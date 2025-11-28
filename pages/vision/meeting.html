@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting - HyperVision</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="../../css/styles.css?v=1732477200000">
+</head>
+<body>
+    <div class="meeting-container">
+        <div class="meeting-header">
+            <div class="meeting-header-left">
+                <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="meeting-logo">
+            </div>
+            <div class="meeting-info">
+                <h2 id="meetingTitle">Loading...</h2>
+                <div id="recordingStatus" style="display: none; color: #dc3545; font-weight: bold; margin-top: 5px;">
+                    🔴 Recording... <span id="recordingTime">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="meeting-main">
+            <!-- Screen share container (hidden by default) -->
+            <div class="screen-share-container" id="screenShareContainer" style="display: none;">
+                <div class="screen-share-header">
+                    <span id="screenShareName">Screen Share</span>
+                </div>
+                <video id="screenShareVideo" autoplay playsinline></video>
+
+                <!-- Screen share controls (only for viewers, not sharer) -->
+                <div class="screen-share-controls" id="screenShareControls" style="display: none;">
+                    <div class="control-group">
+                        <button class="share-control-btn" onclick="zoomScreenShare(0.2)" title="Zoom In">🔍+</button>
+                        <button class="share-control-btn" onclick="zoomScreenShare(-0.2)" title="Zoom Out">🔍−</button>
+                        <button class="share-control-btn" onclick="resetScreenShare()" title="Reset">⟲</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="share-control-btn" onclick="panScreenShare(0, -50)" title="Pan Up">↑</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="share-control-btn" onclick="panScreenShare(-50, 0)" title="Pan Left">←</button>
+                        <button class="share-control-btn" onclick="panScreenShare(0, 0)" title="Center">⊙</button>
+                        <button class="share-control-btn" onclick="panScreenShare(50, 0)" title="Pan Right">→</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="share-control-btn" onclick="panScreenShare(0, 50)" title="Pan Down">↓</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="share-control-btn" onclick="captureScreenShareScreenshot()" title="Take Screenshot">📸</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-container" id="videoContainer">
+                <!-- Video participants will appear here -->
+            </div>
+
+            <div class="chat-sidebar">
+                <div class="chat-header">
+                    <h3>Chat</h3>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+                    <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="meeting-controls">
+            <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="Toggle Microphone">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                <span>Mic</span>
+            </button>
+            <button id="camBtn" class="control-btn active" onclick="toggleCamera()" title="Toggle Camera">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 7l-7 5 7 5V7z"></path>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Video</span>
+            </button>
+            <button id="screenBtn" class="control-btn" onclick="toggleScreenShare()" title="Share Screen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <span>Share</span>
+            </button>
+            <button id="chatBtn" class="control-btn" onclick="toggleChat()" title="Toggle Chat">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Chat</span>
+            </button>
+            <button id="settingsBtn" class="control-btn" onclick="toggleSettingsMenu()" title="More Options">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m6.364-15.364l-4.243 4.243m-4.242 4.242l-4.243 4.243m12.728 0l-4.243-4.243m-4.242-4.242L1.636 1.636"></path>
+                </svg>
+                <span>More</span>
+            </button>
+            <button class="control-btn danger" onclick="leaveMeeting()" title="Leave Meeting">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                </svg>
+                <span>Leave</span>
+            </button>
+        </div>
+
+        <!-- Settings Menu Popup -->
+        <div class="settings-menu" id="settingsMenu" style="display: none;">
+            <div class="settings-menu-item" onclick="toggleBackgroundSettings(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </span>
+                <span class="menu-label">Background</span>
+            </div>
+            <div class="settings-menu-item" onclick="toggleParticipantsPanel(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span class="menu-label">Participants</span>
+            </div>
+            <div class="settings-menu-item" onclick="toggleHandRaise(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+                        <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+                        <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+                        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+                    </svg>
+                </span>
+                <span class="menu-label">Raise Hand</span>
+            </div>
+            <div class="settings-menu-item" onclick="toggleReactionPicker(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </span>
+                <span class="menu-label">Reactions</span>
+            </div>
+            <div class="settings-menu-item" onclick="togglePictureInPicture(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <rect x="13" y="10" width="8" height="6" rx="1" ry="1"></rect>
+                    </svg>
+                </span>
+                <span class="menu-label">Picture-in-Picture</span>
+            </div>
+            <div class="settings-menu-item" onclick="toggleRecording(); closeSettingsMenu();">
+                <span class="menu-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
+                    </svg>
+                </span>
+                <span class="menu-label">Record</span>
+            </div>
+        </div>
+
+        <!-- Background Settings Panel (hidden by default) -->
+        <div class="background-settings" id="backgroundSettings" style="display: none;">
+            <div class="bg-settings-header">
+                <h3>Background Effects</h3>
+                <button onclick="toggleBackgroundSettings()" class="close-btn">✕</button>
+            </div>
+            <div class="bg-options">
+                <div class="bg-option" onclick="setBackground('none')">
+                    <div class="bg-preview bg-none"></div>
+                    <span>None</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('blur')">
+                    <div class="bg-preview bg-blur"></div>
+                    <span>Blur</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('office')">
+                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop')"></div>
+                    <span>Office</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('library')">
+                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400&h=300&fit=crop')"></div>
+                    <span>Library</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('nature')">
+                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop')"></div>
+                    <span>Nature</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('beach')">
+                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop')"></div>
+                    <span>Beach</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('city')">
+                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop')"></div>
+                    <span>City</span>
+                </div>
+                <div class="bg-option" onclick="setBackground('gradient')">
+                    <div class="bg-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
+                    <span>Gradient</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reaction Picker (hidden by default) -->
+        <div class="reaction-picker" id="reactionPicker" style="display: none;">
+            <button onclick="sendReaction('👍')">👍</button>
+            <button onclick="sendReaction('👏')">👏</button>
+            <button onclick="sendReaction('😂')">😂</button>
+            <button onclick="sendReaction('❤️')">❤️</button>
+            <button onclick="sendReaction('🎉')">🎉</button>
+            <button onclick="sendReaction('😮')">😮</button>
+            <button onclick="sendReaction('👎')">👎</button>
+            <button onclick="sendReaction('🤔')">🤔</button>
+        </div>
+
+        <!-- Participants Panel (hidden by default, for host only) -->
+        <div class="participants-panel" id="participantsPanel" style="display: none;">
+            <div class="participants-header">
+                <h3>Participants (<span id="participantCount">0</span>)</h3>
+                <button onclick="toggleParticipantsPanel()" class="close-btn">✕</button>
+            </div>
+            <div class="participants-search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="participantSearch" placeholder="Search participants..." onkeyup="filterParticipants(this.value)">
+            </div>
+            <div class="participants-actions" id="hostActions" style="display: none;">
+                <button onclick="muteAllParticipants()" class="btn-mute-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="3" y1="3" x2="21" y2="21"></line>
+                    </svg>
+                    <span>Mute All</span>
+                </button>
+            </div>
+            <div class="participants-list" id="participantsList">
+                <!-- Participants will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reaction Animations Container -->
+    <div id="reactionsContainer" class="reactions-container"></div>
+
+    <!-- Include LiveKit and SignalR SDKs -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+
+    <!-- TensorFlow.js and BodyPix for background segmentation -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
+
+    <!-- COCO-SSD for object detection (person, chair, etc.) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+    <!-- Three.js for virtual background rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+
+    <script src="../../js/config.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/vision/activeSpeaker.js?v=1732473000000"></script>
+    <!-- <script src="../../js/vision/controls-scroll.js"></script> Disabled - no longer using scrolling controls -->
+    <script src="../../js/vision/meeting.js?v=1732473000000"></script>
+</body>
+</html>

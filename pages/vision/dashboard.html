@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - HyperVision</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <a href="../home.html" class="nav-link">Home</a>
+            <a href="dashboard.html" class="nav-link active">Meetings</a>
+            <a href="../drive/drive.html" class="nav-link">Drive</a>
+            <div class="user-avatar-container">
+                <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()">AB</div>
+                <div class="user-dropdown-menu" id="userDropdownMenu">
+                    <div class="user-dropdown-header">
+                        <span id="userDropdownName">User Name</span>
+                    </div>
+                    <!-- Mobile Navigation Links -->
+                    <div class="mobile-nav-links">
+                        <a href="../home.html" class="mobile-nav-link">Home</a>
+                        <a href="dashboard.html" class="mobile-nav-link active">Meetings</a>
+                        <a href="../drive/drive.html" class="mobile-nav-link">Drive</a>
+                    </div>
+                    <div class="user-dropdown-divider"></div>
+                    <button class="user-dropdown-item" onclick="api.logout()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-content">
+        <!-- Floating Meeting Type Tabs -->
+        <div class="meeting-type-tabs">
+            <button class="tab-btn active" data-type="regular" onclick="switchMeetingType('regular')">
+                <span class="tab-label">Open Meetings</span>
+            </button>
+            <button class="tab-btn" data-type="hosted" onclick="switchMeetingType('hosted')">
+                <span class="tab-label">Hosted Meetings</span>
+            </button>
+            <button class="tab-btn" data-type="participant-controlled" onclick="switchMeetingType('participant-controlled')">
+                <span class="tab-label">Private Meetings</span>
+            </button>
+        </div>
+
+        <!-- Tab Content Containers -->
+        <div class="tab-content-container">
+            <!-- Regular/Open Meetings Tab -->
+            <div id="regular-tab" class="tab-content active">
+                <div class="tab-header">
+                    <div style="display: flex; align-items: center;">
+                        <h2>Open Meetings</h2>
+                        <p class="tab-description">Anyone can join directly without approval</p>
+                    </div>
+                    <button onclick="showCreateProjectModal('regular')" class="btn btn-primary btn-sm">
+                        + Create Project
+                    </button>
+                </div>
+                <div class="projects-accordion" id="regularProjects">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Hosted Meetings Tab -->
+            <div id="hosted-tab" class="tab-content">
+                <div class="tab-header">
+                    <div style="display: flex; align-items: center;">
+                        <h2>Hosted Meetings</h2>
+                        <p class="tab-description">Host must start the meeting first</p>
+                    </div>
+                    <button onclick="showCreateProjectModal('hosted')" class="btn btn-primary btn-sm">
+                        + Create Project
+                    </button>
+                </div>
+                <div class="projects-accordion" id="hostedProjects">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Participant-Controlled Meetings Tab -->
+            <div id="participant-controlled-tab" class="tab-content">
+                <div class="tab-header">
+                    <div style="display: flex; align-items: center;">
+                        <h2>Private Meetings</h2>
+                        <p class="tab-description">Only allowed participants can join</p>
+                    </div>
+                    <button onclick="showCreateProjectModal('participant-controlled')" class="btn btn-primary btn-sm">
+                        + Create Project
+                    </button>
+                </div>
+                <div class="projects-accordion" id="participant-controlledProjects">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Project Modal -->
+    <div id="createProjectModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Project</h5>
+                    <button class="close-btn" onclick="closeModal('createProjectModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createProjectForm">
+                <input type="hidden" id="projectMeetingType">
+                <div class="form-group">
+                    <label for="projectName">Project Name</label>
+                    <input type="text" id="projectName" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Description</label>
+                    <textarea id="projectDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Meeting Modal -->
+    <div id="createMeetingModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Meeting</h5>
+                    <button class="close-btn" onclick="closeModal('createMeetingModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createMeetingForm">
+                <input type="hidden" id="currentProjectId">
+                <input type="hidden" id="currentMeetingType">
+                <div class="form-group">
+                    <label for="meetingName">Meeting Name</label>
+                    <input type="text" id="meetingName" required>
+                </div>
+                <div class="form-group">
+                    <label for="startTime">Start Time</label>
+                    <input type="datetime-local" id="startTime">
+                </div>
+                <div class="form-group">
+                    <label for="endTime">End Time</label>
+                    <input type="datetime-local" id="endTime">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" rows="3"></textarea>
+                </div>
+                <!-- Host Selection (for hosted meetings only) -->
+                <div id="hostSelectionGroup" class="form-group" style="display: none;">
+                    <label for="meetingHost">Host <span style="color: red;">*</span></label>
+                    <select id="meetingHost">
+                        <option value="">Select Host</option>
+                    </select>
+                    <small>Required for hosted meetings</small>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="allowGuests">
+                        <span class="toggle-switch-track">
+                            <span class="toggle-switch-thumb"></span>
+                        </span>
+                        <span class="toggle-switch-label">Allow guest access</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoRecording">
+                        <span class="toggle-switch-track">
+                            <span class="toggle-switch-thumb"></span>
+                        </span>
+                        <span class="toggle-switch-label">Auto-recording</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Create Meeting</button>
+                </div>
+            </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Allowed Participants Modal -->
+    <div id="manageParticipantsModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Participants</h5>
+                    <button class="close-btn" onclick="closeModal('manageParticipantsModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="participants-modal-body">
+                <div class="user-selection-panel">
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="userSearchBox" placeholder="Search by name or email...">
+                        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;" onclick="clearSearch()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="user-list-header">
+                        <span id="userCountDisplay">0 users</span>
+                        <div class="filter-toggles">
+                            <button class="filter-btn active" onclick="filterUsers('all')">All</button>
+                            <button class="filter-btn" onclick="filterUsers('selected')">Selected</button>
+                            <button class="filter-btn" onclick="filterUsers('unselected')">Not Selected</button>
+                        </div>
+                    </div>
+
+                    <div id="registeredUsersList" class="users-list-modern">
+                        <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading users...</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Player Modal -->
+    <div id="recordingPlayerModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Meeting Recording</h5>
+                    <button class="close-btn" onclick="closeRecordingPlayer()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="recordingPlayerContainer" style="margin-top: 20px;">
+                        <!-- Video player will be inserted here -->
+                    </div>
+                    <div id="recordingsListContainer" style="margin-top: 20px; max-height: 200px; overflow-y: auto;">
+                        <!-- List of recordings will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/config.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/vision/dashboard.js?v=2025112508"></script>
+</body>
+</html>

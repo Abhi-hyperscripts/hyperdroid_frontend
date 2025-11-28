@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared - HyperVision</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="../../css/styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .shared-container {
+            max-width: 600px;
+            width: 100%;
+            margin: 20px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .shared-logo {
+            height: 50px;
+            margin-bottom: 20px;
+        }
+
+        .shared-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .shared-icon-svg {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #333 100%);
+            border-radius: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .shared-icon-svg svg {
+            width: 44px;
+            height: 44px;
+            color: white;
+            stroke: white;
+        }
+
+        .shared-icon-svg.folder-icon {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .shared-title {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            word-break: break-word;
+        }
+
+        .shared-subtitle {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 32px;
+            letter-spacing: -0.01em;
+        }
+
+        .file-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+
+        .file-card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .file-icon-large {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #333 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .file-icon-large svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .file-meta {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 32px;
+            background: #1a1a2e;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            background: #333;
+            color: white;
+        }
+
+        .download-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .folder-files-list {
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .folder-file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .folder-file-item:hover {
+            background: rgba(248, 249, 250, 1);
+            transform: translateX(4px);
+        }
+
+        .folder-file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .folder-file-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 26, 46, 0.1);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .folder-file-icon svg {
+            width: 18px;
+            height: 18px;
+            color: #1a1a2e;
+        }
+
+        .folder-file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .folder-file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a2e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .folder-file-size {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .folder-file-download {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .folder-file-download:hover {
+            background: #333;
+            color: white;
+        }
+
+        .password-form {
+            text-align: left;
+        }
+
+        .password-form label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .password-form input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+            font-size: 15px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .password-form input:focus {
+            outline: none;
+            border-color: #1a1a2e;
+            box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+        }
+
+        .error-state {
+            text-align: center;
+        }
+
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 50%;
+            color: #e74c3c;
+        }
+
+        .error-icon svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(26, 26, 46, 0.2);
+            border-top-color: #1a1a2e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .view-only-notice {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            background: rgba(241, 196, 15, 0.15);
+            border-radius: 10px;
+            color: #856404;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .view-only-notice svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .shared-container {
+                margin: 10px;
+                padding: 24px 20px;
+                border-radius: 12px;
+            }
+
+            .shared-logo {
+                height: 40px;
+                margin-bottom: 16px;
+            }
+
+            .shared-icon-svg {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+            }
+
+            .shared-icon-svg svg {
+                width: 36px;
+                height: 36px;
+            }
+
+            .shared-subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            .file-card {
+                padding: 16px;
+                border-radius: 12px;
+            }
+
+            .file-card-header {
+                gap: 12px;
+            }
+
+            .file-icon-large {
+                width: 48px;
+                height: 48px;
+                border-radius: 10px;
+            }
+
+            .file-icon-large svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .file-name {
+                font-size: 14px;
+            }
+
+            .file-meta {
+                font-size: 12px;
+            }
+
+            .download-btn {
+                padding: 14px 24px;
+                font-size: 15px;
+                border-radius: 10px;
+            }
+
+            .folder-files-list {
+                max-height: 250px;
+            }
+
+            .folder-file-item {
+                padding: 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .folder-file-info {
+                width: 100%;
+            }
+
+            .folder-file-download {
+                width: 100%;
+                text-align: center;
+                padding: 10px 16px;
+            }
+
+            .folder-file-name {
+                font-size: 13px;
+            }
+
+            .password-form input {
+                padding: 12px 14px;
+                font-size: 14px;
+            }
+
+            .view-only-notice {
+                padding: 12px 16px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .shared-container {
+                margin: 10px;
+                padding: 20px 16px;
+            }
+
+            .shared-logo {
+                height: 36px;
+            }
+
+            .shared-icon-svg {
+                width: 56px;
+                height: 56px;
+            }
+
+            .shared-icon-svg svg {
+                width: 30px;
+                height: 30px;
+            }
+
+            .shared-subtitle {
+                font-size: 13px;
+            }
+
+            .file-card {
+                padding: 14px;
+            }
+
+            .file-icon-large {
+                width: 44px;
+                height: 44px;
+            }
+
+            .file-name {
+                font-size: 13px;
+            }
+
+            .download-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shared-container">
+        <!-- Loading State -->
+        <div id="loadingState">
+            <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="shared-logo">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="loading-text">Loading shared content...</p>
+            </div>
+        </div>
+
+        <!-- Password Form -->
+        <div id="passwordState" style="display: none;">
+            <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="shared-logo">
+            <div class="shared-icon-svg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <h1 class="shared-title">Password Protected</h1>
+            <p class="shared-subtitle">This content requires a password to access</p>
+
+            <form class="password-form" onsubmit="submitPassword(event)">
+                <label for="password">Enter Password</label>
+                <input type="password" id="password" placeholder="Password" required autocomplete="off">
+                <button type="submit" class="download-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Unlock
+                </button>
+            </form>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" style="display: none;">
+            <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="shared-logo">
+            <div class="error-state">
+                <div class="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <h2 class="error-title" id="errorTitle">Error</h2>
+                <p class="error-message" id="errorMessage">Something went wrong</p>
+            </div>
+        </div>
+
+        <!-- File Content -->
+        <div id="fileState" style="display: none;">
+            <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="shared-logo">
+            <div class="shared-icon-svg" id="fileIconSvg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+            <p class="shared-subtitle" id="fileSubtitle">Someone shared a file with you</p>
+
+            <div class="file-card">
+                <div class="file-card-header">
+                    <div class="file-icon-large" id="fileIconLarge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                    <div class="file-details">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-meta" id="fileMeta"></div>
+                    </div>
+                </div>
+            </div>
+
+            <a id="downloadBtn" class="download-btn" href="#" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download File
+            </a>
+
+            <div id="viewOnlyNotice" class="view-only-notice" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                View only - download is not enabled for this share
+            </div>
+        </div>
+
+        <!-- Folder Content -->
+        <div id="folderState" style="display: none;">
+            <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="shared-logo">
+            <div class="shared-icon-svg folder-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+            </div>
+            <p class="shared-subtitle" id="folderSubtitle">Someone shared a folder with you</p>
+
+            <div class="file-card">
+                <div class="file-card-header">
+                    <div class="file-icon-large" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="file-details">
+                        <div class="file-name" id="folderName"></div>
+                        <div class="file-meta" id="folderMeta"></div>
+                    </div>
+                </div>
+
+                <div class="folder-files-list" id="folderFilesList">
+                    <!-- Files will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/config.js"></script>
+    <script src="../../js/api.js"></script>
+    <script>
+        let shareToken = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            shareToken = urlParams.get('token');
+
+            if (!shareToken) {
+                showError('Invalid Link', 'This share link appears to be invalid or incomplete.');
+                return;
+            }
+
+            accessSharedItem();
+        });
+
+        async function accessSharedItem(password = null) {
+            showLoading();
+
+            try {
+                const result = await api.accessSharedItem(shareToken, password);
+
+                if (result.success) {
+                    if (result.item_type === 'file') {
+                        showFile(result);
+                    } else {
+                        showFolder(result);
+                    }
+                } else {
+                    if (result.message && result.message.toLowerCase().includes('password')) {
+                        showPasswordForm();
+                    } else {
+                        showError('Access Denied', result.message || 'Unable to access this shared content.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error accessing shared item:', error);
+
+                if (error.message.toLowerCase().includes('password')) {
+                    showPasswordForm();
+                } else {
+                    showError('Error', error.message || 'Something went wrong while loading the shared content.');
+                }
+            }
+        }
+
+        function submitPassword(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            accessSharedItem(password);
+        }
+
+        function showLoading() {
+            hideAll();
+            document.getElementById('loadingState').style.display = 'block';
+        }
+
+        function showPasswordForm() {
+            hideAll();
+            document.getElementById('passwordState').style.display = 'block';
+        }
+
+        function showError(title, message) {
+            hideAll();
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorTitle').textContent = title;
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function showFile(result) {
+            hideAll();
+            document.getElementById('fileState').style.display = 'block';
+
+            const file = result.file_info;
+            const sharedBy = result.shared_by_name;
+
+            // Set subtitle (sharer info)
+            if (sharedBy) {
+                document.getElementById('fileSubtitle').textContent = `${sharedBy} shared a file with you`;
+            } else {
+                document.getElementById('fileSubtitle').textContent = 'A file has been shared with you';
+            }
+
+            // Set file card details
+            document.getElementById('fileName').textContent = file.fileName;
+            document.getElementById('fileMeta').textContent = formatBytes(file.fileSize);
+
+            // Set file icons (top icon and card icon)
+            const iconSvg = getFileIconSvg(file.contentType, file.fileName);
+            document.getElementById('fileIconSvg').innerHTML = iconSvg;
+            document.getElementById('fileIconLarge').innerHTML = iconSvg;
+
+            // Handle download button
+            const downloadBtn = document.getElementById('downloadBtn');
+            const viewOnlyNotice = document.getElementById('viewOnlyNotice');
+
+            if (result.download_url && result.access_type !== 'view') {
+                downloadBtn.style.display = 'inline-flex';
+                downloadBtn.href = result.download_url;
+                downloadBtn.setAttribute('download', file.fileName);
+                viewOnlyNotice.style.display = 'none';
+            } else {
+                downloadBtn.style.display = 'none';
+                viewOnlyNotice.style.display = 'flex';
+            }
+        }
+
+        function showFolder(result) {
+            hideAll();
+            document.getElementById('folderState').style.display = 'block';
+
+            const folder = result.folder_info;
+            const sharedBy = result.shared_by_name;
+
+            // Set subtitle (sharer info)
+            if (sharedBy) {
+                document.getElementById('folderSubtitle').textContent = `${sharedBy} shared a folder with you`;
+            } else {
+                document.getElementById('folderSubtitle').textContent = 'A folder has been shared with you';
+            }
+            document.getElementById('folderName').textContent = folder.folderName;
+            document.getElementById('folderMeta').textContent = `${folder.fileCount} files, ${formatBytes(folder.totalSize)}`;
+
+            // Render files
+            const filesList = document.getElementById('folderFilesList');
+            filesList.innerHTML = '';
+
+            if (result.files && result.files.length > 0) {
+                result.files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'folder-file-item';
+                    item.innerHTML = `
+                        <div class="folder-file-info">
+                            <div class="folder-file-icon">
+                                ${getFileIconSvg(file.contentType, file.fileName)}
+                            </div>
+                            <div class="folder-file-details">
+                                <div class="folder-file-name" title="${file.fileName}">${file.fileName}</div>
+                                <div class="folder-file-size">${formatBytes(file.fileSize)}</div>
+                            </div>
+                        </div>
+                        ${file.url ? `<a href="${file.url}" download="${file.fileName}" class="folder-file-download">Download</a>` : ''}
+                    `;
+                    filesList.appendChild(item);
+                });
+            } else {
+                filesList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">This folder is empty</p>';
+            }
+        }
+
+        function hideAll() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('passwordState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('fileState').style.display = 'none';
+            document.getElementById('folderState').style.display = 'none';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 bytes';
+            const k = 1024;
+            const sizes = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileIconSvg(contentType, fileName) {
+            if (!contentType) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>`;
+            }
+
+            if (contentType.startsWith('image/')) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>`;
+            }
+
+            if (contentType.startsWith('video/')) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="23 7 16 12 23 17 23 7"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>`;
+            }
+
+            if (contentType.startsWith('audio/')) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="16" r="3"/>
+                </svg>`;
+            }
+
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>`;
+        }
+    </script>
+</body>
+</html>

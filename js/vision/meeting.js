@@ -1,0 +1,2476 @@
+// Meeting page JavaScript
+let room;
+let signalRConnection;
+let localParticipant;
+let micEnabled = true;
+let cameraEnabled = true;
+let meetingId;
+let participantZoomLevels = {}; // Store zoom levels for each participant
+let isAnyoneScreenSharing = false; // Track if anyone is sharing screen
+let activeSpeakerManager = null; // Active speaker detection manager
+
+// Recording state
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let isPaused = false;
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+
+// Screen share zoom and pan state
+let screenShareZoom = 1;
+let screenSharePanX = 0;
+let screenSharePanY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let dragStartPanX = 0;
+let dragStartPanY = 0;
+
+// Hand raise state
+let handRaised = false;
+let raisedHands = new Set(); // Track who has their hand raised
+
+// Picture-in-Picture state
+let pipEnabled = false;
+
+// Virtual background state
+let currentBackground = 'none';
+let backgroundCanvas = null;
+let backgroundContext = null;
+let backgroundImage = null;
+let bodyPixNet = null; // BodyPix model
+let cocoSsdModel = null; // COCO-SSD object detection model
+let segmentationRunning = false;
+let virtualBackgroundStream = null;
+let originalVideoTrack = null;
+let originalCameraPublication = null; // Store the original LiveKit camera publication
+let tempCanvas = null; // Reusable temp canvas for processing
+let tempCtx = null;
+let maskCanvas = null; // Reusable mask canvas for segmentation
+let maskCtx = null;
+let previousMaskCanvas = null; // For temporal smoothing
+let previousMaskCtx = null;
+let frameCount = 0; // Frame counter for throttling
+
+// Three.js variables for virtual background
+let threeScene = null;
+let threeCamera = null;
+let threeRenderer = null;
+let videoTexture = null;
+let backgroundTexture = null;
+let maskTexture = null;
+let videoMesh = null;
+let backgroundMesh = null;
+
+// Get meeting ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+meetingId = urlParams.get('id');
+
+if (!meetingId) {
+    alert('Meeting ID not provided');
+    window.location.href = '../login.html';
+}
+
+// Check if user is authenticated or guest
+const isGuest = sessionStorage.getItem('isGuest') === 'true';
+const isAuthenticated = api.isAuthenticated();
+
+// If neither authenticated nor guest, redirect to guest join page
+if (!isAuthenticated && !isGuest) {
+    window.location.href = `guest-join.html?id=${meetingId}`;
+}
+
+// Initialize meeting
+async function initializeMeeting() {
+    try {
+        // Check meeting status first
+        const meetingStatus = await api.getMeetingStatus(meetingId);
+
+        if (!meetingStatus) {
+            alert('Meeting not found');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // Get current user info
+        const user = isGuest ? null : api.getUser();
+        const isHostUser = user && meetingStatus.host_user_id === user.userId;
+
+        // Show participants button to all users (host controls are restricted in loadParticipants)
+        const participantsBtn = document.getElementById('participantsBtn');
+        if (participantsBtn) {
+            participantsBtn.style.display = 'inline-block';
+        }
+
+        // If it's a hosted meeting and not started, check if user is host
+        if (meetingStatus.is_host_controlled && !meetingStatus.is_started) {
+            if (!isHostUser) {
+                // Non-host users should wait in lobby
+                window.location.href = `lobby.html?id=${meetingId}`;
+                return;
+            } else {
+                // Host can join but should start the meeting
+                showStartMeetingButton();
+            }
+        }
+
+        let tokenData;
+        let participantName;
+
+        if (isGuest) {
+            // Guest user - use stored token and info
+            const guestMeetingId = sessionStorage.getItem('guestMeetingId');
+
+            // Verify guest is joining the correct meeting
+            if (guestMeetingId !== meetingId) {
+                alert('Invalid guest session');
+                sessionStorage.clear();
+                window.location.href = `guest-join.html?id=${meetingId}`;
+                return;
+            }
+
+            tokenData = {
+                token: sessionStorage.getItem('guestToken'),
+                ws_url: sessionStorage.getItem('guestWsUrl')
+            };
+            participantName = sessionStorage.getItem('guestName');
+
+            console.log('Joining as guest:', participantName);
+        } else {
+            // Authenticated user - use existing flow
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+            participantName = user.email || 'User';
+
+            // Get LiveKit token
+            tokenData = await api.getLiveKitToken(meetingId, participantName);
+        }
+
+        document.getElementById('meetingTitle').textContent = 'Meeting Room';
+
+        // Connect to LiveKit
+        await connectToLiveKit(tokenData.ws_url, tokenData.token);
+
+        // Connect to SignalR chat (for both authenticated users and guests)
+        await connectToSignalR(participantName);
+
+        // Load chat history only for authenticated users
+        if (!isGuest) {
+            // Chat history disabled - only show messages from current session
+            // await loadChatHistory();
+        }
+
+    } catch (error) {
+        console.error('Error initializing meeting:', error);
+        alert('Failed to join meeting: ' + error.message);
+
+        if (isGuest) {
+            sessionStorage.clear();
+            window.location.href = `guest-join.html?id=${meetingId}`;
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    }
+}
+
+// Connect to LiveKit
+async function connectToLiveKit(wsUrl, token) {
+    try {
+        // Fetch ICE servers from backend (REQUIRED)
+        console.log('Fetching ICE servers from backend...');
+        const iceServers = await CONFIG.fetchIceServers();
+        console.log('ICE servers loaded:', iceServers);
+
+        if (!iceServers || iceServers.length === 0) {
+            throw new Error('No ICE servers available. Cannot establish WebRTC connection.');
+        }
+
+        // Configure RTC options with TURN/STUN servers and simulcast
+        const roomOptions = {
+            adaptiveStream: true,
+            dynacast: true,
+            videoCaptureDefaults: {
+                resolution: LivekitClient.VideoPresets.h720.resolution,
+            },
+            publishDefaults: {
+                simulcast: true,  // Enable simulcast for adaptive quality
+            }
+        };
+
+        room = new LivekitClient.Room(roomOptions);
+
+        // Handle participant events
+        room.on('participantConnected', (participant) => {
+            console.log('Participant connected:', participant.identity);
+            // NOTE: addParticipant() is now handled by ActiveSpeakerManager layout system
+            // The old addParticipant() function created duplicate DOM elements
+            // addParticipant(participant);
+        });
+
+        room.on('participantDisconnected', (participant) => {
+            console.log('Participant disconnected:', participant.identity);
+            removeParticipant(participant);
+        });
+
+        room.on('trackSubscribed', (track, publication, participant) => {
+            console.log('Track subscribed:', track.kind, 'source:', publication.source);
+            attachTrack(track, publication, participant);
+        });
+
+        room.on('trackUnsubscribed', (track, publication, participant) => {
+            console.log('Track unsubscribed:', track.kind);
+            detachTrack(track, publication, participant);
+        });
+
+        // Handle local participant track published (for camera toggle)
+        room.on('localTrackPublished', (publication) => {
+            console.log('Local track published:', publication.kind);
+            if (publication.track && publication.kind === 'video') {
+                const video = document.querySelector('#local-participant video');
+                if (video) {
+                    publication.track.attach(video);
+                }
+            }
+        });
+
+        // Configure connection options with ICE servers fetched from backend
+        const connectOptions = {
+            autoSubscribe: true,  // Auto-subscribe to all tracks to show all participant videos
+            rtcConfig: {
+                iceServers: iceServers,
+                iceTransportPolicy: 'all'
+            }
+        };
+
+        // Connect to room
+        await room.connect(wsUrl, token, connectOptions);
+
+        localParticipant = room.localParticipant;
+
+        // Enable camera and microphone with error handling
+        try {
+            await room.localParticipant.setMicrophoneEnabled(true);
+            micEnabled = true;
+            console.log('Microphone enabled successfully');
+        } catch (micError) {
+            console.error('Failed to enable microphone:', micError);
+            micEnabled = false;
+            // Show user-friendly error
+            const micBtn = document.getElementById('micBtn');
+            if (micBtn) {
+                micBtn.classList.remove('active');
+                micBtn.title = 'Microphone permission denied. Click to try again.';
+            }
+        }
+
+        try {
+            await room.localParticipant.setCameraEnabled(true);
+            cameraEnabled = true;
+            console.log('Camera enabled successfully');
+        } catch (camError) {
+            console.error('Failed to enable camera:', camError);
+            cameraEnabled = false;
+            // Show user-friendly error
+            const cameraBtn = document.getElementById('cameraBtn');
+            if (cameraBtn) {
+                cameraBtn.classList.remove('active');
+                cameraBtn.title = 'Camera permission denied. Click to try again.';
+            }
+            // Show alert to user (especially important for guests)
+            alert('Camera access was denied. Please allow camera access in your browser settings and refresh the page.');
+        }
+
+        // Display local participant
+        addLocalParticipant();
+
+        // Add any existing remote participants
+        room.remoteParticipants.forEach((participant) => {
+            console.log('Adding existing participant:', participant.identity);
+            addParticipant(participant);
+        });
+
+        // Initialize Active Speaker Manager with adaptive quality
+        console.log('Initializing Active Speaker Detection...');
+        activeSpeakerManager = new ActiveSpeakerManager(room);
+
+        activeSpeakerManager.onLayoutChange = (layout) => {
+            console.log('Active speaker layout updated:', {
+                mainSpeaker: layout.mainSpeaker?.identity,
+                videoCount: layout.videoParticipants.length,
+                audioOnlyCount: layout.audioOnlyParticipants.length
+            });
+
+            // Update participant UI based on active speaker layout
+            updateParticipantLayout(layout);
+        };
+
+        activeSpeakerManager.onSpeakerUpdate = (speaker) => {
+            if (speaker) {
+                console.log('Main speaker is now:', speaker.identity);
+            }
+        };
+
+        // Initialize active speakers
+        activeSpeakerManager.initializeActiveSpeakers();
+
+        console.log('Connected to LiveKit room with Active Speaker Detection (Main: 720p, Small: 720p)');
+    } catch (error) {
+        console.error('Error connecting to LiveKit:', error);
+        throw error;
+    }
+}
+
+// Connect to SignalR
+async function connectToSignalR(guestName = null) {
+    // Check if explicitly joining as guest (prioritize this over token check)
+    // This handles the case where an authenticated user chooses to join as a guest
+    const isGuestSession = sessionStorage.getItem('isGuest') === 'true';
+    const token = localStorage.getItem('authToken');
+
+    // For guests, pass name in query string (check this FIRST)
+    if (isGuestSession && guestName) {
+        signalRConnection = new signalR.HubConnectionBuilder()
+            .withUrl(`${CONFIG.signalRHubUrl}?guestName=${encodeURIComponent(guestName)}`)
+            .withAutomaticReconnect()
+            .build();
+
+        // Setup event handlers and start connection for guests
+        setupSignalREventHandlers();
+        await signalRConnection.start();
+        await signalRConnection.invoke('JoinMeeting', meetingId);
+        console.log('Connected to SignalR hub as guest:', guestName);
+        return;
+    }
+
+    // For authenticated users, use token factory
+    if (token) {
+        signalRConnection = new signalR.HubConnectionBuilder()
+            .withUrl(CONFIG.signalRHubUrl, {
+                accessTokenFactory: () => token
+            })
+            .withAutomaticReconnect()
+            .build();
+
+        setupSignalREventHandlers();
+        await signalRConnection.start();
+        await signalRConnection.invoke('JoinMeeting', meetingId);
+        console.log('Connected to SignalR hub as authenticated user');
+        return;
+    }
+
+    throw new Error('No authentication method available');
+}
+
+// Setup SignalR event handlers
+function setupSignalREventHandlers() {
+    signalRConnection.on('ReceiveMessage', (data) => {
+        addChatMessage(data.username, data.message, data.messageType);
+    });
+
+    signalRConnection.on('UserJoined', (data) => {
+        addChatMessage('System', `${data.username} joined the meeting`, 'system');
+    });
+
+    signalRConnection.on('UserLeft', (data) => {
+        addChatMessage('System', `${data.username} left the meeting`, 'system');
+    });
+
+    signalRConnection.on('HandRaised', (data) => {
+        console.log(`${data.username} raised hand`);
+        raisedHands.add(data.username);
+        updateHandRaiseIndicator(data.username, true);
+        addChatMessage('System', `${data.username} raised their hand ✋`, 'system');
+    });
+
+    signalRConnection.on('HandLowered', (data) => {
+        console.log(`${data.username} lowered hand`);
+        raisedHands.delete(data.username);
+        updateHandRaiseIndicator(data.username, false);
+    });
+
+    signalRConnection.on('ReactionReceived', (data) => {
+        console.log(`${data.username} sent reaction: ${data.emoji}`);
+        showReactionAnimation(data.emoji, data.username);
+    });
+
+    signalRConnection.on('ParticipantMutedByHost', (data) => {
+        console.log(`Participant ${data.participantIdentity} was muted by ${data.mutedBy}`);
+
+        // Check if it's the current user who was muted
+        if (room && room.localParticipant.identity === data.participantIdentity) {
+            // Update UI to show muted state
+            const micBtn = document.getElementById('micBtn');
+            if (micBtn) {
+                micBtn.classList.remove('active');
+                micEnabled = false;
+            }
+
+            // Show notification
+            addChatMessage('System', `You were muted by the host (${data.mutedBy})`, 'system');
+        }
+    });
+
+    signalRConnection.on('AllParticipantsMutedByHost', (data) => {
+        console.log(`All participants were muted by ${data.mutedBy}`);
+
+        // Check if current user has audio enabled
+        if (room && micEnabled) {
+            // Update UI to show muted state
+            const micBtn = document.getElementById('micBtn');
+            if (micBtn) {
+                micBtn.classList.remove('active');
+                micEnabled = false;
+            }
+
+            // Show notification
+            addChatMessage('System', `All participants were muted by the host (${data.mutedBy})`, 'system');
+        }
+    });
+
+    signalRConnection.on('ParticipantRemovedByHost', (data) => {
+        console.log(`Participant ${data.participantIdentity} was removed by ${data.removedBy}`);
+
+        // Check if it's the current user who was removed
+        if (room && room.localParticipant.identity === data.participantIdentity) {
+            alert(`You have been removed from the meeting by the host (${data.removedBy})`);
+
+            // Disconnect and redirect
+            room.disconnect();
+            if (isGuest) {
+                sessionStorage.clear();
+                window.location.href = '../login.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } else {
+            // Another participant was removed - clean up their UI elements immediately
+            console.log(`Removing UI elements for kicked participant: ${data.participantIdentity}`);
+            removeParticipant(data.participantIdentity);
+
+            // Show system message
+            addChatMessage('System', `${data.participantIdentity} was removed from the meeting by ${data.removedBy}`, 'system');
+        }
+    });
+}
+
+// Add local participant video
+function addLocalParticipant() {
+    const videoContainer = document.getElementById('videoContainer');
+    const participantDiv = document.createElement('div');
+    participantDiv.className = 'video-participant';
+    participantDiv.id = 'local-participant';
+    participantZoomLevels['local'] = 1;
+
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+
+    const nameTag = document.createElement('div');
+    nameTag.className = 'participant-name';
+    nameTag.textContent = 'You';
+
+    // Add zoom controls
+    const zoomControls = createZoomControls('local');
+
+    participantDiv.appendChild(video);
+    participantDiv.appendChild(nameTag);
+    participantDiv.appendChild(zoomControls);
+    videoContainer.appendChild(participantDiv);
+
+    // Attach local tracks
+    room.localParticipant.videoTrackPublications.forEach((publication) => {
+        if (publication.track) {
+            video.srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+        }
+    });
+}
+
+// Add remote participant
+function addParticipant(participant) {
+    const videoContainer = document.getElementById('videoContainer');
+    const participantDiv = document.createElement('div');
+    participantDiv.className = 'video-participant';
+    participantDiv.id = `participant-${participant.identity}`;
+    participantZoomLevels[participant.identity] = 1;
+
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+
+    const nameTag = document.createElement('div');
+    nameTag.className = 'participant-name';
+    nameTag.textContent = participant.name || participant.identity;
+
+    // Add zoom controls
+    const zoomControls = createZoomControls(participant.identity);
+
+    participantDiv.appendChild(video);
+    participantDiv.appendChild(nameTag);
+    participantDiv.appendChild(zoomControls);
+    videoContainer.appendChild(participantDiv);
+
+    // Attach any existing video tracks
+    participant.videoTrackPublications.forEach((publication) => {
+        if (publication.track && publication.isSubscribed) {
+            publication.track.attach(video);
+        }
+    });
+
+    // Attach any existing audio tracks
+    participant.audioTrackPublications.forEach((publication) => {
+        if (publication.track && publication.isSubscribed) {
+            let audio = document.createElement('audio');
+            audio.autoplay = true;
+            participantDiv.appendChild(audio);
+            publication.track.attach(audio);
+        }
+    });
+}
+
+// Remove participant
+function removeParticipant(participantOrIdentity) {
+    // Support both participant object and identity string for backwards compatibility
+    const identity = typeof participantOrIdentity === 'string' ? participantOrIdentity : participantOrIdentity.identity;
+    const participantSid = typeof participantOrIdentity === 'object' ? participantOrIdentity.sid : null;
+
+    console.log(`Removing participant: ${identity}`);
+
+    // Remove from active speaker manager
+    if (activeSpeakerManager && participantSid) {
+        activeSpeakerManager.removeParticipant(participantSid);
+    }
+
+    // Remove video tile
+    const participantDiv = document.getElementById(`participant-${identity}`);
+    if (participantDiv) {
+        console.log(`Removing video tile for: ${identity}`);
+        participantDiv.remove();
+    }
+
+    // Remove audio-only tile if present
+    const audioOnlyDiv = document.getElementById(`audio-only-${identity}`);
+    if (audioOnlyDiv) {
+        console.log(`Removing audio-only tile for: ${identity}`);
+        audioOnlyDiv.remove();
+    }
+
+    // Clean up zoom level tracking
+    if (participantZoomLevels[identity]) {
+        delete participantZoomLevels[identity];
+    }
+
+    // Remove from raised hands tracking
+    raisedHands.delete(identity);
+
+    console.log(`Participant ${identity} fully removed from UI`);
+}
+
+// Update participant layout based on active speaker detection
+function updateParticipantLayout(layout) {
+    const videoContainer = document.getElementById('videoContainer');
+    const mainSpeaker = layout.mainSpeaker;
+    const videoParticipants = layout.videoParticipants || [];
+
+    console.log('📊 Layout Update:', {
+        mainSpeaker: mainSpeaker?.identity,
+        videoParticipants: videoParticipants.map(p => p.identity),
+        audioOnlyParticipants: layout.audioOnlyParticipants?.map(p => p.identity) || []
+    });
+
+    // Clear video container
+    videoContainer.innerHTML = '';
+
+    // Create main speaker container
+    const mainSpeakerContainer = document.createElement('div');
+    mainSpeakerContainer.className = 'main-speaker-container';
+
+    // Create small tiles container
+    const smallTilesContainer = document.createElement('div');
+    smallTilesContainer.className = 'small-tiles-container';
+
+    // CRITICAL: Main speaker tile must NEVER be empty
+    // Track which participant identity is actually used as main speaker (for deduplication)
+    let actualMainSpeakerIdentity = null;
+
+    // Add local participant to main speaker if no active speaker
+    if (!mainSpeaker || mainSpeaker.participantSid === 'local') {
+        addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
+        actualMainSpeakerIdentity = 'local';
+    } else {
+        // Add main speaker (use identity as key to lookup in remoteParticipants Map)
+        const mainParticipant = room.remoteParticipants.get(mainSpeaker.identity);
+        if (mainParticipant) {
+            addParticipantToContainer(mainParticipant, mainSpeakerContainer, 'main-speaker-tile', false);
+            actualMainSpeakerIdentity = mainSpeaker.identity;
+        } else {
+            // CRITICAL FALLBACK: Main speaker not found - use first available participant
+            console.warn('Main speaker not found in remoteParticipants:', mainSpeaker.identity, '- using fallback');
+
+            // Try to use first video participant
+            if (videoParticipants.length > 0) {
+                const fallbackParticipant = room.remoteParticipants.get(videoParticipants[0].identity);
+                if (fallbackParticipant) {
+                    console.log('Using fallback main speaker:', fallbackParticipant.identity);
+                    addParticipantToContainer(fallbackParticipant, mainSpeakerContainer, 'main-speaker-tile', false);
+                    actualMainSpeakerIdentity = fallbackParticipant.identity;
+                } else {
+                    // Last resort: use local participant
+                    console.warn('No remote participants available - showing local participant as main speaker');
+                    addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
+                    actualMainSpeakerIdentity = 'local';
+                }
+            } else {
+                // No video participants at all - show local
+                console.warn('No video participants - showing local participant as main speaker');
+                addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
+                actualMainSpeakerIdentity = 'local';
+            }
+        }
+    }
+
+    // Add up to 4 small tiles (excluding main speaker)
+    let addedSmallTiles = 0;
+    const maxSmallTiles = 4;
+
+    // Add local participant to small tiles if they're not the main speaker
+    if (actualMainSpeakerIdentity !== 'local' && addedSmallTiles < maxSmallTiles) {
+        addParticipantToContainer(room.localParticipant, smallTilesContainer, 'small-tile', true);
+        addedSmallTiles++;
+    }
+
+    // Add other participants to small tiles
+    videoParticipants.forEach((vpData, index) => {
+        if (addedSmallTiles >= maxSmallTiles) return;
+
+        // Skip the actual main speaker (avoid duplicates)
+        if (vpData.identity === actualMainSpeakerIdentity) return;
+
+        // Use identity as key to lookup in remoteParticipants Map
+        const participant = room.remoteParticipants.get(vpData.identity);
+        if (participant) {
+            addParticipantToContainer(participant, smallTilesContainer, 'small-tile', false);
+            addedSmallTiles++;
+        } else {
+            console.warn('Participant not found in remoteParticipants:', vpData.identity);
+        }
+    });
+
+    // Append containers to video container
+    videoContainer.appendChild(mainSpeakerContainer);
+    videoContainer.appendChild(smallTilesContainer);
+}
+
+// Helper function to add participant to a container
+function addParticipantToContainer(participant, container, className, isLocal) {
+    const participantDiv = document.createElement('div');
+    participantDiv.className = `video-participant ${className}`;
+    participantDiv.id = isLocal ? 'local-participant' : `participant-${participant.identity}`;
+
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = isLocal;
+    video.playsInline = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+
+    const nameTag = document.createElement('div');
+    nameTag.className = 'participant-name';
+    nameTag.textContent = isLocal ? 'You' : (participant.name || participant.identity);
+
+    participantDiv.appendChild(video);
+    participantDiv.appendChild(nameTag);
+
+    // Attach tracks
+    if (isLocal) {
+        const localTracks = room.localParticipant.videoTrackPublications;
+        localTracks.forEach((publication) => {
+            if (publication.track && publication.source === 'camera') {
+                publication.track.attach(video);
+            }
+        });
+    } else {
+        // Attach video track for remote participants
+        participant.videoTrackPublications.forEach((publication) => {
+            if (publication.track && publication.isSubscribed && publication.source === 'camera') {
+                publication.track.attach(video);
+            }
+        });
+
+        // Attach audio track for remote participants
+        participant.audioTrackPublications.forEach((publication) => {
+            if (publication.track && publication.isSubscribed) {
+                const audio = document.createElement('audio');
+                audio.autoplay = true;
+                participantDiv.appendChild(audio);
+                publication.track.attach(audio);
+            }
+        });
+    }
+
+    container.appendChild(participantDiv);
+}
+
+// Add audio-only participant indicator
+function addAudioOnlyParticipant(participant) {
+    const videoContainer = document.getElementById('videoContainer');
+    const audioOnlyDiv = document.createElement('div');
+    audioOnlyDiv.className = 'audio-only-participant';
+    audioOnlyDiv.id = `audio-only-${participant.identity}`;
+
+    const icon = document.createElement('div');
+    icon.className = 'audio-only-icon';
+    icon.innerHTML = '🎤';
+
+    const nameTag = document.createElement('div');
+    nameTag.className = 'participant-name';
+    nameTag.textContent = participant.name || participant.identity;
+
+    audioOnlyDiv.appendChild(icon);
+    audioOnlyDiv.appendChild(nameTag);
+    videoContainer.appendChild(audioOnlyDiv);
+}
+
+// Attach track to participant
+function attachTrack(track, publication, participant) {
+    // Handle screen share tracks separately
+    if (publication.source === 'screen_share') {
+        const screenShareVideo = document.getElementById('screenShareVideo');
+        const screenShareContainer = document.getElementById('screenShareContainer');
+        const screenShareName = document.getElementById('screenShareName');
+        const videoContainer = document.getElementById('videoContainer');
+        const chatSidebar = document.querySelector('.chat-sidebar');
+        const screenBtn = document.getElementById('screenBtn');
+        const screenShareControls = document.getElementById('screenShareControls');
+
+        track.attach(screenShareVideo);
+        screenShareContainer.style.display = 'flex';
+        videoContainer.classList.add('minimized');
+        chatSidebar.style.display = 'none';
+        screenShareName.textContent = `${participant.name || participant.identity} is sharing`;
+
+        // Mark that someone is sharing and disable button for others
+        isAnyoneScreenSharing = true;
+        const isLocalParticipant = participant.identity === room.localParticipant.identity;
+        if (!isLocalParticipant) {
+            screenBtn.disabled = true;
+            screenBtn.style.opacity = '0.5';
+            screenBtn.style.cursor = 'not-allowed';
+            // Show controls only for viewers, not the person sharing
+            screenShareControls.style.display = 'flex';
+
+            // Enable drag to pan and wheel zoom for viewers
+            screenShareVideo.style.cursor = 'grab';
+            screenShareVideo.addEventListener('mousedown', onScreenShareMouseDown);
+            screenShareVideo.addEventListener('mousemove', onScreenShareMouseMove);
+            screenShareVideo.addEventListener('mouseup', onScreenShareMouseUp);
+            screenShareVideo.addEventListener('mouseleave', onScreenShareMouseLeave);
+            screenShareVideo.addEventListener('wheel', onScreenShareWheel, { passive: false });
+        } else {
+            // Hide controls for the person who is sharing
+            screenShareControls.style.display = 'none';
+            screenShareVideo.style.cursor = 'default';
+        }
+
+        // Reset zoom and pan when new screen share starts
+        resetScreenShare();
+        return;
+    }
+
+    const participantDiv = document.getElementById(`participant-${participant.identity}`);
+    if (participantDiv) {
+        if (track.kind === 'video') {
+            const video = participantDiv.querySelector('video');
+            if (video) {
+                track.attach(video);
+            }
+        } else if (track.kind === 'audio') {
+            // Create or get audio element for this participant
+            let audio = participantDiv.querySelector('audio');
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.autoplay = true;
+                participantDiv.appendChild(audio);
+            }
+            track.attach(audio);
+        }
+    }
+}
+
+// Detach track
+function detachTrack(track, publication, participant) {
+    // Handle screen share detachment
+    if (publication.source === 'screen_share') {
+        const screenShareVideo = document.getElementById('screenShareVideo');
+        const screenShareContainer = document.getElementById('screenShareContainer');
+        const videoContainer = document.getElementById('videoContainer');
+        const chatSidebar = document.querySelector('.chat-sidebar');
+        const screenBtn = document.getElementById('screenBtn');
+        const screenShareControls = document.getElementById('screenShareControls');
+
+        track.detach(screenShareVideo);
+        screenShareContainer.style.display = 'none';
+        videoContainer.classList.remove('minimized');
+        chatSidebar.style.display = 'flex';
+        screenShareControls.style.display = 'none';
+
+        // Remove drag and wheel event listeners
+        screenShareVideo.removeEventListener('mousedown', onScreenShareMouseDown);
+        screenShareVideo.removeEventListener('mousemove', onScreenShareMouseMove);
+        screenShareVideo.removeEventListener('mouseup', onScreenShareMouseUp);
+        screenShareVideo.removeEventListener('mouseleave', onScreenShareMouseLeave);
+        screenShareVideo.removeEventListener('wheel', onScreenShareWheel);
+        screenShareVideo.style.cursor = 'default';
+
+        // Mark that no one is sharing and re-enable button
+        isAnyoneScreenSharing = false;
+        screenBtn.disabled = false;
+        screenBtn.style.opacity = '1';
+        screenBtn.style.cursor = 'pointer';
+
+        // Reset zoom and pan
+        resetScreenShare();
+        return;
+    }
+
+    const participantDiv = document.getElementById(`participant-${participant.identity}`);
+    if (participantDiv) {
+        const video = participantDiv.querySelector('video');
+        if (video) {
+            track.detach(video);
+        }
+    }
+}
+
+// Toggle microphone
+async function toggleMic() {
+    micEnabled = !micEnabled;
+    await room.localParticipant.setMicrophoneEnabled(micEnabled);
+    document.getElementById('micBtn').classList.toggle('active', micEnabled);
+}
+
+// Toggle camera
+async function toggleCamera() {
+    cameraEnabled = !cameraEnabled;
+    await room.localParticipant.setCameraEnabled(cameraEnabled);
+    document.getElementById('camBtn').classList.toggle('active', cameraEnabled);
+
+    // Re-attach video track to local video element after enabling
+    if (cameraEnabled) {
+        const video = document.querySelector('#local-participant video');
+        if (video) {
+            // Wait a moment for the new track to be published
+            setTimeout(() => {
+                room.localParticipant.videoTrackPublications.forEach((publication) => {
+                    if (publication.track) {
+                        video.srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+                    }
+                });
+            }, 100);
+        }
+    }
+}
+
+// Toggle screen share
+async function toggleScreenShare() {
+    const isSharing = room.localParticipant.isScreenShareEnabled;
+    const screenBtn = document.getElementById('screenBtn');
+
+    // Don't allow starting screen share if someone else is already sharing
+    if (!isSharing && isAnyoneScreenSharing) {
+        alert('Someone else is already sharing their screen. Please wait until they stop.');
+        return;
+    }
+
+    if (isSharing) {
+        await room.localParticipant.setScreenShareEnabled(false);
+        screenBtn.classList.remove('active');
+
+        // Re-attach camera video after stopping screen share
+        const video = document.querySelector('#local-participant video');
+        if (video && cameraEnabled) {
+            setTimeout(() => {
+                room.localParticipant.videoTrackPublications.forEach((publication) => {
+                    if (publication.track && publication.source === 'camera') {
+                        video.srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+                    }
+                });
+            }, 100);
+        }
+    } else {
+        await room.localParticipant.setScreenShareEnabled(true);
+        screenBtn.classList.add('active');
+    }
+}
+
+// Toggle recording
+async function toggleRecording() {
+    if (!isRecording) {
+        await startRecording();
+    } else if (isPaused) {
+        resumeRecording();
+    } else {
+        pauseRecording();
+    }
+}
+
+// Start recording
+async function startRecording() {
+    try {
+        // Get all audio and video tracks from the meeting
+        const tracks = [];
+
+        // Add local participant tracks
+        room.localParticipant.audioTrackPublications.forEach((pub) => {
+            if (pub.track) tracks.push(pub.track.mediaStreamTrack);
+        });
+        room.localParticipant.videoTrackPublications.forEach((pub) => {
+            if (pub.track && pub.source === 'camera') {
+                tracks.push(pub.track.mediaStreamTrack);
+            }
+        });
+
+        // Add remote participant tracks
+        room.remoteParticipants.forEach((participant) => {
+            participant.audioTrackPublications.forEach((pub) => {
+                if (pub.track && pub.isSubscribed) {
+                    tracks.push(pub.track.mediaStreamTrack);
+                }
+            });
+            participant.videoTrackPublications.forEach((pub) => {
+                if (pub.track && pub.isSubscribed && pub.source === 'camera') {
+                    tracks.push(pub.track.mediaStreamTrack);
+                }
+            });
+        });
+
+        if (tracks.length === 0) {
+            alert('No tracks available to record. Please enable your camera or microphone.');
+            return;
+        }
+
+        // Create a MediaStream from all tracks
+        const stream = new MediaStream(tracks);
+
+        // Create MediaRecorder
+        const options = {
+            mimeType: 'video/webm;codecs=vp8,opus',
+            videoBitsPerSecond: 2500000 // 2.5 Mbps
+        };
+
+        // Fallback to default if codec not supported
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm';
+        }
+
+        mediaRecorder = new MediaRecorder(stream, options);
+        recordedChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            downloadRecording();
+        };
+
+        mediaRecorder.start(1000); // Collect data every second
+
+        isRecording = true;
+        isPaused = false;
+        recordingStartTime = Date.now();
+
+        // Update UI
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.classList.add('active');
+        recordBtn.innerHTML = '⏸️ Pause';
+        document.getElementById('recordingStatus').style.display = 'block';
+
+        // Start timer
+        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+
+        console.log('Recording started');
+    } catch (error) {
+        console.error('Error starting recording:', error);
+        alert('Failed to start recording: ' + error.message);
+    }
+}
+
+// Pause recording
+function pauseRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+        isPaused = true;
+
+        // Update UI
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.innerHTML = '▶️ Resume';
+        document.getElementById('recordingStatus').style.color = '#ffc107';
+        document.getElementById('recordingStatus').innerHTML = '⏸️ Paused... <span id="recordingTime">00:00</span>';
+
+        // Stop timer
+        if (recordingTimerInterval) {
+            clearInterval(recordingTimerInterval);
+            recordingTimerInterval = null;
+        }
+
+        console.log('Recording paused');
+    }
+}
+
+// Resume recording
+function resumeRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+        isPaused = false;
+
+        // Update UI
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.innerHTML = '⏸️ Pause';
+        document.getElementById('recordingStatus').style.color = '#dc3545';
+        document.getElementById('recordingStatus').innerHTML = '🔴 Recording... <span id="recordingTime">00:00</span>';
+
+        // Restart timer
+        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+
+        console.log('Recording resumed');
+    }
+}
+
+// Stop recording and download
+async function stopRecording() {
+    if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
+        mediaRecorder.stop();
+
+        // Stop timer
+        if (recordingTimerInterval) {
+            clearInterval(recordingTimerInterval);
+            recordingTimerInterval = null;
+        }
+
+        // Reset UI
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.classList.remove('active');
+        recordBtn.innerHTML = '⏺️ Record';
+        document.getElementById('recordingStatus').style.display = 'none';
+
+        isRecording = false;
+        isPaused = false;
+        recordingStartTime = null;
+
+        console.log('Recording stopped');
+    }
+}
+
+// Update recording timer
+function updateRecordingTimer() {
+    if (recordingStartTime) {
+        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const timerElement = document.getElementById('recordingTime');
+        if (timerElement) {
+            timerElement.textContent = formatTime(elapsed);
+        }
+    }
+}
+
+// Format time (seconds to MM:SS)
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Download recording
+function downloadRecording() {
+    if (recordedChunks.length === 0) {
+        console.log('No recorded data to download');
+        return;
+    }
+
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    link.download = `meeting-recording-${timestamp}.webm`;
+    link.href = url;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+    console.log('Recording downloaded');
+
+    // Reset
+    mediaRecorder = null;
+    recordedChunks = [];
+}
+
+// Load chat history
+async function loadChatHistory() {
+    try {
+        const messages = await api.getChatHistory(meetingId);
+        messages.forEach(msg => {
+            addChatMessage(msg.user_id || 'Unknown', msg.message, msg.message_type);
+        });
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
+// Send chat message
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+
+    if (message && signalRConnection) {
+        try {
+            await signalRConnection.invoke('SendMessage', meetingId, message);
+            input.value = '';
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    }
+}
+
+// Handle Enter key in chat
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Add chat message to UI
+function addChatMessage(sender, message, type = 'text') {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message';
+
+    const senderDiv = document.createElement('div');
+    senderDiv.className = 'chat-message-sender';
+    senderDiv.textContent = sender;
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'chat-message-text';
+    textDiv.textContent = message;
+
+    if (type === 'system') {
+        senderDiv.style.color = '#999';
+        textDiv.style.fontStyle = 'italic';
+    }
+
+    messageDiv.appendChild(senderDiv);
+    messageDiv.appendChild(textDiv);
+    chatMessages.appendChild(messageDiv);
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Create zoom controls
+function createZoomControls(participantId) {
+    const zoomControls = document.createElement('div');
+    zoomControls.className = 'zoom-controls';
+
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.className = 'zoom-btn';
+    zoomInBtn.textContent = '+';
+    zoomInBtn.onclick = () => zoomParticipant(participantId, 0.2);
+
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.className = 'zoom-btn';
+    zoomOutBtn.textContent = '−';
+    zoomOutBtn.onclick = () => zoomParticipant(participantId, -0.2);
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'zoom-btn';
+    resetBtn.textContent = '⟲';
+    resetBtn.onclick = () => resetZoom(participantId);
+
+    zoomControls.appendChild(zoomInBtn);
+    zoomControls.appendChild(zoomOutBtn);
+    zoomControls.appendChild(resetBtn);
+
+    return zoomControls;
+}
+
+// Zoom participant video
+function zoomParticipant(participantId, delta) {
+    const currentZoom = participantZoomLevels[participantId] || 1;
+    const newZoom = Math.max(0.5, Math.min(3, currentZoom + delta)); // Limit between 0.5x and 3x
+    participantZoomLevels[participantId] = newZoom;
+
+    const participantDiv = participantId === 'local'
+        ? document.getElementById('local-participant')
+        : document.getElementById(`participant-${participantId}`);
+
+    if (participantDiv) {
+        const video = participantDiv.querySelector('video');
+        if (video) {
+            video.style.transform = `scale(${newZoom})`;
+        }
+    }
+}
+
+// Reset zoom
+function resetZoom(participantId) {
+    participantZoomLevels[participantId] = 1;
+
+    const participantDiv = participantId === 'local'
+        ? document.getElementById('local-participant')
+        : document.getElementById(`participant-${participantId}`);
+
+    if (participantDiv) {
+        const video = participantDiv.querySelector('video');
+        if (video) {
+            video.style.transform = 'scale(1)';
+        }
+    }
+}
+
+// Zoom screen share
+function zoomScreenShare(delta) {
+    screenShareZoom = Math.max(0.5, Math.min(3, screenShareZoom + delta));
+    updateScreenShareTransform();
+}
+
+// Pan screen share
+function panScreenShare(deltaX, deltaY) {
+    screenSharePanX += deltaX;
+    screenSharePanY += deltaY;
+    updateScreenShareTransform();
+}
+
+// Reset screen share view
+function resetScreenShare() {
+    screenShareZoom = 1;
+    screenSharePanX = 0;
+    screenSharePanY = 0;
+    updateScreenShareTransform();
+}
+
+// Update screen share transform
+function updateScreenShareTransform() {
+    const video = document.getElementById('screenShareVideo');
+    if (video) {
+        video.style.transform = `scale(${screenShareZoom}) translate(${screenSharePanX}px, ${screenSharePanY}px)`;
+    }
+}
+
+// Mouse drag handlers for screen share
+function onScreenShareMouseDown(e) {
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartPanX = screenSharePanX;
+    dragStartPanY = screenSharePanY;
+    e.target.style.cursor = 'grabbing';
+}
+
+function onScreenShareMouseMove(e) {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - dragStartX;
+    const deltaY = e.clientY - dragStartY;
+
+    screenSharePanX = dragStartPanX + deltaX;
+    screenSharePanY = dragStartPanY + deltaY;
+
+    updateScreenShareTransform();
+}
+
+function onScreenShareMouseUp(e) {
+    if (isDragging) {
+        isDragging = false;
+        e.target.style.cursor = 'grab';
+    }
+}
+
+function onScreenShareMouseLeave(e) {
+    if (isDragging) {
+        isDragging = false;
+        e.target.style.cursor = 'grab';
+    }
+}
+
+// Mouse wheel zoom handler for screen share
+function onScreenShareWheel(e) {
+    e.preventDefault();
+
+    // Determine zoom direction (positive = zoom in, negative = zoom out)
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+
+    zoomScreenShare(delta);
+}
+
+// Capture screenshot of screen share with current zoom/pan
+function captureScreenShareScreenshot() {
+    const video = document.getElementById('screenShareVideo');
+    const container = document.getElementById('screenShareContainer');
+
+    if (!video || video.readyState < 2) {
+        alert('Screen share video is not ready. Please try again.');
+        return;
+    }
+
+    try {
+        // Create a canvas matching the container size (visible area)
+        const canvas = document.createElement('canvas');
+        const containerRect = container.getBoundingClientRect();
+        canvas.width = containerRect.width;
+        canvas.height = containerRect.height;
+
+        const ctx = canvas.getContext('2d');
+
+        // Fill with black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Save context state
+        ctx.save();
+
+        // Apply transformations to match the current view
+        // Move to center of canvas
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+
+        // Apply zoom (scale)
+        ctx.scale(screenShareZoom, screenShareZoom);
+
+        // Apply pan (translate) - note: pan values are already in pixels
+        ctx.translate(screenSharePanX, screenSharePanY);
+
+        // Calculate video dimensions maintaining aspect ratio (object-fit: contain)
+        const videoAspect = video.videoWidth / video.videoHeight;
+        const containerAspect = canvas.width / canvas.height;
+
+        let drawWidth, drawHeight;
+        if (videoAspect > containerAspect) {
+            // Video is wider - fit to width
+            drawWidth = canvas.width - 20; // Account for 10px padding
+            drawHeight = drawWidth / videoAspect;
+        } else {
+            // Video is taller - fit to height
+            drawHeight = canvas.height - 20; // Account for 10px padding
+            drawWidth = drawHeight * videoAspect;
+        }
+
+        // Draw video centered
+        ctx.drawImage(
+            video,
+            -drawWidth / 2,
+            -drawHeight / 2,
+            drawWidth,
+            drawHeight
+        );
+
+        // Restore context state
+        ctx.restore();
+
+        // Convert canvas to blob and download
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+
+                // Generate filename with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                link.download = `screenshare-${timestamp}.png`;
+                link.href = url;
+
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+
+                console.log('Screenshot captured with zoom:', screenShareZoom, 'pan:', screenSharePanX, screenSharePanY);
+            } else {
+                alert('Failed to capture screenshot. Please try again.');
+            }
+        }, 'image/png');
+    } catch (error) {
+        console.error('Error capturing screenshot:', error);
+        alert('Failed to capture screenshot: ' + error.message);
+    }
+}
+
+// Copy meeting link to clipboard
+function copyMeetingLink() {
+    const meetingUrl = window.location.origin + window.location.pathname + '?id=' + meetingId;
+
+    navigator.clipboard.writeText(meetingUrl).then(() => {
+        const btn = document.getElementById('copyLinkBtn');
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Link Copied!';
+        btn.style.backgroundColor = '#28a745';
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.backgroundColor = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link. Please copy manually: ' + meetingUrl);
+    });
+}
+
+// Leave meeting
+async function leaveMeeting() {
+    if (confirm('Are you sure you want to leave the meeting?')) {
+        try {
+            // Stop recording if active
+            if (isRecording) {
+                await stopRecording();
+                // Wait a moment for recording to save
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            if (signalRConnection) {
+                await signalRConnection.invoke('LeaveMeeting', meetingId);
+                await signalRConnection.stop();
+            }
+
+            if (room) {
+                await room.disconnect();
+            }
+
+            // Clear guest session if guest user
+            if (isGuest) {
+                sessionStorage.clear();
+                window.location.href = '../login.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } catch (error) {
+            console.error('Error leaving meeting:', error);
+
+            if (isGuest) {
+                sessionStorage.clear();
+                window.location.href = '../login.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }
+    }
+}
+
+// Show start meeting button for host
+function showStartMeetingButton() {
+    const controlsContainer = document.querySelector('.meeting-controls');
+
+    const startButton = document.createElement('button');
+    startButton.id = 'startMeetingBtn';
+    startButton.className = 'control-btn';
+    startButton.style.cssText = 'background: #28a745; color: white; font-weight: bold; padding: 12px 24px; border-radius: 6px; margin-right: 10px;';
+    startButton.innerHTML = '▶️ Start Meeting';
+    startButton.onclick = startMeetingAsHost;
+
+    // Insert at the beginning of controls
+    controlsContainer.insertBefore(startButton, controlsContainer.firstChild);
+}
+
+async function startMeetingAsHost() {
+    try {
+        const result = await api.startMeeting(meetingId);
+
+        if (result.success) {
+            // Remove the start button
+            const startButton = document.getElementById('startMeetingBtn');
+            if (startButton) {
+                startButton.remove();
+            }
+
+            // Notify lobby participants via SignalR
+            if (signalRConnection) {
+                await signalRConnection.invoke('NotifyMeetingStarted', meetingId);
+            }
+
+            // Show success message
+            alert('Meeting started! Participants in the lobby can now join.');
+        }
+    } catch (error) {
+        console.error('Error starting meeting:', error);
+        alert('Failed to start meeting: ' + error.message);
+    }
+}
+
+// Toggle hand raise
+async function toggleHandRaise() {
+    handRaised = !handRaised;
+    const handBtn = document.getElementById('handBtn');
+
+    try {
+        if (handRaised) {
+            await signalRConnection.invoke('RaiseHand', meetingId);
+            handBtn.classList.add('active');
+            handBtn.innerHTML = '✋ Lower Hand';
+        } else {
+            await signalRConnection.invoke('LowerHand', meetingId);
+            handBtn.classList.remove('active');
+            handBtn.innerHTML = '✋ Raise Hand';
+        }
+    } catch (error) {
+        console.error('Error toggling hand raise:', error);
+        handRaised = !handRaised; // Revert on error
+    }
+}
+
+// Update hand raise indicator on participant
+function updateHandRaiseIndicator(username, isRaised) {
+    // Find participant by name
+    const participants = document.querySelectorAll('.participant-name');
+    participants.forEach(nameTag => {
+        if (nameTag.textContent === username || (username === 'You' && nameTag.textContent === 'You')) {
+            const participantDiv = nameTag.parentElement;
+            let handIndicator = participantDiv.querySelector('.hand-raised-indicator');
+
+            if (isRaised) {
+                if (!handIndicator) {
+                    handIndicator = document.createElement('div');
+                    handIndicator.className = 'hand-raised-indicator';
+                    handIndicator.innerHTML = '✋';
+                    participantDiv.appendChild(handIndicator);
+                }
+            } else {
+                if (handIndicator) {
+                    handIndicator.remove();
+                }
+            }
+        }
+    });
+}
+
+// Toggle reaction picker
+function toggleReactionPicker() {
+    const picker = document.getElementById('reactionPicker');
+    picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+}
+
+// Send reaction
+async function sendReaction(emoji) {
+    try {
+        await signalRConnection.invoke('SendReaction', meetingId, emoji);
+        toggleReactionPicker(); // Close picker after sending
+    } catch (error) {
+        console.error('Error sending reaction:', error);
+    }
+}
+
+// Show reaction animation
+function showReactionAnimation(emoji, username) {
+    const container = document.getElementById('reactionsContainer');
+    const reaction = document.createElement('div');
+    reaction.className = 'reaction-animation';
+    reaction.textContent = emoji;
+
+    // Random horizontal position
+    reaction.style.left = Math.random() * 80 + 10 + '%';
+
+    container.appendChild(reaction);
+
+    // Remove after animation completes (3 seconds)
+    setTimeout(() => {
+        reaction.remove();
+    }, 3000);
+}
+
+// Toggle Picture-in-Picture mode
+async function togglePictureInPicture() {
+    const pipBtn = document.getElementById('pipBtn');
+
+    try {
+        if (!document.pictureInPictureEnabled) {
+            alert('Picture-in-Picture is not supported in your browser');
+            return;
+        }
+
+        if (document.pictureInPictureElement) {
+            // Exit PiP
+            await document.exitPictureInPicture();
+            pipBtn.classList.remove('active');
+            pipEnabled = false;
+        } else {
+            // Enter PiP - use local participant video or first remote video
+            let video = document.querySelector('#local-participant video');
+
+            // If local video not available, try first remote participant
+            if (!video || !video.srcObject) {
+                video = document.querySelector('.video-participant video');
+            }
+
+            if (video && video.srcObject) {
+                await video.requestPictureInPicture();
+                pipBtn.classList.add('active');
+                pipEnabled = true;
+            } else {
+                alert('No active video available for Picture-in-Picture mode');
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling Picture-in-Picture:', error);
+        alert('Failed to toggle Picture-in-Picture: ' + error.message);
+    }
+}
+
+// Listen for PiP exit (when user clicks browser X button)
+document.addEventListener('leavepictureinpicture', () => {
+    const pipBtn = document.getElementById('pipBtn');
+    pipBtn.classList.remove('active');
+    pipEnabled = false;
+});
+
+// Toggle background settings panel
+function toggleBackgroundSettings() {
+    const panel = document.getElementById('backgroundSettings');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+// Initialize BodyPix for person segmentation
+async function initializeSegmentation() {
+    if (bodyPixNet) return bodyPixNet; // Already initialized
+
+    try {
+        console.log('Loading BodyPix model...');
+
+        // Check if BodyPix is available
+        if (typeof bodyPix === 'undefined') {
+            console.warn('BodyPix library not loaded, falling back to simple mode');
+            return null;
+        }
+
+        // Load BodyPix model
+        // Using MobileNetV1 architecture with multiplier 0.75 for balance of speed and accuracy
+        bodyPixNet = await bodyPix.load({
+            architecture: 'MobileNetV1',
+            outputStride: 16,
+            multiplier: 0.75,
+            quantBytes: 2
+        });
+
+        console.log('✅ BodyPix model loaded successfully!');
+
+        // Load COCO-SSD for object detection (person, chair, etc.)
+        if (typeof cocoSsd !== 'undefined' && !cocoSsdModel) {
+            console.log('Loading COCO-SSD model...');
+            cocoSsdModel = await cocoSsd.load();
+            console.log('✅ COCO-SSD model loaded successfully!');
+        }
+
+        return bodyPixNet;
+    } catch (error) {
+        console.warn('BodyPix initialization failed, using simple blur mode:', error);
+        bodyPixNet = null;
+        return null;
+    }
+}
+
+// Initialize Three.js for virtual background
+function initializeThreeJS() {
+    if (threeRenderer) return; // Already initialized
+
+    console.log('Initializing Three.js for virtual background...');
+
+    // Create Three.js renderer using the existing canvas
+    threeRenderer = new THREE.WebGLRenderer({
+        canvas: backgroundCanvas,
+        alpha: false,
+        antialias: false
+    });
+    threeRenderer.setSize(640, 480);
+    threeRenderer.setClearColor(0x000000, 1);
+
+    // Create scene
+    threeScene = new THREE.Scene();
+
+    // Create orthographic camera
+    threeCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    console.log('✅ Three.js initialized');
+}
+
+// Process video frames with Three.js compositing
+async function processVideoFrame() {
+    if (!segmentationRunning || !bodyPixNet) {
+        return;
+    }
+
+    // Request next frame first for smooth animation
+    if (segmentationRunning) {
+        requestAnimationFrame(processVideoFrame);
+    }
+
+    try {
+        // Get the hidden processing video element
+        let processingVideo = document.getElementById('bg-processing-video');
+        if (!processingVideo && originalVideoTrack) {
+            processingVideo = document.createElement('video');
+            processingVideo.id = 'bg-processing-video';
+            processingVideo.autoplay = true;
+            processingVideo.playsInline = true;
+            processingVideo.muted = true;
+            processingVideo.style.display = 'none';
+            processingVideo.width = 640;
+            processingVideo.height = 480;
+            processingVideo.srcObject = new MediaStream([originalVideoTrack]);
+            document.body.appendChild(processingVideo);
+
+            // Explicitly play the video (autoplay may be blocked)
+            try {
+                await processingVideo.play();
+                console.log('✅ Processing video is now playing');
+            } catch (e) {
+                console.warn('Could not autoplay processing video:', e);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        if (!processingVideo || processingVideo.readyState !== processingVideo.HAVE_ENOUGH_DATA) {
+            return;
+        }
+
+        // Ensure video is playing (not paused)
+        if (processingVideo.paused) {
+            try {
+                await processingVideo.play();
+            } catch (e) {
+                console.warn('Video paused, trying to play:', e);
+            }
+        }
+
+        // Handle blur and none modes with simple 2D canvas
+        if (currentBackground === 'blur' || currentBackground === 'none') {
+            const canvasCtx = backgroundContext;
+            canvasCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            if (currentBackground === 'blur') {
+                canvasCtx.filter = 'blur(10px)';
+            }
+            canvasCtx.drawImage(processingVideo, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            canvasCtx.filter = 'none';
+            return;
+        }
+
+        // Create mask canvas if needed
+        if (!maskCanvas) {
+            maskCanvas = document.createElement('canvas');
+            maskCanvas.width = 640;
+            maskCanvas.height = 480;
+            maskCtx = maskCanvas.getContext('2d');
+        }
+
+        // Throttle segmentation
+        frameCount++;
+        const shouldSegment = frameCount % 2 === 0;
+
+        if (shouldSegment) {
+            // Segment person from background
+            const segmentation = await bodyPixNet.segmentPerson(processingVideo, {
+                flipHorizontal: false,
+                internalResolution: 'medium',
+                segmentationThreshold: 0.12  // Lower = include more area
+            });
+
+            // Create mask - person is opaque white, background is transparent
+            const maskImageData = bodyPix.toMask(segmentation,
+                { r: 255, g: 255, b: 255, a: 255 }, // person = opaque white
+                { r: 0, g: 0, b: 0, a: 0 },         // background = transparent
+                false
+            );
+
+            // Create temp canvas for blending if needed
+            if (!previousMaskCanvas) {
+                previousMaskCanvas = document.createElement('canvas');
+                previousMaskCanvas.width = 640;
+                previousMaskCanvas.height = 480;
+                previousMaskCtx = previousMaskCanvas.getContext('2d');
+            }
+
+            // Put new mask data
+            maskCtx.putImageData(maskImageData, 0, 0);
+
+            // Expand mask more to cover edge areas
+            maskCtx.filter = 'blur(15px) brightness(1.6)';
+            maskCtx.drawImage(maskCanvas, 0, 0);
+            maskCtx.filter = 'none';
+
+            // Temporal smoothing with more previous frame for stability
+            const tempMaskImageData = maskCtx.getImageData(0, 0, 640, 480);
+            const prevMaskImageData = previousMaskCtx.getImageData(0, 0, 640, 480);
+
+            // Use 70/30 blend: smoother edges, less flickering
+            for (let i = 0; i < tempMaskImageData.data.length; i += 4) {
+                const currentAlpha = tempMaskImageData.data[i + 3];
+                const previousAlpha = prevMaskImageData.data[i + 3];
+                tempMaskImageData.data[i + 3] = currentAlpha * 0.7 + previousAlpha * 0.3;
+            }
+
+            maskCtx.putImageData(tempMaskImageData, 0, 0);
+
+            // Store current mask for next frame
+            previousMaskCtx.clearRect(0, 0, 640, 480);
+            previousMaskCtx.drawImage(maskCanvas, 0, 0);
+        }
+
+        // Create temp canvas for masked video
+        if (!tempCanvas) {
+            tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 640;
+            tempCanvas.height = 480;
+            tempCtx = tempCanvas.getContext('2d', { willReadFrequently: false });
+        }
+
+        // Draw video to temp canvas
+        tempCtx.clearRect(0, 0, 640, 480);
+        tempCtx.drawImage(processingVideo, 0, 0, 640, 480);
+
+        // Apply mask using destination-in (keep only person pixels)
+        if (maskCanvas) {
+            tempCtx.globalCompositeOperation = 'destination-in';
+            tempCtx.drawImage(maskCanvas, 0, 0, 640, 480);
+            tempCtx.globalCompositeOperation = 'source-over';
+        }
+
+        // Composite on main canvas
+        const canvasCtx = backgroundContext;
+        canvasCtx.clearRect(0, 0, 640, 480);
+
+        // Draw background
+        if (backgroundImage && backgroundImage.complete) {
+            canvasCtx.drawImage(backgroundImage, 0, 0, 640, 480);
+        } else if (currentBackground === 'gradient') {
+            const gradient = canvasCtx.createLinearGradient(0, 0, 640, 480);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            canvasCtx.fillStyle = gradient;
+            canvasCtx.fillRect(0, 0, 640, 480);
+        }
+
+        // Draw masked person on top
+        canvasCtx.drawImage(tempCanvas, 0, 0, 640, 480);
+
+    } catch (error) {
+        console.error('Error processing frame:', error);
+        // On error, just draw the video without effects
+        if (backgroundContext) {
+            const processingVideo = document.getElementById('bg-processing-video');
+            if (processingVideo) {
+                backgroundContext.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+                backgroundContext.drawImage(processingVideo, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            }
+        }
+    }
+}
+
+// Set background effect
+async function setBackground(type) {
+    currentBackground = type;
+    const localVideo = document.querySelector('#local-participant video');
+
+    if (!localVideo) {
+        console.error('Local video not found');
+        return;
+    }
+
+    const participantDiv = localVideo.parentElement;
+
+    try {
+        if (type === 'none') {
+            // Stop segmentation and restore original video
+            await stopVirtualBackground();
+            console.log('✅ Background: None (original)');
+
+        } else if (type === 'blur') {
+            // For blur, try simple CSS filter first (faster, works everywhere)
+            console.log('Applying simple blur (CSS filter)...');
+            await stopVirtualBackground(); // Make sure segmentation is stopped
+
+            // Apply CSS blur
+            participantDiv.style.filter = 'blur(5px)';
+            localVideo.style.filter = 'blur(5px)';
+
+            console.log('✅ Background: Blur applied (CSS mode)');
+
+        } else {
+            // For virtual backgrounds, use BodyPix
+            try {
+                // Initialize BodyPix if needed
+                if (!bodyPixNet) {
+                    console.log('Loading BodyPix model for first use...');
+                    await initializeSegmentation();
+                }
+
+                if (!bodyPixNet) {
+                    throw new Error('BodyPix not available - using fallback mode');
+                }
+
+                // Create canvas if needed
+                if (!backgroundCanvas) {
+                    backgroundCanvas = document.createElement('canvas');
+                    backgroundCanvas.width = 640;
+                    backgroundCanvas.height = 480;
+                    backgroundContext = backgroundCanvas.getContext('2d');
+                    console.log('Canvas created: 640x480');
+                }
+
+                // Load background image
+                if (type !== 'gradient') {
+                    console.log(`Loading background image: ${type}...`);
+                    await loadBackgroundImage(type);
+                }
+
+                // Start virtual background processing
+                console.log('Starting virtual background processing with BodyPix...');
+                await startVirtualBackground();
+
+                console.log(`✅ Background: ${type} applied with BodyPix segmentation!`);
+
+            } catch (bgError) {
+                console.warn('Virtual background failed, using fallback:', bgError);
+                alert(`Virtual backgrounds require BodyPix library. Using blur as fallback.\n\nError: ${bgError.message}`);
+
+                // Fallback to blur
+                participantDiv.style.filter = 'blur(8px)';
+                localVideo.style.filter = 'blur(8px)';
+            }
+        }
+
+        // Visual feedback
+        document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+        const selectedOption = Array.from(document.querySelectorAll('.bg-option')).find(
+            opt => opt.textContent.toLowerCase().includes(type)
+        );
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+        }
+
+        // Update button state
+        const bgBtn = document.getElementById('bgBtn');
+        bgBtn.classList.toggle('active', type !== 'none');
+
+    } catch (error) {
+        console.error('Error applying background:', error);
+        alert('Failed to apply background effect: ' + error.message);
+
+        // Try to restore original video
+        await stopVirtualBackground();
+    }
+}
+
+// Load background image
+async function loadBackgroundImage(backgroundType) {
+    const backgrounds = {
+        office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&h=1080&fit=crop',
+        library: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1920&h=1080&fit=crop',
+        nature: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop',
+        beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=1080&fit=crop',
+        city: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1920&h=1080&fit=crop',
+    };
+
+    const bgImageUrl = backgrounds[backgroundType];
+    if (!bgImageUrl) {
+        throw new Error('Unknown background type: ' + backgroundType);
+    }
+
+    return new Promise((resolve, reject) => {
+        backgroundImage = new Image();
+        backgroundImage.crossOrigin = 'anonymous';
+
+        backgroundImage.onload = () => {
+            console.log('Background image loaded:', backgroundType);
+            resolve();
+        };
+
+        backgroundImage.onerror = () => {
+            reject(new Error('Failed to load background image'));
+        };
+
+        backgroundImage.src = bgImageUrl;
+    });
+}
+
+// Start virtual background processing
+async function startVirtualBackground() {
+    if (segmentationRunning) {
+        console.log('Virtual background already running');
+        return;
+    }
+
+    try {
+        const localVideo = document.querySelector('#local-participant video');
+        if (!localVideo) {
+            throw new Error('Local video element not found');
+        }
+
+        // Save original camera track and publication if we don't have it
+        if (!originalVideoTrack || !originalCameraPublication) {
+            console.log('Saving original video track from LiveKit...');
+
+            // Get the original camera publication from LiveKit
+            const cameraPublication = Array.from(room.localParticipant.videoTrackPublications.values())
+                .find(pub => pub.source === LivekitClient.Track.Source.Camera);
+
+            if (!cameraPublication || !cameraPublication.track) {
+                throw new Error('No camera track found in LiveKit');
+            }
+
+            // Store the publication and clone the track
+            originalCameraPublication = cameraPublication;
+            originalVideoTrack = cameraPublication.track.mediaStreamTrack.clone();
+            console.log('Original track saved:', originalVideoTrack.id);
+        }
+
+        // Wait for canvas to be ready
+        if (!backgroundCanvas || !backgroundContext) {
+            throw new Error('Canvas not initialized');
+        }
+
+        // Start processing flag
+        segmentationRunning = true;
+        console.log('Starting segmentation processing...');
+
+        // Start frame processing first
+        processVideoFrame();
+
+        // Wait for first few frames to process
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Create stream from canvas
+        virtualBackgroundStream = backgroundCanvas.captureStream(30); // 30 FPS
+        const canvasVideoTrack = virtualBackgroundStream.getVideoTracks()[0];
+        console.log('Canvas stream created, track ID:', canvasVideoTrack.id);
+
+        // Create a LiveKit LocalVideoTrack from the canvas track
+        const localTrack = new LivekitClient.LocalVideoTrack(canvasVideoTrack, 'camera', {
+            name: 'camera-with-background'
+        });
+
+        // Unpublish the original camera track (if it's still published)
+        console.log('Unpublishing original camera track...');
+        try {
+            // Check if track is still published before unpublishing
+            const stillPublished = Array.from(room.localParticipant.videoTrackPublications.values())
+                .find(pub => pub.track === originalCameraPublication.track);
+
+            if (stillPublished) {
+                await room.localParticipant.unpublishTrack(originalCameraPublication.track);
+                console.log('Original track unpublished');
+            } else {
+                console.log('Original track already unpublished, skipping');
+            }
+        } catch (unpublishError) {
+            console.warn('Could not unpublish original track:', unpublishError);
+        }
+
+        // Publish the canvas track as the new camera
+        console.log('Publishing canvas track...');
+        await room.localParticipant.publishTrack(localTrack);
+
+        // Update local video display
+        localVideo.srcObject = new MediaStream([canvasVideoTrack]);
+
+        console.log('✅ Virtual background active and published to LiveKit!');
+    } catch (error) {
+        console.error('Error starting virtual background:', error);
+        segmentationRunning = false;
+
+        // Try to restore original video on error
+        if (originalCameraPublication && originalCameraPublication.track) {
+            try {
+                await room.localParticipant.publishTrack(originalCameraPublication.track);
+            } catch (restoreError) {
+                console.error('Failed to restore original track:', restoreError);
+            }
+        }
+
+        throw error;
+    }
+}
+
+// Stop virtual background processing
+async function stopVirtualBackground() {
+    console.log('Stopping virtual background...');
+    segmentationRunning = false;
+
+    // Clean up hidden processing video
+    const processingVideo = document.getElementById('bg-processing-video');
+    if (processingVideo) {
+        processingVideo.srcObject = null;
+        processingVideo.remove();
+    }
+
+    // Restore original video
+    const localVideo = document.querySelector('#local-participant video');
+    const participantDiv = localVideo ? localVideo.parentElement : null;
+
+    // Reset all filters
+    if (localVideo) {
+        localVideo.style.filter = '';
+        localVideo.style.mixBlendMode = '';
+        localVideo.style.opacity = '';
+    }
+
+    if (participantDiv) {
+        participantDiv.style.filter = '';
+        participantDiv.style.background = '';
+        participantDiv.style.backgroundImage = '';
+    }
+
+    // If we have a virtual background track published, replace it with the original
+    if (originalCameraPublication && room && room.localParticipant) {
+        try {
+            console.log('Unpublishing virtual background track...');
+
+            // Find and unpublish the canvas track
+            const canvasPublication = Array.from(room.localParticipant.videoTrackPublications.values())
+                .find(pub => pub.trackName === 'camera-with-background');
+
+            if (canvasPublication) {
+                await room.localParticipant.unpublishTrack(canvasPublication.track);
+            }
+
+            // Republish the original camera track
+            console.log('Republishing original camera track...');
+            await room.localParticipant.publishTrack(originalCameraPublication.track);
+
+            // Update local video display
+            if (localVideo && originalCameraPublication.track) {
+                localVideo.srcObject = new MediaStream([originalCameraPublication.track.mediaStreamTrack]);
+            }
+
+            console.log('✅ Original camera track restored to LiveKit');
+        } catch (error) {
+            console.error('Error restoring original track:', error);
+
+            // Fallback: just update local display
+            if (localVideo && originalVideoTrack) {
+                localVideo.srcObject = new MediaStream([originalVideoTrack]);
+            }
+        }
+    } else if (localVideo && originalVideoTrack) {
+        // Simple restore if no LiveKit track management needed
+        console.log('Restoring original video track (display only)');
+        const stream = new MediaStream([originalVideoTrack]);
+        localVideo.srcObject = stream;
+    }
+
+    console.log('✅ Virtual background stopped, original video restored');
+}
+
+// Participants panel management
+let isHost = false;
+let participantsRefreshInterval = null;
+
+// Toggle participants panel
+function toggleParticipantsPanel() {
+    const panel = document.getElementById('participantsPanel');
+    const isVisible = panel.style.display === 'block';
+
+    if (isVisible) {
+        panel.style.display = 'none';
+        // Stop refreshing when panel is closed
+        if (participantsRefreshInterval) {
+            clearInterval(participantsRefreshInterval);
+            participantsRefreshInterval = null;
+        }
+    } else {
+        panel.style.display = 'block';
+        // Load participants and start auto-refresh
+        loadParticipants();
+        participantsRefreshInterval = setInterval(loadParticipants, 2000); // Refresh every 2 seconds for better responsiveness
+    }
+}
+
+// Filter participants by search query
+function filterParticipants(searchQuery) {
+    const participantItems = document.querySelectorAll('.participant-item');
+    const query = searchQuery.toLowerCase().trim();
+
+    let visibleCount = 0;
+
+    participantItems.forEach(item => {
+        const nameElement = item.querySelector('.participant-name');
+        if (!nameElement) return;
+
+        const participantName = nameElement.textContent.toLowerCase();
+
+        if (participantName.includes(query)) {
+            item.style.display = 'flex';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Update count display
+    const countElement = document.getElementById('participantCount');
+    if (countElement) {
+        // Show filtered count if searching, otherwise show total
+        if (query) {
+            countElement.textContent = visibleCount;
+        } else {
+            countElement.textContent = participantItems.length;
+        }
+    }
+}
+
+// Toggle chat sidebar
+function toggleChat() {
+    const chatSidebar = document.querySelector('.chat-sidebar');
+    const chatBtn = document.getElementById('chatBtn');
+
+    chatSidebar.classList.toggle('visible');
+    chatBtn.classList.toggle('active');
+}
+
+// Toggle settings menu
+function toggleSettingsMenu() {
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsBtn = document.getElementById('settingsBtn');
+
+    if (settingsMenu.style.display === 'none' || settingsMenu.style.display === '') {
+        settingsMenu.style.display = 'block';
+        settingsBtn.classList.add('active');
+    } else {
+        settingsMenu.style.display = 'none';
+        settingsBtn.classList.remove('active');
+    }
+}
+
+// Close settings menu when clicking outside
+document.addEventListener('click', function(event) {
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsBtn = document.getElementById('settingsBtn');
+
+    if (settingsMenu && settingsBtn &&
+        settingsMenu.style.display === 'block' &&
+        !settingsMenu.contains(event.target) &&
+        !settingsBtn.contains(event.target)) {
+        settingsMenu.style.display = 'none';
+        settingsBtn.classList.remove('active');
+    }
+});
+
+// Close settings menu after selecting an option
+function closeSettingsMenu() {
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsMenu && settingsBtn) {
+        settingsMenu.style.display = 'none';
+        settingsBtn.classList.remove('active');
+    }
+}
+
+// Load participants from API
+async function loadParticipants() {
+    try {
+        let response;
+
+        // Call API differently for guests vs authenticated users
+        if (isGuest) {
+            // Guests make direct fetch call (backend allows anonymous access)
+            const apiResponse = await fetch(`${CONFIG.visionApiBaseUrl}/meetings/${meetingId}/live-participants`);
+            response = await apiResponse.json();
+        } else {
+            // Authenticated users use API client
+            response = await api.getLiveParticipants(meetingId);
+        }
+
+        if (response && response.participants) {
+            isHost = response.isHost;
+            const participants = response.participants;
+
+            // Update participant count
+            document.getElementById('participantCount').textContent = participants.length;
+
+            // Show/hide host actions
+            const hostActions = document.getElementById('hostActions');
+            if (isHost) {
+                hostActions.style.display = 'block';
+            } else {
+                hostActions.style.display = 'none';
+            }
+
+            // Render participants list
+            renderParticipantsList(participants, response.hostUserId);
+        }
+    } catch (error) {
+        console.error('Error loading participants:', error);
+    }
+}
+
+// Render participants list
+function renderParticipantsList(participants, hostUserId) {
+    const listContainer = document.getElementById('participantsList');
+
+    if (!participants || participants.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No participants</p>';
+        return;
+    }
+
+    listContainer.innerHTML = '';
+
+    participants.forEach(participant => {
+        const isHostParticipant = participant.identity.includes(hostUserId);
+        const isCurrentUser = room && participant.identity === room.localParticipant.identity;
+
+        const item = document.createElement('div');
+        item.className = 'participant-item' + (isHostParticipant ? ' host' : '');
+
+        // Get initials for avatar
+        const initials = participant.name ? participant.name.substring(0, 2).toUpperCase() : '??';
+
+        // Find audio track to check mute status
+        const audioTrack = participant.tracks.find(t => t.type === 'AUDIO');
+        const isMuted = audioTrack ? audioTrack.muted : false;
+
+        // Status indicators
+        const statusHtml = `
+            ${isMuted ? '<span class="status-indicator muted">🔇 Muted</span>' : '<span class="status-indicator">🎤 Speaking</span>'}
+        `;
+
+        // Host controls (only show for host and not for themselves)
+        let controlsHtml = '';
+        if (isHost && !isCurrentUser) {
+            controlsHtml = `
+                <div class="participant-controls">
+                    ${!isMuted ? `<button class="participant-control-btn mute" onclick="muteParticipant('${participant.identity}')" title="Mute">🔇</button>` : ''}
+                    <button class="participant-control-btn remove" onclick="kickParticipant('${participant.identity}')" title="Remove">🚫</button>
+                </div>
+            `;
+        }
+
+        item.innerHTML = `
+            <div class="participant-info">
+                <div class="participant-avatar">${initials}</div>
+                <div class="participant-details">
+                    <div class="participant-name">${participant.name}${isCurrentUser ? ' (You)' : ''}</div>
+                    <div class="participant-status">${statusHtml}</div>
+                </div>
+            </div>
+            ${controlsHtml}
+        `;
+
+        listContainer.appendChild(item);
+    });
+}
+
+// Mute a specific participant (host only)
+async function muteParticipant(participantIdentity) {
+    if (!isHost || !signalRConnection) {
+        console.log('Not authorized to mute participants');
+        return;
+    }
+
+    try {
+        // Find the actual LiveKit participant
+        const livekitParticipant = room.remoteParticipants.get(participantIdentity);
+
+        if (!livekitParticipant) {
+            alert('Cannot mute: Participant not found in the room');
+            return;
+        }
+
+        // Find the audio track publication
+        let audioTrackSid = null;
+        livekitParticipant.audioTrackPublications.forEach((publication) => {
+            if (publication.kind === 'audio' && publication.trackSid) {
+                audioTrackSid = publication.trackSid;
+            }
+        });
+
+        if (!audioTrackSid) {
+            alert('Cannot mute: No audio track found for this participant');
+            return;
+        }
+
+        await signalRConnection.invoke('MuteParticipant', meetingId, participantIdentity, audioTrackSid);
+        console.log(`Muted participant ${participantIdentity}, track: ${audioTrackSid}`);
+
+        // Refresh participants list
+        await loadParticipants();
+    } catch (error) {
+        console.error('Error muting participant:', error);
+        alert('Failed to mute participant: ' + error.message);
+    }
+}
+
+// Mute all participants (host only)
+async function muteAllParticipants() {
+    if (!isHost || !signalRConnection) {
+        console.log('Not authorized to mute all participants');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to mute all participants?')) {
+        return;
+    }
+
+    try {
+        await signalRConnection.invoke('MuteAllParticipants', meetingId);
+        console.log('Muted all participants');
+
+        // Refresh participants list
+        await loadParticipants();
+    } catch (error) {
+        console.error('Error muting all participants:', error);
+        alert('Failed to mute all participants: ' + error.message);
+    }
+}
+
+// Remove a participant from the meeting (host only)
+async function kickParticipant(participantIdentity) {
+    if (!isHost || !signalRConnection) {
+        console.log('Not authorized to remove participants');
+        return;
+    }
+
+    // Show confirmation immediately - don't wait for any async operations
+    const confirmed = confirm('Are you sure you want to remove this participant from the meeting?');
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        console.log(`Removing participant ${participantIdentity} from meeting...`);
+        await signalRConnection.invoke('RemoveParticipant', meetingId, participantIdentity);
+        console.log(`Successfully removed participant ${participantIdentity}`);
+
+        // Refresh participants list after a short delay to allow backend to process
+        setTimeout(() => {
+            loadParticipants();
+        }, 500);
+    } catch (error) {
+        console.error('Error removing participant:', error);
+        alert('Failed to remove participant: ' + error.message);
+    }
+}
+
+// Initialize on page load
+initializeMeeting();
+
+// Clean up on page unload
+window.addEventListener('beforeunload', async (e) => {
+    // Stop recording if active
+    if (isRecording) {
+        e.preventDefault();
+        e.returnValue = '';
+        await stopRecording();
+    }
+
+    if (signalRConnection) {
+        await signalRConnection.invoke('LeaveMeeting', meetingId);
+    }
+});

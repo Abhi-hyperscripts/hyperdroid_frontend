@@ -1,0 +1,695 @@
+/* Drive Page Styles - Matching Vision UI */
+
+.drive-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.drive-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.drive-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    color: #1a1a2e;
+}
+
+.breadcrumb-item {
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.breadcrumb-item:hover {
+    color: #1a1a2e;
+}
+
+.breadcrumb-item.active {
+    color: #1a1a2e;
+    font-weight: 600;
+    cursor: default;
+}
+
+.breadcrumb-separator {
+    color: #aaa;
+}
+
+.drive-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Storage Info - Glassmorphism style like Vision cards */
+.storage-info {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.storage-text {
+    color: #666;
+    font-size: 14px;
+}
+
+#usedStorage {
+    color: #1a1a2e;
+    font-weight: 600;
+}
+
+/* Drive Grid */
+.drive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+/* Drive Items - Glassmorphism style */
+.drive-item {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.drive-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.drive-item-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.drive-item-icon svg {
+    color: #6c5ce7;
+    width: 48px;
+    height: 48px;
+}
+
+.drive-item.folder .drive-item-icon svg {
+    color: #f39c12;
+}
+
+.shared-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -8px;
+    background: #27ae60;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.drive-item-info {
+    width: 100%;
+}
+
+.drive-item-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.drive-item-meta {
+    font-size: 12px;
+    color: #888;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: #666;
+}
+
+.empty-state svg {
+    color: #ccc;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    margin: 4px 0;
+    color: #666;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: #666;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #6c5ce7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Context Menu - Light style */
+.context-menu {
+    position: fixed;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    color: #1a1a2e;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+    background: rgba(108, 92, 231, 0.1);
+}
+
+.context-menu-item svg {
+    color: #666;
+}
+
+.context-menu-item.danger {
+    color: #e74c3c;
+}
+
+.context-menu-item.danger svg {
+    color: #e74c3c;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 8px 0;
+}
+
+/* Upload Dropzone - Light style */
+.upload-dropzone {
+    border: 2px dashed #ccc;
+    border-radius: 16px;
+    padding: 60px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+    border-color: #6c5ce7;
+    background: rgba(108, 92, 231, 0.05);
+}
+
+.upload-dropzone svg {
+    color: #1a1a2e;
+    margin-bottom: 16px;
+}
+
+.upload-dropzone p {
+    margin: 8px 0;
+    color: #1a1a2e;
+}
+
+.upload-dropzone p.text-muted {
+    color: #888;
+}
+
+/* Upload Queue - Light style */
+.upload-queue {
+    margin-top: 24px;
+}
+
+.upload-queue h6 {
+    color: #1a1a2e;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.upload-item {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.upload-item-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.upload-item-name {
+    color: #1a1a2e;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.upload-item-size {
+    color: #888;
+    font-size: 12px;
+}
+
+.upload-item-progress {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #1a1a2e;
+    transition: width 0.3s;
+}
+
+.upload-item-status {
+    font-size: 12px;
+    color: #888;
+}
+
+.upload-item.complete .upload-item-status {
+    color: #27ae60;
+}
+
+.upload-item.error .upload-item-status {
+    color: #e74c3c;
+}
+
+/* Share Modal - Existing Link Section */
+.share-existing-section {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.share-success-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #333 100%);
+    border-radius: 50%;
+}
+
+.share-success-icon svg {
+    width: 30px;
+    height: 30px;
+    color: white;
+    stroke: white;
+}
+
+.share-success-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 20px;
+}
+
+.share-url-box {
+    margin-bottom: 16px;
+}
+
+.share-url-input,
+.share-url-input[type="text"],
+.modal-content .share-url-input,
+.modal-content .share-url-input[type="text"] {
+    width: 100% !important;
+    padding: 14px 16px !important;
+    background: #f8f9fa !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    color: #1a1a2e !important;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace !important;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.share-url-input:focus {
+    outline: none;
+    border-color: #1a1a2e !important;
+}
+
+.share-actions {
+    margin-bottom: 20px;
+}
+
+.btn-copy-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 24px;
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-copy-link:hover {
+    background: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-copy-link svg {
+    flex-shrink: 0;
+}
+
+/* Revoke Button - Outline style to match theme */
+.btn-revoke {
+    width: 100%;
+    padding: 12px 20px;
+    background: transparent;
+    color: #666;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-revoke:hover {
+    background: #f8f9fa;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #1a1a2e;
+}
+
+/* Navigation Links */
+.navbar-menu {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.nav-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: #1a1a2e;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.nav-link.active {
+    color: #1a1a2e;
+    background: rgba(26, 26, 46, 0.1);
+    font-weight: 600;
+}
+
+/* Folder-First Upload Notice */
+.upload-notice {
+    background: rgba(241, 196, 15, 0.1);
+    border: 1px solid rgba(241, 196, 15, 0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #856404;
+}
+
+.upload-notice svg {
+    color: #f39c12;
+    flex-shrink: 0;
+}
+
+.upload-notice p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Disabled button state */
+.btn.disabled,
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    .drive-content {
+        padding: 16px;
+    }
+
+    .drive-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .drive-breadcrumb {
+        font-size: 16px;
+    }
+
+    .drive-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .drive-actions button {
+        flex: 1;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .storage-info {
+        padding: 12px 16px;
+    }
+
+    .upload-notice {
+        padding: 12px 16px;
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .upload-notice p {
+        font-size: 13px;
+    }
+
+    .drive-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .drive-item {
+        padding: 16px 12px;
+    }
+
+    .drive-item-icon svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .drive-item-name {
+        font-size: 13px;
+    }
+
+    .drive-item-meta {
+        font-size: 11px;
+    }
+
+    /* Modal responsive */
+    .modal-dialog {
+        margin: 16px;
+        max-width: calc(100% - 32px);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        padding: 16px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .upload-dropzone {
+        padding: 40px 16px;
+    }
+
+    .upload-dropzone svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .context-menu {
+        min-width: 160px;
+    }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 480px) {
+    .drive-content {
+        padding: 12px;
+    }
+
+    .drive-breadcrumb {
+        font-size: 14px;
+    }
+
+    .drive-actions {
+        flex-direction: column;
+    }
+
+    .drive-actions button {
+        width: 100%;
+    }
+
+    .storage-info {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .upload-notice {
+        padding: 10px 12px;
+    }
+
+    .drive-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .drive-item {
+        padding: 12px 10px;
+        border-radius: 12px;
+    }
+
+    .drive-item-icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 8px;
+    }
+
+    .drive-item-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .drive-item-name {
+        font-size: 12px;
+    }
+
+    .drive-item-meta {
+        font-size: 10px;
+    }
+
+    .empty-state {
+        padding: 40px 16px;
+    }
+
+    .empty-state svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+    }
+
+    .upload-dropzone {
+        padding: 30px 12px;
+    }
+
+    .upload-dropzone p {
+        font-size: 14px;
+    }
+
+    .upload-item-name {
+        max-width: 180px;
+        font-size: 13px;
+    }
+}

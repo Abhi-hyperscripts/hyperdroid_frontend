@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperVision - Video Conferencing</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="css/styles.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <img src="assets/logo-svg.svg" alt="HyperVision Logo" class="hero-logo">
+            <p>Professional Video Conferencing Platform</p>
+            <div class="hero-buttons">
+                <button onclick="location.href='pages/login.html'" class="btn btn-primary">Login</button>
+                <button onclick="location.href='pages/register.html'" class="btn btn-secondary">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        // Redirect authenticated users to home page
+        if (api.isAuthenticated()) {
+            window.location.href = 'pages/home.html';
+        }
+    </script>
+</body>
+</html>

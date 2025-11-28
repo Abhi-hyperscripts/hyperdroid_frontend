@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - HyperVision</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .home-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .home-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .home-header h1 {
+            font-size: 2.5rem;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .home-header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .module-card {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
+            border-radius: 20px;
+            padding: 40px 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--module-color), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .module-card.vision {
+            --module-color: #6c5ce7;
+        }
+
+        .module-card.drive {
+            --module-color: #00b894;
+        }
+
+        .module-card.admin {
+            --module-color: #e74c3c;
+            display: none; /* Hidden by default, shown for SUPERADMIN */
+        }
+
+        .module-card.admin.visible {
+            display: block;
+        }
+
+        .module-card.admin .module-icon {
+            background: rgba(231, 76, 60, 0.15);
+        }
+
+        .module-card.admin .module-icon svg {
+            color: #e74c3c;
+        }
+
+        .module-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .module-card.vision .module-icon {
+            background: rgba(108, 92, 231, 0.15);
+        }
+
+        .module-card.vision .module-icon svg {
+            color: #6c5ce7;
+        }
+
+        .module-card.drive .module-icon {
+            background: rgba(0, 184, 148, 0.15);
+        }
+
+        .module-card.drive .module-icon svg {
+            color: #00b894;
+        }
+
+        .module-icon svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .module-card h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .module-card p {
+            color: #888;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .module-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+
+        .module-status.offline {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .module-status.checking {
+            background: rgba(241, 196, 15, 0.15);
+            color: #f1c40f;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .coming-soon-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(241, 196, 15, 0.15);
+            color: #f1c40f;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .module-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .module-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Quick actions */
+        .quick-actions {
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .quick-actions h3 {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .quick-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .quick-link {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .quick-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="home.html">
+                <img src="../assets/logo-svg.svg" alt="HyperVision Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <div class="user-avatar-container">
+                <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()">AB</div>
+                <div class="user-dropdown-menu" id="userDropdownMenu">
+                    <div class="user-dropdown-header">
+                        <span id="userDropdownName">User Name</span>
+                    </div>
+                    <!-- Mobile Navigation Links -->
+                    <div class="mobile-nav-links">
+                        <a href="home.html" class="mobile-nav-link active">Home</a>
+                        <a href="vision/dashboard.html" class="mobile-nav-link">Meetings</a>
+                        <a href="drive/drive.html" class="mobile-nav-link">Drive</a>
+                        <a href="auth/dashboard.html" class="mobile-nav-link" id="mobileAdminLink" style="display: none;">Admin</a>
+                    </div>
+                    <div class="user-dropdown-divider"></div>
+                    <button class="user-dropdown-item" onclick="api.logout()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="home-container">
+        <div class="home-header">
+            <h1>Welcome back, <span id="userName">User</span></h1>
+            <p>Select a module to get started</p>
+        </div>
+
+        <div class="modules-grid">
+            <!-- Vision Module -->
+            <div class="module-card vision" onclick="navigateToModule('vision')" id="visionCard">
+                <div class="module-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <h2>Vision</h2>
+                <p>Video conferencing with real-time collaboration, screen sharing, and meeting recordings</p>
+                <div class="module-status checking" id="visionStatus">
+                    <span class="status-dot"></span>
+                    <span>Checking...</span>
+                </div>
+            </div>
+
+            <!-- Drive Module -->
+            <div class="module-card drive" onclick="navigateToModule('drive')" id="driveCard">
+                <div class="module-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h2>Drive</h2>
+                <p>Secure cloud storage with folder organization, file sharing, and up to 5GB uploads</p>
+                <div class="module-status checking" id="driveStatus">
+                    <span class="status-dot"></span>
+                    <span>Checking...</span>
+                </div>
+            </div>
+
+            <!-- Admin Module (SUPERADMIN only) -->
+            <div class="module-card admin" onclick="navigateToModule('admin')" id="adminCard">
+                <div class="module-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                    </svg>
+                </div>
+                <h2>Admin</h2>
+                <p>System administration with service health monitoring, user management, and role configuration</p>
+                <div class="module-status" id="adminStatus">
+                    <span class="status-dot"></span>
+                    <span>SUPERADMIN</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="quick-links">
+                <a href="vision/dashboard.html" class="quick-link">My Meetings</a>
+                <a href="drive/drive.html" class="quick-link">My Files</a>
+                <a href="auth/dashboard.html" class="quick-link" id="quickAdminLink" style="display: none;">Admin Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            initializeUser();
+            checkModuleStatus();
+        });
+
+        function initializeUser() {
+            const user = api.getUser();
+            if (user) {
+                const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
+                document.getElementById('userAvatar').textContent = initials;
+                document.getElementById('userDropdownName').textContent = `${user.firstName} ${user.lastName}`;
+                document.getElementById('userName').textContent = user.firstName || 'User';
+
+                // Show admin module for SUPERADMIN users
+                if (user.roles && user.roles.includes('SUPERADMIN')) {
+                    document.getElementById('adminCard').classList.add('visible');
+                    document.getElementById('mobileAdminLink').style.display = 'block';
+                    document.getElementById('quickAdminLink').style.display = 'inline-block';
+                }
+            }
+        }
+
+        async function checkModuleStatus() {
+            // Check Vision service
+            checkServiceHealth('vision', CONFIG.endpoints.vision);
+
+            // Check Drive service
+            checkServiceHealth('drive', CONFIG.endpoints.drive);
+        }
+
+        async function checkServiceHealth(moduleName, endpoint) {
+            const statusEl = document.getElementById(`${moduleName}Status`);
+            const cardEl = document.getElementById(`${moduleName}Card`);
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                const response = await fetch(`${endpoint}/health`, {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    statusEl.className = 'module-status';
+                    statusEl.innerHTML = '<span class="status-dot"></span><span>Online</span>';
+                    cardEl.classList.remove('disabled');
+                } else {
+                    throw new Error('Service unavailable');
+                }
+            } catch (error) {
+                statusEl.className = 'module-status offline';
+                statusEl.innerHTML = '<span class="status-dot"></span><span>Offline</span>';
+                // Don't disable the card - let user try anyway
+            }
+        }
+
+        function navigateToModule(module) {
+            switch (module) {
+                case 'vision':
+                    window.location.href = 'vision/dashboard.html';
+                    break;
+                case 'drive':
+                    window.location.href = 'drive/drive.html';
+                    break;
+                case 'admin':
+                    window.location.href = 'auth/dashboard.html';
+                    break;
+            }
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown on click outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const avatar = document.getElementById('userAvatar');
+            if (!dropdown.contains(e.target) && !avatar.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
