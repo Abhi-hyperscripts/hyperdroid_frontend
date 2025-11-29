@@ -2,24 +2,41 @@
  * HyperVision Frontend Configuration
  *
  * Centralized endpoint configuration for easy environment switching.
- * Update these values when deploying to different environments (home/office/production).
+ * Auto-detects environment based on hostname.
  */
 
-const CONFIG = {
-    // Service Endpoints - Each microservice runs independently
-    endpoints: {
-        // Authentication Service (handles /api/auth/* endpoints)
+// Environment configurations
+const ENVIRONMENTS = {
+    local: {
         auth: 'http://localhost:5098',
-
-        // Vision Service (handles /api/projects/*, /api/meetings/*, SignalR hubs)
         vision: 'http://localhost:5099',
-
-        // Drive Service (handles /api/drive/* endpoints) - Independent microservice
         drive: 'http://localhost:5100'
-
-        // LiveKit WebSocket URL (obtained from backend token endpoint)
-        // TURN/STUN servers (fetched from backend at runtime)
     },
+    production: {
+        auth: 'https://auth.hyperdroid.io',
+        vision: 'https://vision.hyperdroid.io',
+        drive: 'https://drive.hyperdroid.io'
+    }
+};
+
+// Auto-detect environment based on hostname
+function detectEnvironment() {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.')) {
+        return 'local';
+    }
+    return 'production';
+}
+
+const currentEnv = detectEnvironment();
+console.log(`[CONFIG] Environment: ${currentEnv}`);
+
+const CONFIG = {
+    // Current environment
+    environment: currentEnv,
+
+    // Service Endpoints - Auto-selected based on environment
+    endpoints: ENVIRONMENTS[currentEnv],
 
     // Cached ICE servers from backend
     _cachedIceServers: null,
