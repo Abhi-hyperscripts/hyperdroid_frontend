@@ -46,68 +46,28 @@
     </nav>
 
     <div class="dashboard-content">
-        <!-- Floating Meeting Type Tabs -->
-        <div class="meeting-type-tabs">
-            <button class="tab-btn active" data-type="regular" onclick="switchMeetingType('regular')">
-                <span class="tab-label">Open Meetings</span>
-            </button>
-            <button class="tab-btn" data-type="hosted" onclick="switchMeetingType('hosted')">
-                <span class="tab-label">Hosted Meetings</span>
-            </button>
-            <button class="tab-btn" data-type="participant-controlled" onclick="switchMeetingType('participant-controlled')">
-                <span class="tab-label">Private Meetings</span>
+        <!-- Unified Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <h2>My Projects</h2>
+                <p class="dashboard-subtitle">Manage your projects and meetings</p>
+            </div>
+            <button onclick="showCreateProjectModal()" class="btn btn-primary">
+                + Create Project
             </button>
         </div>
 
-        <!-- Tab Content Containers -->
-        <div class="tab-content-container">
-            <!-- Regular/Open Meetings Tab -->
-            <div id="regular-tab" class="tab-content active">
-                <div class="tab-header">
-                    <div style="display: flex; align-items: center;">
-                        <h2>Open Meetings</h2>
-                        <p class="tab-description">Anyone can join directly without approval</p>
-                    </div>
-                    <button onclick="showCreateProjectModal('regular')" class="btn btn-primary btn-sm">
-                        + Create Project
-                    </button>
-                </div>
-                <div class="projects-accordion" id="regularProjects">
-                    <!-- Projects will be loaded here -->
-                </div>
+        <!-- Meetings I'm Hosting (from other users' projects) -->
+        <div id="meetingsImHostingSection" class="hosted-meetings-section" style="display: none;">
+            <h3 class="section-subtitle">Meetings I'm Hosting</h3>
+            <div class="meetings-list" id="meetingsImHostingList">
+                <!-- Meetings will be loaded here -->
             </div>
+        </div>
 
-            <!-- Hosted Meetings Tab -->
-            <div id="hosted-tab" class="tab-content">
-                <div class="tab-header">
-                    <div style="display: flex; align-items: center;">
-                        <h2>Hosted Meetings</h2>
-                        <p class="tab-description">Host must start the meeting first</p>
-                    </div>
-                    <button onclick="showCreateProjectModal('hosted')" class="btn btn-primary btn-sm">
-                        + Create Project
-                    </button>
-                </div>
-                <div class="projects-accordion" id="hostedProjects">
-                    <!-- Projects will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Participant-Controlled Meetings Tab -->
-            <div id="participant-controlled-tab" class="tab-content">
-                <div class="tab-header">
-                    <div style="display: flex; align-items: center;">
-                        <h2>Private Meetings</h2>
-                        <p class="tab-description">Only allowed participants can join</p>
-                    </div>
-                    <button onclick="showCreateProjectModal('participant-controlled')" class="btn btn-primary btn-sm">
-                        + Create Project
-                    </button>
-                </div>
-                <div class="projects-accordion" id="participant-controlledProjects">
-                    <!-- Projects will be loaded here -->
-                </div>
-            </div>
+        <!-- All Projects Container -->
+        <div class="projects-accordion" id="allProjects">
+            <!-- Projects will be loaded here -->
         </div>
     </div>
 
@@ -121,19 +81,18 @@
                 </div>
                 <div class="modal-body">
                     <form id="createProjectForm">
-                <input type="hidden" id="projectMeetingType">
-                <div class="form-group">
-                    <label for="projectName">Project Name</label>
-                    <input type="text" id="projectName" required>
-                </div>
-                <div class="form-group">
-                    <label for="projectDescription">Description</label>
-                    <textarea id="projectDescription" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Create Project</button>
-                </div>
-            </form>
+                        <div class="form-group">
+                            <label for="projectName">Project Name</label>
+                            <input type="text" id="projectName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectDescription">Description</label>
+                            <textarea id="projectDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Create Project</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -149,54 +108,100 @@
                 </div>
                 <div class="modal-body">
                     <form id="createMeetingForm">
-                <input type="hidden" id="currentProjectId">
-                <input type="hidden" id="currentMeetingType">
-                <div class="form-group">
-                    <label for="meetingName">Meeting Name</label>
-                    <input type="text" id="meetingName" required>
-                </div>
-                <div class="form-group">
-                    <label for="startTime">Start Time</label>
-                    <input type="datetime-local" id="startTime">
-                </div>
-                <div class="form-group">
-                    <label for="endTime">End Time</label>
-                    <input type="datetime-local" id="endTime">
-                </div>
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes" rows="3"></textarea>
-                </div>
-                <!-- Host Selection (for hosted meetings only) -->
-                <div id="hostSelectionGroup" class="form-group" style="display: none;">
-                    <label for="meetingHost">Host <span style="color: red;">*</span></label>
-                    <select id="meetingHost">
-                        <option value="">Select Host</option>
-                    </select>
-                    <small>Required for hosted meetings</small>
-                </div>
-                <div class="form-group">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="allowGuests">
-                        <span class="toggle-switch-track">
-                            <span class="toggle-switch-thumb"></span>
-                        </span>
-                        <span class="toggle-switch-label">Allow guest access</span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoRecording">
-                        <span class="toggle-switch-track">
-                            <span class="toggle-switch-thumb"></span>
-                        </span>
-                        <span class="toggle-switch-label">Auto-recording</span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Create Meeting</button>
-                </div>
-            </form>
+                        <input type="hidden" id="currentProjectId">
+
+                        <!-- Meeting Type Toggle Buttons -->
+                        <div class="form-group">
+                            <label>Meeting Type</label>
+                            <div class="meeting-type-toggle" id="meetingTypeToggle">
+                                <button type="button" class="type-btn active" data-type="regular" onclick="selectMeetingType('regular')">
+                                    <span class="type-icon">🌐</span>
+                                    <span class="type-name">Open</span>
+                                </button>
+                                <button type="button" class="type-btn" data-type="hosted" onclick="selectMeetingType('hosted')">
+                                    <span class="type-icon">🎯</span>
+                                    <span class="type-name">Hosted</span>
+                                </button>
+                                <button type="button" class="type-btn" data-type="participant-controlled" onclick="selectMeetingType('participant-controlled')">
+                                    <span class="type-icon">🔒</span>
+                                    <span class="type-name">Private</span>
+                                </button>
+                            </div>
+                            <small id="meetingTypeHelp" class="form-help">Anyone can join directly without approval</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="meetingName">Meeting Name</label>
+                            <input type="text" id="meetingName" required>
+                        </div>
+
+                        <!-- Host Selection (for hosted and private meetings) -->
+                        <div id="hostSelectionGroup" class="form-group" style="display: none;">
+                            <label for="meetingHost">Host <span id="hostRequiredMark" style="color: red;">*</span></label>
+                            <select id="meetingHost">
+                                <option value="">Select Host</option>
+                            </select>
+                            <small id="hostHelp">Required for hosted meetings</small>
+                        </div>
+
+                        <!-- Participants Selection (for private meetings only) -->
+                        <div id="participantsSelectionGroup" class="form-group" style="display: none;">
+                            <label>Allowed Participants</label>
+                            <div class="participants-inline-panel">
+                                <div class="search-box-inline">
+                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" id="createMeetingUserSearch" placeholder="Search users...">
+                                </div>
+                                <div id="createMeetingUsersList" class="users-list-inline">
+                                    <p class="loading-text">Loading users...</p>
+                                </div>
+                                <div class="selected-count">
+                                    <span id="selectedParticipantsCount">0</span> participants selected
+                                </div>
+                            </div>
+                            <small>Only selected users can join this meeting</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="startTime">Start Time</label>
+                                <input type="datetime-local" id="startTime">
+                            </div>
+                            <div class="form-group half">
+                                <label for="endTime">End Time</label>
+                                <input type="datetime-local" id="endTime">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-toggles">
+                            <label class="toggle-switch" id="allowGuestsToggleGroup">
+                                <input type="checkbox" id="allowGuests">
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Allow guest access</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoRecording">
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Auto-recording</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-full">Create Meeting</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -266,8 +271,100 @@
         </div>
     </div>
 
+    <!-- Meeting Settings Modal -->
+    <div id="meetingSettingsModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Meeting Settings</h5>
+                    <button class="close-btn" onclick="closeModal('meetingSettingsModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="settingsMeetingId">
+                    <input type="hidden" id="settingsMeetingType">
+
+                    <!-- Meeting Type Display (read-only) -->
+                    <div class="form-group settings-row">
+                        <label>Meeting Type</label>
+                        <div class="meeting-type-display" id="settingsMeetingTypeDisplay">
+                            <span class="type-badge type-regular">Open</span>
+                        </div>
+                    </div>
+
+                    <div id="settingsInProgressWarning" class="settings-warning" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>Settings locked while meeting is in progress</span>
+                    </div>
+
+                    <!-- Host Selection -->
+                    <div id="hostSettingGroup" class="form-group settings-row">
+                        <label for="settingsHost">Meeting Host</label>
+                        <select id="settingsHost">
+                            <option value="">No host (open meeting)</option>
+                        </select>
+                        <small id="hostSettingHelp">The host must start the meeting before others can join</small>
+                    </div>
+
+                    <!-- Participants Section (for Private meetings) -->
+                    <div id="settingsParticipantsGroup" class="form-group settings-row" style="display: none;">
+                        <label>Allowed Participants</label>
+                        <div class="participants-inline-panel">
+                            <div class="search-box-inline">
+                                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="m21 21-4.35-4.35"/>
+                                </svg>
+                                <input type="text" id="settingsUserSearch" placeholder="Search users...">
+                            </div>
+                            <div id="settingsUsersList" class="users-list-inline">
+                                <p class="loading-text">Loading users...</p>
+                            </div>
+                            <div class="selected-count">
+                                <span id="settingsParticipantsCount">0</span> participants allowed
+                            </div>
+                        </div>
+                        <small>Only selected users can join this meeting</small>
+                    </div>
+
+                    <!-- Allow Guests Toggle -->
+                    <div id="allowGuestsSettingGroup" class="form-group settings-row">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="settingsAllowGuests">
+                            <span class="toggle-switch-track">
+                                <span class="toggle-switch-thumb"></span>
+                            </span>
+                            <span class="toggle-switch-label">Allow guest access</span>
+                        </label>
+                        <small>When enabled, anyone with the guest link can join without signing in</small>
+                    </div>
+
+                    <!-- Auto Recording Toggle -->
+                    <div class="form-group settings-row">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="settingsAutoRecording">
+                            <span class="toggle-switch-track">
+                                <span class="toggle-switch-thumb"></span>
+                            </span>
+                            <span class="toggle-switch-label">Auto-recording</span>
+                        </label>
+                        <small>Automatically record the meeting when it starts</small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button type="button" class="btn btn-primary btn-full" onclick="saveMeetingSettings()">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script src="../../js/config.js"></script>
-    <script src="../../js/api.js"></script>
-    <script src="../../js/vision/dashboard.js?v=2025112508"></script>
+    <script src="../../js/api.js?v=2025112816"></script>
+    <script src="../../js/vision/dashboard.js?v=2025112841"></script>
 </body>
 </html>

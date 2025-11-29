@@ -249,13 +249,29 @@ async function connectToLiveKit(wsUrl, token) {
 
         localParticipant = room.localParticipant;
 
-        // Enable camera and microphone with error handling
+        // Read lobby preferences from sessionStorage
+        const preMeetingMicEnabled = sessionStorage.getItem('preMeetingMicEnabled');
+        const preMeetingCameraEnabled = sessionStorage.getItem('preMeetingCameraEnabled');
+
+        // Determine initial states based on lobby preferences (default to true if not set)
+        const shouldEnableMic = preMeetingMicEnabled === null ? true : preMeetingMicEnabled === 'true';
+        const shouldEnableCamera = preMeetingCameraEnabled === null ? true : preMeetingCameraEnabled === 'true';
+
+        console.log('Lobby preferences - Mic:', shouldEnableMic, 'Camera:', shouldEnableCamera);
+
+        // Enable/disable microphone based on lobby preference
         try {
-            await room.localParticipant.setMicrophoneEnabled(true);
-            micEnabled = true;
-            console.log('Microphone enabled successfully');
+            await room.localParticipant.setMicrophoneEnabled(shouldEnableMic);
+            micEnabled = shouldEnableMic;
+            console.log('Microphone ' + (shouldEnableMic ? 'enabled' : 'disabled') + ' based on lobby preference');
+
+            // Update UI to reflect mic state
+            const micBtn = document.getElementById('micBtn');
+            if (micBtn) {
+                micBtn.classList.toggle('active', micEnabled);
+            }
         } catch (micError) {
-            console.error('Failed to enable microphone:', micError);
+            console.error('Failed to set microphone state:', micError);
             micEnabled = false;
             // Show user-friendly error
             const micBtn = document.getElementById('micBtn');
@@ -265,22 +281,38 @@ async function connectToLiveKit(wsUrl, token) {
             }
         }
 
+        // Enable/disable camera based on lobby preference
         try {
-            await room.localParticipant.setCameraEnabled(true);
-            cameraEnabled = true;
-            console.log('Camera enabled successfully');
+            await room.localParticipant.setCameraEnabled(shouldEnableCamera);
+            cameraEnabled = shouldEnableCamera;
+            console.log('Camera ' + (shouldEnableCamera ? 'enabled' : 'disabled') + ' based on lobby preference');
+
+            // Update UI to reflect camera state
+            const camBtn = document.getElementById('camBtn');
+            if (camBtn) {
+                camBtn.classList.toggle('active', cameraEnabled);
+            }
         } catch (camError) {
-            console.error('Failed to enable camera:', camError);
+            console.error('Failed to set camera state:', camError);
             cameraEnabled = false;
             // Show user-friendly error
-            const cameraBtn = document.getElementById('cameraBtn');
-            if (cameraBtn) {
-                cameraBtn.classList.remove('active');
-                cameraBtn.title = 'Camera permission denied. Click to try again.';
+            const camBtn = document.getElementById('camBtn');
+            if (camBtn) {
+                camBtn.classList.remove('active');
+                camBtn.title = 'Camera permission denied. Click to try again.';
             }
-            // Show alert to user (especially important for guests)
-            alert('Camera access was denied. Please allow camera access in your browser settings and refresh the page.');
+            // Show alert to user only if they wanted camera enabled
+            if (shouldEnableCamera) {
+                alert('Camera access was denied. Please allow camera access in your browser settings and refresh the page.');
+            }
         }
+
+        // Clear the lobby preferences from sessionStorage after applying
+        sessionStorage.removeItem('preMeetingMicEnabled');
+        sessionStorage.removeItem('preMeetingCameraEnabled');
+        sessionStorage.removeItem('preMeetingCameraId');
+        sessionStorage.removeItem('preMeetingMicId');
+        sessionStorage.removeItem('preMeetingSpeakerId');
 
         // Display local participant
         addLocalParticipant();

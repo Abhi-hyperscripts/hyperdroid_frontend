@@ -2904,13 +2904,19 @@ body:has(.pre-meeting-container) {
     border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .project-accordion-item:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-color: rgba(0, 0, 0, 0.1);
+}
+
+.project-accordion-item.expanded {
+    z-index: 100;
 }
 
 .project-accordion-header {
@@ -2993,6 +2999,8 @@ body:has(.pre-meeting-container) {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 10;
 }
 
 .project-accordion-item.expanded .project-accordion-body {
@@ -3015,6 +3023,8 @@ body:has(.pre-meeting-container) {
     border-radius: 6px;
     padding: 8px 10px;
     transition: all 0.2s ease;
+    position: relative;
+    z-index: 20;
 }
 
 .meeting-card:hover {
@@ -3087,6 +3097,16 @@ body:has(.pre-meeting-container) {
 .badge-recording {
     background: #fef3c7;
     color: #d97706;
+}
+
+.badge-guest {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.badge-host {
+    background: #e0e7ff;
+    color: #4f46e5;
 }
 
 .badge-participants {
@@ -3178,6 +3198,95 @@ body:has(.pre-meeting-container) {
 .btn-icon.btn-danger:hover {
     background: #dc2626;
     color: white;
+}
+
+.btn-icon.btn-danger-permanent {
+    background: rgba(185, 28, 28, 0.15);
+    color: #991b1b;
+    padding: 0 8px;
+    min-width: auto;
+}
+
+.btn-icon.btn-danger-permanent:hover {
+    background: #991b1b;
+    color: white;
+}
+
+/* Inactive Meeting Styles */
+.meeting-card.meeting-inactive {
+    opacity: 0.7;
+    border: 2px dashed #f59e0b;
+    background: rgba(255, 251, 235, 0.8);
+}
+
+.meeting-card.meeting-inactive:hover {
+    opacity: 0.85;
+    background: rgba(255, 251, 235, 0.95);
+}
+
+.badge-inactive {
+    background: #fef3c7;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.meeting-inactive-notice {
+    font-size: 0.7rem;
+    color: #92400e;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 6px 8px;
+    margin: 6px 0 0 0;
+    border-radius: 4px;
+    border-left: 3px solid #f59e0b;
+}
+
+/* Meetings I'm Hosting Section */
+.hosted-meetings-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.section-subtitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6366f1;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-subtitle::before {
+    content: '🎯';
+    font-size: 1rem;
+}
+
+.my-projects-subtitle {
+    margin-top: 20px;
+    color: #374151;
+}
+
+.my-projects-subtitle::before {
+    content: '📁';
+}
+
+.badge-project {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    color: #4338ca;
+    font-weight: 500;
+}
+
+.badge-host-you {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #047857;
+    font-weight: 600;
+}
+
+.hosted-meeting-card {
+    border-left: 3px solid #6366f1;
 }
 
 /* Auto Recording Toggle - Minimal */
@@ -4485,4 +4594,467 @@ body:has(.pre-meeting-container) {
         padding: 5px 8px;
         font-size: 0.7rem;
     }
+}
+
+/* ============================================
+   Meeting Settings Modal Styles
+   ============================================ */
+
+.settings-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+}
+
+.settings-warning svg {
+    flex-shrink: 0;
+    color: #d97706;
+}
+
+.settings-row {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.settings-row:last-child {
+    border-bottom: none;
+}
+
+.settings-row label {
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.settings-row small {
+    display: block;
+    color: #666;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.settings-row select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    margin-top: 4px;
+}
+
+.settings-row select:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.settings-row .toggle-switch {
+    margin-top: 0;
+}
+
+/* Waiting for host - compact inline layout */
+.waiting-for-host-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.waiting-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.waiting-indicator .waiting-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+.waiting-for-host-row .btn-sm {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+
+/* Empty Projects Section - for projects without any meetings */
+.empty-projects-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.empty-projects-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 12px;
+    padding-left: 4px;
+}
+
+.empty-project-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.empty-project-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.empty-project-info {
+    flex: 1;
+}
+
+.empty-project-info h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+    color: #374151;
+}
+
+.empty-project-info p {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0 0 4px 0;
+}
+
+.no-meetings-badge {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.empty-project-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.empty-project-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+}
+
+/* ============================================
+   UNIFIED DASHBOARD STYLES
+   ============================================ */
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+}
+
+.dashboard-title h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+.dashboard-subtitle {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+}
+
+/* Meeting Type Toggle Buttons */
+.meeting-type-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.meeting-type-toggle .type-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.meeting-type-toggle .type-btn:hover {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.meeting-type-toggle .type-btn.active {
+    border-color: #6366f1;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+.meeting-type-toggle .type-btn .type-icon {
+    font-size: 1.5rem;
+}
+
+.meeting-type-toggle .type-btn .type-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.meeting-type-toggle .type-btn.active .type-name {
+    color: #6366f1;
+}
+
+.form-help {
+    color: #6b7280;
+    font-size: 0.8rem;
+    margin-top: 8px;
+}
+
+/* Meeting Type Badges */
+.badge-type {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-type-open {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.badge-type-hosted {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.badge-type-private {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+/* Meeting Type Display (Read-only in settings) */
+.meeting-type-display {
+    margin-top: 8px;
+}
+
+/* Form Row for side-by-side fields */
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row .form-group.half {
+    flex: 1;
+}
+
+/* Form Toggles Side by Side */
+.form-toggles {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+/* Inline Participants Panel (for create meeting modal) */
+.participants-inline-panel {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.search-box-inline {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.search-box-inline .search-icon {
+    color: #9ca3af;
+    margin-right: 8px;
+}
+
+.search-box-inline input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.users-list-inline {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.user-select-item-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s ease;
+}
+
+.user-select-item-inline:last-child {
+    border-bottom: none;
+}
+
+.user-select-item-inline:hover {
+    background: #f9fafb;
+}
+
+.user-select-item-inline.selected {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.user-info-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-name-inline {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.user-email-inline {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.checkbox-inline {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-inline input {
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
+.checkbox-inline.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.checkbox-inline.disabled input {
+    cursor: not-allowed;
+}
+
+.selected-count {
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Loading, Error, Empty text */
+.loading-text,
+.error-text,
+.empty-text {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.85rem;
+}
+
+.loading-text {
+    color: #6b7280;
+}
+
+.error-text {
+    color: #dc3545;
+}
+
+.empty-text {
+    color: #9ca3af;
+}
+
+/* Host Badge - "You are host" */
+.badge-host-you {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Project Badge - for meetings from other projects */
+.badge-project {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Hosted meeting card highlight */
+.hosted-meeting-card {
+    border-left: 3px solid #8b5cf6;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    color: #374151;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin: 0 0 24px 0;
 }

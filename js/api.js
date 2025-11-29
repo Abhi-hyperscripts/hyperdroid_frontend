@@ -40,10 +40,21 @@ class API {
 
         try {
             const response = await fetch(url, config);
-            const data = await response.json();
+
+            // Handle non-JSON responses gracefully
+            const contentType = response.headers.get('content-type');
+            let data;
+
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                // Handle plain text or other response types
+                const text = await response.text();
+                data = { message: text };
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || data.title || 'Request failed');
+                throw new Error(data.message || data.title || data.errors?.join(', ') || 'Request failed');
             }
 
             return data;
@@ -206,6 +217,10 @@ class API {
         return this.request(`/meetings/project/${projectId}`);
     }
 
+    async getHostedMeetings() {
+        return this.request('/meetings/hosted');
+    }
+
     async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null) {
         return this.request('/meetings/create', {
             method: 'POST',
@@ -243,6 +258,12 @@ class API {
         });
     }
 
+    async permanentDeleteMeeting(id) {
+        return this.request(`/meetings/${id}/permanent`, {
+            method: 'DELETE'
+        });
+    }
+
     async getLiveKitToken(meetingId, participantName) {
         return this.request('/meetings/token', {
             method: 'POST',
@@ -274,6 +295,16 @@ class API {
             body: JSON.stringify({
                 meeting_id: meetingId,
                 value: value
+            })
+        });
+    }
+
+    async updateMeetingHost(meetingId, hostUserId) {
+        return this.request(`/meetings/${meetingId}/update-host`, {
+            method: 'POST',
+            body: JSON.stringify({
+                meeting_id: meetingId,
+                host_user_id: hostUserId
             })
         });
     }

@@ -242,9 +242,10 @@ async function checkMeetingStatus() {
         const status = await api.getMeetingStatus(meetingId);
 
         if (status && status.is_started) {
-            showMeetingStartedNotification('Meeting has started!');
-            // Auto-redirect immediately (Safari compatible)
-            window.location.replace(`meeting.html?id=${meetingId}`);
+            // Stop the status check interval
+            stopStatusCheck();
+            // Use goToMeeting to properly clean up before redirecting
+            goToMeeting();
         }
     } catch (error) {
         console.error('Error checking meeting status:', error);
@@ -696,6 +697,113 @@ async function changeSpeaker() {
 
 // Proceed to meeting after device testing
 async function proceedToMeeting() {
+    // If meetingData is not loaded yet, load it now (refresh to get latest status)
+    try {
+        meetingData = await api.getMeetingStatus(meetingId);
+        if (!meetingData) {
+            showError('Failed to load meeting details');
+            return;
+        }
+    } catch (error) {
+        console.error('Error loading meeting data:', error);
+        showError('Failed to load meeting details: ' + error.message);
+        return;
+    }
+
+    // Check if this is a hosted meeting that hasn't started
+    if (meetingData.is_host_controlled && !meetingData.is_started) {
+        // Check if user is the host
+        if (!isGuest) {
+            const user = api.getUser();
+            if (user && meetingData.host_user_id === user.userId) {
+                // Host goes directly to meeting and starts it
+                goToMeeting();
+                return;
+            }
+        }
+
+        // Non-host: Show waiting overlay on the device testing page
+        showWaitingForHostOverlay();
+
+        // Setup SignalR connection for real-time updates
+        await setupSignalRConnection();
+
+        // Start periodic status check to auto-join when host starts
+        startStatusCheck();
+    } else {
+        // Regular meeting, participant-controlled, or hosted meeting already started - go to meeting
+        goToMeeting();
+    }
+}
+
+// Show waiting for host overlay on device testing page
+function showWaitingForHostOverlay() {
+    // Update the title to indicate waiting
+    const titleEl = document.getElementById('meetingTitle');
+    if (titleEl) {
+        const meetingName = meetingData?.meeting_name || meetingData?.name || 'this meeting';
+        titleEl.textContent = `Waiting to join "${meetingName}"`;
+    }
+
+    // Update subtitle
+    const subtitleEl = document.getElementById('meetingSubtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = 'The host has not started this meeting yet';
+    }
+
+    // Update the action buttons (Join Now, Cancel)
+    const actionsDiv = document.querySelector('.join-actions');
+    if (actionsDiv) {
+        actionsDiv.innerHTML = `
+            <div class="waiting-for-host-row">
+                <div class="waiting-indicator">
+                    <div class="waiting-spinner"></div>
+                    <span>Waiting for host to start the meeting...</span>
+                </div>
+                <button onclick="cancelWaiting()" class="btn btn-secondary btn-sm">Cancel</button>
+            </div>
+        `;
+    }
+}
+
+// Cancel waiting and go back
+function cancelWaiting() {
+    // Stop status checking
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+    }
+
+    // Disconnect SignalR if connected
+    if (lobbyConnection) {
+        lobbyConnection.stop();
+    }
+
+    // Restore title
+    const titleEl = document.getElementById('meetingTitle');
+    if (titleEl) {
+        const meetingName = meetingData?.meeting_name || meetingData?.name || 'this meeting';
+        titleEl.textContent = `Ready to join "${meetingName}"?`;
+    }
+
+    // Restore subtitle
+    const subtitleEl = document.getElementById('meetingSubtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = 'Test your camera and microphone before joining';
+    }
+
+    // Restore the original action buttons
+    const actionsDiv = document.querySelector('.join-actions');
+    if (actionsDiv) {
+        actionsDiv.innerHTML = `
+            <button onclick="cancelJoin()" class="btn btn-secondary">Cancel</button>
+            <button id="joinMeetingBtn" onclick="proceedToMeeting()" class="btn btn-primary btn-lg">Join Now</button>
+        `;
+    }
+}
+
+// Go to meeting page (cleanup and redirect)
+function goToMeeting() {
     // Store device states in sessionStorage
     sessionStorage.setItem('preMeetingCameraEnabled', cameraEnabled);
     sessionStorage.setItem('preMeetingMicEnabled', microphoneEnabled);
@@ -713,49 +821,8 @@ async function proceedToMeeting() {
         audioContext.close();
     }
 
-    // If meetingData is not loaded yet, load it now
-    if (!meetingData) {
-        try {
-            meetingData = await api.getMeetingStatus(meetingId);
-            if (!meetingData) {
-                showError('Failed to load meeting details');
-                return;
-            }
-        } catch (error) {
-            console.error('Error loading meeting data:', error);
-            showError('Failed to load meeting details: ' + error.message);
-            return;
-        }
-    }
-
-    // Check if this is a hosted meeting that hasn't started
-    if (meetingData.meeting_type === 'hosted' && !meetingData.is_started) {
-        // Check if user is the host
-        if (!isGuest) {
-            const user = api.getUser();
-            if (user && meetingData.host_user_id === user.userId) {
-                // Host goes directly to meeting and starts it
-                window.location.href = `meeting.html?id=${meetingId}`;
-                return;
-            }
-        }
-
-        // Non-host: Show waiting lobby section
-        document.getElementById('deviceTestingSection').style.display = 'none';
-        document.getElementById('waitingLobbySection').style.display = 'block';
-
-        // Load meeting details for waiting lobby
-        await loadMeetingDetails();
-
-        // Setup SignalR connection
-        await setupSignalRConnection();
-
-        // Start periodic status check
-        startStatusCheck();
-    } else {
-        // Regular or participant-controlled meeting - go directly to meeting
-        window.location.href = `meeting.html?id=${meetingId}`;
-    }
+    // Go to meeting
+    window.location.href = `meeting.html?id=${meetingId}`;
 }
 
 // Cancel join
