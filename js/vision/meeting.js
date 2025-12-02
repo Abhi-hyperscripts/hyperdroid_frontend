@@ -692,7 +692,15 @@ function updateParticipantLayout(layout) {
 
     // Append containers to video container
     videoContainer.appendChild(mainSpeakerContainer);
-    videoContainer.appendChild(smallTilesContainer);
+
+    // Only add small tiles container if there are small tiles
+    if (addedSmallTiles > 0) {
+        videoContainer.appendChild(smallTilesContainer);
+        videoContainer.classList.remove('single-participant');
+    } else {
+        // Single participant - add class for full width layout
+        videoContainer.classList.add('single-participant');
+    }
 }
 
 // Helper function to add participant to a container

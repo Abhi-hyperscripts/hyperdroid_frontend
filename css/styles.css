@@ -1072,6 +1072,21 @@ body {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Single participant layout - full width */
+.video-container.single-participant {
+    justify-content: center;
+}
+
+.video-container.single-participant .main-speaker-container {
+    max-width: 100%;
+    width: 100%;
+}
+
+.video-container.single-participant .main-speaker-tile {
+    aspect-ratio: 16/9;
+    max-height: calc(100vh - 200px);
+}
+
 /* Mobile responsive layout */
 @media (max-width: 768px) {
     .video-container {
