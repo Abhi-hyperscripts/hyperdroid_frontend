@@ -227,14 +227,15 @@
 
         <!-- Reaction Picker (hidden by default) -->
         <div class="reaction-picker" id="reactionPicker" style="display: none;">
-            <button onclick="sendReaction('👍')">👍</button>
-            <button onclick="sendReaction('👏')">👏</button>
-            <button onclick="sendReaction('😂')">😂</button>
-            <button onclick="sendReaction('❤️')">❤️</button>
-            <button onclick="sendReaction('🎉')">🎉</button>
-            <button onclick="sendReaction('😮')">😮</button>
-            <button onclick="sendReaction('👎')">👎</button>
-            <button onclick="sendReaction('🤔')">🤔</button>
+            <button class="reaction-btn" onclick="sendReaction('👍')">👍</button>
+            <button class="reaction-btn" onclick="sendReaction('👏')">👏</button>
+            <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+            <button class="reaction-btn" onclick="sendReaction('❤️')">❤️</button>
+            <button class="reaction-btn" onclick="sendReaction('🎉')">🎉</button>
+            <button class="reaction-btn" onclick="sendReaction('😮')">😮</button>
+            <button class="reaction-btn" onclick="sendReaction('👎')">👎</button>
+            <button class="reaction-btn" onclick="sendReaction('🤔')">🤔</button>
+            <button class="reaction-close-btn" onclick="closeReactionPicker()">✕</button>
         </div>
 
         <!-- Participants Panel (hidden by default, for host only) -->

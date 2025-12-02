@@ -1711,10 +1711,16 @@ function toggleReactionPicker() {
 async function sendReaction(emoji) {
     try {
         await signalRConnection.invoke('SendReaction', meetingId, emoji);
-        toggleReactionPicker(); // Close picker after sending
+        // Don't close picker - let user send multiple reactions
     } catch (error) {
         console.error('Error sending reaction:', error);
     }
+}
+
+// Close reaction picker
+function closeReactionPicker() {
+    const picker = document.getElementById('reactionPicker');
+    picker.style.display = 'none';
 }
 
 // Show reaction animation
@@ -1722,7 +1728,19 @@ function showReactionAnimation(emoji, username) {
     const container = document.getElementById('reactionsContainer');
     const reaction = document.createElement('div');
     reaction.className = 'reaction-animation';
-    reaction.textContent = emoji;
+
+    // Create emoji element
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'reaction-emoji';
+    emojiSpan.textContent = emoji;
+
+    // Create username element
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'reaction-username';
+    nameSpan.textContent = username || 'Anonymous';
+
+    reaction.appendChild(emojiSpan);
+    reaction.appendChild(nameSpan);
 
     // Random horizontal position
     reaction.style.left = Math.random() * 80 + 10 + '%';

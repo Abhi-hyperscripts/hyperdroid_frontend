@@ -1334,7 +1334,7 @@ body {
     justify-content: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(26, 26, 46, 0.95);
+    background: rgb(183, 183, 197);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 10px;
@@ -1419,12 +1419,12 @@ body {
     bottom: 70px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26, 26, 46, 0.98);
+    background: rgb(183, 183, 197);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     padding: 6px;
     min-width: 220px;
     z-index: 999;
@@ -1438,12 +1438,12 @@ body {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(0, 0, 0, 0.8);
 }
 
 .settings-menu-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(255, 255, 255, 0.4);
+    color: rgba(0, 0, 0, 0.95);
 }
 
 .settings-menu-item .menu-icon {
@@ -1514,9 +1514,19 @@ body {
     }
 
     .chat-sidebar {
-        width: 100%;
-        max-height: 300px;
+        position: fixed;
+        bottom: 70px; /* Above the meeting controls */
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-height: calc(100vh - 180px); /* Leave space for header and controls */
         border-radius: 12px;
+        z-index: 999; /* Below controls (1000) but above video */
+        margin-bottom: 0;
+    }
+
+    .chat-sidebar .chat-input {
+        padding-bottom: 12px;
     }
 
     .video-container {
@@ -1576,8 +1586,14 @@ body {
     .participants-panel {
         right: 10px;
         left: 10px;
+        top: auto;
+        bottom: 70px;
         width: auto;
-        max-height: calc(100vh - 160px);
+        max-height: calc(100vh - 150px);
+    }
+
+    .participants-list {
+        max-height: 300px;
     }
 
     .reaction-picker {
@@ -1841,36 +1857,56 @@ body {
 /* Reaction Picker */
 .reaction-picker {
     position: fixed;
-    bottom: 120px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.95);
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgb(245, 245, 248);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 6px 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(0, 0, 0, 0.08);
     z-index: 1000;
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    max-width: 300px;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
     animation: fadeInUp 0.3s ease-out;
 }
 
-.reaction-picker button {
+.reaction-picker .reaction-btn {
     background: transparent;
     border: none;
-    font-size: 32px;
+    font-size: 22px;
     cursor: pointer;
-    padding: 10px;
-    border-radius: 12px;
-    transition: all 0.3s ease;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1;
 }
 
-.reaction-picker button:hover {
-    background: rgba(0, 0, 0, 0.05);
+.reaction-picker .reaction-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
     transform: scale(1.15);
+}
+
+.reaction-picker .reaction-close-btn {
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: #666;
+    margin-left: 4px;
+    line-height: 1;
+}
+
+.reaction-picker .reaction-close-btn:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #333;
 }
 
 /* Reaction Animations Container */
@@ -1887,9 +1923,30 @@ body {
 .reaction-animation {
     position: absolute;
     bottom: 0;
-    font-size: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     animation: floatUp 3s ease-out forwards;
     pointer-events: none;
+}
+
+.reaction-animation .reaction-emoji {
+    font-size: 48px;
+    line-height: 1;
+}
+
+.reaction-animation .reaction-username {
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 @keyframes floatUp {
@@ -1900,12 +1957,12 @@ body {
     }
     50% {
         opacity: 1;
-        transform: translateY(-200px) scale(1.2);
+        transform: translateY(-200px) scale(1.1);
     }
     100% {
         bottom: 80%;
         opacity: 0;
-        transform: translateY(-400px) scale(0.8);
+        transform: translateY(-400px) scale(0.9);
     }
 }
 
@@ -1915,13 +1972,13 @@ body {
     bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26, 26, 46, 0.98);
+    background: rgb(245, 245, 248);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     z-index: 1000;
     width: 500px;
     max-width: 90vw;
@@ -1933,25 +1990,27 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .bg-settings-header h3 {
     margin: 0;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: #1a1a2e;
     letter-spacing: 0.2px;
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 20px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 18px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.7);
+    color: #666;
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     transition: all 0.2s;
     display: flex;
@@ -1960,9 +2019,9 @@ body {
 }
 
 .close-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.1);
+    color: #333;
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
 .bg-options {
@@ -1979,29 +2038,31 @@ body {
     padding: 8px;
     border-radius: 10px;
     transition: all 0.2s ease;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.7);
 }
 
 .bg-option span {
-    color: rgba(255, 255, 255, 0.85);
+    color: #444;
     font-size: 12px;
     font-weight: 500;
 }
 
 .bg-option:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .bg-option.selected {
-    border-color: #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
+    border-color: #4285f4;
+    background: rgba(66, 133, 244, 0.08);
 }
 
 .bg-option.selected span {
-    color: #4CAF50;
+    color: #4285f4;
+    font-weight: 600;
 }
 
 .bg-preview {
@@ -2011,31 +2072,42 @@ body {
     margin-bottom: 6px;
     background-size: cover;
     background-position: center;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .bg-preview.bg-none {
-    background: white;
+    background: #f8f9fa;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
 }
 
 .bg-preview.bg-none::after {
-    content: '🚫';
-    font-size: 32px;
+    content: '✕';
+    font-size: 24px;
+    color: #999;
 }
 
 .bg-preview.bg-blur {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    filter: blur(8px);
+    background: linear-gradient(135deg, #e8eaed 0%, #c3cfe2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.bg-preview.bg-blur::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    filter: blur(4px);
 }
 
 .bg-option span {
     font-size: 12px;
     font-weight: 500;
-    color: #666;
+    color: #555;
     text-align: center;
     letter-spacing: -0.01em;
 }
@@ -2061,15 +2133,15 @@ body {
 .participants-panel {
     position: fixed;
     right: 20px;
-    top: 90px;
-    width: 340px;
-    max-height: calc(100vh - 180px);
-    background: rgba(26, 26, 46, 0.98);
+    top: 80px;
+    width: 260px;
+    max-height: calc(100vh - 160px);
+    background: rgb(245, 245, 248);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -2080,92 +2152,107 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .participants-header h3 {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(0, 0, 0, 0.8);
     margin: 0;
-    letter-spacing: 0.2px;
+}
+
+.participants-header .close-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s ease;
+}
+
+.participants-header .close-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.7);
 }
 
 .participants-search {
-    padding: 12px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .participants-search svg {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 0, 0, 0.35);
     flex-shrink: 0;
+    width: 14px;
+    height: 14px;
 }
 
 .participants-search input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.04);
+    border: none;
     border-radius: 6px;
-    padding: 8px 12px;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 13px;
+    padding: 8px 10px;
+    color: rgba(0, 0, 0, 0.8);
+    font-size: 12px;
     outline: none;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .participants-search input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(0, 0, 0, 0.35);
 }
 
 .participants-search input:focus {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .participants-actions {
-    padding: 12px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .btn-mute-all {
     width: 100%;
-    padding: 10px 14px;
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    padding: 8px 12px;
+    background: #dc3545;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    letter-spacing: 0.2px;
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn-mute-all svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .btn-mute-all:hover {
-    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(220, 53, 69, 0.4);
+    background: #c82333;
 }
 
 .participants-list {
-    flex: 1;
     overflow-y: auto;
-    padding: 8px;
-    min-height: 200px;
+    padding: 6px;
+    max-height: 400px;
 }
 
 /* Custom scrollbar for participants list */
@@ -2174,17 +2261,17 @@ body {
 }
 
 .participants-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 3px;
 }
 
 .participants-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.15);
     border-radius: 3px;
 }
 
 .participants-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .participant-item {
@@ -2193,17 +2280,17 @@ body {
     justify-content: space-between;
     padding: 8px 10px;
     margin-bottom: 4px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.6);
     border-radius: 8px;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background 0.15s ease;
+}
+
+.participant-item:last-child {
+    margin-bottom: 0;
 }
 
 .participant-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .participant-info {
@@ -2215,10 +2302,10 @@ body {
 }
 
 .participant-avatar {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -2226,41 +2313,40 @@ body {
     font-weight: 600;
     font-size: 11px;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .participant-details {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
 }
 
-.participant-name {
-    color: rgba(255, 255, 255, 0.98);
+.participants-panel .participant-name {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: rgba(0, 0, 0, 0.85);
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding: 0;
+    border-radius: 0;
+    line-height: 1.3;
 }
 
 .participant-status {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.5);
     margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .status-indicator {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .status-indicator.muted {
@@ -2269,49 +2355,47 @@ body {
 
 .participant-controls {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
 }
 
 .participant-control-btn {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border: none;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.15s ease;
+    color: rgba(0, 0, 0, 0.4);
 }
 
 .participant-control-btn:hover {
-    background: rgba(220, 53, 69, 0.8);
-    border-color: #dc3545;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
 }
 
 .participant-control-btn.mute:hover {
-    background: rgba(255, 152, 0, 0.8);
-    border-color: #ff9800;
-    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
 }
 
 .participant-item.host {
     background: rgba(76, 175, 80, 0.08);
-    border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
-.participant-item.host .participant-name::after {
+.participant-item.host .participant-avatar {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+}
+
+.participants-panel .participant-item.host .participant-name::after {
     content: " (Host)";
-    color: rgba(76, 175, 80, 0.9);
-    font-size: 11px;
+    color: #4CAF50;
+    font-size: 10px;
     font-weight: 500;
     margin-left: 4px;
 }
@@ -2676,15 +2760,17 @@ body:has(.pre-meeting-container) {
     font-size: 18px;
 }
 
-.participants-list {
+.lobby .participants-list {
     margin: 32px 0;
     padding: 24px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: 16px;
     text-align: left;
+    max-height: none;
+    overflow: visible;
 }
 
-.participants-list h3 {
+.lobby .participants-list h3 {
     margin-bottom: 16px;
     color: #000;
     font-weight: 600;
@@ -4102,7 +4188,7 @@ body:has(.pre-meeting-container) {
     transform: rotate(90deg);
 }
 
-.participants-list {
+.participants-section .participants-list {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
@@ -4113,7 +4199,7 @@ body:has(.pre-meeting-container) {
     margin-top: 12px;
 }
 
-.participants-list ul {
+.participants-section .participants-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -4122,7 +4208,7 @@ body:has(.pre-meeting-container) {
     gap: 8px;
 }
 
-.participant-item {
+.participants-section .participant-item {
     display: flex;
     align-items: center;
     gap: 12px;
