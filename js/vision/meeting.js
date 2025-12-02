@@ -200,10 +200,14 @@ async function connectToLiveKit(wsUrl, token) {
             adaptiveStream: true,
             dynacast: true,
             videoCaptureDefaults: {
-                resolution: LivekitClient.VideoPresets.h720.resolution,
+                resolution: LivekitClient.VideoPresets.h1080.resolution,
             },
             publishDefaults: {
                 simulcast: true,  // Enable simulcast for adaptive quality
+                videoEncoding: {
+                    maxBitrate: 6_000_000,  // 6 Mbps for sharp 1080p
+                    maxFramerate: 30,
+                },
             }
         };
 
@@ -355,7 +359,7 @@ async function connectToLiveKit(wsUrl, token) {
         // Initialize active speakers
         activeSpeakerManager.initializeActiveSpeakers();
 
-        console.log('Connected to LiveKit room with Active Speaker Detection (Main: 720p, Small: 720p)');
+        console.log('Connected to LiveKit room with Active Speaker Detection (Main: 1080p, Small: 360p)');
     } catch (error) {
         console.error('Error connecting to LiveKit:', error);
         throw error;

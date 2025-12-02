@@ -15,9 +15,10 @@ class ActiveSpeakerManager {
         this.screenShareActive = false; // Track if someone is screen sharing
 
         // Adaptive video quality settings
-        // Note: LiveKit supports LOW(180p), MEDIUM(360p), HIGH(720p)
-        // Using MEDIUM (360p) for small tiles to reduce egress server load
-        this.mainSpeakerQuality = LivekitClient.VideoQuality.HIGH;      // 720p for main speaker
+        // Note: LiveKit VideoQuality enum: LOW(0), MEDIUM(1), HIGH(2)
+        // HIGH requests the highest available simulcast layer from the publisher
+        // With h1080 capture, HIGH = 1080p, MEDIUM = 360p, LOW = 180p
+        this.mainSpeakerQuality = LivekitClient.VideoQuality.HIGH;      // 1080p for main speaker (highest layer)
         this.smallTileQuality = LivekitClient.VideoQuality.MEDIUM;      // 360p for small tiles (reduces bandwidth and recording load)
 
         // Callbacks for UI updates
@@ -31,7 +32,7 @@ class ActiveSpeakerManager {
         // Participants will only be removed when they disconnect
         // this.startCleanupInterval();
 
-        console.log('ActiveSpeakerManager initialized with adaptive quality (Main: 720p, Small: 360p)');
+        console.log('ActiveSpeakerManager initialized with adaptive quality (Main: 1080p, Small: 360p)');
     }
 
     /**
@@ -281,7 +282,7 @@ class ActiveSpeakerManager {
                         const quality = isMainSpeaker
                             ? this.mainSpeakerQuality
                             : this.smallTileQuality;
-                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '720p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
+                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
                         publication.setSubscribed(true);
@@ -293,7 +294,7 @@ class ActiveSpeakerManager {
                         const quality = isMainSpeaker
                             ? this.mainSpeakerQuality
                             : this.smallTileQuality;
-                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '720p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
+                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
                         publication.setVideoQuality(quality);
@@ -523,7 +524,7 @@ class ActiveSpeakerManager {
                 newParticipant.videoTrackPublications.forEach((publication) => {
                     if (publication.source === LivekitClient.Track.Source.Camera && publication.isSubscribed) {
                         publication.setVideoQuality(this.mainSpeakerQuality);
-                        console.log(`Upgraded ${newMain.identity} to ${this.mainSpeakerQuality} (720p)`);
+                        console.log(`Upgraded ${newMain.identity} to ${this.mainSpeakerQuality} (1080p)`);
                     }
                 });
             }
