@@ -111,23 +111,67 @@
                         <input type="hidden" id="currentProjectId">
 
                         <!-- Meeting Type Toggle Buttons -->
-                        <div class="form-group">
+                        <div class="form-group meeting-type-group">
                             <label>Meeting Type</label>
-                            <div class="meeting-type-toggle" id="meetingTypeToggle">
-                                <button type="button" class="type-btn active" data-type="regular" onclick="selectMeetingType('regular')">
-                                    <span class="type-icon">🌐</span>
-                                    <span class="type-name">Open</span>
-                                </button>
-                                <button type="button" class="type-btn" data-type="hosted" onclick="selectMeetingType('hosted')">
-                                    <span class="type-icon">🎯</span>
-                                    <span class="type-name">Hosted</span>
-                                </button>
-                                <button type="button" class="type-btn" data-type="participant-controlled" onclick="selectMeetingType('participant-controlled')">
-                                    <span class="type-icon">🔒</span>
-                                    <span class="type-name">Private</span>
-                                </button>
+                            <div class="meeting-type-segmented" id="meetingTypeToggle">
+                                <button type="button" class="segment-btn active" data-type="regular" onclick="selectMeetingType('regular')">Open</button>
+                                <button type="button" class="segment-btn" data-type="hosted" onclick="selectMeetingType('hosted')">Hosted</button>
+                                <button type="button" class="segment-btn" data-type="participant-controlled" onclick="selectMeetingType('participant-controlled')">Private</button>
                             </div>
                             <small id="meetingTypeHelp" class="form-help">Anyone can join directly without approval</small>
+                        </div>
+
+                        <!-- Host Selection (for hosted and private meetings) -->
+                        <div id="hostSelectionGroup" class="form-group" style="display: none;">
+                            <label>Host <span id="hostRequiredMark" style="color: red;">*</span></label>
+                            <div class="searchable-dropdown" id="createHostDropdown">
+                                <input type="hidden" id="meetingHost" value="">
+                                <div class="dropdown-selected" id="createHostSelected" onclick="toggleCreateHostDropdown()">
+                                    <span class="selected-text">Select Host</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </div>
+                                <div class="dropdown-menu" id="createHostMenu">
+                                    <div class="dropdown-search">
+                                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <path d="m21 21-4.35-4.35"/>
+                                        </svg>
+                                        <input type="text" id="createHostSearch" placeholder="Search users..." oninput="filterCreateHostOptions()">
+                                    </div>
+                                    <div class="dropdown-options" id="createHostOptions">
+                                        <!-- Options populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                            <small id="hostHelp">Required for hosted meetings</small>
+                        </div>
+
+                        <!-- Participants Selection (for private meetings only) -->
+                        <div id="participantsSelectionGroup" class="form-group" style="display: none;">
+                            <label>Allowed Participants</label>
+                            <div class="searchable-dropdown multi-select" id="createParticipantsDropdown">
+                                <div class="dropdown-selected" id="createParticipantsSelected" onclick="toggleCreateParticipantsDropdown()">
+                                    <span class="selected-text"><span id="selectedParticipantsCount">0</span> participants selected</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </div>
+                                <div class="dropdown-menu" id="createParticipantsMenu">
+                                    <div class="dropdown-search">
+                                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <path d="m21 21-4.35-4.35"/>
+                                        </svg>
+                                        <input type="text" id="createParticipantsSearch" placeholder="Search users..." oninput="filterCreateParticipantsOptions()">
+                                    </div>
+                                    <div class="dropdown-options multi-select-options" id="createParticipantsOptions">
+                                        <!-- Options populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                            <small>Only selected users can join this meeting</small>
                         </div>
 
                         <div class="form-group">
@@ -135,44 +179,70 @@
                             <input type="text" id="meetingName" required>
                         </div>
 
-                        <!-- Host Selection (for hosted and private meetings) -->
-                        <div id="hostSelectionGroup" class="form-group" style="display: none;">
-                            <label for="meetingHost">Host <span id="hostRequiredMark" style="color: red;">*</span></label>
-                            <select id="meetingHost">
-                                <option value="">Select Host</option>
-                            </select>
-                            <small id="hostHelp">Required for hosted meetings</small>
-                        </div>
-
-                        <!-- Participants Selection (for private meetings only) -->
-                        <div id="participantsSelectionGroup" class="form-group" style="display: none;">
-                            <label>Allowed Participants</label>
-                            <div class="participants-inline-panel">
-                                <div class="search-box-inline">
-                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="11" cy="11" r="8"/>
-                                        <path d="m21 21-4.35-4.35"/>
-                                    </svg>
-                                    <input type="text" id="createMeetingUserSearch" placeholder="Search users...">
-                                </div>
-                                <div id="createMeetingUsersList" class="users-list-inline">
-                                    <p class="loading-text">Loading users...</p>
-                                </div>
-                                <div class="selected-count">
-                                    <span id="selectedParticipantsCount">0</span> participants selected
-                                </div>
-                            </div>
-                            <small>Only selected users can join this meeting</small>
-                        </div>
-
                         <div class="form-row">
                             <div class="form-group half">
-                                <label for="startTime">Start Time</label>
-                                <input type="datetime-local" id="startTime">
+                                <label>Start Time</label>
+                                <div class="datetime-picker">
+                                    <div class="custom-date-picker" id="startDatePicker">
+                                        <input type="text" id="startDate" class="date-input" readonly placeholder="Select date" onclick="toggleDatePicker('start')">
+                                        <div class="date-dropdown" id="startDateDropdown">
+                                            <div class="date-header">
+                                                <button type="button" class="date-nav-btn" onclick="navigateMonth('start', -1)">‹</button>
+                                                <span class="date-month-year" id="startMonthYear"></span>
+                                                <button type="button" class="date-nav-btn" onclick="navigateMonth('start', 1)">›</button>
+                                            </div>
+                                            <div class="date-weekdays">
+                                                <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                                            </div>
+                                            <div class="date-days" id="startDateDays"></div>
+                                            <div class="date-footer">
+                                                <button type="button" class="date-btn" onclick="clearDate('start')">Clear</button>
+                                                <button type="button" class="date-btn" onclick="selectToday('start')">Today</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="custom-time-picker" id="startTimePicker">
+                                        <input type="text" id="startTime" class="time-input" readonly placeholder="00:00" onclick="toggleTimePicker('start')">
+                                        <div class="time-dropdown" id="startTimeDropdown">
+                                            <div class="time-columns">
+                                                <div class="time-column" id="startHourColumn"></div>
+                                                <div class="time-column" id="startMinuteColumn"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group half">
-                                <label for="endTime">End Time</label>
-                                <input type="datetime-local" id="endTime">
+                                <label>End Time</label>
+                                <div class="datetime-picker">
+                                    <div class="custom-date-picker" id="endDatePicker">
+                                        <input type="text" id="endDate" class="date-input" readonly placeholder="Select date" onclick="toggleDatePicker('end')">
+                                        <div class="date-dropdown" id="endDateDropdown">
+                                            <div class="date-header">
+                                                <button type="button" class="date-nav-btn" onclick="navigateMonth('end', -1)">‹</button>
+                                                <span class="date-month-year" id="endMonthYear"></span>
+                                                <button type="button" class="date-nav-btn" onclick="navigateMonth('end', 1)">›</button>
+                                            </div>
+                                            <div class="date-weekdays">
+                                                <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                                            </div>
+                                            <div class="date-days" id="endDateDays"></div>
+                                            <div class="date-footer">
+                                                <button type="button" class="date-btn" onclick="clearDate('end')">Clear</button>
+                                                <button type="button" class="date-btn" onclick="selectToday('end')">Today</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="custom-time-picker" id="endTimePicker">
+                                        <input type="text" id="endTime" class="time-input" readonly placeholder="00:00" onclick="toggleTimePicker('end')">
+                                        <div class="time-dropdown" id="endTimeDropdown">
+                                            <div class="time-columns">
+                                                <div class="time-column" id="endHourColumn"></div>
+                                                <div class="time-column" id="endMinuteColumn"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -219,13 +289,13 @@
                     <div class="participants-modal-body">
                 <div class="user-selection-panel">
                     <div class="search-box-modern">
-                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"/>
                             <path d="m21 21-4.35-4.35"/>
                         </svg>
                         <input type="text" id="userSearchBox" placeholder="Search by name or email...">
                         <button class="clear-search-btn" id="clearSearchBtn" style="display: none;" onclick="clearSearch()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"/>
                                 <line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
@@ -276,20 +346,12 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Meeting Settings</h5>
+                    <h5 class="modal-title">Meeting Settings <span class="meeting-type-display" id="settingsMeetingTypeDisplay"><span class="badge badge-type">Open</span></span></h5>
                     <button class="close-btn" onclick="closeModal('meetingSettingsModal')">&times;</button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="settingsMeetingId">
                     <input type="hidden" id="settingsMeetingType">
-
-                    <!-- Meeting Type Display (read-only) -->
-                    <div class="form-group settings-row">
-                        <label>Meeting Type</label>
-                        <div class="meeting-type-display" id="settingsMeetingTypeDisplay">
-                            <span class="type-badge type-regular">Open</span>
-                        </div>
-                    </div>
 
                     <div id="settingsInProgressWarning" class="settings-warning" style="display: none;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -302,29 +364,52 @@
 
                     <!-- Host Selection -->
                     <div id="hostSettingGroup" class="form-group settings-row">
-                        <label for="settingsHost">Meeting Host</label>
-                        <select id="settingsHost">
-                            <option value="">No host (open meeting)</option>
-                        </select>
+                        <label>Meeting Host</label>
+                        <div class="searchable-dropdown" id="settingsHostDropdown">
+                            <input type="hidden" id="settingsHost" value="">
+                            <div class="dropdown-selected" id="settingsHostSelected" onclick="toggleHostDropdown()">
+                                <span class="selected-text">No host (open meeting)</span>
+                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                            <div class="dropdown-menu" id="settingsHostMenu">
+                                <div class="dropdown-search">
+                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" id="settingsHostSearch" placeholder="Search users..." oninput="filterHostOptions()">
+                                </div>
+                                <div class="dropdown-options" id="settingsHostOptions">
+                                    <!-- Options will be populated dynamically with virtual scrolling -->
+                                </div>
+                            </div>
+                        </div>
                         <small id="hostSettingHelp">The host must start the meeting before others can join</small>
                     </div>
 
                     <!-- Participants Section (for Private meetings) -->
                     <div id="settingsParticipantsGroup" class="form-group settings-row" style="display: none;">
                         <label>Allowed Participants</label>
-                        <div class="participants-inline-panel">
-                            <div class="search-box-inline">
-                                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="11" cy="11" r="8"/>
-                                    <path d="m21 21-4.35-4.35"/>
+                        <div class="searchable-dropdown multi-select" id="settingsParticipantsDropdown">
+                            <div class="dropdown-selected" id="settingsParticipantsSelected" onclick="toggleSettingsParticipantsDropdown()">
+                                <span class="selected-text"><span id="settingsParticipantsCount">0</span> participants allowed</span>
+                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
                                 </svg>
-                                <input type="text" id="settingsUserSearch" placeholder="Search users...">
                             </div>
-                            <div id="settingsUsersList" class="users-list-inline">
-                                <p class="loading-text">Loading users...</p>
-                            </div>
-                            <div class="selected-count">
-                                <span id="settingsParticipantsCount">0</span> participants allowed
+                            <div class="dropdown-menu" id="settingsParticipantsMenu">
+                                <div class="dropdown-search">
+                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" id="settingsParticipantsSearch" placeholder="Search users..." oninput="filterSettingsParticipantsOptions()">
+                                </div>
+                                <div class="dropdown-options multi-select-options" id="settingsParticipantsOptions">
+                                    <!-- Options populated by JavaScript -->
+                                </div>
                             </div>
                         </div>
                         <small>Only selected users can join this meeting</small>

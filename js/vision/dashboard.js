@@ -232,40 +232,62 @@ function createEmptyProjectCardHTML(project) {
 // ============================================
 
 function createMeetingItemHTML(meeting) {
-    const status = getMeetingStatus(meeting);
     const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
     const participantCount = meeting.participant_count || 0;
     const isActive = meeting.is_active !== false;
-    const isStarted = meeting.is_started || false;
     const type = meeting.meeting_type || 'regular';
 
     const dateStr = meeting.start_time
         ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
 
-    const inactiveClass = !isActive ? 'meeting-inactive' : '';
-    const inactiveBadge = !isActive ? '<span class="badge badge-inactive">Inactive</span>' : '';
-
     // Type badge with colors
     const typeBadge = getTypeBadgeHTML(type);
 
+    // Guest link badge (clickable when guests are allowed and not participant-controlled)
+    const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
+
     return `
-        <div class="meeting-card ${inactiveClass}" id="meeting-${meeting.id}">
+        <div class="meeting-card" id="meeting-${meeting.id}">
             <div class="meeting-card-header">
                 <div class="meeting-card-title">
                     <h4>${meeting.meeting_name}</h4>
                     <div class="meeting-card-badges">
                         ${typeBadge}
-                        ${inactiveBadge}
                         ${dateStr ? `<span class="badge badge-date">${dateStr}</span>` : ''}
-                        <span class="badge badge-status badge-${status.toLowerCase()}">${status}</span>
                         ${type === 'participant-controlled' ? `<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount} participant${participantCount !== 1 ? 's' : ''}</span>` : ''}
                         ${hasRecordings ? `<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="View ${meeting.recordings.length} recording${meeting.recordings.length > 1 ? 's' : ''}">${meeting.recordings.length} rec</span>` : ''}
-                        ${meeting.allow_guests && type !== 'participant-controlled' ? '<span class="badge badge-guest">Guests OK</span>' : ''}
+                        ${showGuestLink ? `<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Click to copy guest link">Guests OK</span>` : ''}
                         ${(type === 'hosted' || type === 'participant-controlled') && meeting.host_user_name ? `<span class="badge badge-host" title="Host: ${meeting.host_user_name}">Host: ${meeting.host_user_name.split(' ')[0]}</span>` : ''}
                     </div>
                 </div>
                 <div class="meeting-card-actions">
+                    <button class="btn-icon btn-danger" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    ${isActive ? `
+                    <span class="auto-rec-label">Auto Rec</span>
+                    <label class="toggle-auto-rec" title="Auto Recording">
+                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
+                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>` : ''}
+                    ${isActive ? `
+                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>` : ''}
+                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                    </button>
                     ${isActive ? `
                     <button class="btn-icon btn-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
                         <span>Join</span>
@@ -275,59 +297,14 @@ function createMeetingItemHTML(meeting) {
                             <line x1="15" y1="12" x2="3" y2="12"/>
                         </svg>
                     </button>` : ''}
-                    ${type === 'participant-controlled' ? `
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); manageParticipants('${meeting.id}')" title="Manage Participants">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                    </button>` : ''}
-                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Link">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                    </button>
-                    ${isActive ? `
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>` : ''}
-                    ${isActive ? `
-                    <label class="toggle-auto-rec" title="Auto Recording">
-                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
-                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>` : ''}
-                    ${isActive ? `
-                    <button class="btn-icon btn-danger" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>` : `
-                    <button class="btn-icon btn-danger-permanent" onclick="confirmPermanentDeleteMeeting('${meeting.id}')" title="Permanently Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                        </svg>
-                    </button>`}
                 </div>
             </div>
-            ${!isActive ? `<div class="meeting-inactive-notice">This meeting is inactive. Use "Permanently Delete" to remove it completely.</div>` : ''}
             ${meeting.notes && meeting.notes !== 'No notes' ? `<div class="meeting-card-notes">${meeting.notes}</div>` : ''}
         </div>
     `;
 }
 
 function createHostedMeetingItemHTML(meeting) {
-    const status = getMeetingStatus(meeting);
     const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
     const participantCount = meeting.participant_count || 0;
     const isActive = meeting.is_active !== false;
@@ -337,28 +314,51 @@ function createHostedMeetingItemHTML(meeting) {
         ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
 
-    const inactiveClass = !isActive ? 'meeting-inactive' : '';
-    const inactiveBadge = !isActive ? '<span class="badge badge-inactive">Inactive</span>' : '';
     const typeBadge = getTypeBadgeHTML(type);
+    const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
 
     return `
-        <div class="meeting-card hosted-meeting-card ${inactiveClass}" id="meeting-${meeting.id}">
+        <div class="meeting-card hosted-meeting-card" id="meeting-${meeting.id}">
             <div class="meeting-card-header">
                 <div class="meeting-card-title">
                     <h4>${meeting.meeting_name}</h4>
                     <div class="meeting-card-badges">
                         ${typeBadge}
                         <span class="badge badge-project" title="From project: ${meeting.project_name || 'Unknown'}">📁 ${meeting.project_name || 'Unknown Project'}</span>
-                        ${inactiveBadge}
                         ${dateStr ? `<span class="badge badge-date">${dateStr}</span>` : ''}
-                        <span class="badge badge-status badge-${status.toLowerCase()}">${status}</span>
                         ${type === 'participant-controlled' ? `<span class="badge badge-participants">${participantCount} participant${participantCount !== 1 ? 's' : ''}</span>` : ''}
                         ${hasRecordings ? `<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')">${meeting.recordings.length} rec</span>` : ''}
-                        ${meeting.allow_guests && type !== 'participant-controlled' ? '<span class="badge badge-guest">Guests OK</span>' : ''}
+                        ${showGuestLink ? `<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Click to copy guest link">Guests OK</span>` : ''}
                         <span class="badge badge-host-you">You are host</span>
                     </div>
                 </div>
                 <div class="meeting-card-actions">
+                    <button class="btn-icon btn-danger" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    ${isActive ? `
+                    <span class="auto-rec-label">Auto Rec</span>
+                    <label class="toggle-auto-rec" title="Auto Recording">
+                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
+                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>` : ''}
+                    ${isActive ? `
+                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>` : ''}
+                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                    </button>
                     ${isActive ? `
                     <button class="btn-icon btn-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
                         <span>Join</span>
@@ -368,37 +368,8 @@ function createHostedMeetingItemHTML(meeting) {
                             <line x1="15" y1="12" x2="3" y2="12"/>
                         </svg>
                     </button>` : ''}
-                    ${type === 'participant-controlled' ? `
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); manageParticipants('${meeting.id}')" title="Manage Participants">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                    </button>` : ''}
-                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Link">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                    </button>
-                    ${isActive ? `
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>` : ''}
-                    ${isActive ? `
-                    <label class="toggle-auto-rec" title="Auto Recording">
-                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
-                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>` : ''}
                 </div>
             </div>
-            ${!isActive ? `<div class="meeting-inactive-notice">This meeting is inactive.</div>` : ''}
             ${meeting.notes && meeting.notes !== 'No notes' ? `<div class="meeting-card-notes">${meeting.notes}</div>` : ''}
         </div>
     `;
@@ -477,6 +448,329 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
 // CREATE MEETING WITH TYPE SELECTION
 // ============================================
 
+// ============================================
+// Custom Date Picker
+// ============================================
+let startDatePickerDate = new Date();
+let endDatePickerDate = new Date();
+let selectedStartDate = null;
+let selectedEndDate = null;
+
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+function toggleDatePicker(type) {
+    const dropdown = document.getElementById(type + 'DateDropdown');
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all dropdowns
+    closeAllDatePickers();
+    closeAllTimePickers();
+
+    if (!isOpen) {
+        dropdown.classList.add('open');
+        renderDatePicker(type);
+    }
+}
+
+function closeAllDatePickers() {
+    document.querySelectorAll('.date-dropdown').forEach(d => d.classList.remove('open'));
+}
+
+function navigateMonth(type, direction) {
+    const pickerDate = type === 'start' ? startDatePickerDate : endDatePickerDate;
+    pickerDate.setMonth(pickerDate.getMonth() + direction);
+
+    if (type === 'start') {
+        startDatePickerDate = new Date(pickerDate);
+    } else {
+        endDatePickerDate = new Date(pickerDate);
+    }
+
+    renderDatePicker(type);
+}
+
+function renderDatePicker(type) {
+    const pickerDate = type === 'start' ? startDatePickerDate : endDatePickerDate;
+    const selectedDate = type === 'start' ? selectedStartDate : selectedEndDate;
+    const daysContainer = document.getElementById(type + 'DateDays');
+    const monthYearLabel = document.getElementById(type + 'MonthYear');
+
+    const year = pickerDate.getFullYear();
+    const month = pickerDate.getMonth();
+
+    // Update month/year label
+    monthYearLabel.textContent = `${monthNames[month]} ${year}`;
+
+    // Get first day of month and total days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    // Today's date for comparison
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let html = '';
+
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const prevMonth = month === 0 ? 11 : month - 1;
+        const prevYear = month === 0 ? year - 1 : year;
+        const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        html += `<div class="date-day other-month" onclick="selectDate('${type}', '${dateStr}')">${day}</div>`;
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        const isSelected = selectedDate === dateStr;
+        const classes = ['date-day'];
+        if (isToday) classes.push('today');
+        if (isSelected) classes.push('selected');
+        html += `<div class="${classes.join(' ')}" onclick="selectDate('${type}', '${dateStr}')">${day}</div>`;
+    }
+
+    // Next month days
+    const totalCells = firstDay + daysInMonth;
+    const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let day = 1; day <= remainingCells; day++) {
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const nextYear = month === 11 ? year + 1 : year;
+        const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        html += `<div class="date-day other-month" onclick="selectDate('${type}', '${dateStr}')">${day}</div>`;
+    }
+
+    daysContainer.innerHTML = html;
+}
+
+function selectDate(type, dateStr) {
+    if (type === 'start') {
+        selectedStartDate = dateStr;
+        startDatePickerDate = new Date(dateStr);
+    } else {
+        selectedEndDate = dateStr;
+        endDatePickerDate = new Date(dateStr);
+    }
+
+    updateDateInputDisplay(type);
+    closeAllDatePickers();
+}
+
+function updateDateInputDisplay(type) {
+    const dateStr = type === 'start' ? selectedStartDate : selectedEndDate;
+    const input = document.getElementById(type + 'Date');
+
+    if (dateStr) {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = monthNames[date.getMonth()].slice(0, 3);
+        const year = date.getFullYear();
+        input.value = `${day} ${month} ${year}`;
+    } else {
+        input.value = '';
+    }
+}
+
+function clearDate(type) {
+    if (type === 'start') {
+        selectedStartDate = null;
+    } else {
+        selectedEndDate = null;
+    }
+    updateDateInputDisplay(type);
+    closeAllDatePickers();
+}
+
+function selectToday(type) {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    selectDate(type, dateStr);
+}
+
+// Get date value in YYYY-MM-DD format for form submission
+function getDateValue(type) {
+    return type === 'start' ? selectedStartDate : selectedEndDate;
+}
+
+// ============================================
+// Custom Time Picker
+// ============================================
+let selectedStartHour = 9;
+let selectedStartMinute = 0;
+let selectedEndHour = 10;
+let selectedEndMinute = 0;
+
+function initTimePickerColumns() {
+    const hourColumns = ['startHourColumn', 'endHourColumn'];
+    const minuteColumns = ['startMinuteColumn', 'endMinuteColumn'];
+
+    // Generate hours (00-23)
+    hourColumns.forEach(colId => {
+        const col = document.getElementById(colId);
+        if (col) {
+            col.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                const hourStr = h.toString().padStart(2, '0');
+                const div = document.createElement('div');
+                div.className = 'time-option';
+                div.textContent = hourStr;
+                div.dataset.value = h;
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    selectHour(colId.includes('start') ? 'start' : 'end', h);
+                };
+                col.appendChild(div);
+            }
+        }
+    });
+
+    // Generate minutes (00, 15, 30, 45)
+    minuteColumns.forEach(colId => {
+        const col = document.getElementById(colId);
+        if (col) {
+            col.innerHTML = '';
+            [0, 15, 30, 45].forEach(m => {
+                const minStr = m.toString().padStart(2, '0');
+                const div = document.createElement('div');
+                div.className = 'time-option';
+                div.textContent = minStr;
+                div.dataset.value = m;
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    selectMinute(colId.includes('start') ? 'start' : 'end', m);
+                };
+                col.appendChild(div);
+            });
+        }
+    });
+}
+
+function toggleTimePicker(type) {
+    const dropdown = document.getElementById(type + 'TimeDropdown');
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all time dropdowns
+    document.querySelectorAll('.time-dropdown').forEach(d => d.classList.remove('open'));
+
+    if (!isOpen) {
+        dropdown.classList.add('open');
+        updateTimePickerSelection(type);
+        scrollToSelected(type);
+    }
+}
+
+function closeAllTimePickers() {
+    document.querySelectorAll('.time-dropdown').forEach(d => d.classList.remove('open'));
+}
+
+function selectHour(type, hour) {
+    if (type === 'start') {
+        selectedStartHour = hour;
+    } else {
+        selectedEndHour = hour;
+    }
+    updateTimePickerSelection(type);
+    updateTimeInputValue(type);
+}
+
+function selectMinute(type, minute) {
+    if (type === 'start') {
+        selectedStartMinute = minute;
+    } else {
+        selectedEndMinute = minute;
+    }
+    updateTimePickerSelection(type);
+    updateTimeInputValue(type);
+}
+
+function updateTimePickerSelection(type) {
+    const hourCol = document.getElementById(type + 'HourColumn');
+    const minCol = document.getElementById(type + 'MinuteColumn');
+    const selectedHour = type === 'start' ? selectedStartHour : selectedEndHour;
+    const selectedMin = type === 'start' ? selectedStartMinute : selectedEndMinute;
+
+    // Update hour selection
+    hourCol.querySelectorAll('.time-option').forEach(opt => {
+        opt.classList.toggle('selected', parseInt(opt.dataset.value) === selectedHour);
+    });
+
+    // Update minute selection
+    minCol.querySelectorAll('.time-option').forEach(opt => {
+        opt.classList.toggle('selected', parseInt(opt.dataset.value) === selectedMin);
+    });
+}
+
+function scrollToSelected(type) {
+    const hourCol = document.getElementById(type + 'HourColumn');
+    const selectedHour = type === 'start' ? selectedStartHour : selectedEndHour;
+
+    const selectedOption = hourCol.querySelector('.time-option.selected');
+    if (selectedOption) {
+        selectedOption.scrollIntoView({ block: 'center', behavior: 'instant' });
+    }
+}
+
+function updateTimeInputValue(type) {
+    const hour = type === 'start' ? selectedStartHour : selectedEndHour;
+    const minute = type === 'start' ? selectedStartMinute : selectedEndMinute;
+    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    document.getElementById(type + 'Time').value = timeStr;
+}
+
+// Helper function to set default date/time values
+function setDefaultDateTime() {
+    const now = new Date();
+
+    // Round up to next 15 minutes
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    now.setMinutes(roundedMinutes, 0, 0);
+
+    // If rounded to 60, add an hour
+    if (roundedMinutes === 60) {
+        now.setHours(now.getHours() + 1);
+        now.setMinutes(0);
+    }
+
+    // Set start date
+    const startDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    selectedStartDate = startDateStr;
+    startDatePickerDate = new Date(now);
+    updateDateInputDisplay('start');
+
+    // Set start time
+    selectedStartHour = now.getHours();
+    selectedStartMinute = now.getMinutes();
+    updateTimeInputValue('start');
+
+    // Set end values (1 hour later)
+    const endDateTime = new Date(now.getTime() + 60 * 60 * 1000);
+    const endDateStr = `${endDateTime.getFullYear()}-${String(endDateTime.getMonth() + 1).padStart(2, '0')}-${String(endDateTime.getDate()).padStart(2, '0')}`;
+    selectedEndDate = endDateStr;
+    endDatePickerDate = new Date(endDateTime);
+    updateDateInputDisplay('end');
+
+    selectedEndHour = endDateTime.getHours();
+    selectedEndMinute = endDateTime.getMinutes();
+    updateTimeInputValue('end');
+}
+
+// Initialize time picker columns on page load
+document.addEventListener('DOMContentLoaded', initTimePickerColumns);
+
+// Close pickers when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.custom-time-picker')) {
+        closeAllTimePickers();
+    }
+    if (!e.target.closest('.custom-date-picker')) {
+        closeAllDatePickers();
+    }
+});
+
 // Selected participants for private meetings (during creation)
 let createMeetingSelectedParticipants = [];
 let createMeetingAllUsers = [];
@@ -491,8 +785,11 @@ async function showCreateMeetingModalForProject(projectId) {
     // Reset form
     document.getElementById('createMeetingForm').reset();
 
+    // Set default date/time values (today, next 15-min slot)
+    setDefaultDateTime();
+
     // Reset type selection
-    document.querySelectorAll('#meetingTypeToggle .type-btn').forEach(btn => {
+    document.querySelectorAll('#meetingTypeToggle .segment-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.type === 'regular') {
             btn.classList.add('active');
@@ -506,8 +803,8 @@ async function showCreateMeetingModalForProject(projectId) {
     document.getElementById('hostSelectionGroup').style.display = 'none';
     document.getElementById('participantsSelectionGroup').style.display = 'none';
 
-    // Show allow guests toggle
-    document.getElementById('allowGuestsToggleGroup').style.display = 'flex';
+    // Show allow guests toggle (modal opens with 'regular' type by default)
+    document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
 
     modal.classList.add('active');
     await fetchAndPopulateUsers();
@@ -517,7 +814,7 @@ function selectMeetingType(type) {
     selectedMeetingType = type;
 
     // Update button states
-    document.querySelectorAll('#meetingTypeToggle .type-btn').forEach(btn => {
+    document.querySelectorAll('#meetingTypeToggle .segment-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.type === type) {
             btn.classList.add('active');
@@ -534,24 +831,23 @@ function selectMeetingType(type) {
 
     // Show/hide host selection
     const hostGroup = document.getElementById('hostSelectionGroup');
-    const hostSelect = document.getElementById('meetingHost');
     const hostRequiredMark = document.getElementById('hostRequiredMark');
     const hostHelp = document.getElementById('hostHelp');
 
     if (type === 'hosted') {
         hostGroup.style.display = 'block';
-        hostSelect.required = true;
         hostRequiredMark.style.display = 'inline';
         hostHelp.textContent = 'Required for hosted meetings';
+        populateCreateHostDropdown(type);
     } else if (type === 'participant-controlled') {
         hostGroup.style.display = 'block';
-        hostSelect.required = false;
         hostRequiredMark.style.display = 'none';
         hostHelp.textContent = 'Optional - if set, host must start before participants can join';
+        populateCreateHostDropdown(type);
     } else {
         hostGroup.style.display = 'none';
-        hostSelect.required = false;
-        hostSelect.value = '';
+        createHostDropdownSelectedId = '';
+        document.getElementById('meetingHost').value = '';
     }
 
     // Show/hide participants selection
@@ -567,97 +863,144 @@ function selectMeetingType(type) {
     // Show/hide allow guests toggle (hidden for private meetings)
     const allowGuestsToggle = document.getElementById('allowGuestsToggleGroup');
     if (type === 'participant-controlled') {
-        allowGuestsToggle.style.display = 'none';
+        allowGuestsToggle.classList.add('hidden');
         document.getElementById('allowGuests').checked = false;
     } else {
-        allowGuestsToggle.style.display = 'flex';
+        allowGuestsToggle.classList.remove('hidden');
     }
 }
 
-async function loadCreateMeetingUsersList() {
-    const list = document.getElementById('createMeetingUsersList');
-    const countDisplay = document.getElementById('selectedParticipantsCount');
+// ============================================
+// Create Meeting Participants Multi-Select Dropdown
+// ============================================
+let createParticipantsDropdownOpen = false;
+let createParticipantsFiltered = [];
 
-    list.innerHTML = '<p class="loading-text">Loading users...</p>';
+async function loadCreateMeetingUsersList() {
+    const container = document.getElementById('createParticipantsOptions');
+    container.innerHTML = '<div class="dropdown-no-results">Loading users...</div>';
 
     try {
         createMeetingAllUsers = await api.getAllUsers();
-        renderCreateMeetingUsersList(createMeetingAllUsers);
+        createParticipantsFiltered = [...createMeetingAllUsers];
+        renderCreateParticipantsOptions();
+        updateCreateParticipantsCount();
     } catch (error) {
         console.error('Error loading users:', error);
-        list.innerHTML = '<p class="error-text">Failed to load users</p>';
+        container.innerHTML = '<div class="dropdown-no-results">Failed to load users</div>';
     }
 }
 
-function renderCreateMeetingUsersList(users) {
-    const list = document.getElementById('createMeetingUsersList');
-    const countDisplay = document.getElementById('selectedParticipantsCount');
+function toggleCreateParticipantsDropdown() {
+    const selectedDiv = document.getElementById('createParticipantsSelected');
+    const menu = document.getElementById('createParticipantsMenu');
+    const searchInput = document.getElementById('createParticipantsSearch');
 
-    if (users.length === 0) {
-        list.innerHTML = '<p class="empty-text">No users found</p>';
+    createParticipantsDropdownOpen = !createParticipantsDropdownOpen;
+
+    if (createParticipantsDropdownOpen) {
+        selectedDiv.classList.add('open');
+        menu.classList.add('open');
+        searchInput.value = '';
+        createParticipantsFiltered = [...createMeetingAllUsers];
+        renderCreateParticipantsOptions();
+        setTimeout(() => searchInput.focus(), 50);
+    } else {
+        closeCreateParticipantsDropdown();
+    }
+}
+
+function closeCreateParticipantsDropdown() {
+    const selectedDiv = document.getElementById('createParticipantsSelected');
+    const menu = document.getElementById('createParticipantsMenu');
+
+    createParticipantsDropdownOpen = false;
+    if (selectedDiv) selectedDiv.classList.remove('open');
+    if (menu) menu.classList.remove('open');
+}
+
+function filterCreateParticipantsOptions() {
+    const searchInput = document.getElementById('createParticipantsSearch');
+    const query = searchInput.value.toLowerCase().trim();
+
+    if (!query) {
+        createParticipantsFiltered = [...createMeetingAllUsers];
+    } else {
+        createParticipantsFiltered = createMeetingAllUsers.filter(user => {
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }
+
+    renderCreateParticipantsOptions();
+}
+
+function renderCreateParticipantsOptions() {
+    const container = document.getElementById('createParticipantsOptions');
+
+    if (createParticipantsFiltered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
         return;
     }
 
-    list.innerHTML = users.map(user => {
+    // Sort: selected participants first, then alphabetically by name
+    const sortedUsers = [...createParticipantsFiltered].sort((a, b) => {
+        const aSelected = createMeetingSelectedParticipants.includes((a.email || '').toLowerCase());
+        const bSelected = createMeetingSelectedParticipants.includes((b.email || '').toLowerCase());
+
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+
+        // If same selection status, sort by name
+        const aName = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
+        const bName = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase();
+        return aName.localeCompare(bName);
+    });
+
+    container.innerHTML = sortedUsers.map(user => {
         const email = user.email || '';
         const firstName = user.firstName || '';
         const lastName = user.lastName || '';
         const isSelected = createMeetingSelectedParticipants.includes(email.toLowerCase());
 
         return `
-            <div class="user-select-item-inline ${isSelected ? 'selected' : ''}">
-                <div class="user-info-inline">
-                    <span class="user-name-inline">${firstName} ${lastName}</span>
-                    <span class="user-email-inline">${email}</span>
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleCreateParticipantSelection(event, '${escapeHtml(email)}')">
+                <div class="option-info">
+                    <div class="option-name">${escapeHtml(firstName)} ${escapeHtml(lastName)}</div>
+                    <div class="option-email">${escapeHtml(email)}</div>
                 </div>
-                <label class="checkbox-inline ${!email ? 'disabled' : ''}">
-                    <input type="checkbox"
-                           value="${email}"
-                           data-email="${email}"
-                           ${isSelected ? 'checked' : ''}
-                           ${!email ? 'disabled' : ''}
-                           onchange="handleCreateMeetingParticipantToggle(this)">
-                    <span class="checkmark-inline"></span>
-                </label>
+                <div class="option-toggle">
+                    <div class="mini-toggle ${isSelected ? 'active' : ''}"></div>
+                </div>
             </div>
         `;
     }).join('');
-
-    countDisplay.textContent = createMeetingSelectedParticipants.length;
 }
 
-function handleCreateMeetingParticipantToggle(checkbox) {
-    const email = checkbox.dataset.email.toLowerCase();
+function toggleCreateParticipantSelection(event, email) {
+    event.stopPropagation(); // Prevent dropdown from closing
+    if (!email) return;
 
-    if (checkbox.checked) {
-        if (!createMeetingSelectedParticipants.includes(email)) {
-            createMeetingSelectedParticipants.push(email);
-        }
+    const lowerEmail = email.toLowerCase();
+    const index = createMeetingSelectedParticipants.indexOf(lowerEmail);
+
+    if (index > -1) {
+        createMeetingSelectedParticipants.splice(index, 1);
     } else {
-        const index = createMeetingSelectedParticipants.indexOf(email);
-        if (index > -1) {
-            createMeetingSelectedParticipants.splice(index, 1);
-        }
+        createMeetingSelectedParticipants.push(lowerEmail);
     }
 
-    // Update count
-    document.getElementById('selectedParticipantsCount').textContent = createMeetingSelectedParticipants.length;
-
-    // Update visual state
-    checkbox.closest('.user-select-item-inline').classList.toggle('selected', checkbox.checked);
+    updateCreateParticipantsCount();
+    renderCreateParticipantsOptions();
 }
 
-// Search handler for create meeting users list
-document.getElementById('createMeetingUserSearch')?.addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filtered = createMeetingAllUsers.filter(user => {
-        const firstName = (user.firstName || '').toLowerCase();
-        const lastName = (user.lastName || '').toLowerCase();
-        const email = (user.email || '').toLowerCase();
-        return firstName.includes(searchTerm) || lastName.includes(searchTerm) || email.includes(searchTerm);
-    });
-    renderCreateMeetingUsersList(filtered);
-});
+function updateCreateParticipantsCount() {
+    const countDisplay = document.getElementById('selectedParticipantsCount');
+    if (countDisplay) {
+        countDisplay.textContent = createMeetingSelectedParticipants.length;
+    }
+}
 
 async function fetchAndPopulateUsers() {
     try {
@@ -686,8 +1029,16 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     }
 
     const meetingName = document.getElementById('meetingName').value;
-    const startTime = document.getElementById('startTime').value || null;
-    const endTime = document.getElementById('endTime').value || null;
+
+    // Combine custom date and time picker values
+    const startDateVal = selectedStartDate; // YYYY-MM-DD format
+    const startTimeVal = document.getElementById('startTime').value;
+    const startTime = (startDateVal && startTimeVal) ? `${startDateVal}T${startTimeVal}` : null;
+
+    const endDateVal = selectedEndDate; // YYYY-MM-DD format
+    const endTimeVal = document.getElementById('endTime').value;
+    const endTime = (endDateVal && endTimeVal) ? `${endDateVal}T${endTimeVal}` : null;
+
     const notes = document.getElementById('notes').value;
     const allowGuests = document.getElementById('allowGuests').checked;
     const autoRecording = document.getElementById('autoRecording').checked;
@@ -799,16 +1150,51 @@ function joinMeeting(meetingId) {
 function copyMeetingLink(meetingId) {
     const link = `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
     navigator.clipboard.writeText(link).then(() => {
-        alert('Meeting link copied to clipboard!');
+        showToast('Meeting link copied!');
     }).catch(() => {
-        const textArea = document.createElement('textarea');
-        textArea.value = link;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('Meeting link copied to clipboard!');
+        fallbackCopyToClipboard(link, 'Meeting link copied!');
     });
+}
+
+function copyGuestLink(meetingId) {
+    const link = `${window.location.origin}/pages/vision/guest-join.html?id=${meetingId}`;
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Guest link copied!');
+    }).catch(() => {
+        fallbackCopyToClipboard(link, 'Guest link copied!');
+    });
+}
+
+function fallbackCopyToClipboard(text, successMessage) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showToast(successMessage);
+}
+
+function showToast(message) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove after 2 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
 }
 
 async function handleAutoRecordingToggle(meetingId, value) {
@@ -1266,14 +1652,10 @@ async function showMeetingSettingsModal(meetingId, type) {
         const typeDisplay = document.getElementById('settingsMeetingTypeDisplay');
         typeDisplay.innerHTML = getTypeBadgeHTML(type);
 
-        await populateSettingsHostDropdown(meeting.host_user_id);
+        await populateSettingsHostDropdown(meeting.host_user_id, type);
 
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
         document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
-
-        if (meeting.host_user_id) {
-            document.getElementById('settingsHost').value = meeting.host_user_id;
-        }
 
         // Show/hide fields based on meeting type
         const allowGuestsGroup = document.getElementById('allowGuestsSettingGroup');
@@ -1304,13 +1686,13 @@ async function showMeetingSettingsModal(meetingId, type) {
         if (isStarted) {
             warningDiv.style.display = 'flex';
             document.getElementById('settingsAllowGuests').disabled = true;
-            document.getElementById('settingsHost').disabled = true;
+            setHostDropdownDisabled(true);
             document.getElementById('settingsAutoRecording').disabled = true;
             if (saveBtn) saveBtn.disabled = true;
         } else {
             warningDiv.style.display = 'none';
             document.getElementById('settingsAllowGuests').disabled = false;
-            document.getElementById('settingsHost').disabled = false;
+            setHostDropdownDisabled(false);
             document.getElementById('settingsAutoRecording').disabled = false;
             if (saveBtn) saveBtn.disabled = false;
         }
@@ -1323,11 +1705,15 @@ async function showMeetingSettingsModal(meetingId, type) {
     }
 }
 
-async function loadSettingsParticipantsList(meetingId) {
-    const list = document.getElementById('settingsUsersList');
-    const countDisplay = document.getElementById('settingsParticipantsCount');
+// ============================================
+// Settings Participants Multi-Select Dropdown
+// ============================================
+let settingsParticipantsDropdownOpen = false;
+let settingsParticipantsFiltered = [];
 
-    list.innerHTML = '<p class="loading-text">Loading users...</p>';
+async function loadSettingsParticipantsList(meetingId) {
+    const container = document.getElementById('settingsParticipantsOptions');
+    container.innerHTML = '<div class="dropdown-no-results">Loading users...</div>';
 
     try {
         // Load allowed participants first
@@ -1336,108 +1722,476 @@ async function loadSettingsParticipantsList(meetingId) {
 
         // Load all users
         settingsAllUsers = await api.getAllUsers();
-        renderSettingsUsersList(settingsAllUsers);
-        countDisplay.textContent = settingsSelectedParticipants.length;
+        settingsParticipantsFiltered = [...settingsAllUsers];
+        renderSettingsParticipantsOptions();
+        updateSettingsParticipantsCount();
     } catch (error) {
         console.error('Error loading users:', error);
-        list.innerHTML = '<p class="error-text">Failed to load users</p>';
+        container.innerHTML = '<div class="dropdown-no-results">Failed to load users</div>';
     }
 }
 
-function renderSettingsUsersList(users) {
-    const list = document.getElementById('settingsUsersList');
+function toggleSettingsParticipantsDropdown() {
+    const selectedDiv = document.getElementById('settingsParticipantsSelected');
+    const menu = document.getElementById('settingsParticipantsMenu');
+    const searchInput = document.getElementById('settingsParticipantsSearch');
 
-    if (users.length === 0) {
-        list.innerHTML = '<p class="empty-text">No users found</p>';
+    settingsParticipantsDropdownOpen = !settingsParticipantsDropdownOpen;
+
+    if (settingsParticipantsDropdownOpen) {
+        selectedDiv.classList.add('open');
+        menu.classList.add('open');
+        searchInput.value = '';
+        settingsParticipantsFiltered = [...settingsAllUsers];
+        renderSettingsParticipantsOptions();
+        setTimeout(() => searchInput.focus(), 50);
+    } else {
+        closeSettingsParticipantsDropdown();
+    }
+}
+
+function closeSettingsParticipantsDropdown() {
+    const selectedDiv = document.getElementById('settingsParticipantsSelected');
+    const menu = document.getElementById('settingsParticipantsMenu');
+
+    settingsParticipantsDropdownOpen = false;
+    if (selectedDiv) selectedDiv.classList.remove('open');
+    if (menu) menu.classList.remove('open');
+}
+
+function filterSettingsParticipantsOptions() {
+    const searchInput = document.getElementById('settingsParticipantsSearch');
+    const query = searchInput.value.toLowerCase().trim();
+
+    if (!query) {
+        settingsParticipantsFiltered = [...settingsAllUsers];
+    } else {
+        settingsParticipantsFiltered = settingsAllUsers.filter(user => {
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }
+
+    renderSettingsParticipantsOptions();
+}
+
+function renderSettingsParticipantsOptions() {
+    const container = document.getElementById('settingsParticipantsOptions');
+
+    if (settingsParticipantsFiltered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
         return;
     }
 
-    list.innerHTML = users.map(user => {
+    // Sort: selected participants first, then alphabetically by name
+    const sortedUsers = [...settingsParticipantsFiltered].sort((a, b) => {
+        const aSelected = settingsSelectedParticipants.includes((a.email || '').toLowerCase());
+        const bSelected = settingsSelectedParticipants.includes((b.email || '').toLowerCase());
+
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+
+        // If same selection status, sort by name
+        const aName = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
+        const bName = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase();
+        return aName.localeCompare(bName);
+    });
+
+    container.innerHTML = sortedUsers.map(user => {
         const email = user.email || '';
         const firstName = user.firstName || '';
         const lastName = user.lastName || '';
         const isSelected = settingsSelectedParticipants.includes(email.toLowerCase());
 
         return `
-            <div class="user-select-item-inline ${isSelected ? 'selected' : ''}">
-                <div class="user-info-inline">
-                    <span class="user-name-inline">${firstName} ${lastName}</span>
-                    <span class="user-email-inline">${email}</span>
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleSettingsParticipantSelection(event, '${escapeHtml(email)}')">
+                <div class="option-info">
+                    <div class="option-name">${escapeHtml(firstName)} ${escapeHtml(lastName)}</div>
+                    <div class="option-email">${escapeHtml(email)}</div>
                 </div>
-                <label class="checkbox-inline ${!email ? 'disabled' : ''}">
-                    <input type="checkbox"
-                           value="${email}"
-                           data-email="${email}"
-                           ${isSelected ? 'checked' : ''}
-                           ${!email ? 'disabled' : ''}
-                           onchange="handleSettingsParticipantToggle(this)">
-                    <span class="checkmark-inline"></span>
-                </label>
+                <div class="option-toggle">
+                    <div class="mini-toggle ${isSelected ? 'active' : ''}"></div>
+                </div>
             </div>
         `;
     }).join('');
 }
 
-async function handleSettingsParticipantToggle(checkbox) {
-    const email = checkbox.dataset.email.toLowerCase();
-    const isChecked = checkbox.checked;
-    const meetingId = document.getElementById('settingsMeetingId').value;
+async function toggleSettingsParticipantSelection(event, email) {
+    event.stopPropagation(); // Prevent dropdown from closing
+    if (!email) return;
 
-    checkbox.disabled = true;
+    const lowerEmail = email.toLowerCase();
+    const meetingId = document.getElementById('settingsMeetingId').value;
+    const isCurrentlySelected = settingsSelectedParticipants.includes(lowerEmail);
 
     try {
-        if (isChecked) {
-            await api.addAllowedParticipant(meetingId, email);
-            if (!settingsSelectedParticipants.includes(email)) {
-                settingsSelectedParticipants.push(email);
-            }
-        } else {
+        if (isCurrentlySelected) {
             await api.removeAllowedParticipant(meetingId, email);
-            const index = settingsSelectedParticipants.indexOf(email);
+            const index = settingsSelectedParticipants.indexOf(lowerEmail);
             if (index > -1) {
                 settingsSelectedParticipants.splice(index, 1);
             }
+        } else {
+            await api.addAllowedParticipant(meetingId, email);
+            settingsSelectedParticipants.push(lowerEmail);
         }
 
-        document.getElementById('settingsParticipantsCount').textContent = settingsSelectedParticipants.length;
-        checkbox.closest('.user-select-item-inline').classList.toggle('selected', isChecked);
-        checkbox.disabled = false;
+        updateSettingsParticipantsCount();
+        renderSettingsParticipantsOptions();
     } catch (error) {
-        checkbox.checked = !isChecked;
-        checkbox.disabled = false;
-        alert(`Failed to ${isChecked ? 'add' : 'remove'} participant: ${error.message}`);
+        alert(`Failed to ${isCurrentlySelected ? 'remove' : 'add'} participant: ${error.message}`);
     }
 }
 
-document.getElementById('settingsUserSearch')?.addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filtered = settingsAllUsers.filter(user => {
-        const firstName = (user.firstName || '').toLowerCase();
-        const lastName = (user.lastName || '').toLowerCase();
-        const email = (user.email || '').toLowerCase();
-        return firstName.includes(searchTerm) || lastName.includes(searchTerm) || email.includes(searchTerm);
-    });
-    renderSettingsUsersList(filtered);
-});
+function updateSettingsParticipantsCount() {
+    const countDisplay = document.getElementById('settingsParticipantsCount');
+    if (countDisplay) {
+        countDisplay.textContent = settingsSelectedParticipants.length;
+    }
+}
 
-async function populateSettingsHostDropdown(currentHostId = null) {
-    const hostSelect = document.getElementById('settingsHost');
-    hostSelect.innerHTML = '<option value="">No host (open meeting)</option>';
+// Host dropdown state
+let hostDropdownUsers = [];
+let hostDropdownFiltered = [];
+let hostDropdownSelectedId = '';
+let hostDropdownOpen = false;
+const HOST_ITEM_HEIGHT = 36; // Height of each option in pixels (smaller)
+const HOST_VISIBLE_ITEMS = 5; // Number of visible items
+
+async function populateSettingsHostDropdown(currentHostId = null, meetingType = 'regular') {
+    const hiddenInput = document.getElementById('settingsHost');
+    const selectedDiv = document.getElementById('settingsHostSelected');
+    const optionsContainer = document.getElementById('settingsHostOptions');
+
+    hostDropdownSelectedId = currentHostId || '';
 
     try {
         const users = await api.getAllUsers();
-        users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.userId;
-            option.textContent = `${user.firstName} ${user.lastName} (${user.email})`;
-            if (currentHostId && user.userId === currentHostId) {
-                option.selected = true;
+        // Only add "No host" option for regular meetings (not for hosted or participant-controlled)
+        if (meetingType === 'regular') {
+            hostDropdownUsers = [
+                { userId: '', firstName: 'No host', lastName: '(open meeting)', email: '' },
+                ...users
+            ];
+        } else {
+            // Hosted and participant-controlled meetings require a host
+            hostDropdownUsers = [...users];
+            // If no host is currently set, select the first user
+            if (!currentHostId && users.length > 0) {
+                hostDropdownSelectedId = users[0].userId;
             }
-            hostSelect.appendChild(option);
-        });
+        }
+        hostDropdownFiltered = [...hostDropdownUsers];
+
+        // Set initial selection
+        updateHostDropdownSelection();
+        renderHostDropdownOptions();
+
     } catch (error) {
         console.error('Error fetching users for host selection:', error);
+        hostDropdownUsers = [];
+        hostDropdownFiltered = [];
+        renderHostDropdownOptions();
     }
+}
+
+function updateHostDropdownSelection() {
+    const hiddenInput = document.getElementById('settingsHost');
+    const selectedDiv = document.getElementById('settingsHostSelected');
+    const selectedText = selectedDiv.querySelector('.selected-text');
+
+    hiddenInput.value = hostDropdownSelectedId;
+
+    const selectedUser = hostDropdownUsers.find(u => u.userId === hostDropdownSelectedId);
+    if (selectedUser) {
+        if (selectedUser.userId === '') {
+            selectedText.textContent = 'No host (open meeting)';
+        } else {
+            selectedText.textContent = `${selectedUser.firstName} ${selectedUser.lastName} (${selectedUser.email})`;
+        }
+    } else {
+        selectedText.textContent = 'No host (open meeting)';
+    }
+}
+
+function toggleHostDropdown() {
+    const selectedDiv = document.getElementById('settingsHostSelected');
+    const menu = document.getElementById('settingsHostMenu');
+    const searchInput = document.getElementById('settingsHostSearch');
+
+    // Check if disabled
+    if (selectedDiv.classList.contains('disabled')) return;
+
+    hostDropdownOpen = !hostDropdownOpen;
+
+    if (hostDropdownOpen) {
+        selectedDiv.classList.add('open');
+        menu.classList.add('open');
+        searchInput.value = '';
+        hostDropdownFiltered = [...hostDropdownUsers];
+        renderHostDropdownOptions();
+        setTimeout(() => searchInput.focus(), 50);
+    } else {
+        closeHostDropdown();
+    }
+}
+
+function closeHostDropdown() {
+    const selectedDiv = document.getElementById('settingsHostSelected');
+    const menu = document.getElementById('settingsHostMenu');
+
+    hostDropdownOpen = false;
+    selectedDiv.classList.remove('open');
+    menu.classList.remove('open');
+}
+
+function filterHostOptions() {
+    const searchInput = document.getElementById('settingsHostSearch');
+    const query = searchInput.value.toLowerCase().trim();
+
+    if (!query) {
+        hostDropdownFiltered = [...hostDropdownUsers];
+    } else {
+        hostDropdownFiltered = hostDropdownUsers.filter(user => {
+            const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+            const email = user.email.toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }
+
+    renderHostDropdownOptions();
+}
+
+function renderHostDropdownOptions() {
+    const container = document.getElementById('settingsHostOptions');
+
+    if (hostDropdownFiltered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
+        return;
+    }
+
+    // Virtual scrolling: only render visible items + buffer
+    const totalHeight = hostDropdownFiltered.length * HOST_ITEM_HEIGHT;
+
+    // Create virtual scroll content
+    let html = `<div class="virtual-scroll-content" style="height: ${totalHeight}px;">`;
+
+    // For simplicity with reasonable user counts, render all but with efficient HTML
+    // True virtual scrolling would require scroll event handling
+    hostDropdownFiltered.forEach((user, index) => {
+        const isSelected = user.userId === hostDropdownSelectedId;
+        const displayName = user.userId === ''
+            ? 'No host (open meeting)'
+            : `${user.firstName} ${user.lastName}`;
+        const displayEmail = user.email || '';
+
+        html += `
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}"
+                 onclick="selectHostOption('${user.userId}')"
+                 style="position: absolute; top: ${index * HOST_ITEM_HEIGHT}px; left: 0; right: 0; height: ${HOST_ITEM_HEIGHT}px;">
+                <div class="option-name">${escapeHtml(displayName)}</div>
+                ${displayEmail ? `<div class="option-email">${escapeHtml(displayEmail)}</div>` : ''}
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function selectHostOption(userId) {
+    hostDropdownSelectedId = userId;
+    updateHostDropdownSelection();
+    closeHostDropdown();
+}
+
+function setHostDropdownDisabled(disabled) {
+    const selectedDiv = document.getElementById('settingsHostSelected');
+    if (disabled) {
+        selectedDiv.classList.add('disabled');
+    } else {
+        selectedDiv.classList.remove('disabled');
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    // Settings Host Dropdown
+    const settingsDropdown = document.getElementById('settingsHostDropdown');
+    if (settingsDropdown && !settingsDropdown.contains(e.target) && hostDropdownOpen) {
+        closeHostDropdown();
+    }
+    // Create Host Dropdown
+    const createDropdown = document.getElementById('createHostDropdown');
+    if (createDropdown && !createDropdown.contains(e.target) && createHostDropdownOpen) {
+        closeCreateHostDropdown();
+    }
+    // Create Participants Multi-Select Dropdown
+    const createParticipantsDropdown = document.getElementById('createParticipantsDropdown');
+    if (createParticipantsDropdown && !createParticipantsDropdown.contains(e.target) && createParticipantsDropdownOpen) {
+        closeCreateParticipantsDropdown();
+    }
+    // Settings Participants Multi-Select Dropdown
+    const settingsParticipantsDropdown = document.getElementById('settingsParticipantsDropdown');
+    if (settingsParticipantsDropdown && !settingsParticipantsDropdown.contains(e.target) && settingsParticipantsDropdownOpen) {
+        closeSettingsParticipantsDropdown();
+    }
+});
+
+// ============================================
+// Create Meeting Host Dropdown (searchable)
+// ============================================
+let createHostDropdownUsers = [];
+let createHostDropdownFiltered = [];
+let createHostDropdownSelectedId = '';
+let createHostDropdownOpen = false;
+
+async function populateCreateHostDropdown(meetingType = 'regular') {
+    const hiddenInput = document.getElementById('meetingHost');
+    const selectedDiv = document.getElementById('createHostSelected');
+    const optionsContainer = document.getElementById('createHostOptions');
+
+    createHostDropdownSelectedId = '';
+
+    try {
+        const users = await api.getAllUsers();
+        // Only add "No host" option for regular meetings
+        if (meetingType === 'regular') {
+            createHostDropdownUsers = [
+                { userId: '', firstName: 'No host', lastName: '(open meeting)', email: '' },
+                ...users
+            ];
+        } else {
+            // Hosted and participant-controlled meetings require a host
+            createHostDropdownUsers = [...users];
+            // Auto-select first user for hosted meetings
+            if (users.length > 0) {
+                createHostDropdownSelectedId = users[0].userId;
+            }
+        }
+        createHostDropdownFiltered = [...createHostDropdownUsers];
+
+        updateCreateHostDropdownSelection();
+        renderCreateHostDropdownOptions();
+
+    } catch (error) {
+        console.error('Error fetching users for host selection:', error);
+        createHostDropdownUsers = [];
+        createHostDropdownFiltered = [];
+        renderCreateHostDropdownOptions();
+    }
+}
+
+function updateCreateHostDropdownSelection() {
+    const hiddenInput = document.getElementById('meetingHost');
+    const selectedDiv = document.getElementById('createHostSelected');
+    const selectedText = selectedDiv.querySelector('.selected-text');
+
+    hiddenInput.value = createHostDropdownSelectedId;
+
+    const selectedUser = createHostDropdownUsers.find(u => u.userId === createHostDropdownSelectedId);
+    if (selectedUser) {
+        if (selectedUser.userId === '') {
+            selectedText.textContent = 'No host (open meeting)';
+        } else {
+            selectedText.textContent = `${selectedUser.firstName} ${selectedUser.lastName} (${selectedUser.email})`;
+        }
+    } else {
+        selectedText.textContent = 'Select Host';
+    }
+}
+
+function toggleCreateHostDropdown() {
+    const selectedDiv = document.getElementById('createHostSelected');
+    const menu = document.getElementById('createHostMenu');
+    const searchInput = document.getElementById('createHostSearch');
+
+    createHostDropdownOpen = !createHostDropdownOpen;
+
+    if (createHostDropdownOpen) {
+        selectedDiv.classList.add('open');
+        menu.classList.add('open');
+        searchInput.value = '';
+        createHostDropdownFiltered = [...createHostDropdownUsers];
+        renderCreateHostDropdownOptions();
+        setTimeout(() => searchInput.focus(), 50);
+    } else {
+        closeCreateHostDropdown();
+    }
+}
+
+function closeCreateHostDropdown() {
+    const selectedDiv = document.getElementById('createHostSelected');
+    const menu = document.getElementById('createHostMenu');
+
+    createHostDropdownOpen = false;
+    if (selectedDiv) selectedDiv.classList.remove('open');
+    if (menu) menu.classList.remove('open');
+}
+
+function filterCreateHostOptions() {
+    const searchInput = document.getElementById('createHostSearch');
+    const query = searchInput.value.toLowerCase().trim();
+
+    if (!query) {
+        createHostDropdownFiltered = [...createHostDropdownUsers];
+    } else {
+        createHostDropdownFiltered = createHostDropdownUsers.filter(user => {
+            const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+            const email = user.email.toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }
+
+    renderCreateHostDropdownOptions();
+}
+
+function renderCreateHostDropdownOptions() {
+    const container = document.getElementById('createHostOptions');
+    if (!container) return;
+
+    if (createHostDropdownFiltered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
+        return;
+    }
+
+    const totalHeight = createHostDropdownFiltered.length * HOST_ITEM_HEIGHT;
+    let html = `<div class="virtual-scroll-content" style="height: ${totalHeight}px;">`;
+
+    createHostDropdownFiltered.forEach((user, index) => {
+        const isSelected = user.userId === createHostDropdownSelectedId;
+        const displayName = user.userId === ''
+            ? 'No host (open meeting)'
+            : `${user.firstName} ${user.lastName}`;
+        const displayEmail = user.email || '';
+
+        html += `
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}"
+                 onclick="selectCreateHostOption('${user.userId}')"
+                 style="position: absolute; top: ${index * HOST_ITEM_HEIGHT}px; left: 0; right: 0; height: ${HOST_ITEM_HEIGHT}px;">
+                <div class="option-name">${escapeHtml(displayName)}</div>
+                ${displayEmail ? `<div class="option-email">${escapeHtml(displayEmail)}</div>` : ''}
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function selectCreateHostOption(userId) {
+    createHostDropdownSelectedId = userId;
+    updateCreateHostDropdownSelection();
+    closeCreateHostDropdown();
 }
 
 async function saveMeetingSettings() {

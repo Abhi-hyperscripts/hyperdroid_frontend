@@ -242,25 +242,25 @@ body {
     border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* Modal form specific styles */
+/* Modal form specific styles - compact */
 .modal-content .form-group {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .modal-content .form-group label {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: #374151;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .modal-content .form-group input[type="text"],
 .modal-content .form-group input[type="datetime-local"],
 .modal-content .form-group textarea,
 .modal-content .form-group select {
-    padding: 8px 12px;
-    font-size: 0.8125rem;
-    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    border-radius: 6px;
     border: 1px solid rgba(0, 0, 0, 0.12);
     transition: all 0.2s ease;
 }
@@ -270,17 +270,18 @@ body {
 .modal-content .form-group select:focus {
     outline: none;
     border-color: #000;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
 .modal-content .form-group textarea {
-    min-height: 70px;
+    min-height: 50px;
     resize: vertical;
 }
 
 .modal-content .form-group small {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #6b7280;
+    margin-top: 1px;
 }
 
 .form-label {
@@ -804,22 +805,42 @@ body {
 
 .modal.active {
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+}
+
+/* Bootstrap 5 vertical centering - ensure it works with our styles */
+.modal-dialog.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+    margin: 0.5rem auto;
 }
 
 .modal-dialog {
     width: 100%;
-    margin: 1.75rem;
+    max-width: 500px;
+    max-height: calc(100vh - 1.5rem);
+    overflow: hidden;
+}
+
+/* Prevent any horizontal overflow in modals */
+.modal-content,
+.modal-body,
+.modal-body * {
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-content {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     border: 1px solid rgba(0, 0, 0, 0.06);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
 }
 
 .modal-header {
@@ -827,20 +848,38 @@ body {
 }
 
 .modal-body {
-    padding: 1rem;
+    padding: 0.75rem;
+    overflow: visible;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-title {
     font-weight: 600;
     font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1;
+}
+
+.modal-title .meeting-type-display {
+    display: inline-flex;
+    align-items: center;
+}
+
+.modal-title .badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    vertical-align: middle;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -2722,61 +2761,119 @@ body:has(.pre-meeting-container) {
 
 /* Responsive Pre-Meeting & Lobby */
 @media (max-width: 768px) {
+    body:has(.pre-meeting-container) {
+        align-items: flex-start;
+        padding: 10px;
+        min-height: auto;
+    }
+
     .pre-meeting-container {
-        margin: 20px;
-        padding: 20px;
+        margin: 0;
+        padding: 16px;
+        max-height: none;
+        border-radius: 12px;
+    }
+
+    .pre-meeting-header {
+        margin-bottom: 8px;
     }
 
     .pre-meeting-header h2 {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
     }
 
     .pre-meeting-header p {
-        font-size: 13px;
+        font-size: 11px;
+    }
+
+    .pre-meeting-logo {
+        height: 28px;
+        margin-bottom: 6px;
+    }
+
+    .pre-meeting-content {
+        gap: 10px;
     }
 
     .video-preview-container {
         max-width: 100%;
+        aspect-ratio: 4 / 3;
     }
 
-    .device-select-group {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .device-select-group label {
-        min-width: auto;
+    .control-group {
+        flex-direction: row;
+        flex-wrap: nowrap;
     }
 
     .device-control-btn {
         flex: 1;
         justify-content: center;
-        min-width: 140px;
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .device-control-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .mic-level-container {
+        padding: 0;
+    }
+
+    .mic-level-container label {
+        font-size: 11px;
+    }
+
+    .device-selection {
+        padding: 0;
+        gap: 8px;
+    }
+
+    .device-select-group {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .device-select-group label {
+        min-width: 85px;
+        font-size: 11px;
+    }
+
+    .device-select-group select {
+        font-size: 11px;
+        padding: 6px 8px;
     }
 
     .join-actions {
         flex-direction: column;
+        gap: 8px;
+        padding-top: 4px;
     }
 
     .join-actions .btn {
         width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
     }
 
     .lobby-container {
-        margin: 20px;
-        padding: 24px;
+        margin: 10px;
+        padding: 20px;
     }
 
     .lobby-title {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .lobby-icon {
-        font-size: 56px;
+        font-size: 48px;
+        margin-bottom: 16px;
     }
 
     .participants-list {
-        padding: 16px;
+        padding: 12px;
     }
 }
 
@@ -3104,6 +3201,24 @@ body:has(.pre-meeting-container) {
     color: #059669;
 }
 
+.badge-guest.badge-clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.badge-guest.badge-clickable:hover {
+    background: #059669;
+    color: white;
+}
+
+/* Auto Recording Label */
+.auto-rec-label {
+    font-size: 0.65rem;
+    color: #6b7280;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 .badge-host {
     background: #e0e7ff;
     color: #4f46e5;
@@ -3212,32 +3327,38 @@ body:has(.pre-meeting-container) {
     color: white;
 }
 
-/* Inactive Meeting Styles */
-.meeting-card.meeting-inactive {
-    opacity: 0.7;
-    border: 2px dashed #f59e0b;
-    background: rgba(255, 251, 235, 0.8);
+/* Guest Link Button */
+.btn-icon.btn-guest-link {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
 }
 
-.meeting-card.meeting-inactive:hover {
-    opacity: 0.85;
-    background: rgba(255, 251, 235, 0.95);
+.btn-icon.btn-guest-link:hover {
+    background: #059669;
+    color: white;
 }
 
-.badge-inactive {
-    background: #fef3c7;
-    color: #b45309;
-    font-weight: 600;
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1f2937;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.meeting-inactive-notice {
-    font-size: 0.7rem;
-    color: #92400e;
-    background: rgba(245, 158, 11, 0.1);
-    padding: 6px 8px;
-    margin: 6px 0 0 0;
-    border-radius: 4px;
-    border-left: 3px solid #f59e0b;
+.toast-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
 }
 
 /* Meetings I'm Hosting Section */
@@ -3404,7 +3525,7 @@ body:has(.pre-meeting-container) {
 
 /* Manage Participants Modal - Modern Scalable Design */
 .participants-modal-body {
-    margin-top: 12px;
+    margin-top: 8px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -3413,48 +3534,55 @@ body:has(.pre-meeting-container) {
 .user-selection-panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0;
     width: 100%;
     box-sizing: border-box;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 .search-box-modern {
     position: relative;
     display: flex;
     align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
     width: 100%;
     box-sizing: border-box;
 }
 
 .search-box-modern .search-icon {
-    position: absolute;
-    left: 12px;
-    color: #999;
-    pointer-events: none;
-    z-index: 1;
+    color: #9ca3af;
+    flex-shrink: 0;
+    width: 11px;
+    height: 11px;
 }
 
 .search-box-modern input {
-    width: 100%;
-    padding: 8px 36px 8px 36px;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.7rem;
+    color: #374151;
     outline: none;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
+    padding: 0;
+}
+
+.search-box-modern input::placeholder {
+    color: #9ca3af;
 }
 
 .search-box-modern input:focus {
-    border-color: #333;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .clear-search-btn {
-    position: absolute;
-    right: 8px;
-    width: 24px;
-    height: 24px;
+    width: 16px;
+    height: 16px;
     border: none;
     background: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
@@ -3464,6 +3592,7 @@ body:has(.pre-meeting-container) {
     justify-content: center;
     color: #666;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .clear-search-btn:hover {
@@ -3475,11 +3604,11 @@ body:has(.pre-meeting-container) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.02);
-    border-radius: 6px;
-    font-size: 0.7rem;
-    color: #666;
+    padding: 4px 8px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.65rem;
+    color: #6b7280;
     width: 100%;
     box-sizing: border-box;
 }
@@ -3491,34 +3620,34 @@ body:has(.pre-meeting-container) {
 }
 
 .filter-btn {
-    padding: 3px 8px;
+    padding: 2px 6px;
     border: 1px solid transparent;
     background: transparent;
     border-radius: 4px;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     cursor: pointer;
-    color: #666;
+    color: #6b7280;
     transition: all 0.15s ease;
     white-space: nowrap;
 }
 
 .filter-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #333;
+    background: #f3f4f6;
+    color: #374151;
 }
 
 .filter-btn.active {
-    background: #333;
+    background: #000;
     color: white;
-    border-color: #333;
+    border-color: #000;
 }
 
 .users-list-modern {
-    max-height: 360px;
+    max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border: none;
+    border-radius: 0;
     background: white;
     width: 100%;
     box-sizing: border-box;
@@ -3527,11 +3656,13 @@ body:has(.pre-meeting-container) {
 .user-select-item {
     display: flex;
     align-items: center;
-    padding: 6px 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    justify-content: space-between;
+    padding: 4px 8px;
+    height: 28px;
+    border-bottom: 1px solid #f3f4f6;
     cursor: pointer;
     transition: background 0.15s ease;
-    gap: 10px;
+    gap: 6px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -3541,33 +3672,36 @@ body:has(.pre-meeting-container) {
 }
 
 .user-select-item:hover {
-    background: rgba(0, 0, 0, 0.02);
+    background: #f3f4f6;
 }
 
 .user-select-item.selected {
-    background: rgba(0, 0, 0, 0.04);
+    background: #f3f4f6;
 }
 
 .user-info-compact {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
     min-width: 0;
 }
 
 .user-name-compact {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #333;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #374151;
+    line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .user-email-compact {
-    font-size: 0.65rem;
-    color: #666;
+    font-size: 0.6rem;
+    color: #6b7280;
+    line-height: 1.1;
+    margin-top: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3577,8 +3711,8 @@ body:has(.pre-meeting-container) {
 .toggle-switch-participant {
     position: relative;
     display: inline-block;
-    width: 30px;
-    height: 16px;
+    width: 24px;
+    height: 14px;
     flex-shrink: 0;
 }
 
@@ -3602,14 +3736,14 @@ body:has(.pre-meeting-container) {
     bottom: 0;
     background-color: #ccc;
     transition: 0.3s;
-    border-radius: 16px;
+    border-radius: 14px;
 }
 
 .toggle-slider-participant:before {
     position: absolute;
     content: "";
-    height: 12px;
-    width: 12px;
+    height: 10px;
+    width: 10px;
     left: 2px;
     bottom: 2px;
     background-color: white;
@@ -3622,7 +3756,7 @@ body:has(.pre-meeting-container) {
 }
 
 .toggle-switch-participant input:checked + .toggle-slider-participant:before {
-    transform: translateX(14px);
+    transform: translateX(10px);
 }
 
 .toggle-switch-participant input:disabled + .toggle-slider-participant {
@@ -3971,94 +4105,90 @@ body:has(.pre-meeting-container) {
 }
 
 /* Toggle switch container */
-.toggle-switch {
-    display: inline-flex;
+.toggle-switch,
+label.toggle-switch,
+.modal-content .form-group label.toggle-switch,
+.settings-row label.toggle-switch {
+    display: inline-flex !important;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     cursor: pointer;
     user-select: none;
+    margin-bottom: 0;
 }
 
-/* Toggle switch track */
+.toggle-switch.hidden {
+    display: none !important;
+}
+
+/* Hide the actual checkbox - must not take space */
+.toggle-switch input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+/* Toggle switch track - matches Auto Rec style (30px x 16px, black/gray) */
 .toggle-switch-track {
     position: relative;
-    width: 48px;
-    height: 28px;
-    background: #e5e7eb;
-    border-radius: 14px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 30px;
+    min-width: 30px;
+    height: 16px;
+    background: #ccc;
+    border-radius: 16px;
+    transition: all 0.3s;
+    flex-shrink: 0;
 }
 
-/* Smaller toggle switch in modal */
-.modal-content .toggle-switch-track {
-    width: 40px;
-    height: 22px;
-    border-radius: 11px;
+/* Label comes after the track */
+.toggle-switch-label {
+    flex: 1;
 }
 
-/* Toggle switch thumb */
+/* Toggle switch thumb - white circle */
 .toggle-switch-thumb {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 24px;
-    height: 24px;
+    width: 12px;
+    height: 12px;
     background: white;
     border-radius: 50%;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s;
 }
 
-/* Smaller thumb in modal */
-.modal-content .toggle-switch-thumb {
-    width: 18px;
-    height: 18px;
-}
-
-/* Toggle switch label */
+/* Toggle switch label - additional styles */
 .toggle-switch-label {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: #374151;
 }
 
 /* Smaller label in modal */
 .modal-content .toggle-switch-label {
-    font-size: 0.8125rem;
+    font-size: 0.7rem;
 }
 
-/* Checked state */
+/* Checked state - black track, white thumb moves right */
 .toggle-switch input[type="checkbox"]:checked + .toggle-switch-track {
-    background: #10b981;
+    background: #333;
 }
 
 .toggle-switch input[type="checkbox"]:checked + .toggle-switch-track .toggle-switch-thumb {
-    transform: translateX(20px);
-}
-
-/* Checked state for smaller modal toggles */
-.modal-content .toggle-switch input[type="checkbox"]:checked + .toggle-switch-track .toggle-switch-thumb {
-    transform: translateX(18px);
-}
-
-/* Extra small inline toggles in meeting cards */
-.meeting-item-actions .toggle-switch-track[style*="width: 32px"] .toggle-switch-thumb {
-    transform: translateX(0);
-}
-
-.meeting-item-actions .toggle-switch input[type="checkbox"]:checked + .toggle-switch-track[style*="width: 32px"] .toggle-switch-thumb {
     transform: translateX(14px);
 }
 
 /* Hover states */
 .toggle-switch:hover .toggle-switch-track {
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(0, 0, 0, 0.05);
+    opacity: 0.9;
 }
 
 .toggle-switch input[type="checkbox"]:checked:hover + .toggle-switch-track {
-    background: #059669;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(16, 185, 129, 0.1);
+    background: #222;
 }
 
 /* Disabled state */
@@ -4069,6 +4199,262 @@ body:has(.pre-meeting-container) {
 
 .toggle-switch.disabled .toggle-switch-track {
     background: #d1d5db;
+}
+
+/* ============================================
+   SEARCHABLE DROPDOWN WITH VIRTUAL SCROLLING
+   ============================================ */
+
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-selected {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.dropdown-selected:hover {
+    border-color: #9ca3af;
+}
+
+.dropdown-selected.open {
+    border-color: #000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-selected.disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.dropdown-selected .selected-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dropdown-arrow {
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.dropdown-selected.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+.dropdown-menu.open {
+    display: block;
+}
+
+.dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.dropdown-search .search-icon {
+    color: #9ca3af;
+    flex-shrink: 0;
+    width: 11px;
+    height: 11px;
+}
+
+.dropdown-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.7rem;
+    color: #374151;
+    outline: none;
+}
+
+.dropdown-search input::placeholder {
+    color: #9ca3af;
+}
+
+.dropdown-options {
+    max-height: 120px;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Virtual scroll container */
+.dropdown-options .virtual-scroll-content {
+    position: relative;
+}
+
+.dropdown-option {
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: #374151;
+    transition: background 0.15s;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+
+.dropdown-option:hover {
+    background: #f3f4f6;
+}
+
+.dropdown-option.selected {
+    background: #f3f4f6;
+    color: #111827;
+    font-weight: 500;
+}
+
+.dropdown-option .option-name {
+    font-weight: 500;
+    font-size: 0.7rem;
+    line-height: 1.1;
+}
+
+.dropdown-option .option-email {
+    font-size: 0.6rem;
+    color: #6b7280;
+    margin-top: 0;
+    line-height: 1.1;
+}
+
+.dropdown-option.selected .option-email {
+    color: #6b7280;
+}
+
+.dropdown-no-results {
+    padding: 8px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.7rem;
+}
+
+/* ============================================
+   MULTI-SELECT DROPDOWN STYLES
+   ============================================ */
+
+.searchable-dropdown.multi-select .dropdown-options {
+    max-height: 120px;
+}
+
+/* Compact multi-select item height (28px) */
+.searchable-dropdown.multi-select .dropdown-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    height: 28px;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.searchable-dropdown.multi-select .dropdown-option .option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.searchable-dropdown.multi-select .dropdown-option .option-name {
+    font-weight: 500;
+    font-size: 0.7rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.searchable-dropdown.multi-select .dropdown-option .option-email {
+    font-size: 0.6rem;
+    color: #6b7280;
+    line-height: 1.1;
+    margin-top: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mini toggle switch for multi-select */
+.searchable-dropdown.multi-select .option-toggle {
+    flex-shrink: 0;
+}
+
+.searchable-dropdown.multi-select .mini-toggle {
+    position: relative;
+    width: 24px;
+    height: 14px;
+    background: #d1d5db;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.searchable-dropdown.multi-select .mini-toggle.active {
+    background: #000;
+}
+
+.searchable-dropdown.multi-select .mini-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.searchable-dropdown.multi-select .mini-toggle.active::after {
+    transform: translateX(10px);
+}
+
+.searchable-dropdown.multi-select .dropdown-option:hover {
+    background: #f3f4f6;
+}
+
+.searchable-dropdown.multi-select .dropdown-option.selected {
+    background: #f9fafb;
+}
+
+/* Selected count in the dropdown trigger */
+.searchable-dropdown.multi-select .selected-text {
+    color: #374151;
+}
+
+.searchable-dropdown.multi-select .selected-text span {
+    font-weight: 600;
+    color: #000;
 }
 
 /* ============================================
@@ -4085,11 +4471,11 @@ body:has(.pre-meeting-container) {
 
 /* Modal submit buttons even smaller */
 .modal-content .btn {
-    padding: 8px 16px;
-    font-size: 0.8125rem;
+    padding: 6px 12px;
+    font-size: 0.75rem;
     font-weight: 500;
     width: 100%;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .btn-sm, .btn-primary.btn-sm, .btn-secondary.btn-sm {
@@ -4619,7 +5005,7 @@ body:has(.pre-meeting-container) {
 }
 
 .settings-row {
-    padding: 12px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -4627,17 +5013,46 @@ body:has(.pre-meeting-container) {
     border-bottom: none;
 }
 
-.settings-row label {
+.settings-row label:not(.toggle-switch) {
     font-weight: 500;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     display: block;
+    font-size: 0.8rem;
+}
+
+/* Override for inline rows - must come after the above rule */
+.settings-row.inline-row > label {
+    display: inline !important;
+    margin-bottom: 0 !important;
 }
 
 .settings-row small {
     display: block;
     color: #666;
-    font-size: 0.75rem;
-    margin-top: 4px;
+    font-size: 0.7rem;
+    margin-top: 2px;
+}
+
+/* Inline layout for Meeting Type row */
+.settings-row.inline-row,
+.form-group.settings-row.inline-row,
+.modal-content .settings-row.inline-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+}
+
+.settings-row.inline-row label,
+.form-group.settings-row.inline-row > label,
+.modal-content .form-group.settings-row.inline-row label {
+    margin-bottom: 0 !important;
+    white-space: nowrap;
+}
+
+.settings-row.inline-row .meeting-type-display {
+    flex: 1;
 }
 
 .settings-row select {
@@ -4786,49 +5201,41 @@ body:has(.pre-meeting-container) {
     margin: 4px 0 0 0;
 }
 
-/* Meeting Type Toggle Buttons */
-.meeting-type-toggle {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
+/* Meeting Type Segmented Control */
+.meeting-type-group {
+    margin-bottom: 8px;
 }
 
-.meeting-type-toggle .type-btn {
-    flex: 1;
+.meeting-type-segmented {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 2px;
+    margin-top: 4px;
+}
+
+.meeting-type-segmented .segment-btn {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.meeting-type-toggle .type-btn:hover {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.05);
-}
-
-.meeting-type-toggle .type-btn.active {
-    border-color: #6366f1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-}
-
-.meeting-type-toggle .type-btn .type-icon {
-    font-size: 1.5rem;
-}
-
-.meeting-type-toggle .type-btn .type-name {
-    font-size: 0.85rem;
-    font-weight: 600;
+.meeting-type-segmented .segment-btn:hover:not(.active) {
     color: #374151;
+    background: rgba(255, 255, 255, 0.5);
 }
 
-.meeting-type-toggle .type-btn.active .type-name {
-    color: #6366f1;
+.meeting-type-segmented .segment-btn.active {
+    color: #fff;
+    background: #000;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .form-help {
@@ -4864,24 +5271,312 @@ body:has(.pre-meeting-container) {
 
 /* Meeting Type Display (Read-only in settings) */
 .meeting-type-display {
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 /* Form Row for side-by-side fields */
 .form-row {
     display: flex;
-    gap: 16px;
+    gap: 10px;
 }
 
 .form-row .form-group.half {
     flex: 1;
 }
 
+/* DateTime Picker - separate date and time inputs */
+.datetime-picker {
+    display: flex;
+    gap: 3px;
+}
+
+.datetime-picker .date-input,
+.datetime-picker .time-input {
+    min-width: 0;
+    padding: 6px 4px;
+    font-size: 0.65rem;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    background: white;
+    color: #374151;
+    box-sizing: border-box;
+}
+
+.datetime-picker .date-input {
+    flex: 1;
+    width: 100%;
+}
+
+.datetime-picker .time-input {
+    flex: 0 0 auto;
+    width: 70px;
+}
+
+.datetime-picker input:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+.datetime-picker input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    margin: 0;
+    padding: 0;
+}
+
+.datetime-picker input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Custom Date Picker */
+.custom-date-picker {
+    position: relative;
+    flex: 7;
+}
+
+.custom-date-picker .date-input {
+    width: 100%;
+    cursor: pointer;
+}
+
+.date-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: none;
+    width: 220px;
+    padding: 8px;
+}
+
+.date-dropdown.open {
+    display: block;
+}
+
+.date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.date-month-year {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.date-nav-btn {
+    background: none;
+    border: none;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #6b7280;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.date-nav-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.date-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.date-weekdays span {
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: #9ca3af;
+    padding: 4px 0;
+}
+
+.date-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.date-day {
+    text-align: center;
+    font-size: 0.65rem;
+    padding: 6px 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #374151;
+    transition: all 0.15s;
+}
+
+.date-day:hover {
+    background: #f3f4f6;
+}
+
+.date-day.other-month {
+    color: #d1d5db;
+}
+
+.date-day.today {
+    font-weight: 600;
+    color: #000;
+}
+
+.date-day.selected {
+    background: #000;
+    color: white;
+    font-weight: 500;
+}
+
+.date-day.selected:hover {
+    background: #333;
+}
+
+.date-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.date-btn {
+    background: none;
+    border: none;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #000;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.date-btn:hover {
+    background: #f3f4f6;
+}
+
+/* Custom Time Picker */
+.custom-time-picker {
+    position: relative;
+    flex: 3;
+}
+
+.custom-time-picker .time-input {
+    width: 100%;
+    cursor: pointer;
+    text-align: center;
+    padding: 6px 4px;
+}
+
+.time-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    display: none;
+    overflow: hidden;
+}
+
+.time-dropdown.open {
+    display: block;
+}
+
+.time-columns {
+    display: flex;
+}
+
+.time-column {
+    width: 50px;
+    max-height: 150px;
+    overflow-y: auto;
+    border-right: 1px solid #f3f4f6;
+}
+
+.time-column:last-child {
+    border-right: none;
+}
+
+.time-column::-webkit-scrollbar {
+    width: 4px;
+}
+
+.time-column::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+
+.time-column::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+}
+
+.time-option {
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.time-option:hover {
+    background: #f3f4f6;
+}
+
+.time-option.selected {
+    background: #000;
+    color: white;
+    font-weight: 500;
+}
+
+/* Mobile responsive - stack date/time vertically */
+@media (max-width: 480px) {
+    .modal-dialog.modal-dialog-centered {
+        margin: 0.5rem 12px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .datetime-picker {
+        gap: 4px;
+    }
+
+    .datetime-picker .date-input,
+    .datetime-picker .time-input {
+        padding: 8px 6px;
+        font-size: 0.75rem;
+    }
+
+    .datetime-picker .time-input {
+        width: 80px;
+    }
+}
+
 /* Form Toggles Side by Side */
 .form-toggles {
     display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
+    gap: 16px;
+    margin-bottom: 8px;
 }
 
 .btn-full {
@@ -4918,7 +5613,7 @@ body:has(.pre-meeting-container) {
 }
 
 .users-list-inline {
-    max-height: 180px;
+    max-height: 150px;
     overflow-y: auto;
 }
 
