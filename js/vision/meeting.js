@@ -7,6 +7,7 @@ let cameraEnabled = true;
 let meetingId;
 let participantZoomLevels = {}; // Store zoom levels for each participant
 let isAnyoneScreenSharing = false; // Track if anyone is sharing screen
+let chatWasVisibleBeforeScreenShare = false; // Track chat visibility before screen share
 let activeSpeakerManager = null; // Active speaker detection manager
 
 // Recording state
@@ -155,6 +156,13 @@ async function initializeMeeting() {
 
         // Connect to SignalR chat (for both authenticated users and guests)
         await connectToSignalR(participantName);
+
+        // Check if recording is already in progress when joining
+        if (tokenData.meeting && tokenData.meeting.is_recording) {
+            console.log('Meeting is already being recorded, showing overlay');
+            // Small delay to ensure layout is rendered first
+            setTimeout(() => showServerRecordingOverlay(true), 500);
+        }
 
         // Load chat history only for authenticated users
         if (!isGuest) {
@@ -485,6 +493,20 @@ function setupSignalREventHandlers() {
             addChatMessage('System', `${data.participantIdentity} was removed from the meeting by ${data.removedBy}`, 'system');
         }
     });
+
+    // Server-side recording started (LiveKit Egress)
+    signalRConnection.on('RecordingStarted', (data) => {
+        console.log('Server recording started:', data);
+        showServerRecordingOverlay(true);
+        addChatMessage('System', 'Recording has started', 'system');
+    });
+
+    // Server-side recording stopped (LiveKit Egress)
+    signalRConnection.on('RecordingStopped', (data) => {
+        console.log('Server recording stopped:', data);
+        showServerRecordingOverlay(false);
+        addChatMessage('System', 'Recording has stopped', 'system');
+    });
 }
 
 // Add local participant video
@@ -618,6 +640,13 @@ function updateParticipantLayout(layout) {
     // Create main speaker container
     const mainSpeakerContainer = document.createElement('div');
     mainSpeakerContainer.className = 'main-speaker-container';
+
+    // Add recording overlay to main speaker container
+    const recordingOverlay = document.createElement('div');
+    recordingOverlay.className = 'recording-overlay';
+    recordingOverlay.id = 'recordingOverlay';
+    recordingOverlay.innerHTML = '<span class="recording-dot"></span>Recording <span id="recordingTimeOverlay">00:00</span>';
+    mainSpeakerContainer.appendChild(recordingOverlay);
 
     // Create small tiles container
     const smallTilesContainer = document.createElement('div');
@@ -789,11 +818,18 @@ function attachTrack(track, publication, participant) {
         track.attach(screenShareVideo);
         screenShareContainer.style.display = 'flex';
         videoContainer.classList.add('minimized');
+        // Save chat visibility state before hiding
+        chatWasVisibleBeforeScreenShare = chatSidebar.classList.contains('visible');
         chatSidebar.style.display = 'none';
+        chatSidebar.classList.remove('visible');
         screenShareName.textContent = `${participant.name || participant.identity} is sharing`;
 
         // Mark that someone is sharing and disable button for others
         isAnyoneScreenSharing = true;
+        // Disable active speaker switching while screen share is active
+        if (activeSpeakerManager) {
+            activeSpeakerManager.setScreenShareActive(true);
+        }
         const isLocalParticipant = participant.identity === room.localParticipant.identity;
         if (!isLocalParticipant) {
             screenBtn.disabled = true;
@@ -854,7 +890,11 @@ function detachTrack(track, publication, participant) {
         track.detach(screenShareVideo);
         screenShareContainer.style.display = 'none';
         videoContainer.classList.remove('minimized');
-        chatSidebar.style.display = 'flex';
+        // Only restore chat visibility if it was open before screen share
+        if (chatWasVisibleBeforeScreenShare) {
+            chatSidebar.style.display = 'flex';
+            chatSidebar.classList.add('visible');
+        }
         screenShareControls.style.display = 'none';
 
         // Remove drag and wheel event listeners
@@ -867,6 +907,10 @@ function detachTrack(track, publication, participant) {
 
         // Mark that no one is sharing and re-enable button
         isAnyoneScreenSharing = false;
+        // Re-enable active speaker switching when screen share ends
+        if (activeSpeakerManager) {
+            activeSpeakerManager.setScreenShareActive(false);
+        }
         screenBtn.disabled = false;
         screenBtn.style.opacity = '1';
         screenBtn.style.cursor = 'pointer';
@@ -1031,6 +1075,12 @@ async function startRecording() {
         recordBtn.innerHTML = '⏸️ Pause';
         document.getElementById('recordingStatus').style.display = 'block';
 
+        // Show recording overlay on video
+        const recordingOverlay = document.getElementById('recordingOverlay');
+        if (recordingOverlay) {
+            recordingOverlay.classList.add('visible');
+        }
+
         // Start timer
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
 
@@ -1099,6 +1149,12 @@ async function stopRecording() {
         recordBtn.innerHTML = '⏺️ Record';
         document.getElementById('recordingStatus').style.display = 'none';
 
+        // Hide recording overlay on video
+        const recordingOverlay = document.getElementById('recordingOverlay');
+        if (recordingOverlay) {
+            recordingOverlay.classList.remove('visible');
+        }
+
         isRecording = false;
         isPaused = false;
         recordingStartTime = null;
@@ -1107,13 +1163,62 @@ async function stopRecording() {
     }
 }
 
+// Show/hide server-side recording overlay (LiveKit Egress)
+let serverRecordingStartTime = null;
+let serverRecordingTimerInterval = null;
+
+function showServerRecordingOverlay(show) {
+    const recordingOverlay = document.getElementById('recordingOverlay');
+    if (!recordingOverlay) return;
+
+    if (show) {
+        recordingOverlay.classList.add('visible');
+        serverRecordingStartTime = Date.now();
+        // Start timer for server recording
+        serverRecordingTimerInterval = setInterval(updateServerRecordingTimer, 1000);
+        console.log('Server recording overlay shown');
+    } else {
+        recordingOverlay.classList.remove('visible');
+        serverRecordingStartTime = null;
+        if (serverRecordingTimerInterval) {
+            clearInterval(serverRecordingTimerInterval);
+            serverRecordingTimerInterval = null;
+        }
+        // Reset timer display
+        const overlayTimer = document.getElementById('recordingTimeOverlay');
+        if (overlayTimer) {
+            overlayTimer.textContent = '00:00';
+        }
+        console.log('Server recording overlay hidden');
+    }
+}
+
+function updateServerRecordingTimer() {
+    if (serverRecordingStartTime) {
+        const elapsed = Math.floor((Date.now() - serverRecordingStartTime) / 1000);
+        const overlayTimer = document.getElementById('recordingTimeOverlay');
+        if (overlayTimer) {
+            overlayTimer.textContent = formatTime(elapsed);
+        }
+    }
+}
+
 // Update recording timer
 function updateRecordingTimer() {
     if (recordingStartTime) {
         const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const formattedTime = formatTime(elapsed);
+
+        // Update header timer
         const timerElement = document.getElementById('recordingTime');
         if (timerElement) {
-            timerElement.textContent = formatTime(elapsed);
+            timerElement.textContent = formattedTime;
+        }
+
+        // Update overlay timer
+        const overlayTimer = document.getElementById('recordingTimeOverlay');
+        if (overlayTimer) {
+            overlayTimer.textContent = formattedTime;
         }
     }
 }

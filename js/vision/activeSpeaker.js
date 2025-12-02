@@ -12,6 +12,7 @@ class ActiveSpeakerManager {
         this.speakingThreshold = 0.15; // Audio level threshold for speaking detection
         this.inactivityTimeout = 30000; // 30 seconds - remove from active list after this
         this.mainSpeaker = null; // Currently focused speaker (large tile)
+        this.screenShareActive = false; // Track if someone is screen sharing
 
         // Adaptive video quality settings
         // Note: LiveKit supports LOW(180p), MEDIUM(360p), HIGH(720p)
@@ -179,8 +180,16 @@ class ActiveSpeakerManager {
     /**
      * Update the main speaker (shown in large tile) and adjust video qualities
      * CRITICAL: Main speaker must ALWAYS have video - never show blank tile
+     * CRITICAL: When screen share is active, do NOT change main speaker
      */
     updateMainSpeaker() {
+        // CRITICAL: Skip main speaker changes when screen share is active
+        // The screen share should remain the focus, not switch to active speaker
+        if (this.screenShareActive) {
+            console.log('Screen share active - skipping main speaker change');
+            return;
+        }
+
         const previousMainSpeaker = this.mainSpeaker;
         const currentlySpeaking = this.activeSpeakers.find(s => s.isSpeaking);
 
@@ -575,5 +584,23 @@ class ActiveSpeakerManager {
         this.notifyLayoutChange();
 
         console.log('Initialized active speakers:', this.activeSpeakers.length);
+    }
+
+    /**
+     * Set screen share active state
+     * When screen share is active, main speaker switching is disabled
+     * @param {boolean} active - Whether screen share is active
+     */
+    setScreenShareActive(active) {
+        this.screenShareActive = active;
+        console.log(`Screen share active: ${active} - main speaker switching ${active ? 'DISABLED' : 'ENABLED'}`);
+    }
+
+    /**
+     * Check if screen share is currently active
+     * @returns {boolean} Whether screen share is active
+     */
+    isScreenShareActive() {
+        return this.screenShareActive;
     }
 }

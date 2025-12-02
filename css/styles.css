@@ -1035,6 +1035,7 @@ body {
     justify-content: center;
     min-height: 0;
     min-width: 0;
+    position: relative; /* For recording overlay positioning */
 }
 
 .main-speaker-tile {
@@ -1047,6 +1048,43 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Recording indicator overlay on video */
+.recording-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.recording-overlay.visible {
+    display: flex;
+}
+
+.recording-overlay .recording-dot {
+    width: 10px;
+    height: 10px;
+    background: #dc3545;
+    border-radius: 50%;
+    animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
 }
 
 .small-tiles-container {
@@ -1137,6 +1175,12 @@ body {
         padding: 4px 8px;
         bottom: 6px;
         left: 6px;
+    }
+
+    /* Hide recording status and meeting info in header on mobile */
+    #recordingStatus,
+    .meeting-info {
+        display: none !important;
     }
 }
 
