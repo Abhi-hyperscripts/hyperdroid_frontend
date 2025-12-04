@@ -1048,9 +1048,22 @@ async function resetPassword() {
 function openDeleteModal(userId, userName, permanent) {
     document.getElementById('deleteUserId').value = userId;
     document.getElementById('deletePermanent').value = permanent;
-    document.getElementById('deleteConfirmMessage').textContent = permanent
-        ? `Are you sure you want to permanently delete ${userName}? This action cannot be undone.`
-        : `Are you sure you want to deactivate ${userName}? The user will not be able to log in.`;
+
+    // Update modal title, message, and button text based on action type
+    const modalTitle = document.querySelector('#confirmDeleteModal .modal-header h3');
+    const confirmBtn = document.querySelector('#confirmDeleteModal .btn-danger');
+
+    if (permanent) {
+        modalTitle.textContent = 'Delete User Permanently';
+        document.getElementById('deleteConfirmMessage').textContent =
+            `Are you sure you want to permanently delete ${userName}? This action cannot be undone.`;
+        confirmBtn.textContent = 'Delete Permanently';
+    } else {
+        modalTitle.textContent = 'Deactivate User';
+        document.getElementById('deleteConfirmMessage').textContent =
+            `Are you sure you want to deactivate ${userName}? The user will not be able to log in but can be reactivated later.`;
+        confirmBtn.textContent = 'Deactivate';
+    }
 
     openModal('confirmDeleteModal');
 }
