@@ -24,7 +24,7 @@
 
         .welcome-greeting {
             font-size: 1rem;
-            color: #888;
+            color: #666;
             margin-bottom: 8px;
             font-weight: 500;
         }
@@ -32,7 +32,7 @@
         .welcome-title {
             font-size: 2rem;
             font-weight: 700;
-            color: #fff;
+            color: #1a1a2e;
             margin-bottom: 8px;
             line-height: 1.2;
         }
@@ -45,28 +45,29 @@
         /* App Cards Grid */
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
             margin-bottom: 48px;
         }
 
         .app-card {
-            background: #1a1a2e;
+            background: #fff;
             border-radius: 16px;
             padding: 28px;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.08);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .app-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
         }
 
         .app-card-header {
@@ -77,8 +78,8 @@
         }
 
         .app-icon {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             border-radius: 14px;
             display: flex;
             align-items: center;
@@ -87,32 +88,32 @@
         }
 
         .app-icon svg {
-            width: 26px;
-            height: 26px;
+            width: 28px;
+            height: 28px;
         }
 
         .app-card.vision .app-icon {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
         }
 
         .app-card.vision .app-icon svg {
-            color: #818cf8;
+            color: #fff;
         }
 
         .app-card.drive .app-icon {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.2));
+            background: linear-gradient(135deg, #10b981, #34d399);
         }
 
         .app-card.drive .app-icon svg {
-            color: #34d399;
+            color: #fff;
         }
 
         .app-card.admin .app-icon {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(248, 113, 113, 0.2));
+            background: linear-gradient(135deg, #ef4444, #f87171);
         }
 
         .app-card.admin .app-icon svg {
-            color: #f87171;
+            color: #fff;
         }
 
         .app-status {
@@ -122,18 +123,18 @@
             font-size: 0.75rem;
             padding: 4px 10px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.04);
             color: #888;
         }
 
         .app-status.online {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
         }
 
         .app-status.offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
         }
 
         .status-indicator {
@@ -146,12 +147,12 @@
         .app-card-body h3 {
             font-size: 1.25rem;
             font-weight: 600;
-            color: #fff;
+            color: #1a1a2e;
             margin-bottom: 8px;
         }
 
         .app-card-body p {
-            color: #888;
+            color: #666;
             font-size: 0.875rem;
             line-height: 1.5;
             margin: 0;
@@ -168,14 +169,14 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            color: #888;
+            color: #666;
             font-size: 0.875rem;
             font-weight: 500;
             transition: color 0.2s;
         }
 
         .app-card:hover .app-action {
-            color: #fff;
+            color: #1a1a2e;
         }
 
         .app-action svg {
@@ -197,161 +198,6 @@
             display: block;
         }
 
-        /* Quick Stats Section */
-        .stats-section {
-            width: 100%;
-            max-width: 900px;
-            margin-bottom: 48px;
-        }
-
-        .stats-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .stats-title {
-            font-size: 0.85rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 6px;
-        }
-
-        .stat-value {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .stat-value.loading {
-            color: #444;
-        }
-
-        /* Recent Activity */
-        .activity-section {
-            width: 100%;
-            max-width: 900px;
-        }
-
-        .activity-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .activity-title {
-            font-size: 0.85rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        .activity-list {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            overflow: hidden;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .activity-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .activity-icon.meeting {
-            background: rgba(99, 102, 241, 0.15);
-            color: #818cf8;
-        }
-
-        .activity-icon.file {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-        }
-
-        .activity-icon svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .activity-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .activity-name {
-            font-size: 0.9rem;
-            color: #fff;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .activity-meta {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 2px;
-        }
-
-        .activity-time {
-            font-size: 0.75rem;
-            color: #555;
-            flex-shrink: 0;
-        }
-
-        .activity-empty {
-            padding: 40px 20px;
-            text-align: center;
-            color: #555;
-            font-size: 0.9rem;
-        }
-
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .home-content {
@@ -369,20 +215,6 @@
 
             .app-card {
                 padding: 24px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stat-value {
-                font-size: 1.5rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -518,41 +350,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Quick Stats -->
-        <div class="stats-section">
-            <div class="stats-header">
-                <span class="stats-title">Quick Overview</span>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Projects</div>
-                    <div class="stat-value loading" id="statProjects">--</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Meetings</div>
-                    <div class="stat-value loading" id="statMeetings">--</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Files</div>
-                    <div class="stat-value loading" id="statFiles">--</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Storage Used</div>
-                    <div class="stat-value loading" id="statStorage">--</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="activity-section">
-            <div class="activity-header">
-                <span class="activity-title">Recent Activity</span>
-            </div>
-            <div class="activity-list" id="activityList">
-                <div class="activity-empty">Loading recent activity...</div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -570,8 +367,6 @@
             initializeUser();
             setTimeGreeting();
             checkModuleStatus();
-            loadQuickStats();
-            loadRecentActivity();
         });
 
         function setTimeGreeting() {
@@ -629,122 +424,6 @@
             }
         }
 
-        async function loadQuickStats() {
-            try {
-                // Load projects count
-                const projectsResult = await api.getProjects();
-                if (projectsResult.success && projectsResult.projects) {
-                    const projectCount = projectsResult.projects.length;
-                    document.getElementById('statProjects').textContent = projectCount;
-                    document.getElementById('statProjects').classList.remove('loading');
-
-                    // Count total meetings
-                    let totalMeetings = 0;
-                    for (const project of projectsResult.projects) {
-                        const meetingsResult = await api.getProjectMeetings(project.id);
-                        if (meetingsResult.success && meetingsResult.meetings) {
-                            totalMeetings += meetingsResult.meetings.length;
-                        }
-                    }
-                    document.getElementById('statMeetings').textContent = totalMeetings;
-                    document.getElementById('statMeetings').classList.remove('loading');
-                }
-            } catch (error) {
-                console.error('Error loading project stats:', error);
-                document.getElementById('statProjects').textContent = '0';
-                document.getElementById('statMeetings').textContent = '0';
-            }
-
-            try {
-                // Load drive stats
-                const driveResult = await api.browseDrive(null);
-                if (driveResult.success) {
-                    const folderCount = driveResult.folders?.length || 0;
-                    const fileCount = driveResult.files?.length || 0;
-                    document.getElementById('statFiles').textContent = folderCount + fileCount;
-                    document.getElementById('statFiles').classList.remove('loading');
-
-                    document.getElementById('statStorage').textContent = formatBytes(driveResult.total_size || 0);
-                    document.getElementById('statStorage').classList.remove('loading');
-                }
-            } catch (error) {
-                console.error('Error loading drive stats:', error);
-                document.getElementById('statFiles').textContent = '0';
-                document.getElementById('statStorage').textContent = '0 B';
-            }
-        }
-
-        async function loadRecentActivity() {
-            const activityList = document.getElementById('activityList');
-            const activities = [];
-
-            try {
-                // Get recent projects/meetings
-                const projectsResult = await api.getProjects();
-                if (projectsResult.success && projectsResult.projects) {
-                    for (const project of projectsResult.projects.slice(0, 3)) {
-                        const meetingsResult = await api.getProjectMeetings(project.id);
-                        if (meetingsResult.success && meetingsResult.meetings) {
-                            for (const meeting of meetingsResult.meetings.slice(0, 2)) {
-                                activities.push({
-                                    type: 'meeting',
-                                    name: meeting.meeting_name,
-                                    meta: project.project_name,
-                                    time: new Date(meeting.created_at),
-                                    link: `vision/dashboard.html`
-                                });
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading meeting activity:', error);
-            }
-
-            try {
-                // Get recent files
-                const driveResult = await api.browseDrive(null);
-                if (driveResult.success) {
-                    for (const folder of (driveResult.folders || []).slice(0, 3)) {
-                        activities.push({
-                            type: 'file',
-                            name: folder.folderName,
-                            meta: 'Folder',
-                            time: new Date(folder.createdAt || Date.now()),
-                            link: 'drive/drive.html'
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading drive activity:', error);
-            }
-
-            // Sort by time and limit to 5
-            activities.sort((a, b) => b.time - a.time);
-            const recentActivities = activities.slice(0, 5);
-
-            if (recentActivities.length === 0) {
-                activityList.innerHTML = '<div class="activity-empty">No recent activity. Start by creating a project or uploading files.</div>';
-                return;
-            }
-
-            activityList.innerHTML = recentActivities.map(activity => `
-                <div class="activity-item" onclick="window.location.href='${activity.link}'">
-                    <div class="activity-icon ${activity.type}">
-                        ${activity.type === 'meeting'
-                            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
-                            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
-                        }
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-name">${escapeHtml(activity.name)}</div>
-                        <div class="activity-meta">${escapeHtml(activity.meta)}</div>
-                    </div>
-                    <div class="activity-time">${formatTimeAgo(activity.time)}</div>
-                </div>
-            `).join('');
-        }
-
         function navigateToModule(module) {
             switch (module) {
                 case 'vision':
@@ -772,33 +451,6 @@
                 dropdown.classList.remove('show');
             }
         });
-
-        // Utility functions
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        function formatTimeAgo(date) {
-            const seconds = Math.floor((new Date() - date) / 1000);
-            if (seconds < 60) return 'Just now';
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `${minutes}m ago`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `${hours}h ago`;
-            const days = Math.floor(hours / 24);
-            if (days < 7) return `${days}d ago`;
-            return date.toLocaleDateString();
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
     </script>
 </body>
 </html>
