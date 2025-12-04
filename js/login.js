@@ -13,6 +13,52 @@ const swipeHandle = document.getElementById('swipeHandle');
 const swipeTrack = swipeHandle?.parentElement;
 const errorMessage = document.getElementById('errorMessage');
 
+// Detect browser autofill and adjust input styling
+function detectAutofill() {
+    const inputs = document.querySelectorAll('.form-input');
+    inputs.forEach(input => {
+        const wrapper = input.closest('.input-wrapper');
+        if (!wrapper) return;
+
+        // Check if input has been autofilled
+        const checkAutofill = () => {
+            try {
+                // Safari/Chrome autofill detection
+                const isAutofilled = input.matches(':-webkit-autofill') ||
+                                    input.matches(':autofill') ||
+                                    (input.value && window.getComputedStyle(input).backgroundColor !== 'rgba(255, 255, 255, 0.9)');
+
+                if (isAutofilled || input.value) {
+                    wrapper.classList.add('autofilled');
+                } else {
+                    wrapper.classList.remove('autofilled');
+                }
+            } catch (e) {
+                // Fallback: just check if there's a value
+                if (input.value) {
+                    wrapper.classList.add('autofilled');
+                } else {
+                    wrapper.classList.remove('autofilled');
+                }
+            }
+        };
+
+        // Check on various events
+        input.addEventListener('input', checkAutofill);
+        input.addEventListener('change', checkAutofill);
+        input.addEventListener('focus', checkAutofill);
+        input.addEventListener('blur', checkAutofill);
+
+        // Check after a delay for browser autofill
+        setTimeout(checkAutofill, 100);
+        setTimeout(checkAutofill, 500);
+        setTimeout(checkAutofill, 1000);
+    });
+}
+
+// Run autofill detection
+detectAutofill();
+
 // Toggle password visibility
 togglePasswordBtn?.addEventListener('click', () => {
     const type = passwordInput.type === 'password' ? 'text' : 'password';

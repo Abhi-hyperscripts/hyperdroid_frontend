@@ -307,7 +307,7 @@ body {
 
 .form-input {
     width: 100%;
-    padding: 10px 16px 10px 48px;
+    padding: 14px 16px 14px 48px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
@@ -316,6 +316,22 @@ body {
     font-family: inherit;
     transition: all 0.3s ease;
     letter-spacing: -0.01em;
+}
+
+/* Handle Safari/iOS autofill - when browser shows autofill icon, adjust text position */
+.form-input:-webkit-autofill,
+.form-input:autofill {
+    padding-left: 48px;
+}
+
+/* Hide custom icon when input wrapper has autofilled class (set via JS) */
+.input-wrapper.autofilled .input-icon {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.input-wrapper.autofilled .form-input {
+    padding-left: 16px;
 }
 
 .form-input::placeholder {
