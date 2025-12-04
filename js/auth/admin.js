@@ -404,7 +404,7 @@ function renderUsersTable(users) {
                             </svg>
                         </button>
                         ${!isActive ? `
-                            <button class="action-btn success" onclick="reactivateUser('${user.userId}')" title="Reactivate">
+                            <button class="action-btn success" onclick="openReactivateModal('${user.userId}', '${user.firstName} ${user.lastName}')" title="Reactivate">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="20 6 9 17 4 12"/>
                                 </svg>
@@ -1003,9 +1003,18 @@ async function confirmDeleteUser() {
     }
 }
 
-async function reactivateUser(userId) {
+function openReactivateModal(userId, userName) {
+    document.getElementById('reactivateUserId').value = userId;
+    document.getElementById('reactivateConfirmMessage').textContent = `Are you sure you want to reactivate ${userName}? The user will be able to log in again.`;
+    openModal('confirmReactivateModal');
+}
+
+async function confirmReactivateUser() {
+    const userId = document.getElementById('reactivateUserId').value;
+
     try {
         await api.reactivateUser(userId);
+        closeModal('confirmReactivateModal');
         showToast('User reactivated successfully', 'success');
         await loadUsers();
     } catch (error) {

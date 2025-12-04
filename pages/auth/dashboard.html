@@ -1450,6 +1450,26 @@
         </div>
     </div>
 
+    <!-- Confirm Reactivate Modal -->
+    <div class="modal" id="confirmReactivateModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Confirm Reactivate</h3>
+                    <button class="close-btn" onclick="closeModal('confirmReactivateModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="reactivateConfirmMessage" style="color: #666;"></p>
+                    <input type="hidden" id="reactivateUserId">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('confirmReactivateModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmReactivateUser()">Reactivate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
