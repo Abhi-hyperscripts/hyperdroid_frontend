@@ -1606,7 +1606,6 @@ body {
         bottom: 75px;
         padding: 10px !important;
         overflow: visible !important;
-        display: block !important;
     }
 
     .bg-settings-header {
