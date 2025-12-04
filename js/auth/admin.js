@@ -622,7 +622,95 @@ function updateRoleCheckboxes() {
 function openCreateUserModal() {
     // Reset form
     document.getElementById('createUserForm').reset();
+    // Reset password strength indicator
+    resetPasswordStrength();
     openModal('createUserModal');
+}
+
+// Password strength validation
+function checkPasswordStrength() {
+    const password = document.getElementById('newUserPassword').value;
+    const strengthFill = document.getElementById('passwordStrengthFill');
+    const strengthText = document.getElementById('passwordStrengthText');
+
+    // Check each requirement
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*]/.test(password)
+    };
+
+    // Update requirement indicators
+    updateRequirement('req-length', requirements.length);
+    updateRequirement('req-uppercase', requirements.uppercase);
+    updateRequirement('req-lowercase', requirements.lowercase);
+    updateRequirement('req-number', requirements.number);
+    updateRequirement('req-special', requirements.special);
+
+    // Calculate strength score (0-5)
+    const score = Object.values(requirements).filter(Boolean).length;
+
+    // Remove all classes
+    strengthFill.className = 'password-strength-fill';
+    strengthText.className = 'password-strength-text';
+
+    if (password.length === 0) {
+        strengthText.textContent = '';
+        return;
+    }
+
+    // Set strength level
+    if (score <= 1) {
+        strengthFill.classList.add('weak');
+        strengthText.classList.add('weak');
+        strengthText.textContent = 'Weak';
+    } else if (score <= 2) {
+        strengthFill.classList.add('fair');
+        strengthText.classList.add('fair');
+        strengthText.textContent = 'Fair';
+    } else if (score <= 4) {
+        strengthFill.classList.add('good');
+        strengthText.classList.add('good');
+        strengthText.textContent = 'Good';
+    } else {
+        strengthFill.classList.add('strong');
+        strengthText.classList.add('strong');
+        strengthText.textContent = 'Strong';
+    }
+}
+
+function updateRequirement(reqId, isMet) {
+    const reqElement = document.getElementById(reqId);
+    if (reqElement) {
+        if (isMet) {
+            reqElement.classList.add('met');
+        } else {
+            reqElement.classList.remove('met');
+        }
+    }
+}
+
+function resetPasswordStrength() {
+    const strengthFill = document.getElementById('passwordStrengthFill');
+    const strengthText = document.getElementById('passwordStrengthText');
+
+    if (strengthFill) {
+        strengthFill.className = 'password-strength-fill';
+    }
+    if (strengthText) {
+        strengthText.className = 'password-strength-text';
+        strengthText.textContent = '';
+    }
+
+    // Reset all requirements
+    ['req-length', 'req-uppercase', 'req-lowercase', 'req-number', 'req-special'].forEach(reqId => {
+        const reqElement = document.getElementById(reqId);
+        if (reqElement) {
+            reqElement.classList.remove('met');
+        }
+    });
 }
 
 async function createUser() {

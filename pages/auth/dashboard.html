@@ -1270,6 +1270,106 @@
         .users-table tr.deactivated-row:hover td {
             background: rgba(231, 76, 60, 0.06);
         }
+
+        /* Password Strength Meter */
+        .password-strength-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .password-strength-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .password-strength-fill.weak {
+            width: 25%;
+            background-color: #e74c3c;
+        }
+
+        .password-strength-fill.fair {
+            width: 50%;
+            background-color: #f39c12;
+        }
+
+        .password-strength-fill.good {
+            width: 75%;
+            background-color: #3498db;
+        }
+
+        .password-strength-fill.strong {
+            width: 100%;
+            background-color: #27ae60;
+        }
+
+        .password-strength-text {
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .password-strength-text.weak { color: #e74c3c; }
+        .password-strength-text.fair { color: #f39c12; }
+        .password-strength-text.good { color: #3498db; }
+        .password-strength-text.strong { color: #27ae60; }
+
+        /* Password Requirements Checklist */
+        .password-requirements {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #666;
+            padding: 4px 0;
+        }
+
+        .requirement .req-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .requirement .req-icon.unmet {
+            stroke: #ccc;
+        }
+
+        .requirement .req-icon.met {
+            stroke: #27ae60;
+            display: none;
+        }
+
+        .requirement.met {
+            color: #27ae60;
+        }
+
+        .requirement.met .req-icon.unmet {
+            display: none;
+        }
+
+        .requirement.met .req-icon.met {
+            display: block;
+        }
     </style>
 </head>
 <body class="dashboard">
@@ -1455,7 +1555,42 @@
                         </div>
                         <div class="form-group">
                             <label>Password</label>
-                            <input type="password" id="newUserPassword" required placeholder="Min 8 chars, uppercase, number, special">
+                            <input type="password" id="newUserPassword" required placeholder="Enter password" oninput="checkPasswordStrength()">
+                            <!-- Password Strength Meter -->
+                            <div class="password-strength-container">
+                                <div class="password-strength-bar">
+                                    <div class="password-strength-fill" id="passwordStrengthFill"></div>
+                                </div>
+                                <span class="password-strength-text" id="passwordStrengthText"></span>
+                            </div>
+                            <!-- Password Requirements Checklist -->
+                            <div class="password-requirements" id="passwordRequirements">
+                                <div class="requirement" id="req-length">
+                                    <svg class="req-icon unmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <svg class="req-icon met" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="requirement" id="req-uppercase">
+                                    <svg class="req-icon unmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <svg class="req-icon met" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>One uppercase letter</span>
+                                </div>
+                                <div class="requirement" id="req-lowercase">
+                                    <svg class="req-icon unmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <svg class="req-icon met" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>One lowercase letter</span>
+                                </div>
+                                <div class="requirement" id="req-number">
+                                    <svg class="req-icon unmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <svg class="req-icon met" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>One number</span>
+                                </div>
+                                <div class="requirement" id="req-special">
+                                    <svg class="req-icon unmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <svg class="req-icon met" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>One special character (!@#$%^&*)</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>First Name</label>
@@ -1469,7 +1604,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeModal('createUserModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="createUser()">Create User</button>
+                    <button class="btn btn-primary" id="createUserBtn" onclick="createUser()">Create User</button>
                 </div>
             </div>
         </div>
