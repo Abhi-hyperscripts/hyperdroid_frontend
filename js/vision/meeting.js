@@ -2067,7 +2067,7 @@ async function togglePictureInPicture() {
         if (document.pictureInPictureElement) {
             // Exit PiP
             await document.exitPictureInPicture();
-            pipBtn.classList.remove('active');
+            if (pipBtn) pipBtn.classList.remove('active');
             pipEnabled = false;
         } else {
             // Enter PiP - use local participant video or first remote video
@@ -2080,7 +2080,7 @@ async function togglePictureInPicture() {
 
             if (video && video.srcObject) {
                 await video.requestPictureInPicture();
-                pipBtn.classList.add('active');
+                if (pipBtn) pipBtn.classList.add('active');
                 pipEnabled = true;
             } else {
                 alert('No active video available for Picture-in-Picture mode');
@@ -2095,7 +2095,7 @@ async function togglePictureInPicture() {
 // Listen for PiP exit (when user clicks browser X button)
 document.addEventListener('leavepictureinpicture', () => {
     const pipBtn = document.getElementById('pipBtn');
-    pipBtn.classList.remove('active');
+    if (pipBtn) pipBtn.classList.remove('active');
     pipEnabled = false;
 });
 

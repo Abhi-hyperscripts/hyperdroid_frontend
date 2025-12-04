@@ -1605,7 +1605,7 @@ body {
         max-width: 400px;
         bottom: 80px;
         padding: 0;
-        max-height: 280px;
+        max-height: 300px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -1625,11 +1625,14 @@ body {
     }
 
     .bg-options {
+        display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         padding: 12px 14px;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         flex: 1;
+        min-height: 0;
     }
 
     .bg-option {
@@ -1736,7 +1739,7 @@ body {
 
     .background-settings {
         max-width: 340px;
-        max-height: 220px;
+        max-height: 260px;
         bottom: 70px;
     }
 
@@ -1745,9 +1748,11 @@ body {
     }
 
     .bg-options {
+        display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
         padding: 10px 12px;
+        min-height: 0;
     }
 
     .bg-option {
