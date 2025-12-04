@@ -6,6 +6,7 @@ let allRoles = [];
 let allServices = [];
 let currentUserRoles = [];
 let adminHubConnection = null;
+let showDeactivatedUsers = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -302,9 +303,15 @@ async function loadUsers() {
         const users = await api.getAllUsersAdmin();
         allUsers = users || [];
 
-        document.getElementById('usersCount').textContent = allUsers.length;
+        // Show total active users count in tab
+        const activeUsers = allUsers.filter(u => u.isActive !== false);
+        document.getElementById('usersCount').textContent = activeUsers.length;
 
-        renderUsersTable(allUsers);
+        // Update deactivated count badge
+        updateDeactivatedCount();
+
+        // Apply current filter and render
+        filterUsers();
     } catch (error) {
         console.error('Failed to load users:', error);
         tbody.innerHTML = `
@@ -359,8 +366,11 @@ function renderUsersTable(users) {
         const hiddenRoles = roles.slice(maxVisibleRoles);
         const hasMoreRoles = hiddenRoles.length > 0;
 
+        // Escape user name for use in onclick attributes
+        const escapedName = `${user.firstName || ''} ${user.lastName || ''}`.replace(/'/g, "\\'");
+
         return `
-            <tr>
+            <tr class="${!isActive ? 'deactivated-row' : ''}">
                 <td>
                     <div class="user-info">
                         <div class="user-avatar-small">${initials}</div>
@@ -392,30 +402,38 @@ function renderUsersTable(users) {
                 <td class="date-cell">${user.createDate ? formatDate(user.createDate) : '-'}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="openEditRolesModal('${user.userId}', '${user.firstName} ${user.lastName}', ${JSON.stringify(roles).replace(/"/g, '&quot;')})" title="Manage Roles">
+                        <button class="action-btn" onclick="openEditRolesModal('${user.userId}', '${escapedName}', ${JSON.stringify(roles).replace(/"/g, '&quot;')})" title="Manage Roles">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                             </svg>
                         </button>
-                        <button class="action-btn" onclick="openResetPasswordModal('${user.userId}', '${user.firstName} ${user.lastName}')" title="Reset Password">
+                        <button class="action-btn" onclick="openResetPasswordModal('${user.userId}', '${escapedName}')" title="Reset Password">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
                         </button>
-                        ${!isActive ? `
-                            <button class="action-btn success" onclick="openReactivateModal('${user.userId}', '${user.firstName} ${user.lastName}')" title="Reactivate">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                            </button>
-                        ` : ''}
-                        ${!isSelf ? `
-                            <button class="action-btn danger" onclick="openDeleteModal('${user.userId}', '${user.firstName} ${user.lastName}', false)" title="Deactivate">
+                        ${isActive && !isSelf ? `
+                            <button class="action-btn danger" onclick="openDeleteModal('${user.userId}', '${escapedName}', false)" title="Deactivate">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"/>
                                     <line x1="15" y1="9" x2="9" y2="15"/>
                                     <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                        ${!isActive ? `
+                            <button class="action-btn success" onclick="openReactivateModal('${user.userId}', '${escapedName}')" title="Reactivate">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn danger" onclick="openDeleteModal('${user.userId}', '${escapedName}', true)" title="Delete Permanently">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    <line x1="10" y1="11" x2="10" y2="17"/>
+                                    <line x1="14" y1="11" x2="14" y2="17"/>
                                 </svg>
                             </button>
                         ` : ''}
@@ -432,10 +450,48 @@ function filterUsers() {
     const filtered = allUsers.filter(user => {
         const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
         const email = (user.email || '').toLowerCase();
-        return fullName.includes(searchTerm) || email.includes(searchTerm);
+        const matchesSearch = fullName.includes(searchTerm) || email.includes(searchTerm);
+
+        // Filter by active status based on toggle
+        const isActive = user.isActive !== false;
+        if (!showDeactivatedUsers && !isActive) {
+            return false; // Hide deactivated users when toggle is off
+        }
+
+        return matchesSearch;
     });
 
     renderUsersTable(filtered);
+}
+
+function toggleShowDeactivated() {
+    showDeactivatedUsers = !showDeactivatedUsers;
+
+    const btn = document.getElementById('toggleDeactivatedBtn');
+    const text = document.getElementById('toggleDeactivatedText');
+
+    if (showDeactivatedUsers) {
+        btn.classList.add('active');
+        text.textContent = 'Hide Deactivated';
+    } else {
+        btn.classList.remove('active');
+        text.textContent = 'Show Deactivated';
+    }
+
+    filterUsers();
+}
+
+function updateDeactivatedCount() {
+    const deactivatedUsers = allUsers.filter(u => u.isActive === false);
+    const countEl = document.getElementById('deactivatedCount');
+    const count = deactivatedUsers.length;
+
+    if (count > 0) {
+        countEl.textContent = count;
+        countEl.style.display = 'inline';
+    } else {
+        countEl.style.display = 'none';
+    }
 }
 
 function getRoleBadgeClass(role) {

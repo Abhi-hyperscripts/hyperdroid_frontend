@@ -1172,6 +1172,56 @@
             font-size: 0.8rem;
             color: #888;
         }
+
+        /* Toggle Deactivated Users Button */
+        .btn-toggle-deactivated {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-toggle-deactivated:hover {
+            background: rgba(0, 0, 0, 0.06);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-toggle-deactivated.active {
+            background: rgba(231, 76, 60, 0.1);
+            border-color: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+
+        .btn-toggle-deactivated.active:hover {
+            background: rgba(231, 76, 60, 0.15);
+        }
+
+        .deactivated-count {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Deactivated user row styling */
+        .users-table tr.deactivated-row {
+            background: rgba(231, 76, 60, 0.03);
+        }
+
+        .users-table tr.deactivated-row:hover td {
+            background: rgba(231, 76, 60, 0.06);
+        }
     </style>
 </head>
 <body class="dashboard">
@@ -1289,6 +1339,14 @@
                         </svg>
                         <input type="text" class="search-input" id="userSearch" placeholder="Search users..." oninput="filterUsers()" autocomplete="off">
                     </div>
+                    <button class="btn-toggle-deactivated" id="toggleDeactivatedBtn" onclick="toggleShowDeactivated()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span id="toggleDeactivatedText">Show Deactivated</span>
+                        <span class="deactivated-count" id="deactivatedCount" style="display: none;">0</span>
+                    </button>
                 </div>
                 <button class="btn btn-primary" onclick="openCreateUserModal()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
