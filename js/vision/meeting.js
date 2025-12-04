@@ -9,6 +9,55 @@ let participantZoomLevels = {}; // Store zoom levels for each participant
 let isAnyoneScreenSharing = false; // Track if anyone is sharing screen
 let chatWasVisibleBeforeScreenShare = false; // Track chat visibility before screen share
 let activeSpeakerManager = null; // Active speaker detection manager
+let audioResumed = false; // Track if we've already handled audio resume
+
+// Global handler to resume all audio elements on first user interaction
+// This is needed for mobile Safari which blocks autoplay until user gesture
+function setupAudioResumeHandler() {
+    const resumeAllAudio = () => {
+        if (audioResumed) return;
+        audioResumed = true;
+
+        console.log('User interaction detected - resuming all audio elements');
+        document.querySelectorAll('audio').forEach(audio => {
+            if (audio.paused && audio.srcObject) {
+                audio.play().catch(e => console.warn('Failed to resume audio:', e));
+            }
+        });
+
+        // Also resume AudioContext if suspended (Safari requirement)
+        if (window.AudioContext || window.webkitAudioContext) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass.prototype.resume) {
+                // Resume any suspended audio contexts
+                document.querySelectorAll('audio, video').forEach(el => {
+                    if (el.captureStream) {
+                        try {
+                            const ctx = new AudioContextClass();
+                            if (ctx.state === 'suspended') {
+                                ctx.resume();
+                            }
+                        } catch (e) {
+                            // Ignore errors
+                        }
+                    }
+                });
+            }
+        }
+
+        // Remove the listeners after first interaction
+        document.removeEventListener('click', resumeAllAudio);
+        document.removeEventListener('touchstart', resumeAllAudio);
+        document.removeEventListener('keydown', resumeAllAudio);
+    };
+
+    document.addEventListener('click', resumeAllAudio);
+    document.addEventListener('touchstart', resumeAllAudio);
+    document.addEventListener('keydown', resumeAllAudio);
+}
+
+// Call immediately to setup the handler
+setupAudioResumeHandler();
 
 // Recording state
 let mediaRecorder = null;
@@ -582,8 +631,25 @@ function addParticipant(participant) {
         if (publication.track && publication.isSubscribed) {
             let audio = document.createElement('audio');
             audio.autoplay = true;
+            audio.playsInline = true;
+            audio.dataset.participantId = participant.identity;
             participantDiv.appendChild(audio);
             publication.track.attach(audio);
+
+            // Handle mobile Safari autoplay
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
+                    const resumeAudio = () => {
+                        audio.play().catch(e => console.warn('Audio play retry failed:', e));
+                        document.removeEventListener('click', resumeAudio);
+                        document.removeEventListener('touchstart', resumeAudio);
+                    };
+                    document.addEventListener('click', resumeAudio, { once: true });
+                    document.addEventListener('touchstart', resumeAudio, { once: true });
+                });
+            }
         }
     });
 }
@@ -778,8 +844,25 @@ function addParticipantToContainer(participant, container, className, isLocal) {
             if (publication.track && publication.isSubscribed) {
                 const audio = document.createElement('audio');
                 audio.autoplay = true;
+                audio.playsInline = true;
+                audio.dataset.participantId = participant.identity;
                 participantDiv.appendChild(audio);
                 publication.track.attach(audio);
+
+                // Handle mobile Safari autoplay
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
+                        const resumeAudio = () => {
+                            audio.play().catch(e => console.warn('Audio play retry failed:', e));
+                            document.removeEventListener('click', resumeAudio);
+                            document.removeEventListener('touchstart', resumeAudio);
+                        };
+                        document.addEventListener('click', resumeAudio, { once: true });
+                        document.addEventListener('touchstart', resumeAudio, { once: true });
+                    });
+                }
             }
         });
     }
@@ -873,9 +956,28 @@ function attachTrack(track, publication, participant) {
             if (!audio) {
                 audio = document.createElement('audio');
                 audio.autoplay = true;
+                audio.playsInline = true;
+                // Add data attribute to identify the participant for this audio
+                audio.dataset.participantId = participant.identity;
                 participantDiv.appendChild(audio);
             }
             track.attach(audio);
+
+            // Handle mobile Safari autoplay - attempt play with user gesture fallback
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
+                    // Add one-time click handler to resume audio on any user interaction
+                    const resumeAudio = () => {
+                        audio.play().catch(e => console.warn('Audio play retry failed:', e));
+                        document.removeEventListener('click', resumeAudio);
+                        document.removeEventListener('touchstart', resumeAudio);
+                    };
+                    document.addEventListener('click', resumeAudio, { once: true });
+                    document.addEventListener('touchstart', resumeAudio, { once: true });
+                });
+            }
         }
     }
 }
@@ -934,31 +1036,119 @@ function detachTrack(track, publication, participant) {
 }
 
 // Toggle microphone
+let micToggleInProgress = false;
 async function toggleMic() {
-    micEnabled = !micEnabled;
-    await room.localParticipant.setMicrophoneEnabled(micEnabled);
-    document.getElementById('micBtn').classList.toggle('active', micEnabled);
+    // Prevent double-clicks / race conditions
+    if (micToggleInProgress) {
+        console.log('Mic toggle already in progress, ignoring');
+        return;
+    }
+
+    const micBtn = document.getElementById('micBtn');
+    if (!micBtn) return;
+
+    micToggleInProgress = true;
+    micBtn.disabled = true;
+
+    const newState = !micEnabled;
+
+    try {
+        await room.localParticipant.setMicrophoneEnabled(newState);
+        micEnabled = newState;
+        micBtn.classList.toggle('active', micEnabled);
+        console.log('Microphone toggled:', micEnabled ? 'ON' : 'OFF');
+    } catch (error) {
+        console.error('Failed to toggle microphone:', error);
+        // Show user-friendly error
+        if (error.name === 'NotAllowedError' || error.message?.includes('Permission')) {
+            alert('Microphone access was denied. Please check your browser permissions and try again.');
+        } else {
+            // For other errors, try to re-acquire mic permission
+            try {
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Retry the toggle
+                await room.localParticipant.setMicrophoneEnabled(newState);
+                micEnabled = newState;
+                micBtn.classList.toggle('active', micEnabled);
+            } catch (retryError) {
+                console.error('Retry failed:', retryError);
+                alert('Unable to toggle microphone. Please refresh the page and try again.');
+            }
+        }
+    } finally {
+        micToggleInProgress = false;
+        micBtn.disabled = false;
+    }
 }
 
 // Toggle camera
+let cameraToggleInProgress = false;
 async function toggleCamera() {
-    cameraEnabled = !cameraEnabled;
-    await room.localParticipant.setCameraEnabled(cameraEnabled);
-    document.getElementById('camBtn').classList.toggle('active', cameraEnabled);
+    // Prevent double-clicks / race conditions
+    if (cameraToggleInProgress) {
+        console.log('Camera toggle already in progress, ignoring');
+        return;
+    }
 
-    // Re-attach video track to local video element after enabling
-    if (cameraEnabled) {
-        const video = document.querySelector('#local-participant video');
-        if (video) {
-            // Wait a moment for the new track to be published
-            setTimeout(() => {
-                room.localParticipant.videoTrackPublications.forEach((publication) => {
-                    if (publication.track) {
-                        video.srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+    const camBtn = document.getElementById('camBtn');
+    if (!camBtn) return;
+
+    cameraToggleInProgress = true;
+    camBtn.disabled = true;
+
+    const newState = !cameraEnabled;
+
+    try {
+        await room.localParticipant.setCameraEnabled(newState);
+        cameraEnabled = newState;
+        camBtn.classList.toggle('active', cameraEnabled);
+        console.log('Camera toggled:', cameraEnabled ? 'ON' : 'OFF');
+
+        // Re-attach video track to local video element after enabling
+        if (cameraEnabled) {
+            const video = document.querySelector('#local-participant video');
+            if (video) {
+                // Wait for the new track to be published, with proper retry
+                let retries = 0;
+                const maxRetries = 10;
+                const attachVideoTrack = () => {
+                    const cameraPublication = Array.from(room.localParticipant.videoTrackPublications.values())
+                        .find(pub => pub.source === 'camera' && pub.track);
+
+                    if (cameraPublication && cameraPublication.track) {
+                        video.srcObject = new MediaStream([cameraPublication.track.mediaStreamTrack]);
+                        console.log('Camera track reattached successfully');
+                    } else if (retries < maxRetries) {
+                        retries++;
+                        setTimeout(attachVideoTrack, 100);
+                    } else {
+                        console.warn('Could not find camera track after', maxRetries, 'retries');
                     }
-                });
-            }, 100);
+                };
+                setTimeout(attachVideoTrack, 100);
+            }
         }
+    } catch (error) {
+        console.error('Failed to toggle camera:', error);
+        // Show user-friendly error
+        if (error.name === 'NotAllowedError' || error.message?.includes('Permission')) {
+            alert('Camera access was denied. Please check your browser permissions and try again.');
+        } else {
+            // For other errors, try to re-acquire camera permission
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                // Retry the toggle
+                await room.localParticipant.setCameraEnabled(newState);
+                cameraEnabled = newState;
+                camBtn.classList.toggle('active', cameraEnabled);
+            } catch (retryError) {
+                console.error('Retry failed:', retryError);
+                alert('Unable to toggle camera. Please refresh the page and try again.');
+            }
+        }
+    } finally {
+        cameraToggleInProgress = false;
+        camBtn.disabled = false;
     }
 }
 
