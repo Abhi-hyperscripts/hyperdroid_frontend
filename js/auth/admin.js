@@ -405,27 +405,28 @@ function renderUsersTable(users) {
                 <td class="date-cell">${user.createDate ? formatDate(user.createDate) : '-'}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="openEditRolesModal('${user.userId}', '${escapedName}', ${JSON.stringify(roles).replace(/"/g, '&quot;')})" title="Manage Roles">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn" onclick="openResetPasswordModal('${user.userId}', '${escapedName}')" title="Reset Password">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                        </button>
-                        ${isActive && !isSelf ? `
-                            <button class="action-btn danger" onclick="openDeleteModal('${user.userId}', '${escapedName}', false)" title="Deactivate">
+                        ${isActive ? `
+                            <button class="action-btn" onclick="openEditRolesModal('${user.userId}', '${escapedName}', ${JSON.stringify(roles).replace(/"/g, '&quot;')})" title="Manage Roles">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="15" y1="9" x2="9" y2="15"/>
-                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                                 </svg>
                             </button>
-                        ` : ''}
-                        ${!isActive ? `
+                            <button class="action-btn" onclick="openResetPasswordModal('${user.userId}', '${escapedName}')" title="Reset Password">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </button>
+                            ${!isSelf ? `
+                                <button class="action-btn danger" onclick="openDeleteModal('${user.userId}', '${escapedName}', false)" title="Deactivate">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="15" y1="9" x2="9" y2="15"/>
+                                        <line x1="9" y1="9" x2="15" y2="15"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        ` : `
                             <button class="action-btn success" onclick="openReactivateModal('${user.userId}', '${escapedName}')" title="Reactivate">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="20 6 9 17 4 12"/>
@@ -439,7 +440,7 @@ function renderUsersTable(users) {
                                     <line x1="14" y1="11" x2="14" y2="17"/>
                                 </svg>
                             </button>
-                        ` : ''}
+                        `}
                     </div>
                 </td>
             </tr>
