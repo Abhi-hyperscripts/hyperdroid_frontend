@@ -432,6 +432,9 @@ async function connectToLiveKit(wsUrl, token) {
         // Initialize active speakers
         activeSpeakerManager.initializeActiveSpeakers();
 
+        // Start periodic cleanup of stale participant tiles (helps on mobile)
+        startStaleParticipantCleanup();
+
         console.log('Connected to LiveKit room with Active Speaker Detection (Main: 1080p, Small: 360p)');
     } catch (error) {
         console.error('Error connecting to LiveKit:', error);
@@ -714,6 +717,59 @@ function removeParticipant(participantOrIdentity) {
     raisedHands.delete(identity);
 
     console.log(`Participant ${identity} fully removed from UI`);
+}
+
+// Periodic cleanup of stale participant tiles (for mobile reliability)
+function cleanupStaleParticipants() {
+    if (!room) return;
+
+    const videoContainer = document.getElementById('videoContainer');
+    if (!videoContainer) return;
+
+    // Get all current remote participant identities
+    const activeParticipants = new Set(
+        Array.from(room.remoteParticipants.values()).map(p => p.identity)
+    );
+
+    // Find all participant tiles in the DOM
+    const allTiles = videoContainer.querySelectorAll('[id^="participant-"], [id^="audio-only-"]');
+
+    allTiles.forEach(tile => {
+        // Extract identity from tile ID
+        let identity = null;
+        if (tile.id.startsWith('participant-')) {
+            identity = tile.id.replace('participant-', '');
+        } else if (tile.id.startsWith('audio-only-')) {
+            identity = tile.id.replace('audio-only-', '');
+        }
+
+        // Skip local participant
+        if (identity === room.localParticipant?.identity || tile.id === 'local-participant') {
+            return;
+        }
+
+        // Remove tile if participant is no longer active
+        if (identity && !activeParticipants.has(identity)) {
+            console.log(`Cleaning up stale tile for disconnected participant: ${identity}`);
+            tile.remove();
+        }
+    });
+}
+
+// Start periodic cleanup every 5 seconds
+let staleCleanupInterval = null;
+function startStaleParticipantCleanup() {
+    if (staleCleanupInterval) return;
+    staleCleanupInterval = setInterval(cleanupStaleParticipants, 5000);
+    console.log('Started periodic stale participant cleanup');
+}
+
+function stopStaleParticipantCleanup() {
+    if (staleCleanupInterval) {
+        clearInterval(staleCleanupInterval);
+        staleCleanupInterval = null;
+        console.log('Stopped periodic stale participant cleanup');
+    }
 }
 
 // Track current layout state to avoid unnecessary rebuilds
@@ -1072,6 +1128,18 @@ function detachTrack(track, publication, participant) {
             track.detach(video);
         }
     }
+
+    // On mobile, participantDisconnected event may not fire reliably
+    // Check if participant is still in the room after a short delay
+    setTimeout(() => {
+        const isStillConnected = room && Array.from(room.remoteParticipants.values())
+            .some(p => p.identity === participant.identity);
+
+        if (!isStillConnected) {
+            console.log(`Participant ${participant.identity} no longer in room, cleaning up stale tile`);
+            removeParticipant(participant);
+        }
+    }, 500);
 }
 
 // Toggle microphone
@@ -1895,6 +1963,9 @@ async function leaveMeeting() {
             if (room) {
                 await room.disconnect();
             }
+
+            // Stop stale participant cleanup
+            stopStaleParticipantCleanup();
 
             // Clear guest session if guest user
             if (isGuest) {
