@@ -512,6 +512,54 @@
             background: rgba(39, 174, 96, 0.1);
         }
 
+        /* Custom Tooltip - instant, black background */
+        .action-btn {
+            position: relative;
+        }
+
+        .action-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 10px;
+            background: #000;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            pointer-events: none;
+            margin-bottom: 6px;
+            z-index: 1000;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            pointer-events: none;
+            margin-bottom: -4px;
+            z-index: 1000;
+        }
+
+        .action-btn:hover::after,
+        .action-btn:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
         /* Modal Styles */
         .modal-sm {
             max-width: 480px;
