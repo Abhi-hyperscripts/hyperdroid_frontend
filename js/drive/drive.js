@@ -14,9 +14,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initializeUser();
     setupEventListeners();
+    setupBrowserNavigation();
     await loadDriveContents();
     initializeSignalR();
 });
+
+// Handle browser back/forward navigation
+function setupBrowserNavigation() {
+    // Push initial state
+    const initialState = { folderId: currentFolderId };
+    history.replaceState(initialState, '', window.location.href);
+
+    // Listen for browser back/forward buttons
+    window.addEventListener('popstate', async (event) => {
+        if (event.state && event.state.hasOwnProperty('folderId')) {
+            currentFolderId = event.state.folderId;
+            folderStack = event.state.folderStack || [];
+            await loadDriveContents();
+        } else {
+            // No state, go to root
+            currentFolderId = null;
+            folderStack = [];
+            await loadDriveContents();
+        }
+    });
+}
 
 // SignalR connection for real-time updates
 function initializeSignalR() {
@@ -164,13 +186,20 @@ async function loadDriveContents() {
             updateUploadButtonState();
         } else {
             showError(result.message || 'Failed to load drive contents');
+            // Don't clear contents on error - keep showing what we had
         }
     } catch (error) {
         console.error('Error loading drive:', error);
         showError(error.message);
+        // Don't clear contents on error - keep showing what we had
     } finally {
         showLoading(false);
     }
+}
+
+// Refresh current folder contents (exposed for UI refresh button)
+async function refreshDriveContents() {
+    await loadDriveContents();
 }
 
 // Update upload button state based on current folder
@@ -353,7 +382,7 @@ function getFileIcon(contentType, fileName) {
 }
 
 // Navigation
-function navigateToFolder(folderId, folderName = null) {
+function navigateToFolder(folderId, folderName = null, skipHistory = false) {
     if (folderId === null) {
         // Go to root
         currentFolderId = null;
@@ -364,6 +393,12 @@ function navigateToFolder(folderId, folderName = null) {
             folderStack.push({ id: currentFolderId });
         }
         currentFolderId = folderId;
+    }
+
+    // Push state to browser history (unless navigating via popstate)
+    if (!skipHistory) {
+        const state = { folderId: currentFolderId, folderStack: [...folderStack] };
+        history.pushState(state, '', window.location.href);
     }
 
     loadDriveContents();
@@ -525,13 +560,15 @@ async function handleCreateFolder(e) {
         if (result.success) {
             showSuccess('Folder created successfully');
             closeModal('createFolderModal');
-            loadDriveContents();
+            await loadDriveContents();
         } else {
             showError(result.message || 'Failed to create folder');
+            // Don't close modal on error - let user retry or cancel
         }
     } catch (error) {
         console.error('Error creating folder:', error);
         showError(error.message);
+        // Don't close modal on error - let user retry or cancel
     }
 }
 
@@ -919,8 +956,25 @@ function updateStorageInfo(totalSize) {
 }
 
 function showLoading(show) {
-    document.getElementById('loadingState').style.display = show ? 'flex' : 'none';
-    document.getElementById('driveContents').style.display = show ? 'none' : 'grid';
+    const loadingState = document.getElementById('loadingState');
+    const driveContents = document.getElementById('driveContents');
+
+    if (show) {
+        loadingState.style.display = 'flex';
+        // Only hide contents if there's nothing to show (first load)
+        if (driveContents.children.length === 0) {
+            driveContents.style.display = 'none';
+        } else {
+            // Keep contents visible but dimmed during refresh
+            driveContents.style.opacity = '0.5';
+            driveContents.style.pointerEvents = 'none';
+        }
+    } else {
+        loadingState.style.display = 'none';
+        driveContents.style.display = 'grid';
+        driveContents.style.opacity = '1';
+        driveContents.style.pointerEvents = 'auto';
+    }
 }
 
 function showError(message) {
