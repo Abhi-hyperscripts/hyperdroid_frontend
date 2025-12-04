@@ -505,15 +505,11 @@ function getRoleBadgeClass(role) {
 }
 
 function formatRoleName(role) {
-    // Format role names for display: VISION_USER -> Vision:USER, DRIVE_USER -> Drive:USER
-    if (role === 'SUPERADMIN') return 'Admin';
-    if (role.startsWith('VISION_')) return role.replace('VISION_', 'Vision:');
-    if (role.startsWith('DRIVE_')) return role.replace('DRIVE_', 'Drive:');
-    // Handle other service prefixes dynamically (e.g., AUTH_USER -> Auth:USER)
-    const prefixMatch = role.match(/^([A-Z]+)_(.+)$/);
-    if (prefixMatch) {
-        const serviceName = prefixMatch[1].charAt(0) + prefixMatch[1].slice(1).toLowerCase();
-        return `${serviceName}:${prefixMatch[2]}`;
+    // Format role names for display: VISION_USER -> VISION:USER, DRIVE_USER -> DRIVE:USER
+    if (role === 'SUPERADMIN') return 'ADMIN';
+    // Replace underscore with colon for service-prefixed roles
+    if (role.includes('_')) {
+        return role.replace('_', ':');
     }
     return role;
 }
