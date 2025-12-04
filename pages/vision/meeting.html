@@ -186,6 +186,11 @@
 
         <!-- Background Settings Panel (hidden by default) -->
         <div class="background-settings" id="backgroundSettings" style="display: none;">
+            <!-- Loading overlay for lazy-loaded libraries -->
+            <div class="bg-loading-overlay" id="bgLoadingOverlay" style="display: none;">
+                <div class="bg-loading-spinner"></div>
+                <span>Loading effects...</span>
+            </div>
             <div class="bg-settings-header">
                 <h3>Background Effects</h3>
                 <button onclick="toggleBackgroundSettings()" class="close-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -271,19 +276,19 @@
     <!-- Reaction Animations Container -->
     <div id="reactionsContainer" class="reactions-container"></div>
 
-    <!-- Include LiveKit and SignalR SDKs -->
+    <!-- Include LiveKit and SignalR SDKs - Required for meeting -->
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
 
-    <!-- TensorFlow.js and BodyPix for background segmentation -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
-
-    <!-- COCO-SSD for object detection (person, chair, etc.) -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
-
-    <!-- Three.js for virtual background rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+    <!--
+    Virtual Background Libraries - LAZY LOADED when user opens background settings
+    These are heavy (~5MB total) and slow down mobile devices if loaded upfront:
+    - TensorFlow.js (~1.5MB)
+    - BodyPix (~2MB)
+    - COCO-SSD (~1MB)
+    - Three.js (~600KB)
+    See loadVirtualBackgroundLibraries() in meeting.js
+    -->
 
     <script src="../../js/config.js"></script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>

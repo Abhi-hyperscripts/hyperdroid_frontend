@@ -103,6 +103,10 @@ let previousMaskCanvas = null; // For temporal smoothing
 let previousMaskCtx = null;
 let frameCount = 0; // Frame counter for throttling
 
+// Library loading state for lazy loading
+let virtualBackgroundLibsLoaded = false;
+let virtualBackgroundLibsLoading = false;
+
 // Three.js variables for virtual background
 let threeScene = null;
 let threeCamera = null;
@@ -364,7 +368,27 @@ async function connectToLiveKit(wsUrl, token) {
             }
             // Show alert to user only if they wanted camera enabled
             if (shouldEnableCamera) {
-                alert('Camera access was denied. Please allow camera access in your browser settings and refresh the page.');
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                let message = 'Camera access was denied.\n\n';
+                if (isAndroid) {
+                    message += 'To enable camera on Android:\n';
+                    message += '1. Tap the lock/info icon in the address bar\n';
+                    message += '2. Tap "Site settings" or "Permissions"\n';
+                    message += '3. Allow Camera access\n';
+                    message += '4. Refresh the page';
+                } else if (isIOS) {
+                    message += 'To enable camera on iOS:\n';
+                    message += '1. Go to Settings > Safari (or your browser)\n';
+                    message += '2. Tap "Camera"\n';
+                    message += '3. Select "Allow"\n';
+                    message += '4. Return to this page and refresh';
+                } else {
+                    message += 'Please allow camera access in your browser settings and refresh the page.';
+                }
+                alert(message);
             }
         }
 
@@ -1074,9 +1098,29 @@ async function toggleMic() {
         console.log('Microphone toggled:', micEnabled ? 'ON' : 'OFF');
     } catch (error) {
         console.error('Failed to toggle microphone:', error);
-        // Show user-friendly error
-        if (error.name === 'NotAllowedError' || error.message?.includes('Permission')) {
-            alert('Microphone access was denied. Please check your browser permissions and try again.');
+        // Show user-friendly error with device-specific instructions
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (error.name === 'NotAllowedError' || error.message?.includes('Permission') || error.message?.includes('denied')) {
+            let message = 'Microphone access was denied.\n\n';
+            if (isAndroid) {
+                message += 'To enable microphone on Android:\n';
+                message += '1. Tap the lock/info icon in the address bar\n';
+                message += '2. Tap "Site settings" or "Permissions"\n';
+                message += '3. Allow Microphone access\n';
+                message += '4. Refresh the page';
+            } else if (isIOS) {
+                message += 'To enable microphone on iOS:\n';
+                message += '1. Go to Settings > Safari (or your browser)\n';
+                message += '2. Tap "Microphone"\n';
+                message += '3. Select "Allow"\n';
+                message += '4. Return to this page and refresh';
+            } else {
+                message += 'Please check your browser permissions and try again.';
+            }
+            alert(message);
         } else {
             // For other errors, try to re-acquire mic permission
             try {
@@ -1087,7 +1131,16 @@ async function toggleMic() {
                 micBtn.classList.toggle('active', micEnabled);
             } catch (retryError) {
                 console.error('Retry failed:', retryError);
-                alert('Unable to toggle microphone. Please refresh the page and try again.');
+                let message = 'Unable to toggle microphone.\n\n';
+                if (isMobile) {
+                    message += 'Please try:\n';
+                    message += '1. Refresh the page\n';
+                    message += '2. Check microphone permissions in browser settings\n';
+                    message += '3. Restart your browser';
+                } else {
+                    message += 'Please refresh the page and try again.';
+                }
+                alert(message);
             }
         }
     } finally {
@@ -1145,9 +1198,43 @@ async function toggleCamera() {
         }
     } catch (error) {
         console.error('Failed to toggle camera:', error);
-        // Show user-friendly error
-        if (error.name === 'NotAllowedError' || error.message?.includes('Permission')) {
-            alert('Camera access was denied. Please check your browser permissions and try again.');
+        // Show user-friendly error with device-specific instructions
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (error.name === 'NotAllowedError' || error.message?.includes('Permission') || error.message?.includes('denied')) {
+            let message = 'Camera access was denied.\n\n';
+            if (isAndroid) {
+                message += 'To enable camera on Android:\n';
+                message += '1. Tap the lock/info icon in the address bar\n';
+                message += '2. Tap "Site settings" or "Permissions"\n';
+                message += '3. Allow Camera access\n';
+                message += '4. Refresh the page';
+            } else if (isIOS) {
+                message += 'To enable camera on iOS:\n';
+                message += '1. Go to Settings > Safari (or your browser)\n';
+                message += '2. Tap "Camera"\n';
+                message += '3. Select "Allow"\n';
+                message += '4. Return to this page and refresh';
+            } else {
+                message += 'Please allow camera access in your browser settings and refresh the page.';
+            }
+            alert(message);
+        } else if (error.name === 'NotReadableError' || error.message?.includes('in use') || error.message?.includes('Could not start')) {
+            let message = 'Camera is not available.\n\n';
+            if (isMobile) {
+                message += 'This may be because:\n';
+                message += '- Another app is using the camera\n';
+                message += '- Camera hardware issue\n\n';
+                message += 'Try:\n';
+                message += '1. Close other apps using the camera\n';
+                message += '2. Refresh the page\n';
+                message += '3. Restart your browser';
+            } else {
+                message += 'The camera may be in use by another application. Close other apps and try again.';
+            }
+            alert(message);
         } else {
             // For other errors, try to re-acquire camera permission
             try {
@@ -1158,7 +1245,16 @@ async function toggleCamera() {
                 camBtn.classList.toggle('active', cameraEnabled);
             } catch (retryError) {
                 console.error('Retry failed:', retryError);
-                alert('Unable to toggle camera. Please refresh the page and try again.');
+                let message = 'Unable to toggle camera.\n\n';
+                if (isMobile) {
+                    message += 'Please try:\n';
+                    message += '1. Refresh the page\n';
+                    message += '2. Check camera permissions in browser settings\n';
+                    message += '3. Restart your browser';
+                } else {
+                    message += 'Please refresh the page and try again.';
+                }
+                alert(message);
             }
         }
     } finally {
@@ -2003,10 +2099,105 @@ document.addEventListener('leavepictureinpicture', () => {
     pipEnabled = false;
 });
 
+// Lazy load virtual background libraries (TensorFlow.js, BodyPix, COCO-SSD, Three.js)
+// These are ~5MB total and slow down mobile devices if loaded upfront
+async function loadVirtualBackgroundLibraries() {
+    if (virtualBackgroundLibsLoaded) {
+        return true;
+    }
+
+    if (virtualBackgroundLibsLoading) {
+        // Already loading, wait for it
+        while (virtualBackgroundLibsLoading) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return virtualBackgroundLibsLoaded;
+    }
+
+    virtualBackgroundLibsLoading = true;
+
+    // Show loading indicator in background panel
+    const loadingOverlay = document.getElementById('bgLoadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+    }
+
+    const libraries = [
+        {
+            name: 'TensorFlow.js',
+            url: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js',
+            check: () => typeof tf !== 'undefined'
+        },
+        {
+            name: 'BodyPix',
+            url: 'https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js',
+            check: () => typeof bodyPix !== 'undefined'
+        },
+        {
+            name: 'COCO-SSD',
+            url: 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js',
+            check: () => typeof cocoSsd !== 'undefined'
+        },
+        {
+            name: 'Three.js',
+            url: 'https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js',
+            check: () => typeof THREE !== 'undefined'
+        }
+    ];
+
+    try {
+        console.log('🔄 Loading virtual background libraries...');
+
+        for (const lib of libraries) {
+            if (lib.check()) {
+                console.log(`✓ ${lib.name} already loaded`);
+                continue;
+            }
+
+            console.log(`Loading ${lib.name}...`);
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = lib.url;
+                script.async = true;
+                script.onload = () => {
+                    console.log(`✓ ${lib.name} loaded`);
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error(`✗ Failed to load ${lib.name}`);
+                    reject(new Error(`Failed to load ${lib.name}`));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        console.log('✅ All virtual background libraries loaded successfully!');
+        virtualBackgroundLibsLoaded = true;
+        return true;
+
+    } catch (error) {
+        console.error('Failed to load virtual background libraries:', error);
+        virtualBackgroundLibsLoaded = false;
+        return false;
+    } finally {
+        virtualBackgroundLibsLoading = false;
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+}
+
 // Toggle background settings panel
-function toggleBackgroundSettings() {
+async function toggleBackgroundSettings() {
     const panel = document.getElementById('backgroundSettings');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    const isOpening = panel.style.display === 'none';
+
+    panel.style.display = isOpening ? 'block' : 'none';
+
+    // Lazy load libraries when panel is first opened
+    if (isOpening && !virtualBackgroundLibsLoaded && !virtualBackgroundLibsLoading) {
+        loadVirtualBackgroundLibraries();
+    }
 }
 
 // Initialize BodyPix for person segmentation
@@ -2277,6 +2468,15 @@ async function setBackground(type) {
         } else {
             // For virtual backgrounds, use BodyPix
             try {
+                // Ensure libraries are loaded first (lazy loading)
+                if (!virtualBackgroundLibsLoaded) {
+                    console.log('Loading virtual background libraries...');
+                    const loaded = await loadVirtualBackgroundLibraries();
+                    if (!loaded) {
+                        throw new Error('Failed to load virtual background libraries');
+                    }
+                }
+
                 // Initialize BodyPix if needed
                 if (!bodyPixNet) {
                     console.log('Loading BodyPix model for first use...');

@@ -1602,7 +1602,45 @@ body {
 
     .background-settings {
         width: 95vw;
-        bottom: 100px;
+        max-width: 400px;
+        bottom: 80px;
+        padding: 14px;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+
+    .bg-settings-header {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+    }
+
+    .bg-settings-header h3 {
+        font-size: 14px;
+    }
+
+    .bg-options {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .bg-option {
+        padding: 6px;
+        border-radius: 8px;
+    }
+
+    .bg-option span {
+        font-size: 10px;
+    }
+
+    .bg-preview {
+        width: 60px;
+        height: 45px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+    }
+
+    .bg-preview.bg-none::after {
+        font-size: 18px;
     }
 
     .participants-panel {
@@ -1679,14 +1717,34 @@ body {
         width: 30px;
     }
 
+    .background-settings {
+        max-width: 340px;
+        max-height: 240px;
+        padding: 12px;
+        bottom: 70px;
+    }
+
     .bg-options {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+
+    .bg-option {
+        padding: 4px;
+    }
+
+    .bg-option span {
+        font-size: 9px;
     }
 
     .bg-preview {
-        width: 70px;
-        height: 50px;
+        width: 55px;
+        height: 40px;
+        margin-bottom: 3px;
+    }
+
+    .bg-preview.bg-none::after {
+        font-size: 16px;
     }
 }
 
@@ -2015,6 +2073,44 @@ body {
     width: 500px;
     max-width: 90vw;
     animation: fadeInUp 0.3s ease-out;
+}
+
+/* Loading overlay for lazy-loaded libraries */
+.bg-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(245, 245, 248, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 16px;
+    z-index: 10;
+}
+
+.bg-loading-overlay span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.bg-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: bgSpinner 0.8s linear infinite;
+}
+
+@keyframes bgSpinner {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .bg-settings-header {
