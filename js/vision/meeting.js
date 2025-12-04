@@ -2194,6 +2194,13 @@ async function toggleBackgroundSettings() {
 
     panel.style.display = isOpening ? 'block' : 'none';
 
+    // Prevent body scroll when panel is open on mobile
+    if (isOpening) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+
     // Lazy load libraries when panel is first opened
     if (isOpening && !virtualBackgroundLibsLoaded && !virtualBackgroundLibsLoading) {
         loadVirtualBackgroundLibraries();

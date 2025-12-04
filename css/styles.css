@@ -1609,6 +1609,7 @@ body {
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        touch-action: none;
     }
 
     .bg-settings-header {
@@ -1629,10 +1630,12 @@ body {
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         padding: 12px 14px;
-        overflow-y: auto;
+        overflow-y: scroll;
         -webkit-overflow-scrolling: touch;
         flex: 1;
         min-height: 0;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
     }
 
     .bg-option {
@@ -1753,6 +1756,9 @@ body {
         gap: 6px;
         padding: 10px 12px;
         min-height: 0;
+        overflow-y: scroll;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
     }
 
     .bg-option {
