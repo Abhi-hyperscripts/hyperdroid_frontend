@@ -1601,23 +1601,33 @@ body {
     }
 
     .background-settings {
-        width: auto !important;
+        width: calc(100vw - 20px) !important;
         max-width: none !important;
         left: 10px !important;
         right: 10px !important;
-        bottom: 75px;
+        transform: none !important;
+        bottom: 70px;
         padding: 8px !important;
         overflow: visible !important;
+        border-radius: 12px !important;
     }
 
     .bg-settings-header {
         margin: 0 0 6px 0 !important;
-        padding: 0 0 6px 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 0 0 4px 0 !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .bg-settings-header h3 {
-        font-size: 12px;
+        font-size: 11px !important;
+    }
+
+    .bg-settings-header .close-btn {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
+        font-size: 14px !important;
     }
 
     .bg-options {
