@@ -1604,16 +1604,16 @@ body {
         width: 95vw;
         max-width: 400px;
         bottom: 80px;
-        padding: 0;
+        padding: 0 !important;
         max-height: 300px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
         touch-action: none;
     }
 
     .bg-settings-header {
-        margin: 0;
+        margin: 0 !important;
         padding: 12px 14px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         flex-shrink: 0;
@@ -1626,11 +1626,11 @@ body {
     }
 
     .bg-options {
-        display: grid;
+        display: grid !important;
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         padding: 12px 14px;
-        overflow-y: scroll;
+        overflow-y: scroll !important;
         -webkit-overflow-scrolling: touch;
         flex: 1;
         min-height: 0;
@@ -1744,21 +1744,30 @@ body {
         max-width: 340px;
         max-height: 260px;
         bottom: 70px;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
     }
 
     .bg-settings-header {
         padding: 10px 12px;
+        margin: 0 !important;
+        flex-shrink: 0;
+        background: rgb(245, 245, 248);
     }
 
     .bg-options {
-        display: grid;
+        display: grid !important;
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
         padding: 10px 12px;
         min-height: 0;
-        overflow-y: scroll;
+        flex: 1;
+        overflow-y: scroll !important;
         overscroll-behavior: contain;
         touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
     }
 
     .bg-option {
