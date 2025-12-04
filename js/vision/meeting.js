@@ -753,25 +753,10 @@ function updateParticipantLayout(layout) {
         !currentLayoutState.smallTileIdentities.every((id, i) => id === newSmallTileIdentities[i]);
     const layoutChanged = mainSpeakerChanged || smallTilesChanged;
 
-    // Debug log to track layout decisions
-    console.log('📊 Layout check:', {
-        current: currentLayoutState.mainSpeakerIdentity,
-        new: newMainSpeakerIdentity,
-        mainSpeakerChanged,
-        smallTilesChanged,
-        willRebuild: layoutChanged
-    });
-
     if (!layoutChanged) {
         // Layout hasn't changed - skip rebuild to prevent flickering
         return;
     }
-
-    console.log('📊 Layout Update (rebuilding):', {
-        mainSpeaker: newMainSpeakerIdentity,
-        smallTiles: newSmallTileIdentities,
-        previousMain: currentLayoutState.mainSpeakerIdentity
-    });
 
     // Update current layout state
     currentLayoutState = {
