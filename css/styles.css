@@ -821,6 +821,8 @@ body {
 
 .modal.active {
     display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Bootstrap 5 vertical centering - ensure it works with our styles */
