@@ -449,6 +449,15 @@ class API {
         });
     }
 
+    async renameFile(fileId, fileName) {
+        return this.request(`/drive/files/${fileId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                file_name: fileName
+            })
+        });
+    }
+
     async getUploadUrl(fileName, contentType, folderId = null, fileSize = 0, expiryMinutes = 60) {
         return this.request('/drive/upload-url', {
             method: 'POST',

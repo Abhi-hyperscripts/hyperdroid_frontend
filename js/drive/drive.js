@@ -570,8 +570,35 @@ function escapeHtml(text) {
 
 // File rename modal
 function showRenameFileModal(fileId, fileName) {
-    // File rename not yet implemented in backend
-    showError('File rename is not supported yet. Please delete and re-upload with a new name.');
+    document.getElementById('renameFileId').value = fileId;
+    document.getElementById('renameFileName').value = fileName;
+    showModal('renameFileModal');
+}
+
+async function handleRenameFile(e) {
+    e.preventDefault();
+
+    const fileId = document.getElementById('renameFileId').value;
+    const newName = document.getElementById('renameFileName').value.trim();
+
+    if (!newName) {
+        showError('File name is required');
+        return;
+    }
+
+    try {
+        const result = await api.renameFile(fileId, newName);
+        if (result.success) {
+            showSuccess('File renamed successfully');
+            closeModal('renameFileModal');
+            loadDriveContents();
+        } else {
+            showError(result.message || 'Failed to rename file');
+        }
+    } catch (error) {
+        console.error('Error renaming file:', error);
+        showError(error.message);
+    }
 }
 
 // File operations

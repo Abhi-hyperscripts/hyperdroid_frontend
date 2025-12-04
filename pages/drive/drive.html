@@ -269,6 +269,30 @@
         </div>
     </div>
 
+    <!-- Rename File Modal -->
+    <div id="renameFileModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rename File</h5>
+                    <button class="close-btn" onclick="closeModal('renameFileModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="renameFileForm" onsubmit="handleRenameFile(event)">
+                        <input type="hidden" id="renameFileId">
+                        <div class="form-group">
+                            <label for="renameFileName">File Name</label>
+                            <input type="text" id="renameFileName" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Rename</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Context Menu -->
     <div id="contextMenu" class="context-menu" style="display: none;">
         <div class="context-menu-item" onclick="contextMenuAction('download')">
