@@ -692,17 +692,77 @@ function removeParticipant(participantOrIdentity) {
     console.log(`Participant ${identity} fully removed from UI`);
 }
 
+// Track current layout state to avoid unnecessary rebuilds
+let currentLayoutState = {
+    mainSpeakerIdentity: null,
+    smallTileIdentities: []
+};
+
 // Update participant layout based on active speaker detection
+// OPTIMIZED: Only rebuild when layout actually changes to prevent flickering
 function updateParticipantLayout(layout) {
     const videoContainer = document.getElementById('videoContainer');
     const mainSpeaker = layout.mainSpeaker;
     const videoParticipants = layout.videoParticipants || [];
 
-    console.log('📊 Layout Update:', {
-        mainSpeaker: mainSpeaker?.identity,
-        videoParticipants: videoParticipants.map(p => p.identity),
-        audioOnlyParticipants: layout.audioOnlyParticipants?.map(p => p.identity) || []
+    // Determine what the new layout should be
+    let newMainSpeakerIdentity = null;
+    let newSmallTileIdentities = [];
+
+    // Determine main speaker identity
+    if (!mainSpeaker || mainSpeaker.participantSid === 'local') {
+        newMainSpeakerIdentity = 'local';
+    } else {
+        const mainParticipant = room.remoteParticipants.get(mainSpeaker.identity);
+        if (mainParticipant) {
+            newMainSpeakerIdentity = mainSpeaker.identity;
+        } else if (videoParticipants.length > 0) {
+            const fallbackParticipant = room.remoteParticipants.get(videoParticipants[0].identity);
+            if (fallbackParticipant) {
+                newMainSpeakerIdentity = fallbackParticipant.identity;
+            } else {
+                newMainSpeakerIdentity = 'local';
+            }
+        } else {
+            newMainSpeakerIdentity = 'local';
+        }
+    }
+
+    // Determine small tile identities
+    const maxSmallTiles = 4;
+    if (newMainSpeakerIdentity !== 'local') {
+        newSmallTileIdentities.push('local');
+    }
+    videoParticipants.forEach((vpData) => {
+        if (newSmallTileIdentities.length >= maxSmallTiles) return;
+        if (vpData.identity === newMainSpeakerIdentity) return;
+        if (room.remoteParticipants.get(vpData.identity)) {
+            newSmallTileIdentities.push(vpData.identity);
+        }
     });
+
+    // Check if layout actually changed
+    const layoutChanged =
+        currentLayoutState.mainSpeakerIdentity !== newMainSpeakerIdentity ||
+        currentLayoutState.smallTileIdentities.length !== newSmallTileIdentities.length ||
+        !currentLayoutState.smallTileIdentities.every((id, i) => id === newSmallTileIdentities[i]);
+
+    if (!layoutChanged) {
+        // Layout hasn't changed - skip rebuild to prevent flickering
+        return;
+    }
+
+    console.log('📊 Layout Update (rebuilding):', {
+        mainSpeaker: newMainSpeakerIdentity,
+        smallTiles: newSmallTileIdentities,
+        previousMain: currentLayoutState.mainSpeakerIdentity
+    });
+
+    // Update current layout state
+    currentLayoutState = {
+        mainSpeakerIdentity: newMainSpeakerIdentity,
+        smallTileIdentities: [...newSmallTileIdentities]
+    };
 
     // Clear video container
     videoContainer.innerHTML = '';
@@ -722,70 +782,25 @@ function updateParticipantLayout(layout) {
     const smallTilesContainer = document.createElement('div');
     smallTilesContainer.className = 'small-tiles-container';
 
-    // CRITICAL: Main speaker tile must NEVER be empty
-    // Track which participant identity is actually used as main speaker (for deduplication)
-    let actualMainSpeakerIdentity = null;
-
-    // Add local participant to main speaker if no active speaker
-    if (!mainSpeaker || mainSpeaker.participantSid === 'local') {
+    // Add main speaker
+    if (newMainSpeakerIdentity === 'local') {
         addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
-        actualMainSpeakerIdentity = 'local';
     } else {
-        // Add main speaker (use identity as key to lookup in remoteParticipants Map)
-        const mainParticipant = room.remoteParticipants.get(mainSpeaker.identity);
+        const mainParticipant = room.remoteParticipants.get(newMainSpeakerIdentity);
         if (mainParticipant) {
             addParticipantToContainer(mainParticipant, mainSpeakerContainer, 'main-speaker-tile', false);
-            actualMainSpeakerIdentity = mainSpeaker.identity;
-        } else {
-            // CRITICAL FALLBACK: Main speaker not found - use first available participant
-            console.warn('Main speaker not found in remoteParticipants:', mainSpeaker.identity, '- using fallback');
-
-            // Try to use first video participant
-            if (videoParticipants.length > 0) {
-                const fallbackParticipant = room.remoteParticipants.get(videoParticipants[0].identity);
-                if (fallbackParticipant) {
-                    console.log('Using fallback main speaker:', fallbackParticipant.identity);
-                    addParticipantToContainer(fallbackParticipant, mainSpeakerContainer, 'main-speaker-tile', false);
-                    actualMainSpeakerIdentity = fallbackParticipant.identity;
-                } else {
-                    // Last resort: use local participant
-                    console.warn('No remote participants available - showing local participant as main speaker');
-                    addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
-                    actualMainSpeakerIdentity = 'local';
-                }
-            } else {
-                // No video participants at all - show local
-                console.warn('No video participants - showing local participant as main speaker');
-                addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
-                actualMainSpeakerIdentity = 'local';
-            }
         }
     }
 
-    // Add up to 4 small tiles (excluding main speaker)
-    let addedSmallTiles = 0;
-    const maxSmallTiles = 4;
-
-    // Add local participant to small tiles if they're not the main speaker
-    if (actualMainSpeakerIdentity !== 'local' && addedSmallTiles < maxSmallTiles) {
-        addParticipantToContainer(room.localParticipant, smallTilesContainer, 'small-tile', true);
-        addedSmallTiles++;
-    }
-
-    // Add other participants to small tiles
-    videoParticipants.forEach((vpData, index) => {
-        if (addedSmallTiles >= maxSmallTiles) return;
-
-        // Skip the actual main speaker (avoid duplicates)
-        if (vpData.identity === actualMainSpeakerIdentity) return;
-
-        // Use identity as key to lookup in remoteParticipants Map
-        const participant = room.remoteParticipants.get(vpData.identity);
-        if (participant) {
-            addParticipantToContainer(participant, smallTilesContainer, 'small-tile', false);
-            addedSmallTiles++;
+    // Add small tiles
+    newSmallTileIdentities.forEach((identity) => {
+        if (identity === 'local') {
+            addParticipantToContainer(room.localParticipant, smallTilesContainer, 'small-tile', true);
         } else {
-            console.warn('Participant not found in remoteParticipants:', vpData.identity);
+            const participant = room.remoteParticipants.get(identity);
+            if (participant) {
+                addParticipantToContainer(participant, smallTilesContainer, 'small-tile', false);
+            }
         }
     });
 
@@ -793,7 +808,7 @@ function updateParticipantLayout(layout) {
     videoContainer.appendChild(mainSpeakerContainer);
 
     // Only add small tiles container if there are small tiles
-    if (addedSmallTiles > 0) {
+    if (newSmallTileIdentities.length > 0) {
         videoContainer.appendChild(smallTilesContainer);
         videoContainer.classList.remove('single-participant');
     } else {
