@@ -1073,10 +1073,11 @@ function showToast(message, type = 'info') {
 
     container.appendChild(toast);
 
+    // Display toast for 5 seconds before fading out
     setTimeout(() => {
         toast.style.animation = 'slideIn 0.3s ease reverse';
         setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, 5000);
 }
 
 // ==================== Utility Functions ====================
