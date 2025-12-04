@@ -384,12 +384,15 @@ function renderUsersTable(users) {
                     <div class="roles-container" id="roles-${user.userId}">
                         ${visibleRoles.map(role => `<span class="role-badge ${getRoleBadgeClass(role)}">${formatRoleName(role)}</span>`).join('')}
                         ${hasMoreRoles ? `
-                            <button class="role-badge more-roles" onclick="toggleMoreRoles('${user.userId}')">
+                            <button class="role-badge more-roles expand-btn" id="expand-btn-${user.userId}" onclick="toggleMoreRoles('${user.userId}')">
                                 +${hiddenRoles.length} more
                             </button>
-                            <div class="hidden-roles" id="hidden-roles-${user.userId}" style="display: none;">
+                            <span class="hidden-roles" id="hidden-roles-${user.userId}" style="display: none;">
                                 ${hiddenRoles.map(role => `<span class="role-badge ${getRoleBadgeClass(role)}">${formatRoleName(role)}</span>`).join('')}
-                            </div>
+                            </span>
+                            <button class="role-badge more-roles collapse-btn" id="collapse-btn-${user.userId}" onclick="toggleMoreRoles('${user.userId}')" style="display: none;">
+                                Show less
+                            </button>
                         ` : ''}
                     </div>
                 </td>
@@ -511,15 +514,19 @@ function formatRoleName(role) {
 
 function toggleMoreRoles(userId) {
     const hiddenRoles = document.getElementById(`hidden-roles-${userId}`);
-    const moreBtn = document.querySelector(`#roles-${userId} .more-roles`);
+    const expandBtn = document.getElementById(`expand-btn-${userId}`);
+    const collapseBtn = document.getElementById(`collapse-btn-${userId}`);
 
     if (hiddenRoles.style.display === 'none') {
+        // Expand: show hidden roles and "Show less" button, hide "+X more" button
         hiddenRoles.style.display = 'inline';
-        moreBtn.textContent = 'Show less';
+        expandBtn.style.display = 'none';
+        collapseBtn.style.display = 'inline-block';
     } else {
+        // Collapse: hide hidden roles and "Show less" button, show "+X more" button
         hiddenRoles.style.display = 'none';
-        const count = hiddenRoles.querySelectorAll('.role-badge').length;
-        moreBtn.textContent = `+${count} more`;
+        expandBtn.style.display = 'inline-block';
+        collapseBtn.style.display = 'none';
     }
 }
 
