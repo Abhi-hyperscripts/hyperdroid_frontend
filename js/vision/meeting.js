@@ -710,7 +710,13 @@ function updateParticipantLayout(layout) {
     let newSmallTileIdentities = [];
 
     // Determine main speaker identity
-    if (!mainSpeaker || mainSpeaker.participantSid === 'local') {
+    // Check if main speaker is the local participant (compare with local participant's identity)
+    const localIdentity = room.localParticipant?.identity;
+    const isMainSpeakerLocal = !mainSpeaker ||
+                               mainSpeaker.participantSid === 'local' ||
+                               mainSpeaker.identity === localIdentity;
+
+    if (isMainSpeakerLocal) {
         newMainSpeakerIdentity = 'local';
     } else {
         const mainParticipant = room.remoteParticipants.get(mainSpeaker.identity);
@@ -742,10 +748,19 @@ function updateParticipantLayout(layout) {
     });
 
     // Check if layout actually changed
-    const layoutChanged =
-        currentLayoutState.mainSpeakerIdentity !== newMainSpeakerIdentity ||
-        currentLayoutState.smallTileIdentities.length !== newSmallTileIdentities.length ||
+    const mainSpeakerChanged = currentLayoutState.mainSpeakerIdentity !== newMainSpeakerIdentity;
+    const smallTilesChanged = currentLayoutState.smallTileIdentities.length !== newSmallTileIdentities.length ||
         !currentLayoutState.smallTileIdentities.every((id, i) => id === newSmallTileIdentities[i]);
+    const layoutChanged = mainSpeakerChanged || smallTilesChanged;
+
+    // Debug log to track layout decisions
+    console.log('📊 Layout check:', {
+        current: currentLayoutState.mainSpeakerIdentity,
+        new: newMainSpeakerIdentity,
+        mainSpeakerChanged,
+        smallTilesChanged,
+        willRebuild: layoutChanged
+    });
 
     if (!layoutChanged) {
         // Layout hasn't changed - skip rebuild to prevent flickering
