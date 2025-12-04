@@ -272,6 +272,30 @@ function createFolderCard(folder) {
             <span class="drive-item-name" title="${folder.folderName}">${folder.folderName}</span>
             <span class="drive-item-meta">${folder.fileCount} files, ${formatBytes(folder.totalSize)}</span>
         </div>
+        <div class="drive-item-actions">
+            <button class="action-btn" onclick="event.stopPropagation(); openFolder('${folder.folderId}', '${escapeHtml(folder.folderName)}')" title="Open">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Share">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+            </button>
+            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Rename">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </button>
+            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Delete">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+        </div>
     `;
 
     card.addEventListener('dblclick', () => navigateToFolder(folder.folderId, folder.folderName));
@@ -297,6 +321,30 @@ function createFileCard(file) {
         <div class="drive-item-info">
             <span class="drive-item-name" title="${file.fileName}">${file.fileName}</span>
             <span class="drive-item-meta">${formatBytes(file.fileSize)}</span>
+        </div>
+        <div class="drive-item-actions">
+            <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${file.fileId}')" title="Download">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </button>
+            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Share">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+            </button>
+            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Rename">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </button>
+            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Delete">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
         </div>
     `;
 
@@ -481,6 +529,49 @@ async function contextMenuAction(action) {
             }
             break;
     }
+}
+
+// Action button helper functions (for mobile-friendly buttons)
+function openFolder(folderId, folderName) {
+    navigateToFolder(folderId, folderName);
+}
+
+function shareItem(itemId, itemType, itemName) {
+    showShareModal(itemId, itemType, itemName);
+}
+
+function renameItem(itemId, itemType, itemName) {
+    if (itemType === 'folder') {
+        // Create a folder object for the edit modal
+        // Note: description will be empty since we don't have it in the card
+        showEditFolderModal({ folderId: itemId, folderName: itemName, description: '' });
+    } else {
+        // For files, we'll show a simple rename prompt for now
+        showRenameFileModal(itemId, itemName);
+    }
+}
+
+function deleteItem(itemId, itemType, itemName) {
+    if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+        if (itemType === 'folder') {
+            deleteFolder(itemId);
+        } else {
+            deleteFile(itemId);
+        }
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// File rename modal
+function showRenameFileModal(fileId, fileName) {
+    // File rename not yet implemented in backend
+    showError('File rename is not supported yet. Please delete and re-upload with a new name.');
 }
 
 // File operations
