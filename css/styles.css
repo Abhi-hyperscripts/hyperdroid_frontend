@@ -1918,15 +1918,25 @@ body {
     border: none;
     font-size: 14px;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     border-radius: 6px;
     transition: all 0.2s ease;
     color: #666;
     margin-left: 4px;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
-.reaction-picker .reaction-close-btn:hover {
+.reaction-picker .reaction-close-btn:hover,
+.reaction-picker .reaction-close-btn:active {
     background: rgba(0, 0, 0, 0.12);
     color: #333;
 }
@@ -2024,26 +2034,44 @@ body {
     letter-spacing: 0.2px;
 }
 
-.close-btn {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+.bg-settings-header .close-btn {
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 18px;
     cursor: pointer;
     color: #666;
     padding: 0;
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     border-radius: 50%;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    position: relative;
+    z-index: 10;
 }
 
-.close-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+.bg-settings-header .close-btn:hover,
+.bg-settings-header .close-btn:active {
+    background: rgba(0, 0, 0, 0.15);
     color: #333;
-    border-color: rgba(0, 0, 0, 0.15);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Larger touch target for mobile */
+@media (max-width: 768px) {
+    .bg-settings-header .close-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 20px;
+    }
 }
 
 .bg-options {
@@ -2186,16 +2214,20 @@ body {
 }
 
 .participants-header .close-btn {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     border-radius: 50%;
     border: none;
-    background: transparent;
-    color: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.5);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
     font-size: 12px;
     transition: all 0.15s ease;
 }
