@@ -5,6 +5,13 @@ let contextMenuTarget = null;
 let currentShareId = null;
 let driveHubConnection = null;
 
+// Flags to prevent race conditions
+let isCreatingFolder = false;
+let isLoadingContents = false;
+let pendingLoadRequest = false;
+let isUploading = false;
+let signalRReloadTimeout = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
@@ -21,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Handle browser back/forward navigation
 function setupBrowserNavigation() {
-    // Push initial state
-    const initialState = { folderId: currentFolderId };
+    // Push initial state with folderStack
+    const initialState = { folderId: currentFolderId, folderStack: [...folderStack] };
     history.replaceState(initialState, '', window.location.href);
 
     // Listen for browser back/forward buttons
@@ -38,6 +45,26 @@ function setupBrowserNavigation() {
             await loadDriveContents();
         }
     });
+}
+
+// Debounced reload for SignalR events - prevents multiple rapid reloads
+function debouncedReload() {
+    // Skip if we're currently uploading (will reload when upload completes)
+    if (isUploading) {
+        console.log('SignalR: Skipping reload during upload');
+        return;
+    }
+
+    // Clear any pending reload
+    if (signalRReloadTimeout) {
+        clearTimeout(signalRReloadTimeout);
+    }
+
+    // Delay reload by 500ms to batch multiple events
+    signalRReloadTimeout = setTimeout(() => {
+        signalRReloadTimeout = null;
+        loadDriveContents();
+    }, 500);
 }
 
 // SignalR connection for real-time updates
@@ -61,7 +88,7 @@ function initializeSignalR() {
         console.log('SignalR: FileUploaded', event);
         // Refresh if we're in the same folder or root
         if (event.folderId === currentFolderId || (!event.folderId && !currentFolderId)) {
-            loadDriveContents();
+            debouncedReload();
         }
     });
 
@@ -70,7 +97,7 @@ function initializeSignalR() {
         console.log('SignalR: FileDeleted', event);
         // Refresh if we're in the same folder or root
         if (event.folderId === currentFolderId || (!event.folderId && !currentFolderId)) {
-            loadDriveContents();
+            debouncedReload();
         }
     });
 
@@ -79,7 +106,7 @@ function initializeSignalR() {
         console.log('SignalR: FolderCreated', event);
         // Refresh if we're in the parent folder or root
         if (event.parentFolderId === currentFolderId || (!event.parentFolderId && !currentFolderId)) {
-            loadDriveContents();
+            debouncedReload();
         }
     });
 
@@ -88,14 +115,14 @@ function initializeSignalR() {
         console.log('SignalR: FolderDeleted', event);
         // Refresh if we're in the parent folder or root
         if (event.parentFolderId === currentFolderId || (!event.parentFolderId && !currentFolderId)) {
-            loadDriveContents();
+            debouncedReload();
         }
     });
 
     // Handle folder updated event
     driveHubConnection.on('FolderUpdated', (event) => {
         console.log('SignalR: FolderUpdated', event);
-        loadDriveContents();
+        debouncedReload();
     });
 
     // Handle storage updated event
@@ -173,9 +200,17 @@ function setupEventListeners() {
     });
 }
 
-// Load drive contents
+// Load drive contents with race condition protection
 async function loadDriveContents() {
+    // If already loading, mark that we need to reload after current finishes
+    if (isLoadingContents) {
+        pendingLoadRequest = true;
+        return;
+    }
+
+    isLoadingContents = true;
     showLoading(true);
+
     try {
         const result = await api.browseDrive(currentFolderId);
 
@@ -194,6 +229,14 @@ async function loadDriveContents() {
         // Don't clear contents on error - keep showing what we had
     } finally {
         showLoading(false);
+        isLoadingContents = false;
+
+        // If there was a pending request while we were loading, reload now
+        if (pendingLoadRequest) {
+            pendingLoadRequest = false;
+            // Small delay to prevent tight loops
+            setTimeout(() => loadDriveContents(), 100);
+        }
     }
 }
 
@@ -665,12 +708,25 @@ function showCreateFolderModal() {
 async function handleCreateFolder(e) {
     e.preventDefault();
 
+    // Prevent double-submission
+    if (isCreatingFolder) {
+        return;
+    }
+
     const name = document.getElementById('folderName').value.trim();
     const description = document.getElementById('folderDescription').value.trim();
 
     if (!name) {
         showError('Folder name is required');
         return;
+    }
+
+    // Disable the submit button and set flag
+    isCreatingFolder = true;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
     }
 
     try {
@@ -687,6 +743,13 @@ async function handleCreateFolder(e) {
         console.error('Error creating folder:', error);
         showError(error.message);
         // Don't close modal on error - let user retry or cancel
+    } finally {
+        // Re-enable submit button
+        isCreatingFolder = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Folder';
+        }
     }
 }
 
@@ -766,6 +829,9 @@ async function handleFileSelect(e) {
 
     queue.style.display = 'block';
 
+    // Set uploading flag to prevent SignalR reloads during upload
+    isUploading = true;
+
     for (const file of files) {
         const item = createUploadQueueItem(file);
         queueList.appendChild(item);
@@ -774,6 +840,10 @@ async function handleFileSelect(e) {
 
     // Reset file input
     document.getElementById('fileInput').value = '';
+
+    // Clear uploading flag and reload once after all uploads complete
+    isUploading = false;
+    await loadDriveContents();
 
     // Auto-close modal after 3 seconds if all uploads complete
     const allComplete = Array.from(queueList.querySelectorAll('.upload-item')).every(
@@ -824,8 +894,7 @@ async function uploadFile(file, queueItem) {
         status.textContent = 'Complete';
         queueItem.classList.add('complete');
 
-        // Refresh drive contents
-        loadDriveContents();
+        // Note: loadDriveContents is called once after all uploads in handleFileSelect
 
     } catch (error) {
         console.error('Upload error:', error);
