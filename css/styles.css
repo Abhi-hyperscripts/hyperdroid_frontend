@@ -1604,14 +1604,20 @@ body {
         width: 95vw;
         max-width: 400px;
         bottom: 80px;
-        padding: 14px;
+        padding: 0;
         max-height: 280px;
-        overflow-y: auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .bg-settings-header {
-        margin-bottom: 12px;
-        padding-bottom: 8px;
+        margin: 0;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        flex-shrink: 0;
+        background: rgb(245, 245, 248);
+        border-radius: 16px 16px 0 0;
     }
 
     .bg-settings-header h3 {
@@ -1621,6 +1627,9 @@ body {
     .bg-options {
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
+        padding: 12px 14px;
+        overflow-y: auto;
+        flex: 1;
     }
 
     .bg-option {
@@ -1641,6 +1650,14 @@ body {
 
     .bg-preview.bg-none::after {
         font-size: 18px;
+    }
+
+    /* Fix reaction picker on mobile */
+    .reaction-picker {
+        max-width: calc(100vw - 40px);
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .participants-panel {
@@ -1719,14 +1736,18 @@ body {
 
     .background-settings {
         max-width: 340px;
-        max-height: 240px;
-        padding: 12px;
+        max-height: 220px;
         bottom: 70px;
+    }
+
+    .bg-settings-header {
+        padding: 10px 12px;
     }
 
     .bg-options {
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
+        padding: 10px 12px;
     }
 
     .bg-option {
@@ -1745,6 +1766,18 @@ body {
 
     .bg-preview.bg-none::after {
         font-size: 16px;
+    }
+
+    /* Reaction picker even more compact */
+    .reaction-picker {
+        padding: 6px 8px;
+        gap: 4px;
+    }
+
+    .reaction-btn {
+        font-size: 20px;
+        padding: 4px;
+        min-width: 32px;
     }
 }
 
@@ -1951,7 +1984,9 @@ body {
     display: flex;
     align-items: center;
     gap: 2px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90vw;
     animation: fadeInUp 0.3s ease-out;
 }
 

@@ -2529,7 +2529,9 @@ async function setBackground(type) {
 
         // Update button state
         const bgBtn = document.getElementById('bgBtn');
-        bgBtn.classList.toggle('active', type !== 'none');
+        if (bgBtn) {
+            bgBtn.classList.toggle('active', type !== 'none');
+        }
 
     } catch (error) {
         console.error('Error applying background:', error);
