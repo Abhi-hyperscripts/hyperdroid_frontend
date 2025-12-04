@@ -457,8 +457,12 @@ function filterUsers() {
 
         // Filter by active status based on toggle
         const isActive = user.isActive !== false;
-        if (!showDeactivatedUsers && !isActive) {
-            return false; // Hide deactivated users when toggle is off
+        if (showDeactivatedUsers) {
+            // When toggle is ON, show ONLY deactivated users
+            if (isActive) return false;
+        } else {
+            // When toggle is OFF, show ONLY active users
+            if (!isActive) return false;
         }
 
         return matchesSearch;
