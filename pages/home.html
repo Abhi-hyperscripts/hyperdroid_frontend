@@ -3,231 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - HyperVision</title>
+    <title>Home - HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <style>
-        .home-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .home-content {
+            min-height: calc(100vh - 60px);
             padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .home-header {
+        .welcome-section {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 48px;
+            max-width: 600px;
         }
 
-        .home-header h1 {
-            font-size: 2.5rem;
-            color: #fff;
-            margin-bottom: 12px;
-        }
-
-        .home-header p {
+        .welcome-greeting {
+            font-size: 1rem;
             color: #888;
-            font-size: 1.1rem;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
-        .modules-grid {
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .welcome-subtitle {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* App Cards Grid */
+        .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
             max-width: 900px;
-            margin: 0 auto;
+            margin-bottom: 48px;
         }
 
-        .module-card {
-            background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
-            border-radius: 20px;
-            padding: 40px 32px;
-            text-align: center;
+        .app-card {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 28px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             position: relative;
             overflow: hidden;
         }
 
-        .module-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--module-color), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
+        .app-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
-        .module-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 255, 255, 0.1);
+        .app-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
         }
 
-        .module-card:hover::before {
-            opacity: 1;
-        }
-
-        .module-card.vision {
-            --module-color: #6c5ce7;
-        }
-
-        .module-card.drive {
-            --module-color: #00b894;
-        }
-
-        .module-card.admin {
-            --module-color: #e74c3c;
-            display: none; /* Hidden by default, shown for SUPERADMIN */
-        }
-
-        .module-card.admin.visible {
-            display: block;
-        }
-
-        .module-card.admin .module-icon {
-            background: rgba(231, 76, 60, 0.15);
-        }
-
-        .module-card.admin .module-icon svg {
-            color: #e74c3c;
-        }
-
-        .module-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 24px;
+        .app-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
         }
 
-        .module-card.vision .module-icon {
-            background: rgba(108, 92, 231, 0.15);
+        .app-icon svg {
+            width: 26px;
+            height: 26px;
         }
 
-        .module-card.vision .module-icon svg {
-            color: #6c5ce7;
+        .app-card.vision .app-icon {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
         }
 
-        .module-card.drive .module-icon {
-            background: rgba(0, 184, 148, 0.15);
+        .app-card.vision .app-icon svg {
+            color: #818cf8;
         }
 
-        .module-card.drive .module-icon svg {
-            color: #00b894;
+        .app-card.drive .app-icon {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.2));
         }
 
-        .module-icon svg {
-            width: 40px;
-            height: 40px;
+        .app-card.drive .app-icon svg {
+            color: #34d399;
         }
 
-        .module-card h2 {
-            font-size: 1.5rem;
-            color: #fff;
-            margin-bottom: 12px;
-            font-weight: 600;
+        .app-card.admin .app-icon {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(248, 113, 113, 0.2));
         }
 
-        .module-card p {
-            color: #888;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 24px;
+        .app-card.admin .app-icon svg {
+            color: #f87171;
         }
 
-        .module-status {
-            display: inline-flex;
+        .app-status {
+            display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
-            padding: 6px 12px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
             border-radius: 20px;
-            background: rgba(39, 174, 96, 0.15);
-            color: #27ae60;
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
         }
 
-        .module-status.offline {
-            background: rgba(231, 76, 60, 0.15);
-            color: #e74c3c;
+        .app-status.online {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
         }
 
-        .module-status.checking {
-            background: rgba(241, 196, 15, 0.15);
-            color: #f1c40f;
+        .app-status.offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
+        .status-indicator {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: currentColor;
         }
 
-        .coming-soon-badge {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: rgba(241, 196, 15, 0.15);
-            color: #f1c40f;
-            font-size: 0.7rem;
-            padding: 4px 10px;
-            border-radius: 12px;
+        .app-card-body h3 {
+            font-size: 1.25rem;
             font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .app-card-body p {
+            color: #888;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .app-card-footer {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #888;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .app-card:hover .app-action {
+            color: #fff;
+        }
+
+        .app-action svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
+
+        .app-card:hover .app-action svg {
+            transform: translateX(4px);
+        }
+
+        /* Admin card hidden by default */
+        .app-card.admin {
+            display: none;
+        }
+
+        .app-card.admin.visible {
+            display: block;
+        }
+
+        /* Quick Stats Section */
+        .stats-section {
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 48px;
+        }
+
+        .stats-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .stats-title {
+            font-size: 0.85rem;
+            color: #666;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
-        .module-card.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .module-card.disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Quick actions */
-        .quick-actions {
-            margin-top: 60px;
-            text-align: center;
-        }
-
-        .quick-actions h3 {
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-        }
-
-        .quick-links {
-            display: flex;
-            justify-content: center;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
-            flex-wrap: wrap;
         }
 
-        .quick-link {
-            color: #888;
-            text-decoration: none;
-            font-size: 0.9rem;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.2s;
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        .quick-link:hover {
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
             color: #fff;
-            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-value.loading {
+            color: #444;
+        }
+
+        /* Recent Activity */
+        .activity-section {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .activity-title {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .activity-list {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.meeting {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+        }
+
+        .activity-icon.file {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .activity-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .activity-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-name {
+            font-size: 0.9rem;
+            color: #fff;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-meta {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .activity-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .home-content {
+                padding: 24px 16px;
+            }
+
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .app-card {
+                padding: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -235,10 +391,13 @@
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="home.html">
-                <img src="../assets/logo-svg.svg" alt="HyperVision Logo" class="navbar-logo">
+                <img src="../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
             </a>
         </div>
         <div class="navbar-menu">
+            <a href="home.html" class="nav-link active">Home</a>
+            <a href="vision/dashboard.html" class="nav-link">Meetings</a>
+            <a href="drive/drive.html" class="nav-link">Drive</a>
             <div class="user-avatar-container">
                 <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()">AB</div>
                 <div class="user-dropdown-menu" id="userDropdownMenu">
@@ -266,67 +425,132 @@
         </div>
     </nav>
 
-    <div class="home-container">
-        <div class="home-header">
-            <h1>Welcome back, <span id="userName">User</span></h1>
-            <p>Select a module to get started</p>
+    <div class="home-content">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <p class="welcome-greeting">Good <span id="timeGreeting">morning</span>,</p>
+            <h1 class="welcome-title"><span id="userName">User</span></h1>
+            <p class="welcome-subtitle">What would you like to do today?</p>
         </div>
 
-        <div class="modules-grid">
-            <!-- Vision Module -->
-            <div class="module-card vision" onclick="navigateToModule('vision')" id="visionCard">
-                <div class="module-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <polygon points="23 7 16 12 23 17 23 7"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                    </svg>
+        <!-- Apps Grid -->
+        <div class="apps-grid">
+            <!-- Vision Card -->
+            <div class="app-card vision" onclick="navigateToModule('vision')" id="visionCard">
+                <div class="app-card-header">
+                    <div class="app-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <div class="app-status" id="visionStatus">
+                        <span class="status-indicator"></span>
+                        <span>Checking...</span>
+                    </div>
                 </div>
-                <h2>Vision</h2>
-                <p>Video conferencing with real-time collaboration, screen sharing, and meeting recordings</p>
-                <div class="module-status checking" id="visionStatus">
-                    <span class="status-dot"></span>
-                    <span>Checking...</span>
+                <div class="app-card-body">
+                    <h3>Meetings</h3>
+                    <p>Video conferencing with screen sharing, chat, and recording capabilities</p>
                 </div>
-            </div>
-
-            <!-- Drive Module -->
-            <div class="module-card drive" onclick="navigateToModule('drive')" id="driveCard">
-                <div class="module-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <h2>Drive</h2>
-                <p>Secure cloud storage with folder organization, file sharing, and up to 5GB uploads</p>
-                <div class="module-status checking" id="driveStatus">
-                    <span class="status-dot"></span>
-                    <span>Checking...</span>
+                <div class="app-card-footer">
+                    <span class="app-action">
+                        Open Meetings
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
 
-            <!-- Admin Module (SUPERADMIN only) -->
-            <div class="module-card admin" onclick="navigateToModule('admin')" id="adminCard">
-                <div class="module-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
-                    </svg>
+            <!-- Drive Card -->
+            <div class="app-card drive" onclick="navigateToModule('drive')" id="driveCard">
+                <div class="app-card-header">
+                    <div class="app-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="app-status" id="driveStatus">
+                        <span class="status-indicator"></span>
+                        <span>Checking...</span>
+                    </div>
                 </div>
-                <h2>Admin</h2>
-                <p>System administration with service health monitoring, user management, and role configuration</p>
-                <div class="module-status" id="adminStatus">
-                    <span class="status-dot"></span>
-                    <span>SUPERADMIN</span>
+                <div class="app-card-body">
+                    <h3>Drive</h3>
+                    <p>Secure cloud storage with file sharing and organization tools</p>
+                </div>
+                <div class="app-card-footer">
+                    <span class="app-action">
+                        Open Drive
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Admin Card (SUPERADMIN only) -->
+            <div class="app-card admin" onclick="navigateToModule('admin')" id="adminCard">
+                <div class="app-card-header">
+                    <div class="app-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                        </svg>
+                    </div>
+                    <div class="app-status online">
+                        <span class="status-indicator"></span>
+                        <span>Admin</span>
+                    </div>
+                </div>
+                <div class="app-card-body">
+                    <h3>Admin Panel</h3>
+                    <p>User management, service monitoring, and system configuration</p>
+                </div>
+                <div class="app-card-footer">
+                    <span class="app-action">
+                        Open Admin
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="quick-actions">
-            <h3>Quick Actions</h3>
-            <div class="quick-links">
-                <a href="vision/dashboard.html" class="quick-link">My Meetings</a>
-                <a href="drive/drive.html" class="quick-link">My Files</a>
-                <a href="auth/dashboard.html" class="quick-link" id="quickAdminLink" style="display: none;">Admin Dashboard</a>
+        <!-- Quick Stats -->
+        <div class="stats-section">
+            <div class="stats-header">
+                <span class="stats-title">Quick Overview</span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Projects</div>
+                    <div class="stat-value loading" id="statProjects">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Meetings</div>
+                    <div class="stat-value loading" id="statMeetings">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Files</div>
+                    <div class="stat-value loading" id="statFiles">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Storage Used</div>
+                    <div class="stat-value loading" id="statStorage">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="activity-header">
+                <span class="activity-title">Recent Activity</span>
+            </div>
+            <div class="activity-list" id="activityList">
+                <div class="activity-empty">Loading recent activity...</div>
             </div>
         </div>
     </div>
@@ -344,8 +568,20 @@
             }
 
             initializeUser();
+            setTimeGreeting();
             checkModuleStatus();
+            loadQuickStats();
+            loadRecentActivity();
         });
+
+        function setTimeGreeting() {
+            const hour = new Date().getHours();
+            let greeting;
+            if (hour < 12) greeting = 'morning';
+            else if (hour < 17) greeting = 'afternoon';
+            else greeting = 'evening';
+            document.getElementById('timeGreeting').textContent = greeting;
+        }
 
         function initializeUser() {
             const user = api.getUser();
@@ -359,22 +595,17 @@
                 if (user.roles && user.roles.includes('SUPERADMIN')) {
                     document.getElementById('adminCard').classList.add('visible');
                     document.getElementById('mobileAdminLink').style.display = 'block';
-                    document.getElementById('quickAdminLink').style.display = 'inline-block';
                 }
             }
         }
 
         async function checkModuleStatus() {
-            // Check Vision service
             checkServiceHealth('vision', CONFIG.endpoints.vision);
-
-            // Check Drive service
             checkServiceHealth('drive', CONFIG.endpoints.drive);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
             const statusEl = document.getElementById(`${moduleName}Status`);
-            const cardEl = document.getElementById(`${moduleName}Card`);
 
             try {
                 const controller = new AbortController();
@@ -387,17 +618,131 @@
                 clearTimeout(timeoutId);
 
                 if (response.ok) {
-                    statusEl.className = 'module-status';
-                    statusEl.innerHTML = '<span class="status-dot"></span><span>Online</span>';
-                    cardEl.classList.remove('disabled');
+                    statusEl.className = 'app-status online';
+                    statusEl.innerHTML = '<span class="status-indicator"></span><span>Online</span>';
                 } else {
                     throw new Error('Service unavailable');
                 }
             } catch (error) {
-                statusEl.className = 'module-status offline';
-                statusEl.innerHTML = '<span class="status-dot"></span><span>Offline</span>';
-                // Don't disable the card - let user try anyway
+                statusEl.className = 'app-status offline';
+                statusEl.innerHTML = '<span class="status-indicator"></span><span>Offline</span>';
             }
+        }
+
+        async function loadQuickStats() {
+            try {
+                // Load projects count
+                const projectsResult = await api.getProjects();
+                if (projectsResult.success && projectsResult.projects) {
+                    const projectCount = projectsResult.projects.length;
+                    document.getElementById('statProjects').textContent = projectCount;
+                    document.getElementById('statProjects').classList.remove('loading');
+
+                    // Count total meetings
+                    let totalMeetings = 0;
+                    for (const project of projectsResult.projects) {
+                        const meetingsResult = await api.getProjectMeetings(project.id);
+                        if (meetingsResult.success && meetingsResult.meetings) {
+                            totalMeetings += meetingsResult.meetings.length;
+                        }
+                    }
+                    document.getElementById('statMeetings').textContent = totalMeetings;
+                    document.getElementById('statMeetings').classList.remove('loading');
+                }
+            } catch (error) {
+                console.error('Error loading project stats:', error);
+                document.getElementById('statProjects').textContent = '0';
+                document.getElementById('statMeetings').textContent = '0';
+            }
+
+            try {
+                // Load drive stats
+                const driveResult = await api.browseDrive(null);
+                if (driveResult.success) {
+                    const folderCount = driveResult.folders?.length || 0;
+                    const fileCount = driveResult.files?.length || 0;
+                    document.getElementById('statFiles').textContent = folderCount + fileCount;
+                    document.getElementById('statFiles').classList.remove('loading');
+
+                    document.getElementById('statStorage').textContent = formatBytes(driveResult.total_size || 0);
+                    document.getElementById('statStorage').classList.remove('loading');
+                }
+            } catch (error) {
+                console.error('Error loading drive stats:', error);
+                document.getElementById('statFiles').textContent = '0';
+                document.getElementById('statStorage').textContent = '0 B';
+            }
+        }
+
+        async function loadRecentActivity() {
+            const activityList = document.getElementById('activityList');
+            const activities = [];
+
+            try {
+                // Get recent projects/meetings
+                const projectsResult = await api.getProjects();
+                if (projectsResult.success && projectsResult.projects) {
+                    for (const project of projectsResult.projects.slice(0, 3)) {
+                        const meetingsResult = await api.getProjectMeetings(project.id);
+                        if (meetingsResult.success && meetingsResult.meetings) {
+                            for (const meeting of meetingsResult.meetings.slice(0, 2)) {
+                                activities.push({
+                                    type: 'meeting',
+                                    name: meeting.meeting_name,
+                                    meta: project.project_name,
+                                    time: new Date(meeting.created_at),
+                                    link: `vision/dashboard.html`
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading meeting activity:', error);
+            }
+
+            try {
+                // Get recent files
+                const driveResult = await api.browseDrive(null);
+                if (driveResult.success) {
+                    for (const folder of (driveResult.folders || []).slice(0, 3)) {
+                        activities.push({
+                            type: 'file',
+                            name: folder.folderName,
+                            meta: 'Folder',
+                            time: new Date(folder.createdAt || Date.now()),
+                            link: 'drive/drive.html'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading drive activity:', error);
+            }
+
+            // Sort by time and limit to 5
+            activities.sort((a, b) => b.time - a.time);
+            const recentActivities = activities.slice(0, 5);
+
+            if (recentActivities.length === 0) {
+                activityList.innerHTML = '<div class="activity-empty">No recent activity. Start by creating a project or uploading files.</div>';
+                return;
+            }
+
+            activityList.innerHTML = recentActivities.map(activity => `
+                <div class="activity-item" onclick="window.location.href='${activity.link}'">
+                    <div class="activity-icon ${activity.type}">
+                        ${activity.type === 'meeting'
+                            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
+                            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+                        }
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-name">${escapeHtml(activity.name)}</div>
+                        <div class="activity-meta">${escapeHtml(activity.meta)}</div>
+                    </div>
+                    <div class="activity-time">${formatTimeAgo(activity.time)}</div>
+                </div>
+            `).join('');
         }
 
         function navigateToModule(module) {
@@ -427,6 +772,33 @@
                 dropdown.classList.remove('show');
             }
         });
+
+        // Utility functions
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
