@@ -1602,59 +1602,50 @@ body {
 
     .background-settings {
         width: 95vw;
-        max-width: 400px;
-        bottom: 80px;
-        padding: 0 !important;
-        max-height: 300px;
-        overflow: hidden !important;
-        display: flex !important;
-        flex-direction: column !important;
+        max-width: 360px;
+        bottom: 75px;
+        padding: 10px !important;
+        overflow: visible !important;
+        display: block !important;
     }
 
     .bg-settings-header {
-        margin: 0 !important;
-        padding: 12px 14px;
+        margin: 0 0 8px 0 !important;
+        padding: 0 0 8px 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        flex-shrink: 0;
-        background: rgb(245, 245, 248);
-        border-radius: 16px 16px 0 0;
     }
 
     .bg-settings-header h3 {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .bg-options {
         display: grid !important;
         grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        padding: 12px 14px;
-        overflow-y: scroll !important;
-        -webkit-overflow-scrolling: touch;
-        flex: 1;
-        min-height: 0;
-        overscroll-behavior: contain;
-        touch-action: pan-y;
+        gap: 6px;
+        padding: 0;
+        overflow: visible !important;
     }
 
     .bg-option {
-        padding: 6px;
-        border-radius: 8px;
+        padding: 4px;
+        border-radius: 6px;
     }
 
     .bg-option span {
-        font-size: 10px;
+        font-size: 9px;
+        margin-top: 2px;
     }
 
     .bg-preview {
-        width: 60px;
-        height: 45px;
-        border-radius: 6px;
-        margin-bottom: 4px;
+        width: 100%;
+        height: 40px;
+        border-radius: 5px;
+        margin-bottom: 2px;
     }
 
     .bg-preview.bg-none::after {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     /* Fix reaction picker on mobile */
@@ -1740,51 +1731,38 @@ body {
     }
 
     .background-settings {
-        max-width: 340px;
-        max-height: 260px;
-        bottom: 70px;
-        padding: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
+        max-width: 320px;
+        bottom: 65px;
+        padding: 8px !important;
     }
 
     .bg-settings-header {
-        padding: 10px 12px;
-        margin: 0 !important;
-        flex-shrink: 0;
-        background: rgb(245, 245, 248);
+        margin: 0 0 6px 0 !important;
+        padding: 0 0 6px 0;
+    }
+
+    .bg-settings-header h3 {
+        font-size: 12px;
     }
 
     .bg-options {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
-        padding: 10px 12px;
-        min-height: 0;
-        flex: 1;
-        overflow-y: scroll !important;
-        overscroll-behavior: contain;
-        touch-action: pan-y;
-        -webkit-overflow-scrolling: touch;
+        gap: 4px;
     }
 
     .bg-option {
-        padding: 4px;
+        padding: 3px;
     }
 
     .bg-option span {
-        font-size: 9px;
+        font-size: 8px;
     }
 
     .bg-preview {
-        width: 55px;
-        height: 40px;
-        margin-bottom: 3px;
+        height: 35px;
     }
 
     .bg-preview.bg-none::after {
-        font-size: 16px;
+        font-size: 14px;
     }
 
     /* Reaction picker even more compact */
