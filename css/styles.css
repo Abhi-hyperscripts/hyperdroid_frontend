@@ -1609,7 +1609,6 @@ body {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
-        touch-action: none;
     }
 
     .bg-settings-header {

@@ -2187,6 +2187,18 @@ async function loadVirtualBackgroundLibraries() {
     }
 }
 
+// Prevent background scroll on touch for mobile
+function preventBackgroundScroll(e) {
+    const bgOptions = document.querySelector('.bg-options');
+    // Allow scrolling only within bg-options
+    if (bgOptions && bgOptions.contains(e.target)) {
+        // Allow the scroll within the panel
+        return;
+    }
+    // Prevent scroll on everything else when panel is open
+    e.preventDefault();
+}
+
 // Toggle background settings panel
 async function toggleBackgroundSettings() {
     const panel = document.getElementById('backgroundSettings');
@@ -2197,8 +2209,18 @@ async function toggleBackgroundSettings() {
     // Prevent body scroll when panel is open on mobile
     if (isOpening) {
         document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.top = `-${window.scrollY}px`;
+        document.addEventListener('touchmove', preventBackgroundScroll, { passive: false });
     } else {
+        const scrollY = document.body.style.top;
         document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        document.removeEventListener('touchmove', preventBackgroundScroll);
     }
 
     // Lazy load libraries when panel is first opened
