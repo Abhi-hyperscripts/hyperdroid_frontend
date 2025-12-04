@@ -204,13 +204,13 @@ body {
     margin-bottom: 6px;
 }
 
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group input[type="password"],
-.form-group input[type="number"],
-.form-group input[type="datetime-local"],
-.form-group textarea,
-.form-group select {
+.form-group input[type="text"]:not(.form-input),
+.form-group input[type="email"]:not(.form-input),
+.form-group input[type="password"]:not(.form-input),
+.form-group input[type="number"]:not(.form-input),
+.form-group input[type="datetime-local"]:not(.form-input),
+.form-group textarea:not(.form-input),
+.form-group select:not(.form-input) {
     width: 100%;
     padding: 12px 16px;
     background: rgba(255, 255, 255, 0.9);
