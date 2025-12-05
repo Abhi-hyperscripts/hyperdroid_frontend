@@ -5231,12 +5231,13 @@ label.toggle-switch,
 }
 
 .nav-dropdown-link.active {
-    color: #6c5ce7;
-    background: rgba(108, 92, 231, 0.08);
+    color: #000;
+    background: rgba(0, 0, 0, 0.06);
+    font-weight: 600;
 }
 
 .nav-dropdown-link.active .nav-link-icon svg {
-    stroke: #6c5ce7;
+    stroke: #000;
 }
 
 .nav-link-icon {
