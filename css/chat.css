@@ -1432,12 +1432,12 @@ body.chat-page {
 }
 
 .message.own .message-file {
-    background: rgba(0, 0, 0, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #1a1a2e;
+    border-color: #1a1a2e;
 }
 
 .message.own .message-file:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: #252542;
 }
 
 .file-icon {
