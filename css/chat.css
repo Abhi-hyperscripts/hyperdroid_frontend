@@ -1263,30 +1263,42 @@ body.chat-page {
 /* Toast Notifications */
 .toast-container {
     position: fixed;
-    bottom: 24px;
+    top: 24px;
     right: 24px;
     z-index: 10000;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
 .toast {
-    background: #333;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
+    background: #000;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: toastSlideIn 0.3s ease forwards;
+    max-width: 400px;
     font-size: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    animation: toastSlideIn 0.3s ease;
+}
+
+.toast svg {
+    flex-shrink: 0;
 }
 
 .toast.success {
-    background: #22c55e;
+    background: #27ae60;
 }
 
 .toast.error {
-    background: #ef4444;
+    background: #e74c3c;
+}
+
+.toast.info {
+    background: #3498db;
 }
 
 @keyframes toastSlideIn {
