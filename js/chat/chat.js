@@ -880,7 +880,8 @@ async function loadArchivedConversations() {
 async function showActiveConversations() {
     showingArchived = false;
     updateSidebarHeader();
-    renderConversations(conversations);
+    // Reload conversations to include any recently unarchived ones
+    await loadConversations();
 }
 
 function updateSidebarHeader() {
