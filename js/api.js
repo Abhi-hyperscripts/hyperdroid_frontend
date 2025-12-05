@@ -283,7 +283,7 @@ class API {
     // Routes to Chat microservice: /api/chat/conversations/{conversationId}/upload
     async uploadChatFile(conversationId, file, onProgress = null) {
         const baseUrl = CONFIG.chatApiBaseUrl;
-        const url = `${baseUrl}/conversations/${conversationId}/upload`;
+        const url = `${baseUrl}/chat/conversations/${conversationId}/upload`;
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
