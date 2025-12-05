@@ -257,14 +257,14 @@ function renderConversations(convos) {
                 <div class="conversation-meta">
                     ${time ? `<span class="conversation-time">${time}</span>` : ''}
                     ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
-                    <button class="conversation-menu-btn" onclick="event.stopPropagation(); toggleConversationMenu('${conv.id}')" title="More options">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="5" r="1"/>
-                            <circle cx="12" cy="12" r="1"/>
-                            <circle cx="12" cy="19" r="1"/>
-                        </svg>
-                    </button>
                 </div>
+                <button class="conversation-menu-btn" onclick="event.stopPropagation(); toggleConversationMenu('${conv.id}')" title="More options">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="5" r="1"/>
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="12" cy="19" r="1"/>
+                    </svg>
+                </button>
                 <div class="conversation-menu" id="convMenu-${conv.id}">
                     ${showingArchived ? `
                         <button class="conversation-menu-item" onclick="event.stopPropagation(); unarchiveChat('${conv.id}')">

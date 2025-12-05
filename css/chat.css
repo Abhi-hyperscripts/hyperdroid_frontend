@@ -852,13 +852,8 @@ body.chat-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
     transition: all 0.15s ease;
     flex-shrink: 0;
-}
-
-.conversation-item:hover .conversation-menu-btn {
-    opacity: 1;
 }
 
 .conversation-menu-btn:hover {
