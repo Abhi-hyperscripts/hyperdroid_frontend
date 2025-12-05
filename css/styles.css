@@ -5167,6 +5167,122 @@ label.toggle-switch,
     }
 }
 
+/* ============================================
+   NEW NAVIGATION DROPDOWN STYLES
+   Role-based navigation in user dropdown
+   ============================================ */
+
+/* Ensure dropdown has highest z-index */
+.user-avatar-container {
+    position: relative;
+    z-index: 99999;
+}
+
+.user-dropdown-menu {
+    z-index: 99999 !important;
+}
+
+/* User dropdown header with name and email */
+.user-dropdown-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+}
+
+.user-dropdown-name {
+    color: #1a1a2e;
+    font-size: 15px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.user-dropdown-email {
+    color: #888;
+    font-size: 12px;
+    font-weight: 400;
+    display: block;
+}
+
+/* Navigation links section in dropdown */
+.nav-links-section {
+    padding: 8px 0;
+}
+
+.nav-dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.nav-dropdown-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #1a1a2e;
+    text-decoration: none;
+}
+
+.nav-dropdown-link.active {
+    color: #6c5ce7;
+    background: rgba(108, 92, 231, 0.08);
+}
+
+.nav-dropdown-link.active .nav-link-icon svg {
+    stroke: #6c5ce7;
+}
+
+.nav-link-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nav-link-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+}
+
+.nav-link-label {
+    flex: 1;
+}
+
+/* Logout button styling */
+.logout-btn {
+    color: #e74c3c !important;
+}
+
+.logout-btn:hover {
+    background: rgba(231, 76, 60, 0.08) !important;
+}
+
+.logout-btn svg {
+    stroke: #e74c3c;
+}
+
+/* Hide desktop nav links - all navigation is in dropdown now */
+.navbar-menu > .nav-link {
+    display: none !important;
+}
+
+/* Mobile nav links - deprecated, using nav-links-section instead */
+.mobile-nav-links {
+    display: none !important;
+}
+
 @media (max-width: 480px) {
     .navbar {
         padding: 10px 12px;

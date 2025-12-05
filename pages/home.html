@@ -235,35 +235,7 @@
             </a>
         </div>
         <div class="navbar-menu">
-            <a href="home.html" class="nav-link active">Home</a>
-            <a href="vision/dashboard.html" class="nav-link">Meetings</a>
-            <a href="drive/drive.html" class="nav-link">Drive</a>
-            <a href="chat/chat.html" class="nav-link">Chat</a>
-            <div class="user-avatar-container">
-                <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()"></div>
-                <div class="user-dropdown-menu" id="userDropdownMenu">
-                    <div class="user-dropdown-header">
-                        <span id="userDropdownName">User Name</span>
-                    </div>
-                    <!-- Mobile Navigation Links -->
-                    <div class="mobile-nav-links">
-                        <a href="home.html" class="mobile-nav-link active">Home</a>
-                        <a href="vision/dashboard.html" class="mobile-nav-link">Meetings</a>
-                        <a href="drive/drive.html" class="mobile-nav-link">Drive</a>
-                        <a href="chat/chat.html" class="mobile-nav-link">Chat</a>
-                        <a href="auth/dashboard.html" class="mobile-nav-link" id="mobileAdminLink" style="display: none;">Admin</a>
-                    </div>
-                    <div class="user-dropdown-divider"></div>
-                    <button class="user-dropdown-item" onclick="api.logout()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Logout
-                    </button>
-                </div>
-            </div>
+            <!-- Navigation links rendered by Navigation.init() -->
         </div>
     </nav>
 
@@ -392,6 +364,7 @@
     <script>
         document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         // Check authentication
@@ -401,9 +374,13 @@
                 return;
             }
 
+            // Initialize navigation
+            Navigation.init('home', '');
+
             initializeUser();
             setTimeGreeting();
             checkModuleStatus();
+            showAccessibleModules();
         });
 
         function setTimeGreeting() {
@@ -418,15 +395,34 @@
         function initializeUser() {
             const user = api.getUser();
             if (user) {
-                const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
-                document.getElementById('userAvatar').textContent = initials;
-                document.getElementById('userDropdownName').textContent = `${user.firstName} ${user.lastName}`;
                 document.getElementById('userName').textContent = user.firstName || 'User';
+            }
+        }
 
-                // Show admin module for SUPERADMIN users
-                if (user.roles && user.roles.includes('SUPERADMIN')) {
-                    document.getElementById('adminCard').classList.add('visible');
-                    document.getElementById('mobileAdminLink').style.display = 'block';
+        // Show/hide module cards based on user roles
+        function showAccessibleModules() {
+            const user = api.getUser();
+            if (!user || !user.roles) return;
+
+            const roleMapping = {
+                'visionCard': 'VISION_USER',
+                'driveCard': 'DRIVE_USER',
+                'chatCard': 'CHAT_USER',
+                'adminCard': 'SUPERADMIN'
+            };
+
+            for (const [cardId, role] of Object.entries(roleMapping)) {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    const hasAccess = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
+                    if (hasAccess) {
+                        card.style.display = 'block';
+                        if (cardId === 'adminCard') {
+                            card.classList.add('visible');
+                        }
+                    } else {
+                        card.style.display = 'none';
+                    }
                 }
             }
         }
@@ -439,6 +435,7 @@
 
         async function checkServiceHealth(moduleName, endpoint) {
             const statusEl = document.getElementById(`${moduleName}Status`);
+            if (!statusEl) return;
 
             try {
                 const controller = new AbortController();
@@ -478,20 +475,6 @@
                     break;
             }
         }
-
-        function toggleUserDropdown() {
-            const dropdown = document.getElementById('userDropdownMenu');
-            dropdown.classList.toggle('show');
-        }
-
-        // Close dropdown on click outside
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('userDropdownMenu');
-            const avatar = document.getElementById('userAvatar');
-            if (!dropdown.contains(e.target) && !avatar.contains(e.target)) {
-                dropdown.classList.remove('show');
-            }
-        });
     </script>
 </body>
 </html>

@@ -25,34 +25,7 @@
             </a>
         </div>
         <div class="navbar-menu">
-            <a href="../home.html" class="nav-link">Home</a>
-            <a href="../vision/dashboard.html" class="nav-link">Meetings</a>
-            <a href="../drive/drive.html" class="nav-link">Drive</a>
-            <a href="chat.html" class="nav-link active">Chat</a>
-
-            <div class="user-avatar-container">
-                <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()"></div>
-                <div class="user-dropdown-menu" id="userDropdownMenu">
-                    <div class="user-dropdown-header">
-                        <span id="userDropdownName">User Name</span>
-                    </div>
-                    <div class="mobile-nav-links">
-                        <a href="../home.html" class="mobile-nav-link">Home</a>
-                        <a href="../vision/dashboard.html" class="mobile-nav-link">Meetings</a>
-                        <a href="../drive/drive.html" class="mobile-nav-link">Drive</a>
-                        <a href="chat.html" class="mobile-nav-link active">Chat</a>
-                    </div>
-                    <div class="user-dropdown-divider"></div>
-                    <button class="user-dropdown-item" onclick="api.logout()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Logout
-                    </button>
-                </div>
-            </div>
+            <!-- Navigation links rendered by Navigation.init() -->
         </div>
     </nav>
 
@@ -270,6 +243,15 @@
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        // Initialize navigation before chat.js
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Navigation !== 'undefined') {
+                Navigation.init('chat', '../');
+            }
+        });
     </script>
     <script>
         document.write('<script src="../../js/chat/chat.js?v=' + CACHE_VERSION + '"><\/script>');
