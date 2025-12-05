@@ -431,14 +431,19 @@ async function sendMessage() {
     const content = input.value.trim();
 
     if (!content || !currentConversationId) return;
+    if (!signalRConnection || signalRConnection.state !== signalR.HubConnectionState.Connected) {
+        showToast('Not connected to chat server', 'error');
+        return;
+    }
 
     try {
         input.value = '';
         autoResizeTextarea(input);
 
-        await api.sendMessage(currentConversationId, content, 'text');
+        // Send message via SignalR for real-time delivery
+        await signalRConnection.invoke('SendMessage', currentConversationId, content, 'text', null, null, null, null, null);
 
-        // Message will be added via SignalR
+        // Message will be added via SignalR MessageReceived event
     } catch (error) {
         console.error('Error sending message:', error);
         showToast('Failed to send message', 'error');
