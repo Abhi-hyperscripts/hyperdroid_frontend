@@ -1419,28 +1419,51 @@ body.chat-page {
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.05);
+    background: #f5f5f5;
     border-radius: 12px;
     cursor: pointer;
     max-width: 280px;
     transition: all 0.15s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .message-file:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: #ebebeb;
 }
 
 .message.own .message-file {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .message.own .message-file:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .file-icon {
-    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    border-radius: 8px;
     flex-shrink: 0;
+}
+
+.file-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: #555;
+}
+
+.message.own .file-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.message.own .file-icon svg {
+    stroke: white;
 }
 
 .message-file .file-info {
@@ -1451,7 +1474,7 @@ body.chat-page {
 .message-file .file-name {
     font-size: 14px;
     font-weight: 500;
-    color: #000;
+    color: #1a1a1a;
     display: block;
     white-space: nowrap;
     overflow: hidden;
@@ -1465,6 +1488,7 @@ body.chat-page {
 .message-file .file-size {
     font-size: 12px;
     color: #666;
+    margin-top: 2px;
 }
 
 .message.own .message-file .file-size {
@@ -1474,10 +1498,10 @@ body.chat-page {
 .download-icon {
     width: 20px;
     height: 20px;
-    stroke: #666;
+    stroke: #555;
     flex-shrink: 0;
 }
 
 .message.own .download-icon {
-    stroke: rgba(255, 255, 255, 0.8);
+    stroke: rgba(255, 255, 255, 0.9);
 }
