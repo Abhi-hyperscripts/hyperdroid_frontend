@@ -11,7 +11,7 @@ body.chat-page {
 /* Main Layout */
 .chat-container {
     display: flex;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 70px - 24px);
     gap: 12px;
     margin: 12px;
     position: relative;
