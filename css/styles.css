@@ -5081,9 +5081,9 @@ label.toggle-switch,
     }
 
     .navbar-menu {
-        flex: 1;
         justify-content: flex-end;
         gap: 8px;
+        margin-left: auto;
     }
 
     .user-avatar {
