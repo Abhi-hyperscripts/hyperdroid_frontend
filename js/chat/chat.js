@@ -439,12 +439,16 @@ function renderMessage(msg) {
         const fileIcon = getFileIcon(msg.file_content_type);
         const isImage = msg.file_content_type?.startsWith('image/');
 
+        // If it's an image and has a valid URL, show image preview
+        // Otherwise, show as a downloadable file attachment
+        const showAsImage = isImage && msg.file_download_url;
+
         fileHtml = `
             <div class="message-file-attachment" data-s3-key="${escapeHtml(msg.file_s3_key)}">
-                ${isImage ? `
+                ${showAsImage ? `
                     <div class="message-image-preview" onclick="openFilePreview('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}', true)">
-                        <img src="${msg.file_download_url || ''}" alt="${escapeHtml(fileName)}"
-                             onerror="this.parentElement.innerHTML='<div class=\\'image-load-error\\'>Image failed to load</div>'"
+                        <img src="${msg.file_download_url}" alt="${escapeHtml(fileName)}"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=image-load-error>Click to view image</div>';"
                              onload="scrollToBottom()">
                     </div>
                 ` : `

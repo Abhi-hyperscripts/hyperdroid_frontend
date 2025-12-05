@@ -5275,6 +5275,21 @@ label.toggle-switch,
     display: none !important;
 }
 
+/* Navigation dropdown portal - appended to body to escape stacking contexts */
+#navDropdownPortal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 2147483647; /* Max possible z-index */
+    pointer-events: none;
+}
+
+#navDropdownPortal .user-dropdown-menu {
+    pointer-events: auto;
+}
+
 @media (max-width: 480px) {
     .navbar {
         padding: 10px 12px;

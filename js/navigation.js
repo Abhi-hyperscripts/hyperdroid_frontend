@@ -114,45 +114,53 @@ const Navigation = {
         const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
         const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
 
-        // Build navbar HTML - only avatar, no nav links in main bar
+        // Build navbar HTML - only avatar in navbar
         navbarMenu.innerHTML = `
             <div class="user-avatar-container">
                 <div class="user-avatar" id="userAvatar" onclick="Navigation.toggleDropdown()">
                     ${initials}
                 </div>
-                <div class="user-dropdown-menu" id="userDropdownMenu">
-                    <div class="user-dropdown-header">
-                        <span class="user-dropdown-name">${this.escapeHtml(displayName)}</span>
-                        <span class="user-dropdown-email">${this.escapeHtml(user.email || '')}</span>
-                    </div>
-                    <div class="nav-links-section">
-                        ${accessibleItems.map(item => `
-                            <a href="${basePath}${item.href}"
-                               class="nav-dropdown-link ${currentPageId === item.id ? 'active' : ''}"
-                               data-nav-id="${item.id}">
-                                <span class="nav-link-icon">${item.icon}</span>
-                                <span class="nav-link-label">${item.label}</span>
-                            </a>
-                        `).join('')}
-                    </div>
-                    <div class="user-dropdown-divider"></div>
-                    <button class="user-dropdown-item logout-btn" onclick="Navigation.logout()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Logout
-                    </button>
-                </div>
             </div>
         `;
 
-        // Also update the userAvatar and userDropdownName if they exist elsewhere
-        const avatarEl = document.getElementById('userAvatar');
-        if (avatarEl) {
-            avatarEl.textContent = initials;
+        // Remove any existing dropdown from body
+        const existingDropdown = document.getElementById('navDropdownPortal');
+        if (existingDropdown) {
+            existingDropdown.remove();
         }
+
+        // Create dropdown as a portal appended directly to body
+        // This bypasses all stacking context issues from backdrop-filter
+        const dropdownPortal = document.createElement('div');
+        dropdownPortal.id = 'navDropdownPortal';
+        dropdownPortal.innerHTML = `
+            <div class="user-dropdown-menu" id="userDropdownMenu">
+                <div class="user-dropdown-header">
+                    <span class="user-dropdown-name">${this.escapeHtml(displayName)}</span>
+                    <span class="user-dropdown-email">${this.escapeHtml(user.email || '')}</span>
+                </div>
+                <div class="nav-links-section">
+                    ${accessibleItems.map(item => `
+                        <a href="${basePath}${item.href}"
+                           class="nav-dropdown-link ${currentPageId === item.id ? 'active' : ''}"
+                           data-nav-id="${item.id}">
+                            <span class="nav-link-icon">${item.icon}</span>
+                            <span class="nav-link-label">${item.label}</span>
+                        </a>
+                    `).join('')}
+                </div>
+                <div class="user-dropdown-divider"></div>
+                <button class="user-dropdown-item logout-btn" onclick="Navigation.logout()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        `;
+        document.body.appendChild(dropdownPortal);
     },
 
     /**
