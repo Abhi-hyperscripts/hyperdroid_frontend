@@ -597,8 +597,10 @@ body.chat-page {
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
-    overflow: hidden;
+    overflow: visible;
     animation: modalSlideIn 0.2s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes modalSlideIn {
@@ -646,8 +648,9 @@ body.chat-page {
 
 .chat-modal-body {
     padding: 24px;
-    overflow-y: auto;
-    max-height: calc(90vh - 140px);
+    overflow-y: visible;
+    overflow-x: visible;
+    flex: 1;
 }
 
 .chat-modal-footer {
@@ -703,10 +706,10 @@ body.chat-page {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     margin-top: 4px;
-    max-height: 200px;
+    max-height: 180px;
     overflow-y: auto;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
     display: none;
 }
 
@@ -1137,7 +1140,8 @@ body.chat-page {
     }
 
     .chat-modal-body {
-        max-height: calc(100vh - 140px);
+        overflow-y: visible;
+        overflow-x: visible;
     }
 
     .back-btn {
