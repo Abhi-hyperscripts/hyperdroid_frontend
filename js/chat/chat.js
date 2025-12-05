@@ -311,9 +311,17 @@ async function selectConversation(conversationId) {
 
 async function loadConversationDetails(conversationId) {
     try {
-        const conv = conversations.find(c => c.id === conversationId);
-        if (!conv) return;
+        // Fetch full conversation details including participants
+        const fullConv = await api.getConversation(conversationId);
+        if (!fullConv) return;
 
+        // Update the cached conversation with full details
+        const convIndex = conversations.findIndex(c => c.id === conversationId);
+        if (convIndex !== -1) {
+            conversations[convIndex] = { ...conversations[convIndex], ...fullConv };
+        }
+
+        const conv = fullConv;
         const isGroup = conv.conversation_type === 'group';
         const displayName = isGroup ? conv.group_name : getOtherParticipantName(conv);
         const initials = getInitials(displayName);
