@@ -116,6 +116,14 @@
             color: #fff;
         }
 
+        .app-card.chat .app-icon {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+        }
+
+        .app-card.chat .app-icon svg {
+            color: #fff;
+        }
+
         .app-status {
             display: flex;
             align-items: center;
@@ -230,6 +238,7 @@
             <a href="home.html" class="nav-link active">Home</a>
             <a href="vision/dashboard.html" class="nav-link">Meetings</a>
             <a href="drive/drive.html" class="nav-link">Drive</a>
+            <a href="chat/chat.html" class="nav-link">Chat</a>
             <div class="user-avatar-container">
                 <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()"></div>
                 <div class="user-dropdown-menu" id="userDropdownMenu">
@@ -241,6 +250,7 @@
                         <a href="home.html" class="mobile-nav-link active">Home</a>
                         <a href="vision/dashboard.html" class="mobile-nav-link">Meetings</a>
                         <a href="drive/drive.html" class="mobile-nav-link">Drive</a>
+                        <a href="chat/chat.html" class="mobile-nav-link">Chat</a>
                         <a href="auth/dashboard.html" class="mobile-nav-link" id="mobileAdminLink" style="display: none;">Admin</a>
                     </div>
                     <div class="user-dropdown-divider"></div>
@@ -315,6 +325,33 @@
                 <div class="app-card-footer">
                     <span class="app-action">
                         Open Drive
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Chat Card -->
+            <div class="app-card chat" onclick="navigateToModule('chat')" id="chatCard">
+                <div class="app-card-header">
+                    <div class="app-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="app-status" id="chatStatus">
+                        <span class="status-indicator"></span>
+                        <span>Checking...</span>
+                    </div>
+                </div>
+                <div class="app-card-body">
+                    <h3>Chat</h3>
+                    <p>Real-time messaging with direct and group conversations</p>
+                </div>
+                <div class="app-card-footer">
+                    <span class="app-action">
+                        Open Chat
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
@@ -397,6 +434,7 @@
         async function checkModuleStatus() {
             checkServiceHealth('vision', CONFIG.endpoints.vision);
             checkServiceHealth('drive', CONFIG.endpoints.drive);
+            checkServiceHealth('chat', CONFIG.endpoints.chat);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -431,6 +469,9 @@
                     break;
                 case 'drive':
                     window.location.href = 'drive/drive.html';
+                    break;
+                case 'chat':
+                    window.location.href = 'chat/chat.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';

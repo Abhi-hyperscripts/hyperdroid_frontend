@@ -18,6 +18,10 @@ class API {
         if (endpoint.startsWith('/drive/')) {
             return CONFIG.driveApiBaseUrl;
         }
+        // Chat endpoints go to Chat service (independent microservice)
+        if (endpoint.startsWith('/chat/')) {
+            return CONFIG.chatApiBaseUrl;
+        }
         // Vision endpoints (projects, meetings) go to Vision service
         return CONFIG.visionApiBaseUrl;
     }
@@ -549,6 +553,139 @@ class API {
             throw new Error(data.message || 'Failed to access shared item');
         }
         return data;
+    }
+
+    // ==================== CHAT API ====================
+
+    // Conversations
+    async getConversations(limit = 50, offset = 0) {
+        return this.request(`/chat/conversations?limit=${limit}&offset=${offset}`);
+    }
+
+    async getConversation(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}`);
+    }
+
+    async createDirectConversation(targetUserId) {
+        return this.request('/chat/conversations/direct', {
+            method: 'POST',
+            body: JSON.stringify({ target_user_id: targetUserId })
+        });
+    }
+
+    async createGroupConversation(name, description = null, memberUserIds = []) {
+        return this.request('/chat/conversations/group', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                member_user_ids: memberUserIds
+            })
+        });
+    }
+
+    async updateConversation(conversationId, name, description = null, avatarUrl = null) {
+        return this.request(`/chat/conversations/${conversationId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                avatar_url: avatarUrl
+            })
+        });
+    }
+
+    async leaveConversation(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Messages
+    async getMessages(conversationId, beforeMessageId = null, limit = 50) {
+        let query = `?limit=${limit}`;
+        if (beforeMessageId) query += `&before_message_id=${beforeMessageId}`;
+        return this.request(`/chat/conversations/${conversationId}/messages${query}`);
+    }
+
+    async sendMessage(conversationId, content, messageType = 'text', fileId = null, fileName = null, fileSize = null, fileContentType = null, replyToMessageId = null) {
+        return this.request(`/chat/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({
+                content: content,
+                message_type: messageType,
+                file_id: fileId,
+                file_name: fileName,
+                file_size: fileSize,
+                file_content_type: fileContentType,
+                reply_to_message_id: replyToMessageId
+            })
+        });
+    }
+
+    async editMessage(messageId, content) {
+        return this.request(`/chat/messages/${messageId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ content: content })
+        });
+    }
+
+    async deleteMessage(messageId) {
+        return this.request(`/chat/messages/${messageId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async markAsRead(conversationId, messageId) {
+        return this.request(`/chat/conversations/${conversationId}/read`, {
+            method: 'POST',
+            body: JSON.stringify({ message_id: messageId })
+        });
+    }
+
+    // Participants
+    async getParticipants(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}/participants`);
+    }
+
+    async addParticipant(conversationId, userId) {
+        return this.request(`/chat/conversations/${conversationId}/participants`, {
+            method: 'POST',
+            body: JSON.stringify({ user_id: userId })
+        });
+    }
+
+    async addMultipleParticipants(conversationId, userIds) {
+        return this.request(`/chat/conversations/${conversationId}/participants/bulk`, {
+            method: 'POST',
+            body: JSON.stringify({ user_ids: userIds })
+        });
+    }
+
+    async removeParticipant(conversationId, targetUserId) {
+        return this.request(`/chat/conversations/${conversationId}/participants/${targetUserId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Users & Status
+    async searchChatUsers(query, limit = 20) {
+        return this.request(`/chat/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
+    }
+
+    async getUnreadCounts() {
+        return this.request('/chat/unread');
+    }
+
+    async updateChatStatus(status) {
+        return this.request('/chat/status', {
+            method: 'PUT',
+            body: JSON.stringify({ status: status })
+        });
+    }
+
+    async getChatStatus() {
+        return this.request('/chat/status');
     }
 }
 

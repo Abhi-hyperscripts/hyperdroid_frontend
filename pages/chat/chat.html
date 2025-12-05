@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - HyperDroid</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/chat.css?v=' + CACHE_VERSION + '">');
+    </script>
+</head>
+<body class="dashboard">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <a href="../home.html" class="nav-link">Home</a>
+            <a href="../vision/dashboard.html" class="nav-link">Meetings</a>
+            <a href="../drive/drive.html" class="nav-link">Drive</a>
+            <a href="chat.html" class="nav-link active">Chat</a>
+
+            <div class="user-avatar-container">
+                <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()"></div>
+                <div class="user-dropdown-menu" id="userDropdownMenu">
+                    <div class="user-dropdown-header">
+                        <span id="userDropdownName">User Name</span>
+                    </div>
+                    <div class="mobile-nav-links">
+                        <a href="../home.html" class="mobile-nav-link">Home</a>
+                        <a href="../vision/dashboard.html" class="mobile-nav-link">Meetings</a>
+                        <a href="../drive/drive.html" class="mobile-nav-link">Drive</a>
+                        <a href="chat.html" class="mobile-nav-link active">Chat</a>
+                    </div>
+                    <div class="user-dropdown-divider"></div>
+                    <button class="user-dropdown-item" onclick="api.logout()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Chat Container -->
+    <div class="chat-container">
+        <!-- Sidebar - Conversations List -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-sidebar-header">
+                <h2>Messages</h2>
+                <button class="new-chat-btn" onclick="showNewChatModal()" title="New Chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="chat-search">
+                <input type="text" id="searchConversations" placeholder="Search conversations..." oninput="filterConversations(this.value)">
+            </div>
+
+            <div class="conversations-list" id="conversationsList">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-main" id="chatMain">
+            <!-- Empty State (shown when no conversation selected) -->
+            <div class="chat-empty-state" id="chatEmptyState">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h3>Welcome to Chat</h3>
+                <p>Select a conversation or start a new one</p>
+            </div>
+
+            <!-- Active Chat (hidden by default) -->
+            <div class="chat-active" id="chatActive" style="display: none; flex-direction: column; height: 100%;">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <button class="back-btn" onclick="goBackToList()" style="display: none; margin-right: 12px; background: none; border: none; cursor: pointer;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <div class="chat-header-avatar" id="chatHeaderAvatar">AB</div>
+                        <div class="chat-header-details">
+                            <h3 id="chatHeaderName">Conversation Name</h3>
+                            <p id="chatHeaderStatus">Online</p>
+                        </div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button onclick="showChatInfo()" title="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be loaded here -->
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span id="typingText">Someone is typing...</span>
+                </div>
+
+                <!-- Message Input -->
+                <div class="chat-input-area">
+                    <div class="chat-input-container">
+                        <textarea
+                            id="messageInput"
+                            placeholder="Type a message..."
+                            rows="1"
+                            onkeydown="handleMessageKeydown(event)"
+                            oninput="autoResizeTextarea(this); handleTyping();"
+                        ></textarea>
+                        <div class="chat-input-actions">
+                            <button class="send-btn" onclick="sendMessage()" title="Send">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div class="chat-modal" id="newChatModal">
+        <div class="chat-modal-content">
+            <div class="chat-modal-header">
+                <h3>New Conversation</h3>
+                <button class="chat-modal-close" onclick="closeNewChatModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-modal-body">
+                <!-- Conversation Type Toggle -->
+                <div class="conversation-type-toggle">
+                    <button class="type-btn active" data-type="direct" onclick="setConversationType('direct')">Direct Message</button>
+                    <button class="type-btn" data-type="group" onclick="setConversationType('group')">Group Chat</button>
+                </div>
+
+                <!-- Group Name (only for groups) -->
+                <div class="form-group" id="groupNameField" style="display: none;">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" id="groupName" placeholder="Enter group name...">
+                </div>
+
+                <!-- User Search -->
+                <div class="form-group">
+                    <label for="userSearch" id="userSearchLabel">Search User</label>
+                    <div class="user-search-container">
+                        <input type="text" id="userSearch" placeholder="Search by name or email..." oninput="searchUsers(this.value)">
+                        <div class="user-search-results" id="userSearchResults"></div>
+                    </div>
+                </div>
+
+                <!-- Selected Users -->
+                <div class="selected-users" id="selectedUsers"></div>
+            </div>
+            <div class="chat-modal-footer">
+                <button class="btn btn-secondary" onclick="closeNewChatModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createConversation()">Start Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Info Modal -->
+    <div class="chat-modal" id="chatInfoModal">
+        <div class="chat-modal-content">
+            <div class="chat-modal-header">
+                <h3>Conversation Info</h3>
+                <button class="chat-modal-close" onclick="closeChatInfoModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-modal-body" id="chatInfoContent">
+                <!-- Info will be loaded here -->
+            </div>
+            <div class="chat-modal-footer">
+                <button class="btn btn-danger" onclick="leaveConversation()" id="leaveConversationBtn">Leave Conversation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        document.write('<script src="../../js/chat/chat.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

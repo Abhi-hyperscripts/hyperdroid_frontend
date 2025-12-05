@@ -10,12 +10,14 @@ const ENVIRONMENTS = {
     local: {
         auth: 'http://localhost:5098',
         vision: 'http://localhost:5099',
-        drive: 'http://localhost:5100'
+        drive: 'http://localhost:5100',
+        chat: 'http://localhost:5102'
     },
     production: {
         auth: 'https://auth.hyperdroid.io',
         vision: 'https://vision.hyperdroid.io',
-        drive: 'https://drive.hyperdroid.io'
+        drive: 'https://drive.hyperdroid.io',
+        chat: 'https://chat.hyperdroid.io'
     }
 };
 
@@ -54,6 +56,10 @@ const CONFIG = {
         return `${this.endpoints.drive}/api`;
     },
 
+    get chatApiBaseUrl() {
+        return `${this.endpoints.chat}/api`;
+    },
+
     // Legacy alias for backwards compatibility
     get apiBaseUrl() {
         return this.visionApiBaseUrl;
@@ -65,6 +71,10 @@ const CONFIG = {
 
     get driveSignalRHubUrl() {
         return `${this.endpoints.drive}/hubs/drive`;
+    },
+
+    get chatSignalRHubUrl() {
+        return `${this.endpoints.chat}/hubs/chat`;
     },
 
     // Fetch ICE servers from backend
