@@ -156,12 +156,7 @@ function initializeSignalR() {
 }
 
 function initializeUser() {
-    const user = api.getUser();
-    if (user) {
-        const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
-        document.getElementById('userAvatar').textContent = initials;
-        document.getElementById('userDropdownName').textContent = `${user.firstName} ${user.lastName}`;
-    }
+    // Navigation is now handled by Navigation.init() in navigation.js
 }
 
 function setupEventListeners() {
@@ -190,14 +185,7 @@ function setupEventListeners() {
         }
     });
 
-    // Close user dropdown on click outside
-    document.addEventListener('click', (e) => {
-        const dropdown = document.getElementById('userDropdownMenu');
-        const avatar = document.getElementById('userAvatar');
-        if (!dropdown.contains(e.target) && !avatar.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
+    // User dropdown click-outside is handled by navigation.js
 }
 
 // Load drive contents with race condition protection
@@ -1173,7 +1161,4 @@ function showSuccess(message) {
     console.log('Success:', message);
 }
 
-function toggleUserDropdown() {
-    const dropdown = document.getElementById('userDropdownMenu');
-    dropdown.classList.toggle('show');
-}
+// toggleUserDropdown is handled by navigation.js

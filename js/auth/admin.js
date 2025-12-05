@@ -171,12 +171,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 function initializeUser() {
-    const user = api.getUser();
-    if (user) {
-        const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'SA';
-        document.getElementById('userAvatar').textContent = initials;
-        document.getElementById('userDropdownName').textContent = `${user.firstName} ${user.lastName}`;
-    }
+    // Navigation is now handled by Navigation.init() in navigation.js
 }
 
 async function loadAllData() {
@@ -1286,16 +1281,4 @@ function formatRelativeTime(date) {
 }
 
 // ==================== User Dropdown ====================
-
-function toggleUserDropdown() {
-    const dropdown = document.getElementById('userDropdownMenu');
-    dropdown.classList.toggle('show');
-}
-
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const avatar = document.getElementById('userAvatar');
-    if (dropdown && avatar && !dropdown.contains(e.target) && !avatar.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
-});
+// Handled by navigation.js

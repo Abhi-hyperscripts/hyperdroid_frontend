@@ -47,9 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initializeUserUI() {
-    const initials = `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'U';
-    document.getElementById('userAvatar').textContent = initials;
-    document.getElementById('userDropdownName').textContent = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email;
+    // Navigation is now handled by Navigation.init() in navigation.js
+    // This function is kept for any chat-specific UI initialization
 }
 
 // ============================================
@@ -1308,21 +1307,8 @@ function getFileIcon(contentType) {
 }
 
 // ============================================
-// User Dropdown
+// User Dropdown - handled by navigation.js
 // ============================================
-
-window.toggleUserDropdown = function() {
-    const dropdown = document.getElementById('userDropdownMenu');
-    dropdown.classList.toggle('show');
-};
-
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const avatar = document.getElementById('userAvatar');
-    if (dropdown && avatar && !dropdown.contains(e.target) && !avatar.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
-});
 
 // Close search results when clicking outside
 document.addEventListener('click', (e) => {

@@ -7,43 +7,8 @@ if (!api.isAuthenticated()) {
     window.location.href = '../login.html';
 }
 
-// Display user avatar with initials
+// User avatar and dropdown are now handled by Navigation.init() in navigation.js
 const user = api.getUser();
-if (user) {
-    const firstName = user.firstName || user.first_name || '';
-    const lastName = user.lastName || user.last_name || '';
-    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || user.email.charAt(0).toUpperCase();
-
-    const userAvatar = document.getElementById('userAvatar');
-    const userDropdownName = document.getElementById('userDropdownName');
-
-    if (userAvatar) {
-        userAvatar.textContent = initials;
-    }
-
-    if (userDropdownName) {
-        const fullName = `${firstName} ${lastName}`.trim();
-        userDropdownName.textContent = fullName || user.email;
-    }
-}
-
-// Toggle user dropdown menu
-window.toggleUserDropdown = function() {
-    const dropdown = document.getElementById('userDropdownMenu');
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-    }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (event) => {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const avatar = document.getElementById('userAvatar');
-
-    if (dropdown && avatar && !dropdown.contains(event.target) && !avatar.contains(event.target)) {
-        dropdown.classList.remove('show');
-    }
-});
 
 // ============================================
 // UNIFIED DASHBOARD - LOAD ALL PROJECTS
