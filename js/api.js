@@ -601,6 +601,28 @@ class API {
         });
     }
 
+    async archiveConversation(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}/archive`, {
+            method: 'POST'
+        });
+    }
+
+    async unarchiveConversation(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}/unarchive`, {
+            method: 'POST'
+        });
+    }
+
+    async deleteConversationForUser(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}/delete`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getArchivedConversations(limit = 50, offset = 0) {
+        return this.request(`/chat/conversations/archived?limit=${limit}&offset=${offset}`);
+    }
+
     // Messages
     async getMessages(conversationId, beforeMessageId = null, limit = 50) {
         let query = `?limit=${limit}`;

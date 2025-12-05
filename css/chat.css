@@ -48,6 +48,36 @@ body.chat-page {
     color: #000;
 }
 
+.chat-sidebar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.archived-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    color: #666;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.archived-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+}
+
+.archived-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 .new-chat-btn {
     width: 40px;
     height: 40px;
@@ -801,6 +831,155 @@ body.chat-page {
 
 .conversation-avatar {
     position: relative;
+}
+
+/* Conversation Item Menu (three-dot menu) */
+.conversation-item-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.conversation-menu-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+    z-index: 2;
+}
+
+.conversation-item:hover .conversation-menu-btn {
+    opacity: 1;
+}
+
+.conversation-menu-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.conversation-menu-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: #666;
+}
+
+.conversation-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    min-width: 140px;
+    padding: 6px;
+    z-index: 100;
+    display: none;
+}
+
+.conversation-menu.show {
+    display: block;
+}
+
+.conversation-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.conversation-menu-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.conversation-menu-item svg {
+    width: 16px;
+    height: 16px;
+    stroke: #666;
+}
+
+.conversation-menu-item.danger {
+    color: #ef4444;
+}
+
+.conversation-menu-item.danger svg {
+    stroke: #ef4444;
+}
+
+.conversation-menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Archived header style */
+.chat-sidebar-header.archived-view h2 {
+    color: #666;
+}
+
+.back-to-chats-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    color: #666;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.back-to-chats-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+}
+
+.back-to-chats-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Empty archived state */
+.empty-archived-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+}
+
+.empty-archived-state svg {
+    width: 48px;
+    height: 48px;
+    stroke: #ccc;
+    margin-bottom: 16px;
+}
+
+.empty-archived-state p {
+    font-size: 14px;
+    margin: 0;
 }
 
 /* Responsive - Tablet */

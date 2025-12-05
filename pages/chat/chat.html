@@ -62,12 +62,21 @@
         <div class="chat-sidebar" id="chatSidebar">
             <div class="chat-sidebar-header">
                 <h2>Messages</h2>
-                <button class="new-chat-btn" onclick="showNewChatModal()" title="New Chat">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                </button>
+                <div class="chat-sidebar-actions">
+                    <button class="archived-btn" onclick="loadArchivedConversations()" title="Archived Chats">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="21 8 21 21 3 21 3 8"/>
+                            <rect x="1" y="3" width="22" height="5"/>
+                            <line x1="10" y1="12" x2="14" y2="12"/>
+                        </svg>
+                    </button>
+                    <button class="new-chat-btn" onclick="showNewChatModal()" title="New Chat">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="chat-search">

@@ -5,12 +5,14 @@
 // Global State
 let currentConversationId = null;
 let conversations = [];
+let archivedConversations = [];
 let currentMessages = [];
 let selectedUsers = [];
 let conversationType = 'direct';
 let signalRConnection = null;
 let typingTimeout = null;
 let currentUser = null;
+let showingArchived = false;
 
 // ============================================
 // Initialization
@@ -226,8 +228,8 @@ function renderConversations(convos) {
     if (!convos || convos.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px 20px; color: #666;">
-                <p>No conversations yet</p>
-                <p style="font-size: 13px;">Start a new chat to begin messaging</p>
+                <p>${showingArchived ? 'No archived conversations' : 'No conversations yet'}</p>
+                <p style="font-size: 13px;">${showingArchived ? 'Archived chats will appear here' : 'Start a new chat to begin messaging'}</p>
             </div>
         `;
         return;
@@ -255,6 +257,44 @@ function renderConversations(convos) {
                 <div class="conversation-meta">
                     ${time ? `<span class="conversation-time">${time}</span>` : ''}
                     ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
+                    <button class="conversation-menu-btn" onclick="event.stopPropagation(); toggleConversationMenu('${conv.id}')" title="More options">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="5" r="1"/>
+                            <circle cx="12" cy="12" r="1"/>
+                            <circle cx="12" cy="19" r="1"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="conversation-menu" id="convMenu-${conv.id}">
+                    ${showingArchived ? `
+                        <button class="conversation-menu-item" onclick="event.stopPropagation(); unarchiveChat('${conv.id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 9 3 4 9 4"/>
+                                <path d="M3 4L14 15"/>
+                                <path d="M21 3v7h-7"/>
+                            </svg>
+                            Unarchive
+                        </button>
+                    ` : `
+                        <button class="conversation-menu-item" onclick="event.stopPropagation(); archiveChat('${conv.id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="21 8 21 21 3 21 3 8"/>
+                                <rect x="1" y="3" width="22" height="5"/>
+                                <line x1="10" y1="12" x2="14" y2="12"/>
+                            </svg>
+                            Archive
+                        </button>
+                    `}
+                    <button class="conversation-menu-item danger" onclick="event.stopPropagation(); deleteChat('${conv.id}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-2 14H7L5 6"/>
+                            <path d="M10 11v6"/>
+                            <path d="M14 11v6"/>
+                            <path d="M9 6V4h6v2"/>
+                        </svg>
+                        Delete
+                    </button>
                 </div>
             </div>
         `;
@@ -650,6 +690,154 @@ async function createConversation() {
     } catch (error) {
         console.error('Error creating conversation:', error);
         showToast(error.message || 'Failed to create conversation', 'error');
+    }
+}
+
+// ============================================
+// Archive/Delete Functions
+// ============================================
+
+function toggleConversationMenu(conversationId) {
+    // Close all other menus first
+    document.querySelectorAll('.conversation-menu.show').forEach(menu => {
+        if (menu.id !== `convMenu-${conversationId}`) {
+            menu.classList.remove('show');
+        }
+    });
+
+    const menu = document.getElementById(`convMenu-${conversationId}`);
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Close conversation menus when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.conversation-menu-btn') && !e.target.closest('.conversation-menu')) {
+        document.querySelectorAll('.conversation-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+
+async function archiveChat(conversationId) {
+    try {
+        await api.archiveConversation(conversationId);
+
+        // Remove from current list
+        conversations = conversations.filter(c => c.id !== conversationId);
+
+        // Clear current conversation if it was archived
+        if (currentConversationId === conversationId) {
+            currentConversationId = null;
+            showEmptyState();
+        }
+
+        renderConversations(conversations);
+        showToast('Conversation archived', 'success');
+    } catch (error) {
+        console.error('Error archiving conversation:', error);
+        showToast('Failed to archive conversation', 'error');
+    }
+}
+
+async function unarchiveChat(conversationId) {
+    try {
+        await api.unarchiveConversation(conversationId);
+
+        // Remove from archived list
+        archivedConversations = archivedConversations.filter(c => c.id !== conversationId);
+
+        // Clear current conversation if it was unarchived
+        if (currentConversationId === conversationId) {
+            currentConversationId = null;
+            showEmptyState();
+        }
+
+        renderConversations(archivedConversations);
+        showToast('Conversation restored', 'success');
+    } catch (error) {
+        console.error('Error unarchiving conversation:', error);
+        showToast('Failed to restore conversation', 'error');
+    }
+}
+
+async function deleteChat(conversationId) {
+    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        await api.deleteConversationForUser(conversationId);
+
+        // Remove from current list
+        if (showingArchived) {
+            archivedConversations = archivedConversations.filter(c => c.id !== conversationId);
+            renderConversations(archivedConversations);
+        } else {
+            conversations = conversations.filter(c => c.id !== conversationId);
+            renderConversations(conversations);
+        }
+
+        // Clear current conversation if it was deleted
+        if (currentConversationId === conversationId) {
+            currentConversationId = null;
+            showEmptyState();
+        }
+
+        showToast('Conversation deleted', 'success');
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+        showToast('Failed to delete conversation', 'error');
+    }
+}
+
+async function loadArchivedConversations() {
+    try {
+        const response = await api.getArchivedConversations();
+        archivedConversations = response.conversations || [];
+        showingArchived = true;
+        updateSidebarHeader();
+        renderConversations(archivedConversations);
+    } catch (error) {
+        console.error('Error loading archived conversations:', error);
+        showToast('Failed to load archived conversations', 'error');
+    }
+}
+
+async function showActiveConversations() {
+    showingArchived = false;
+    updateSidebarHeader();
+    renderConversations(conversations);
+}
+
+function updateSidebarHeader() {
+    const headerTitle = document.querySelector('.chat-sidebar-header h2');
+    if (headerTitle) {
+        headerTitle.textContent = showingArchived ? 'Archived' : 'Messages';
+    }
+
+    // Update the new chat button to toggle between archived/active
+    const newChatBtn = document.querySelector('.new-chat-btn');
+    if (newChatBtn) {
+        if (showingArchived) {
+            newChatBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            `;
+            newChatBtn.setAttribute('onclick', 'showActiveConversations()');
+            newChatBtn.setAttribute('title', 'Back to Messages');
+        } else {
+            newChatBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+            `;
+            newChatBtn.setAttribute('onclick', 'showNewChatModal()');
+            newChatBtn.setAttribute('title', 'New Chat');
+        }
     }
 }
 
