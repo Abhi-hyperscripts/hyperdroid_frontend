@@ -658,10 +658,14 @@ async function searchUsers(query) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         try {
-            const results = await api.searchChatUsers(query);
-            renderUserSearchResults(results);
+            const response = await api.searchChatUsers(query);
+            // Handle both array and object response formats
+            const users = Array.isArray(response) ? response : (response.users || response.data || []);
+            console.log('Search results for:', query, users);
+            renderUserSearchResults(users);
         } catch (error) {
             console.error('Error searching users:', error);
+            renderUserSearchResults([]);
         }
     }, 300);
 }
