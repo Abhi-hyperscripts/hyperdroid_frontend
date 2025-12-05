@@ -279,6 +279,64 @@ class API {
         return this.request(`/meetings/${meetingId}/chat?limit=${limit}`);
     }
 
+    // Upload a file to chat conversation (max 100MB)
+    // Routes to Chat microservice: /api/chat/conversations/{conversationId}/upload
+    async uploadChatFile(conversationId, file, onProgress = null) {
+        const baseUrl = CONFIG.chatApiBaseUrl;
+        const url = `${baseUrl}/conversations/${conversationId}/upload`;
+
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            // Progress handler
+            if (onProgress) {
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        onProgress(percent);
+                    }
+                });
+            }
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response);
+                    } catch (e) {
+                        reject(new Error('Invalid response from server'));
+                    }
+                } else {
+                    try {
+                        const error = JSON.parse(xhr.responseText);
+                        reject(new Error(error.message || error.error || 'Upload failed'));
+                    } catch (e) {
+                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                    }
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Network error during upload'));
+            });
+
+            xhr.open('POST', url);
+            if (this.token) {
+                xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            xhr.send(formData);
+        });
+    }
+
+    // Get download URL for a chat file
+    // Routes to Chat microservice: /api/chat/conversations/{conversationId}/file-url
+    async getChatFileDownloadUrl(conversationId, s3Key, expiryMinutes = 10080) {
+        return this.request(`/chat/conversations/${conversationId}/file-url?s3_key=${encodeURIComponent(s3Key)}&expiry_minutes=${expiryMinutes}`);
+    }
+
     async getLiveParticipants(meetingId) {
         return this.request(`/meetings/${meetingId}/live-participants`);
     }

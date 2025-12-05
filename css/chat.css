@@ -1255,3 +1255,229 @@ body.chat-page {
         transform: translateX(0);
     }
 }
+
+/* ============================================
+   File Attachment Styles
+   ============================================ */
+
+/* Attach Button */
+.attach-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.attach-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.attach-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: #666;
+}
+
+/* File Upload Preview */
+.file-upload-preview {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px 12px 0 0;
+    margin: 0 16px;
+}
+
+.file-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-preview-icon {
+    width: 32px;
+    height: 32px;
+    stroke: #666;
+    flex-shrink: 0;
+}
+
+.file-preview-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-preview-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #000;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-preview-size {
+    font-size: 12px;
+    color: #666;
+}
+
+.file-preview-remove {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.file-preview-remove:hover {
+    background: #ef4444;
+}
+
+.file-preview-remove:hover svg {
+    stroke: white;
+}
+
+.file-preview-remove svg {
+    width: 14px;
+    height: 14px;
+    stroke: #666;
+}
+
+/* File Upload Progress */
+.file-upload-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #000;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+}
+
+/* Message File Attachment */
+.message-file-attachment {
+    margin-bottom: 8px;
+}
+
+.message-image-preview {
+    max-width: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.message-image-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.message-image-preview:hover {
+    opacity: 0.9;
+}
+
+.image-load-error {
+    padding: 20px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.05);
+    color: #666;
+    font-size: 13px;
+}
+
+.message-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    max-width: 280px;
+    transition: all 0.15s ease;
+}
+
+.message-file:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.message.own .message-file {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.message.own .message-file:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.file-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.message-file .file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-file .file-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #000;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.message.own .message-file .file-name {
+    color: white;
+}
+
+.message-file .file-size {
+    font-size: 12px;
+    color: #666;
+}
+
+.message.own .message-file .file-size {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.download-icon {
+    width: 20px;
+    height: 20px;
+    stroke: #666;
+    flex-shrink: 0;
+}
+
+.message.own .download-icon {
+    stroke: rgba(255, 255, 255, 0.8);
+}

@@ -13,6 +13,7 @@ let signalRConnection = null;
 let typingTimeout = null;
 let currentUser = null;
 let showingArchived = false;
+let pendingFileAttachment = null; // Stores file info while uploading/pending send
 
 // ============================================
 // Initialization
@@ -431,15 +432,58 @@ function renderMessage(msg) {
         `;
     }
 
+    // Render file attachment if present
+    let fileHtml = '';
+    if (msg.message_type === 'file' && msg.file_s3_key) {
+        const fileName = msg.file_name || 'Attachment';
+        const fileSize = formatFileSize(msg.file_size || 0);
+        const fileIcon = getFileIcon(msg.file_content_type);
+        const isImage = msg.file_content_type?.startsWith('image/');
+
+        fileHtml = `
+            <div class="message-file-attachment" data-s3-key="${escapeHtml(msg.file_s3_key)}">
+                ${isImage ? `
+                    <div class="message-image-preview" onclick="openFilePreview('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}', true)">
+                        <img src="${msg.file_download_url || ''}" alt="${escapeHtml(fileName)}"
+                             onerror="this.parentElement.innerHTML='<div class=\\'image-load-error\\'>Image failed to load</div>'"
+                             onload="scrollToBottom()">
+                    </div>
+                ` : `
+                    <div class="message-file" onclick="downloadFile('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}')">
+                        <span class="file-icon">${fileIcon}</span>
+                        <div class="file-info">
+                            <span class="file-name">${escapeHtml(fileName)}</span>
+                            <span class="file-size">${fileSize}</span>
+                        </div>
+                        <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </div>
+                `}
+            </div>
+        `;
+    }
+
+    // Render text content if present
+    let textHtml = '';
+    if (msg.content && msg.content.trim()) {
+        textHtml = `
+            <div class="message-bubble">
+                ${escapeHtml(msg.content)}
+                ${msg.is_edited ? '<span class="edited-indicator" style="font-size: 11px; opacity: 0.7;"> (edited)</span>' : ''}
+            </div>
+        `;
+    }
+
     return `
         <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.id}">
             <div class="message-avatar">${initials}</div>
             <div class="message-content">
                 <span class="message-sender">${escapeHtml(senderName)}</span>
-                <div class="message-bubble">
-                    ${escapeHtml(msg.content)}
-                    ${msg.is_edited ? '<span class="edited-indicator" style="font-size: 11px; opacity: 0.7;"> (edited)</span>' : ''}
-                </div>
+                ${fileHtml}
+                ${textHtml}
                 <span class="message-time">${time}</span>
             </div>
         </div>
@@ -478,7 +522,9 @@ async function sendMessage() {
     const input = document.getElementById('messageInput');
     const content = input.value.trim();
 
-    if (!content || !currentConversationId) return;
+    // Must have either content or file attachment
+    if (!content && !pendingFileAttachment) return;
+    if (!currentConversationId) return;
     if (!signalRConnection || signalRConnection.state !== signalR.HubConnectionState.Connected) {
         showToast('Not connected to chat server', 'error');
         return;
@@ -488,8 +534,28 @@ async function sendMessage() {
         input.value = '';
         autoResizeTextarea(input);
 
-        // Send message via SignalR for real-time delivery
-        await signalRConnection.invoke('SendMessage', currentConversationId, content, 'text', null, null, null, null, null);
+        if (pendingFileAttachment) {
+            // Send file message via SignalR
+            const messageType = 'file';
+            const { s3_key, file_name, file_size, content_type } = pendingFileAttachment;
+
+            await signalRConnection.invoke('SendMessage',
+                currentConversationId,
+                content || null,      // Optional text content with file
+                messageType,
+                s3_key,
+                file_name,
+                file_size,
+                content_type,
+                null                  // reply_to_message_id
+            );
+
+            // Clear file attachment
+            removeFileAttachment();
+        } else {
+            // Send text message via SignalR
+            await signalRConnection.invoke('SendMessage', currentConversationId, content, 'text', null, null, null, null, null);
+        }
 
         // Message will be added via SignalR MessageReceived event
     } catch (error) {
@@ -1082,6 +1148,156 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+// ============================================
+// File Attachment Handling
+// ============================================
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
+function triggerFileInput() {
+    if (!currentConversationId) {
+        showToast('Select a conversation first', 'error');
+        return;
+    }
+    document.getElementById('fileInput').click();
+}
+
+async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input for re-selection
+    event.target.value = '';
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+        showToast('File size exceeds 100MB limit', 'error');
+        return;
+    }
+
+    // Show preview
+    showFilePreview(file);
+
+    // Upload file
+    await uploadFile(file);
+}
+
+function showFilePreview(file) {
+    const preview = document.getElementById('fileUploadPreview');
+    const nameEl = document.getElementById('filePreviewName');
+    const sizeEl = document.getElementById('filePreviewSize');
+
+    nameEl.textContent = file.name;
+    sizeEl.textContent = formatFileSize(file.size);
+    preview.style.display = 'block';
+}
+
+async function uploadFile(file) {
+    const progressContainer = document.getElementById('fileUploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    try {
+        progressContainer.style.display = 'flex';
+        progressFill.style.width = '0%';
+        progressText.textContent = 'Uploading...';
+
+        // Upload via API
+        const result = await api.uploadChatFile(currentConversationId, file, (percent) => {
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = `Uploading... ${percent}%`;
+        });
+
+        if (result.success) {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Ready to send';
+
+            // Store file info for sending
+            pendingFileAttachment = {
+                s3_key: result.s3_key,
+                file_name: result.file_name,
+                file_size: result.file_size,
+                content_type: result.content_type,
+                download_url: result.download_url
+            };
+        } else {
+            showToast(`Upload failed: ${result.error || 'Unknown error'}`, 'error');
+            removeFileAttachment();
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        showToast('Failed to upload file', 'error');
+        removeFileAttachment();
+    } finally {
+        progressContainer.style.display = 'none';
+    }
+}
+
+function removeFileAttachment() {
+    pendingFileAttachment = null;
+    document.getElementById('fileUploadPreview').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+}
+
+async function downloadFile(s3Key, fileName) {
+    try {
+        showToast('Getting download link...', 'info');
+
+        const result = await api.getChatFileDownloadUrl(currentConversationId, s3Key);
+        if (result.success && result.url) {
+            // Open in new tab or trigger download
+            const link = document.createElement('a');
+            link.href = result.url;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            showToast('Failed to get download URL', 'error');
+        }
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        showToast('Failed to download file', 'error');
+    }
+}
+
+async function openFilePreview(s3Key, fileName, isImage) {
+    try {
+        const result = await api.getChatFileDownloadUrl(currentConversationId, s3Key);
+        if (result.success && result.url) {
+            window.open(result.url, '_blank');
+        } else {
+            showToast('Failed to get file URL', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening file preview:', error);
+        showToast('Failed to open file', 'error');
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function getFileIcon(contentType) {
+    if (!contentType) return '📄';
+    if (contentType.startsWith('image/')) return '🖼️';
+    if (contentType.startsWith('video/')) return '🎬';
+    if (contentType.startsWith('audio/')) return '🎵';
+    if (contentType.includes('pdf')) return '📕';
+    if (contentType.includes('word') || contentType.includes('document')) return '📝';
+    if (contentType.includes('sheet') || contentType.includes('excel')) return '📊';
+    if (contentType.includes('presentation') || contentType.includes('powerpoint')) return '📽️';
+    if (contentType.includes('zip') || contentType.includes('archive') || contentType.includes('compressed')) return '📦';
+    if (contentType.includes('text')) return '📄';
+    return '📎';
 }
 
 // ============================================
