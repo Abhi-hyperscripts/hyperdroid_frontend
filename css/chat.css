@@ -717,8 +717,8 @@ body.chat-page {
 .user-search-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 8px 12px;
     cursor: pointer;
     transition: background 0.15s ease;
 }
@@ -728,31 +728,39 @@ body.chat-page {
 }
 
 .user-search-item-avatar {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
     border-radius: 50%;
     background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 .user-search-item-info {
     flex: 1;
+    min-width: 0;
 }
 
 .user-search-item-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-search-item-email {
-    font-size: 12px;
+    font-size: 11px;
     color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Selected Users */
