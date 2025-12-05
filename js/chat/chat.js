@@ -160,7 +160,7 @@ function handleMessageDeleted(event) {
 function handleUserTyping(event) {
     const { conversation_id, user_id, user_name, is_typing } = event;
 
-    if (currentConversationId === conversation_id && user_id !== currentUser.id) {
+    if (currentConversationId === conversation_id && user_id !== currentUser.userId) {
         const indicator = document.getElementById('typingIndicator');
         const typingText = document.getElementById('typingText');
 
@@ -192,7 +192,7 @@ function handleParticipantAdded(event) {
 function handleParticipantRemoved(event) {
     const { conversation_id, user_id } = event;
 
-    if (user_id === currentUser.id) {
+    if (user_id === currentUser.userId) {
         // Current user was removed
         if (currentConversationId === conversation_id) {
             currentConversationId = null;
@@ -375,7 +375,7 @@ async function loadConversationDetails(conversationId) {
             const memberCount = conv.participants?.length || 0;
             document.getElementById('chatHeaderStatus').textContent = `${memberCount} members`;
         } else {
-            const otherUser = conv.participants?.find(p => p.user_id !== currentUser.id);
+            const otherUser = conv.participants?.find(p => p.user_id !== currentUser.userId);
             document.getElementById('chatHeaderStatus').textContent = otherUser?.user_status || 'Offline';
         }
     } catch (error) {
@@ -419,7 +419,7 @@ function renderMessages(messages) {
 }
 
 function renderMessage(msg) {
-    const isOwn = msg.sender_id === currentUser.id;
+    const isOwn = msg.sender_id === currentUser.userId;
     const senderName = msg.sender_name || msg.sender_email || 'Unknown';
     const initials = getInitials(senderName);
     const time = formatTime(msg.created_at);
@@ -668,7 +668,7 @@ function renderUserSearchResults(users) {
 
     // Filter out already selected users and current user
     const filtered = users.filter(u =>
-        u.user_id !== currentUser.id &&
+        u.user_id !== currentUser.userId &&
         !selectedUsers.some(s => s.user_id === u.user_id)
     );
 
@@ -727,6 +727,12 @@ function removeSelectedUser(userId) {
 async function createConversation() {
     if (selectedUsers.length === 0) {
         showToast('Please select at least one user', 'error');
+        return;
+    }
+
+    // Prevent self-chat
+    if (conversationType === 'direct' && selectedUsers[0].user_id === currentUser.userId) {
+        showToast('You cannot start a conversation with yourself', 'error');
         return;
     }
 
@@ -947,7 +953,7 @@ function showChatInfo() {
         `;
         leaveBtn.style.display = 'block';
     } else {
-        const otherUser = conv.participants?.find(p => p.user_id !== currentUser.id);
+        const otherUser = conv.participants?.find(p => p.user_id !== currentUser.userId);
         content.innerHTML = `
             <div style="text-align: center;">
                 <div class="chat-header-avatar" style="width: 80px; height: 80px; font-size: 28px; margin: 0 auto 16px;">
@@ -998,7 +1004,7 @@ function showEmptyState() {
 
 function getOtherParticipantName(conversation) {
     if (!conversation.participants) return 'Unknown';
-    const other = conversation.participants.find(p => p.user_id !== currentUser.id);
+    const other = conversation.participants.find(p => p.user_id !== currentUser.userId);
     return other?.user_name || other?.user_email || 'Unknown';
 }
 
