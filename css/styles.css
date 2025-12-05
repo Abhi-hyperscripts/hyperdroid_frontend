@@ -566,6 +566,8 @@ body {
     align-items: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 999999;
 }
 
 .navbar-brand {
@@ -670,7 +672,7 @@ body {
     visibility: hidden;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-    z-index: 9999;
+    z-index: 9999999 !important;
     overflow: hidden;
 }
 
@@ -5171,16 +5173,6 @@ label.toggle-switch,
    NEW NAVIGATION DROPDOWN STYLES
    Role-based navigation in user dropdown
    ============================================ */
-
-/* Ensure dropdown has highest z-index */
-.user-avatar-container {
-    position: relative;
-    z-index: 99999;
-}
-
-.user-dropdown-menu {
-    z-index: 99999 !important;
-}
 
 /* User dropdown header with name and email */
 .user-dropdown-header {
