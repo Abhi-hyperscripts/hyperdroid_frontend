@@ -5094,8 +5094,14 @@ label.toggle-switch,
     }
 
     .user-dropdown-menu {
-        right: 0;
+        right: 16px;
+        top: 60px;
         min-width: 200px;
+    }
+
+    #navDropdownPortal .user-dropdown-menu {
+        right: 16px;
+        top: 60px;
     }
 
     /* Show mobile nav links in dropdown */
@@ -5303,6 +5309,16 @@ label.toggle-switch,
         width: 36px;
         height: 36px;
         font-size: 12px;
+    }
+
+    .user-dropdown-menu {
+        right: 12px;
+        top: 55px;
+    }
+
+    #navDropdownPortal .user-dropdown-menu {
+        right: 12px;
+        top: 55px;
     }
 
     .dashboard-content {
