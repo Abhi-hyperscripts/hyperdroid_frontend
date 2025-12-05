@@ -466,14 +466,14 @@ function handleTyping() {
         clearTimeout(typingTimeout);
     }
 
-    // Send typing indicator
-    signalRConnection.invoke('SendTyping', currentConversationId, true).catch(err => {
+    // Send start typing indicator
+    signalRConnection.invoke('StartTyping', currentConversationId).catch(err => {
         console.error('Error sending typing indicator:', err);
     });
 
     // Stop typing after 3 seconds of inactivity
     typingTimeout = setTimeout(() => {
-        signalRConnection.invoke('SendTyping', currentConversationId, false).catch(err => {
+        signalRConnection.invoke('StopTyping', currentConversationId).catch(err => {
             console.error('Error sending typing indicator:', err);
         });
     }, 3000);
