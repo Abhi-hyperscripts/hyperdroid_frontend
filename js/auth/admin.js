@@ -564,6 +564,7 @@ async function loadRoles() {
                 'System': [],
                 'Vision': [],
                 'Drive': [],
+                'Chat': [],
                 'Other': []
             };
 
@@ -574,6 +575,8 @@ async function loadRoles() {
                     roleGroups['Vision'].push(role);
                 } else if (role.startsWith('DRIVE_')) {
                     roleGroups['Drive'].push(role);
+                } else if (role.startsWith('CHAT_')) {
+                    roleGroups['Chat'].push(role);
                 } else {
                     roleGroups['Other'].push(role);
                 }
@@ -762,6 +765,7 @@ function getServiceGroups() {
     const groups = {
         'Vision': [],
         'Drive': [],
+        'Chat': [],
         'System': []
     };
 
@@ -772,6 +776,8 @@ function getServiceGroups() {
             groups['Vision'].push(role);
         } else if (role.startsWith('DRIVE_')) {
             groups['Drive'].push(role);
+        } else if (role.startsWith('CHAT_')) {
+            groups['Chat'].push(role);
         }
     });
 
@@ -818,6 +824,17 @@ function renderHierarchicalRolesModal() {
 
         if (filteredRoles.length > 0 || !searchTerm) {
             html += renderServiceGroup('Drive', filteredRoles.length > 0 ? filteredRoles : groups['Drive']);
+        }
+    }
+
+    // Render Chat group
+    if (groups['Chat'].length > 0) {
+        const filteredRoles = searchTerm
+            ? groups['Chat'].filter(r => r.toLowerCase().includes(searchTerm))
+            : groups['Chat'];
+
+        if (filteredRoles.length > 0 || !searchTerm) {
+            html += renderServiceGroup('Chat', filteredRoles.length > 0 ? filteredRoles : groups['Chat']);
         }
     }
 
