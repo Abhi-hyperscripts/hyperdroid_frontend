@@ -559,25 +559,27 @@ async function loadRoles() {
                 </div>
             `;
         } else {
-            // Group roles by service
+            // Group roles dynamically by service prefix
             const roleGroups = {
-                'System': [],
-                'Vision': [],
-                'Drive': [],
-                'Chat': [],
-                'Other': []
+                'System': []
             };
 
             allRoles.forEach(role => {
                 if (role === 'SUPERADMIN') {
                     roleGroups['System'].push(role);
-                } else if (role.startsWith('VISION_')) {
-                    roleGroups['Vision'].push(role);
-                } else if (role.startsWith('DRIVE_')) {
-                    roleGroups['Drive'].push(role);
-                } else if (role.startsWith('CHAT_')) {
-                    roleGroups['Chat'].push(role);
+                } else if (role.includes('_')) {
+                    // Extract service name from role (e.g., VISION_USER -> Vision)
+                    const serviceName = role.split('_')[0];
+                    const displayName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1).toLowerCase();
+                    if (!roleGroups[displayName]) {
+                        roleGroups[displayName] = [];
+                    }
+                    roleGroups[displayName].push(role);
                 } else {
+                    // Roles without underscore go to Other
+                    if (!roleGroups['Other']) {
+                        roleGroups['Other'] = [];
+                    }
                     roleGroups['Other'].push(role);
                 }
             });
@@ -761,23 +763,22 @@ function openEditRolesModal(userId, userName, currentRoles) {
 }
 
 function getServiceGroups() {
-    // Group roles by service
+    // Group roles dynamically by service prefix
     const groups = {
-        'Vision': [],
-        'Drive': [],
-        'Chat': [],
         'System': []
     };
 
     allRoles.forEach(role => {
         if (role === 'SUPERADMIN') {
             groups['System'].push(role);
-        } else if (role.startsWith('VISION_')) {
-            groups['Vision'].push(role);
-        } else if (role.startsWith('DRIVE_')) {
-            groups['Drive'].push(role);
-        } else if (role.startsWith('CHAT_')) {
-            groups['Chat'].push(role);
+        } else if (role.includes('_')) {
+            // Extract service name from role (e.g., VISION_USER -> Vision)
+            const serviceName = role.split('_')[0];
+            const displayName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1).toLowerCase();
+            if (!groups[displayName]) {
+                groups[displayName] = [];
+            }
+            groups[displayName].push(role);
         }
     });
 
@@ -805,41 +806,22 @@ function renderHierarchicalRolesModal() {
 
     let html = '';
 
-    // Render Vision group
-    if (groups['Vision'].length > 0) {
+    // Render all service groups dynamically (excluding System which is rendered separately)
+    Object.entries(groups).forEach(([groupName, roles]) => {
+        if (groupName === 'System') return; // Handle System separately
+        if (roles.length === 0) return;
+
         const filteredRoles = searchTerm
-            ? groups['Vision'].filter(r => r.toLowerCase().includes(searchTerm))
-            : groups['Vision'];
+            ? roles.filter(r => r.toLowerCase().includes(searchTerm))
+            : roles;
 
         if (filteredRoles.length > 0 || !searchTerm) {
-            html += renderServiceGroup('Vision', filteredRoles.length > 0 ? filteredRoles : groups['Vision']);
+            html += renderServiceGroup(groupName, filteredRoles.length > 0 ? filteredRoles : roles);
         }
-    }
-
-    // Render Drive group
-    if (groups['Drive'].length > 0) {
-        const filteredRoles = searchTerm
-            ? groups['Drive'].filter(r => r.toLowerCase().includes(searchTerm))
-            : groups['Drive'];
-
-        if (filteredRoles.length > 0 || !searchTerm) {
-            html += renderServiceGroup('Drive', filteredRoles.length > 0 ? filteredRoles : groups['Drive']);
-        }
-    }
-
-    // Render Chat group
-    if (groups['Chat'].length > 0) {
-        const filteredRoles = searchTerm
-            ? groups['Chat'].filter(r => r.toLowerCase().includes(searchTerm))
-            : groups['Chat'];
-
-        if (filteredRoles.length > 0 || !searchTerm) {
-            html += renderServiceGroup('Chat', filteredRoles.length > 0 ? filteredRoles : groups['Chat']);
-        }
-    }
+    });
 
     // Render SUPERADMIN as standalone
-    if (groups['System'].length > 0) {
+    if (groups['System'] && groups['System'].length > 0) {
         const showSuperAdmin = !searchTerm || 'superadmin'.includes(searchTerm);
         if (showSuperAdmin) {
             const isChecked = currentUserRoles.includes('SUPERADMIN');
