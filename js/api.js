@@ -22,6 +22,10 @@ class API {
         if (endpoint.startsWith('/chat/')) {
             return CONFIG.chatApiBaseUrl;
         }
+        // HRMS endpoints go to HRMS service (independent microservice)
+        if (endpoint.startsWith('/hrms/')) {
+            return CONFIG.hrmsApiBaseUrl;
+        }
         // Vision endpoints (projects, meetings) go to Vision service
         return CONFIG.visionApiBaseUrl;
     }
@@ -766,6 +770,685 @@ class API {
 
     async getChatStatus() {
         return this.request('/chat/status');
+    }
+
+    // ==================== HRMS API ====================
+
+    // Self-Service Dashboard
+    async getHrmsDashboard() {
+        return this.request('/hrms/self-service/dashboard');
+    }
+
+    // --- Offices ---
+    async getHrmsOffices() {
+        return this.request('/hrms/offices');
+    }
+
+    async getHrmsOffice(id) {
+        return this.request(`/hrms/offices/${id}`);
+    }
+
+    async createHrmsOffice(office) {
+        return this.request('/hrms/offices', {
+            method: 'POST',
+            body: JSON.stringify(office)
+        });
+    }
+
+    async updateHrmsOffice(id, office) {
+        return this.request(`/hrms/offices/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(office)
+        });
+    }
+
+    async deleteHrmsOffice(id) {
+        return this.request(`/hrms/offices/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Departments ---
+    async getHrmsDepartments() {
+        return this.request('/hrms/departments');
+    }
+
+    async getHrmsDepartment(id) {
+        return this.request(`/hrms/departments/${id}`);
+    }
+
+    async createHrmsDepartment(department) {
+        return this.request('/hrms/departments', {
+            method: 'POST',
+            body: JSON.stringify(department)
+        });
+    }
+
+    async updateHrmsDepartment(id, department) {
+        return this.request(`/hrms/departments/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(department)
+        });
+    }
+
+    async deleteHrmsDepartment(id) {
+        return this.request(`/hrms/departments/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Designations ---
+    async getHrmsDesignations() {
+        return this.request('/hrms/designations');
+    }
+
+    async getHrmsDesignation(id) {
+        return this.request(`/hrms/designations/${id}`);
+    }
+
+    async createHrmsDesignation(designation) {
+        return this.request('/hrms/designations', {
+            method: 'POST',
+            body: JSON.stringify(designation)
+        });
+    }
+
+    async updateHrmsDesignation(id, designation) {
+        return this.request(`/hrms/designations/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(designation)
+        });
+    }
+
+    async deleteHrmsDesignation(id) {
+        return this.request(`/hrms/designations/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Shifts ---
+    async getHrmsShifts() {
+        return this.request('/hrms/shifts');
+    }
+
+    async getHrmsShift(id) {
+        return this.request(`/hrms/shifts/${id}`);
+    }
+
+    async createHrmsShift(shift) {
+        return this.request('/hrms/shifts', {
+            method: 'POST',
+            body: JSON.stringify(shift)
+        });
+    }
+
+    async updateHrmsShift(id, shift) {
+        return this.request(`/hrms/shifts/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(shift)
+        });
+    }
+
+    async deleteHrmsShift(id) {
+        return this.request(`/hrms/shifts/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Holidays ---
+    async getHrmsHolidays(year = null) {
+        const query = year ? `?year=${year}` : '';
+        return this.request(`/hrms/holidays${query}`);
+    }
+
+    async getHrmsHoliday(id) {
+        return this.request(`/hrms/holidays/${id}`);
+    }
+
+    async createHrmsHoliday(holiday) {
+        return this.request('/hrms/holidays', {
+            method: 'POST',
+            body: JSON.stringify(holiday)
+        });
+    }
+
+    async updateHrmsHoliday(id, holiday) {
+        return this.request(`/hrms/holidays/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(holiday)
+        });
+    }
+
+    async deleteHrmsHoliday(id) {
+        return this.request(`/hrms/holidays/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Employees ---
+    async getHrmsEmployees(includeInactive = false) {
+        return this.request(`/hrms/employees?includeInactive=${includeInactive}`);
+    }
+
+    async getHrmsEmployee(id) {
+        return this.request(`/hrms/employees/${id}`);
+    }
+
+    async getHrmsEmployeeByUserId(userId) {
+        return this.request(`/hrms/employees/by-user/${userId}`);
+    }
+
+    async createHrmsEmployee(employee) {
+        return this.request('/hrms/employees', {
+            method: 'POST',
+            body: JSON.stringify(employee)
+        });
+    }
+
+    async updateHrmsEmployee(id, employee) {
+        return this.request(`/hrms/employees/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(employee)
+        });
+    }
+
+    async deleteHrmsEmployee(id) {
+        return this.request(`/hrms/employees/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getAvailableUsersForEmployee() {
+        return this.request('/hrms/employees/available-users');
+    }
+
+    // --- Attendance ---
+    async checkIn(request) {
+        return this.request('/hrms/attendance/check-in', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async checkOut(request) {
+        return this.request('/hrms/attendance/check-out', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getMyAttendance(startDate, endDate) {
+        return this.request(`/hrms/attendance/my?startDate=${startDate}&endDate=${endDate}`);
+    }
+
+    async getEmployeeAttendance(employeeId, startDate, endDate) {
+        return this.request(`/hrms/attendance/employee/${employeeId}?startDate=${startDate}&endDate=${endDate}`);
+    }
+
+    async getAttendanceStatus() {
+        return this.request('/hrms/attendance/status');
+    }
+
+    async requestAttendanceRegularization(request) {
+        return this.request('/hrms/attendance/regularization', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getRegularizationRequests(status = null) {
+        const query = status ? `?status=${status}` : '';
+        return this.request(`/hrms/attendance/regularization${query}`);
+    }
+
+    async approveRegularization(id, comments = null) {
+        return this.request(`/hrms/attendance/regularization/${id}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ comments })
+        });
+    }
+
+    async rejectRegularization(id, comments = null) {
+        return this.request(`/hrms/attendance/regularization/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ comments })
+        });
+    }
+
+    // --- Leave Management ---
+    async getLeaveTypes() {
+        return this.request('/hrms/leave/types');
+    }
+
+    async createLeaveType(leaveType) {
+        return this.request('/hrms/leave/types', {
+            method: 'POST',
+            body: JSON.stringify(leaveType)
+        });
+    }
+
+    async updateLeaveType(id, leaveType) {
+        return this.request(`/hrms/leave/types/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(leaveType)
+        });
+    }
+
+    async deleteLeaveType(id) {
+        return this.request(`/hrms/leave/types/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getMyLeaveBalance() {
+        return this.request('/hrms/leave/balance');
+    }
+
+    async getEmployeeLeaveBalance(employeeId) {
+        return this.request(`/hrms/leave/balance/${employeeId}`);
+    }
+
+    async applyLeave(request) {
+        return this.request('/hrms/leave/apply', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getMyLeaveRequests() {
+        return this.request('/hrms/leave/my-requests');
+    }
+
+    async getPendingLeaveApprovals() {
+        return this.request('/hrms/leave/pending-approvals');
+    }
+
+    async approveLeave(id, comments = null) {
+        return this.request(`/hrms/leave/${id}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ comments })
+        });
+    }
+
+    async rejectLeave(id, comments = null) {
+        return this.request(`/hrms/leave/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ comments })
+        });
+    }
+
+    async cancelLeave(id) {
+        return this.request(`/hrms/leave/${id}/cancel`, {
+            method: 'POST'
+        });
+    }
+
+    // --- Salary Structures ---
+    async getSalaryStructures() {
+        return this.request('/hrms/salary-structures');
+    }
+
+    async getSalaryStructure(id) {
+        return this.request(`/hrms/salary-structures/${id}`);
+    }
+
+    async createSalaryStructure(structure) {
+        return this.request('/hrms/salary-structures', {
+            method: 'POST',
+            body: JSON.stringify(structure)
+        });
+    }
+
+    async updateSalaryStructure(id, structure) {
+        return this.request(`/hrms/salary-structures/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(structure)
+        });
+    }
+
+    async deleteSalaryStructure(id) {
+        return this.request(`/hrms/salary-structures/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Salary Components ---
+    async getSalaryComponents() {
+        return this.request('/hrms/salary-components');
+    }
+
+    async createSalaryComponent(component) {
+        return this.request('/hrms/salary-components', {
+            method: 'POST',
+            body: JSON.stringify(component)
+        });
+    }
+
+    async updateSalaryComponent(id, component) {
+        return this.request(`/hrms/salary-components/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(component)
+        });
+    }
+
+    async deleteSalaryComponent(id) {
+        return this.request(`/hrms/salary-components/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Employee Salary ---
+    async getEmployeeSalary(employeeId) {
+        return this.request(`/hrms/employee-salary/${employeeId}`);
+    }
+
+    async assignEmployeeSalary(salaryData) {
+        return this.request('/hrms/employee-salary', {
+            method: 'POST',
+            body: JSON.stringify(salaryData)
+        });
+    }
+
+    async updateEmployeeSalary(id, salaryData) {
+        return this.request(`/hrms/employee-salary/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(salaryData)
+        });
+    }
+
+    async calculateSalaryBreakdown(request) {
+        return this.request('/hrms/employee-salary/calculate-breakdown', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    // --- Payroll Runs ---
+    async getPayrollRuns(year = null, month = null) {
+        let query = '';
+        if (year) query += `year=${year}`;
+        if (month) query += `${query ? '&' : ''}month=${month}`;
+        return this.request(`/hrms/payroll/runs${query ? '?' + query : ''}`);
+    }
+
+    async getPayrollRun(id) {
+        return this.request(`/hrms/payroll/runs/${id}`);
+    }
+
+    async createPayrollRun(request) {
+        return this.request('/hrms/payroll/runs', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async processPayrollRun(id) {
+        return this.request(`/hrms/payroll/runs/${id}/process`, {
+            method: 'POST'
+        });
+    }
+
+    async approvePayrollRun(id) {
+        return this.request(`/hrms/payroll/runs/${id}/approve`, {
+            method: 'POST'
+        });
+    }
+
+    async rejectPayrollRun(id, reason) {
+        return this.request(`/hrms/payroll/runs/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    }
+
+    // --- Payslips ---
+    async getPayslips(runId) {
+        return this.request(`/hrms/payroll/runs/${runId}/payslips`);
+    }
+
+    async getPayslip(id) {
+        return this.request(`/hrms/payroll/payslips/${id}`);
+    }
+
+    async getMyPayslips() {
+        return this.request('/hrms/payroll/my-payslips');
+    }
+
+    async downloadPayslip(id) {
+        return this.request(`/hrms/payroll/payslips/${id}/download`);
+    }
+
+    // --- Loans ---
+    async getLoans(employeeId = null) {
+        const query = employeeId ? `?employeeId=${employeeId}` : '';
+        return this.request(`/hrms/loans${query}`);
+    }
+
+    async getLoan(id) {
+        return this.request(`/hrms/loans/${id}`);
+    }
+
+    async applyLoan(request) {
+        return this.request('/hrms/loans', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async approveLoan(id) {
+        return this.request(`/hrms/loans/${id}/approve`, {
+            method: 'POST'
+        });
+    }
+
+    async rejectLoan(id, reason) {
+        return this.request(`/hrms/loans/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    }
+
+    async getMyLoans() {
+        return this.request('/hrms/loans/my-loans');
+    }
+
+    // --- Payroll Adjustments ---
+    async getPayrollAdjustments(employeeId = null, month = null, year = null) {
+        let query = [];
+        if (employeeId) query.push(`employeeId=${employeeId}`);
+        if (month) query.push(`month=${month}`);
+        if (year) query.push(`year=${year}`);
+        return this.request(`/hrms/payroll-adjustments${query.length ? '?' + query.join('&') : ''}`);
+    }
+
+    async createPayrollAdjustment(adjustment) {
+        return this.request('/hrms/payroll-adjustments', {
+            method: 'POST',
+            body: JSON.stringify(adjustment)
+        });
+    }
+
+    async deletePayrollAdjustment(id) {
+        return this.request(`/hrms/payroll-adjustments/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Self-Service ---
+    async updateMyProfile(request) {
+        return this.request('/hrms/self-service/profile', {
+            method: 'PUT',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getProfileUpdateRequests() {
+        return this.request('/hrms/self-service/profile/requests');
+    }
+
+    async approveProfileUpdate(id) {
+        return this.request(`/hrms/self-service/profile/requests/${id}/approve`, {
+            method: 'POST'
+        });
+    }
+
+    async rejectProfileUpdate(id, reason) {
+        return this.request(`/hrms/self-service/profile/requests/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    }
+
+    // --- Announcements ---
+    async getAnnouncements() {
+        return this.request('/hrms/announcements');
+    }
+
+    async getAnnouncement(id) {
+        return this.request(`/hrms/announcements/${id}`);
+    }
+
+    async createAnnouncement(announcement) {
+        return this.request('/hrms/announcements', {
+            method: 'POST',
+            body: JSON.stringify(announcement)
+        });
+    }
+
+    async updateAnnouncement(id, announcement) {
+        return this.request(`/hrms/announcements/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(announcement)
+        });
+    }
+
+    async deleteAnnouncement(id) {
+        return this.request(`/hrms/announcements/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Notifications ---
+    async getMyNotifications() {
+        return this.request('/hrms/notifications');
+    }
+
+    async markNotificationAsRead(id) {
+        return this.request(`/hrms/notifications/${id}/read`, {
+            method: 'POST'
+        });
+    }
+
+    async markAllNotificationsAsRead() {
+        return this.request('/hrms/notifications/read-all', {
+            method: 'POST'
+        });
+    }
+
+    // --- Reports ---
+    async getHeadcountReport(asOfDate = null) {
+        const query = asOfDate ? `?asOfDate=${asOfDate}` : '';
+        return this.request(`/hrms/reports/headcount${query}`);
+    }
+
+    async getAttritionReport(startDate, endDate) {
+        return this.request(`/hrms/reports/attrition?startDate=${startDate}&endDate=${endDate}`);
+    }
+
+    async getAttendanceReport(startDate, endDate, departmentId = null) {
+        let query = `startDate=${startDate}&endDate=${endDate}`;
+        if (departmentId) query += `&departmentId=${departmentId}`;
+        return this.request(`/hrms/reports/attendance?${query}`);
+    }
+
+    async getLeaveReport(startDate, endDate, departmentId = null) {
+        let query = `startDate=${startDate}&endDate=${endDate}`;
+        if (departmentId) query += `&departmentId=${departmentId}`;
+        return this.request(`/hrms/reports/leave?${query}`);
+    }
+
+    async getPayrollReport(year, month) {
+        return this.request(`/hrms/reports/payroll?year=${year}&month=${month}`);
+    }
+
+    async getCostCenterReport(year, month) {
+        return this.request(`/hrms/reports/cost-center?year=${year}&month=${month}`);
+    }
+
+    // --- Employee Transfers (Multi-Location) ---
+    async transferEmployee(request) {
+        return this.request('/hrms/employee-transfers', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getEmployeeOfficeHistory(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/history`);
+    }
+
+    async getCurrentOfficeAssignment(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/current`);
+    }
+
+    // --- Location Tax Rules ---
+    async getLocationTaxTypes(includeInactive = false) {
+        return this.request(`/hrms/location-taxes/types?includeInactive=${includeInactive}`);
+    }
+
+    async getLocationTaxType(id) {
+        return this.request(`/hrms/location-taxes/types/${id}`);
+    }
+
+    async createLocationTaxType(taxType) {
+        return this.request('/hrms/location-taxes/types', {
+            method: 'POST',
+            body: JSON.stringify(taxType)
+        });
+    }
+
+    async updateLocationTaxType(id, taxType) {
+        return this.request(`/hrms/location-taxes/types/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(taxType)
+        });
+    }
+
+    async deleteLocationTaxType(id) {
+        return this.request(`/hrms/location-taxes/types/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getOfficeTaxRules(officeId, includeInactive = false) {
+        return this.request(`/hrms/location-taxes/rules/office/${officeId}?includeInactive=${includeInactive}`);
+    }
+
+    async createOfficeTaxRule(rule) {
+        return this.request('/hrms/location-taxes/rules', {
+            method: 'POST',
+            body: JSON.stringify(rule)
+        });
+    }
+
+    async updateOfficeTaxRule(id, rule) {
+        return this.request(`/hrms/location-taxes/rules/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(rule)
+        });
+    }
+
+    async deleteOfficeTaxRule(id) {
+        return this.request(`/hrms/location-taxes/rules/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async calculateTaxPreview(request) {
+        return this.request('/hrms/location-taxes/calculate-preview', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
     }
 }
 

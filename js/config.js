@@ -11,13 +11,15 @@ const ENVIRONMENTS = {
         auth: 'http://localhost:5098',
         vision: 'http://localhost:5099',
         drive: 'http://localhost:5100',
-        chat: 'http://localhost:5102'
+        chat: 'http://localhost:5102',
+        hrms: 'http://localhost:5104'
     },
     production: {
         auth: 'https://auth.hyperdroid.io',
         vision: 'https://vision.hyperdroid.io',
         drive: 'https://drive.hyperdroid.io',
-        chat: 'https://chat.hyperdroid.io'
+        chat: 'https://chat.hyperdroid.io',
+        hrms: 'https://hrms.hyperdroid.io'
     }
 };
 
@@ -58,6 +60,10 @@ const CONFIG = {
 
     get chatApiBaseUrl() {
         return `${this.endpoints.chat}/api`;
+    },
+
+    get hrmsApiBaseUrl() {
+        return `${this.endpoints.hrms}/api`;
     },
 
     // Legacy alias for backwards compatibility

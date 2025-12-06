@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance - HRMS - HyperDroid</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="hrms-container">
+        <div class="hrms-header">
+            <div>
+                <div class="breadcrumb-nav">
+                    <a href="dashboard.html">HRMS</a>
+                    <span>/</span>
+                    <span>Attendance</span>
+                </div>
+                <h1>Attendance Management</h1>
+                <p>Track and manage employee attendance</p>
+            </div>
+            <div class="header-actions">
+                <input type="date" id="dateFilter" class="filter-select" onchange="loadAttendance()">
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="hrms-tabs">
+            <button class="hrms-tab active" data-tab="daily" onclick="switchTab('daily')">Daily View</button>
+            <button class="hrms-tab" data-tab="myAttendance" onclick="switchTab('myAttendance')">My Attendance</button>
+            <button class="hrms-tab" data-tab="regularization" onclick="switchTab('regularization')">Regularization</button>
+            <button class="hrms-tab" data-tab="overtime" onclick="switchTab('overtime')">Overtime</button>
+        </div>
+
+        <!-- Daily View Tab -->
+        <div class="tab-content active" id="dailyTab">
+            <div class="stats-row">
+                <div class="stat-mini active">
+                    <span class="stat-mini-value" id="presentCount">-</span>
+                    <span class="stat-mini-label">Present</span>
+                </div>
+                <div class="stat-mini danger">
+                    <span class="stat-mini-value" id="absentCount">-</span>
+                    <span class="stat-mini-label">Absent</span>
+                </div>
+                <div class="stat-mini warning">
+                    <span class="stat-mini-value" id="lateCount">-</span>
+                    <span class="stat-mini-label">Late</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="onLeaveCount">-</span>
+                    <span class="stat-mini-label">On Leave</span>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Working Hours</th>
+                            <th>Status</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- My Attendance Tab -->
+        <div class="tab-content" id="myAttendanceTab">
+            <div class="filters-bar">
+                <select class="filter-select" id="monthFilter" onchange="loadMyAttendance()">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+                <select class="filter-select" id="yearFilter" onchange="loadMyAttendance()">
+                </select>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="myWorkingDays">-</span>
+                    <span class="stat-mini-label">Working Days</span>
+                </div>
+                <div class="stat-mini active">
+                    <span class="stat-mini-value" id="myPresentDays">-</span>
+                    <span class="stat-mini-label">Present</span>
+                </div>
+                <div class="stat-mini warning">
+                    <span class="stat-mini-value" id="myLateDays">-</span>
+                    <span class="stat-mini-label">Late</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="myTotalHours">-</span>
+                    <span class="stat-mini-label">Total Hours</span>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Working Hours</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myAttendanceTableBody">
+                        <tr>
+                            <td colspan="5">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Regularization Tab -->
+        <div class="tab-content" id="regularizationTab">
+            <div class="filters-bar">
+                <button class="btn btn-primary" onclick="openRegularizationModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Request Regularization
+                </button>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Requested Check In</th>
+                            <th>Requested Check Out</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="regularizationTableBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Overtime Tab -->
+        <div class="tab-content" id="overtimeTab">
+            <div class="filters-bar">
+                <button class="btn btn-primary" onclick="openOvertimeModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Request Overtime
+                </button>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Planned Hours</th>
+                            <th>Actual Hours</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overtimeTableBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regularization Modal -->
+    <div class="modal" id="regularizationModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Request Regularization</h3>
+                    <button class="close-btn" onclick="closeModal('regularizationModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="regularizationForm">
+                        <div class="form-group">
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" id="regDate" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Check In Time <span class="required">*</span></label>
+                                <input type="time" id="regCheckIn" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Check Out Time <span class="required">*</span></label>
+                                <input type="time" id="regCheckOut" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason <span class="required">*</span></label>
+                            <textarea id="regReason" required placeholder="Explain why regularization is needed..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('regularizationModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitRegularization()">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overtime Modal -->
+    <div class="modal" id="overtimeModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Request Overtime</h3>
+                    <button class="close-btn" onclick="closeModal('overtimeModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="overtimeForm">
+                        <div class="form-group">
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" id="otDate" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Time <span class="required">*</span></label>
+                                <input type="time" id="otStartTime" required>
+                            </div>
+                            <div class="form-group">
+                                <label>End Time <span class="required">*</span></label>
+                                <input type="time" id="otEndTime" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason <span class="required">*</span></label>
+                            <textarea id="otReason" required placeholder="Why is overtime needed?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Project/Task</label>
+                            <input type="text" id="otTask" placeholder="What will you work on?">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('overtimeModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitOvertime()">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        let userRole = 'HRMS_USER';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            Navigation.init('hrms', '../');
+
+            const user = api.getUser();
+            if (user && user.roles) {
+                if (user.roles.includes('SUPERADMIN') || user.roles.includes('HRMS_ADMIN')) {
+                    userRole = 'HRMS_ADMIN';
+                } else if (user.roles.includes('HRMS_MANAGER')) {
+                    userRole = 'HRMS_MANAGER';
+                }
+            }
+
+            // Set default date
+            document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+
+            // Populate year filter
+            const currentYear = new Date().getFullYear();
+            const yearSelect = document.getElementById('yearFilter');
+            for (let y = currentYear; y >= currentYear - 5; y--) {
+                yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+            document.getElementById('monthFilter').value = new Date().getMonth() + 1;
+
+            await loadAttendance();
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.hrms-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+
+            switch(tabName) {
+                case 'daily': loadAttendance(); break;
+                case 'myAttendance': loadMyAttendance(); break;
+                case 'regularization': loadRegularizations(); break;
+                case 'overtime': loadOvertimeRequests(); break;
+            }
+        }
+
+        async function loadAttendance() {
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+            try {
+                const date = document.getElementById('dateFilter').value;
+                const attendance = await api.hrmsGetTeamAttendance(date);
+
+                let present = 0, absent = 0, late = 0, onLeave = 0;
+
+                if (!attendance || attendance.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No attendance records for this date</p></td></tr>';
+                    updateDailyStats(0, 0, 0, 0);
+                    return;
+                }
+
+                attendance.forEach(a => {
+                    if (a.status === 'present') present++;
+                    else if (a.status === 'absent') absent++;
+                    if (a.is_late) late++;
+                    if (a.status === 'leave') onLeave++;
+                });
+
+                updateDailyStats(present, absent, late, onLeave);
+
+                tbody.innerHTML = attendance.map(a => `
+                    <tr>
+                        <td>
+                            <div class="employee-info">
+                                <div class="employee-avatar">${getInitials(a.employee_name)}</div>
+                                <div class="employee-name">${a.employee_name || 'Employee'}</div>
+                            </div>
+                        </td>
+                        <td>${formatTime(a.check_in_time)}</td>
+                        <td>${formatTime(a.check_out_time)}</td>
+                        <td>${a.working_hours ? a.working_hours.toFixed(1) + 'h' : '-'}</td>
+                        <td><span class="status-badge ${a.status}">${capitalizeFirst(a.status)}</span></td>
+                        <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading attendance</p></td></tr>';
+            }
+        }
+
+        function updateDailyStats(present, absent, late, onLeave) {
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
+            document.getElementById('lateCount').textContent = late;
+            document.getElementById('onLeaveCount').textContent = onLeave;
+        }
+
+        async function loadMyAttendance() {
+            const tbody = document.getElementById('myAttendanceTableBody');
+            tbody.innerHTML = '<tr><td colspan="5"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+            try {
+                const month = document.getElementById('monthFilter').value;
+                const year = document.getElementById('yearFilter').value;
+                const summary = await api.hrmsGetAttendanceSummary(year, month);
+
+                document.getElementById('myWorkingDays').textContent = summary?.working_days || '-';
+                document.getElementById('myPresentDays').textContent = summary?.present_days || '-';
+                document.getElementById('myLateDays').textContent = summary?.late_days || '-';
+                document.getElementById('myTotalHours').textContent = summary?.total_hours ? summary.total_hours.toFixed(0) : '-';
+
+                const history = await api.hrmsGetAttendanceHistory(
+                    `${year}-${String(month).padStart(2, '0')}-01`,
+                    `${year}-${String(month).padStart(2, '0')}-31`
+                );
+
+                if (!history || history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><p>No attendance records</p></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = history.map(a => `
+                    <tr>
+                        <td>${formatDate(a.attendance_date)}</td>
+                        <td>${formatTime(a.check_in_time)}</td>
+                        <td>${formatTime(a.check_out_time)}</td>
+                        <td>${a.working_hours ? a.working_hours.toFixed(1) + 'h' : '-'}</td>
+                        <td><span class="status-badge ${a.status}">${capitalizeFirst(a.status)}</span></td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading my attendance:', error);
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><p>Error loading attendance</p></td></tr>';
+            }
+        }
+
+        async function loadRegularizations() {
+            const tbody = document.getElementById('regularizationTableBody');
+            tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+            try {
+                const regs = await api.hrmsGetMyRegularizations();
+
+                if (!regs || regs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No regularization requests</p></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = regs.map(r => `
+                    <tr>
+                        <td>${formatDate(r.date)}</td>
+                        <td>${formatTime(r.requested_check_in)}</td>
+                        <td>${formatTime(r.requested_check_out)}</td>
+                        <td>${r.reason || '-'}</td>
+                        <td><span class="status-badge ${r.status}">${capitalizeFirst(r.status)}</span></td>
+                        <td>
+                            ${r.status === 'pending' ? `
+                                <button class="action-btn danger" onclick="cancelRegularization('${r.id}')" data-tooltip="Cancel">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading regularizations:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading requests</p></td></tr>';
+            }
+        }
+
+        async function loadOvertimeRequests() {
+            const tbody = document.getElementById('overtimeTableBody');
+            tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+            try {
+                const ots = await api.hrmsGetMyOvertimeRequests();
+
+                if (!ots || ots.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No overtime requests</p></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = ots.map(o => `
+                    <tr>
+                        <td>${formatDate(o.request_date)}</td>
+                        <td>${o.planned_hours || '-'}h</td>
+                        <td>${o.actual_hours || '-'}h</td>
+                        <td>${o.reason || '-'}</td>
+                        <td><span class="status-badge ${o.status}">${capitalizeFirst(o.status)}</span></td>
+                        <td>-</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading overtime:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading requests</p></td></tr>';
+            }
+        }
+
+        function openRegularizationModal() {
+            document.getElementById('regularizationForm').reset();
+            openModal('regularizationModal');
+        }
+
+        function openOvertimeModal() {
+            document.getElementById('overtimeForm').reset();
+            openModal('overtimeModal');
+        }
+
+        async function submitRegularization() {
+            const date = document.getElementById('regDate').value;
+            const checkIn = document.getElementById('regCheckIn').value;
+            const checkOut = document.getElementById('regCheckOut').value;
+            const reason = document.getElementById('regReason').value;
+
+            if (!date || !checkIn || !checkOut || !reason) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await api.hrmsCreateRegularization({
+                    date: date,
+                    requested_check_in: `${date}T${checkIn}:00`,
+                    requested_check_out: `${date}T${checkOut}:00`,
+                    reason: reason
+                });
+
+                showToast('Regularization request submitted', 'success');
+                closeModal('regularizationModal');
+                loadRegularizations();
+
+            } catch (error) {
+                showToast(error.message || 'Error submitting request', 'error');
+            }
+        }
+
+        async function submitOvertime() {
+            const date = document.getElementById('otDate').value;
+            const startTime = document.getElementById('otStartTime').value;
+            const endTime = document.getElementById('otEndTime').value;
+            const reason = document.getElementById('otReason').value;
+            const task = document.getElementById('otTask').value;
+
+            if (!date || !startTime || !endTime || !reason) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await api.hrmsCreateOvertimeRequest({
+                    request_date: date,
+                    planned_start_time: `${date}T${startTime}:00`,
+                    planned_end_time: `${date}T${endTime}:00`,
+                    reason: reason,
+                    project_task: task || null
+                });
+
+                showToast('Overtime request submitted', 'success');
+                closeModal('overtimeModal');
+                loadOvertimeRequests();
+
+            } catch (error) {
+                showToast(error.message || 'Error submitting request', 'error');
+            }
+        }
+
+        // Utility functions
+        function getInitials(name) {
+            if (!name) return 'U';
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            return new Date(timeStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function capitalizeFirst(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
+                </svg>
+                ${message}
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+
+    <style>
+        .hrms-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .hrms-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+        }
+        .hrms-tab:hover { color: #000; background: rgba(0, 0, 0, 0.03); }
+        .hrms-tab.active { color: #000; }
+        .hrms-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #000;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</body>
+</html>

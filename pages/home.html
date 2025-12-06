@@ -124,6 +124,14 @@
             color: #fff;
         }
 
+        .app-card.hrms .app-icon {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+        }
+
+        .app-card.hrms .app-icon svg {
+            color: #fff;
+        }
+
         .app-status {
             display: flex;
             align-items: center;
@@ -331,6 +339,36 @@
                 </div>
             </div>
 
+            <!-- HRMS Card -->
+            <div class="app-card hrms" onclick="navigateToModule('hrms')" id="hrmsCard">
+                <div class="app-card-header">
+                    <div class="app-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="app-status" id="hrmsStatus">
+                        <span class="status-indicator"></span>
+                        <span>Checking...</span>
+                    </div>
+                </div>
+                <div class="app-card-body">
+                    <h3>HRMS</h3>
+                    <p>Human resources management with attendance, leave, and payroll</p>
+                </div>
+                <div class="app-card-footer">
+                    <span class="app-action">
+                        Open HRMS
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
             <!-- Admin Card (SUPERADMIN only) -->
             <div class="app-card admin" onclick="navigateToModule('admin')" id="adminCard">
                 <div class="app-card-header">
@@ -408,6 +446,7 @@
                 'visionCard': 'VISION_USER',
                 'driveCard': 'DRIVE_USER',
                 'chatCard': 'CHAT_USER',
+                'hrmsCard': 'HRMS_USER',
                 'adminCard': 'SUPERADMIN'
             };
 
@@ -431,6 +470,7 @@
             checkServiceHealth('vision', CONFIG.endpoints.vision);
             checkServiceHealth('drive', CONFIG.endpoints.drive);
             checkServiceHealth('chat', CONFIG.endpoints.chat);
+            checkServiceHealth('hrms', CONFIG.endpoints.hrms);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -469,6 +509,9 @@
                     break;
                 case 'chat':
                     window.location.href = 'chat/chat.html';
+                    break;
+                case 'hrms':
+                    window.location.href = 'hrms/dashboard.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';

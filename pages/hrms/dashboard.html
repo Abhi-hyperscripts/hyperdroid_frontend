@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Dashboard - HyperDroid</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        /* Override Bootstrap primary button to match black/white theme */
+        .btn-primary {
+            background-color: #000;
+            border-color: #000;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+            border-color: #333;
+            color: #fff;
+        }
+        .btn-primary:focus, .btn-primary:active, .btn-primary.active {
+            background-color: #333 !important;
+            border-color: #333 !important;
+            color: #fff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25) !important;
+        }
+        .btn-primary:disabled {
+            background-color: #666;
+            border-color: #666;
+        }
+
+        /* Professional system font stack */
+        .hrms-container, .modal-content {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .hrms-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .hrms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .hrms-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin: 0;
+            color: #000;
+        }
+
+        .hrms-header p {
+            color: #666;
+            margin: 4px 0 0 0;
+            font-size: 0.8rem;
+        }
+
+        /* Tabs */
+        .hrms-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding-bottom: 0;
+            flex-wrap: wrap;
+        }
+
+        .hrms-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .hrms-tab:hover {
+            color: #000;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .hrms-tab.active {
+            color: #000;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .hrms-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #000;
+        }
+
+        .tab-badge {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Stats Cards Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon svg {
+            width: 24px;
+            height: 24px;
+            color: #fff;
+        }
+
+        .stat-icon.employees { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+        .stat-icon.attendance { background: linear-gradient(135deg, #10b981, #34d399); }
+        .stat-icon.leave { background: linear-gradient(135deg, #f59e0b, #f97316); }
+        .stat-icon.payroll { background: linear-gradient(135deg, #ef4444, #f87171); }
+        .stat-icon.departments { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+        .stat-icon.offices { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #000;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .stat-trend {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .stat-trend.up {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        .stat-trend.down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        .action-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .action-icon svg {
+            width: 22px;
+            height: 22px;
+            color: #333;
+        }
+
+        .action-content h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 4px 0;
+        }
+
+        .action-content p {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .action-arrow {
+            margin-left: auto;
+            color: #999;
+            transition: transform 0.2s;
+        }
+
+        .action-card:hover .action-arrow {
+            transform: translateX(4px);
+        }
+
+        /* Data Grid/Table Styles */
+        .data-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .data-table-container {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: rgba(0, 0, 0, 0.03);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        /* Employee Info Cell */
+        .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .employee-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .employee-code {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.present {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+
+        .status-badge.absent {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .status-badge.leave {
+            background: rgba(241, 196, 15, 0.15);
+            color: #d4a500;
+        }
+
+        .status-badge.late {
+            background: rgba(243, 156, 18, 0.15);
+            color: #f39c12;
+        }
+
+        .status-badge.active {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+
+        .status-badge.inactive {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .status-badge.pending {
+            background: rgba(241, 196, 15, 0.15);
+            color: #d4a500;
+        }
+
+        .status-badge.approved {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+
+        .status-badge.rejected {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            background: #000;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease forwards;
+            max-width: 400px;
+        }
+
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hrms-container {
+                padding: 20px 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hrms-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .hrms-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .hrms-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 8px;
+            }
+
+            .hrms-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .hrms-tab {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .data-table {
+                min-width: 600px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hrms-container {
+                padding: 16px 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-badge {
+                display: none;
+            }
+        }
+
+        /* Refresh button */
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .refresh-btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Clock In/Out Section */
+        .clock-section {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 16px;
+            padding: 24px;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+        .clock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .clock-time {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .clock-date {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .clock-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .clock-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clock-btn.clock-in {
+            background: #fff;
+            color: #3b82f6;
+        }
+
+        .clock-btn.clock-out {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .clock-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .clock-info {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="hrms-container">
+        <div class="hrms-header">
+            <div>
+                <h1>HRMS Dashboard</h1>
+                <p>Human Resource Management System</p>
+            </div>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <!-- Clock In/Out Section (for Employee Role) -->
+        <div class="clock-section" id="clockSection" style="display: none;">
+            <div class="clock-header">
+                <div>
+                    <div class="clock-time" id="currentTime">--:--:--</div>
+                    <div class="clock-date" id="currentDate">Loading...</div>
+                </div>
+                <div class="clock-status">
+                    <span class="clock-info" id="clockInfo">Not checked in yet</span>
+                    <button class="clock-btn clock-in" id="clockBtn" onclick="handleClock()">Clock In</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon employees">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalEmployees">-</div>
+                <div class="stat-label">Total Employees</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon attendance">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="presentToday">-</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon leave">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="onLeave">-</div>
+                <div class="stat-label">On Leave</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon departments">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalDepartments">-</div>
+                <div class="stat-label">Departments</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon offices">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalOffices">-</div>
+                <div class="stat-label">Offices</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon payroll">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"/>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="pendingApprovals">-</div>
+                <div class="stat-label">Pending Approvals</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header">
+            <h3 class="section-title">Quick Actions</h3>
+        </div>
+        <div class="quick-actions">
+            <div class="action-card" onclick="navigateTo('employees.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="23" y1="11" x2="17" y2="11"/>
+                        <line x1="20" y1="8" x2="20" y2="14"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Employee Management</h4>
+                    <p>Add, edit, and manage employee profiles</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" onclick="navigateTo('attendance.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Attendance</h4>
+                    <p>View and manage employee attendance</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" onclick="navigateTo('leave.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Leave Management</h4>
+                    <p>Handle leave requests and balances</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" onclick="navigateTo('payroll.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Payroll</h4>
+                    <p>Process salaries and view payslips</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" onclick="navigateTo('organization.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Organization</h4>
+                    <p>Manage offices, departments, and designations</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" onclick="navigateTo('reports.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Reports & Analytics</h4>
+                    <p>View HR reports and insights</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="data-section">
+            <div class="section-header">
+                <h3 class="section-title">Recent Leave Requests</h3>
+                <a href="leave.html" style="font-size: 0.85rem; color: #666; text-decoration: none;">View All</a>
+            </div>
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentLeaveRequests">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Upcoming Events Section -->
+        <div class="data-section">
+            <div class="section-header">
+                <h3 class="section-title">Upcoming</h3>
+            </div>
+            <div class="quick-actions">
+                <div class="stat-card">
+                    <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Upcoming Holidays</h4>
+                    <div id="upcomingHolidays">
+                        <div class="loading-spinner" style="padding: 20px;">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; color: #1a1a1a;">Birthdays This Week</h4>
+                    <div id="upcomingBirthdays">
+                        <div class="loading-spinner" style="padding: 20px;">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        let userRole = 'HRMS_USER';
+        let currentEmployee = null;
+        let isClockedIn = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!api.isAuthenticated()) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Initialize navigation
+            Navigation.init('hrms', '../');
+
+            // Determine user role
+            const user = api.getUser();
+            if (user && user.roles) {
+                if (user.roles.includes('SUPERADMIN') || user.roles.includes('HRMS_ADMIN')) {
+                    userRole = 'HRMS_ADMIN';
+                } else if (user.roles.includes('HRMS_MANAGER')) {
+                    userRole = 'HRMS_MANAGER';
+                }
+            }
+
+            // Start clock
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Load dashboard data
+            await loadDashboard();
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            const dateStr = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const timeEl = document.getElementById('currentTime');
+            const dateEl = document.getElementById('currentDate');
+            if (timeEl) timeEl.textContent = timeStr;
+            if (dateEl) dateEl.textContent = dateStr;
+        }
+
+        async function loadDashboard() {
+            try {
+                // Show clock section for regular employees
+                if (userRole === 'HRMS_USER') {
+                    document.getElementById('clockSection').style.display = 'block';
+                    await loadEmployeeAttendance();
+                }
+
+                // Load stats based on role
+                if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
+                    await loadAdminStats();
+                } else {
+                    await loadEmployeeStats();
+                }
+
+                // Load common sections
+                await loadRecentLeaveRequests();
+                await loadUpcomingEvents();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Error loading dashboard data', 'error');
+            }
+        }
+
+        async function loadAdminStats() {
+            try {
+                // Load employees count
+                const employees = await api.hrmsGetAllEmployees(false);
+                document.getElementById('totalEmployees').textContent = employees.length || 0;
+
+                // Load departments
+                const departments = await api.hrmsGetAllDepartments(false);
+                document.getElementById('totalDepartments').textContent = departments.length || 0;
+
+                // Load offices
+                const offices = await api.hrmsGetAllOffices(false);
+                document.getElementById('totalOffices').textContent = offices.length || 0;
+
+                // Attendance and leave would come from dashboard API
+                document.getElementById('presentToday').textContent = '-';
+                document.getElementById('onLeave').textContent = '-';
+                document.getElementById('pendingApprovals').textContent = '-';
+
+            } catch (error) {
+                console.error('Error loading admin stats:', error);
+            }
+        }
+
+        async function loadEmployeeStats() {
+            try {
+                // Load current employee's data
+                const myProfile = await api.hrmsGetMyProfile();
+                if (myProfile) {
+                    currentEmployee = myProfile;
+                }
+
+                // Update stats
+                document.getElementById('totalEmployees').textContent = '-';
+                document.getElementById('presentToday').textContent = '-';
+                document.getElementById('onLeave').textContent = '-';
+                document.getElementById('totalDepartments').textContent = '-';
+                document.getElementById('totalOffices').textContent = '-';
+                document.getElementById('pendingApprovals').textContent = '-';
+
+            } catch (error) {
+                console.error('Error loading employee stats:', error);
+            }
+        }
+
+        async function loadEmployeeAttendance() {
+            try {
+                const today = await api.hrmsGetTodayAttendance();
+                if (today && today.check_in_time) {
+                    isClockedIn = !today.check_out_time;
+                    updateClockUI(today);
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+            }
+        }
+
+        function updateClockUI(attendance) {
+            const clockBtn = document.getElementById('clockBtn');
+            const clockInfo = document.getElementById('clockInfo');
+
+            if (attendance && attendance.check_in_time) {
+                const checkIn = new Date(attendance.check_in_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                if (attendance.check_out_time) {
+                    const checkOut = new Date(attendance.check_out_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    clockInfo.textContent = `Checked in: ${checkIn} | Checked out: ${checkOut}`;
+                    clockBtn.textContent = 'Completed';
+                    clockBtn.disabled = true;
+                    clockBtn.classList.remove('clock-in');
+                    clockBtn.classList.add('clock-out');
+                } else {
+                    clockInfo.textContent = `Checked in at ${checkIn}`;
+                    clockBtn.textContent = 'Clock Out';
+                    clockBtn.classList.remove('clock-in');
+                    clockBtn.classList.add('clock-out');
+                    isClockedIn = true;
+                }
+            } else {
+                clockInfo.textContent = 'Not checked in yet';
+                clockBtn.textContent = 'Clock In';
+                clockBtn.classList.remove('clock-out');
+                clockBtn.classList.add('clock-in');
+                isClockedIn = false;
+            }
+        }
+
+        async function handleClock() {
+            try {
+                if (isClockedIn) {
+                    const result = await api.hrmsClockOut({});
+                    showToast('Clocked out successfully', 'success');
+                    updateClockUI(result);
+                } else {
+                    const result = await api.hrmsClockIn({});
+                    showToast('Clocked in successfully', 'success');
+                    updateClockUI(result);
+                }
+            } catch (error) {
+                showToast(error.message || 'Clock operation failed', 'error');
+            }
+        }
+
+        async function loadRecentLeaveRequests() {
+            const tbody = document.getElementById('recentLeaveRequests');
+            try {
+                // For admin/manager, show pending approvals
+                // For employee, show their own requests
+                let requests = [];
+
+                if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
+                    requests = await api.hrmsGetPendingLeaveApprovals();
+                } else {
+                    requests = await api.hrmsGetMyLeaveRequests(new Date().getFullYear());
+                }
+
+                if (!requests || requests.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <p style="color: #888; font-size: 0.85rem;">No leave requests found</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Show only recent 5
+                const recentRequests = requests.slice(0, 5);
+
+                tbody.innerHTML = recentRequests.map(req => `
+                    <tr>
+                        <td>
+                            <div class="employee-info">
+                                <div class="employee-avatar">${getInitials(req.employee_name || 'User')}</div>
+                                <div>
+                                    <div class="employee-name">${req.employee_name || 'Employee'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${req.leave_type_name || '-'}</td>
+                        <td>${formatDate(req.start_date)}</td>
+                        <td>${formatDate(req.end_date)}</td>
+                        <td>${req.number_of_days || '-'}</td>
+                        <td><span class="status-badge ${req.status || 'pending'}">${capitalizeFirst(req.status || 'pending')}</span></td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading leave requests:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p style="color: #888; font-size: 0.85rem;">Unable to load leave requests</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        async function loadUpcomingEvents() {
+            const holidaysContainer = document.getElementById('upcomingHolidays');
+            const birthdaysContainer = document.getElementById('upcomingBirthdays');
+
+            try {
+                // Load upcoming holidays
+                const holidays = await api.hrmsGetUpcomingHolidays(5);
+                if (holidays && holidays.length > 0) {
+                    holidaysContainer.innerHTML = holidays.map(h => `
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
+                            <span style="font-size: 0.85rem;">${h.holiday_name}</span>
+                            <span style="font-size: 0.8rem; color: #888;">${formatDate(h.holiday_date)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    holidaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">No upcoming holidays</p>';
+                }
+            } catch (error) {
+                holidaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Unable to load holidays</p>';
+            }
+
+            try {
+                // Load upcoming birthdays
+                const birthdays = await api.hrmsGetUpcomingBirthdays(7);
+                if (birthdays && birthdays.length > 0) {
+                    birthdaysContainer.innerHTML = birthdays.map(b => `
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
+                            <span style="font-size: 0.85rem;">${b.employee_name}</span>
+                            <span style="font-size: 0.8rem; color: #888;">${formatDate(b.date_of_birth)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">No birthdays this week</p>';
+                }
+            } catch (error) {
+                birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Unable to load birthdays</p>';
+            }
+        }
+
+        function refreshDashboard() {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('loading');
+            loadDashboard().finally(() => {
+                btn.classList.remove('loading');
+            });
+        }
+
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        // Utility functions
+        function getInitials(name) {
+            if (!name) return 'U';
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function capitalizeFirst(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${type === 'success'
+                        ? '<polyline points="20 6 9 17 4 12"/>'
+                        : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
+                </svg>
+                ${message}
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
