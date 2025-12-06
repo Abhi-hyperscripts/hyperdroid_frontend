@@ -799,8 +799,8 @@
             const searchTerm = document.getElementById('officeSearch')?.value?.toLowerCase() || '';
 
             const filtered = offices.filter(o =>
-                o.name.toLowerCase().includes(searchTerm) ||
-                o.code?.toLowerCase().includes(searchTerm) ||
+                o.office_name?.toLowerCase().includes(searchTerm) ||
+                o.office_code?.toLowerCase().includes(searchTerm) ||
                 o.city?.toLowerCase().includes(searchTerm)
             );
 
@@ -822,12 +822,12 @@
 
             tbody.innerHTML = filtered.map(office => `
                 <tr>
-                    <td><strong>${office.name}</strong></td>
-                    <td><code>${office.code}</code></td>
-                    <td><span class="badge badge-${office.type}">${formatOfficeType(office.type)}</span></td>
+                    <td><strong>${office.office_name}</strong></td>
+                    <td><code>${office.office_code}</code></td>
+                    <td><span class="badge badge-${office.office_type || 'branch'}">${formatOfficeType(office.office_type)}</span></td>
                     <td>${office.city}, ${office.country}</td>
-                    <td>${office.employeeCount || 0}</td>
-                    <td><span class="status-badge status-${office.isActive ? 'active' : 'inactive'}">${office.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>${office.employee_count || 0}</td>
+                    <td><span class="status-badge status-${office.is_active ? 'active' : 'inactive'}">${office.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editOffice('${office.id}')" title="Edit">
@@ -850,8 +850,8 @@
                     const isMultiple = select.multiple;
                     const firstOption = isMultiple ? '' : '<option value="">Select Office</option>';
                     select.innerHTML = firstOption;
-                    offices.filter(o => o.isActive).forEach(office => {
-                        select.innerHTML += `<option value="${office.id}">${office.name}</option>`;
+                    offices.filter(o => o.is_active).forEach(office => {
+                        select.innerHTML += `<option value="${office.id}">${office.office_name}</option>`;
                     });
                 }
             });
@@ -874,12 +874,12 @@
             const officeFilter = document.getElementById('departmentOffice')?.value || '';
 
             let filtered = departments.filter(d =>
-                d.name.toLowerCase().includes(searchTerm) ||
-                d.code?.toLowerCase().includes(searchTerm)
+                d.department_name?.toLowerCase().includes(searchTerm) ||
+                d.department_code?.toLowerCase().includes(searchTerm)
             );
 
             if (officeFilter) {
-                filtered = filtered.filter(d => d.officeId === officeFilter);
+                filtered = filtered.filter(d => d.office_id === officeFilter);
             }
 
             if (filtered.length === 0) {
@@ -900,12 +900,12 @@
 
             tbody.innerHTML = filtered.map(dept => `
                 <tr>
-                    <td><strong>${dept.name}</strong></td>
-                    <td><code>${dept.code}</code></td>
-                    <td>${dept.officeName || '-'}</td>
-                    <td>${dept.headName || '-'}</td>
-                    <td>${dept.employeeCount || 0}</td>
-                    <td><span class="status-badge status-${dept.isActive ? 'active' : 'inactive'}">${dept.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td><strong>${dept.department_name}</strong></td>
+                    <td><code>${dept.department_code}</code></td>
+                    <td>${dept.office_name || '-'}</td>
+                    <td>${dept.head_name || '-'}</td>
+                    <td>${dept.employee_count || 0}</td>
+                    <td><span class="status-badge status-${dept.is_active ? 'active' : 'inactive'}">${dept.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editDepartment('${dept.id}')" title="Edit">
@@ -926,8 +926,8 @@
                 const select = document.getElementById(id);
                 if (select) {
                     select.innerHTML = '<option value="">All Departments</option>';
-                    departments.filter(d => d.isActive).forEach(dept => {
-                        select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    departments.filter(d => d.is_active).forEach(dept => {
+                        select.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
                     });
                 }
             });
@@ -949,12 +949,12 @@
             const deptFilter = document.getElementById('designationDepartment')?.value || '';
 
             let filtered = designations.filter(d =>
-                d.name.toLowerCase().includes(searchTerm) ||
-                d.code?.toLowerCase().includes(searchTerm)
+                d.designation_name?.toLowerCase().includes(searchTerm) ||
+                d.designation_code?.toLowerCase().includes(searchTerm)
             );
 
             if (deptFilter) {
-                filtered = filtered.filter(d => d.departmentId === deptFilter);
+                filtered = filtered.filter(d => d.department_id === deptFilter);
             }
 
             if (filtered.length === 0) {
@@ -977,12 +977,12 @@
 
             tbody.innerHTML = filtered.map(desig => `
                 <tr>
-                    <td><strong>${desig.name}</strong></td>
-                    <td><code>${desig.code}</code></td>
-                    <td>${desig.departmentName || 'All'}</td>
+                    <td><strong>${desig.designation_name}</strong></td>
+                    <td><code>${desig.designation_code}</code></td>
+                    <td>${desig.department_name || 'All'}</td>
                     <td>Level ${desig.level || 1}</td>
-                    <td>${desig.employeeCount || 0}</td>
-                    <td><span class="status-badge status-${desig.isActive ? 'active' : 'inactive'}">${desig.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>${desig.employee_count || 0}</td>
+                    <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editDesignation('${desig.id}')" title="Edit">
@@ -1013,8 +1013,8 @@
             const officeFilter = document.getElementById('shiftOffice')?.value || '';
 
             let filtered = shifts.filter(s =>
-                s.name.toLowerCase().includes(searchTerm) ||
-                s.code?.toLowerCase().includes(searchTerm)
+                s.shift_name?.toLowerCase().includes(searchTerm) ||
+                s.shift_code?.toLowerCase().includes(searchTerm)
             );
 
             if (officeFilter) {
@@ -1039,12 +1039,12 @@
 
             tbody.innerHTML = filtered.map(shift => `
                 <tr>
-                    <td><strong>${shift.name}</strong></td>
-                    <td><code>${shift.code}</code></td>
-                    <td>${shift.officeName || '-'}</td>
-                    <td>${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}</td>
-                    <td>${shift.workingHours || calculateWorkingHours(shift.startTime, shift.endTime)} hrs</td>
-                    <td><span class="status-badge status-${shift.isActive ? 'active' : 'inactive'}">${shift.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td><strong>${shift.shift_name}</strong></td>
+                    <td><code>${shift.shift_code}</code></td>
+                    <td>${shift.office_name || '-'}</td>
+                    <td>${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}</td>
+                    <td>${shift.working_hours || calculateWorkingHours(shift.start_time, shift.end_time)} hrs</td>
+                    <td><span class="status-badge status-${shift.is_active ? 'active' : 'inactive'}">${shift.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editShift('${shift.id}')" title="Edit">
@@ -1078,7 +1078,7 @@
             let filtered = holidays;
 
             if (typeFilter) {
-                filtered = filtered.filter(h => h.type === typeFilter);
+                filtered = filtered.filter(h => h.holiday_type === typeFilter);
             }
 
             if (filtered.length === 0) {
@@ -1101,11 +1101,11 @@
 
             tbody.innerHTML = filtered.map(holiday => `
                 <tr>
-                    <td><strong>${holiday.name}</strong></td>
-                    <td>${formatDate(holiday.date)}</td>
-                    <td>${getDayName(holiday.date)}</td>
-                    <td><span class="badge badge-${holiday.type}">${formatHolidayType(holiday.type)}</span></td>
-                    <td>${holiday.officeNames?.join(', ') || 'All Offices'}</td>
+                    <td><strong>${holiday.holiday_name}</strong></td>
+                    <td>${formatDate(holiday.holiday_date)}</td>
+                    <td>${getDayName(holiday.holiday_date)}</td>
+                    <td><span class="badge badge-${holiday.holiday_type}">${formatHolidayType(holiday.holiday_type)}</span></td>
+                    <td>${holiday.office_names?.join(', ') || 'All Offices'}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn" onclick="editHoliday('${holiday.id}')" title="Edit">
@@ -1156,16 +1156,16 @@
             if (!office) return;
 
             document.getElementById('officeId').value = office.id;
-            document.getElementById('officeName').value = office.name;
-            document.getElementById('officeCode').value = office.code;
-            document.getElementById('officeType').value = office.type;
+            document.getElementById('officeName').value = office.office_name;
+            document.getElementById('officeCode').value = office.office_code;
+            document.getElementById('officeType').value = office.office_type || 'branch';
             document.getElementById('officeTimezone').value = office.timezone || 'Asia/Kolkata';
             document.getElementById('officeAddress').value = office.address || '';
             document.getElementById('officeCity').value = office.city || '';
             document.getElementById('officeCountry').value = office.country || 'India';
             document.getElementById('officePhone').value = office.phone || '';
             document.getElementById('officeEmail').value = office.email || '';
-            document.getElementById('officeIsActive').value = office.isActive ? 'true' : 'false';
+            document.getElementById('officeIsActive').value = office.is_active ? 'true' : 'false';
 
             document.getElementById('officeModalTitle').textContent = 'Edit Office';
             document.getElementById('officeModal').classList.add('active');
@@ -1183,12 +1183,12 @@
             if (!dept) return;
 
             document.getElementById('departmentId').value = dept.id;
-            document.getElementById('departmentName').value = dept.name;
-            document.getElementById('departmentCode').value = dept.code;
-            document.getElementById('deptOffice').value = dept.officeId || '';
-            document.getElementById('deptHead').value = dept.headId || '';
+            document.getElementById('departmentName').value = dept.department_name;
+            document.getElementById('departmentCode').value = dept.department_code;
+            document.getElementById('deptOffice').value = dept.office_id || '';
+            document.getElementById('deptHead').value = dept.head_employee_id || '';
             document.getElementById('departmentDescription').value = dept.description || '';
-            document.getElementById('departmentIsActive').value = dept.isActive ? 'true' : 'false';
+            document.getElementById('departmentIsActive').value = dept.is_active ? 'true' : 'false';
 
             document.getElementById('departmentModalTitle').textContent = 'Edit Department';
             document.getElementById('departmentModal').classList.add('active');
@@ -1206,12 +1206,12 @@
             if (!desig) return;
 
             document.getElementById('designationId').value = desig.id;
-            document.getElementById('designationName').value = desig.name;
-            document.getElementById('designationCode').value = desig.code;
-            document.getElementById('desigDepartment').value = desig.departmentId || '';
+            document.getElementById('designationName').value = desig.designation_name;
+            document.getElementById('designationCode').value = desig.designation_code;
+            document.getElementById('desigDepartment').value = desig.department_id || '';
             document.getElementById('desigLevel').value = desig.level || 1;
             document.getElementById('designationDescription').value = desig.description || '';
-            document.getElementById('designationIsActive').value = desig.isActive ? 'true' : 'false';
+            document.getElementById('designationIsActive').value = desig.is_active ? 'true' : 'false';
 
             document.getElementById('designationModalTitle').textContent = 'Edit Designation';
             document.getElementById('designationModal').classList.add('active');
@@ -1229,19 +1229,19 @@
             if (!shift) return;
 
             document.getElementById('shiftId').value = shift.id;
-            document.getElementById('shiftName').value = shift.name;
-            document.getElementById('shiftCode').value = shift.code;
-            document.getElementById('shiftOfficeId').value = shift.officeId || '';
-            document.getElementById('shiftStart').value = shift.startTime || '09:00';
-            document.getElementById('shiftEnd').value = shift.endTime || '18:00';
-            document.getElementById('breakStart').value = shift.breakStart || '13:00';
-            document.getElementById('breakEnd').value = shift.breakEnd || '14:00';
-            document.getElementById('graceMinutes').value = shift.graceMinutes || 15;
-            document.getElementById('halfDayHours').value = shift.halfDayHours || 4;
-            document.getElementById('shiftIsActive').value = shift.isActive ? 'true' : 'false';
+            document.getElementById('shiftName').value = shift.shift_name;
+            document.getElementById('shiftCode').value = shift.shift_code;
+            document.getElementById('shiftOfficeId').value = shift.office_id || '';
+            document.getElementById('shiftStart').value = shift.start_time || '09:00';
+            document.getElementById('shiftEnd').value = shift.end_time || '18:00';
+            document.getElementById('breakStart').value = shift.break_start || '13:00';
+            document.getElementById('breakEnd').value = shift.break_end || '14:00';
+            document.getElementById('graceMinutes').value = shift.grace_period_minutes || 15;
+            document.getElementById('halfDayHours').value = shift.half_day_hours || 4;
+            document.getElementById('shiftIsActive').value = shift.is_active ? 'true' : 'false';
 
             // Set working days checkboxes
-            const workingDays = shift.workingDays || [];
+            const workingDays = shift.working_days || [];
             document.querySelectorAll('input[name="workingDays"]').forEach(cb => {
                 cb.checked = workingDays.includes(cb.value);
             });
@@ -1262,15 +1262,15 @@
             if (!holiday) return;
 
             document.getElementById('holidayId').value = holiday.id;
-            document.getElementById('holidayName').value = holiday.name;
-            document.getElementById('holidayDate').value = holiday.date?.split('T')[0] || '';
-            document.getElementById('holidayTypeSelect').value = holiday.type;
+            document.getElementById('holidayName').value = holiday.holiday_name;
+            document.getElementById('holidayDate').value = holiday.holiday_date?.split('T')[0] || '';
+            document.getElementById('holidayTypeSelect').value = holiday.holiday_type;
             document.getElementById('holidayDescription').value = holiday.description || '';
 
             // Set selected offices
             const officeSelect = document.getElementById('holidayOffices');
             Array.from(officeSelect.options).forEach(opt => {
-                opt.selected = holiday.officeIds?.includes(opt.value);
+                opt.selected = holiday.office_ids?.includes(opt.value);
             });
 
             document.getElementById('holidayModalTitle').textContent = 'Edit Holiday';
