@@ -1040,21 +1040,28 @@
         async function loadAdminStats() {
             try {
                 // Load employees count
-                const employees = await api.hrmsGetAllEmployees(false);
+                const employees = await api.getHrmsEmployees(false);
                 document.getElementById('totalEmployees').textContent = employees.length || 0;
 
                 // Load departments
-                const departments = await api.hrmsGetAllDepartments(false);
+                const departments = await api.getHrmsDepartments();
                 document.getElementById('totalDepartments').textContent = departments.length || 0;
 
                 // Load offices
-                const offices = await api.hrmsGetAllOffices(false);
+                const offices = await api.getHrmsOffices();
                 document.getElementById('totalOffices').textContent = offices.length || 0;
 
-                // Attendance and leave would come from dashboard API
+                // Load pending leave approvals count
+                try {
+                    const pendingLeave = await api.getPendingLeaveApprovals();
+                    document.getElementById('pendingApprovals').textContent = pendingLeave.length || 0;
+                } catch (e) {
+                    document.getElementById('pendingApprovals').textContent = '-';
+                }
+
+                // Attendance stats would come from dashboard API
                 document.getElementById('presentToday').textContent = '-';
                 document.getElementById('onLeave').textContent = '-';
-                document.getElementById('pendingApprovals').textContent = '-';
 
             } catch (error) {
                 console.error('Error loading admin stats:', error);
@@ -1063,13 +1070,13 @@
 
         async function loadEmployeeStats() {
             try {
-                // Load current employee's data
-                const myProfile = await api.hrmsGetMyProfile();
-                if (myProfile) {
-                    currentEmployee = myProfile;
+                // Load current employee's dashboard data
+                const dashboardData = await api.getHrmsDashboard();
+                if (dashboardData) {
+                    currentEmployee = dashboardData.employee;
                 }
 
-                // Update stats
+                // Update stats for employee view
                 document.getElementById('totalEmployees').textContent = '-';
                 document.getElementById('presentToday').textContent = '-';
                 document.getElementById('onLeave').textContent = '-';
@@ -1084,7 +1091,7 @@
 
         async function loadEmployeeAttendance() {
             try {
-                const today = await api.hrmsGetTodayAttendance();
+                const today = await api.getAttendanceStatus();
                 if (today && today.check_in_time) {
                     isClockedIn = !today.check_out_time;
                     updateClockUI(today);
@@ -1127,11 +1134,11 @@
         async function handleClock() {
             try {
                 if (isClockedIn) {
-                    const result = await api.hrmsClockOut({});
+                    const result = await api.checkOut({});
                     showToast('Clocked out successfully', 'success');
                     updateClockUI(result);
                 } else {
-                    const result = await api.hrmsClockIn({});
+                    const result = await api.checkIn({});
                     showToast('Clocked in successfully', 'success');
                     updateClockUI(result);
                 }
@@ -1148,9 +1155,9 @@
                 let requests = [];
 
                 if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
-                    requests = await api.hrmsGetPendingLeaveApprovals();
+                    requests = await api.getPendingLeaveApprovals();
                 } else {
-                    requests = await api.hrmsGetMyLeaveRequests(new Date().getFullYear());
+                    requests = await api.getMyLeaveRequests();
                 }
 
                 if (!requests || requests.length === 0) {
@@ -1202,10 +1209,17 @@
             const birthdaysContainer = document.getElementById('upcomingBirthdays');
 
             try {
-                // Load upcoming holidays
-                const holidays = await api.hrmsGetUpcomingHolidays(5);
-                if (holidays && holidays.length > 0) {
-                    holidaysContainer.innerHTML = holidays.map(h => `
+                // Load upcoming holidays for current year
+                const holidays = await api.getHrmsHolidays(new Date().getFullYear());
+                // Filter for upcoming holidays only
+                const today = new Date();
+                const upcomingHolidays = (holidays || [])
+                    .filter(h => new Date(h.holiday_date) >= today)
+                    .sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date))
+                    .slice(0, 5);
+
+                if (upcomingHolidays.length > 0) {
+                    holidaysContainer.innerHTML = upcomingHolidays.map(h => `
                         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
                             <span style="font-size: 0.85rem;">${h.holiday_name}</span>
                             <span style="font-size: 0.8rem; color: #888;">${formatDate(h.holiday_date)}</span>
@@ -1218,22 +1232,8 @@
                 holidaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Unable to load holidays</p>';
             }
 
-            try {
-                // Load upcoming birthdays
-                const birthdays = await api.hrmsGetUpcomingBirthdays(7);
-                if (birthdays && birthdays.length > 0) {
-                    birthdaysContainer.innerHTML = birthdays.map(b => `
-                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
-                            <span style="font-size: 0.85rem;">${b.employee_name}</span>
-                            <span style="font-size: 0.8rem; color: #888;">${formatDate(b.date_of_birth)}</span>
-                        </div>
-                    `).join('');
-                } else {
-                    birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">No birthdays this week</p>';
-                }
-            } catch (error) {
-                birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Unable to load birthdays</p>';
-            }
+            // Birthdays feature - show placeholder for now (requires backend API)
+            birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Feature coming soon</p>';
         }
 
         function refreshDashboard() {

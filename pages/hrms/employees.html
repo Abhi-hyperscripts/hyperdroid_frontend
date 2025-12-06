@@ -324,10 +324,10 @@
         async function loadFormData() {
             try {
                 const [depts, desigs, offs, shiftsData] = await Promise.all([
-                    api.hrmsGetAllDepartments(false),
-                    api.hrmsGetAllDesignations(false),
-                    api.hrmsGetAllOffices(false),
-                    api.hrmsGetAllShifts(false)
+                    api.getHrmsDepartments(),
+                    api.getHrmsDesignations(),
+                    api.getHrmsOffices(),
+                    api.getHrmsShifts()
                 ]);
 
                 departments = depts || [];
@@ -365,7 +365,7 @@
             tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
             try {
-                employees = await api.hrmsGetAllEmployees(false);
+                employees = await api.getHrmsEmployees(false);
 
                 updateStats();
                 renderEmployees();
@@ -478,7 +478,7 @@
 
             // Load available users
             try {
-                availableUsers = await api.hrmsGetAvailableUsers();
+                availableUsers = await api.getAvailableUsersForEmployee();
                 const userSelect = document.getElementById('userSelect');
                 userSelect.innerHTML = '<option value="">Select a user...</option>' +
                     availableUsers.map(u => `<option value="${u.id}">${u.email} (${u.firstName} ${u.lastName})</option>`).join('');
@@ -560,10 +560,10 @@
 
             try {
                 if (isEdit) {
-                    await api.hrmsUpdateEmployee(id, data);
+                    await api.updateHrmsEmployee(id, data);
                     showToast('Employee updated successfully', 'success');
                 } else {
-                    await api.hrmsCreateEmployee(data);
+                    await api.createHrmsEmployee(data);
                     showToast('Employee created successfully', 'success');
                 }
 
@@ -581,7 +581,7 @@
             openModal('viewEmployeeModal');
 
             try {
-                const emp = await api.hrmsGetEmployeeById(id);
+                const emp = await api.getHrmsEmployee(id);
                 currentViewEmployee = emp;
 
                 const dept = departments.find(d => d.id === emp.department_id);
