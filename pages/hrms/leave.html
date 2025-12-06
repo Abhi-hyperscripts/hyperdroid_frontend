@@ -291,13 +291,19 @@
     </div>
 
     <!-- Apply Leave Modal -->
-    <div class="modal-overlay" id="applyLeaveModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2>Apply for Leave</h2>
-                <button class="close-btn" onclick="closeModal('applyLeaveModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="applyLeaveModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Apply for Leave</h5>
+                    <button class="close-btn" onclick="closeModal('applyLeaveModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="applyLeaveForm">
                     <div class="form-section">
                         <div class="form-row">
@@ -347,21 +353,28 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('applyLeaveModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitLeaveApplication()">Submit Application</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('applyLeaveModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitLeaveApplication()">Submit Application</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create/Edit Leave Type Modal -->
-    <div class="modal-overlay" id="leaveTypeModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="leaveTypeModalTitle">Create Leave Type</h2>
-                <button class="close-btn" onclick="closeModal('leaveTypeModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="leaveTypeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveTypeModalTitle">Create Leave Type</h5>
+                    <button class="close-btn" onclick="closeModal('leaveTypeModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="leaveTypeForm">
                     <input type="hidden" id="leaveTypeId" name="id">
                     <div class="form-section">
@@ -439,21 +452,28 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('leaveTypeModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveLeaveType()">Save Leave Type</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveTypeModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveLeaveType()">Save Leave Type</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Allocate Leave Modal -->
-    <div class="modal-overlay" id="allocateLeaveModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2>Allocate Leave Balance</h2>
-                <button class="close-btn" onclick="closeModal('allocateLeaveModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="allocateLeaveModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Allocate Leave Balance</h5>
+                    <button class="close-btn" onclick="closeModal('allocateLeaveModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="allocateLeaveForm">
                     <div class="form-section">
                         <div class="form-row">
@@ -498,52 +518,67 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('allocateLeaveModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveLeaveAllocation()">Allocate Leave</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('allocateLeaveModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveLeaveAllocation()">Allocate Leave</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Approve/Reject Leave Modal -->
-    <div class="modal-overlay" id="leaveActionModal">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-header">
-                <h2 id="leaveActionTitle">Approve Leave</h2>
-                <button class="close-btn" onclick="closeModal('leaveActionModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="leaveRequestId">
-                <input type="hidden" id="leaveAction">
-                <div class="leave-request-summary" id="leaveRequestSummary">
-                    <!-- Filled dynamically -->
+    <div class="modal" id="leaveActionModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveActionTitle">Approve Leave</h5>
+                    <button class="close-btn" onclick="closeModal('leaveActionModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="actionComments">Comments</label>
-                    <textarea id="actionComments" class="form-control" rows="3" placeholder="Optional comments..."></textarea>
+                <div class="modal-body">
+                    <input type="hidden" id="leaveRequestId">
+                    <input type="hidden" id="leaveAction">
+                    <div class="leave-request-summary" id="leaveRequestSummary">
+                        <!-- Filled dynamically -->
+                    </div>
+                    <div class="form-group">
+                        <label for="actionComments">Comments</label>
+                        <textarea id="actionComments" class="form-control" rows="3" placeholder="Optional comments..."></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('leaveActionModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmActionBtn" onclick="confirmLeaveAction()">Confirm</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveActionModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmActionBtn" onclick="confirmLeaveAction()">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- View Leave Details Modal -->
-    <div class="modal-overlay" id="viewLeaveModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2>Leave Request Details</h2>
-                <button class="close-btn" onclick="closeModal('viewLeaveModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="leave-details" id="leaveDetails">
-                    <!-- Filled dynamically -->
+    <div class="modal" id="viewLeaveModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Leave Request Details</h5>
+                    <button class="close-btn" onclick="closeModal('viewLeaveModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('viewLeaveModal')">Close</button>
+                <div class="modal-body">
+                    <div class="leave-details" id="leaveDetails">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('viewLeaveModal')">Close</button>
+                </div>
             </div>
         </div>
     </div>

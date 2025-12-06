@@ -335,13 +335,14 @@
     </div>
 
     <!-- Create/Edit Office Modal -->
-    <div class="modal-overlay" id="officeModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="officeModalTitle">Create Office</h2>
-                <button class="close-btn" onclick="closeModal('officeModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div id="officeModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="officeModalTitle">Create Office</h5>
+                    <button class="close-btn" onclick="closeModal('officeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
                 <form id="officeForm">
                     <input type="hidden" id="officeId" name="id">
                     <div class="form-section">
@@ -414,289 +415,298 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('officeModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveOffice()">Save Office</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('officeModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveOffice()">Save Office</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create/Edit Department Modal -->
-    <div class="modal-overlay" id="departmentModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="departmentModalTitle">Create Department</h2>
-                <button class="close-btn" onclick="closeModal('departmentModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="departmentForm">
-                    <input type="hidden" id="departmentId" name="id">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="departmentName">Department Name *</label>
-                                <input type="text" id="departmentName" name="name" class="form-control" required placeholder="e.g., Engineering">
+    <div id="departmentModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="departmentModalTitle">Create Department</h5>
+                    <button class="close-btn" onclick="closeModal('departmentModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="departmentForm">
+                        <input type="hidden" id="departmentId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="departmentName">Department Name *</label>
+                                    <input type="text" id="departmentName" name="name" class="form-control" required placeholder="e.g., Engineering">
+                                </div>
+                                <div class="form-group">
+                                    <label for="departmentCode">Code *</label>
+                                    <input type="text" id="departmentCode" name="code" class="form-control" required placeholder="e.g., ENG">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="departmentCode">Code *</label>
-                                <input type="text" id="departmentCode" name="code" class="form-control" required placeholder="e.g., ENG">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="deptOffice">Office *</label>
+                                    <select id="deptOffice" name="officeId" class="form-control" required>
+                                        <option value="">Select Office</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="deptHead">Department Head</label>
+                                    <select id="deptHead" name="headId" class="form-control">
+                                        <option value="">Select Employee</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="departmentDescription">Description</label>
+                                    <textarea id="departmentDescription" name="description" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="departmentIsActive">Status</label>
+                                    <select id="departmentIsActive" name="isActive" class="form-control">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="deptOffice">Office *</label>
-                                <select id="deptOffice" name="officeId" class="form-control" required>
-                                    <option value="">Select Office</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="deptHead">Department Head</label>
-                                <select id="deptHead" name="headId" class="form-control">
-                                    <option value="">Select Employee</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="departmentDescription">Description</label>
-                                <textarea id="departmentDescription" name="description" class="form-control" rows="2" placeholder="Brief description"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="departmentIsActive">Status</label>
-                                <select id="departmentIsActive" name="isActive" class="form-control">
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('departmentModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save Department</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('departmentModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save Department</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create/Edit Designation Modal -->
-    <div class="modal-overlay" id="designationModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="designationModalTitle">Create Designation</h2>
-                <button class="close-btn" onclick="closeModal('designationModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="designationForm">
-                    <input type="hidden" id="designationId" name="id">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="designationName">Designation Name *</label>
-                                <input type="text" id="designationName" name="name" class="form-control" required placeholder="e.g., Software Engineer">
+    <div id="designationModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="designationModalTitle">Create Designation</h5>
+                    <button class="close-btn" onclick="closeModal('designationModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="designationForm">
+                        <input type="hidden" id="designationId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="designationName">Designation Name *</label>
+                                    <input type="text" id="designationName" name="name" class="form-control" required placeholder="e.g., Software Engineer">
+                                </div>
+                                <div class="form-group">
+                                    <label for="designationCode">Code *</label>
+                                    <input type="text" id="designationCode" name="code" class="form-control" required placeholder="e.g., SE">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="designationCode">Code *</label>
-                                <input type="text" id="designationCode" name="code" class="form-control" required placeholder="e.g., SE">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="desigDepartment">Department</label>
+                                    <select id="desigDepartment" name="departmentId" class="form-control">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="desigLevel">Level</label>
+                                    <input type="number" id="desigLevel" name="level" class="form-control" min="1" max="20" value="1">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="designationDescription">Description</label>
+                                    <textarea id="designationDescription" name="description" class="form-control" rows="2" placeholder="Job responsibilities"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="designationIsActive">Status</label>
+                                    <select id="designationIsActive" name="isActive" class="form-control">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="desigDepartment">Department</label>
-                                <select id="desigDepartment" name="departmentId" class="form-control">
-                                    <option value="">All Departments</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="desigLevel">Level</label>
-                                <input type="number" id="desigLevel" name="level" class="form-control" min="1" max="20" value="1">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="designationDescription">Description</label>
-                                <textarea id="designationDescription" name="description" class="form-control" rows="2" placeholder="Job responsibilities"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="designationIsActive">Status</label>
-                                <select id="designationIsActive" name="isActive" class="form-control">
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('designationModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDesignation()">Save Designation</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('designationModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDesignation()">Save Designation</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create/Edit Shift Modal -->
-    <div class="modal-overlay" id="shiftModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="shiftModalTitle">Create Shift</h2>
-                <button class="close-btn" onclick="closeModal('shiftModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="shiftForm">
-                    <input type="hidden" id="shiftId" name="id">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="shiftName">Shift Name *</label>
-                                <input type="text" id="shiftName" name="name" class="form-control" required placeholder="e.g., Day Shift">
+    <div id="shiftModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shiftModalTitle">Create Shift</h5>
+                    <button class="close-btn" onclick="closeModal('shiftModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="shiftForm">
+                        <input type="hidden" id="shiftId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="shiftName">Shift Name *</label>
+                                    <input type="text" id="shiftName" name="name" class="form-control" required placeholder="e.g., Day Shift">
+                                </div>
+                                <div class="form-group">
+                                    <label for="shiftCode">Code *</label>
+                                    <input type="text" id="shiftCode" name="code" class="form-control" required placeholder="e.g., DAY">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="shiftCode">Code *</label>
-                                <input type="text" id="shiftCode" name="code" class="form-control" required placeholder="e.g., DAY">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="shiftOfficeId">Office *</label>
+                                    <select id="shiftOfficeId" name="officeId" class="form-control" required>
+                                        <option value="">Select Office</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="shiftOfficeId">Office *</label>
-                                <select id="shiftOfficeId" name="officeId" class="form-control" required>
-                                    <option value="">Select Office</option>
-                                </select>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="shiftStart">Start Time *</label>
+                                    <input type="time" id="shiftStart" name="startTime" class="form-control" required value="09:00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="shiftEnd">End Time *</label>
+                                    <input type="time" id="shiftEnd" name="endTime" class="form-control" required value="18:00">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="shiftStart">Start Time *</label>
-                                <input type="time" id="shiftStart" name="startTime" class="form-control" required value="09:00">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="breakStart">Break Start</label>
+                                    <input type="time" id="breakStart" name="breakStart" class="form-control" value="13:00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="breakEnd">Break End</label>
+                                    <input type="time" id="breakEnd" name="breakEnd" class="form-control" value="14:00">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="shiftEnd">End Time *</label>
-                                <input type="time" id="shiftEnd" name="endTime" class="form-control" required value="18:00">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="graceMinutes">Grace Period (minutes)</label>
+                                    <input type="number" id="graceMinutes" name="graceMinutes" class="form-control" min="0" value="15">
+                                </div>
+                                <div class="form-group">
+                                    <label for="halfDayHours">Half Day Hours</label>
+                                    <input type="number" id="halfDayHours" name="halfDayHours" class="form-control" min="1" step="0.5" value="4">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="breakStart">Break Start</label>
-                                <input type="time" id="breakStart" name="breakStart" class="form-control" value="13:00">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Working Days</label>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="monday" checked> Mon
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="tuesday" checked> Tue
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="wednesday" checked> Wed
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="thursday" checked> Thu
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="friday" checked> Fri
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="saturday"> Sat
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="workingDays" value="sunday"> Sun
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="breakEnd">Break End</label>
-                                <input type="time" id="breakEnd" name="breakEnd" class="form-control" value="14:00">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="graceMinutes">Grace Period (minutes)</label>
-                                <input type="number" id="graceMinutes" name="graceMinutes" class="form-control" min="0" value="15">
-                            </div>
-                            <div class="form-group">
-                                <label for="halfDayHours">Half Day Hours</label>
-                                <input type="number" id="halfDayHours" name="halfDayHours" class="form-control" min="1" step="0.5" value="4">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Working Days</label>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="monday" checked> Mon
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="tuesday" checked> Tue
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="wednesday" checked> Wed
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="thursday" checked> Thu
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="friday" checked> Fri
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="saturday"> Sat
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" name="workingDays" value="sunday"> Sun
-                                    </label>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="shiftIsActive">Status</label>
+                                    <select id="shiftIsActive" name="isActive" class="form-control">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="shiftIsActive">Status</label>
-                                <select id="shiftIsActive" name="isActive" class="form-control">
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('shiftModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveShift()">Save Shift</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('shiftModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveShift()">Save Shift</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create/Edit Holiday Modal -->
-    <div class="modal-overlay" id="holidayModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="holidayModalTitle">Create Holiday</h2>
-                <button class="close-btn" onclick="closeModal('holidayModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="holidayForm">
-                    <input type="hidden" id="holidayId" name="id">
-                    <div class="form-section">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="holidayName">Holiday Name *</label>
-                                <input type="text" id="holidayName" name="name" class="form-control" required placeholder="e.g., Republic Day">
+    <div id="holidayModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="holidayModalTitle">Create Holiday</h5>
+                    <button class="close-btn" onclick="closeModal('holidayModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="holidayForm">
+                        <input type="hidden" id="holidayId" name="id">
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="holidayName">Holiday Name *</label>
+                                    <input type="text" id="holidayName" name="name" class="form-control" required placeholder="e.g., Republic Day">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="holidayDate">Date *</label>
+                                    <input type="date" id="holidayDate" name="date" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="holidayTypeSelect">Type *</label>
+                                    <select id="holidayTypeSelect" name="type" class="form-control" required>
+                                        <option value="national">National Holiday</option>
+                                        <option value="regional">Regional Holiday</option>
+                                        <option value="optional">Optional Holiday</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="holidayOffices">Applicable Offices</label>
+                                    <select id="holidayOffices" name="officeIds" class="form-control" multiple>
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                    <small class="form-text">Hold Ctrl/Cmd to select multiple. Leave empty for all offices.</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="holidayDescription">Description</label>
+                                    <textarea id="holidayDescription" name="description" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="holidayDate">Date *</label>
-                                <input type="date" id="holidayDate" name="date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="holidayTypeSelect">Type *</label>
-                                <select id="holidayTypeSelect" name="type" class="form-control" required>
-                                    <option value="national">National Holiday</option>
-                                    <option value="regional">Regional Holiday</option>
-                                    <option value="optional">Optional Holiday</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="holidayOffices">Applicable Offices</label>
-                                <select id="holidayOffices" name="officeIds" class="form-control" multiple>
-                                    <!-- Populated dynamically -->
-                                </select>
-                                <small class="form-text">Hold Ctrl/Cmd to select multiple. Leave empty for all offices.</small>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="holidayDescription">Description</label>
-                                <textarea id="holidayDescription" name="description" class="form-control" rows="2" placeholder="Brief description"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('holidayModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveHoliday()">Save Holiday</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('holidayModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveHoliday()">Save Holiday</button>
+                </div>
             </div>
         </div>
     </div>

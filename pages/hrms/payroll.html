@@ -360,13 +360,19 @@
     </div>
 
     <!-- Run Payroll Modal -->
-    <div class="modal-overlay" id="runPayrollModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2>Run Payroll</h2>
-                <button class="close-btn" onclick="closeModal('runPayrollModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="runPayrollModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Run Payroll</h5>
+                    <button class="close-btn" onclick="closeModal('runPayrollModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="runPayrollForm">
                     <div class="form-section">
                         <div class="form-row two-col">
@@ -430,21 +436,28 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('runPayrollModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="runPayroll()">Run Payroll</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('runPayrollModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="runPayroll()">Run Payroll</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create Salary Structure Modal -->
-    <div class="modal-overlay" id="structureModal">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-header">
-                <h2 id="structureModalTitle">Create Salary Structure</h2>
-                <button class="close-btn" onclick="closeModal('structureModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="structureModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="structureModalTitle">Create Salary Structure</h5>
+                    <button class="close-btn" onclick="closeModal('structureModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="structureForm">
                     <input type="hidden" id="structureId" name="id">
                     <div class="form-section">
@@ -477,21 +490,28 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('structureModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveSalaryStructure()">Save Structure</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('structureModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSalaryStructure()">Save Structure</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create Component Modal -->
-    <div class="modal-overlay" id="componentModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="componentModalTitle">Create Salary Component</h2>
-                <button class="close-btn" onclick="closeModal('componentModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="componentModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="componentModalTitle">Create Salary Component</h5>
+                    <button class="close-btn" onclick="closeModal('componentModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="componentForm">
                     <input type="hidden" id="componentId" name="id">
                     <div class="form-section">
@@ -547,21 +567,28 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('componentModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveComponent()">Save Component</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('componentModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveComponent()">Save Component</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Create Loan Modal -->
-    <div class="modal-overlay" id="loanModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 id="loanModalTitle">Apply for Loan</h2>
-                <button class="close-btn" onclick="closeModal('loanModal')">&times;</button>
-            </div>
-            <div class="modal-body">
+    <div class="modal" id="loanModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loanModalTitle">Apply for Loan</h5>
+                    <button class="close-btn" onclick="closeModal('loanModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
                 <form id="loanForm">
                     <input type="hidden" id="loanId" name="id">
                     <div class="form-section">
@@ -616,35 +643,43 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('loanModal')">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveLoan()">Submit Application</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('loanModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveLoan()">Submit Application</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- View Payslip Modal -->
-    <div class="modal-overlay" id="payslipModal">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-header">
-                <h2>Payslip Details</h2>
-                <button class="close-btn" onclick="closeModal('payslipModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="payslip-container" id="payslipContent">
-                    <!-- Dynamically populated -->
+    <div class="modal" id="payslipModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payslip Details</h5>
+                    <button class="close-btn" onclick="closeModal('payslipModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="downloadPayslip()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download PDF
-                </button>
-                <button type="button" class="btn btn-primary" onclick="closeModal('payslipModal')">Close</button>
+                <div class="modal-body">
+                    <div class="payslip-container" id="payslipContent">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="downloadPayslip()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download PDF
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="closeModal('payslipModal')">Close</button>
+                </div>
             </div>
         </div>
     </div>
