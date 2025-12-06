@@ -110,6 +110,63 @@
     color: #999;
 }
 
+/* HRMS Tabs */
+.hrms-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #666;
+    white-space: nowrap;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: #000;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.tab-btn.active {
+    color: #000;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #000;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 /* Filters Bar */
 .filters-bar {
     display: flex;
@@ -205,6 +262,47 @@
 .stat-mini.active .stat-mini-value { color: #27ae60; }
 .stat-mini.warning .stat-mini-value { color: #f39c12; }
 .stat-mini.danger .stat-mini-value { color: #e74c3c; }
+
+/* Stat Cards - Modern balance cards */
+.stat-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 120px;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #000;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Stat card color variants */
+.stat-card.success .stat-value { color: #27ae60; }
+.stat-card.warning .stat-value { color: #f39c12; }
+.stat-card.danger .stat-value { color: #e74c3c; }
+.stat-card.info .stat-value { color: #3498db; }
 
 /* Data Table */
 .data-table-container {
@@ -598,6 +696,24 @@
     font-weight: 500;
 }
 
+/* Loading Overlay (full-screen loader used during API calls) */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
 /* Loading Spinner */
 .loading-spinner {
     display: flex;
@@ -643,16 +759,24 @@
 }
 
 .toast {
+    display: none;
+    position: fixed;
+    top: 24px;
+    right: 24px;
     background: #000;
     color: #fff;
     padding: 14px 20px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    display: flex;
     align-items: center;
     gap: 12px;
-    animation: slideIn 0.3s ease forwards;
     max-width: 400px;
+    z-index: 10001;
+}
+
+.toast.show {
+    display: flex;
+    animation: slideIn 0.3s ease forwards;
 }
 
 .toast.success { background: #27ae60; }
