@@ -32,11 +32,11 @@ class API {
 
     async request(endpoint, options = {}) {
         const baseUrl = this._getBaseUrl(endpoint);
-        // For HRMS endpoints, strip /hrms prefix and use /api instead
-        // e.g., /hrms/offices -> /api/offices
+        // For HRMS endpoints, strip /hrms prefix since baseUrl already has /api
+        // e.g., /hrms/offices -> /offices (baseUrl has /api, so final is /api/offices)
         let actualEndpoint = endpoint;
         if (endpoint.startsWith('/hrms/')) {
-            actualEndpoint = '/api' + endpoint.substring(5); // Remove '/hrms' prefix, add '/api'
+            actualEndpoint = endpoint.substring(5); // Remove '/hrms' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {
