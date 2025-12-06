@@ -566,7 +566,11 @@
         async function initializePage() {
             try {
                 showLoading();
-                currentUser = await api.validateToken();
+                if (!api.isAuthenticated()) {
+                    window.location.href = '../login.html';
+                    return;
+                }
+                currentUser = api.getUser();
 
                 if (!currentUser) {
                     window.location.href = '../login.html';
