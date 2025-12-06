@@ -556,25 +556,36 @@
     color: #000;
 }
 
-.close-btn {
-    background: transparent !important;
+.close-btn,
+.modal-header .close-btn {
+    background: #000 !important;
     border: none;
     cursor: pointer;
     padding: 8px;
-    border-radius: 8px;
-    transition: background 0.2s;
+    border-radius: 50%;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
+    color: #fff !important;
+    width: 32px;
+    height: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.close-btn:hover {
-    background: rgba(0, 0, 0, 0.05) !important;
-}
-
-.close-btn svg {
+.close-btn svg,
+.modal-header .close-btn svg {
     display: block;
+    stroke: #fff !important;
+    width: 14px;
+    height: 14px;
+}
+
+.close-btn:hover,
+.modal-header .close-btn:hover {
+    background: #333 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transform: scale(1.05);
 }
 
 .modal-body {
