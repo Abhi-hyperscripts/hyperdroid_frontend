@@ -224,6 +224,37 @@ function toggleUserDropdown() {
     Navigation.toggleDropdown();
 }
 
+/**
+ * Load navigation - backward compatible wrapper for Navigation.init()
+ * Detects current page and base path automatically
+ */
+async function loadNavigation() {
+    // Detect current page based on URL path
+    const path = window.location.pathname;
+    let currentPageId = 'home';
+    let basePath = '';
+
+    if (path.includes('/hrms/')) {
+        currentPageId = 'hrms';
+        basePath = '../';
+    } else if (path.includes('/vision/')) {
+        currentPageId = 'vision';
+        basePath = '../';
+    } else if (path.includes('/drive/')) {
+        currentPageId = 'drive';
+        basePath = '../';
+    } else if (path.includes('/chat/')) {
+        currentPageId = 'chat';
+        basePath = '../';
+    } else if (path.includes('/auth/')) {
+        currentPageId = 'admin';
+        basePath = '../';
+    }
+
+    // Initialize navigation
+    Navigation.init(currentPageId, basePath);
+}
+
 // Export for ES6 modules if needed
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = Navigation;
