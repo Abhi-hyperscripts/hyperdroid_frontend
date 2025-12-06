@@ -32,7 +32,13 @@ class API {
 
     async request(endpoint, options = {}) {
         const baseUrl = this._getBaseUrl(endpoint);
-        const url = `${baseUrl}${endpoint}`;
+        // For HRMS endpoints, strip /hrms prefix and use /api instead
+        // e.g., /hrms/offices -> /api/offices
+        let actualEndpoint = endpoint;
+        if (endpoint.startsWith('/hrms/')) {
+            actualEndpoint = '/api' + endpoint.substring(5); // Remove '/hrms' prefix, add '/api'
+        }
+        const url = `${baseUrl}${actualEndpoint}`;
         const headers = {
             'Content-Type': 'application/json',
             ...(this.token && { 'Authorization': `Bearer ${this.token}` })
