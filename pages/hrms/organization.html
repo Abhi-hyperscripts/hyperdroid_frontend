@@ -6,6 +6,7 @@
     <title>Organization - HRMS | HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
 </head>
@@ -45,10 +46,10 @@
         <!-- Offices Tab -->
         <div class="tab-content active" id="offices">
             <div class="filters-bar">
-                <div class="search-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input type="text" id="officeSearch" placeholder="Search offices...">
                 </div>
@@ -109,10 +110,10 @@
         <!-- Departments Tab -->
         <div class="tab-content" id="departments">
             <div class="filters-bar">
-                <div class="search-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input type="text" id="departmentSearch" placeholder="Search departments...">
                 </div>
@@ -163,10 +164,10 @@
         <!-- Designations Tab -->
         <div class="tab-content" id="designations">
             <div class="filters-bar">
-                <div class="search-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input type="text" id="designationSearch" placeholder="Search designations...">
                 </div>
@@ -219,10 +220,10 @@
         <!-- Shifts Tab -->
         <div class="tab-content" id="shifts">
             <div class="filters-bar">
-                <div class="search-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input type="text" id="shiftSearch" placeholder="Search shifts...">
                 </div>
@@ -578,21 +579,21 @@
                             <div class="form-row two-col">
                                 <div class="form-group">
                                     <label for="shiftStart">Start Time *</label>
-                                    <input type="time" id="shiftStart" name="startTime" class="form-control" required value="09:00">
+                                    <input type="text" id="shiftStart" name="startTime" class="form-control time-picker" required placeholder="09:00 AM">
                                 </div>
                                 <div class="form-group">
                                     <label for="shiftEnd">End Time *</label>
-                                    <input type="time" id="shiftEnd" name="endTime" class="form-control" required value="18:00">
+                                    <input type="text" id="shiftEnd" name="endTime" class="form-control time-picker" required placeholder="06:00 PM">
                                 </div>
                             </div>
                             <div class="form-row two-col">
                                 <div class="form-group">
                                     <label for="breakStart">Break Start</label>
-                                    <input type="time" id="breakStart" name="breakStart" class="form-control" value="13:00">
+                                    <input type="text" id="breakStart" name="breakStart" class="form-control time-picker" placeholder="01:00 PM">
                                 </div>
                                 <div class="form-group">
                                     <label for="breakEnd">Break End</label>
-                                    <input type="time" id="breakEnd" name="breakEnd" class="form-control" value="14:00">
+                                    <input type="text" id="breakEnd" name="breakEnd" class="form-control time-picker" placeholder="02:00 PM">
                                 </div>
                             </div>
                             <div class="form-row two-col">
@@ -608,28 +609,27 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Working Days</label>
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="monday" checked> Mon
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="tuesday" checked> Tue
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="wednesday" checked> Wed
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="thursday" checked> Thu
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="friday" checked> Fri
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="saturday"> Sat
-                                        </label>
-                                        <label class="checkbox-item">
-                                            <input type="checkbox" name="workingDays" value="sunday"> Sun
-                                        </label>
+                                    <div class="day-toggle-group">
+                                        <input type="checkbox" id="shiftDay_mon" name="workingDays" value="monday" checked class="day-toggle-input">
+                                        <label for="shiftDay_mon" class="day-toggle-btn">Mon</label>
+
+                                        <input type="checkbox" id="shiftDay_tue" name="workingDays" value="tuesday" checked class="day-toggle-input">
+                                        <label for="shiftDay_tue" class="day-toggle-btn">Tue</label>
+
+                                        <input type="checkbox" id="shiftDay_wed" name="workingDays" value="wednesday" checked class="day-toggle-input">
+                                        <label for="shiftDay_wed" class="day-toggle-btn">Wed</label>
+
+                                        <input type="checkbox" id="shiftDay_thu" name="workingDays" value="thursday" checked class="day-toggle-input">
+                                        <label for="shiftDay_thu" class="day-toggle-btn">Thu</label>
+
+                                        <input type="checkbox" id="shiftDay_fri" name="workingDays" value="friday" checked class="day-toggle-input">
+                                        <label for="shiftDay_fri" class="day-toggle-btn">Fri</label>
+
+                                        <input type="checkbox" id="shiftDay_sat" name="workingDays" value="saturday" class="day-toggle-input">
+                                        <label for="shiftDay_sat" class="day-toggle-btn">Sat</label>
+
+                                        <input type="checkbox" id="shiftDay_sun" name="workingDays" value="sunday" class="day-toggle-input">
+                                        <label for="shiftDay_sun" class="day-toggle-btn">Sun</label>
                                     </div>
                                 </div>
                             </div>
@@ -801,5 +801,8 @@
             margin-bottom: 24px;
         }
     </style>
+
+    <!-- Flatpickr for Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </body>
 </html>

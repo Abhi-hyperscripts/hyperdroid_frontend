@@ -541,7 +541,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 14px 16px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
     background: #fff;
@@ -589,7 +589,7 @@
 }
 
 .modal-body {
-    padding: 24px;
+    padding: 16px;
     overflow-y: auto !important;
     flex: 1 1 auto;
     min-height: 0;
@@ -600,8 +600,8 @@
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px;
+    gap: 10px;
+    padding: 12px 16px;
     border-top: 1px solid rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
     background: #fff;
@@ -609,29 +609,29 @@
 
 /* Form Styles */
 .form-section {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 .form-section h4 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #333;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .form-group label {
@@ -647,9 +647,9 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.85rem;
     transition: all 0.2s;
 }
@@ -885,3 +885,194 @@
         font-size: 1.25rem;
     }
 }
+
+/* Day Toggle Buttons - Vision Style */
+.day-toggle-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.day-toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.day-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    user-select: none;
+}
+
+.day-toggle-btn:hover {
+    background: #e8e8e8;
+    color: #333;
+}
+
+/* Active state when checkbox is checked */
+.day-toggle-input:checked + .day-toggle-btn {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.day-toggle-input:checked + .day-toggle-btn:hover {
+    background: #333;
+    border-color: #333;
+}
+
+/* Focus state for accessibility */
+.day-toggle-input:focus + .day-toggle-btn {
+    outline: 2px solid rgba(0, 0, 0, 0.2);
+    outline-offset: 2px;
+}
+
+/* HRMS Search Box Modern Override */
+.filters-bar .search-box-modern {
+    width: auto;
+    min-width: 220px;
+    max-width: 280px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 8px 12px;
+}
+
+.filters-bar .search-box-modern .search-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.filters-bar .search-box-modern input {
+    font-size: 0.85rem;
+}
+
+/* Time Picker Styling - Black & White Theme */
+.flatpickr-calendar {
+    font-family: inherit;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+}
+
+.flatpickr-calendar.noCalendar {
+    width: auto !important;
+    min-width: 160px;
+}
+
+.flatpickr-calendar.noCalendar .flatpickr-time {
+    border: none;
+    padding: 8px 12px;
+    height: auto;
+    max-height: none;
+}
+
+.flatpickr-time {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Remove blue selection/focus highlight */
+.flatpickr-time input:focus,
+.flatpickr-time input:active,
+.flatpickr-time .numInputWrapper input:focus,
+.flatpickr-time .numInputWrapper input:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Style the number input wrappers */
+.flatpickr-time .numInputWrapper {
+    background: #f5f5f5;
+    border-radius: 8px;
+    height: 36px;
+    width: 44px;
+    flex-shrink: 0;
+}
+
+.flatpickr-time .numInputWrapper:hover {
+    background: #e8e8e8;
+}
+
+.flatpickr-time .numInputWrapper input {
+    font-size: 0.9rem !important;
+    font-weight: 600;
+    color: #000;
+    background: transparent !important;
+    padding: 0;
+    height: 100%;
+}
+
+/* Time separator */
+.flatpickr-time .flatpickr-time-separator {
+    font-weight: 600;
+    color: #666;
+    width: auto;
+    padding: 0 2px;
+}
+
+/* AM/PM button - match height with number inputs */
+.flatpickr-time .flatpickr-am-pm {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #000;
+    background: #f5f5f5;
+    border-radius: 8px;
+    height: 36px;
+    width: 44px;
+    line-height: 36px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.flatpickr-time .flatpickr-am-pm:hover {
+    background: #000;
+    color: #fff;
+}
+
+.flatpickr-time .flatpickr-am-pm:focus {
+    background: #000;
+    color: #fff;
+    outline: none;
+}
+
+/* Hide arrows by default, show on hover */
+.flatpickr-time .numInputWrapper span.arrowUp,
+.flatpickr-time .numInputWrapper span.arrowDown {
+    border: none;
+    background: transparent;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.flatpickr-time .numInputWrapper:hover span.arrowUp,
+.flatpickr-time .numInputWrapper:hover span.arrowDown {
+    opacity: 0.6;
+}
+
+.flatpickr-time .numInputWrapper span.arrowUp:after {
+    border-bottom-color: #333;
+}
+
+.flatpickr-time .numInputWrapper span.arrowDown:after {
+    border-top-color: #333;
+}
+
+

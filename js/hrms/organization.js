@@ -517,6 +517,13 @@ function showCreateShiftModal() {
     document.getElementById('shiftId').value = '';
     document.getElementById('shiftModalTitle').textContent = 'Create Shift';
     document.getElementById('shiftModal').classList.add('active');
+
+    // Initialize time pickers and set default values
+    initTimePickers();
+    setTimePickerValue('shiftStart', '09:00');
+    setTimePickerValue('shiftEnd', '18:00');
+    setTimePickerValue('breakStart', '13:00');
+    setTimePickerValue('breakEnd', '14:00');
 }
 
 function editShift(id) {
@@ -527,10 +534,6 @@ function editShift(id) {
     document.getElementById('shiftName').value = shift.shift_name;
     document.getElementById('shiftCode').value = shift.shift_code;
     document.getElementById('shiftOfficeId').value = shift.office_id || '';
-    document.getElementById('shiftStart').value = shift.start_time || '09:00';
-    document.getElementById('shiftEnd').value = shift.end_time || '18:00';
-    document.getElementById('breakStart').value = shift.break_start || '13:00';
-    document.getElementById('breakEnd').value = shift.break_end || '14:00';
     document.getElementById('graceMinutes').value = shift.grace_period_minutes || 15;
     document.getElementById('halfDayHours').value = shift.half_day_hours || 4;
     document.getElementById('shiftIsActive').value = shift.is_active ? 'true' : 'false';
@@ -543,6 +546,13 @@ function editShift(id) {
 
     document.getElementById('shiftModalTitle').textContent = 'Edit Shift';
     document.getElementById('shiftModal').classList.add('active');
+
+    // Initialize time pickers and set values
+    initTimePickers();
+    setTimePickerValue('shiftStart', shift.start_time || '09:00');
+    setTimePickerValue('shiftEnd', shift.end_time || '18:00');
+    setTimePickerValue('breakStart', shift.break_start || '13:00');
+    setTimePickerValue('breakEnd', shift.break_end || '14:00');
 }
 
 function showCreateHolidayModal() {
@@ -902,3 +912,46 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('holidayOffice')?.addEventListener('change', updateHolidaysTable);
     document.getElementById('holidayType')?.addEventListener('change', updateHolidaysTable);
 });
+
+// ============================================
+// Time Picker Initialization (Flatpickr)
+// ============================================
+
+function initTimePickers() {
+    if (typeof flatpickr === 'undefined') {
+        console.warn('Flatpickr not loaded');
+        return;
+    }
+
+    const timePickerConfig = {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "h:i K",
+        time_24hr: false,
+        minuteIncrement: 15,
+        defaultHour: 9,
+        defaultMinute: 0
+    };
+
+    document.querySelectorAll('.time-picker').forEach(input => {
+        if (!input._flatpickr) {
+            flatpickr(input, timePickerConfig);
+        }
+    });
+}
+
+function setTimePickerValue(inputId, timeValue) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    if (input._flatpickr && timeValue) {
+        // Convert 24h time (HH:MM) to 12h format for flatpickr
+        const [hours, minutes] = timeValue.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        input._flatpickr.setDate(`${hour12}:${minutes} ${ampm}`, true);
+    } else if (timeValue) {
+        input.value = timeValue;
+    }
+}
