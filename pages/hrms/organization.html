@@ -68,12 +68,20 @@
                     <div class="stat-label">Total Offices</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="headOffice">0</div>
+                    <div class="stat-value" id="headOfficeCount">0</div>
                     <div class="stat-label">Head Office</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="branchOffices">0</div>
-                    <div class="stat-label">Branch Offices</div>
+                    <div class="stat-value" id="regionalOfficeCount">0</div>
+                    <div class="stat-label">Regional</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="branchOfficeCount">0</div>
+                    <div class="stat-label">Branch</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="satelliteOfficeCount">0</div>
+                    <div class="stat-label">Satellite</div>
                 </div>
             </div>
 
@@ -285,9 +293,10 @@
                     </select>
                     <select id="holidayType" class="form-select">
                         <option value="">All Types</option>
-                        <option value="national">National</option>
+                        <option value="public">Public/National</option>
                         <option value="regional">Regional</option>
-                        <option value="optional">Optional</option>
+                        <option value="restricted">Restricted/Optional</option>
+                        <option value="company">Company Holiday</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="showCreateHolidayModal()">
@@ -699,9 +708,10 @@
                                 <div class="form-group">
                                     <label for="holidayTypeSelect">Type *</label>
                                     <select id="holidayTypeSelect" name="type" class="form-control" required>
-                                        <option value="national">National Holiday</option>
+                                        <option value="public">Public/National Holiday</option>
                                         <option value="regional">Regional Holiday</option>
-                                        <option value="optional">Optional Holiday</option>
+                                        <option value="restricted">Restricted/Optional Holiday</option>
+                                        <option value="company">Company Holiday</option>
                                     </select>
                                 </div>
                             </div>

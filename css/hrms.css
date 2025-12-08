@@ -422,6 +422,52 @@
     color: #f39c12;
 }
 
+/* Office Type Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-head {
+    background: rgba(155, 89, 182, 0.15);
+    color: #8e44ad;
+}
+
+.badge-regional {
+    background: rgba(52, 152, 219, 0.15);
+    color: #2980b9;
+}
+
+.badge-branch {
+    background: rgba(39, 174, 96, 0.15);
+    color: #27ae60;
+}
+
+.badge-satellite {
+    background: rgba(241, 196, 15, 0.15);
+    color: #d4a500;
+}
+
+/* Holiday Type Badges */
+.badge-public {
+    background: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+}
+
+.badge-restricted {
+    background: rgba(241, 196, 15, 0.15);
+    color: #d4a500;
+}
+
+.badge-company {
+    background: rgba(155, 89, 182, 0.15);
+    color: #8e44ad;
+}
+
 /* Action Buttons */
 .action-buttons {
     display: flex;

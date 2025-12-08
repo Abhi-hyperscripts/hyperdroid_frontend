@@ -126,12 +126,18 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = Array.isArray(response) ? response : (response?.data || []);
 
-        // Update stats by office type
-        document.getElementById('totalOffices').textContent = offices.length;
-        document.getElementById('headOfficeCount').textContent = offices.filter(o => o.office_type === 'head').length;
-        document.getElementById('regionalOfficeCount').textContent = offices.filter(o => o.office_type === 'regional').length;
-        document.getElementById('branchOfficeCount').textContent = offices.filter(o => o.office_type === 'branch' || !o.office_type).length;
-        document.getElementById('satelliteOfficeCount').textContent = offices.filter(o => o.office_type === 'satellite').length;
+        // Update stats by office type (with null checks for when not on Offices tab)
+        const totalOfficesEl = document.getElementById('totalOffices');
+        const headOfficeCountEl = document.getElementById('headOfficeCount');
+        const regionalOfficeCountEl = document.getElementById('regionalOfficeCount');
+        const branchOfficeCountEl = document.getElementById('branchOfficeCount');
+        const satelliteOfficeCountEl = document.getElementById('satelliteOfficeCount');
+
+        if (totalOfficesEl) totalOfficesEl.textContent = offices.length;
+        if (headOfficeCountEl) headOfficeCountEl.textContent = offices.filter(o => o.office_type === 'head').length;
+        if (regionalOfficeCountEl) regionalOfficeCountEl.textContent = offices.filter(o => o.office_type === 'regional').length;
+        if (branchOfficeCountEl) branchOfficeCountEl.textContent = offices.filter(o => o.office_type === 'branch' || !o.office_type).length;
+        if (satelliteOfficeCountEl) satelliteOfficeCountEl.textContent = offices.filter(o => o.office_type === 'satellite').length;
 
         updateOfficesTable();
         populateOfficeSelects();
