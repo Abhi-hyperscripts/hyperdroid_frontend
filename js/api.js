@@ -968,6 +968,93 @@ class API {
         return this.request('/hrms/employees/available-users');
     }
 
+    // --- Employee Bank Accounts ---
+    async getEmployeeBankAccounts(employeeId) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts`);
+    }
+
+    async getEmployeeBankAccount(employeeId, accountId) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts/${accountId}`);
+    }
+
+    async createEmployeeBankAccount(employeeId, data) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async updateEmployeeBankAccount(employeeId, accountId, data) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts/${accountId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async deleteEmployeeBankAccount(employeeId, accountId) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts/${accountId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async setPrimaryBankAccount(employeeId, accountId) {
+        return this.request(`/hrms/employees/${employeeId}/bank-accounts/${accountId}/set-primary`, {
+            method: 'PUT'
+        });
+    }
+
+    // --- Employee Documents ---
+    async getEmployeeDocuments(employeeId) {
+        return this.request(`/hrms/employees/${employeeId}/documents`);
+    }
+
+    async getEmployeeDocument(employeeId, documentId) {
+        return this.request(`/hrms/employees/${employeeId}/documents/${documentId}`);
+    }
+
+    async uploadEmployeeDocument(employeeId, formData) {
+        // Special handling for multipart form data - don't set Content-Type header
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${this._getBaseUrl('/hrms/')}/hrms/employees/${employeeId}/documents`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.error || errorText;
+            } catch {
+                errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
+        }
+
+        return response.json();
+    }
+
+    async getEmployeeDocumentDownloadUrl(employeeId, documentId) {
+        return this.request(`/hrms/employees/${employeeId}/documents/${documentId}/download`);
+    }
+
+    async deleteEmployeeDocument(employeeId, documentId) {
+        return this.request(`/hrms/employees/${employeeId}/documents/${documentId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async verifyEmployeeDocument(employeeId, documentId, approve, rejectionReason = null) {
+        return this.request(`/hrms/employees/${employeeId}/documents/${documentId}/verify`, {
+            method: 'POST',
+            body: JSON.stringify({ approve, rejection_reason: rejectionReason })
+        });
+    }
+
     // --- Attendance ---
     async checkIn(request) {
         return this.request('/hrms/attendance/check-in', {

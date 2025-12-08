@@ -191,6 +191,9 @@ async function openCreateEmployeeModal() {
     document.getElementById('employeeId').value = '';
     document.getElementById('userSelectionSection').style.display = 'block';
 
+    // Hide user info display until user is selected
+    document.getElementById('userInfoDisplay').style.display = 'none';
+
     // Reset all cascading dropdowns
     document.getElementById('departmentId').innerHTML = '<option value="">Select office first...</option>';
     document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
@@ -200,6 +203,9 @@ async function openCreateEmployeeModal() {
     selectedUserId = null;
     document.getElementById('userSelect').value = '';
     resetUserDropdown();
+
+    // Reset documents and banking
+    resetDocumentsAndBanking();
 
     // Load available users
     try {
@@ -372,10 +378,15 @@ function selectUser(userId) {
         selectedText.textContent = `${user.email} (${user.firstName} ${user.lastName})`;
         selectedText.classList.remove('placeholder');
 
-        // Auto-populate form fields
+        // Store values in hidden inputs (for form submission)
         document.getElementById('firstName').value = user.firstName || '';
         document.getElementById('lastName').value = user.lastName || '';
         document.getElementById('workEmail').value = user.email || '';
+
+        // Display read-only user info
+        document.getElementById('userInfoDisplay').style.display = 'flex';
+        document.getElementById('userNameDisplay').textContent = `${user.firstName} ${user.lastName}`.trim() || '-';
+        document.getElementById('userEmailDisplay').textContent = user.email || '-';
 
         // Update list to show selected state
         document.querySelectorAll('.user-search-panel .user-select-item').forEach(item => {
@@ -398,9 +409,17 @@ async function editEmployee(id) {
 
     // Fill basic form fields first
     document.getElementById('employeeCode').value = emp.employee_code || '';
+
+    // Store values in hidden inputs (read-only, from Auth service)
     document.getElementById('firstName').value = emp.first_name || '';
     document.getElementById('lastName').value = emp.last_name || '';
     document.getElementById('workEmail').value = emp.work_email || '';
+
+    // Display read-only user info
+    document.getElementById('userInfoDisplay').style.display = 'flex';
+    document.getElementById('userNameDisplay').textContent = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || '-';
+    document.getElementById('userEmailDisplay').textContent = emp.work_email || '-';
+
     document.getElementById('workPhone').value = emp.work_phone || '';
     document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
     document.getElementById('gender').value = emp.gender || '';
@@ -433,6 +452,13 @@ async function editEmployee(id) {
         employees.filter(e => e.id !== id).map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name}</option>`).join('');
     managerSelect.value = emp.reporting_manager_id || '';
 
+    // Reset and load documents and bank account
+    resetDocumentsAndBanking();
+    await Promise.all([
+        loadEmployeeDocuments(id),
+        loadEmployeeBankAccount(id)
+    ]);
+
     openModal('employeeModal');
 }
 
@@ -440,11 +466,15 @@ async function saveEmployee() {
     const id = document.getElementById('employeeId').value;
     const isEdit = !!id;
 
+    // Validate bank details
+    if (!validateBankDetails()) {
+        return;
+    }
+
+    // Note: first_name, last_name, and work_email are NOT sent to the backend
+    // These fields are managed by the Auth service and sourced from there
     const data = {
         employee_code: document.getElementById('employeeCode').value,
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value,
-        work_email: document.getElementById('workEmail').value,
         work_phone: document.getElementById('workPhone').value || null,
         date_of_birth: document.getElementById('dateOfBirth').value || null,
         gender: document.getElementById('gender').value || null,
@@ -467,14 +497,52 @@ async function saveEmployee() {
     }
 
     try {
+        let employeeId = id;
+
         if (isEdit) {
             await api.updateHrmsEmployee(id, data);
-            showToast('Employee updated successfully', 'success');
         } else {
-            await api.createHrmsEmployee(data);
-            showToast('Employee created successfully', 'success');
+            const result = await api.createHrmsEmployee(data);
+            employeeId = result.id || result.employee_id || result;
         }
 
+        // Save bank account
+        try {
+            await saveBankAccount(employeeId);
+        } catch (bankError) {
+            console.error('Error saving bank account:', bankError);
+            showToast('Employee saved but bank account failed: ' + bankError.message, 'error');
+        }
+
+        // Upload pending documents
+        const docTypes = ['pan', 'aadhar', 'passport', 'photo'];
+        for (const docType of docTypes) {
+            if (pendingDocuments[docType]) {
+                try {
+                    // Delete existing document if replacing
+                    if (existingDocuments[docType] && !existingDocuments[docType].markedForDeletion) {
+                        await api.deleteEmployeeDocument(employeeId, existingDocuments[docType].id);
+                    }
+                    await uploadDocument(employeeId, docType, pendingDocuments[docType]);
+                } catch (docError) {
+                    console.error(`Error uploading ${docType}:`, docError);
+                    showToast(`Failed to upload ${docType}: ${docError.message}`, 'error');
+                }
+            }
+        }
+
+        // Delete documents marked for deletion
+        for (const [docType, doc] of Object.entries(existingDocuments)) {
+            if (doc && doc.markedForDeletion) {
+                try {
+                    await api.deleteEmployeeDocument(employeeId, doc.id);
+                } catch (delError) {
+                    console.error(`Error deleting ${docType}:`, delError);
+                }
+            }
+        }
+
+        showToast(isEdit ? 'Employee updated successfully' : 'Employee created successfully', 'success');
         closeModal('employeeModal');
         await loadEmployees();
 
@@ -714,4 +782,379 @@ function showToast(message, type = 'success') {
         toast.style.transform = 'translateX(100%)';
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+// ============================================
+// Document Upload Functions
+// ============================================
+
+// Store pending uploads (files selected but not yet uploaded)
+let pendingDocuments = {
+    pan: null,
+    aadhar: null,
+    passport: null,
+    photo: null
+};
+
+// Existing documents loaded when editing
+let existingDocuments = {};
+
+function triggerFileUpload(docType) {
+    document.getElementById(`${docType}-file`).click();
+}
+
+function handleDocumentSelect(docType, input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Validate file size (10MB for documents, 5MB for photo)
+    const maxSize = docType === 'photo' ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showToast(`File too large. Maximum size is ${docType === 'photo' ? '5MB' : '10MB'}`, 'error');
+        input.value = '';
+        return;
+    }
+
+    // Validate file type
+    const validTypes = docType === 'photo'
+        ? ['image/jpeg', 'image/png']
+        : ['image/jpeg', 'image/png', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Invalid file type', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Store for later upload
+    pendingDocuments[docType] = file;
+
+    // Show preview
+    const previewEl = document.getElementById(`${docType}-preview`);
+    const uploadArea = document.getElementById(`${docType}-upload`);
+
+    if (previewEl && uploadArea) {
+        previewEl.querySelector('.file-name').textContent = file.name;
+        previewEl.style.display = 'flex';
+        uploadArea.style.display = 'none';
+    }
+
+    // Update status
+    const statusEl = document.getElementById(`${docType}-status`);
+    if (statusEl) {
+        statusEl.textContent = 'Pending upload';
+        statusEl.className = 'doc-status pending';
+    }
+}
+
+function handlePhotoSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Photo too large. Maximum size is 5MB', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        showToast('Invalid file type. Only JPG and PNG allowed', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Store for later upload
+    pendingDocuments.photo = file;
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const photoImage = document.getElementById('photoImage');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+        const removeBtn = document.getElementById('removePhotoBtn');
+
+        photoImage.src = e.target.result;
+        photoImage.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
+        removeBtn.style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeDocument(docType) {
+    pendingDocuments[docType] = null;
+
+    const input = document.getElementById(`${docType}-file`);
+    if (input) input.value = '';
+
+    const previewEl = document.getElementById(`${docType}-preview`);
+    const uploadArea = document.getElementById(`${docType}-upload`);
+
+    if (previewEl && uploadArea) {
+        previewEl.style.display = 'none';
+        uploadArea.style.display = 'flex';
+    }
+
+    const statusEl = document.getElementById(`${docType}-status`);
+    if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'doc-status';
+    }
+
+    // Clear doc ID if it was an existing document
+    const docIdEl = document.getElementById(`${docType}-doc-id`);
+    if (docIdEl) docIdEl.value = '';
+
+    // Mark for deletion if it was an existing document
+    if (existingDocuments[docType]) {
+        existingDocuments[docType].markedForDeletion = true;
+    }
+}
+
+function removePhoto() {
+    pendingDocuments.photo = null;
+
+    const input = document.getElementById('photo-file');
+    if (input) input.value = '';
+
+    const photoImage = document.getElementById('photoImage');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const removeBtn = document.getElementById('removePhotoBtn');
+
+    photoImage.src = '';
+    photoImage.style.display = 'none';
+    photoPlaceholder.style.display = 'flex';
+    removeBtn.style.display = 'none';
+
+    // Clear doc ID
+    document.getElementById('photo-doc-id').value = '';
+
+    // Mark for deletion if it was an existing document
+    if (existingDocuments.photo) {
+        existingDocuments.photo.markedForDeletion = true;
+    }
+}
+
+async function uploadDocument(employeeId, docType, file) {
+    const docTypeMap = {
+        'pan': 'pan_card',
+        'aadhar': 'aadhar_card',
+        'passport': 'passport',
+        'photo': 'employee_photo'
+    };
+
+    const docNumber = document.getElementById(`${docType}-number`)?.value || null;
+    const expiryDate = document.getElementById(`${docType}-expiry`)?.value || null;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('document_type', docTypeMap[docType]);
+    formData.append('document_name', `${docType.charAt(0).toUpperCase() + docType.slice(1)} - ${file.name}`);
+    if (docNumber) formData.append('document_number', docNumber);
+    if (expiryDate) formData.append('expiry_date', expiryDate);
+
+    return await api.uploadEmployeeDocument(employeeId, formData);
+}
+
+async function loadEmployeeDocuments(employeeId) {
+    try {
+        const documents = await api.getEmployeeDocuments(employeeId);
+        existingDocuments = {};
+
+        for (const doc of documents) {
+            const docTypeMap = {
+                'pan_card': 'pan',
+                'aadhar_card': 'aadhar',
+                'passport': 'passport',
+                'employee_photo': 'photo'
+            };
+
+            const docType = docTypeMap[doc.document_type];
+            if (!docType) continue;
+
+            existingDocuments[docType] = doc;
+
+            if (docType === 'photo') {
+                // Load photo preview
+                if (doc.s3_key) {
+                    try {
+                        const downloadUrl = await api.getEmployeeDocumentDownloadUrl(employeeId, doc.id);
+                        const photoImage = document.getElementById('photoImage');
+                        const photoPlaceholder = document.getElementById('photoPlaceholder');
+                        const removeBtn = document.getElementById('removePhotoBtn');
+
+                        photoImage.src = downloadUrl.url || downloadUrl;
+                        photoImage.style.display = 'block';
+                        photoPlaceholder.style.display = 'none';
+                        removeBtn.style.display = 'inline-flex';
+                    } catch (e) {
+                        console.error('Error loading photo:', e);
+                    }
+                }
+                document.getElementById('photo-doc-id').value = doc.id;
+            } else {
+                // Show as uploaded
+                const previewEl = document.getElementById(`${docType}-preview`);
+                const uploadArea = document.getElementById(`${docType}-upload`);
+                const statusEl = document.getElementById(`${docType}-status`);
+
+                if (previewEl && uploadArea) {
+                    previewEl.querySelector('.file-name').textContent = doc.file_name || 'Uploaded';
+                    previewEl.style.display = 'flex';
+                    uploadArea.style.display = 'none';
+                }
+
+                if (statusEl) {
+                    statusEl.textContent = doc.verification_status === 'verified' ? 'Verified' : 'Uploaded';
+                    statusEl.className = `doc-status ${doc.verification_status === 'verified' ? 'verified' : 'uploaded'}`;
+                }
+
+                // Set document number if available
+                const docNumberEl = document.getElementById(`${docType}-number`);
+                if (docNumberEl && doc.document_number) {
+                    docNumberEl.value = doc.document_number;
+                }
+
+                // Set expiry date if available
+                const expiryEl = document.getElementById(`${docType}-expiry`);
+                if (expiryEl && doc.expiry_date) {
+                    expiryEl.value = doc.expiry_date.split('T')[0];
+                }
+
+                document.getElementById(`${docType}-doc-id`).value = doc.id;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading employee documents:', error);
+    }
+}
+
+// ============================================
+// Bank Account Functions
+// ============================================
+
+async function loadEmployeeBankAccount(employeeId) {
+    try {
+        const accounts = await api.getEmployeeBankAccounts(employeeId);
+        if (accounts && accounts.length > 0) {
+            // Use the primary account or first account
+            const account = accounts.find(a => a.is_primary) || accounts[0];
+
+            document.getElementById('bankAccountId').value = account.id;
+            document.getElementById('accountHolderName').value = account.account_holder_name || '';
+            document.getElementById('bankName').value = account.bank_name || '';
+            document.getElementById('accountNumber').value = account.account_number || '';
+            document.getElementById('confirmAccountNumber').value = account.account_number || '';
+            document.getElementById('ifscCode').value = account.ifsc_code || '';
+            document.getElementById('branchName').value = account.branch_name || '';
+        }
+    } catch (error) {
+        console.error('Error loading bank account:', error);
+    }
+}
+
+function validateBankDetails() {
+    const accountNumber = document.getElementById('accountNumber').value;
+    const confirmAccountNumber = document.getElementById('confirmAccountNumber').value;
+    const ifscCode = document.getElementById('ifscCode').value;
+
+    if (accountNumber && accountNumber !== confirmAccountNumber) {
+        showToast('Account numbers do not match', 'error');
+        return false;
+    }
+
+    if (ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
+        showToast('Invalid IFSC code format', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+async function saveBankAccount(employeeId) {
+    const accountHolderName = document.getElementById('accountHolderName').value;
+    const bankName = document.getElementById('bankName').value;
+    const accountNumber = document.getElementById('accountNumber').value;
+    const ifscCode = document.getElementById('ifscCode').value?.toUpperCase();
+    const branchName = document.getElementById('branchName').value;
+    const bankAccountId = document.getElementById('bankAccountId').value;
+
+    // Skip if no bank details provided
+    if (!accountHolderName && !bankName && !accountNumber) {
+        return;
+    }
+
+    const data = {
+        employee_id: employeeId,
+        account_holder_name: accountHolderName,
+        bank_name: bankName,
+        account_number: accountNumber,
+        ifsc_code: ifscCode,
+        branch_name: branchName || null,
+        is_primary: true
+    };
+
+    if (bankAccountId) {
+        await api.updateEmployeeBankAccount(employeeId, bankAccountId, data);
+    } else {
+        await api.createEmployeeBankAccount(employeeId, data);
+    }
+}
+
+// ============================================
+// Reset Form Functions
+// ============================================
+
+function resetDocumentsAndBanking() {
+    // Reset pending documents
+    pendingDocuments = { pan: null, aadhar: null, passport: null, photo: null };
+    existingDocuments = {};
+
+    // Reset file inputs
+    ['pan', 'aadhar', 'passport', 'photo'].forEach(docType => {
+        const input = document.getElementById(`${docType}-file`);
+        if (input) input.value = '';
+
+        const previewEl = document.getElementById(`${docType}-preview`);
+        const uploadArea = document.getElementById(`${docType}-upload`);
+
+        if (previewEl) previewEl.style.display = 'none';
+        if (uploadArea) uploadArea.style.display = 'flex';
+
+        const statusEl = document.getElementById(`${docType}-status`);
+        if (statusEl) {
+            statusEl.textContent = '';
+            statusEl.className = 'doc-status';
+        }
+
+        const docIdEl = document.getElementById(`${docType}-doc-id`);
+        if (docIdEl) docIdEl.value = '';
+
+        const numberEl = document.getElementById(`${docType}-number`);
+        if (numberEl) numberEl.value = '';
+
+        const expiryEl = document.getElementById(`${docType}-expiry`);
+        if (expiryEl) expiryEl.value = '';
+    });
+
+    // Reset photo
+    const photoImage = document.getElementById('photoImage');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const removeBtn = document.getElementById('removePhotoBtn');
+    if (photoImage) {
+        photoImage.src = '';
+        photoImage.style.display = 'none';
+    }
+    if (photoPlaceholder) photoPlaceholder.style.display = 'flex';
+    if (removeBtn) removeBtn.style.display = 'none';
+
+    // Reset bank fields
+    document.getElementById('bankAccountId').value = '';
+    document.getElementById('accountHolderName').value = '';
+    document.getElementById('bankName').value = '';
+    document.getElementById('accountNumber').value = '';
+    document.getElementById('confirmAccountNumber').value = '';
+    document.getElementById('ifscCode').value = '';
+    document.getElementById('branchName').value = '';
 }

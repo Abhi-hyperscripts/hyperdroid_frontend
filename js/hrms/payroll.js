@@ -247,12 +247,63 @@ function updatePayrollRunsTable(runs) {
 
 async function loadSalaryStructures() {
     try {
-        const response = await api.request('/hrms/salary-structures');
+        const officeFilter = document.getElementById('structureOfficeFilter')?.value || '';
+        let url = '/hrms/payroll/structures';
+        if (officeFilter) {
+            url = `/hrms/payroll/structures/office/${officeFilter}`;
+        }
+
+        const response = await api.request(url);
         structures = response || [];
         updateSalaryStructuresTable();
+
+        // Also load setup status to display office structure status
+        await loadOfficeStructureStatus();
     } catch (error) {
         console.error('Error loading salary structures:', error);
     }
+}
+
+async function loadOfficeStructureStatus() {
+    try {
+        const response = await api.request('/hrms/dashboard/setup-status');
+        if (response && response.office_salary_structure_status) {
+            updateOfficeStructureStatusCards(response.office_salary_structure_status);
+        }
+    } catch (error) {
+        console.error('Error loading office structure status:', error);
+    }
+}
+
+function updateOfficeStructureStatusCards(statusList) {
+    const container = document.getElementById('officeStructureStatus');
+    if (!container) return;
+
+    if (!statusList || statusList.length === 0) {
+        container.innerHTML = '<p class="text-muted">No offices configured yet.</p>';
+        return;
+    }
+
+    container.innerHTML = statusList.map(status => `
+        <div class="office-status-card ${status.has_salary_structure ? 'complete' : 'incomplete'}">
+            <div class="office-status-header">
+                <span class="office-name">${status.office_name}</span>
+                <span class="status-icon">
+                    ${status.has_salary_structure ?
+                        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>' :
+                        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+                    }
+                </span>
+            </div>
+            <div class="office-status-details">
+                <span class="structure-count">${status.structure_count} structure(s)</span>
+                ${status.has_default_structure ?
+                    '<span class="has-default">Default set</span>' :
+                    '<span class="no-default">No default</span>'
+                }
+            </div>
+        </div>
+    `).join('');
 }
 
 function updateSalaryStructuresTable() {
@@ -260,14 +311,15 @@ function updateSalaryStructuresTable() {
     const searchTerm = document.getElementById('structureSearch')?.value?.toLowerCase() || '';
 
     const filtered = structures.filter(s =>
-        s.name.toLowerCase().includes(searchTerm) ||
-        s.code?.toLowerCase().includes(searchTerm)
+        (s.structure_name || '').toLowerCase().includes(searchTerm) ||
+        (s.structure_code || '').toLowerCase().includes(searchTerm) ||
+        (s.office_name || '').toLowerCase().includes(searchTerm)
     );
 
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="6">
+                <td colspan="8">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -281,11 +333,18 @@ function updateSalaryStructuresTable() {
 
     tbody.innerHTML = filtered.map(s => `
         <tr>
-            <td><strong>${s.name}</strong></td>
-            <td>${formatCurrency(s.minBasic || 0)} - ${formatCurrency(s.maxBasic || 0)}</td>
-            <td>${s.componentCount || 0}</td>
-            <td>${s.employeeCount || 0}</td>
-            <td><span class="status-badge status-${s.isActive ? 'active' : 'inactive'}">${s.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><strong>${s.office_name || 'N/A'}</strong></td>
+            <td><strong>${s.structure_name}</strong></td>
+            <td><code>${s.structure_code || '-'}</code></td>
+            <td>
+                ${s.is_default ?
+                    '<span class="status-badge status-default">Default</span>' :
+                    '<span class="text-muted">-</span>'
+                }
+            </td>
+            <td>${formatCurrency(s.min_basic || 0)} - ${formatCurrency(s.max_basic || 0)}</td>
+            <td>${s.component_count || 0}</td>
+            <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
@@ -302,7 +361,7 @@ function updateSalaryStructuresTable() {
 
 async function loadComponents() {
     try {
-        const response = await api.request('/hrms/salary-components');
+        const response = await api.request('/hrms/payroll/components');
         components = response || [];
         updateComponentsTables();
     } catch (error) {
@@ -453,14 +512,21 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = response || [];
 
-        const selects = ['payrollOffice', 'runOffice'];
+        const selects = ['payrollOffice', 'runOffice', 'structureOfficeFilter', 'structureOffice'];
         selects.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
-                const firstOption = id === 'runOffice' ? '<option value="">All Offices</option>' : '<option value="">Select Office</option>';
+                let firstOption;
+                if (id === 'runOffice' || id === 'structureOfficeFilter') {
+                    firstOption = '<option value="">All Offices</option>';
+                } else if (id === 'structureOffice') {
+                    firstOption = '<option value="">Select Office (Required)</option>';
+                } else {
+                    firstOption = '<option value="">Select Office</option>';
+                }
                 select.innerHTML = firstOption;
                 offices.forEach(office => {
-                    select.innerHTML += `<option value="${office.id}">${office.name}</option>`;
+                    select.innerHTML += `<option value="${office.id}">${office.office_name}</option>`;
                 });
             }
         });
@@ -506,7 +572,99 @@ function showCreateStructureModal() {
     document.getElementById('structureId').value = '';
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
     document.getElementById('structureComponents').innerHTML = '';
+    // Reset office dropdown
+    const officeSelect = document.getElementById('structureOffice');
+    if (officeSelect) officeSelect.value = '';
+    // Reset is_default checkbox
+    const isDefaultCheckbox = document.getElementById('structureIsDefault');
+    if (isDefaultCheckbox) isDefaultCheckbox.checked = false;
     document.getElementById('structureModal').classList.add('active');
+}
+
+async function editSalaryStructure(structureId) {
+    try {
+        showLoading();
+        const structure = await api.request(`/hrms/payroll/structures/${structureId}`);
+
+        if (!structure) {
+            showToast('Structure not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        document.getElementById('structureId').value = structure.id;
+        document.getElementById('structureName').value = structure.structure_name || '';
+        document.getElementById('structureCode').value = structure.structure_code || '';
+        document.getElementById('structureDescription').value = structure.description || '';
+
+        // Set office dropdown
+        const officeSelect = document.getElementById('structureOffice');
+        if (officeSelect && structure.office_id) {
+            officeSelect.value = structure.office_id;
+        }
+
+        // Set is_default checkbox
+        const isDefaultCheckbox = document.getElementById('structureIsDefault');
+        if (isDefaultCheckbox) {
+            isDefaultCheckbox.checked = structure.is_default || false;
+        }
+
+        document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
+        document.getElementById('structureModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading structure:', error);
+        showToast('Failed to load structure details', 'error');
+        hideLoading();
+    }
+}
+
+async function saveSalaryStructure() {
+    const form = document.getElementById('structureForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const officeId = document.getElementById('structureOffice')?.value;
+    if (!officeId) {
+        showToast('Please select an office for this salary structure', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('structureId').value;
+        const data = {
+            structure_name: document.getElementById('structureName').value,
+            structure_code: document.getElementById('structureCode').value,
+            description: document.getElementById('structureDescription').value,
+            office_id: officeId,
+            is_default: document.getElementById('structureIsDefault')?.checked || false
+        };
+
+        if (id) {
+            data.id = id;
+            await api.request(`/hrms/payroll/structures/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+        } else {
+            await api.request('/hrms/payroll/structures', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+        }
+
+        closeModal('structureModal');
+        showToast(`Salary structure ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadSalaryStructures();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving structure:', error);
+        showToast(error.message || 'Failed to save salary structure', 'error');
+        hideLoading();
+    }
 }
 
 function showCreateComponentModal() {
@@ -584,12 +742,12 @@ async function saveComponent() {
 
         if (id) {
             data.id = id;
-            await api.request(`/hrms/salary-components/${id}`, {
+            await api.request(`/hrms/payroll/components/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(data)
             });
         } else {
-            await api.request('/hrms/salary-components', {
+            await api.request('/hrms/payroll/components', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
@@ -816,6 +974,7 @@ document.getElementById('runYear')?.addEventListener('change', loadPayrollRuns);
 document.getElementById('runMonth')?.addEventListener('change', loadPayrollRuns);
 document.getElementById('runOffice')?.addEventListener('change', loadPayrollRuns);
 document.getElementById('structureSearch')?.addEventListener('input', updateSalaryStructuresTable);
+document.getElementById('structureOfficeFilter')?.addEventListener('change', loadSalaryStructures);
 document.getElementById('componentSearch')?.addEventListener('input', updateComponentsTables);
 document.getElementById('componentType')?.addEventListener('change', updateComponentsTables);
 document.getElementById('loanStatus')?.addEventListener('change', loadLoans);

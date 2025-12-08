@@ -784,6 +784,39 @@
     color: #888;
 }
 
+/* Read-only field display (for Auth-managed fields) */
+.readonly-field {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.user-info-display {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #e9ecef;
+}
+
+.user-info-display .form-group label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+}
+
+.user-info-display .readonly-field {
+    background-color: transparent;
+    border: none;
+    padding: 4px 0;
+    font-size: 0.9rem;
+}
+
 /* View Employee Styles */
 .employee-view-header {
     display: flex;
@@ -1316,6 +1349,300 @@
 
 .flatpickr-time .numInputWrapper span.arrowDown:after {
     border-top-color: #333;
+}
+
+/* Office Salary Structure Status Cards */
+.office-structure-status {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.office-status-card {
+    flex: 0 0 auto;
+    min-width: 160px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.office-status-card.complete {
+    border-color: rgba(39, 174, 96, 0.3);
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.office-status-card.incomplete {
+    border-color: rgba(231, 76, 60, 0.3);
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.office-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.office-status-header .office-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #111827;
+}
+
+.office-status-header .status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.office-status-card.complete .status-icon svg {
+    stroke: #27ae60;
+}
+
+.office-status-card.incomplete .status-icon svg {
+    stroke: #e74c3c;
+}
+
+.office-status-details {
+    display: flex;
+    gap: 10px;
+    font-size: 0.75rem;
+}
+
+.office-status-details .structure-count {
+    color: #6b7280;
+}
+
+.office-status-details .has-default {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.office-status-details .no-default {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+/* Default badge for salary structures */
+.status-badge.status-default {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+/* ============================================ */
+/* Employee Photo Upload Styles */
+/* ============================================ */
+
+.photo-row {
+    margin-bottom: 16px;
+}
+
+.photo-upload-group {
+    flex: 0 0 auto;
+    width: 100%;
+}
+
+.photo-upload-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    border: 2px dashed #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #f9fafb;
+    flex-shrink: 0;
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #9ca3af;
+}
+
+.photo-placeholder span {
+    font-size: 0.7rem;
+}
+
+.photo-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.photo-hint {
+    color: #9ca3af;
+    font-size: 0.7rem;
+    margin-top: 4px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+}
+
+/* ============================================ */
+/* Document Upload Grid Styles */
+/* ============================================ */
+
+.form-section-hint {
+    color: #6b7280;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+}
+
+.document-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.document-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+    background: #f9fafb;
+}
+
+.doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.doc-label {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.doc-status {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.doc-status.pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.doc-status.uploaded {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.doc-status.verified {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.doc-upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.upload-btn:hover {
+    background: #e5e7eb;
+}
+
+.doc-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.doc-preview .file-name {
+    font-size: 0.75rem;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
+.doc-preview .remove-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.doc-preview .remove-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.doc-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.doc-fields input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.doc-fields input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 
