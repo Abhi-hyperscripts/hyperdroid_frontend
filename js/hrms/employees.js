@@ -191,6 +191,24 @@ async function openCreateEmployeeModal() {
         const userSelect = document.getElementById('userSelect');
         userSelect.innerHTML = '<option value="">Select a user...</option>' +
             availableUsers.map(u => `<option value="${u.id}">${u.email} (${u.firstName} ${u.lastName})</option>`).join('');
+
+        // Add onchange handler to auto-populate fields when user is selected
+        userSelect.onchange = function() {
+            const selectedUserId = this.value;
+            if (selectedUserId) {
+                const user = availableUsers.find(u => u.id === selectedUserId);
+                if (user) {
+                    document.getElementById('firstName').value = user.firstName || '';
+                    document.getElementById('lastName').value = user.lastName || '';
+                    document.getElementById('workEmail').value = user.email || '';
+                }
+            } else {
+                // Clear fields if no user selected
+                document.getElementById('firstName').value = '';
+                document.getElementById('lastName').value = '';
+                document.getElementById('workEmail').value = '';
+            }
+        };
     } catch (error) {
         console.error('Error loading available users:', error);
     }
@@ -222,6 +240,8 @@ async function editEmployee(id) {
     document.getElementById('departmentId').value = emp.department_id || '';
     document.getElementById('designationId').value = emp.designation_id || '';
     document.getElementById('officeId').value = emp.office_id || '';
+    // Update shifts dropdown based on selected office, then set the value
+    updateShiftsForOffice();
     document.getElementById('shiftId').value = emp.shift_id || '';
     document.getElementById('reportingManagerId').value = emp.reporting_manager_id || '';
     document.getElementById('employmentType').value = emp.employment_type || 'full_time';
@@ -392,12 +412,30 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function updateShiftsForOffice() {
+    const officeId = document.getElementById('officeId').value;
+    const shiftSelect = document.getElementById('shiftId');
+    const currentShiftId = shiftSelect.value;
+
+    // Filter shifts by selected office
+    // Show shifts that either belong to the selected office or have no office (global shifts)
+    const filteredShifts = shifts.filter(s => !s.office_id || s.office_id === officeId);
+
+    shiftSelect.innerHTML = '<option value="">Default shift</option>' +
+        filteredShifts.map(s => `<option value="${s.id}">${s.shift_name}</option>`).join('');
+
+    // Try to keep the previously selected shift if it's still in the filtered list
+    if (currentShiftId && filteredShifts.some(s => s.id === currentShiftId)) {
+        shiftSelect.value = currentShiftId;
+    }
+}
+
 function openModal(id) {
-    document.getElementById(id).style.display = 'flex';
+    document.getElementById(id).classList.add('active');
 }
 
 function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+    document.getElementById(id).classList.remove('active');
 }
 
 function showToast(message, type = 'success') {
