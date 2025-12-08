@@ -631,9 +631,14 @@ function editShift(id) {
 
     // Set working days checkboxes
     // working_days comes from backend as comma-separated string (e.g., "Mon,Tue,Wed,Thu,Fri")
+    // Checkbox values are lowercase full names (monday, tuesday, etc.)
+    const dayMapping = {
+        'Mon': 'monday', 'Tue': 'tuesday', 'Wed': 'wednesday',
+        'Thu': 'thursday', 'Fri': 'friday', 'Sat': 'saturday', 'Sun': 'sunday'
+    };
     let workingDays = shift.working_days || "Mon,Tue,Wed,Thu,Fri";
     if (typeof workingDays === 'string') {
-        workingDays = workingDays.split(',').map(d => d.trim());
+        workingDays = workingDays.split(',').map(d => dayMapping[d.trim()] || d.trim().toLowerCase());
     }
     document.querySelectorAll('input[name="workingDays"]').forEach(cb => {
         cb.checked = workingDays.includes(cb.value);
@@ -860,9 +865,15 @@ async function saveShift() {
             if (breakDurationMinutes < 0) breakDurationMinutes = 60; // fallback if invalid
         }
 
-        // Get selected working days from checkboxes and join as comma-separated string
+        // Get selected working days from checkboxes and convert to abbreviated format for backend
+        // Checkbox values are lowercase full names (monday, tuesday, etc.)
+        // Backend expects abbreviated format (Mon, Tue, etc.)
+        const dayToAbbrev = {
+            'monday': 'Mon', 'tuesday': 'Tue', 'wednesday': 'Wed',
+            'thursday': 'Thu', 'friday': 'Fri', 'saturday': 'Sat', 'sunday': 'Sun'
+        };
         const selectedWorkingDays = Array.from(document.querySelectorAll('input[name="workingDays"]:checked'))
-            .map(cb => cb.value)
+            .map(cb => dayToAbbrev[cb.value] || cb.value)
             .join(',');
 
         const data = {
