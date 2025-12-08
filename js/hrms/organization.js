@@ -8,6 +8,55 @@ let shifts = [];
 let holidays = [];
 let employees = [];
 
+// Convert time string from "9:00 AM" or "09:00 AM" format to "HH:mm:ss" (24-hour TimeSpan format)
+function convertTo24HourFormat(timeStr) {
+    if (!timeStr) return null;
+
+    // If already in 24-hour format (HH:mm or HH:mm:ss), return with seconds
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeStr) && !timeStr.toLowerCase().includes('am') && !timeStr.toLowerCase().includes('pm')) {
+        const parts = timeStr.split(':');
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        const seconds = parts[2] || '00';
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Parse AM/PM format
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) {
+        console.warn('Invalid time format:', timeStr);
+        return timeStr; // Return as-is if format not recognized
+    }
+
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const period = match[3].toUpperCase();
+
+    // Convert to 24-hour format
+    if (period === 'AM') {
+        if (hours === 12) hours = 0;
+    } else { // PM
+        if (hours !== 12) hours += 12;
+    }
+
+    return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+}
+
+// Convert time from "HH:mm:ss" (24-hour) format to "h:mm AM/PM" for display
+function convertTo12HourFormat(timeStr) {
+    if (!timeStr) return '';
+
+    const parts = timeStr.split(':');
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const period = hours >= 12 ? 'PM' : 'AM';
+
+    if (hours === 0) hours = 12;
+    else if (hours > 12) hours -= 12;
+
+    return `${hours}:${minutes} ${period}`;
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
     await initializePage();
@@ -77,10 +126,12 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = Array.isArray(response) ? response : (response?.data || []);
 
-        // Update stats
+        // Update stats by office type
         document.getElementById('totalOffices').textContent = offices.length;
-        document.getElementById('headOffice').textContent = offices.filter(o => o.is_headquarters || o.office_type === 'head').length;
-        document.getElementById('branchOffices').textContent = offices.filter(o => !o.is_headquarters && o.office_type !== 'head').length;
+        document.getElementById('headOfficeCount').textContent = offices.filter(o => o.office_type === 'head').length;
+        document.getElementById('regionalOfficeCount').textContent = offices.filter(o => o.office_type === 'regional').length;
+        document.getElementById('branchOfficeCount').textContent = offices.filter(o => o.office_type === 'branch' || !o.office_type).length;
+        document.getElementById('satelliteOfficeCount').textContent = offices.filter(o => o.office_type === 'satellite').length;
 
         updateOfficesTable();
         populateOfficeSelects();
@@ -93,11 +144,25 @@ function updateOfficesTable() {
     const tbody = document.getElementById('officesTable');
     const searchTerm = document.getElementById('officeSearch')?.value?.toLowerCase() || '';
 
-    const filtered = offices.filter(o =>
-        o.office_name?.toLowerCase().includes(searchTerm) ||
-        o.office_code?.toLowerCase().includes(searchTerm) ||
-        o.city?.toLowerCase().includes(searchTerm)
-    );
+    // Map office_type to display text for searching
+    const typeMap = {
+        'head': 'head office',
+        'regional': 'regional office',
+        'branch': 'branch office',
+        'satellite': 'satellite office'
+    };
+
+    const filtered = offices.filter(o => {
+        const officeTypeText = typeMap[o.office_type] || 'branch office';
+        const statusText = o.is_active ? 'active' : 'inactive';
+        const location = `${o.city || ''} ${o.country || ''}`.toLowerCase();
+
+        return o.office_name?.toLowerCase().includes(searchTerm) ||
+            o.office_code?.toLowerCase().includes(searchTerm) ||
+            officeTypeText.includes(searchTerm) ||
+            location.includes(searchTerm) ||
+            statusText.includes(searchTerm);
+    });
 
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -116,8 +181,15 @@ function updateOfficesTable() {
     }
 
     tbody.innerHTML = filtered.map(office => {
-        const officeType = office.is_headquarters ? 'Head Office' : 'Branch';
-        const badgeClass = office.is_headquarters ? 'head' : 'branch';
+        // Map office_type to display text
+        const typeMap = {
+            'head': 'Head Office',
+            'regional': 'Regional Office',
+            'branch': 'Branch Office',
+            'satellite': 'Satellite Office'
+        };
+        const officeType = typeMap[office.office_type] || 'Branch Office';
+        const badgeClass = office.office_type || 'branch';
         return `
         <tr>
             <td><strong>${office.office_name}</strong></td>
@@ -128,7 +200,7 @@ function updateOfficesTable() {
             <td><span class="status-badge status-${office.is_active ? 'active' : 'inactive'}">${office.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editOffice('${office.id}')" title="Edit">
+                    <button class="action-btn" onclick="editOffice('${office.id}')" data-tooltip="Edit Office">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -206,7 +278,7 @@ function updateDepartmentsTable() {
             <td><span class="status-badge status-${dept.is_active ? 'active' : 'inactive'}">${dept.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editDepartment('${dept.id}')" title="Edit">
+                    <button class="action-btn" onclick="editDepartment('${dept.id}')" data-tooltip="Edit Department">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -283,7 +355,7 @@ function updateDesignationsTable() {
             <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editDesignation('${desig.id}')" title="Edit">
+                    <button class="action-btn" onclick="editDesignation('${desig.id}')" data-tooltip="Edit Designation">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -345,7 +417,7 @@ function updateShiftsTable() {
             <td><span class="status-badge status-${shift.is_active ? 'active' : 'inactive'}">${shift.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editShift('${shift.id}')" title="Edit">
+                    <button class="action-btn" onclick="editShift('${shift.id}')" data-tooltip="Edit Shift">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -406,13 +478,13 @@ function updateHolidaysTable() {
             <td>${holiday.office_names?.join(', ') || 'All Offices'}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editHoliday('${holiday.id}')" title="Edit">
+                    <button class="action-btn" onclick="editHoliday('${holiday.id}')" data-tooltip="Edit Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteHoliday('${holiday.id}')" title="Delete">
+                    <button class="action-btn danger" onclick="deleteHoliday('${holiday.id}')" data-tooltip="Delete Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -453,11 +525,8 @@ function editOffice(id) {
     const office = offices.find(o => o.id === id);
     if (!office) return;
 
-    // Map is_headquarters to office_type for the dropdown
-    let officeType = 'branch';
-    if (office.is_headquarters) {
-        officeType = 'head';
-    }
+    // Use office_type directly from backend
+    const officeType = office.office_type || 'branch';
 
     document.getElementById('officeId').value = office.id;
     document.getElementById('officeName').value = office.office_name;
@@ -615,7 +684,7 @@ async function saveOffice() {
         const longitudeVal = document.getElementById('officeLongitude').value;
         const geofenceVal = document.getElementById('officeGeofenceRadius').value;
 
-        // Map office_type dropdown to is_headquarters boolean
+        // Get office_type directly from dropdown
         const officeTypeVal = document.getElementById('officeType').value;
         const isHeadquarters = officeTypeVal === 'head';
 
@@ -623,6 +692,7 @@ async function saveOffice() {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
             is_headquarters: isHeadquarters,
+            office_type: officeTypeVal,
             timezone: document.getElementById('officeTimezone').value,
             address_line1: document.getElementById('officeAddress').value,
             city: document.getElementById('officeCity').value,
@@ -763,21 +833,26 @@ async function saveShift() {
         showLoading();
         const id = document.getElementById('shiftId').value;
 
-        const workingDays = Array.from(document.querySelectorAll('input[name="workingDays"]:checked'))
-            .map(cb => cb.value);
+        // Calculate break duration from break start/end times
+        const breakStart = convertTo24HourFormat(document.getElementById('breakStart').value);
+        const breakEnd = convertTo24HourFormat(document.getElementById('breakEnd').value);
+        let breakDurationMinutes = 60; // default
+        if (breakStart && breakEnd) {
+            const [startH, startM] = breakStart.split(':').map(Number);
+            const [endH, endM] = breakEnd.split(':').map(Number);
+            breakDurationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+            if (breakDurationMinutes < 0) breakDurationMinutes = 60; // fallback if invalid
+        }
 
         const data = {
             shift_name: document.getElementById('shiftName').value,
             shift_code: document.getElementById('shiftCode').value,
             office_id: document.getElementById('shiftOfficeId').value || null,
-            start_time: document.getElementById('shiftStart').value,
-            end_time: document.getElementById('shiftEnd').value,
-            break_start: document.getElementById('breakStart').value,
-            break_end: document.getElementById('breakEnd').value,
+            start_time: convertTo24HourFormat(document.getElementById('shiftStart').value),
+            end_time: convertTo24HourFormat(document.getElementById('shiftEnd').value),
+            break_duration_minutes: breakDurationMinutes,
             grace_period_minutes: parseInt(document.getElementById('graceMinutes').value) || 15,
-            half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4,
-            working_days: workingDays,
-            is_active: document.getElementById('shiftIsActive').value === 'true'
+            half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4
         };
 
         if (id) {
@@ -909,9 +984,10 @@ function formatOfficeType(type) {
 
 function formatHolidayType(type) {
     const types = {
-        'national': 'National',
+        'public': 'Public/National',
         'regional': 'Regional',
-        'optional': 'Optional'
+        'restricted': 'Restricted/Optional',
+        'company': 'Company'
     };
     return types[type] || type;
 }
@@ -977,8 +1053,10 @@ function setTimePickerValue(inputId, timeValue) {
     if (!input) return;
 
     if (input._flatpickr && timeValue) {
-        // Convert 24h time (HH:MM) to 12h format for flatpickr
-        const [hours, minutes] = timeValue.split(':');
+        // Convert 24h time (HH:MM or HH:MM:SS) to 12h format for flatpickr
+        const parts = timeValue.split(':');
+        const hours = parts[0];
+        const minutes = parts[1];
         const hour = parseInt(hours);
         const ampm = hour >= 12 ? 'PM' : 'AM';
         const hour12 = hour % 12 || 12;
