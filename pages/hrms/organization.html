@@ -381,36 +381,56 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="officeAddress">Address *</label>
-                                <textarea id="officeAddress" name="address" class="form-control" rows="2" required placeholder="Full office address"></textarea>
+                                <input type="text" id="officeAddress" name="address" class="form-control" required placeholder="Full office address">
                             </div>
                         </div>
-                        <div class="form-row two-col">
+                        <div class="form-row four-col">
                             <div class="form-group">
                                 <label for="officeCity">City *</label>
-                                <input type="text" id="officeCity" name="city" class="form-control" required>
+                                <input type="text" id="officeCity" name="city" class="form-control" required placeholder="City">
+                            </div>
+                            <div class="form-group">
+                                <label for="officeState">State *</label>
+                                <input type="text" id="officeState" name="state" class="form-control" required placeholder="State">
                             </div>
                             <div class="form-group">
                                 <label for="officeCountry">Country *</label>
                                 <input type="text" id="officeCountry" name="country" class="form-control" required value="India">
                             </div>
-                        </div>
-                        <div class="form-row two-col">
                             <div class="form-group">
-                                <label for="officePhone">Phone</label>
-                                <input type="text" id="officePhone" name="phone" class="form-control" placeholder="+91-XXXX-XXXXXX">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeEmail">Email</label>
-                                <input type="email" id="officeEmail" name="email" class="form-control" placeholder="office@company.com">
+                                <label for="officePostalCode">Postal Code *</label>
+                                <input type="text" id="officePostalCode" name="postal_code" class="form-control" required placeholder="Postal Code">
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row three-col">
                             <div class="form-group">
-                                <label for="officeIsActive">Status</label>
-                                <select id="officeIsActive" name="isActive" class="form-control">
+                                <label for="officePhone">Phone *</label>
+                                <input type="tel" id="officePhone" name="phone" class="form-control" required placeholder="+91-XXXX-XXXXXX">
+                            </div>
+                            <div class="form-group">
+                                <label for="officeEmail">Email *</label>
+                                <input type="email" id="officeEmail" name="email" class="form-control" required placeholder="office@company.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="officeIsActive">Status *</label>
+                                <select id="officeIsActive" name="isActive" class="form-control" required>
                                     <option value="true">Active</option>
                                     <option value="false">Inactive</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="officeLatitude">Latitude *</label>
+                                <input type="number" id="officeLatitude" name="latitude" class="form-control" required step="0.000001" placeholder="19.0760">
+                            </div>
+                            <div class="form-group">
+                                <label for="officeLongitude">Longitude *</label>
+                                <input type="number" id="officeLongitude" name="longitude" class="form-control" required step="0.000001" placeholder="72.8777">
+                            </div>
+                            <div class="form-group">
+                                <label for="officeGeofenceRadius">Geofence (m) *</label>
+                                <input type="number" id="officeGeofenceRadius" name="geofence_radius_meters" class="form-control" required min="50" max="5000" value="100" placeholder="100">
                             </div>
                         </div>
                     </div>

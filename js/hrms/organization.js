@@ -115,12 +115,15 @@ function updateOfficesTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(office => `
+    tbody.innerHTML = filtered.map(office => {
+        const officeType = office.is_headquarters ? 'Head Office' : 'Branch';
+        const badgeClass = office.is_headquarters ? 'head' : 'branch';
+        return `
         <tr>
             <td><strong>${office.office_name}</strong></td>
             <td><code>${office.office_code}</code></td>
-            <td><span class="badge badge-${office.is_headquarters ? 'head' : (office.office_type || 'branch')}">${office.is_headquarters ? 'Head Office' : formatOfficeType(office.office_type)}</span></td>
-            <td>${office.city}, ${office.country}</td>
+            <td><span class="badge badge-${badgeClass}">${officeType}</span></td>
+            <td>${office.city || ''}, ${office.country || ''}</td>
             <td>${office.employee_count || 0}</td>
             <td><span class="status-badge status-${office.is_active ? 'active' : 'inactive'}">${office.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -133,8 +136,8 @@ function updateOfficesTable() {
                     </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function populateOfficeSelects() {
@@ -450,16 +453,27 @@ function editOffice(id) {
     const office = offices.find(o => o.id === id);
     if (!office) return;
 
+    // Map is_headquarters to office_type for the dropdown
+    let officeType = 'branch';
+    if (office.is_headquarters) {
+        officeType = 'head';
+    }
+
     document.getElementById('officeId').value = office.id;
     document.getElementById('officeName').value = office.office_name;
     document.getElementById('officeCode').value = office.office_code;
-    document.getElementById('officeType').value = office.office_type || 'branch';
+    document.getElementById('officeType').value = officeType;
     document.getElementById('officeTimezone').value = office.timezone || 'Asia/Kolkata';
-    document.getElementById('officeAddress').value = office.address || '';
+    document.getElementById('officeAddress').value = office.address_line1 || '';
     document.getElementById('officeCity').value = office.city || '';
+    document.getElementById('officeState').value = office.state || '';
     document.getElementById('officeCountry').value = office.country || 'India';
+    document.getElementById('officePostalCode').value = office.postal_code || '';
     document.getElementById('officePhone').value = office.phone || '';
     document.getElementById('officeEmail').value = office.email || '';
+    document.getElementById('officeLatitude').value = office.latitude || '';
+    document.getElementById('officeLongitude').value = office.longitude || '';
+    document.getElementById('officeGeofenceRadius').value = office.geofence_radius_meters || 100;
     document.getElementById('officeIsActive').value = office.is_active ? 'true' : 'false';
 
     document.getElementById('officeModalTitle').textContent = 'Edit Office';
@@ -597,31 +611,49 @@ async function saveOffice() {
     try {
         showLoading();
         const id = document.getElementById('officeId').value;
+        const latitudeVal = document.getElementById('officeLatitude').value;
+        const longitudeVal = document.getElementById('officeLongitude').value;
+        const geofenceVal = document.getElementById('officeGeofenceRadius').value;
+
+        // Map office_type dropdown to is_headquarters boolean
+        const officeTypeVal = document.getElementById('officeType').value;
+        const isHeadquarters = officeTypeVal === 'head';
+
         const data = {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
-            office_type: document.getElementById('officeType').value,
+            is_headquarters: isHeadquarters,
             timezone: document.getElementById('officeTimezone').value,
-            address: document.getElementById('officeAddress').value,
+            address_line1: document.getElementById('officeAddress').value,
             city: document.getElementById('officeCity').value,
+            state: document.getElementById('officeState').value || null,
             country: document.getElementById('officeCountry').value,
-            phone: document.getElementById('officePhone').value,
-            email: document.getElementById('officeEmail').value,
+            postal_code: document.getElementById('officePostalCode').value || null,
+            phone: document.getElementById('officePhone').value || null,
+            email: document.getElementById('officeEmail').value || null,
+            latitude: latitudeVal ? parseFloat(latitudeVal) : null,
+            longitude: longitudeVal ? parseFloat(longitudeVal) : null,
+            geofence_radius_meters: geofenceVal ? parseInt(geofenceVal) : 100,
             is_active: document.getElementById('officeIsActive').value === 'true'
         };
 
+        console.log('Saving office with data:', data);
+
+        let response;
         if (id) {
             data.id = id;
-            await api.request('/hrms/offices', {
+            response = await api.request('/hrms/offices', {
                 method: 'PUT',
                 body: JSON.stringify(data)
             });
         } else {
-            await api.request('/hrms/offices', {
+            response = await api.request('/hrms/offices', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
         }
+
+        console.log('Server response:', response);
 
         closeModal('officeModal');
         showToast(`Office ${id ? 'updated' : 'created'} successfully`, 'success');
@@ -896,7 +928,7 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    setTimeout(() => toast.classList.remove('show'), 5000);
 }
 
 // Event listeners - will be attached after DOM is loaded

@@ -589,11 +589,11 @@
 }
 
 .modal-body {
-    padding: 16px;
+    padding: 12px 16px;
     overflow-y: auto !important;
     flex: 1 1 auto;
     min-height: 0;
-    max-height: calc(100vh - 260px) !important; /* Reserve space for header (73px) + footer (66px) + top padding (80px) + bottom padding (20px) + buffer */
+    max-height: calc(100vh - 200px) !important;
     background: #fff;
 }
 
@@ -609,35 +609,47 @@
 
 /* Form Styles */
 .form-section {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .form-section h4 {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #333;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.form-row.two-col {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-row.three-col {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-row.four-col {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .form-group label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    color: #333;
+    color: #555;
 }
 
 .form-group label .required {
@@ -647,11 +659,34 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 8px 10px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-    font-size: 0.85rem;
+    padding: 6px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px !important;
+    font-size: 0.8rem;
     transition: all 0.2s;
+    height: 32px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.form-group input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 28px;
 }
 
 .form-group input:focus,
@@ -659,12 +694,19 @@
 .form-group textarea:focus {
     outline: none;
     border-color: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
 .form-group textarea {
     resize: vertical;
-    min-height: 100px;
+    min-height: 60px;
+    height: auto;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    font-size: 0.75rem;
+    color: #999;
 }
 
 .form-text {
@@ -782,9 +824,9 @@
 /* Toast Notifications */
 .toast-container {
     position: fixed;
-    top: 24px;
+    top: 90px;
     right: 24px;
-    z-index: 10000;
+    z-index: 9999999;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -793,7 +835,7 @@
 .toast {
     display: none;
     position: fixed;
-    top: 24px;
+    top: 90px;
     right: 24px;
     background: #000;
     color: #fff;
@@ -803,7 +845,7 @@
     align-items: center;
     gap: 12px;
     max-width: 400px;
-    z-index: 10001;
+    z-index: 9999999;
 }
 
 .toast.show {
