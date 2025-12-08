@@ -111,7 +111,7 @@ function setDefaultPayrollDates() {
 async function loadMyPayslips() {
     try {
         const year = document.getElementById('payslipYear').value;
-        const response = await api.request(`/hrms/payslips/my?year=${year}`);
+        const response = await api.request(`/hrms/payroll-processing/my-payslips?year=${year}`);
         const payslips = response || [];
 
         // Update stats
@@ -185,7 +185,7 @@ async function loadPayrollRuns() {
         const month = document.getElementById('runMonth').value;
         const officeId = document.getElementById('runOffice').value;
 
-        let url = `/hrms/payroll-runs?year=${year}`;
+        let url = `/hrms/payroll-processing/runs?year=${year}`;
         if (month) url += `&month=${month}`;
         if (officeId) url += `&officeId=${officeId}`;
 
@@ -217,12 +217,12 @@ function updatePayrollRunsTable(runs) {
 
     tbody.innerHTML = runs.map(run => `
         <tr>
-            <td><code>${run.runNumber || run.id.substring(0, 8)}</code></td>
-            <td>${getMonthName(run.month)} ${run.year}</td>
-            <td>${run.officeName || 'All'}</td>
-            <td>${run.employeeCount}</td>
-            <td>${formatCurrency(run.totalGross)}</td>
-            <td>${formatCurrency(run.totalNet)}</td>
+            <td><code>${run.run_number || run.id.substring(0, 8)}</code></td>
+            <td>${getMonthName(run.payroll_month)} ${run.payroll_year}</td>
+            <td>${run.office_name || 'All Offices'}</td>
+            <td>${run.total_employees || 0}</td>
+            <td>${formatCurrency(run.total_gross)}</td>
+            <td>${formatCurrency(run.total_net)}</td>
             <td><span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span></td>
             <td>
                 <div class="action-buttons">
@@ -232,7 +232,7 @@ function updatePayrollRunsTable(runs) {
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
-                    ${run.status === 'Draft' ? `
+                    ${run.status === 'draft' ? `
                     <button class="action-btn success" onclick="processPayrollRun('${run.id}')" title="Process">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -374,14 +374,17 @@ function updateComponentsTables() {
     const typeFilter = document.getElementById('componentType')?.value || '';
 
     const filtered = components.filter(c => {
-        const matchesSearch = c.name.toLowerCase().includes(searchTerm) ||
-                             c.code?.toLowerCase().includes(searchTerm);
-        const matchesType = !typeFilter || c.category === typeFilter;
+        const name = c.component_name || c.name || '';
+        const code = c.component_code || c.code || '';
+        const type = c.component_type || c.category || '';
+        const matchesSearch = name.toLowerCase().includes(searchTerm) ||
+                             code.toLowerCase().includes(searchTerm);
+        const matchesType = !typeFilter || type === typeFilter;
         return matchesSearch && matchesType;
     });
 
-    const earnings = filtered.filter(c => c.category === 'earning');
-    const deductions = filtered.filter(c => c.category === 'deduction');
+    const earnings = filtered.filter(c => (c.component_type || c.category) === 'earning');
+    const deductions = filtered.filter(c => (c.component_type || c.category) === 'deduction');
 
     updateEarningsTable(earnings);
     updateDeductionsTable(deductions);
@@ -397,11 +400,11 @@ function updateEarningsTable(earnings) {
 
     tbody.innerHTML = earnings.map(c => `
         <tr>
-            <td><strong>${c.name}</strong></td>
-            <td><code>${c.code}</code></td>
-            <td>${c.calculationType}</td>
-            <td>${c.isTaxable ? 'Yes' : 'No'}</td>
-            <td><span class="status-badge status-${c.isActive ? 'active' : 'inactive'}">${c.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><strong>${c.component_name || c.name}</strong></td>
+            <td><code>${c.component_code || c.code}</code></td>
+            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
+            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
@@ -426,11 +429,11 @@ function updateDeductionsTable(deductions) {
 
     tbody.innerHTML = deductions.map(c => `
         <tr>
-            <td><strong>${c.name}</strong></td>
-            <td><code>${c.code}</code></td>
-            <td>${c.calculationType}</td>
-            <td>${c.isPreTax ? 'Yes' : 'No'}</td>
-            <td><span class="status-badge status-${c.isActive ? 'active' : 'inactive'}">${c.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><strong>${c.component_name || c.name}</strong></td>
+            <td><code>${c.component_code || c.code}</code></td>
+            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${(c.is_pre_tax !== undefined ? c.is_pre_tax : c.isPreTax) ? 'Yes' : 'No'}</td>
+            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
@@ -448,7 +451,7 @@ function updateDeductionsTable(deductions) {
 async function loadLoans() {
     try {
         const status = document.getElementById('loanStatus')?.value || '';
-        let url = isAdmin ? '/hrms/loans' : '/hrms/loans/my';
+        let url = isAdmin ? '/hrms/payroll-processing/loans' : '/hrms/payroll-processing/my-loans';
         if (status) url += `?status=${status}`;
 
         const response = await api.request(url);
@@ -572,12 +575,13 @@ function showCreateStructureModal() {
     document.getElementById('structureId').value = '';
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
     document.getElementById('structureComponents').innerHTML = '';
+    structureComponentCounter = 0; // Reset counter
     // Reset office dropdown
     const officeSelect = document.getElementById('structureOffice');
     if (officeSelect) officeSelect.value = '';
-    // Reset is_default checkbox
-    const isDefaultCheckbox = document.getElementById('structureIsDefault');
-    if (isDefaultCheckbox) isDefaultCheckbox.checked = false;
+    // Reset is_default select
+    const isDefaultSelect = document.getElementById('structureIsDefault');
+    if (isDefaultSelect) isDefaultSelect.value = 'false';
     document.getElementById('structureModal').classList.add('active');
 }
 
@@ -603,10 +607,18 @@ async function editSalaryStructure(structureId) {
             officeSelect.value = structure.office_id;
         }
 
-        // Set is_default checkbox
-        const isDefaultCheckbox = document.getElementById('structureIsDefault');
-        if (isDefaultCheckbox) {
-            isDefaultCheckbox.checked = structure.is_default || false;
+        // Set is_default select
+        const isDefaultSelect = document.getElementById('structureIsDefault');
+        if (isDefaultSelect) {
+            isDefaultSelect.value = structure.is_default ? 'true' : 'false';
+        }
+
+        // Load and populate structure components
+        if (structure.components && structure.components.length > 0) {
+            populateStructureComponents(structure.components);
+        } else {
+            document.getElementById('structureComponents').innerHTML = '';
+            structureComponentCounter = 0;
         }
 
         document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
@@ -632,15 +644,22 @@ async function saveSalaryStructure() {
         return;
     }
 
+    // Get structure components
+    const structureComponents = getStructureComponents();
+
     try {
         showLoading();
         const id = document.getElementById('structureId').value;
+        const isDefaultSelect = document.getElementById('structureIsDefault');
+        const isDefault = isDefaultSelect ? isDefaultSelect.value === 'true' : false;
+
         const data = {
             structure_name: document.getElementById('structureName').value,
             structure_code: document.getElementById('structureCode').value,
             description: document.getElementById('structureDescription').value,
             office_id: officeId,
-            is_default: document.getElementById('structureIsDefault')?.checked || false
+            is_default: isDefault,
+            components: structureComponents
         };
 
         if (id) {
@@ -695,16 +714,16 @@ async function runPayroll() {
 
     try {
         showLoading();
+        const officeId = document.getElementById('payrollOffice').value;
         const data = {
-            month: parseInt(document.getElementById('payrollMonth').value),
-            year: parseInt(document.getElementById('payrollYear').value),
-            officeId: document.getElementById('payrollOffice').value,
-            periodStart: document.getElementById('periodStart').value,
-            periodEnd: document.getElementById('periodEnd').value,
-            payDate: document.getElementById('payDate').value
+            payroll_month: parseInt(document.getElementById('payrollMonth').value),
+            payroll_year: parseInt(document.getElementById('payrollYear').value),
+            office_id: officeId ? officeId : null,
+            pay_period_start: document.getElementById('periodStart').value,
+            pay_period_end: document.getElementById('periodEnd').value
         };
 
-        await api.request('/hrms/payroll-runs', {
+        await api.request('/hrms/payroll-processing/runs', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -731,12 +750,12 @@ async function saveComponent() {
         showLoading();
         const id = document.getElementById('componentId').value;
         const data = {
-            name: document.getElementById('componentName').value,
-            code: document.getElementById('componentCode').value,
-            category: document.getElementById('componentCategory').value,
-            calculationType: document.getElementById('calculationType').value,
-            isTaxable: document.getElementById('isTaxable').value === 'true',
-            isStatutory: document.getElementById('isStatutory').value === 'true',
+            component_name: document.getElementById('componentName').value,
+            component_code: document.getElementById('componentCode').value,
+            component_type: document.getElementById('componentCategory').value,
+            calculation_type: document.getElementById('calculationType').value,
+            is_taxable: document.getElementById('isTaxable').value === 'true',
+            is_statutory: document.getElementById('isStatutory').value === 'true',
             description: document.getElementById('componentDescription').value
         };
 
@@ -787,7 +806,7 @@ async function saveLoan() {
             data.employeeId = document.getElementById('loanEmployee').value;
         }
 
-        await api.request('/hrms/loans', {
+        await api.request('/hrms/payroll-processing/loans', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -807,7 +826,7 @@ async function viewPayslip(payslipId) {
     try {
         showLoading();
         currentPayslipId = payslipId;
-        const payslip = await api.request(`/hrms/payslips/${payslipId}`);
+        const payslip = await api.request(`/hrms/payroll-processing/payslips/${payslipId}`);
 
         document.getElementById('payslipContent').innerHTML = `
             <div class="payslip-header">
@@ -889,7 +908,7 @@ async function downloadPayslipById(payslipId) {
     try {
         showToast('Downloading payslip...', 'info');
         // In a real implementation, this would call an API to generate PDF
-        window.open(`/hrms/payslips/${payslipId}/download`, '_blank');
+        window.open(`/hrms/payroll-processing/payslips/${payslipId}/download`, '_blank');
     } catch (error) {
         console.error('Error downloading payslip:', error);
         showToast('Failed to download payslip', 'error');
@@ -901,16 +920,130 @@ function editComponent(componentId) {
     if (!component) return;
 
     document.getElementById('componentId').value = component.id;
-    document.getElementById('componentName').value = component.name;
-    document.getElementById('componentCode').value = component.code;
-    document.getElementById('componentCategory').value = component.category;
-    document.getElementById('calculationType').value = component.calculationType;
-    document.getElementById('isTaxable').value = component.isTaxable ? 'true' : 'false';
-    document.getElementById('isStatutory').value = component.isStatutory ? 'true' : 'false';
+    document.getElementById('componentName').value = component.component_name || component.name || '';
+    document.getElementById('componentCode').value = component.component_code || component.code || '';
+    document.getElementById('componentCategory').value = component.component_type || component.category || 'earning';
+    document.getElementById('calculationType').value = component.calculation_type || component.calculationType || 'fixed';
+    document.getElementById('isTaxable').value = (component.is_taxable !== undefined ? component.is_taxable : component.isTaxable) ? 'true' : 'false';
+    document.getElementById('isStatutory').value = (component.is_statutory !== undefined ? component.is_statutory : component.isStatutory) ? 'true' : 'false';
     document.getElementById('componentDescription').value = component.description || '';
 
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
     document.getElementById('componentModal').classList.add('active');
+}
+
+// Structure component management
+let structureComponentCounter = 0;
+
+function addStructureComponent() {
+    const container = document.getElementById('structureComponents');
+    const componentId = `sc_${structureComponentCounter++}`;
+
+    const componentHtml = `
+        <div class="structure-component-row" id="${componentId}">
+            <div class="form-row component-row">
+                <div class="form-group" style="flex: 2;">
+                    <select class="form-control component-select" required>
+                        <option value="">Select Component</option>
+                        ${components.map(c => `<option value="${c.id}" data-type="${c.component_type || c.category}">${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select class="form-control calc-type-select" onchange="toggleComponentValueFields(this, '${componentId}')">
+                        <option value="percentage">% of Basic</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                </div>
+                <div class="form-group value-field" style="flex: 1;">
+                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;">
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeStructureComponent('${componentId}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', componentHtml);
+}
+
+function removeStructureComponent(componentId) {
+    const element = document.getElementById(componentId);
+    if (element) {
+        element.remove();
+    }
+}
+
+function toggleComponentValueFields(select, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    if (select.value === 'percentage') {
+        percentageInput.style.display = 'block';
+        fixedInput.style.display = 'none';
+        fixedInput.value = '';
+    } else {
+        percentageInput.style.display = 'none';
+        fixedInput.style.display = 'block';
+        percentageInput.value = '';
+    }
+}
+
+function getStructureComponents() {
+    const container = document.getElementById('structureComponents');
+    const rows = container.querySelectorAll('.structure-component-row');
+    const componentsList = [];
+
+    rows.forEach((row, index) => {
+        const componentSelect = row.querySelector('.component-select');
+        const calcTypeSelect = row.querySelector('.calc-type-select');
+        const percentageInput = row.querySelector('.percentage-value');
+        const fixedInput = row.querySelector('.fixed-value');
+
+        if (componentSelect.value) {
+            componentsList.push({
+                component_id: componentSelect.value,
+                calculation_type: calcTypeSelect.value,
+                percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
+                fixed_amount: calcTypeSelect.value === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
+                display_order: index + 1
+            });
+        }
+    });
+
+    return componentsList;
+}
+
+function populateStructureComponents(structureComponents) {
+    const container = document.getElementById('structureComponents');
+    container.innerHTML = '';
+    structureComponentCounter = 0;
+
+    if (structureComponents && structureComponents.length > 0) {
+        structureComponents.forEach(sc => {
+            addStructureComponent();
+            const lastRow = container.lastElementChild;
+            if (lastRow) {
+                lastRow.querySelector('.component-select').value = sc.component_id;
+                lastRow.querySelector('.calc-type-select').value = sc.calculation_type || 'percentage';
+
+                if (sc.calculation_type === 'fixed') {
+                    lastRow.querySelector('.percentage-value').style.display = 'none';
+                    lastRow.querySelector('.fixed-value').style.display = 'block';
+                    lastRow.querySelector('.fixed-value').value = sc.fixed_amount || '';
+                } else {
+                    lastRow.querySelector('.percentage-value').value = sc.percentage || '';
+                }
+            }
+        });
+    }
 }
 
 // Utility functions
@@ -966,6 +1099,440 @@ function showToast(message, type = 'info') {
     toast.textContent = message;
     toast.className = `toast ${type} show`;
     setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Store current payroll run for modal actions
+let currentPayrollRunId = null;
+let currentPayrollRunStatus = null;
+
+// Virtual scroll state for payroll modal
+let payrollModalState = {
+    payslips: [],
+    filteredPayslips: [],
+    rowHeight: 36,
+    visibleRows: 15,
+    scrollTop: 0,
+    searchTerm: '',
+    dynamicColumns: [] // Dynamic columns extracted from payslip items
+};
+
+// View payroll run details - Dynamic Columns Version
+async function viewPayrollRun(runId) {
+    try {
+        showLoading();
+        currentPayrollRunId = runId;
+
+        // Call the details endpoint which includes payslips
+        const response = await api.request(`/hrms/payroll-processing/runs/${runId}/details`);
+        const run = response.run;
+        const payslips = response.payslips || [];
+        const summary = response.summary || {};
+
+        currentPayrollRunStatus = run.status;
+        payrollModalState.payslips = payslips;
+        payrollModalState.filteredPayslips = payslips;
+        payrollModalState.searchTerm = '';
+
+        // Extract dynamic columns from payslip items
+        payrollModalState.dynamicColumns = extractDynamicColumns(payslips);
+
+        // Update modal title
+        document.getElementById('payrollRunDetailsTitle').textContent =
+            `${getMonthName(run.payroll_month)} ${run.payroll_year} Payroll`;
+
+        // Build compact content
+        let contentHtml = `
+            <div class="pr-compact-header">
+                <div class="pr-stats-row">
+                    <div class="pr-stat"><span class="pr-stat-val">${summary.total_employees || 0}</span><span class="pr-stat-lbl">Employees</span></div>
+                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_gross)}</span><span class="pr-stat-lbl">Gross</span></div>
+                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_deductions)}</span><span class="pr-stat-lbl">Deductions</span></div>
+                    <div class="pr-stat pr-stat-highlight"><span class="pr-stat-val">${formatCurrency(summary.total_net)}</span><span class="pr-stat-lbl">Net Pay</span></div>
+                    <div class="pr-stat-badge">
+                        <span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span>
+                    </div>
+                </div>
+                <div class="pr-meta-row">
+                    <span>${run.office_name || 'All Offices'}</span>
+                    <span class="pr-meta-sep">|</span>
+                    <span>${formatDate(run.pay_period_start)} - ${formatDate(run.pay_period_end)}</span>
+                </div>
+            </div>
+        `;
+
+        // Add payslips section with search and virtual scroll
+        if (payslips.length > 0) {
+            contentHtml += `
+                <div class="pr-table-section">
+                    <div class="pr-table-toolbar">
+                        <div class="pr-search-box">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" id="payslipSearchInput" placeholder="Search employee..." onkeyup="filterPayslips(this.value)">
+                        </div>
+                        <span class="pr-count" id="payslipCount">${payslips.length} employees</span>
+                    </div>
+                    <div class="pr-table-container" id="payslipVirtualContainer">
+                        <table class="pr-table">
+                            <thead>
+                                <tr>
+                                    <th class="pr-col-emp">Employee</th>
+                                    <th class="pr-col-dept">Dept</th>
+                                    ${buildDynamicHeaders()}
+                                    <th class="pr-col-num text-right">Gross</th>
+                                    <th class="pr-col-num text-right">Ded.</th>
+                                    <th class="pr-col-num text-right">Net</th>
+                                    <th class="pr-col-days text-center">Days</th>
+                                </tr>
+                            </thead>
+                        </table>
+                        <div class="pr-virtual-scroll" id="payslipVirtualScroll" onscroll="handlePayslipScroll()">
+                            <div class="pr-virtual-spacer" id="payslipSpacer"></div>
+                            <table class="pr-table pr-virtual-table">
+                                <tbody id="payslipTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            contentHtml += `
+                <div class="pr-empty-state">
+                    <p>No payslips generated. ${run.status === 'draft' ? 'Process to generate.' : ''}</p>
+                </div>
+            `;
+        }
+
+        document.getElementById('payrollRunDetailsContent').innerHTML = contentHtml;
+
+        // Show/hide action buttons based on status
+        const deleteBtn = document.getElementById('deletePayrollRunBtn');
+        const processBtn = document.getElementById('processPayrollRunBtn');
+        const downloadBtn = document.getElementById('downloadCsvBtn');
+
+        if (deleteBtn) {
+            deleteBtn.style.display = run.status === 'draft' ? 'inline-flex' : 'none';
+        }
+        if (processBtn) {
+            processBtn.style.display = run.status === 'draft' ? 'inline-flex' : 'none';
+        }
+        if (downloadBtn) {
+            downloadBtn.style.display = (payslips.length > 0) ? 'inline-flex' : 'none';
+        }
+
+        // Show the modal
+        document.getElementById('payrollRunDetailsModal').classList.add('active');
+
+        // Initialize virtual scroll if we have payslips
+        if (payslips.length > 0) {
+            initPayslipVirtualScroll();
+        }
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error viewing payroll run:', error);
+        showToast(error.message || 'Failed to load payroll run details', 'error');
+        hideLoading();
+    }
+}
+
+// Extract unique component columns from all payslips
+function extractDynamicColumns(payslips) {
+    const columnMap = new Map(); // code -> {code, name, type, order}
+
+    payslips.forEach(slip => {
+        const items = slip.items || [];
+        items.forEach(item => {
+            if (!columnMap.has(item.component_code)) {
+                columnMap.set(item.component_code, {
+                    code: item.component_code,
+                    name: item.component_name || item.component_code,
+                    type: item.component_type,
+                    order: item.display_order || 999
+                });
+            }
+        });
+    });
+
+    // Sort by display_order, then by type (earnings first, then deductions)
+    const typeOrder = { 'earning': 0, 'deduction': 1, 'employer_contribution': 2 };
+    return Array.from(columnMap.values()).sort((a, b) => {
+        const typeA = typeOrder[a.type] ?? 3;
+        const typeB = typeOrder[b.type] ?? 3;
+        if (typeA !== typeB) return typeA - typeB;
+        return a.order - b.order;
+    });
+}
+
+// Build dynamic table headers from extracted columns
+function buildDynamicHeaders() {
+    return payrollModalState.dynamicColumns.map(col => {
+        const shortName = col.name.length > 8 ? col.code : col.name;
+        return `<th class="pr-col-num text-right" title="${col.name}">${shortName}</th>`;
+    }).join('');
+}
+
+// Build dynamic table cells for a payslip row
+function buildDynamicCells(slip) {
+    const items = slip.items || [];
+    const itemMap = new Map();
+    items.forEach(item => {
+        itemMap.set(item.component_code, item.amount);
+    });
+
+    return payrollModalState.dynamicColumns.map(col => {
+        const amount = itemMap.get(col.code) || 0;
+        return `<td class="pr-col-num text-right">${formatCurrencyCompact(amount)}</td>`;
+    }).join('');
+}
+
+// Format currency compactly (no decimals, with commas)
+function formatCurrencyCompact(amount) {
+    if (amount === null || amount === undefined || amount === 0) return '0';
+    return Math.round(amount).toLocaleString('en-IN');
+}
+
+// Initialize virtual scroll for payslips
+function initPayslipVirtualScroll() {
+    const container = document.getElementById('payslipVirtualScroll');
+    if (!container) return;
+
+    payrollModalState.scrollTop = 0;
+    container.scrollTop = 0;
+    updatePayslipSpacer();
+    renderVisiblePayslips();
+}
+
+// Update spacer height for virtual scroll
+function updatePayslipSpacer() {
+    const spacer = document.getElementById('payslipSpacer');
+    if (!spacer) return;
+
+    const totalHeight = payrollModalState.filteredPayslips.length * payrollModalState.rowHeight;
+    spacer.style.height = totalHeight + 'px';
+}
+
+// Handle scroll event for virtual scroll
+function handlePayslipScroll() {
+    const container = document.getElementById('payslipVirtualScroll');
+    if (!container) return;
+
+    payrollModalState.scrollTop = container.scrollTop;
+    renderVisiblePayslips();
+}
+
+// Render only visible payslip rows
+function renderVisiblePayslips() {
+    const tbody = document.getElementById('payslipTbody');
+    const virtualTable = document.querySelector('.pr-virtual-table');
+    if (!tbody || !virtualTable) return;
+
+    const { filteredPayslips, rowHeight, visibleRows, scrollTop } = payrollModalState;
+
+    const startIndex = Math.floor(scrollTop / rowHeight);
+    const endIndex = Math.min(startIndex + visibleRows + 2, filteredPayslips.length);
+    const offsetY = startIndex * rowHeight;
+
+    virtualTable.style.transform = `translateY(${offsetY}px)`;
+
+    let html = '';
+    for (let i = startIndex; i < endIndex; i++) {
+        const slip = filteredPayslips[i];
+        if (!slip) continue;
+
+        html += `
+            <tr>
+                <td class="pr-col-emp">
+                    <div class="pr-emp-cell">
+                        <span class="pr-emp-name">${slip.employee_name || slip.employee_code || 'N/A'}</span>
+                    </div>
+                </td>
+                <td class="pr-col-dept pr-cell-muted">${(slip.department_name || '-').substring(0, 12)}</td>
+                ${buildDynamicCells(slip)}
+                <td class="pr-col-num text-right pr-cell-bold">${formatCurrencyCompact(slip.gross_earnings)}</td>
+                <td class="pr-col-num text-right pr-cell-muted">${formatCurrencyCompact(slip.total_deductions)}</td>
+                <td class="pr-col-num text-right pr-cell-net">${formatCurrencyCompact(slip.net_pay)}</td>
+                <td class="pr-col-days text-center">${Math.round(slip.days_worked || 0)}/${slip.total_working_days || 0}</td>
+            </tr>
+        `;
+    }
+
+    tbody.innerHTML = html;
+}
+
+// Filter payslips by search term
+function filterPayslips(searchTerm) {
+    payrollModalState.searchTerm = searchTerm.toLowerCase().trim();
+
+    if (!payrollModalState.searchTerm) {
+        payrollModalState.filteredPayslips = payrollModalState.payslips;
+    } else {
+        payrollModalState.filteredPayslips = payrollModalState.payslips.filter(slip => {
+            const name = (slip.employee_name || '').toLowerCase();
+            const code = (slip.employee_code || '').toLowerCase();
+            const dept = (slip.department_name || '').toLowerCase();
+            return name.includes(payrollModalState.searchTerm) ||
+                   code.includes(payrollModalState.searchTerm) ||
+                   dept.includes(payrollModalState.searchTerm);
+        });
+    }
+
+    // Update count
+    const countEl = document.getElementById('payslipCount');
+    if (countEl) {
+        countEl.textContent = `${payrollModalState.filteredPayslips.length} employees`;
+    }
+
+    // Reset scroll and re-render
+    const container = document.getElementById('payslipVirtualScroll');
+    if (container) container.scrollTop = 0;
+    payrollModalState.scrollTop = 0;
+
+    updatePayslipSpacer();
+    renderVisiblePayslips();
+}
+
+// Delete current payroll run (draft only)
+async function deleteCurrentPayrollRun() {
+    if (!currentPayrollRunId) return;
+
+    if (!confirm('Are you sure you want to delete this draft payroll run? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.request(`/hrms/payroll-processing/runs/${currentPayrollRunId}`, {
+            method: 'DELETE'
+        });
+
+        closeModal('payrollRunDetailsModal');
+        showToast('Payroll run deleted successfully', 'success');
+        await loadPayrollRuns();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting payroll run:', error);
+        showToast(error.message || 'Failed to delete payroll run', 'error');
+        hideLoading();
+    }
+}
+
+// Download payroll CSV for bank upload
+async function downloadPayrollCsv() {
+    if (!currentPayrollRunId) return;
+
+    try {
+        showToast('Generating CSV file...', 'info');
+
+        // Fetch the CSV file
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/payroll-processing/runs/${currentPayrollRunId}/export-csv`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to generate CSV');
+        }
+
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'payroll_export.csv';
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?(.+)"?/);
+            if (match) {
+                filename = match[1];
+            }
+        }
+
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        showToast('CSV downloaded successfully', 'success');
+    } catch (error) {
+        console.error('Error downloading CSV:', error);
+        showToast(error.message || 'Failed to download CSV', 'error');
+    }
+}
+
+// Process payroll from within the modal
+async function processCurrentPayrollRun() {
+    if (!currentPayrollRunId) return;
+
+    if (!confirm('Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-processing/runs/${currentPayrollRunId}/process`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
+        // Show processing results
+        let message = `Payroll processed! Processed: ${result.processed || 0}`;
+        if (result.failed > 0) {
+            message += `, Failed: ${result.failed}`;
+        }
+
+        showToast(message, result.failed > 0 ? 'warning' : 'success');
+
+        // Refresh the modal to show the new payslips
+        await viewPayrollRun(currentPayrollRunId);
+        await loadPayrollRuns();
+        hideLoading();
+    } catch (error) {
+        console.error('Error processing payroll:', error);
+        showToast(error.message || 'Failed to process payroll', 'error');
+        hideLoading();
+    }
+}
+
+// Process payroll run - generate payslips for employees
+async function processPayrollRun(runId) {
+    if (!confirm('Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-processing/runs/${runId}/process`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
+        // Show processing results
+        let message = `Payroll processed! Processed: ${result.processed || 0}`;
+        if (result.failed > 0) {
+            message += `, Failed: ${result.failed}`;
+        }
+        if (result.errors && result.errors.length > 0) {
+            console.warn('Payroll processing errors:', result.errors);
+            message += `. Errors: ${result.errors.slice(0, 3).join('; ')}`;
+            if (result.errors.length > 3) {
+                message += `... and ${result.errors.length - 3} more`;
+            }
+        }
+
+        showToast(message, result.failed > 0 ? 'warning' : 'success');
+        await loadPayrollRuns();
+        hideLoading();
+    } catch (error) {
+        console.error('Error processing payroll:', error);
+        showToast(error.message || 'Failed to process payroll', 'error');
+        hideLoading();
+    }
 }
 
 // Event listeners
