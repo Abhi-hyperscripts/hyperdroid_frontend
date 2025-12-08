@@ -602,6 +602,105 @@
             animation: spin 1s linear infinite;
         }
 
+        /* Setup Warning Banner */
+        .setup-warning-banner {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .setup-warning-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: #f59e0b;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .setup-warning-icon svg {
+            width: 24px;
+            height: 24px;
+            color: #fff;
+        }
+
+        .setup-warning-content {
+            flex: 1;
+        }
+
+        .setup-warning-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #92400e;
+            margin: 0 0 4px 0;
+        }
+
+        .setup-warning-content p {
+            font-size: 0.85rem;
+            color: #b45309;
+            margin: 0;
+        }
+
+        .setup-missing-list {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+            font-size: 0.8rem;
+            color: #92400e;
+        }
+
+        .setup-missing-list li {
+            margin: 2px 0;
+        }
+
+        .setup-warning-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #f59e0b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .setup-warning-action:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
+        /* Disabled Action Cards */
+        .action-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .action-card.disabled::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+        }
+
+        .action-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         /* Clock In/Out Section */
         .clock-section {
             background: linear-gradient(135deg, #3b82f6, #6366f1);
@@ -792,12 +891,52 @@
             </div>
         </div>
 
+        <!-- Setup Warning Banner (hidden by default) -->
+        <div class="setup-warning-banner" id="setupWarningBanner" style="display: none;">
+            <div class="setup-warning-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <div class="setup-warning-content">
+                <h4>Organization Setup Required</h4>
+                <p id="setupWarningMessage">Please complete the organization setup to enable all HRMS features.</p>
+                <ul id="setupMissingItems" class="setup-missing-list"></ul>
+            </div>
+            <button class="setup-warning-action" onclick="navigateTo('organization.html')">
+                Complete Setup
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+        </div>
+
         <!-- Quick Actions -->
         <div class="section-header">
             <h3 class="section-title">Quick Actions</h3>
         </div>
-        <div class="quick-actions">
-            <div class="action-card" onclick="navigateTo('employees.html')">
+        <div class="quick-actions" id="quickActionsGrid">
+            <!-- 1. Organization (always enabled) -->
+            <div class="action-card" id="cardOrganization" onclick="navigateTo('organization.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Organization</h4>
+                    <p>Manage offices, departments, and designations</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <!-- 2. Employee Management -->
+            <div class="action-card" id="cardEmployees" onclick="navigateIfSetupComplete('employees.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -815,7 +954,8 @@
                 </svg>
             </div>
 
-            <div class="action-card" onclick="navigateTo('attendance.html')">
+            <!-- 3. Attendance -->
+            <div class="action-card" id="cardAttendance" onclick="navigateIfSetupComplete('attendance.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
@@ -831,7 +971,8 @@
                 </svg>
             </div>
 
-            <div class="action-card" onclick="navigateTo('leave.html')">
+            <!-- 4. Leave Management -->
+            <div class="action-card" id="cardLeave" onclick="navigateIfSetupComplete('leave.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -849,7 +990,8 @@
                 </svg>
             </div>
 
-            <div class="action-card" onclick="navigateTo('payroll.html')">
+            <!-- 5. Payroll -->
+            <div class="action-card" id="cardPayroll" onclick="navigateIfSetupComplete('payroll.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
@@ -865,23 +1007,8 @@
                 </svg>
             </div>
 
-            <div class="action-card" onclick="navigateTo('organization.html')">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Organization</h4>
-                    <p>Manage offices, departments, and designations</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </div>
-
-            <div class="action-card" onclick="navigateTo('reports.html')">
+            <!-- 6. Reports & Analytics -->
+            <div class="action-card" id="cardReports" onclick="navigateIfSetupComplete('reports.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>

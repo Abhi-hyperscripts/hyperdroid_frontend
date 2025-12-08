@@ -4,8 +4,12 @@ let designations = [];
 let offices = [];
 let shifts = [];
 let availableUsers = [];
+let filteredUsers = [];
+let selectedUserId = null;
 let currentViewEmployee = null;
 let userRole = 'HRMS_USER';
+const USER_BATCH_SIZE = 50;
+let displayedUserCount = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
@@ -192,6 +196,11 @@ async function openCreateEmployeeModal() {
     document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
     document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
 
+    // Reset user selection
+    selectedUserId = null;
+    document.getElementById('userSelect').value = '';
+    resetUserDropdown();
+
     // Load available users
     try {
         const response = await api.getAvailableUsersForEmployee();
@@ -206,29 +215,14 @@ async function openCreateEmployeeModal() {
             displayName: u.display_name || u.displayName || ''
         }));
 
-        const userSelect = document.getElementById('userSelect');
-        userSelect.innerHTML = '<option value="">Select a user...</option>' +
-            availableUsers.map(u => `<option value="${u.id}">${u.email} (${u.firstName} ${u.lastName})</option>`).join('');
-
-        // Add onchange handler to auto-populate fields when user is selected
-        userSelect.onchange = function() {
-            const selectedUserId = this.value;
-            if (selectedUserId) {
-                const user = availableUsers.find(u => u.id === selectedUserId);
-                if (user) {
-                    document.getElementById('firstName').value = user.firstName || '';
-                    document.getElementById('lastName').value = user.lastName || '';
-                    document.getElementById('workEmail').value = user.email || '';
-                }
-            } else {
-                // Clear fields if no user selected
-                document.getElementById('firstName').value = '';
-                document.getElementById('lastName').value = '';
-                document.getElementById('workEmail').value = '';
-            }
-        };
+        filteredUsers = [...availableUsers];
+        displayedUserCount = 0;
+        displayUserList(filteredUsers, false);
+        setupUserListScroll();
     } catch (error) {
         console.error('Error loading available users:', error);
+        document.getElementById('userSearchList').innerHTML =
+            '<p style="text-align: center; color: #dc3545; padding: 20px;">Failed to load users</p>';
     }
 
     // Load managers
@@ -237,6 +231,161 @@ async function openCreateEmployeeModal() {
         employees.map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name}</option>`).join('');
 
     openModal('employeeModal');
+}
+
+// Searchable User Dropdown Functions
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userSearchDropdown');
+    dropdown.classList.toggle('open');
+
+    if (dropdown.classList.contains('open')) {
+        document.getElementById('userSearchInput').focus();
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeUserDropdownOnOutsideClick);
+        }, 0);
+    } else {
+        document.removeEventListener('click', closeUserDropdownOnOutsideClick);
+    }
+}
+
+function closeUserDropdownOnOutsideClick(e) {
+    const dropdown = document.getElementById('userSearchDropdown');
+    if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.removeEventListener('click', closeUserDropdownOnOutsideClick);
+    }
+}
+
+function resetUserDropdown() {
+    const selectedText = document.querySelector('.user-search-selected .selected-user-text');
+    selectedText.textContent = 'Select a user...';
+    selectedText.classList.add('placeholder');
+    document.getElementById('userSearchInput').value = '';
+    document.getElementById('clearUserSearchBtn').style.display = 'none';
+    document.getElementById('userSearchDropdown').classList.remove('open');
+}
+
+function filterUserList() {
+    const searchTerm = document.getElementById('userSearchInput').value.toLowerCase();
+    const clearBtn = document.getElementById('clearUserSearchBtn');
+
+    clearBtn.style.display = searchTerm ? 'flex' : 'none';
+
+    filteredUsers = availableUsers.filter(user => {
+        const firstName = (user.firstName || '').toLowerCase();
+        const lastName = (user.lastName || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+
+        return firstName.includes(searchTerm) ||
+               lastName.includes(searchTerm) ||
+               email.includes(searchTerm);
+    });
+
+    displayedUserCount = 0;
+    displayUserList(filteredUsers, false);
+}
+
+function clearUserSearch() {
+    document.getElementById('userSearchInput').value = '';
+    document.getElementById('clearUserSearchBtn').style.display = 'none';
+    filteredUsers = [...availableUsers];
+    displayedUserCount = 0;
+    displayUserList(filteredUsers, false);
+}
+
+function displayUserList(users, append = false) {
+    const list = document.getElementById('userSearchList');
+    const countDisplay = document.getElementById('userCountDisplay');
+
+    const totalUsers = availableUsers.length;
+    const filteredCount = users.length;
+    countDisplay.textContent = filteredCount === totalUsers
+        ? `${totalUsers} user${totalUsers !== 1 ? 's' : ''}`
+        : `${filteredCount} of ${totalUsers} users`;
+
+    if (users.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">No users found</p>';
+        return;
+    }
+
+    const startIndex = append ? displayedUserCount : 0;
+    const endIndex = Math.min(startIndex + USER_BATCH_SIZE, users.length);
+    const batch = users.slice(startIndex, endIndex);
+
+    const batchHTML = batch.map(user => {
+        const isSelected = selectedUserId === user.id;
+        return `
+            <div class="user-select-item ${isSelected ? 'selected' : ''}"
+                 data-user-id="${user.id}"
+                 onclick="selectUser('${user.id}')">
+                <div class="user-info-compact">
+                    <span class="user-name-compact">${user.firstName} ${user.lastName}</span>
+                    <span class="user-email-compact">${user.email}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (append) {
+        const loadingIndicator = document.getElementById('user-loading-indicator');
+        if (loadingIndicator) loadingIndicator.remove();
+        list.insertAdjacentHTML('beforeend', batchHTML);
+    } else {
+        list.innerHTML = batchHTML;
+    }
+
+    displayedUserCount = endIndex;
+
+    if (displayedUserCount < users.length) {
+        list.insertAdjacentHTML('beforeend',
+            '<div id="user-loading-indicator" style="text-align: center; padding: 12px; color: #999; font-size: 0.75rem;">Scroll for more...</div>');
+    }
+}
+
+function setupUserListScroll() {
+    const list = document.getElementById('userSearchList');
+
+    list.onscroll = () => {
+        const scrollTop = list.scrollTop;
+        const scrollHeight = list.scrollHeight;
+        const clientHeight = list.clientHeight;
+
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            if (displayedUserCount < filteredUsers.length) {
+                displayUserList(filteredUsers, true);
+            }
+        }
+    };
+}
+
+function selectUser(userId) {
+    selectedUserId = userId;
+    const user = availableUsers.find(u => u.id === userId);
+
+    if (user) {
+        // Update hidden input
+        document.getElementById('userSelect').value = userId;
+
+        // Update selected text
+        const selectedText = document.querySelector('.user-search-selected .selected-user-text');
+        selectedText.textContent = `${user.email} (${user.firstName} ${user.lastName})`;
+        selectedText.classList.remove('placeholder');
+
+        // Auto-populate form fields
+        document.getElementById('firstName').value = user.firstName || '';
+        document.getElementById('lastName').value = user.lastName || '';
+        document.getElementById('workEmail').value = user.email || '';
+
+        // Update list to show selected state
+        document.querySelectorAll('.user-search-panel .user-select-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.userId === userId);
+        });
+
+        // Close dropdown
+        document.getElementById('userSearchDropdown').classList.remove('open');
+        document.removeEventListener('click', closeUserDropdownOnOutsideClick);
+    }
 }
 
 async function editEmployee(id) {

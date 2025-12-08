@@ -133,9 +133,36 @@
                             <h4>Select User Account</h4>
                             <div class="form-group">
                                 <label>User Account <span class="required">*</span></label>
-                                <select id="userSelect" required>
-                                    <option value="">Select a user...</option>
-                                </select>
+                                <input type="hidden" id="userSelect" required>
+                                <div class="user-search-dropdown" id="userSearchDropdown">
+                                    <div class="user-search-selected" id="userSearchSelected" onclick="toggleUserDropdown()">
+                                        <span class="selected-user-text">Select a user...</span>
+                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="user-search-panel" id="userSearchPanel">
+                                        <div class="search-box-modern">
+                                            <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="m21 21-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" id="userSearchInput" placeholder="Search by name or email..." oninput="filterUserList()">
+                                            <button type="button" class="clear-search-btn" id="clearUserSearchBtn" style="display: none;" onclick="clearUserSearch()">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="user-list-header">
+                                            <span id="userCountDisplay">0 users</span>
+                                        </div>
+                                        <div id="userSearchList" class="users-list-modern">
+                                            <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading users...</p>
+                                        </div>
+                                    </div>
+                                </div>
                                 <small class="form-text">Only users without employee profiles are shown</small>
                             </div>
                         </div>

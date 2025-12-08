@@ -2,6 +2,7 @@
 let userRole = 'HRMS_USER';
 let currentEmployee = null;
 let isClockedIn = false;
+let isSetupComplete = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -26,9 +27,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     setInterval(updateClock, 1000);
 
+    // Check organization setup status first
+    await checkSetupStatus();
+
     // Load dashboard data
     await loadDashboard();
 });
+
+async function checkSetupStatus() {
+    try {
+        const status = await api.request('/hrms/dashboard/setup-status');
+        isSetupComplete = status.is_setup_complete;
+
+        if (!isSetupComplete) {
+            // Show warning banner
+            const banner = document.getElementById('setupWarningBanner');
+            const message = document.getElementById('setupWarningMessage');
+            const missingList = document.getElementById('setupMissingItems');
+
+            if (banner) {
+                banner.style.display = 'flex';
+            }
+
+            if (message && status.setup_message) {
+                message.textContent = status.setup_message;
+            }
+
+            if (missingList && status.missing_items && status.missing_items.length > 0) {
+                missingList.innerHTML = status.missing_items.map(item => `<li>${item}</li>`).join('');
+            }
+
+            // Disable other cards
+            const cardsToDisable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
+            cardsToDisable.forEach(cardId => {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.classList.add('disabled');
+                }
+            });
+        } else {
+            // Hide warning banner if visible
+            const banner = document.getElementById('setupWarningBanner');
+            if (banner) {
+                banner.style.display = 'none';
+            }
+
+            // Enable all cards
+            const cardsToEnable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
+            cardsToEnable.forEach(cardId => {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.classList.remove('disabled');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error checking setup status:', error);
+        // If error, assume setup is complete to not block users
+        isSetupComplete = true;
+    }
+}
+
+function navigateIfSetupComplete(page) {
+    if (!isSetupComplete) {
+        showToast('Please complete organization setup first', 'error');
+        return;
+    }
+    navigateTo(page);
+}
 
 function updateClock() {
     const now = new Date();

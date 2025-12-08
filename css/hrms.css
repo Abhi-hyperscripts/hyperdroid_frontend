@@ -1052,6 +1052,137 @@
     outline-offset: 2px;
 }
 
+/* Searchable User Dropdown */
+.user-search-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.user-search-selected {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 42px;
+}
+
+.user-search-selected:hover {
+    border-color: #000;
+}
+
+.user-search-dropdown.open .user-search-selected {
+    border-color: #000;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.user-search-selected .selected-user-text {
+    font-size: 0.9rem;
+    color: #374151;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-search-selected .selected-user-text.placeholder {
+    color: #9ca3af;
+}
+
+.user-search-selected .dropdown-arrow {
+    color: #6b7280;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.user-search-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.user-search-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #000;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-search-dropdown.open .user-search-panel {
+    display: block;
+}
+
+.user-search-panel .search-box-modern {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.user-search-panel .user-list-header {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.user-search-panel .users-list-modern {
+    max-height: 250px;
+    border-radius: 0 0 8px 8px;
+}
+
+.user-search-panel .user-select-item {
+    padding: 8px 12px;
+    height: auto;
+    min-height: 36px;
+}
+
+.user-search-panel .user-select-item:hover {
+    background: #f3f4f6;
+}
+
+.user-search-panel .user-select-item.selected {
+    background: #000;
+    color: white;
+}
+
+.user-search-panel .user-select-item.selected .user-name-compact,
+.user-search-panel .user-select-item.selected .user-email-compact {
+    color: white;
+}
+
+.user-search-panel .user-info-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.user-search-panel .user-name-compact {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-search-panel .user-email-compact {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* HRMS Search Box Modern Override */
 .filters-bar .search-box-modern {
     width: auto;
