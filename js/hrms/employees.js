@@ -44,15 +44,17 @@ async function loadFormData() {
         offices = offs || [];
         shifts = shiftsData || [];
 
-        // Populate filter dropdowns
+        // Populate filter dropdowns (all items)
         populateSelect('departmentFilter', departments, 'department_name', true);
         populateSelect('officeFilter', offices, 'office_name', true);
 
-        // Populate form dropdowns
-        populateSelect('departmentId', departments, 'department_name');
-        populateSelect('designationId', designations, 'designation_name');
+        // Only populate Office dropdown in the form - others are cascading
         populateSelect('officeId', offices, 'office_name');
-        populateSelect('shiftId', shifts, 'shift_name');
+
+        // Set initial state for cascading dropdowns
+        document.getElementById('departmentId').innerHTML = '<option value="">Select office first...</option>';
+        document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
+        document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
 
     } catch (error) {
         console.error('Error loading form data:', error);
@@ -185,9 +187,25 @@ async function openCreateEmployeeModal() {
     document.getElementById('employeeId').value = '';
     document.getElementById('userSelectionSection').style.display = 'block';
 
+    // Reset all cascading dropdowns
+    document.getElementById('departmentId').innerHTML = '<option value="">Select office first...</option>';
+    document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
+    document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
+
     // Load available users
     try {
-        availableUsers = await api.getAvailableUsersForEmployee();
+        const response = await api.getAvailableUsersForEmployee();
+        // API returns { users: [...], total_users, existing_employees, available_count }
+        // Extract the users array and normalize field names
+        const usersArray = response.users || response || [];
+        availableUsers = usersArray.map(u => ({
+            id: u.user_id || u.id,
+            email: u.email,
+            firstName: u.first_name || u.firstName || '',
+            lastName: u.last_name || u.lastName || '',
+            displayName: u.display_name || u.displayName || ''
+        }));
+
         const userSelect = document.getElementById('userSelect');
         userSelect.innerHTML = '<option value="">Select a user...</option>' +
             availableUsers.map(u => `<option value="${u.id}">${u.email} (${u.firstName} ${u.lastName})</option>`).join('');
@@ -229,7 +247,7 @@ async function editEmployee(id) {
     document.getElementById('employeeId').value = id;
     document.getElementById('userSelectionSection').style.display = 'none';
 
-    // Fill form fields
+    // Fill basic form fields first
     document.getElementById('employeeCode').value = emp.employee_code || '';
     document.getElementById('firstName').value = emp.first_name || '';
     document.getElementById('lastName').value = emp.last_name || '';
@@ -237,16 +255,28 @@ async function editEmployee(id) {
     document.getElementById('workPhone').value = emp.work_phone || '';
     document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
     document.getElementById('gender').value = emp.gender || '';
-    document.getElementById('departmentId').value = emp.department_id || '';
-    document.getElementById('designationId').value = emp.designation_id || '';
-    document.getElementById('officeId').value = emp.office_id || '';
-    // Update shifts dropdown based on selected office, then set the value
-    updateShiftsForOffice();
-    document.getElementById('shiftId').value = emp.shift_id || '';
-    document.getElementById('reportingManagerId').value = emp.reporting_manager_id || '';
     document.getElementById('employmentType').value = emp.employment_type || 'full_time';
     document.getElementById('dateOfJoining').value = emp.date_of_joining?.split('T')[0] || '';
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
+
+    // Set Office and trigger cascading dropdown updates
+    document.getElementById('officeId').value = emp.office_id || '';
+
+    // Update departments and shifts for the selected office
+    if (emp.office_id) {
+        updateDepartmentsForOffice(emp.office_id);
+        updateShiftsForOffice(emp.office_id);
+    }
+
+    // Set Department and trigger designation cascade
+    document.getElementById('departmentId').value = emp.department_id || '';
+    if (emp.department_id) {
+        updateDesignationsForDepartment(emp.department_id);
+    }
+
+    // Now set the dependent dropdown values
+    document.getElementById('designationId').value = emp.designation_id || '';
+    document.getElementById('shiftId').value = emp.shift_id || '';
 
     // Load managers
     const managerSelect = document.getElementById('reportingManagerId');
@@ -412,22 +442,103 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function updateShiftsForOffice() {
+// Cascading dropdown: Office → Department, Shift
+function updateForOfficeChange() {
     const officeId = document.getElementById('officeId').value;
+
+    // Update departments for this office
+    updateDepartmentsForOffice(officeId);
+
+    // Update shifts for this office
+    updateShiftsForOffice(officeId);
+
+    // Reset designation since department will change
+    document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
+}
+
+function updateDepartmentsForOffice(officeId) {
+    const deptSelect = document.getElementById('departmentId');
+    const currentDeptId = deptSelect.value;
+
+    if (!officeId) {
+        deptSelect.innerHTML = '<option value="">Select office first...</option>';
+        return;
+    }
+
+    // Filter departments by selected office (or show those without office_id for backward compatibility)
+    const filteredDepts = departments.filter(d => !d.office_id || d.office_id === officeId);
+
+    if (filteredDepts.length === 0) {
+        deptSelect.innerHTML = '<option value="">No departments for this office</option>';
+        return;
+    }
+
+    deptSelect.innerHTML = '<option value="">Select department...</option>' +
+        filteredDepts.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+
+    // Keep previous selection if still valid
+    if (currentDeptId && filteredDepts.some(d => d.id === currentDeptId)) {
+        deptSelect.value = currentDeptId;
+        // Trigger designation update
+        updateDesignationsForDepartment(currentDeptId);
+    }
+}
+
+function updateShiftsForOffice(officeId) {
     const shiftSelect = document.getElementById('shiftId');
     const currentShiftId = shiftSelect.value;
 
-    // Filter shifts by selected office
-    // Show shifts that either belong to the selected office or have no office (global shifts)
+    if (!officeId) {
+        shiftSelect.innerHTML = '<option value="">Select office first...</option>';
+        return;
+    }
+
+    // Filter shifts by selected office (or show those without office_id for global shifts)
     const filteredShifts = shifts.filter(s => !s.office_id || s.office_id === officeId);
 
     shiftSelect.innerHTML = '<option value="">Default shift</option>' +
         filteredShifts.map(s => `<option value="${s.id}">${s.shift_name}</option>`).join('');
 
-    // Try to keep the previously selected shift if it's still in the filtered list
+    // Keep previous selection if still valid
     if (currentShiftId && filteredShifts.some(s => s.id === currentShiftId)) {
         shiftSelect.value = currentShiftId;
     }
+}
+
+// Cascading dropdown: Department → Designation
+function updateDesignationsForDepartment(departmentId) {
+    const desigSelect = document.getElementById('designationId');
+    const currentDesigId = desigSelect.value;
+
+    // Get departmentId from parameter or from the select element
+    const deptId = departmentId || document.getElementById('departmentId').value;
+
+    if (!deptId) {
+        desigSelect.innerHTML = '<option value="">Select department first...</option>';
+        return;
+    }
+
+    // Filter designations by selected department (or show those without department_id for backward compatibility)
+    const filteredDesigs = designations.filter(d => !d.department_id || d.department_id === deptId);
+
+    if (filteredDesigs.length === 0) {
+        desigSelect.innerHTML = '<option value="">No designations for this department</option>';
+        return;
+    }
+
+    desigSelect.innerHTML = '<option value="">Select designation...</option>' +
+        filteredDesigs.map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+
+    // Keep previous selection if still valid
+    if (currentDesigId && filteredDesigs.some(d => d.id === currentDesigId)) {
+        desigSelect.value = currentDesigId;
+    }
+}
+
+// Called when department dropdown changes
+function onDepartmentChange() {
+    const deptId = document.getElementById('departmentId').value;
+    updateDesignationsForDepartment(deptId);
 }
 
 function openModal(id) {
