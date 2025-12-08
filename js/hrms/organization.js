@@ -630,7 +630,11 @@ function editShift(id) {
     document.getElementById('shiftIsActive').value = shift.is_active ? 'true' : 'false';
 
     // Set working days checkboxes
-    const workingDays = shift.working_days || [];
+    // working_days comes from backend as comma-separated string (e.g., "Mon,Tue,Wed,Thu,Fri")
+    let workingDays = shift.working_days || "Mon,Tue,Wed,Thu,Fri";
+    if (typeof workingDays === 'string') {
+        workingDays = workingDays.split(',').map(d => d.trim());
+    }
     document.querySelectorAll('input[name="workingDays"]').forEach(cb => {
         cb.checked = workingDays.includes(cb.value);
     });
@@ -856,6 +860,11 @@ async function saveShift() {
             if (breakDurationMinutes < 0) breakDurationMinutes = 60; // fallback if invalid
         }
 
+        // Get selected working days from checkboxes and join as comma-separated string
+        const selectedWorkingDays = Array.from(document.querySelectorAll('input[name="workingDays"]:checked'))
+            .map(cb => cb.value)
+            .join(',');
+
         const data = {
             shift_name: document.getElementById('shiftName').value,
             shift_code: document.getElementById('shiftCode').value,
@@ -864,7 +873,8 @@ async function saveShift() {
             end_time: convertTo24HourFormat(document.getElementById('shiftEnd').value),
             break_duration_minutes: breakDurationMinutes,
             grace_period_minutes: parseInt(document.getElementById('graceMinutes').value) || 15,
-            half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4
+            half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4,
+            working_days: selectedWorkingDays || 'Mon,Tue,Wed,Thu,Fri'
         };
 
         if (id) {
