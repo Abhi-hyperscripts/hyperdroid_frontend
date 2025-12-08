@@ -601,6 +601,9 @@ function showCreateShiftModal() {
     document.getElementById('shiftModalTitle').textContent = 'Create Shift';
     document.getElementById('shiftModal').classList.add('active');
 
+    // Populate the office dropdown
+    populateOfficeSelects();
+
     // Initialize time pickers and set default values
     initTimePickers();
     setTimePickerValue('shiftStart', '09:00');
@@ -616,7 +619,6 @@ function editShift(id) {
     document.getElementById('shiftId').value = shift.id;
     document.getElementById('shiftName').value = shift.shift_name;
     document.getElementById('shiftCode').value = shift.shift_code;
-    document.getElementById('shiftOfficeId').value = shift.office_id || '';
     document.getElementById('graceMinutes').value = shift.grace_period_minutes || 15;
     document.getElementById('halfDayHours').value = shift.half_day_hours || 4;
     document.getElementById('shiftIsActive').value = shift.is_active ? 'true' : 'false';
@@ -629,6 +631,10 @@ function editShift(id) {
 
     document.getElementById('shiftModalTitle').textContent = 'Edit Shift';
     document.getElementById('shiftModal').classList.add('active');
+
+    // Populate office dropdown then set the value
+    populateOfficeSelects();
+    document.getElementById('shiftOfficeId').value = shift.office_id || '';
 
     // Initialize time pickers and set values
     initTimePickers();
