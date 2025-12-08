@@ -176,6 +176,13 @@
     align-items: center;
 }
 
+.filter-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .search-input-wrapper {
     position: relative;
     flex: 1;
