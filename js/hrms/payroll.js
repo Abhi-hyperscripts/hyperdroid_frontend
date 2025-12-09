@@ -5,6 +5,7 @@ let offices = [];
 let components = [];
 let structures = [];
 let currentPayslipId = null;
+let drafts = [];
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
@@ -30,6 +31,7 @@ async function initializePage() {
         // Show/hide admin elements
         if (isAdmin) {
             document.getElementById('adminActions').style.display = 'flex';
+            document.getElementById('payrollDraftsTab').style.display = 'block';
             document.getElementById('payrollRunsTab').style.display = 'block';
             document.getElementById('salaryTab').style.display = 'block';
             document.getElementById('componentsTab').style.display = 'block';
@@ -51,6 +53,7 @@ async function initializePage() {
 
         if (isAdmin) {
             await Promise.all([
+                loadPayrollDrafts(),
                 loadPayrollRuns(),
                 loadComponents(),
                 loadSalaryStructures(),
@@ -195,6 +198,410 @@ async function loadPayrollRuns() {
         console.error('Error loading payroll runs:', error);
     }
 }
+
+// =====================================================
+// PAYROLL DRAFTS FUNCTIONS
+// =====================================================
+
+async function loadPayrollDrafts() {
+    try {
+        const year = document.getElementById('draftYear')?.value || new Date().getFullYear();
+        const month = document.getElementById('draftMonth')?.value || '';
+        const officeId = document.getElementById('draftOffice')?.value || '';
+
+        let url = `/hrms/payroll-drafts?year=${year}`;
+        if (month) url += `&month=${month}`;
+        if (officeId) url += `&officeId=${officeId}`;
+
+        const response = await api.request(url);
+        drafts = response || [];
+        updatePayrollDraftsTable(drafts);
+    } catch (error) {
+        console.error('Error loading payroll drafts:', error);
+    }
+}
+
+function updatePayrollDraftsTable(draftsList) {
+    const tbody = document.getElementById('payrollDraftsTable');
+    if (!tbody) return;
+
+    if (!draftsList || draftsList.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="9">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <p>No payroll drafts found</p>
+                        <p class="hint">Create a new draft to start payroll processing</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = draftsList.map(draft => `
+        <tr>
+            <td><strong>${draft.draft_name || 'Draft'}</strong> #${draft.draft_number || 1}</td>
+            <td>${getMonthName(draft.payroll_month)} ${draft.payroll_year}</td>
+            <td>${draft.office_name || 'All Offices'}</td>
+            <td>${draft.total_employees || 0}</td>
+            <td>${formatCurrency(draft.total_gross)}</td>
+            <td>${formatCurrency(draft.total_net)}</td>
+            <td><span class="status-badge status-${draft.status?.toLowerCase()}">${formatDraftStatus(draft.status)}</span></td>
+            <td>${formatDate(draft.created_at)}</td>
+            <td>
+                <div class="action-buttons">
+                    ${draft.status === 'pending' ? `
+                    <button class="action-btn success" onclick="processDraft('${draft.id}')" title="Process Draft">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                    ` : ''}
+                    ${draft.status === 'processed' ? `
+                    <button class="action-btn" onclick="viewDraftDetails('${draft.id}')" title="View Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                    <button class="action-btn warning" onclick="recalculateDraft('${draft.id}')" title="Recalculate">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn success" onclick="finalizeDraft('${draft.id}')" title="Finalize Draft">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    ` : ''}
+                    <button class="action-btn" onclick="renameDraft('${draft.id}', '${draft.draft_name || 'Draft'}')" title="Rename">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteDraft('${draft.id}')" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function formatDraftStatus(status) {
+    const statusMap = {
+        'pending': 'Not Processed',
+        'processing': 'Processing...',
+        'processed': 'Ready to Finalize'
+    };
+    return statusMap[status] || status;
+}
+
+async function createPayrollDraft() {
+    const form = document.getElementById('createDraftForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const officeId = document.getElementById('draftPayrollOffice').value;
+        const data = {
+            payroll_month: parseInt(document.getElementById('draftPayrollMonth').value),
+            payroll_year: parseInt(document.getElementById('draftPayrollYear').value),
+            office_id: officeId ? officeId : null,
+            draft_name: document.getElementById('draftName').value || 'Draft',
+            pay_period_start: document.getElementById('draftPeriodStart').value,
+            pay_period_end: document.getElementById('draftPeriodEnd').value,
+            notes: document.getElementById('draftNotes')?.value || ''
+        };
+
+        const draft = await api.request('/hrms/payroll-drafts', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        closeModal('createDraftModal');
+        showToast('Draft created successfully', 'success');
+        await loadPayrollDrafts();
+        hideLoading();
+    } catch (error) {
+        console.error('Error creating draft:', error);
+        showToast(error.message || error.error || 'Failed to create draft', 'error');
+        hideLoading();
+    }
+}
+
+async function processDraft(draftId) {
+    if (!confirm('Process this draft? This will generate payslips for all eligible employees.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-drafts/${draftId}/process`, {
+            method: 'POST'
+        });
+
+        let message = `Draft processed! ${result.payslips_generated || 0} payslips generated`;
+        if (result.errors && result.errors.length > 0) {
+            message += ` (${result.errors.length} errors)`;
+        }
+        showToast(message, result.errors?.length > 0 ? 'warning' : 'success');
+        await loadPayrollDrafts();
+        hideLoading();
+
+        // Show details after processing
+        if (result.draft_id) {
+            await viewDraftDetails(result.draft_id);
+        }
+    } catch (error) {
+        console.error('Error processing draft:', error);
+        showToast(error.message || error.error || 'Failed to process draft', 'error');
+        hideLoading();
+    }
+}
+
+async function recalculateDraft(draftId) {
+    if (!confirm('Recalculate this draft? This will regenerate all payslips with current data.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-drafts/${draftId}/recalculate`, {
+            method: 'POST'
+        });
+
+        showToast(`Draft recalculated! ${result.payslips_generated || 0} payslips regenerated`, 'success');
+        await loadPayrollDrafts();
+        hideLoading();
+
+        if (result.draft_id) {
+            await viewDraftDetails(result.draft_id);
+        }
+    } catch (error) {
+        console.error('Error recalculating draft:', error);
+        showToast(error.message || error.error || 'Failed to recalculate draft', 'error');
+        hideLoading();
+    }
+}
+
+async function viewDraftDetails(draftId) {
+    try {
+        showLoading();
+        const details = await api.request(`/hrms/payroll-drafts/${draftId}/details`);
+
+        // Populate modal with draft details
+        const modal = document.getElementById('draftDetailsModal');
+        if (!modal) {
+            console.error('Draft details modal not found');
+            hideLoading();
+            return;
+        }
+
+        const draft = details.draft;
+        const payslips = details.payslips || [];
+        const summary = details.summary || {};
+
+        document.getElementById('draftDetailTitle').textContent = `${draft.draft_name} - ${getMonthName(draft.payroll_month)} ${draft.payroll_year}`;
+
+        // Update summary cards
+        document.getElementById('draftTotalEmployees').textContent = summary.total_employees || 0;
+        document.getElementById('draftTotalGross').textContent = formatCurrency(summary.total_gross || 0);
+        document.getElementById('draftTotalDeductions').textContent = formatCurrency(summary.total_deductions || 0);
+        document.getElementById('draftTotalNet').textContent = formatCurrency(summary.total_net || 0);
+
+        // Update payslips table
+        const tbody = document.getElementById('draftPayslipsTable');
+        if (payslips.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payslips generated yet</td></tr>';
+        } else {
+            tbody.innerHTML = payslips.map(p => `
+                <tr>
+                    <td><code>${p.employee_code || '-'}</code></td>
+                    <td>${p.employee_name || 'Unknown'}</td>
+                    <td>${p.department_name || '-'}</td>
+                    <td>${formatCurrency(p.gross_earnings)}</td>
+                    <td>${formatCurrency(p.total_deductions)}</td>
+                    <td><strong>${formatCurrency(p.net_pay)}</strong></td>
+                    <td>
+                        <button class="action-btn" onclick="viewDraftPayslip('${p.id}')" title="View Details">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Store current draft ID for finalization
+        modal.dataset.draftId = draftId;
+
+        openModal('draftDetailsModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading draft details:', error);
+        showToast(error.message || 'Failed to load draft details', 'error');
+        hideLoading();
+    }
+}
+
+async function viewDraftPayslip(payslipId) {
+    try {
+        showLoading();
+        const payslip = await api.request(`/hrms/payroll-drafts/payslips/${payslipId}?includeItems=true`);
+
+        // Reuse existing payslip modal for display
+        const modal = document.getElementById('payslipModal');
+        if (!modal) {
+            hideLoading();
+            return;
+        }
+
+        document.getElementById('payslipEmployeeName').textContent = payslip.employee_name || 'Employee';
+        document.getElementById('payslipPeriod').textContent = `Draft - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}`;
+        document.getElementById('payslipWorkingDays').textContent = payslip.total_working_days || 0;
+        document.getElementById('payslipDaysWorked').textContent = payslip.days_worked || 0;
+        document.getElementById('payslipLopDays').textContent = payslip.lop_days || 0;
+
+        // Populate items
+        const items = payslip.items || [];
+        const earnings = items.filter(i => i.component_type === 'earning');
+        const deductions = items.filter(i => i.component_type === 'deduction');
+
+        document.getElementById('payslipEarningsTable').innerHTML = earnings.length > 0 ?
+            earnings.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
+            '<tr><td colspan="2">No earnings</td></tr>';
+
+        document.getElementById('payslipDeductionsTable').innerHTML = deductions.length > 0 ?
+            deductions.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
+            '<tr><td colspan="2">No deductions</td></tr>';
+
+        document.getElementById('payslipGrossTotal').textContent = formatCurrency(payslip.gross_earnings);
+        document.getElementById('payslipDeductionsTotal').textContent = formatCurrency(payslip.total_deductions);
+        document.getElementById('payslipNetPay').textContent = formatCurrency(payslip.net_pay);
+
+        openModal('payslipModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading draft payslip:', error);
+        showToast('Failed to load payslip details', 'error');
+        hideLoading();
+    }
+}
+
+async function finalizeDraft(draftId) {
+    const confirmed = confirm('Finalize this draft?\n\nThis will:\n• Move this draft to finalized payroll runs\n• Delete ALL other drafts for this period\n\nThis action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-drafts/${draftId}/finalize`, {
+            method: 'POST'
+        });
+
+        if (result.success) {
+            showToast(`Payroll finalized successfully! ${result.drafts_deleted || 0} draft(s) cleaned up.`, 'success');
+            closeModal('draftDetailsModal');
+            await loadPayrollDrafts();
+            await loadPayrollRuns();
+        } else {
+            showToast(result.message || 'Failed to finalize draft', 'error');
+        }
+        hideLoading();
+    } catch (error) {
+        console.error('Error finalizing draft:', error);
+        showToast(error.message || error.error || 'Failed to finalize draft', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteDraft(draftId) {
+    if (!confirm('Delete this draft? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.request(`/hrms/payroll-drafts/${draftId}`, {
+            method: 'DELETE'
+        });
+
+        showToast('Draft deleted successfully', 'success');
+        await loadPayrollDrafts();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting draft:', error);
+        showToast(error.message || error.error || 'Failed to delete draft', 'error');
+        hideLoading();
+    }
+}
+
+async function renameDraft(draftId, currentName) {
+    const newName = prompt('Enter new draft name:', currentName);
+    if (!newName || newName === currentName) return;
+
+    try {
+        showLoading();
+        await api.request(`/hrms/payroll-drafts/${draftId}/rename`, {
+            method: 'PUT',
+            body: JSON.stringify({ draft_name: newName })
+        });
+
+        showToast('Draft renamed successfully', 'success');
+        await loadPayrollDrafts();
+        hideLoading();
+    } catch (error) {
+        console.error('Error renaming draft:', error);
+        showToast(error.message || error.error || 'Failed to rename draft', 'error');
+        hideLoading();
+    }
+}
+
+function openCreateDraftModal() {
+    // Reset form
+    const form = document.getElementById('createDraftForm');
+    if (form) form.reset();
+
+    // Set default values
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    document.getElementById('draftPayrollMonth').value = currentMonth;
+    document.getElementById('draftPayrollYear').value = currentYear;
+    document.getElementById('draftName').value = 'Draft';
+
+    // Set period start to 1st of month
+    const periodStart = new Date(currentYear, currentMonth - 1, 1);
+    document.getElementById('draftPeriodStart').value = periodStart.toISOString().split('T')[0];
+
+    // Set period end to last day of month
+    const periodEnd = new Date(currentYear, currentMonth, 0);
+    document.getElementById('draftPeriodEnd').value = periodEnd.toISOString().split('T')[0];
+
+    openModal('createDraftModal');
+}
+
+// =====================================================
+// END PAYROLL DRAFTS FUNCTIONS
+// =====================================================
 
 function updatePayrollRunsTable(runs) {
     const tbody = document.getElementById('payrollRunsTable');
@@ -515,12 +922,12 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = response || [];
 
-        const selects = ['payrollOffice', 'runOffice', 'structureOfficeFilter', 'structureOffice'];
+        const selects = ['payrollOffice', 'runOffice', 'structureOfficeFilter', 'structureOffice', 'draftOffice', 'draftPayrollOffice'];
         selects.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
                 let firstOption;
-                if (id === 'runOffice' || id === 'structureOfficeFilter') {
+                if (id === 'runOffice' || id === 'structureOfficeFilter' || id === 'draftOffice' || id === 'draftPayrollOffice') {
                     firstOption = '<option value="">All Offices</option>';
                 } else if (id === 'structureOffice') {
                     firstOption = '<option value="">Select Office (Required)</option>';

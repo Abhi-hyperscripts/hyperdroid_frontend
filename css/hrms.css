@@ -446,6 +446,16 @@
     color: #f39c12;
 }
 
+.status-badge.processing {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
+.status-badge.processed {
+    background: rgba(155, 89, 182, 0.15);
+    color: #9b59b6;
+}
+
 /* Office Type Badges */
 .badge {
     display: inline-flex;
