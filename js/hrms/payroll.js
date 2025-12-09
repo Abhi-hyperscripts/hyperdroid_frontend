@@ -485,16 +485,155 @@ async function viewDraftPayslip(payslipId) {
         }
 
         const items = payslip.items || [];
-        const earnings = items.filter(i => i.component_type === 'earning');
-        const deductions = items.filter(i => i.component_type === 'deduction');
 
-        const earningsHtml = earnings.length > 0 ?
-            earnings.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
-            '<tr><td colspan="2" class="text-muted">No earnings</td></tr>';
+        // Group items by structure for compliance display
+        const structureGroups = groupItemsByStructure(items);
+        const hasMultipleStructures = structureGroups.length > 1;
 
-        const deductionsHtml = deductions.length > 0 ?
-            deductions.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
-            '<tr><td colspan="2" class="text-muted">No deductions</td></tr>';
+        // Build structure-wise breakdown HTML
+        let structureBreakdownHtml = '';
+
+        if (hasMultipleStructures) {
+            structureBreakdownHtml = `
+                <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+                    <strong style="color: #856404;">Mid-Period Structure Change</strong>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #856404;">
+                        This employee had a salary structure change during the pay period.
+                        Components are shown separately for each structure for compliance purposes.
+                    </p>
+                </div>
+            `;
+
+            for (const group of structureGroups) {
+                const periodText = group.period_start && group.period_end
+                    ? `${formatDate(group.period_start)} - ${formatDate(group.period_end)}`
+                    : '';
+
+                const groupEarnings = group.items.filter(i => i.component_type === 'earning');
+                const groupDeductions = group.items.filter(i => i.component_type === 'deduction');
+
+                const groupEarningsTotal = groupEarnings.reduce((sum, i) => sum + (i.amount || 0), 0);
+                const groupDeductionsTotal = groupDeductions.reduce((sum, i) => sum + (i.amount || 0), 0);
+
+                structureBreakdownHtml += `
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-subtle);">
+                        <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                            <h5 style="margin: 0; color: var(--primary-color);">${group.structure_name || 'Salary Structure'}</h5>
+                            ${periodText ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Period: ${periodText}</p>` : ''}
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--success-color);">Earnings</h6>
+                                <table class="data-table" style="width: 100%; font-size: 0.85rem;">
+                                    <tbody>
+                                        ${groupEarnings.length > 0
+                                            ? groupEarnings.map(i => `
+                                                <tr>
+                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
+                                                </tr>
+                                            `).join('')
+                                            : '<tr><td colspan="2" class="text-muted">No earnings</td></tr>'
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
+                                            <td>Subtotal</td>
+                                            <td class="text-right">${formatCurrency(groupEarningsTotal)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div>
+                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--danger-color);">Deductions</h6>
+                                <table class="data-table" style="width: 100%; font-size: 0.85rem;">
+                                    <tbody>
+                                        ${groupDeductions.length > 0
+                                            ? groupDeductions.map(i => `
+                                                <tr>
+                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
+                                                </tr>
+                                            `).join('')
+                                            : '<tr><td colspan="2" class="text-muted">No deductions</td></tr>'
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
+                                            <td>Subtotal</td>
+                                            <td class="text-right">${formatCurrency(groupDeductionsTotal)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Add combined totals section for multi-structure
+            structureBreakdownHtml += `
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border: 2px solid var(--border-color);">
+                    <h5 style="margin: 0 0 1rem 0;">Combined Totals</h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>Total Gross Earnings</span>
+                                <span style="font-weight: 600; color: var(--success-color);">${formatCurrency(payslip.gross_earnings)}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>Total Deductions</span>
+                                <span style="font-weight: 600; color: var(--danger-color);">${formatCurrency(payslip.total_deductions)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Single structure - use original layout
+            const earnings = items.filter(i => i.component_type === 'earning');
+            const deductions = items.filter(i => i.component_type === 'deduction');
+
+            const earningsHtml = earnings.length > 0 ?
+                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
+                '<tr><td colspan="2" class="text-muted">No earnings</td></tr>';
+
+            const deductionsHtml = deductions.length > 0 ?
+                deductions.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
+                '<tr><td colspan="2" class="text-muted">No deductions</td></tr>';
+
+            structureBreakdownHtml = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <h5 style="margin: 0 0 0.75rem 0; color: var(--success-color);">Earnings</h5>
+                        <table class="data-table" style="width: 100%;">
+                            <tbody>${earningsHtml}</tbody>
+                            <tfoot>
+                                <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
+                                    <td>Total Gross</td>
+                                    <td class="text-right">${formatCurrency(payslip.gross_earnings)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div>
+                        <h5 style="margin: 0 0 0.75rem 0; color: var(--danger-color);">Deductions</h5>
+                        <table class="data-table" style="width: 100%;">
+                            <tbody>${deductionsHtml}</tbody>
+                            <tfoot>
+                                <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
+                                    <td>Total Deductions</td>
+                                    <td class="text-right">${formatCurrency(payslip.total_deductions)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
 
         contentDiv.innerHTML = `
             <div class="payslip-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
@@ -517,32 +656,7 @@ async function viewDraftPayslip(payslipId) {
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div>
-                    <h5 style="margin: 0 0 0.75rem 0; color: var(--success-color);">Earnings</h5>
-                    <table class="data-table" style="width: 100%;">
-                        <tbody>${earningsHtml}</tbody>
-                        <tfoot>
-                            <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
-                                <td>Total Gross</td>
-                                <td class="text-right">${formatCurrency(payslip.gross_earnings)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <div>
-                    <h5 style="margin: 0 0 0.75rem 0; color: var(--danger-color);">Deductions</h5>
-                    <table class="data-table" style="width: 100%;">
-                        <tbody>${deductionsHtml}</tbody>
-                        <tfoot>
-                            <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
-                                <td>Total Deductions</td>
-                                <td class="text-right">${formatCurrency(payslip.total_deductions)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+            ${structureBreakdownHtml}
 
             <div style="margin-top: 1.5rem; padding: 1rem; background: var(--primary-color); color: white; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 1.1rem;">Net Pay</span>
@@ -557,6 +671,40 @@ async function viewDraftPayslip(payslipId) {
         showToast('Failed to load payslip details', 'error');
         hideLoading();
     }
+}
+
+// Helper function to group payslip items by structure
+function groupItemsByStructure(items) {
+    const groups = [];
+    const groupMap = new Map();
+
+    for (const item of items) {
+        // Use structure_id or a special key for items without structure
+        const key = item.structure_id || 'no-structure';
+
+        if (!groupMap.has(key)) {
+            const group = {
+                structure_id: item.structure_id,
+                structure_name: item.structure_name || 'Standard',
+                period_start: item.period_start,
+                period_end: item.period_end,
+                items: []
+            };
+            groupMap.set(key, group);
+            groups.push(group);
+        }
+
+        groupMap.get(key).items.push(item);
+    }
+
+    // Sort groups by period_start date
+    groups.sort((a, b) => {
+        if (!a.period_start) return -1;
+        if (!b.period_start) return 1;
+        return new Date(a.period_start) - new Date(b.period_start);
+    });
+
+    return groups;
 }
 
 async function finalizeDraft(draftId) {
