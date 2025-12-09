@@ -297,16 +297,31 @@ function updateDepartmentsTable() {
 }
 
 function populateDepartmentSelects() {
-    const selects = ['designationDepartment', 'desigDepartment'];
-    selects.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            select.innerHTML = '<option value="">All Departments</option>';
-            departments.filter(d => d.is_active).forEach(dept => {
-                select.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
+    const activeDepts = departments.filter(d => d.is_active);
+
+    // Filter dropdown - no "All Departments" option, just departments
+    const filterSelect = document.getElementById('designationDepartment');
+    if (filterSelect) {
+        if (activeDepts.length === 0) {
+            filterSelect.innerHTML = '<option value="">No Departments</option>';
+        } else {
+            filterSelect.innerHTML = '';
+            activeDepts.forEach(dept => {
+                filterSelect.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
             });
         }
-    });
+        // Trigger filter update after dropdown is populated
+        updateDesignationsTable();
+    }
+
+    // Modal dropdown - requires specific department selection
+    const modalSelect = document.getElementById('desigDepartment');
+    if (modalSelect) {
+        modalSelect.innerHTML = '<option value="">Select Department *</option>';
+        activeDepts.forEach(dept => {
+            modalSelect.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
+        });
+    }
 }
 
 async function loadDesignations() {
@@ -556,6 +571,12 @@ function editOffice(id) {
 }
 
 function showCreateDepartmentModal() {
+    // Require at least one office to exist before creating departments
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first before adding departments', 'error');
+        return;
+    }
+
     document.getElementById('departmentForm').reset();
     document.getElementById('departmentId').value = '';
     document.getElementById('departmentModalTitle').textContent = 'Create Department';
@@ -579,6 +600,18 @@ function editDepartment(id) {
 }
 
 function showCreateDesignationModal() {
+    // Require at least one office to exist before creating designations
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first before adding designations', 'error');
+        return;
+    }
+
+    // Require at least one department to exist before creating designations
+    if (departments.filter(d => d.is_active).length === 0) {
+        showToast('Please create a department first before adding designations', 'error');
+        return;
+    }
+
     document.getElementById('designationForm').reset();
     document.getElementById('designationId').value = '';
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
@@ -602,6 +635,12 @@ function editDesignation(id) {
 }
 
 function showCreateShiftModal() {
+    // Require at least one office to exist before creating shifts
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first before adding shifts', 'error');
+        return;
+    }
+
     document.getElementById('shiftForm').reset();
     document.getElementById('shiftId').value = '';
     document.getElementById('shiftModalTitle').textContent = 'Create Shift';
@@ -660,6 +699,12 @@ function editShift(id) {
 }
 
 function showCreateHolidayModal() {
+    // Require at least one office to exist before creating holidays
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first before adding holidays', 'error');
+        return;
+    }
+
     document.getElementById('holidayForm').reset();
     document.getElementById('holidayId').value = '';
     document.getElementById('holidayModalTitle').textContent = 'Create Holiday';
@@ -807,13 +852,20 @@ async function saveDesignation() {
         return;
     }
 
+    // Validate department selection
+    const departmentId = document.getElementById('desigDepartment').value;
+    if (!departmentId) {
+        showToast('Please select a department', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const id = document.getElementById('designationId').value;
         const data = {
             designation_name: document.getElementById('designationName').value,
             designation_code: document.getElementById('designationCode').value,
-            department_id: document.getElementById('desigDepartment').value || null,
+            department_id: departmentId,
             level: parseInt(document.getElementById('desigLevel').value) || 1,
             description: document.getElementById('designationDescription').value,
             is_active: document.getElementById('designationIsActive').value === 'true'
