@@ -976,7 +976,7 @@ function addStructureComponent() {
                 </div>
                 <div class="form-group value-field" style="flex: 1;">
                     <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100">
-                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled>
                 </div>
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeStructureComponent('${componentId}')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1007,11 +1007,15 @@ function toggleComponentValueFields(select, componentId) {
 
     if (select.value === 'percentage') {
         percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
         fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
         fixedInput.value = '';
     } else {
         percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
         fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
         percentageInput.value = '';
     }
 }
@@ -1054,12 +1058,21 @@ function populateStructureComponents(structureComponents) {
                 lastRow.querySelector('.component-select').value = sc.component_id;
                 lastRow.querySelector('.calc-type-select').value = sc.calculation_type || 'percentage';
 
+                const percentageInput = lastRow.querySelector('.percentage-value');
+                const fixedInput = lastRow.querySelector('.fixed-value');
+
                 if (sc.calculation_type === 'fixed') {
-                    lastRow.querySelector('.percentage-value').style.display = 'none';
-                    lastRow.querySelector('.fixed-value').style.display = 'block';
-                    lastRow.querySelector('.fixed-value').value = sc.fixed_amount || '';
+                    percentageInput.style.display = 'none';
+                    percentageInput.disabled = true;
+                    fixedInput.style.display = 'block';
+                    fixedInput.disabled = false;
+                    fixedInput.value = sc.fixed_amount || '';
                 } else {
-                    lastRow.querySelector('.percentage-value').value = sc.percentage || '';
+                    percentageInput.style.display = 'block';
+                    percentageInput.disabled = false;
+                    fixedInput.style.display = 'none';
+                    fixedInput.disabled = true;
+                    percentageInput.value = sc.percentage || '';
                 }
             }
         });
