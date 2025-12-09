@@ -679,6 +679,7 @@ async function saveSalaryStructure() {
             description: document.getElementById('structureDescription').value,
             office_id: officeId,
             is_default: isDefault,
+            is_active: true,
             components: structureComponents
         };
 
