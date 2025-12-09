@@ -7,6 +7,15 @@ let structures = [];
 let currentPayslipId = null;
 let drafts = [];
 
+// Modal utility functions
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
     await initializePage();
@@ -467,35 +476,79 @@ async function viewDraftPayslip(payslipId) {
         showLoading();
         const payslip = await api.request(`/hrms/payroll-drafts/payslips/${payslipId}?includeItems=true`);
 
-        // Reuse existing payslip modal for display
-        const modal = document.getElementById('payslipModal');
-        if (!modal) {
+        // Populate payslipContent dynamically
+        const contentDiv = document.getElementById('payslipContent');
+        if (!contentDiv) {
             hideLoading();
+            showToast('Payslip modal not found', 'error');
             return;
         }
 
-        document.getElementById('payslipEmployeeName').textContent = payslip.employee_name || 'Employee';
-        document.getElementById('payslipPeriod').textContent = `Draft - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}`;
-        document.getElementById('payslipWorkingDays').textContent = payslip.total_working_days || 0;
-        document.getElementById('payslipDaysWorked').textContent = payslip.days_worked || 0;
-        document.getElementById('payslipLopDays').textContent = payslip.lop_days || 0;
-
-        // Populate items
         const items = payslip.items || [];
         const earnings = items.filter(i => i.component_type === 'earning');
         const deductions = items.filter(i => i.component_type === 'deduction');
 
-        document.getElementById('payslipEarningsTable').innerHTML = earnings.length > 0 ?
+        const earningsHtml = earnings.length > 0 ?
             earnings.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
-            '<tr><td colspan="2">No earnings</td></tr>';
+            '<tr><td colspan="2" class="text-muted">No earnings</td></tr>';
 
-        document.getElementById('payslipDeductionsTable').innerHTML = deductions.length > 0 ?
+        const deductionsHtml = deductions.length > 0 ?
             deductions.map(i => `<tr><td>${i.component_name}</td><td class="text-right">${formatCurrency(i.amount)}</td></tr>`).join('') :
-            '<tr><td colspan="2">No deductions</td></tr>';
+            '<tr><td colspan="2" class="text-muted">No deductions</td></tr>';
 
-        document.getElementById('payslipGrossTotal').textContent = formatCurrency(payslip.gross_earnings);
-        document.getElementById('payslipDeductionsTotal').textContent = formatCurrency(payslip.total_deductions);
-        document.getElementById('payslipNetPay').textContent = formatCurrency(payslip.net_pay);
+        contentDiv.innerHTML = `
+            <div class="payslip-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <h4 style="margin: 0 0 0.5rem 0;">${payslip.employee_name || 'Employee'}</h4>
+                <p style="margin: 0; color: var(--text-muted);">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
+            </div>
+
+            <div class="payslip-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Working Days</div>
+                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.total_working_days || 0}</div>
+                </div>
+                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Days Worked</div>
+                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.days_worked || 0}</div>
+                </div>
+                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">LOP Days</div>
+                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.lop_days || 0}</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <h5 style="margin: 0 0 0.75rem 0; color: var(--success-color);">Earnings</h5>
+                    <table class="data-table" style="width: 100%;">
+                        <tbody>${earningsHtml}</tbody>
+                        <tfoot>
+                            <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
+                                <td>Total Gross</td>
+                                <td class="text-right">${formatCurrency(payslip.gross_earnings)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div>
+                    <h5 style="margin: 0 0 0.75rem 0; color: var(--danger-color);">Deductions</h5>
+                    <table class="data-table" style="width: 100%;">
+                        <tbody>${deductionsHtml}</tbody>
+                        <tfoot>
+                            <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
+                                <td>Total Deductions</td>
+                                <td class="text-right">${formatCurrency(payslip.total_deductions)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--primary-color); color: white; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 1.1rem;">Net Pay</span>
+                <span style="font-size: 1.5rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</span>
+            </div>
+        `;
 
         openModal('payslipModal');
         hideLoading();

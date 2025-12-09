@@ -137,7 +137,7 @@ function renderEmployees() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No employees found</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No employees found</p></td></tr>';
         return;
     }
 
@@ -161,6 +161,7 @@ function renderEmployees() {
                 <td>${desig?.designation_name || '-'}</td>
                 <td>${office?.office_name || '-'}</td>
                 <td>${formatDate(emp.hire_date)}</td>
+                <td>${formatCurrency(emp.current_ctc || 0)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
                 <td>
                     <div class="action-buttons">
