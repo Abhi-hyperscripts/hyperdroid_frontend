@@ -177,6 +177,12 @@ function renderEmployees() {
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
                             </button>
+                            <button class="action-btn" onclick="openSalaryModal('${emp.id}')" data-tooltip="Salary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                            </button>
                         ` : ''}
                     </div>
                 </td>
@@ -1157,4 +1163,259 @@ function resetDocumentsAndBanking() {
     document.getElementById('confirmAccountNumber').value = '';
     document.getElementById('ifscCode').value = '';
     document.getElementById('branchName').value = '';
+}
+
+// ============================================
+// Salary Management Functions
+// ============================================
+
+let salaryStructures = [];
+let currentEmployeeSalary = null;
+
+async function openSalaryModal(employeeId) {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    // Reset form
+    document.getElementById('salaryEmployeeId').value = employeeId;
+    document.getElementById('existingSalaryId').value = '';
+    document.getElementById('salaryCTC').value = '';
+    document.getElementById('salaryEffectiveFrom').value = new Date().toISOString().split('T')[0];
+    document.getElementById('currentSalarySection').style.display = 'none';
+    document.getElementById('salaryBreakdownSection').style.display = 'none';
+    document.getElementById('revisionReasonGroup').style.display = 'none';
+    document.getElementById('salaryFormTitle').textContent = 'Configure Salary';
+    document.getElementById('saveSalaryBtnText').textContent = 'Save Salary';
+    currentEmployeeSalary = null;
+
+    // Set employee info in header
+    const initials = (employee.first_name?.[0] || '') + (employee.last_name?.[0] || '');
+    document.getElementById('salaryEmployeeAvatar').textContent = initials.toUpperCase() || '-';
+    document.getElementById('salaryEmployeeName').textContent =
+        `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
+    document.getElementById('salaryEmployeeDesignation').textContent =
+        employee.designation_name || 'No Designation';
+
+    // Load salary structures for employee's office
+    try {
+        salaryStructures = await api.getHrmsSalaryStructures(employee.office_id);
+        const structureSelect = document.getElementById('salaryStructureId');
+        structureSelect.innerHTML = '<option value="">Select Salary Structure...</option>';
+        salaryStructures.forEach(s => {
+            structureSelect.innerHTML += `<option value="${s.id}">${s.structure_name}</option>`;
+        });
+    } catch (error) {
+        console.error('Error loading salary structures:', error);
+        showToast('Failed to load salary structures', 'error');
+    }
+
+    // Load existing salary if any
+    try {
+        const salary = await api.getEmployeeSalary(employeeId);
+        if (salary && salary.id) {
+            currentEmployeeSalary = salary;
+            document.getElementById('existingSalaryId').value = salary.id;
+
+            // Show current salary section
+            document.getElementById('currentSalarySection').style.display = 'block';
+            document.getElementById('currentCTC').textContent = formatCurrency(salary.ctc);
+            document.getElementById('currentMonthlyGross').textContent = formatCurrency(salary.gross / 12);
+            document.getElementById('currentMonthlyNet').textContent = formatCurrency(salary.net / 12);
+            document.getElementById('currentEffectiveFrom').textContent =
+                salary.effective_from ? new Date(salary.effective_from).toLocaleDateString() : '-';
+
+            // Update status badge
+            document.getElementById('salaryStatusBadge').innerHTML =
+                '<span class="badge badge-success">Active</span>';
+
+            // Pre-fill form for revision
+            document.getElementById('salaryStructureId').value = salary.structure_id || '';
+            document.getElementById('salaryCTC').value = salary.ctc || '';
+            document.getElementById('salaryFormTitle').textContent = 'Revise Salary';
+            document.getElementById('revisionReasonGroup').style.display = 'block';
+            document.getElementById('saveSalaryBtnText').textContent = 'Revise Salary';
+
+            // Trigger breakdown preview
+            await previewSalaryBreakdown();
+
+            // Load salary history
+            await loadSalaryHistory(employeeId);
+        } else {
+            document.getElementById('salaryStatusBadge').innerHTML =
+                '<span class="badge badge-warning">Not Configured</span>';
+            document.getElementById('salaryHistorySection').style.display = 'none';
+        }
+    } catch (error) {
+        // No existing salary - that's OK for new employees
+        document.getElementById('salaryStatusBadge').innerHTML =
+            '<span class="badge badge-warning">Not Configured</span>';
+        document.getElementById('salaryHistorySection').style.display = 'none';
+    }
+
+    openModal('salaryModal');
+}
+
+async function loadSalaryHistory(employeeId) {
+    try {
+        const history = await api.getEmployeeSalaryHistory(employeeId);
+        const tbody = document.getElementById('salaryHistoryTableBody');
+
+        if (!history || history.length === 0) {
+            document.getElementById('salaryHistorySection').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('salaryHistorySection').style.display = 'block';
+
+        tbody.innerHTML = history.map(item => {
+            const effectiveFrom = item.effective_from ? new Date(item.effective_from).toLocaleDateString() : '-';
+            const effectiveTo = item.effective_to ? new Date(item.effective_to).toLocaleDateString() : 'Present';
+            const isCurrent = item.is_current || !item.effective_to;
+            const revisionType = item.revision_reason || item.revision_type || '-';
+
+            return `
+                <tr class="${isCurrent ? 'current-salary' : ''}">
+                    <td class="period-cell">
+                        <div class="period-dates">
+                            ${effectiveFrom} - ${effectiveTo}
+                        </div>
+                        ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+                    </td>
+                    <td>${formatCurrency(item.ctc)}</td>
+                    <td>${formatCurrency(item.gross / 12)}</td>
+                    <td>${formatCurrency(item.net / 12)}</td>
+                    <td class="revision-type">${revisionType.replace(/_/g, ' ')}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading salary history:', error);
+        document.getElementById('salaryHistorySection').style.display = 'none';
+    }
+}
+
+async function previewSalaryBreakdown() {
+    const structureId = document.getElementById('salaryStructureId').value;
+    const ctc = parseFloat(document.getElementById('salaryCTC').value);
+
+    if (!structureId || !ctc || ctc <= 0) {
+        document.getElementById('salaryBreakdownSection').style.display = 'none';
+        return;
+    }
+
+    try {
+        const breakdown = await api.calculateSalaryBreakdown({
+            structure_id: structureId,
+            ctc: ctc
+        });
+
+        if (breakdown) {
+            renderSalaryBreakdown(breakdown);
+            document.getElementById('salaryBreakdownSection').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error calculating breakdown:', error);
+        document.getElementById('salaryBreakdownSection').style.display = 'none';
+    }
+}
+
+function renderSalaryBreakdown(breakdown) {
+    const grid = document.getElementById('salaryBreakdownGrid');
+    let html = '';
+
+    // Earnings
+    if (breakdown.earnings && breakdown.earnings.length > 0) {
+        html += '<div class="salary-breakdown-column earnings">';
+        html += '<h5>Earnings</h5>';
+        breakdown.earnings.forEach(e => {
+            html += `
+                <div class="breakdown-item">
+                    <span class="item-name">${e.component_name}</span>
+                    <span class="item-value">${formatCurrency(e.monthly_amount)}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    // Deductions
+    if (breakdown.deductions && breakdown.deductions.length > 0) {
+        html += '<div class="salary-breakdown-column deductions">';
+        html += '<h5>Deductions</h5>';
+        breakdown.deductions.forEach(d => {
+            html += `
+                <div class="breakdown-item">
+                    <span class="item-name">${d.component_name}</span>
+                    <span class="item-value">-${formatCurrency(d.monthly_amount)}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    grid.innerHTML = html;
+
+    // Update totals (backend returns annual amounts, convert to monthly)
+    document.getElementById('previewMonthlyGross').textContent = formatCurrency(breakdown.gross / 12);
+    document.getElementById('previewMonthlyDeductions').textContent =
+        formatCurrency(breakdown.total_deductions / 12 || 0);
+    document.getElementById('previewMonthlyNet').textContent = formatCurrency(breakdown.net / 12);
+}
+
+async function saveEmployeeSalary() {
+    const employeeId = document.getElementById('salaryEmployeeId').value;
+    const existingSalaryId = document.getElementById('existingSalaryId').value;
+    const structureId = document.getElementById('salaryStructureId').value;
+    const ctc = parseFloat(document.getElementById('salaryCTC').value);
+    const effectiveFrom = document.getElementById('salaryEffectiveFrom').value;
+
+    if (!structureId || !ctc || !effectiveFrom) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('saveSalaryBtn');
+    const originalText = document.getElementById('saveSalaryBtnText').textContent;
+    saveBtn.disabled = true;
+    document.getElementById('saveSalaryBtnText').textContent = 'Saving...';
+
+    try {
+        const salaryData = {
+            employee_id: employeeId,
+            structure_id: structureId,
+            ctc: ctc,
+            effective_from: effectiveFrom
+        };
+
+        if (existingSalaryId) {
+            // Revise existing salary
+            salaryData.revision_type = document.getElementById('salaryRevisionType').value || 'annual_increment';
+            await api.updateEmployeeSalary(employeeId, salaryData);
+            showToast('Salary revised successfully', 'success');
+        } else {
+            // Create new salary
+            await api.assignEmployeeSalary(salaryData);
+            showToast('Salary assigned successfully', 'success');
+        }
+
+        closeModal('salaryModal');
+    } catch (error) {
+        console.error('Error saving salary:', error);
+        showToast(error.message || 'Failed to save salary', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        document.getElementById('saveSalaryBtnText').textContent = originalText;
+    }
+}
+
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return '₹0';
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+    }).format(amount);
 }

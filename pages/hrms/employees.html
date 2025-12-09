@@ -483,6 +483,151 @@
         </div>
     </div>
 
+    <!-- Manage Salary Modal -->
+    <div class="modal" id="salaryModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="salaryModalTitle">Manage Employee Salary</h3>
+                    <button class="close-btn" onclick="closeModal('salaryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee Info Header -->
+                    <div class="salary-employee-header" id="salaryEmployeeHeader">
+                        <div class="employee-info">
+                            <div class="employee-avatar" id="salaryEmployeeAvatar">-</div>
+                            <div class="employee-details">
+                                <h4 id="salaryEmployeeName">-</h4>
+                                <p id="salaryEmployeeDesignation">-</p>
+                            </div>
+                        </div>
+                        <div class="salary-status" id="salaryStatusBadge">
+                            <span class="badge badge-warning">Not Configured</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Salary Display (when exists) -->
+                    <div class="current-salary-section" id="currentSalarySection" style="display: none;">
+                        <h4>Current Salary</h4>
+                        <div class="salary-summary-grid">
+                            <div class="salary-card">
+                                <span class="salary-label">Annual CTC</span>
+                                <span class="salary-value" id="currentCTC">-</span>
+                            </div>
+                            <div class="salary-card">
+                                <span class="salary-label">Monthly Gross</span>
+                                <span class="salary-value" id="currentMonthlyGross">-</span>
+                            </div>
+                            <div class="salary-card">
+                                <span class="salary-label">Monthly Net</span>
+                                <span class="salary-value" id="currentMonthlyNet">-</span>
+                            </div>
+                        </div>
+                        <div class="salary-effective-from">
+                            <span>Effective From: </span>
+                            <span id="currentEffectiveFrom">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Salary Form -->
+                    <form id="salaryForm">
+                        <input type="hidden" id="salaryEmployeeId">
+                        <input type="hidden" id="existingSalaryId">
+
+                        <div class="form-section">
+                            <h4 id="salaryFormTitle">Configure Salary</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Salary Structure <span class="required">*</span></label>
+                                    <select id="salaryStructureId" required onchange="previewSalaryBreakdown()">
+                                        <option value="">Select Salary Structure...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Annual CTC <span class="required">*</span></label>
+                                    <div class="input-with-prefix">
+                                        <span class="input-prefix">₹</span>
+                                        <input type="number" id="salaryCTC" required min="0" step="1"
+                                               placeholder="e.g. 1200000" onchange="previewSalaryBreakdown()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Effective From <span class="required">*</span></label>
+                                    <input type="date" id="salaryEffectiveFrom" required>
+                                </div>
+                                <div class="form-group" id="revisionReasonGroup" style="display: none;">
+                                    <label>Revision Reason</label>
+                                    <select id="salaryRevisionType">
+                                        <option value="adjustment">Adjustment</option>
+                                        <option value="promotion">Promotion</option>
+                                        <option value="annual_increment">Annual Increment</option>
+                                        <option value="correction">Correction</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salary Breakdown Preview -->
+                        <div class="form-section" id="salaryBreakdownSection" style="display: none;">
+                            <h4>Salary Breakdown Preview</h4>
+                            <div class="salary-breakdown-grid" id="salaryBreakdownGrid">
+                                <!-- Dynamically populated -->
+                            </div>
+                            <div class="salary-totals">
+                                <div class="salary-total-row">
+                                    <span>Monthly Gross</span>
+                                    <span id="previewMonthlyGross">₹0</span>
+                                </div>
+                                <div class="salary-total-row">
+                                    <span>Monthly Deductions</span>
+                                    <span id="previewMonthlyDeductions">₹0</span>
+                                </div>
+                                <div class="salary-total-row net">
+                                    <span>Monthly Net Pay</span>
+                                    <span id="previewMonthlyNet">₹0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Salary History Section -->
+                    <div class="form-section" id="salaryHistorySection" style="display: none;">
+                        <h4>Salary History</h4>
+                        <div class="salary-history-table-wrapper">
+                            <table class="salary-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Period</th>
+                                        <th>Annual CTC</th>
+                                        <th>Monthly Gross</th>
+                                        <th>Monthly Net</th>
+                                        <th>Revision Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salaryHistoryTableBody">
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('salaryModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveEmployeeSalary()" id="saveSalaryBtn">
+                        <span id="saveSalaryBtnText">Save Salary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 

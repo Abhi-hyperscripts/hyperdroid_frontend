@@ -1185,6 +1185,13 @@ class API {
         return this.request(`/hrms/salary-structures/${id}`);
     }
 
+    async getHrmsSalaryStructures(officeId) {
+        if (officeId) {
+            return this.request(`/hrms/payroll/structures/office/${officeId}`);
+        }
+        return this.request('/hrms/payroll/structures');
+    }
+
     async createSalaryStructure(structure) {
         return this.request('/hrms/salary-structures', {
             method: 'POST',
@@ -1232,28 +1239,40 @@ class API {
 
     // --- Employee Salary ---
     async getEmployeeSalary(employeeId) {
-        return this.request(`/hrms/employee-salary/${employeeId}`);
+        return this.request(`/hrms/payroll/employee/${employeeId}/salary`);
     }
 
     async assignEmployeeSalary(salaryData) {
-        return this.request('/hrms/employee-salary', {
+        // Backend expects: POST /api/payroll/employee/{employeeId}/salary
+        const employeeId = salaryData.employee_id;
+        return this.request(`/hrms/payroll/employee/${employeeId}/salary`, {
             method: 'POST',
             body: JSON.stringify(salaryData)
         });
     }
 
-    async updateEmployeeSalary(id, salaryData) {
-        return this.request(`/hrms/employee-salary/${id}`, {
-            method: 'PUT',
+    async updateEmployeeSalary(employeeId, salaryData) {
+        // Backend expects: POST /api/payroll/employee/{employeeId}/salary/revise
+        return this.request(`/hrms/payroll/employee/${employeeId}/salary/revise`, {
+            method: 'POST',
             body: JSON.stringify(salaryData)
         });
     }
 
     async calculateSalaryBreakdown(request) {
-        return this.request('/hrms/employee-salary/calculate-breakdown', {
+        // Backend expects: POST /api/payroll/calculate
+        return this.request('/hrms/payroll/calculate', {
             method: 'POST',
             body: JSON.stringify(request)
         });
+    }
+
+    async getEmployeeSalaryHistory(employeeId) {
+        return this.request(`/hrms/payroll/employee/${employeeId}/salary/history`);
+    }
+
+    async getEmployeeSalaryRevisions(employeeId) {
+        return this.request(`/hrms/payroll/employee/${employeeId}/salary/revisions`);
     }
 
     // --- Payroll Runs ---
