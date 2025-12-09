@@ -336,14 +336,14 @@ function updateSalaryStructuresTable() {
             <td><strong>${s.office_name || 'N/A'}</strong></td>
             <td><strong>${s.structure_name}</strong></td>
             <td><code>${s.structure_code || '-'}</code></td>
+            <td>${s.component_count || 0} component${s.component_count !== 1 ? 's' : ''}</td>
+            <td>${s.employee_count || 0}</td>
             <td>
                 ${s.is_default ?
                     '<span class="status-badge status-default">Default</span>' :
                     '<span class="text-muted">-</span>'
                 }
             </td>
-            <td>${formatCurrency(s.min_basic || 0)} - ${formatCurrency(s.max_basic || 0)}</td>
-            <td>${s.component_count || 0}</td>
             <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
@@ -744,14 +744,32 @@ async function runPayroll() {
             pay_period_end: document.getElementById('periodEnd').value
         };
 
-        await api.request('/hrms/payroll-processing/runs', {
+        // Step 1: Create the payroll run
+        const createdRun = await api.request('/hrms/payroll-processing/runs', {
             method: 'POST',
             body: JSON.stringify(data)
         });
 
+        // Step 2: Automatically process the payroll run to generate payslips
+        const result = await api.request(`/hrms/payroll-processing/runs/${createdRun.id}/process`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
         closeModal('runPayrollModal');
-        showToast('Payroll run created successfully', 'success');
+
+        // Show processing results
+        let message = `Payroll processed! ${result.successful || 0} employees`;
+        if (result.failed > 0) {
+            message += `, ${result.failed} failed`;
+        }
+        showToast(message, result.failed > 0 ? 'warning' : 'success');
+
         await loadPayrollRuns();
+
+        // Open the payroll run details modal to show results
+        await viewPayrollRun(createdRun.id);
+
         hideLoading();
     } catch (error) {
         console.error('Error running payroll:', error);
