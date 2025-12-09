@@ -68,7 +68,7 @@ class API {
             }
 
             if (!response.ok) {
-                throw new Error(data.message || data.title || data.errors?.join(', ') || 'Request failed');
+                throw new Error(data.message || data.error || data.title || data.errors?.join(', ') || 'Request failed');
             }
 
             return data;
