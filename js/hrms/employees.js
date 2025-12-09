@@ -160,7 +160,7 @@ function renderEmployees() {
                 <td>${dept?.department_name || '-'}</td>
                 <td>${desig?.designation_name || '-'}</td>
                 <td>${office?.office_name || '-'}</td>
-                <td>${formatDate(emp.date_of_joining)}</td>
+                <td>${formatDate(emp.hire_date)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
                 <td>
                     <div class="action-buttons">
@@ -430,7 +430,7 @@ async function editEmployee(id) {
     document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
     document.getElementById('gender').value = emp.gender || '';
     document.getElementById('employmentType').value = emp.employment_type || 'full_time';
-    document.getElementById('dateOfJoining').value = emp.date_of_joining?.split('T')[0] || '';
+    document.getElementById('dateOfJoining').value = emp.hire_date?.split('T')[0] || '';
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
 
     // Set Office and trigger cascading dropdown updates
@@ -490,7 +490,7 @@ async function saveEmployee() {
         shift_id: document.getElementById('shiftId').value || null,
         reporting_manager_id: document.getElementById('reportingManagerId').value || null,
         employment_type: document.getElementById('employmentType').value,
-        date_of_joining: document.getElementById('dateOfJoining').value,
+        hire_date: document.getElementById('dateOfJoining').value,
         probation_end_date: document.getElementById('probationEndDate').value || null
     };
 
@@ -629,7 +629,7 @@ async function viewEmployee(id) {
                         </div>
                         <div class="view-item">
                             <span class="label">Joining Date</span>
-                            <span class="value">${formatDate(emp.date_of_joining)}</span>
+                            <span class="value">${formatDate(emp.hire_date)}</span>
                         </div>
                     </div>
                 </div>
