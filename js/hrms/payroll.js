@@ -647,6 +647,26 @@ async function saveSalaryStructure() {
     // Get structure components
     const structureComponents = getStructureComponents();
 
+    // Validate that at least one component is added with a value
+    if (!structureComponents || structureComponents.length === 0) {
+        showToast('Please add at least one salary component with values', 'error');
+        return;
+    }
+
+    // Validate that all components have proper values
+    const invalidComponents = structureComponents.filter(c => {
+        if (c.calculation_type === 'percentage') {
+            return !c.percentage || c.percentage <= 0;
+        } else {
+            return !c.fixed_amount || c.fixed_amount <= 0;
+        }
+    });
+
+    if (invalidComponents.length > 0) {
+        showToast('All components must have a value greater than 0', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const id = document.getElementById('structureId').value;

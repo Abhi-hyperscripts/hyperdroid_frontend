@@ -39,6 +39,11 @@ async function checkSetupStatus() {
         const status = await api.request('/hrms/dashboard/setup-status');
         isSetupComplete = status.is_setup_complete;
 
+        // Check if we have at least basic organization setup (office, department, designation, shift)
+        // Payroll should be accessible even if salary structures aren't set up yet
+        hasBasicSetup = status.has_office && status.has_department &&
+                        status.has_designation && status.has_shift;
+
         if (!isSetupComplete) {
             // Show warning banner
             const banner = document.getElementById('setupWarningBanner');
@@ -57,14 +62,25 @@ async function checkSetupStatus() {
                 missingList.innerHTML = status.missing_items.map(item => `<li>${item}</li>`).join('');
             }
 
-            // Disable other cards
-            const cardsToDisable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
+            // Disable cards that require full setup
+            const cardsToDisable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardReports'];
             cardsToDisable.forEach(cardId => {
                 const card = document.getElementById(cardId);
                 if (card) {
                     card.classList.add('disabled');
                 }
             });
+
+            // Payroll should be accessible when basic organization is set up
+            // (office, department, designation, shift) so users can create salary structures
+            const payrollCard = document.getElementById('cardPayroll');
+            if (payrollCard) {
+                if (hasBasicSetup) {
+                    payrollCard.classList.remove('disabled');
+                } else {
+                    payrollCard.classList.add('disabled');
+                }
+            }
         } else {
             // Hide warning banner if visible
             const banner = document.getElementById('setupWarningBanner');
@@ -88,7 +104,16 @@ async function checkSetupStatus() {
     }
 }
 
+// Track if basic setup is complete (for Payroll access)
+let hasBasicSetup = false;
+
 function navigateIfSetupComplete(page) {
+    // Allow payroll navigation if basic setup is done (office, department, designation, shift)
+    if (page === 'payroll.html' && hasBasicSetup) {
+        navigateTo(page);
+        return;
+    }
+
     if (!isSetupComplete) {
         showToast('Please complete organization setup first', 'error');
         return;
