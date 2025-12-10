@@ -32,12 +32,6 @@
                 <h1>Payroll Management</h1>
             </div>
             <div class="header-actions" id="adminActions" style="display: none;">
-                <button class="btn btn-outline" onclick="showRunPayrollModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    Run Payroll
-                </button>
                 <button class="btn btn-primary" onclick="showSalaryStructureModal()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -443,91 +437,6 @@
         </div>
     </div>
 
-    <!-- Run Payroll Modal (Legacy - kept for backwards compatibility) -->
-    <div class="modal" id="runPayrollModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Run Payroll</h5>
-                    <button class="close-btn" onclick="closeModal('runPayrollModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                <form id="runPayrollForm">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="payrollMonth">Month *</label>
-                                <select id="payrollMonth" name="month" class="form-control" required>
-                                    <option value="1">January</option>
-                                    <option value="2">February</option>
-                                    <option value="3">March</option>
-                                    <option value="4">April</option>
-                                    <option value="5">May</option>
-                                    <option value="6">June</option>
-                                    <option value="7">July</option>
-                                    <option value="8">August</option>
-                                    <option value="9">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="payrollYear">Year *</label>
-                                <select id="payrollYear" name="year" class="form-control" required>
-                                    <option value="2025">2025</option>
-                                    <option value="2024">2024</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="payrollOffice">Office *</label>
-                                <select id="payrollOffice" name="officeId" class="form-control" required>
-                                    <option value="">Select Office</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="periodStart">Pay Period Start *</label>
-                                <input type="date" id="periodStart" name="periodStart" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="periodEnd">Pay Period End *</label>
-                                <input type="date" id="periodEnd" name="periodEnd" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="payDate">Pay Date *</label>
-                                <input type="date" id="payDate" name="payDate" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="info-box">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                            <span>This will calculate payroll for all active employees in the selected office for the specified period.</span>
-                        </div>
-                    </div>
-                </form>
-            </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('runPayrollModal')">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="runPayroll()">Run Payroll</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Create Payroll Draft Modal -->
     <div class="modal" id="createDraftModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -654,6 +563,37 @@
                         </div>
                     </div>
 
+                    <!-- Toolbar: Search + Action Buttons -->
+                    <div class="draft-toolbar">
+                        <div class="search-box">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="M21 21l-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" id="draftPayslipSearch" placeholder="Search by name, code, or department..." oninput="filterDraftPayslips(this.value)">
+                        </div>
+                        <div class="draft-actions">
+                            <button type="button" class="btn-icon btn-icon-warning" onclick="event.stopPropagation(); recalculateDraft(document.getElementById('draftDetailsModal').dataset.draftId)" title="Recalculate payroll for all employees">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-icon btn-icon-success" onclick="event.stopPropagation(); finalizeDraft(document.getElementById('draftDetailsModal').dataset.draftId)" title="Finalize draft and create payroll run">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-icon btn-icon-primary" onclick="event.stopPropagation(); exportDraftToCSV()" title="Export to CSV">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Payslips Table -->
                     <div class="data-table-container" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table">
@@ -675,22 +615,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('draftDetailsModal')">Close</button>
-                    <button type="button" class="btn btn-warning" onclick="recalculateDraft(document.getElementById('draftDetailsModal').dataset.draftId)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                        </svg>
-                        Recalculate
-                    </button>
-                    <button type="button" class="btn btn-success" onclick="finalizeDraft(document.getElementById('draftDetailsModal').dataset.draftId)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Finalize Draft
-                    </button>
                 </div>
             </div>
         </div>
@@ -923,28 +847,26 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Payslip Details</h5>
-                    <button class="close-btn" onclick="closeModal('payslipModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
+                    <div class="modal-header-actions">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="downloadPayslip()" title="Download PDF">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="close-btn" onclick="closeModal('payslipModal')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="payslip-container" id="payslipContent">
                         <!-- Dynamically populated -->
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="downloadPayslip()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Download PDF
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="closeModal('payslipModal')">Close</button>
                 </div>
             </div>
         </div>

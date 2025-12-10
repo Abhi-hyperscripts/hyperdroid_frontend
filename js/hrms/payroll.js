@@ -1191,12 +1191,6 @@ async function loadEmployees() {
 }
 
 // Modal functions
-function showRunPayrollModal() {
-    document.getElementById('runPayrollForm').reset();
-    setDefaultPayrollDates();
-    document.getElementById('runPayrollModal').classList.add('active');
-}
-
 function showSalaryStructureModal() {
     // Navigate to structures tab first
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1361,58 +1355,6 @@ function closeModal(modalId) {
 }
 
 // Submit functions
-async function runPayroll() {
-    const form = document.getElementById('runPayrollForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    try {
-        showLoading();
-        const officeId = document.getElementById('payrollOffice').value;
-        const data = {
-            payroll_month: parseInt(document.getElementById('payrollMonth').value),
-            payroll_year: parseInt(document.getElementById('payrollYear').value),
-            office_id: officeId ? officeId : null,
-            pay_period_start: document.getElementById('periodStart').value,
-            pay_period_end: document.getElementById('periodEnd').value
-        };
-
-        // Step 1: Create the payroll run
-        const createdRun = await api.request('/hrms/payroll-processing/runs', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-
-        // Step 2: Automatically process the payroll run to generate payslips
-        const result = await api.request(`/hrms/payroll-processing/runs/${createdRun.id}/process`, {
-            method: 'POST',
-            body: JSON.stringify({})
-        });
-
-        closeModal('runPayrollModal');
-
-        // Show processing results
-        let message = `Payroll processed! ${result.successful || 0} employees`;
-        if (result.failed > 0) {
-            message += `, ${result.failed} failed`;
-        }
-        showToast(message, result.failed > 0 ? 'warning' : 'success');
-
-        await loadPayrollRuns();
-
-        // Open the payroll run details modal to show results
-        await viewPayrollRun(createdRun.id);
-
-        hideLoading();
-    } catch (error) {
-        console.error('Error running payroll:', error);
-        showToast(error.message || 'Failed to run payroll', 'error');
-        hideLoading();
-    }
-}
-
 async function saveComponent() {
     const form = document.getElementById('componentForm');
     if (!form.checkValidity()) {
