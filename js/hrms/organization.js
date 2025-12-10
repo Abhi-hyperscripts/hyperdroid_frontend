@@ -112,6 +112,11 @@ function setupTabs() {
 
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
+
+            // Re-render table when switching tabs to fix race condition with office names
+            if (tabId === 'holidays') {
+                updateHolidaysTable();
+            }
         });
     });
 }
