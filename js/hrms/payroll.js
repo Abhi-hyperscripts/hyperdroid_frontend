@@ -1296,6 +1296,13 @@ async function saveSalaryStructure() {
         return;
     }
 
+    // Validate that at least one earning component is present
+    const hasEarningComponent = structureComponents.some(c => c.component_type === 'earning');
+    if (!hasEarningComponent) {
+        showToast('Salary structure must have at least one earning component (e.g., Basic Salary)', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const id = document.getElementById('structureId').value;
@@ -1661,8 +1668,13 @@ function getStructureComponents() {
         const fixedInput = row.querySelector('.fixed-value');
 
         if (componentSelect.value) {
+            // Get component_type from the selected option's data-type attribute
+            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+            const componentType = selectedOption?.getAttribute('data-type') || '';
+
             componentsList.push({
                 component_id: componentSelect.value,
+                component_type: componentType,
                 calculation_type: calcTypeSelect.value,
                 percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
                 fixed_amount: calcTypeSelect.value === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
