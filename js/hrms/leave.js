@@ -101,8 +101,11 @@ async function loadLeaveTypes() {
             const select = document.getElementById(id);
             if (select) {
                 select.innerHTML = '<option value="">Select Leave Type</option>';
-                leaveTypes.filter(t => t.isActive).forEach(type => {
-                    select.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+                // Filter for active leave types (backend returns is_active in snake_case)
+                leaveTypes.filter(t => t.is_active !== false && t.isActive !== false).forEach(type => {
+                    // Backend returns leave_name in snake_case
+                    const displayName = type.leave_name || type.name || type.leaveName || 'Unknown';
+                    select.innerHTML += `<option value="${type.id}">${displayName}</option>`;
                 });
             }
         });
@@ -121,16 +124,21 @@ async function loadLeaveTypes() {
 
 async function loadMyLeaveBalance() {
     try {
-        const response = await api.request('/hrms/leave-balances/my');
-        if (response && response.balances) {
-            // Update stats
-            const balances = response.balances;
+        const year = new Date().getFullYear();
+        const response = await api.request(`/hrms/leave/balances?year=${year}`);
+        // Handle response - could be array directly or { success, data } format
+        const balances = Array.isArray(response) ? response : (response?.balances || response?.data || []);
+        if (balances && balances.length > 0) {
+            // Update stats - look for leave type codes EL (Earned/Annual), SL (Sick), CL (Casual)
             document.getElementById('annualBalance').textContent =
-                balances.find(b => b.leaveTypeCode === 'AL')?.availableBalance ?? 0;
+                balances.find(b => b.leave_type_code === 'EL' || b.leaveTypeCode === 'EL')?.available_balance ??
+                balances.find(b => b.leave_type_code === 'EL' || b.leaveTypeCode === 'EL')?.availableBalance ?? 0;
             document.getElementById('sickBalance').textContent =
-                balances.find(b => b.leaveTypeCode === 'SL')?.availableBalance ?? 0;
+                balances.find(b => b.leave_type_code === 'SL' || b.leaveTypeCode === 'SL')?.available_balance ??
+                balances.find(b => b.leave_type_code === 'SL' || b.leaveTypeCode === 'SL')?.availableBalance ?? 0;
             document.getElementById('casualBalance').textContent =
-                balances.find(b => b.leaveTypeCode === 'CL')?.availableBalance ?? 0;
+                balances.find(b => b.leave_type_code === 'CL' || b.leaveTypeCode === 'CL')?.available_balance ??
+                balances.find(b => b.leave_type_code === 'CL' || b.leaveTypeCode === 'CL')?.availableBalance ?? 0;
         }
     } catch (error) {
         console.error('Error loading leave balance:', error);
@@ -148,8 +156,8 @@ async function loadMyLeaveRequests() {
         const response = await api.request(url);
         const requests = response || [];
 
-        // Update pending count
-        const pendingCount = requests.filter(r => r.status === 'Pending').length;
+        // Update pending count (handle both 'pending' and 'Pending')
+        const pendingCount = requests.filter(r => r.status?.toLowerCase() === 'pending').length;
         document.getElementById('pendingCount').textContent = pendingCount;
 
         updateMyLeaveTable(requests);
@@ -181,13 +189,13 @@ function updateMyLeaveTable(requests) {
 
     tbody.innerHTML = requests.map(req => `
         <tr>
-            <td>${req.leaveTypeName || 'N/A'}</td>
-            <td>${formatDate(req.fromDate)}</td>
-            <td>${formatDate(req.toDate)}</td>
-            <td>${req.numberOfDays}</td>
+            <td>${req.leave_type_name || req.leaveTypeName || 'N/A'}</td>
+            <td>${formatDate(req.start_date || req.fromDate)}</td>
+            <td>${formatDate(req.end_date || req.toDate)}</td>
+            <td>${req.total_days || req.numberOfDays || 'N/A'}</td>
             <td class="reason-cell" title="${escapeHtml(req.reason)}">${truncate(req.reason, 30)}</td>
             <td><span class="status-badge status-${req.status?.toLowerCase()}">${req.status}</span></td>
-            <td>${formatDate(req.appliedOn)}</td>
+            <td>${formatDate(req.created_at || req.appliedOn)}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="viewLeaveDetails('${req.id}')" title="View Details">
@@ -196,7 +204,7 @@ function updateMyLeaveTable(requests) {
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
-                    ${req.status === 'Pending' ? `
+                    ${(req.status === 'pending' || req.status === 'Pending') ? `
                     <button class="action-btn" onclick="cancelLeaveRequest('${req.id}')" title="Cancel Request">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -254,12 +262,22 @@ function updateLeaveRequestsTable(requests) {
     }
 
     tbody.innerHTML = requests.map(req => {
+        // Support both snake_case (backend) and camelCase property names
+        const employeeName = req.employee_name || req.employeeName || 'Unknown';
+        const employeeEmail = req.employee_email || req.employeeEmail || '';
+        const employeeUserId = req.employee_user_id || req.employeeUserId;
+        const leaveTypeName = req.leave_type_name || req.leaveTypeName || 'N/A';
+        const startDate = req.start_date || req.fromDate;
+        const endDate = req.end_date || req.toDate;
+        const totalDays = req.total_days || req.numberOfDays || 'N/A';
+        const status = req.status || 'pending';
+
         // Determine if current user can approve this request
         // SUPERADMIN can approve anyone (including self)
         // HRMS_ADMIN can approve anyone except self
         // Manager can approve only direct reports (backend handles this filtering)
-        const isOwnRequest = req.employeeUserId === currentUser?.userId || req.employeeEmail === currentUser?.email;
-        const canApprove = req.status === 'Pending' && (
+        const isOwnRequest = employeeUserId === currentUser?.userId || employeeEmail === currentUser?.email;
+        const canApprove = status.toLowerCase() === 'pending' && (
             isSuperAdmin ||  // SUPERADMIN can approve anyone including self
             (isAdmin && !isOwnRequest) ||  // HRMS_ADMIN can approve anyone except self
             (!isAdmin && isManager)  // Manager - backend already filtered to their direct reports
@@ -269,19 +287,19 @@ function updateLeaveRequestsTable(requests) {
         <tr>
             <td class="employee-cell">
                 <div class="employee-info">
-                    <div class="avatar">${getInitials(req.employeeName)}</div>
+                    <div class="avatar">${getInitials(employeeName)}</div>
                     <div class="details">
-                        <span class="name">${req.employeeName}${isOwnRequest ? ' (You)' : ''}</span>
-                        <span class="email">${req.employeeEmail || ''}</span>
+                        <span class="name">${employeeName}${isOwnRequest ? ' (You)' : ''}</span>
+                        <span class="email">${employeeEmail}</span>
                     </div>
                 </div>
             </td>
-            <td>${req.leaveTypeName}</td>
-            <td>${formatDate(req.fromDate)}</td>
-            <td>${formatDate(req.toDate)}</td>
-            <td>${req.numberOfDays}</td>
+            <td>${leaveTypeName}</td>
+            <td>${formatDate(startDate)}</td>
+            <td>${formatDate(endDate)}</td>
+            <td>${totalDays}</td>
             <td class="reason-cell" title="${escapeHtml(req.reason)}">${truncate(req.reason, 25)}</td>
-            <td><span class="status-badge status-${req.status?.toLowerCase()}">${req.status}</span></td>
+            <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
             <td>
                 <div class="action-buttons">
                     ${canApprove ? `
@@ -315,11 +333,13 @@ async function loadLeaveBalances() {
         const year = document.getElementById('balanceYear').value;
         const department = document.getElementById('balanceDepartment').value;
 
-        let url = `/hrms/leave-balances?year=${year}`;
+        // Use the admin endpoint for getting all employee balances
+        let url = `/hrms/leave-types/balances?year=${year}`;
         if (department) url += `&departmentId=${department}`;
 
         const response = await api.request(url);
-        updateLeaveBalanceTable(response || []);
+        const balances = Array.isArray(response) ? response : (response?.data || []);
+        updateLeaveBalanceTable(balances);
         hideLoading();
     } catch (error) {
         console.error('Error loading leave balances:', error);
@@ -437,7 +457,9 @@ async function loadDepartments() {
             if (select) {
                 select.innerHTML = '<option value="">All Departments</option>';
                 departments.forEach(dept => {
-                    select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    // Support both snake_case (backend) and camelCase property names
+                    const deptName = dept.department_name || dept.name || 'Unknown';
+                    select.innerHTML += `<option value="${dept.id}">${deptName}</option>`;
                 });
             }
         });
@@ -566,12 +588,12 @@ async function submitLeaveApplication() {
     try {
         showLoading();
         const data = {
-            leaveTypeId: document.getElementById('leaveType').value,
-            fromDate: document.getElementById('fromDate').value,
-            toDate: document.getElementById('toDate').value,
-            halfDayType: document.getElementById('halfDay').value || null,
+            leave_type_id: document.getElementById('leaveType').value,
+            start_date: document.getElementById('fromDate').value,
+            end_date: document.getElementById('toDate').value,
+            half_day_type: document.getElementById('halfDay').value || null,
             reason: document.getElementById('leaveReason').value,
-            emergencyContact: document.getElementById('emergencyContact').value || null
+            contact_during_leave: document.getElementById('emergencyContact').value || null
         };
 
         await api.request('/hrms/leave/requests', {
@@ -686,7 +708,7 @@ async function confirmLeaveAction() {
         });
 
         closeModal('leaveActionModal');
-        showToast(`Leave request ${action}d successfully`, 'success');
+        showToast(`Leave request ${action === 'approve' ? 'approved' : 'rejected'} successfully`, 'success');
         await loadPendingRequests();
         hideLoading();
     } catch (error) {

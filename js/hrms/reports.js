@@ -10,115 +10,115 @@ const reportConfig = {
     'employee-headcount': {
         title: 'Employee Headcount Report',
         endpoint: '/hrms/reports/headcount',
-        columns: ['Department', 'Office', 'Active', 'Inactive', 'Total'],
+        columns: ['Department', 'Count', 'Percentage'],
         dataExtractor: (response) => response.by_department || []
     },
     'employee-demographics': {
         title: 'Demographics Report',
         endpoint: '/hrms/reports/demographics',
-        columns: ['Category', 'Count', 'Percentage'],
+        columns: ['Department', 'Count', 'Percentage'],
         dataExtractor: null
     },
     'employee-turnover': {
         title: 'Turnover Analysis',
         endpoint: '/hrms/reports/turnover',
-        columns: ['Month', 'New Hires', 'Exits', 'Net Change', 'Attrition Rate'],
+        columns: ['Department', 'Exit Count', 'Attrition Rate'],
         dataExtractor: null
     },
     'employee-directory': {
         title: 'Employee Directory',
         endpoint: '/hrms/reports/directory',
-        columns: ['Name', 'Employee ID', 'Department', 'Designation', 'Email', 'Phone'],
+        columns: ['Employee Code', 'Name', 'Email', 'Phone', 'Department', 'Designation', 'Office'],
         dataExtractor: null
     },
     'daily-attendance': {
         title: 'Daily Attendance Report',
         endpoint: '/hrms/reports/daily-attendance',
-        columns: ['Employee', 'Date', 'Check In', 'Check Out', 'Hours', 'Status'],
+        columns: ['Date', 'Total Employees', 'Present', 'Absent', 'On Leave', 'Attendance Rate'],
         dataExtractor: null
     },
     'monthly-attendance': {
         title: 'Monthly Attendance Summary',
         endpoint: '/hrms/reports/monthly-attendance',
-        columns: ['Employee', 'Present', 'Absent', 'Late', 'Half Day', 'Leave', 'Total Days'],
+        columns: ['Department', 'Employee Count', 'Present Days', 'Absent Days', 'Late Arrivals', 'Attendance Rate'],
         dataExtractor: null
     },
     'late-arrivals': {
         title: 'Late Arrivals Report',
         endpoint: '/hrms/reports/late-arrivals',
-        columns: ['Employee', 'Department', 'Late Count', 'Avg Late (mins)', 'Last Late Date'],
-        dataExtractor: null
+        columns: ['Department', 'Late Arrivals'],
+        dataExtractor: (response) => response.by_department || []
     },
     'overtime-report': {
         title: 'Overtime Report',
         endpoint: '/hrms/reports/overtime',
-        columns: ['Employee', 'Department', 'OT Hours', 'OT Amount', 'Status'],
-        dataExtractor: null
+        columns: ['Department', 'Average Working Hours'],
+        dataExtractor: (response) => response.by_department || []
     },
     'absenteeism': {
         title: 'Absenteeism Analysis',
         endpoint: '/hrms/reports/absenteeism',
-        columns: ['Employee', 'Department', 'Absent Days', 'Rate (%)', 'Pattern'],
-        dataExtractor: null
+        columns: ['Department', 'Absent Days'],
+        dataExtractor: (response) => response.by_department || []
     },
     'leave-balance': {
         title: 'Leave Balance Report',
         endpoint: '/hrms/reports/leave-balance',
-        columns: ['Employee', 'Department', 'Annual', 'Sick', 'Casual', 'Comp Off', 'LOP Used'],
+        columns: ['Employee', 'Leave Type', 'Credited', 'Used', 'Balance'],
         dataExtractor: null
     },
     'leave-utilization': {
         title: 'Leave Utilization Report',
         endpoint: '/hrms/reports/leave-utilization',
-        columns: ['Leave Type', 'Allocated', 'Used', 'Balance', 'Utilization %'],
+        columns: ['Leave Type', 'Allocated', 'Used', 'Balance', 'Utilization Rate'],
         dataExtractor: null
     },
     'leave-trend': {
         title: 'Leave Trend Analysis',
         endpoint: '/hrms/reports/leave-trend',
-        columns: ['Month', 'Requests', 'Approved', 'Rejected', 'Avg Days'],
+        columns: ['Month', 'Requests', 'Total Days', 'Approved', 'Rejected', 'Average Days'],
         dataExtractor: null
     },
     'pending-approvals': {
         title: 'Pending Approvals Report',
         endpoint: '/hrms/reports/pending-approvals',
-        columns: ['Employee', 'Leave Type', 'From', 'To', 'Days', 'Applied On', 'Pending With'],
+        columns: ['Employee', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status'],
         dataExtractor: null
     },
     'salary-summary': {
         title: 'Salary Summary Report',
         endpoint: '/hrms/reports/salary-summary',
-        columns: ['Department', 'Employees', 'Gross', 'Deductions', 'Net'],
+        columns: ['Department', 'Employee Count', 'Total Gross', 'Total Net', 'Percentage'],
         dataExtractor: null
     },
     'payroll-register': {
         title: 'Payroll Register',
         endpoint: '/hrms/reports/payroll-register',
-        columns: ['Employee', 'Basic', 'Allowances', 'Gross', 'Deductions', 'Net'],
+        columns: ['Employee Code', 'Employee Name', 'Department', 'Basic', 'Gross', 'Deductions', 'Net Pay'],
         dataExtractor: null
     },
     'deductions-report': {
         title: 'Deductions Report',
         endpoint: '/hrms/reports/deductions',
-        columns: ['Employee', 'PF', 'ESI', 'TDS', 'Loan EMI', 'Other', 'Total'],
+        columns: ['Employee Code', 'Employee Name', 'PF', 'ESI', 'PT', 'TDS', 'Other', 'Total'],
         dataExtractor: null
     },
     'tax-report': {
         title: 'Tax Computation Report',
         endpoint: '/hrms/reports/tax',
-        columns: ['Employee', 'Gross Salary', 'Exemptions', 'Taxable Income', 'Tax Payable', 'TDS Deducted'],
+        columns: ['Month', 'Month Name', 'Total TDS', 'Employee Count'],
         dataExtractor: null
     },
     'loan-report': {
         title: 'Loans & Advances Report',
         endpoint: '/hrms/reports/loans',
-        columns: ['Employee', 'Loan Type', 'Principal', 'EMI', 'Paid', 'Balance', 'Status'],
+        columns: ['Employee Name', 'Loan Type', 'Principal', 'EMI', 'Outstanding', 'Status'],
         dataExtractor: null
     },
     'bank-advice': {
         title: 'Bank Advice Report',
         endpoint: '/hrms/reports/bank-advice',
-        columns: ['Employee', 'Bank', 'Account No', 'IFSC', 'Net Salary'],
+        columns: ['Employee Code', 'Employee Name', 'Bank Name', 'Account Number', 'IFSC Code', 'Net Pay'],
         dataExtractor: null
     }
 };
@@ -263,8 +263,39 @@ async function runReport() {
         const officeId = document.getElementById('reportOffice').value;
         const departmentId = document.getElementById('reportDepartment').value;
 
-        if (fromDate) params.append('fromDate', fromDate);
-        if (toDate) params.append('toDate', toDate);
+        // Extract year and month from dates for reports that need them
+        const fromDateObj = fromDate ? new Date(fromDate) : new Date();
+        const year = fromDateObj.getFullYear();
+        const month = fromDateObj.getMonth() + 1;
+
+        // Different reports need different parameters
+        const reportsNeedingYear = [
+            'employee-turnover', 'leave-trend', 'tax-report',
+            'salary-summary', 'payroll-register', 'deductions-report', 'bank-advice'
+        ];
+
+        const reportsNeedingDates = [
+            'daily-attendance', 'monthly-attendance', 'late-arrivals',
+            'overtime-report', 'absenteeism'
+        ];
+
+        const reportsNeedingYearMonth = [
+            'salary-summary', 'payroll-register', 'deductions-report', 'bank-advice'
+        ];
+
+        if (reportsNeedingYear.includes(currentReportType)) {
+            params.append('year', year);
+        }
+
+        if (reportsNeedingYearMonth.includes(currentReportType)) {
+            params.append('month', month);
+        }
+
+        if (reportsNeedingDates.includes(currentReportType)) {
+            if (fromDate) params.append('fromDate', fromDate);
+            if (toDate) params.append('toDate', toDate);
+        }
+
         if (officeId) params.append('officeId', officeId);
         if (departmentId) params.append('departmentId', departmentId);
 
@@ -323,6 +354,56 @@ function formatFieldName(key) {
         .trim();
 }
 
+// Column name to data key mapping for reports
+const columnKeyMap = {
+    'department': 'department_name',
+    'office': 'office_name',
+    'designation': 'designation_name',
+    'employee': 'employee_name',
+    'leave type': 'leave_type_name',
+    'employee code': 'employee_code',
+    'name': 'employee_name',
+    'email': 'work_email',
+    'phone': 'work_phone',
+    'late arrivals': 'late_arrivals',
+    'average working hours': 'avg_working_hours',
+    'absent days': 'absent_days',
+    'present': 'present_count',
+    'absent': 'absent_count',
+    'on leave': 'on_leave_count',
+    'attendance rate': 'attendance_rate',
+    'total employees': 'total_employees',
+    'employee count': 'employee_count',
+    'present days': 'present_days',
+    'utilization rate': 'utilization_rate',
+    'total gross': 'total_gross',
+    'total net': 'total_net',
+    // Leave balance report mappings
+    'credited': 'total_days',
+    'balance': 'available_days',
+    'used': 'used_days',
+    // Leave utilization report mappings
+    'allocated': 'total_days',
+    // Leave trend report mappings
+    'requests': 'request_count',
+    'total days': 'total_days',
+    'approved': 'approved_count',
+    'rejected': 'rejected_count',
+    'average days': 'average_days',
+    // Pending approvals report mappings
+    'days': 'number_of_days',
+    'start date': 'start_date',
+    'end date': 'end_date',
+    'reason': 'reason',
+    'status': 'status',
+    // Loan report mappings
+    'employee name': 'employee_name',
+    'loan type': 'loan_type',
+    'principal': 'principal_amount',
+    'emi': 'emi_amount',
+    'outstanding': 'outstanding_balance'
+};
+
 function renderReportTable(columns, data) {
     const container = document.getElementById('reportTable');
 
@@ -338,13 +419,22 @@ function renderReportTable(columns, data) {
     let tableColumns = columns;
     if (data.length > 0 && Object.keys(data[0]).length > 0) {
         const dataKeys = Object.keys(data[0]);
-        // Check if data keys match expected columns pattern
-        if (!dataKeys.some(key => columns.some(col =>
-            col.toLowerCase().replace(/\s+/g, '') === key.toLowerCase() ||
-            col.toLowerCase().replace(/\s+/g, '_') === key.toLowerCase()
-        ))) {
-            // Use data keys as columns
-            tableColumns = dataKeys.map(key => formatFieldName(key));
+        // Check if data keys match expected columns pattern (including our custom mapping)
+        const hasMatch = dataKeys.some(key => columns.some(col => {
+            const colLower = col.toLowerCase().replace(/\s+/g, '');
+            const colUnder = col.toLowerCase().replace(/\s+/g, '_');
+            const mappedKey = columnKeyMap[col.toLowerCase()];
+            return colLower === key.toLowerCase() ||
+                   colUnder === key.toLowerCase() ||
+                   mappedKey === key.toLowerCase() ||
+                   key.toLowerCase().includes(colLower);
+        }));
+
+        if (!hasMatch) {
+            // Use data keys as columns (but filter out IDs)
+            tableColumns = dataKeys
+                .filter(key => !key.endsWith('_id') || key === 'employee_id')
+                .map(key => formatFieldName(key));
         }
     }
 
@@ -367,22 +457,41 @@ function renderReportTable(columns, data) {
 
         tableColumns.forEach((col, index) => {
             const td = document.createElement('td');
-            // Try to find matching key
-            const key = rowKeys.find(k =>
-                k.toLowerCase() === col.toLowerCase().replace(/\s+/g, '') ||
-                k.toLowerCase() === col.toLowerCase().replace(/\s+/g, '_') ||
-                formatFieldName(k).toLowerCase() === col.toLowerCase()
-            ) || rowKeys[index];
+
+            // First check our custom column mapping
+            const mappedKey = columnKeyMap[col.toLowerCase()];
+
+            // Try to find matching key with multiple strategies
+            const key = rowKeys.find(k => {
+                const kLower = k.toLowerCase();
+                const colLower = col.toLowerCase().replace(/\s+/g, '');
+                const colUnder = col.toLowerCase().replace(/\s+/g, '_');
+
+                // Direct match with mapped key
+                if (mappedKey && kLower === mappedKey.toLowerCase()) return true;
+
+                // Exact match
+                if (kLower === colLower) return true;
+                if (kLower === colUnder) return true;
+
+                // Format field name match
+                if (formatFieldName(k).toLowerCase() === col.toLowerCase()) return true;
+
+                // Partial match (e.g., "department" matches "department_name")
+                if (kLower.includes(colLower) && !kLower.endsWith('_id')) return true;
+
+                return false;
+            }) || rowKeys[index];
 
             let value = key ? (row[key] ?? '-') : '-';
 
             // Format currency values
-            if (typeof value === 'number' && (col.includes('Salary') || col.includes('Amount') || col.includes('Gross') || col.includes('Net') || col.includes('Deduction') || col.includes('CTC') || col.includes('Basic'))) {
+            if (typeof value === 'number' && (col.includes('Salary') || col.includes('Amount') || col.includes('Gross') || col.includes('Net') || col.includes('Deduction') || col.includes('CTC') || col.includes('Basic') || col.includes('Pay') || col.includes('Principal') || col.includes('EMI') || col.includes('Outstanding'))) {
                 value = formatCurrency(value);
             }
 
             // Format percentages
-            if (typeof value === 'number' && col.includes('%')) {
+            if (typeof value === 'number' && (col.includes('%') || col.toLowerCase().includes('percentage') || col.toLowerCase().includes('rate'))) {
                 value = value.toFixed(1) + '%';
             }
 
