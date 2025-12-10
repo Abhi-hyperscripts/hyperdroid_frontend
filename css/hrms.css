@@ -535,9 +535,9 @@
     background: rgba(231, 76, 60, 0.1);
 }
 
-/* Action Button Tooltip */
+/* Action Button Tooltip - uses title attribute */
 .action-btn::after {
-    content: attr(data-tooltip);
+    content: attr(title);
     position: absolute;
     bottom: 100%;
     left: 50%;
@@ -554,11 +554,18 @@
     transition: opacity 0.15s ease, visibility 0.15s ease;
     margin-bottom: 6px;
     z-index: 1000;
+    pointer-events: none;
 }
 
 .action-btn:hover::after {
     opacity: 1;
     visibility: visible;
+}
+
+/* Hide empty tooltips (when title is missing) */
+.action-btn:not([title])::after,
+.action-btn[title=""]::after {
+    display: none;
 }
 
 /* Modal Styles - HRMS specific overrides */
@@ -2430,5 +2437,625 @@
 
 #downloadCsvBtn:hover {
     background: #eff6ff;
+}
+
+/* ============================================ */
+/* COMPACT MODAL STYLES - Payroll Specific */
+/* ============================================ */
+
+/* Compact modal section headings */
+.modal-body h3 {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+    color: #333;
+}
+
+.modal-body h4 {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 6px 0 !important;
+    color: #444;
+}
+
+.modal-body h5 {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 4px 0 !important;
+    color: #555;
+}
+
+.modal-body h6 {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 4px 0 !important;
+    color: #666;
+}
+
+/* Compact form sections in modals */
+.modal-body .form-section {
+    margin-bottom: 10px !important;
+    padding-bottom: 0 !important;
+}
+
+.modal-body .form-section h4,
+.modal-body .form-section h3 {
+    margin-bottom: 6px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Compact form rows */
+.modal-body .form-row {
+    gap: 8px !important;
+    margin-bottom: 6px !important;
+}
+
+/* Compact form groups */
+.modal-body .form-group {
+    gap: 2px !important;
+    margin-bottom: 4px !important;
+}
+
+.modal-body .form-group label {
+    font-size: 0.7rem !important;
+    margin-bottom: 1px !important;
+}
+
+.modal-body .form-group input,
+.modal-body .form-group select,
+.modal-body .form-group textarea {
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+    height: 30px !important;
+}
+
+.modal-body .form-group textarea {
+    height: auto !important;
+    min-height: 50px !important;
+}
+
+/* Compact structure component rows */
+.modal-body .structure-component-row {
+    margin-bottom: 6px !important;
+    padding: 8px !important;
+}
+
+.modal-body .structure-component-row .component-row {
+    gap: 6px !important;
+}
+
+.modal-body .structure-component-row select,
+.modal-body .structure-component-row input {
+    height: 30px !important;
+    font-size: 0.78rem !important;
+    padding: 4px 8px !important;
+}
+
+.modal-body .structure-component-row .btn-danger {
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    padding: 4px !important;
+}
+
+.modal-body .components-list {
+    max-height: 200px !important;
+    margin-bottom: 8px !important;
+}
+
+/* Compact buttons in modals */
+.modal-body .btn,
+.modal-body button {
+    padding: 5px 10px !important;
+    font-size: 0.75rem !important;
+}
+
+.modal-body .btn-outline,
+.modal-body button.btn-outline {
+    padding: 4px 10px !important;
+}
+
+/* Compact modal footer */
+.modal-footer {
+    padding: 10px 16px !important;
+    gap: 8px !important;
+}
+
+.modal-footer .btn {
+    padding: 6px 14px !important;
+    font-size: 0.8rem !important;
+}
+
+/* Compact stat cards in modals */
+.modal-body .stat-card,
+.modal-body .stat-mini {
+    padding: 10px 14px !important;
+    min-width: 80px !important;
+}
+
+.modal-body .stat-value,
+.modal-body .stat-mini-value {
+    font-size: 1.1rem !important;
+}
+
+.modal-body .stat-label,
+.modal-body .stat-mini-label {
+    font-size: 0.65rem !important;
+}
+
+/* Compact stats row */
+.modal-body .stats-row {
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+}
+
+/* Compact tables in modals */
+.modal-body .data-table th {
+    padding: 8px 10px !important;
+    font-size: 0.68rem !important;
+}
+
+.modal-body .data-table td {
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+}
+
+/* Compact payslip detail modal */
+.modal-body .payslip-header {
+    margin-bottom: 10px !important;
+}
+
+.modal-body .payslip-header h4 {
+    font-size: 1rem !important;
+    margin-bottom: 2px !important;
+}
+
+.modal-body .payslip-header p {
+    font-size: 0.75rem !important;
+    margin: 0 !important;
+}
+
+/* Compact attendance summary in payslip */
+.modal-body .attendance-summary {
+    gap: 12px !important;
+    margin-bottom: 10px !important;
+    padding: 8px 0 !important;
+}
+
+.modal-body .attendance-summary .summary-item {
+    padding: 6px 10px !important;
+}
+
+.modal-body .attendance-summary .summary-label {
+    font-size: 0.65rem !important;
+}
+
+.modal-body .attendance-summary .summary-value {
+    font-size: 0.9rem !important;
+}
+
+/* Compact structure change alert */
+.modal-body .alert,
+.modal-body .structure-change-alert {
+    padding: 6px 10px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.7rem !important;
+}
+
+.modal-body .alert strong {
+    font-size: 0.72rem !important;
+}
+
+.modal-body .alert p {
+    margin: 2px 0 0 0 !important;
+    font-size: 0.68rem !important;
+    line-height: 1.3 !important;
+}
+
+/* Compact structure period sections */
+.modal-body .structure-period {
+    margin-bottom: 8px !important;
+    padding: 6px 8px !important;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.modal-body .structure-period-header {
+    margin-bottom: 4px !important;
+    padding-bottom: 3px !important;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-body .structure-period-header h5 {
+    font-size: 0.72rem !important;
+    color: #2563eb !important;
+    margin: 0 !important;
+}
+
+.modal-body .structure-period-header p {
+    font-size: 0.65rem !important;
+    color: #666 !important;
+    margin: 1px 0 0 0 !important;
+}
+
+/* Compact earnings/deductions columns */
+.modal-body .earnings-deductions-row {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 4px !important;
+}
+
+.modal-body .earnings-column,
+.modal-body .deductions-column {
+    flex: 1 !important;
+}
+
+.modal-body .earnings-column h6,
+.modal-body .deductions-column h6 {
+    font-size: 0.62rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    margin-bottom: 2px !important;
+    padding-bottom: 2px !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
+/* Compact component tables */
+.modal-body .component-table,
+.modal-body table.component-table,
+.modal-body table {
+    font-size: 0.72rem !important;
+    border-collapse: collapse !important;
+}
+
+.modal-body .component-table td,
+.modal-body table td {
+    padding: 2px 4px !important;
+    line-height: 1.3 !important;
+}
+
+.modal-body .component-table .subtotal-row td,
+.modal-body table tfoot td {
+    padding-top: 4px !important;
+    font-weight: 600 !important;
+    border-top: 1px solid #ddd !important;
+}
+
+/* Compact combined totals */
+.modal-body .combined-totals {
+    margin-top: 10px !important;
+    padding: 10px !important;
+    background: #f8f9fa !important;
+    border-radius: 6px !important;
+}
+
+.modal-body .combined-totals h5 {
+    font-size: 0.75rem !important;
+    margin-bottom: 6px !important;
+}
+
+.modal-body .totals-grid {
+    gap: 8px !important;
+}
+
+.modal-body .total-item-label {
+    font-size: 0.65rem !important;
+}
+
+.modal-body .total-item-value {
+    font-size: 0.85rem !important;
+}
+
+/* Compact net pay display */
+.modal-body .net-pay-display {
+    margin-top: 10px !important;
+    padding: 10px 14px !important;
+    background: #111 !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.modal-body .net-pay-display .label {
+    font-size: 0.75rem !important;
+    color: #888 !important;
+}
+
+.modal-body .net-pay-display .value {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #10b981 !important;
+}
+
+/* Compact draft details modal */
+.modal-body .pr-compact-header {
+    padding: 0 0 8px 0 !important;
+    margin-bottom: 8px !important;
+}
+
+.modal-body .pr-stats-row {
+    gap: 12px !important;
+}
+
+.modal-body .pr-stat-val {
+    font-size: 1rem !important;
+}
+
+.modal-body .pr-stat-lbl {
+    font-size: 0.6rem !important;
+}
+
+/* Compact payroll run table */
+.modal-body .pr-table th {
+    padding: 5px 6px !important;
+    font-size: 0.62rem !important;
+}
+
+.modal-body .pr-virtual-table td {
+    padding: 5px 6px !important;
+    font-size: 0.7rem !important;
+}
+
+.modal-body .pr-virtual-scroll {
+    max-height: 280px !important;
+}
+
+/* Compact salary breakdown */
+.modal-body .salary-breakdown-grid {
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.modal-body .salary-breakdown-column {
+    padding: 8px !important;
+}
+
+.modal-body .salary-breakdown-column h5 {
+    font-size: 0.72rem !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+}
+
+.modal-body .breakdown-item {
+    padding: 4px 0 !important;
+    font-size: 0.72rem !important;
+}
+
+/* Compact salary totals */
+.modal-body .salary-totals {
+    padding: 10px 12px !important;
+}
+
+.modal-body .salary-total-row {
+    padding: 5px 0 !important;
+    font-size: 0.72rem !important;
+}
+
+.modal-body .salary-total-row.net span:last-child {
+    font-size: 1rem !important;
+}
+
+/* Make modal body more compact */
+.modal-body {
+    padding: 10px 14px !important;
+}
+
+/* Reduce modal header padding */
+.modal-header {
+    padding: 10px 14px !important;
+}
+
+.modal-header h5,
+.modal-header .modal-title {
+    font-size: 0.95rem !important;
+}
+
+/* Compact close button */
+.modal-header .close-btn {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 6px !important;
+}
+
+.modal-header .close-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+}
+
+/* Modal header actions container */
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-header-actions .btn-sm {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    height: 28px !important;
+    min-width: auto !important;
+}
+
+.modal-header-actions .btn-sm svg {
+    width: 14px !important;
+    height: 14px !important;
+}
+
+/* ======================================
+   Draft Details Modal Toolbar
+   ====================================== */
+
+.draft-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.draft-toolbar .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 400px;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.draft-toolbar .search-box:focus-within {
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.draft-toolbar .search-box svg {
+    color: #999;
+    flex-shrink: 0;
+}
+
+.draft-toolbar .search-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.85rem;
+    background: transparent;
+    color: #333;
+}
+
+.draft-toolbar .search-box input::placeholder {
+    color: #999;
+}
+
+.draft-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icon-only buttons */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Warning (Recalculate) */
+.btn-icon-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.btn-icon-warning:hover {
+    background: #ffc107;
+    color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+}
+
+/* Success (Finalize) */
+.btn-icon-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.btn-icon-success:hover {
+    background: #28a745;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+}
+
+/* Primary (Export) */
+.btn-icon-primary {
+    background: #e7e7e7;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.btn-icon-primary:hover {
+    background: #333;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip styling for icon buttons */
+.btn-icon[title] {
+    position: relative;
+}
+
+.btn-icon[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    animation: tooltipFadeIn 0.2s ease forwards;
+}
+
+.btn-icon[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    animation: tooltipFadeIn 0.2s ease forwards;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Highlight matching search results */
+.draft-payslip-row.hidden {
+    display: none !important;
+}
+
+.draft-payslip-row mark {
+    background: #fff3cd;
+    padding: 0 2px;
+    border-radius: 2px;
 }
 

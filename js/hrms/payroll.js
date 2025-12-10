@@ -1341,7 +1341,33 @@ function showCreateComponentModal() {
     document.getElementById('componentId').value = '';
     document.getElementById('componentModalTitle').textContent = 'Create Salary Component';
     document.getElementById('componentModal').classList.add('active');
+    // Reset percentage fields visibility
+    togglePercentageFields();
 }
+
+// Toggle percentage fields visibility based on calculation type
+function togglePercentageFields() {
+    const calcType = document.getElementById('calculationType').value;
+    const percentageRow = document.getElementById('percentageFieldsRow');
+    const percentageInput = document.getElementById('componentPercentage');
+
+    if (calcType === 'percentage') {
+        percentageRow.style.display = 'flex';
+        percentageInput.required = true;
+    } else {
+        percentageRow.style.display = 'none';
+        percentageInput.required = false;
+        percentageInput.value = '';
+    }
+}
+
+// Add event listener for calculation type change
+document.addEventListener('DOMContentLoaded', function() {
+    const calcTypeSelect = document.getElementById('calculationType');
+    if (calcTypeSelect) {
+        calcTypeSelect.addEventListener('change', togglePercentageFields);
+    }
+});
 
 function showCreateLoanModal() {
     document.getElementById('loanForm').reset();
@@ -1365,15 +1391,22 @@ async function saveComponent() {
     try {
         showLoading();
         const id = document.getElementById('componentId').value;
+        const calculationType = document.getElementById('calculationType').value;
         const data = {
             component_name: document.getElementById('componentName').value,
             component_code: document.getElementById('componentCode').value,
             component_type: document.getElementById('componentCategory').value,
-            calculation_type: document.getElementById('calculationType').value,
+            calculation_type: calculationType,
             is_taxable: document.getElementById('isTaxable').value === 'true',
             is_statutory: document.getElementById('isStatutory').value === 'true',
             description: document.getElementById('componentDescription').value
         };
+
+        // Add percentage fields if calculation type is percentage
+        if (calculationType === 'percentage') {
+            data.percentage = parseFloat(document.getElementById('componentPercentage').value) || 0;
+            data.calculation_base = document.getElementById('calculationBase').value;
+        }
 
         if (id) {
             data.id = id;

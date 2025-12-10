@@ -234,9 +234,10 @@ async function loadEmployeeStats() {
 async function loadEmployeeAttendance() {
     try {
         const today = await api.request('/hrms/attendance/today');
-        if (today && today.check_in_time) {
-            isClockedIn = !today.check_out_time;
-            updateClockUI(today);
+        // API returns { has_checked_in, has_checked_out, record: { check_in_time, ... } }
+        if (today && today.has_checked_in && today.record) {
+            isClockedIn = !today.has_checked_out;
+            updateClockUI(today.record);
         }
     } catch (error) {
         console.error('Error loading attendance:', error);

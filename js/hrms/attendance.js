@@ -1,4 +1,5 @@
 let userRole = 'HRMS_USER';
+let pendingRejectionId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
@@ -14,6 +15,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             userRole = 'HRMS_ADMIN';
         } else if (user.roles.includes('HRMS_MANAGER')) {
             userRole = 'HRMS_MANAGER';
+        }
+    }
+
+    // Show Approvals tab for admins and managers
+    if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
+        const approvalsTab = document.getElementById('approvalsTab');
+        if (approvalsTab) {
+            approvalsTab.style.display = 'inline-block';
         }
     }
 
@@ -36,13 +45,17 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(`${tabName}Tab`).classList.add('active');
+
+    // Handle special case for approvals tab content element
+    const tabContentId = tabName === 'approvals' ? 'approvalsTabContent' : `${tabName}Tab`;
+    document.getElementById(tabContentId).classList.add('active');
 
     switch(tabName) {
         case 'daily': loadAttendance(); break;
         case 'myAttendance': loadMyAttendance(); break;
         case 'regularization': loadRegularizations(); break;
         case 'overtime': loadOvertimeRequests(); break;
+        case 'approvals': loadPendingApprovals(); break;
     }
 }
 
@@ -52,9 +65,8 @@ async function loadAttendance() {
 
     try {
         const date = document.getElementById('dateFilter').value;
-        // Note: For admin view, we need a team attendance endpoint
-        // Using report endpoint for now
-        const attendance = await api.getAttendanceReport(date, date) || [];
+        // Use team attendance endpoint which returns array of attendance records
+        const attendance = await api.request(`/hrms/attendance/team?date=${date}`) || [];
 
         let present = 0, absent = 0, late = 0, onLeave = 0;
 
@@ -67,7 +79,7 @@ async function loadAttendance() {
         attendance.forEach(a => {
             if (a.status === 'present') present++;
             else if (a.status === 'absent') absent++;
-            if (a.is_late) late++;
+            if (a.late_by_minutes > 0) late++;
             if (a.status === 'leave') onLeave++;
         });
 
@@ -77,14 +89,14 @@ async function loadAttendance() {
             <tr>
                 <td>
                     <div class="employee-info">
-                        <div class="employee-avatar">${getInitials(a.employee_name)}</div>
-                        <div class="employee-name">${a.employee_name || 'Employee'}</div>
+                        <div class="employee-avatar">${escapeHtml(getInitials(a.employee_name))}</div>
+                        <div class="employee-name">${escapeHtml(a.employee_name) || 'Employee'}</div>
                     </div>
                 </td>
                 <td>${formatTime(a.check_in_time)}</td>
                 <td>${formatTime(a.check_out_time)}</td>
-                <td>${a.working_hours ? a.working_hours.toFixed(1) + 'h' : '-'}</td>
-                <td><span class="status-badge ${a.status}">${capitalizeFirst(a.status)}</span></td>
+                <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
+                <td><span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span></td>
                 <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
             </tr>
         `).join('');
@@ -115,8 +127,8 @@ async function loadMyAttendance() {
 
         // Calculate summary from history
         const presentDays = history.filter(a => a.status === 'present' || a.check_in_time).length;
-        const lateDays = history.filter(a => a.is_late).length;
-        const totalHours = history.reduce((sum, a) => sum + (a.working_hours || 0), 0);
+        const lateDays = history.filter(a => a.late_by_minutes > 0).length;
+        const totalHours = history.reduce((sum, a) => sum + (a.total_hours || 0), 0);
 
         document.getElementById('myWorkingDays').textContent = history.length || '-';
         document.getElementById('myPresentDays').textContent = presentDays || '-';
@@ -130,10 +142,10 @@ async function loadMyAttendance() {
 
         tbody.innerHTML = history.map(a => `
             <tr>
-                <td>${formatDate(a.attendance_date)}</td>
+                <td>${formatDate(a.date)}</td>
                 <td>${formatTime(a.check_in_time)}</td>
                 <td>${formatTime(a.check_out_time)}</td>
-                <td>${a.working_hours ? a.working_hours.toFixed(1) + 'h' : '-'}</td>
+                <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
                 <td><span class="status-badge ${a.status}">${capitalizeFirst(a.status)}</span></td>
             </tr>
         `).join('');
@@ -161,8 +173,8 @@ async function loadRegularizations() {
                 <td>${formatDate(r.date)}</td>
                 <td>${formatTime(r.requested_check_in)}</td>
                 <td>${formatTime(r.requested_check_out)}</td>
-                <td>${r.reason || '-'}</td>
-                <td><span class="status-badge ${r.status}">${capitalizeFirst(r.status)}</span></td>
+                <td>${escapeHtml(r.reason) || '-'}</td>
+                <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
                 <td>
                     ${r.status === 'pending' ? `
                         <button class="action-btn danger" onclick="cancelRegularization('${r.id}')" data-tooltip="Cancel">
@@ -195,6 +207,84 @@ async function loadOvertimeRequests() {
     }
 }
 
+async function loadPendingApprovals() {
+    const tbody = document.getElementById('pendingRegularizationsTableBody');
+    tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+    try {
+        const pending = await api.getPendingRegularizations();
+
+        if (!pending || pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No pending regularization requests</p></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = pending.map(r => `
+            <tr>
+                <td>
+                    <div class="employee-info">
+                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                    </div>
+                </td>
+                <td>${formatDate(r.date)}</td>
+                <td>${formatTime(r.requested_check_in)}</td>
+                <td>${formatTime(r.requested_check_out)}</td>
+                <td>${escapeHtml(r.reason) || '-'}</td>
+                <td>
+                    <button class="action-btn success" onclick="approveRegularizationRequest('${r.id}')" data-tooltip="Approve">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="openRejectModal('${r.id}')" data-tooltip="Reject">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading pending approvals:', error);
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading pending requests</p></td></tr>';
+    }
+}
+
+async function approveRegularizationRequest(id) {
+    try {
+        await api.approveRegularization(id);
+        showToast('Regularization approved successfully', 'success');
+        loadPendingApprovals();
+    } catch (error) {
+        showToast(error.message || 'Error approving request', 'error');
+    }
+}
+
+function openRejectModal(id) {
+    pendingRejectionId = id;
+    document.getElementById('rejectionReason').value = '';
+    openModal('rejectionModal');
+}
+
+async function confirmRejectRegularization() {
+    if (!pendingRejectionId) return;
+
+    const reason = document.getElementById('rejectionReason').value;
+
+    try {
+        await api.rejectRegularization(pendingRejectionId, reason);
+        showToast('Regularization request rejected', 'success');
+        closeModal('rejectionModal');
+        pendingRejectionId = null;
+        loadPendingApprovals();
+    } catch (error) {
+        showToast(error.message || 'Error rejecting request', 'error');
+    }
+}
+
 function openRegularizationModal() {
     document.getElementById('regularizationForm').reset();
     openModal('regularizationModal');
@@ -218,9 +308,9 @@ async function submitRegularization() {
 
     try {
         await api.requestAttendanceRegularization({
-            attendance_date: date,
-            check_in_time: `${date}T${checkIn}:00`,
-            check_out_time: `${date}T${checkOut}:00`,
+            date: date,
+            requested_check_in: `${date}T${checkIn}:00`,
+            requested_check_out: `${date}T${checkOut}:00`,
             reason: reason
         });
 
@@ -251,6 +341,13 @@ async function submitOvertime() {
 }
 
 // Utility functions
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 function getInitials(name) {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -272,11 +369,11 @@ function capitalizeFirst(str) {
 }
 
 function openModal(id) {
-    document.getElementById(id).style.display = 'flex';
+    document.getElementById(id).classList.add('active');
 }
 
 function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+    document.getElementById(id).classList.remove('active');
 }
 
 function showToast(message, type = 'success') {

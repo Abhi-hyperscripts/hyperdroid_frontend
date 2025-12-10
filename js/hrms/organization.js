@@ -1,4 +1,13 @@
 // Organization Page JavaScript
+
+// Security: HTML escape function to prevent XSS attacks
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let currentUser = null;
 let isAdmin = false;
 let offices = [];
@@ -198,15 +207,15 @@ function updateOfficesTable() {
         const badgeClass = office.office_type || 'branch';
         return `
         <tr>
-            <td><strong>${office.office_name}</strong></td>
-            <td><code>${office.office_code}</code></td>
-            <td><span class="badge badge-${badgeClass}">${officeType}</span></td>
-            <td>${office.city || ''}, ${office.country || ''}</td>
+            <td><strong>${escapeHtml(office.office_name)}</strong></td>
+            <td><code>${escapeHtml(office.office_code)}</code></td>
+            <td><span class="badge badge-${escapeHtml(badgeClass)}">${escapeHtml(officeType)}</span></td>
+            <td>${escapeHtml(office.city || '')}, ${escapeHtml(office.country || '')}</td>
             <td>${office.employee_count || 0}</td>
             <td><span class="status-badge status-${office.is_active ? 'active' : 'inactive'}">${office.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editOffice('${office.id}')" data-tooltip="Edit Office">
+                    <button class="action-btn" onclick="editOffice('${escapeHtml(office.id)}')" data-tooltip="Edit Office">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -227,7 +236,7 @@ function populateOfficeSelects() {
             const firstOption = isMultiple ? '' : '<option value="">Select Office</option>';
             select.innerHTML = firstOption;
             offices.filter(o => o.is_active).forEach(office => {
-                select.innerHTML += `<option value="${office.id}">${office.office_name}</option>`;
+                select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
             });
         }
     });
@@ -276,15 +285,15 @@ function updateDepartmentsTable() {
 
     tbody.innerHTML = filtered.map(dept => `
         <tr>
-            <td><strong>${dept.department_name}</strong></td>
-            <td><code>${dept.department_code}</code></td>
-            <td>${dept.office_name || '-'}</td>
-            <td>${dept.head_name || '-'}</td>
+            <td><strong>${escapeHtml(dept.department_name)}</strong></td>
+            <td><code>${escapeHtml(dept.department_code)}</code></td>
+            <td>${escapeHtml(dept.office_name || '-')}</td>
+            <td>${escapeHtml(dept.head_name || '-')}</td>
             <td>${dept.employee_count || 0}</td>
             <td><span class="status-badge status-${dept.is_active ? 'active' : 'inactive'}">${dept.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editDepartment('${dept.id}')" data-tooltip="Edit Department">
+                    <button class="action-btn" onclick="editDepartment('${escapeHtml(dept.id)}')" data-tooltip="Edit Department">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -307,7 +316,7 @@ function populateDepartmentSelects() {
         } else {
             filterSelect.innerHTML = '';
             activeDepts.forEach(dept => {
-                filterSelect.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
+                filterSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
             });
         }
         // Trigger filter update after dropdown is populated
@@ -319,7 +328,7 @@ function populateDepartmentSelects() {
     if (modalSelect) {
         modalSelect.innerHTML = '<option value="">Select Department *</option>';
         activeDepts.forEach(dept => {
-            modalSelect.innerHTML += `<option value="${dept.id}">${dept.department_name}</option>`;
+            modalSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
         });
     }
 }
@@ -368,15 +377,15 @@ function updateDesignationsTable() {
 
     tbody.innerHTML = filtered.map(desig => `
         <tr>
-            <td><strong>${desig.designation_name}</strong></td>
-            <td><code>${desig.designation_code}</code></td>
-            <td>${desig.department_name || 'All'}</td>
+            <td><strong>${escapeHtml(desig.designation_name)}</strong></td>
+            <td><code>${escapeHtml(desig.designation_code)}</code></td>
+            <td>${escapeHtml(desig.department_name || 'All')}</td>
             <td>Level ${desig.level || 1}</td>
             <td>${desig.employee_count || 0}</td>
             <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editDesignation('${desig.id}')" data-tooltip="Edit Designation">
+                    <button class="action-btn" onclick="editDesignation('${escapeHtml(desig.id)}')" data-tooltip="Edit Designation">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -430,15 +439,15 @@ function updateShiftsTable() {
 
     tbody.innerHTML = filtered.map(shift => `
         <tr>
-            <td><strong>${shift.shift_name}</strong></td>
-            <td><code>${shift.shift_code}</code></td>
-            <td>${shift.office_name || '-'}</td>
-            <td>${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}</td>
+            <td><strong>${escapeHtml(shift.shift_name)}</strong></td>
+            <td><code>${escapeHtml(shift.shift_code)}</code></td>
+            <td>${escapeHtml(shift.office_name || '-')}</td>
+            <td>${escapeHtml(formatTime(shift.start_time))} - ${escapeHtml(formatTime(shift.end_time))}</td>
             <td>${shift.working_hours || calculateWorkingHours(shift.start_time, shift.end_time)} hrs</td>
             <td><span class="status-badge status-${shift.is_active ? 'active' : 'inactive'}">${shift.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editShift('${shift.id}')" data-tooltip="Edit Shift">
+                    <button class="action-btn" onclick="editShift('${escapeHtml(shift.id)}')" data-tooltip="Edit Shift">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -492,20 +501,20 @@ function updateHolidaysTable() {
 
     tbody.innerHTML = filtered.map(holiday => `
         <tr>
-            <td><strong>${holiday.holiday_name}</strong></td>
-            <td>${formatDate(holiday.holiday_date)}</td>
-            <td>${getDayName(holiday.holiday_date)}</td>
-            <td><span class="badge badge-${holiday.holiday_type}">${formatHolidayType(holiday.holiday_type)}</span></td>
-            <td>${holiday.office_names?.join(', ') || 'All Offices'}</td>
+            <td><strong>${escapeHtml(holiday.holiday_name)}</strong></td>
+            <td>${escapeHtml(formatDate(holiday.holiday_date))}</td>
+            <td>${escapeHtml(getDayName(holiday.holiday_date))}</td>
+            <td><span class="badge badge-${escapeHtml(holiday.holiday_type)}">${escapeHtml(formatHolidayType(holiday.holiday_type))}</span></td>
+            <td>${escapeHtml(holiday.office_names?.join(', ') || 'All Offices')}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editHoliday('${holiday.id}')" data-tooltip="Edit Holiday">
+                    <button class="action-btn" onclick="editHoliday('${escapeHtml(holiday.id)}')" data-tooltip="Edit Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteHoliday('${holiday.id}')" data-tooltip="Delete Holiday">
+                    <button class="action-btn danger" onclick="deleteHoliday('${escapeHtml(holiday.id)}')" data-tooltip="Delete Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -526,7 +535,7 @@ async function loadEmployees() {
         if (select) {
             select.innerHTML = '<option value="">Select Employee</option>';
             employees.forEach(emp => {
-                select.innerHTML += `<option value="${emp.id}">${emp.first_name} ${emp.last_name}</option>`;
+                select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</option>`;
             });
         }
     } catch (error) {

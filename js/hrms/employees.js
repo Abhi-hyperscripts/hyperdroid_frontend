@@ -1384,20 +1384,27 @@ async function saveEmployeeSalary() {
     document.getElementById('saveSalaryBtnText').textContent = 'Saving...';
 
     try {
-        const salaryData = {
-            employee_id: employeeId,
-            structure_id: structureId,
-            ctc: ctc,
-            effective_from: effectiveFrom
-        };
+        let salaryData;
 
         if (existingSalaryId) {
-            // Revise existing salary
-            salaryData.revision_type = document.getElementById('salaryRevisionType').value || 'annual_increment';
+            // Revise existing salary - backend expects new_ctc, new_structure_id
+            salaryData = {
+                employee_id: employeeId,
+                new_structure_id: structureId,
+                new_ctc: ctc,
+                effective_from: effectiveFrom,
+                revision_type: document.getElementById('salaryRevisionType').value || 'adjustment'
+            };
             await api.updateEmployeeSalary(employeeId, salaryData);
             showToast('Salary revised successfully', 'success');
         } else {
-            // Create new salary
+            // Create new salary - backend expects ctc, structure_id
+            salaryData = {
+                employee_id: employeeId,
+                structure_id: structureId,
+                ctc: ctc,
+                effective_from: effectiveFrom
+            };
             await api.assignEmployeeSalary(salaryData);
             showToast('Salary assigned successfully', 'success');
         }

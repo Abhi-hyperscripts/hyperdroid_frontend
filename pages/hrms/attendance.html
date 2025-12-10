@@ -41,6 +41,7 @@
             <button class="hrms-tab" data-tab="myAttendance" onclick="switchTab('myAttendance')">My Attendance</button>
             <button class="hrms-tab" data-tab="regularization" onclick="switchTab('regularization')">Regularization</button>
             <button class="hrms-tab" data-tab="overtime" onclick="switchTab('overtime')">Overtime</button>
+            <button class="hrms-tab" data-tab="approvals" onclick="switchTab('approvals')" id="approvalsTab" style="display:none;">Pending Approvals</button>
         </div>
 
         <!-- Daily View Tab -->
@@ -226,6 +227,34 @@
                 </table>
             </div>
         </div>
+
+        <!-- Approvals Tab (Admin/Manager Only) -->
+        <div class="tab-content" id="approvalsTabContent">
+            <div class="data-table-container">
+                <h4 style="margin-bottom: 16px;">Pending Regularization Requests</h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Date</th>
+                            <th>Requested Check In</th>
+                            <th>Requested Check Out</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingRegularizationsTableBody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Regularization Modal -->
@@ -313,6 +342,35 @@
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeModal('overtimeModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="submitOvertime()">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Reason Modal -->
+    <div class="modal" id="rejectionModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Reject Regularization</h3>
+                    <button class="close-btn" onclick="closeModal('rejectionModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectionForm">
+                        <div class="form-group">
+                            <label>Reason for Rejection</label>
+                            <textarea id="rejectionReason" placeholder="Provide reason for rejecting this request..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('rejectionModal')">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmRejectRegularization()">Reject Request</button>
                 </div>
             </div>
         </div>

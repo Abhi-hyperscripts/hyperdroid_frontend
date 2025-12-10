@@ -1071,7 +1071,7 @@ class API {
     }
 
     async getMyAttendance(startDate, endDate) {
-        return this.request(`/hrms/attendance/my?startDate=${startDate}&endDate=${endDate}`);
+        return this.request(`/hrms/attendance/history?startDate=${startDate}&endDate=${endDate}`);
     }
 
     async getEmployeeAttendance(employeeId, startDate, endDate) {
@@ -1094,17 +1094,21 @@ class API {
         return this.request(`/hrms/attendance/regularization${query}`);
     }
 
-    async approveRegularization(id, comments = null) {
+    async getPendingRegularizations() {
+        return this.request('/hrms/attendance/regularization/pending');
+    }
+
+    async approveRegularization(id, rejection_reason = null) {
         return this.request(`/hrms/attendance/regularization/${id}/approve`, {
             method: 'POST',
-            body: JSON.stringify({ comments })
+            body: JSON.stringify({ approve: true, rejection_reason })
         });
     }
 
-    async rejectRegularization(id, comments = null) {
-        return this.request(`/hrms/attendance/regularization/${id}/reject`, {
+    async rejectRegularization(id, rejection_reason = null) {
+        return this.request(`/hrms/attendance/regularization/${id}/approve`, {
             method: 'POST',
-            body: JSON.stringify({ comments })
+            body: JSON.stringify({ approve: false, rejection_reason })
         });
     }
 
