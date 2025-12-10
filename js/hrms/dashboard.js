@@ -139,8 +139,21 @@ function updateClock() {
 
 async function loadDashboard() {
     try {
-        // Show clock section for regular employees
-        if (userRole === 'HRMS_USER') {
+        // Check if user has an employee profile (including admins who are also employees)
+        let hasEmployeeProfile = false;
+        try {
+            const profileResult = await api.request('/hrms/self-service/my-profile');
+            if (profileResult && profileResult.id) {
+                hasEmployeeProfile = true;
+                currentEmployee = profileResult;
+            }
+        } catch (e) {
+            // User doesn't have an employee profile - that's okay
+            console.log('User has no employee profile');
+        }
+
+        // Show clock section for ANY user with an employee profile
+        if (hasEmployeeProfile || userRole === 'HRMS_USER') {
             document.getElementById('clockSection').style.display = 'block';
             await loadEmployeeAttendance();
         }
