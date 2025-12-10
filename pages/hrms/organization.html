@@ -747,11 +747,12 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="holidayOffices">Applicable Offices</label>
-                                    <select id="holidayOffices" name="officeIds" class="form-control" multiple>
+                                    <label for="holidayOffices">Applicable Office</label>
+                                    <select id="holidayOffices" name="office_id" class="form-control">
+                                        <option value="">All Offices (National Holiday)</option>
                                         <!-- Populated dynamically -->
                                     </select>
-                                    <small class="form-text">Hold Ctrl/Cmd to select multiple. Leave empty for all offices.</small>
+                                    <small class="form-text">Select specific office for regional holiday, or leave as "All Offices" for national holidays.</small>
                                 </div>
                             </div>
                             <div class="form-row">

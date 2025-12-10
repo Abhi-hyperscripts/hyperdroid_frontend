@@ -232,8 +232,13 @@ function populateOfficeSelects() {
     selects.forEach(id => {
         const select = document.getElementById(id);
         if (select) {
-            const isMultiple = select.multiple;
-            const firstOption = isMultiple ? '' : '<option value="">Select Office</option>';
+            // Special handling for holidayOffices - keep "All Offices" as first option
+            let firstOption;
+            if (id === 'holidayOffices') {
+                firstOption = '<option value="">All Offices (National Holiday)</option>';
+            } else {
+                firstOption = '<option value="">Select Office</option>';
+            }
             select.innerHTML = firstOption;
             offices.filter(o => o.is_active).forEach(office => {
                 select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
@@ -507,7 +512,7 @@ function updateHolidaysTable() {
             <td>${escapeHtml(formatDate(holiday.holiday_date))}</td>
             <td>${escapeHtml(getDayName(holiday.holiday_date))}</td>
             <td><span class="badge badge-${escapeHtml(holiday.holiday_type)}">${escapeHtml(formatHolidayType(holiday.holiday_type))}</span></td>
-            <td>${escapeHtml(holiday.office_names?.join(', ') || 'All Offices')}</td>
+            <td>${escapeHtml(getOfficeName(holiday.office_id))}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editHoliday('${escapeHtml(holiday.id)}')" data-tooltip="Edit Holiday">
@@ -625,6 +630,8 @@ function showCreateDesignationModal() {
 
     document.getElementById('designationForm').reset();
     document.getElementById('designationId').value = '';
+    document.getElementById('desigIsManager').checked = false;
+    document.getElementById('desigIsManagerLabel').textContent = 'No';
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
     document.getElementById('designationModal').classList.add('active');
 }
@@ -735,11 +742,9 @@ function editHoliday(id) {
     document.getElementById('holidayTypeSelect').value = holiday.holiday_type;
     document.getElementById('holidayDescription').value = holiday.description || '';
 
-    // Set selected offices
+    // Set selected office (single selection now)
     const officeSelect = document.getElementById('holidayOffices');
-    Array.from(officeSelect.options).forEach(opt => {
-        opt.selected = holiday.office_ids?.includes(opt.value);
-    });
+    officeSelect.value = holiday.office_id || '';
 
     document.getElementById('holidayModalTitle').textContent = 'Edit Holiday';
     document.getElementById('holidayModal').classList.add('active');
@@ -991,15 +996,15 @@ async function saveHoliday() {
         showLoading();
         const id = document.getElementById('holidayId').value;
 
-        const officeIds = Array.from(document.getElementById('holidayOffices').selectedOptions)
-            .map(opt => opt.value);
+        const officeSelect = document.getElementById('holidayOffices');
+        const selectedOffice = officeSelect.value;
 
         const data = {
             holiday_name: document.getElementById('holidayName').value,
             holiday_date: document.getElementById('holidayDate').value,
             holiday_type: document.getElementById('holidayTypeSelect').value,
             description: document.getElementById('holidayDescription').value,
-            office_ids: officeIds.length > 0 ? officeIds : null
+            office_id: selectedOffice ? selectedOffice : null
         };
 
         if (id) {
@@ -1091,6 +1096,12 @@ function formatHolidayType(type) {
         'company': 'Company'
     };
     return types[type] || type;
+}
+
+function getOfficeName(officeId) {
+    if (!officeId) return 'All Offices';
+    const office = offices.find(o => o.id === officeId);
+    return office?.office_name || 'Unknown Office';
 }
 
 function showLoading() {
