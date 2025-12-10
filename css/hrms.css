@@ -3059,3 +3059,330 @@
     border-radius: 2px;
 }
 
+/* ============================================
+   Employee Transfer Modal Styles
+   ============================================ */
+
+.transfer-employee-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.transfer-employee-header .employee-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.transfer-employee-header .employee-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.transfer-employee-header .employee-details h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.transfer-employee-header .employee-details p {
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.current-assignment-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.current-assignment-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: #333;
+}
+
+.assignment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.assignment-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.assignment-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.assignment-value {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #000;
+}
+
+.change-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 12px;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.conditional-section {
+    border-left: 3px solid #000;
+    padding-left: 16px;
+    margin-left: 8px;
+}
+
+/* ============================================
+   Transfer History Styles
+   ============================================ */
+
+.transfer-history-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.transfer-history-header .employee-avatar-large {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.transfer-history-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.transfer-history-header p {
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.transfer-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.transfer-stats .stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.transfer-stats .stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #000;
+}
+
+.transfer-stats .stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.history-section {
+    margin-bottom: 24px;
+}
+
+.history-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.history-timeline {
+    position: relative;
+    padding-left: 24px;
+}
+
+.history-timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item {
+    position: relative;
+    padding: 12px 0;
+    padding-left: 20px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -18px;
+    top: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #999;
+}
+
+.timeline-item.current .timeline-marker {
+    background: #000;
+    border-color: #000;
+}
+
+.timeline-content {
+    background: #fafafa;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.timeline-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.timeline-subtitle {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.timeline-date {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+.timeline-reason {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.current-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #000;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.transfer-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.transfer-type-badge.transfer {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.transfer-type-badge.promotion {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.transfer-type-badge.demotion {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.transfer-type-badge.initial {
+    background: #f5f5f5;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .assignment-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transfer-stats {
+        flex-direction: column;
+    }
+
+    .change-options {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+

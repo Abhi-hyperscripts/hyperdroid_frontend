@@ -171,11 +171,23 @@ function renderEmployees() {
                                 <circle cx="12" cy="12" r="3"/>
                             </svg>
                         </button>
+                        <button class="action-btn" onclick="viewTransferHistory('${emp.id}')" data-tooltip="History">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </button>
                         ${userRole === 'HRMS_ADMIN' ? `
                             <button class="action-btn" onclick="editEmployee('${emp.id}')" data-tooltip="Edit">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn" onclick="openTransferModal('${emp.id}')" data-tooltip="Transfer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 10 20 15 15 20"/>
+                                    <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
                                 </svg>
                             </button>
                             <button class="action-btn" onclick="openSalaryModal('${emp.id}')" data-tooltip="Salary">
@@ -1426,4 +1438,525 @@ function formatCurrency(amount) {
         currency: 'INR',
         maximumFractionDigits: 0
     }).format(amount);
+}
+
+// ============================================
+// Employee Transfer Functions
+// ============================================
+
+let currentTransferEmployee = null;
+
+async function openTransferModal(employeeId) {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    currentTransferEmployee = employee;
+
+    // Set employee info
+    const initials = getInitials(employee.first_name, employee.last_name);
+    document.getElementById('transferEmployeeAvatar').textContent = initials;
+    document.getElementById('transferEmployeeName').textContent =
+        `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
+    document.getElementById('transferEmployeeCode').textContent = employee.employee_code || '-';
+
+    // Set current values
+    const currentOffice = offices.find(o => o.id === employee.office_id);
+    const currentDept = departments.find(d => d.id === employee.department_id);
+    const currentDesig = designations.find(d => d.id === employee.designation_id);
+    const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+
+    document.getElementById('currentOfficeName').textContent = currentOffice?.office_name || 'Not assigned';
+    document.getElementById('currentDepartmentName').textContent = currentDept?.department_name || 'Not assigned';
+    document.getElementById('currentDesignationName').textContent = currentDesig?.designation_name || 'Not assigned';
+    document.getElementById('currentManagerName').textContent = currentManager
+        ? `${currentManager.first_name} ${currentManager.last_name}`
+        : 'None';
+
+    // Reset form
+    document.getElementById('transferForm').reset();
+    document.getElementById('transferEmployeeId').value = employeeId;
+    document.getElementById('transferEffectiveDate').value = new Date().toISOString().split('T')[0];
+
+    // Populate dropdowns
+    populateTransferDropdowns(employee);
+
+    // Reset change sections
+    document.getElementById('officeChangeSection').style.display = 'none';
+    document.getElementById('departmentChangeSection').style.display = 'none';
+    document.getElementById('managerChangeSection').style.display = 'none';
+    document.getElementById('salaryRevisionSection').style.display = 'none';
+
+    // Uncheck all checkboxes
+    document.getElementById('changeOffice').checked = false;
+    document.getElementById('changeDepartment').checked = false;
+    document.getElementById('changeManager').checked = false;
+    document.getElementById('reviseSalary').checked = false;
+
+    openModal('transferModal');
+}
+
+function populateTransferDropdowns(employee) {
+    // Populate office dropdown
+    const officeSelect = document.getElementById('newOfficeId');
+    officeSelect.innerHTML = '<option value="">Select new office...</option>' +
+        offices.filter(o => o.id !== employee.office_id)
+            .map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
+
+    // Populate department dropdown
+    const deptSelect = document.getElementById('newDepartmentId');
+    deptSelect.innerHTML = '<option value="">Select new department...</option>' +
+        departments.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+
+    // Populate designation dropdown (initially empty until department selected)
+    document.getElementById('newDesignationId').innerHTML = '<option value="">Select department first...</option>';
+
+    // Populate manager dropdown (exclude current employee and their direct reports)
+    const managerSelect = document.getElementById('newManagerUserId');
+    managerSelect.innerHTML = '<option value="">No manager (CEO/Top level)</option>' +
+        employees.filter(e => e.id !== employee.id && e.user_id !== employee.reporting_manager_id)
+            .map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name} (${e.employee_code})</option>`).join('');
+}
+
+function toggleTransferSection(sectionId, checkbox) {
+    const section = document.getElementById(sectionId);
+    section.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function onNewDepartmentChange() {
+    const deptId = document.getElementById('newDepartmentId').value;
+    const desigSelect = document.getElementById('newDesignationId');
+
+    if (!deptId) {
+        desigSelect.innerHTML = '<option value="">Select department first...</option>';
+        return;
+    }
+
+    // Filter designations for this department
+    const filteredDesigs = designations.filter(d => !d.department_id || d.department_id === deptId);
+
+    desigSelect.innerHTML = '<option value="">Select new designation...</option>' +
+        filteredDesigs.map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+}
+
+async function submitTransfer() {
+    const employeeId = document.getElementById('transferEmployeeId').value;
+    const effectiveDate = document.getElementById('transferEffectiveDate').value;
+    const transferType = document.getElementById('transferType').value;
+    const transferReason = document.getElementById('transferReason').value;
+
+    if (!effectiveDate) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    const changeOffice = document.getElementById('changeOffice').checked;
+    const changeDepartment = document.getElementById('changeDepartment').checked;
+    const changeManager = document.getElementById('changeManager').checked;
+    const reviseSalary = document.getElementById('reviseSalary').checked;
+
+    if (!changeOffice && !changeDepartment && !changeManager && !reviseSalary) {
+        showToast('Please select at least one change to make', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('submitTransferBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Processing...';
+
+    try {
+        // Build comprehensive transfer request
+        const request = {
+            employee_id: employeeId,
+            effective_date: effectiveDate,
+            transfer_type: transferType,
+            transfer_reason: transferReason || null
+        };
+
+        if (changeOffice) {
+            const newOfficeId = document.getElementById('newOfficeId').value;
+            if (!newOfficeId) {
+                showToast('Please select a new office', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Submit Transfer';
+                return;
+            }
+            request.new_office_id = newOfficeId;
+        }
+
+        if (changeDepartment) {
+            const newDeptId = document.getElementById('newDepartmentId').value;
+            if (!newDeptId) {
+                showToast('Please select a new department', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Submit Transfer';
+                return;
+            }
+            request.new_department_id = newDeptId;
+            const newDesigId = document.getElementById('newDesignationId').value;
+            if (newDesigId) {
+                request.new_designation_id = newDesigId;
+            }
+        }
+
+        if (changeManager) {
+            request.change_manager = true;
+            const newManagerId = document.getElementById('newManagerUserId').value;
+            request.new_manager_user_id = newManagerId || null;
+        }
+
+        if (reviseSalary) {
+            const newCTC = parseFloat(document.getElementById('newCTC').value);
+            if (newCTC && newCTC > 0) {
+                request.new_ctc = newCTC;
+            }
+        }
+
+        // Call comprehensive transfer API
+        await api.comprehensiveTransfer(request);
+
+        showToast('Transfer completed successfully', 'success');
+        closeModal('transferModal');
+        await loadEmployees();
+
+    } catch (error) {
+        console.error('Error processing transfer:', error);
+        showToast(error.message || 'Failed to process transfer', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Submit Transfer';
+    }
+}
+
+// ============================================
+// Transfer History Functions
+// ============================================
+
+// ============================================
+// Manager Hierarchy Validation Functions
+// ============================================
+
+/**
+ * Check if assigning newManagerUserId as manager to employeeId would create a circular dependency.
+ * A circular dependency exists if the new manager (or any of their managers up the chain)
+ * reports to the employee being modified.
+ * @param {string} employeeId - The employee ID (guid) being assigned a new manager
+ * @param {string} newManagerUserId - The user_id of the proposed new manager
+ * @returns {boolean} - true if circular dependency would be created
+ */
+function wouldCreateCircularDependency(employeeId, newManagerUserId) {
+    if (!newManagerUserId) return false;
+
+    // Get the employee being modified
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return false;
+
+    const visited = new Set();
+    let currentUserId = newManagerUserId;
+
+    while (currentUserId) {
+        // Check if we've visited this user before (cycle in existing data)
+        if (visited.has(currentUserId)) {
+            return true;
+        }
+        visited.add(currentUserId);
+
+        // Find the employee with this user_id
+        const currentEmployee = employees.find(e => e.user_id === currentUserId);
+        if (!currentEmployee) {
+            break; // User doesn't have an employee record
+        }
+
+        // If this employee is the one we're assigning a manager to, it's circular
+        if (currentEmployee.id === employeeId) {
+            return true;
+        }
+
+        // Move up the chain
+        currentUserId = currentEmployee.manager_user_id || currentEmployee.reporting_manager_id;
+    }
+
+    return false;
+}
+
+/**
+ * Validate manager selection and show error if invalid.
+ * @param {string} employeeId - The employee ID being modified (null for create)
+ * @param {string} employeeUserId - The user_id of the employee being modified (for self-check)
+ * @param {string} newManagerUserId - The proposed manager's user_id
+ * @returns {object} - { valid: boolean, message: string }
+ */
+function validateManagerSelection(employeeId, employeeUserId, newManagerUserId) {
+    if (!newManagerUserId) {
+        return { valid: true, message: '' };
+    }
+
+    // 1. Check self-assignment
+    if (employeeUserId && newManagerUserId === employeeUserId) {
+        return {
+            valid: false,
+            message: 'Employee cannot be their own manager'
+        };
+    }
+
+    // 2. Check if manager is an active employee
+    const managerEmployee = employees.find(e => e.user_id === newManagerUserId);
+    if (!managerEmployee) {
+        return {
+            valid: false,
+            message: 'Selected manager is not a valid employee'
+        };
+    }
+
+    if (managerEmployee.employment_status !== 'active' && !managerEmployee.is_active) {
+        return {
+            valid: false,
+            message: 'Manager must be an active employee'
+        };
+    }
+
+    // 3. Check for circular dependency (only for existing employees)
+    if (employeeId && wouldCreateCircularDependency(employeeId, newManagerUserId)) {
+        return {
+            valid: false,
+            message: 'This assignment would create a circular reporting structure. The selected manager (or someone in their reporting chain) reports to this employee.'
+        };
+    }
+
+    return { valid: true, message: '' };
+}
+
+/**
+ * Called when manager dropdown changes in the employee form
+ */
+function onManagerChange() {
+    const employeeId = document.getElementById('employeeId').value;
+    const userSelect = document.getElementById('userSelect');
+    const employeeUserId = userSelect ? userSelect.value : null;
+    const managerUserId = document.getElementById('reportingManagerId').value;
+    const validationMsg = document.getElementById('managerValidationMsg');
+
+    // For edit mode, get the employee's user_id from existing data
+    let actualEmployeeUserId = employeeUserId;
+    if (employeeId && !actualEmployeeUserId) {
+        const employee = employees.find(e => e.id === employeeId);
+        actualEmployeeUserId = employee?.user_id;
+    }
+
+    const validation = validateManagerSelection(employeeId, actualEmployeeUserId, managerUserId);
+
+    const managerSelect = document.getElementById('reportingManagerId');
+    if (!validation.valid) {
+        showToast(validation.message, 'error');
+        // Show inline validation message
+        if (validationMsg) {
+            validationMsg.textContent = validation.message;
+            validationMsg.style.display = 'block';
+        }
+        // Reset to previous value or empty
+        managerSelect.value = '';
+    } else {
+        // Hide validation message
+        if (validationMsg) {
+            validationMsg.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Called when manager dropdown changes in the transfer modal
+ */
+function onTransferManagerChange() {
+    const employeeId = document.getElementById('transferEmployeeId').value;
+    if (!employeeId) return;
+
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return;
+
+    const newManagerUserId = document.getElementById('newManagerUserId').value;
+    const validationMsg = document.getElementById('transferManagerValidationMsg');
+
+    const validation = validateManagerSelection(employeeId, employee.user_id, newManagerUserId);
+
+    if (!validation.valid) {
+        showToast(validation.message, 'error');
+        // Show inline validation message
+        if (validationMsg) {
+            validationMsg.textContent = validation.message;
+            validationMsg.style.display = 'block';
+        }
+        // Reset to empty (No manager option)
+        document.getElementById('newManagerUserId').value = '';
+    } else {
+        // Hide validation message
+        if (validationMsg) {
+            validationMsg.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Filter manager dropdown to exclude invalid options
+ * @param {Array} employeeList - List of employees to filter
+ * @param {string} currentEmployeeId - The employee being edited (to exclude from list)
+ * @param {string} currentEmployeeUserId - The user_id of employee being edited (to check hierarchy)
+ * @returns {Array} - Filtered list of valid managers
+ */
+function getValidManagers(employeeList, currentEmployeeId, currentEmployeeUserId) {
+    return employeeList.filter(e => {
+        // Exclude the employee themselves
+        if (e.id === currentEmployeeId) return false;
+        if (e.user_id === currentEmployeeUserId) return false;
+
+        // Only include active employees
+        if (e.employment_status !== 'active' && !e.is_active) return false;
+
+        // Check if selecting this manager would create circular dependency
+        if (currentEmployeeId && wouldCreateCircularDependency(currentEmployeeId, e.user_id)) {
+            return false;
+        }
+
+        return true;
+    });
+}
+
+async function viewTransferHistory(employeeId) {
+    const content = document.getElementById('transferHistoryContent');
+    content.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    openModal('transferHistoryModal');
+
+    try {
+        const history = await api.getEmployeeFullTransferHistory(employeeId);
+        const employee = employees.find(e => e.id === employeeId);
+
+        let html = `
+            <div class="transfer-history-header">
+                <div class="employee-avatar-large">${getInitials(employee?.first_name, employee?.last_name)}</div>
+                <div>
+                    <h3>${employee?.first_name || ''} ${employee?.last_name || ''}</h3>
+                    <p>${employee?.employee_code || ''}</p>
+                </div>
+            </div>
+
+            <div class="transfer-stats">
+                <div class="stat-item">
+                    <span class="stat-value">${history.total_office_transfers || 0}</span>
+                    <span class="stat-label">Office Transfers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${history.total_department_changes || 0}</span>
+                    <span class="stat-label">Department Changes</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${history.total_manager_changes || 0}</span>
+                    <span class="stat-label">Manager Changes</span>
+                </div>
+            </div>
+        `;
+
+        // Office History
+        if (history.office_history && history.office_history.length > 0) {
+            html += `
+                <div class="history-section">
+                    <h4>Office History</h4>
+                    <div class="history-timeline">
+                        ${history.office_history.map((item, idx) => {
+                            const office = offices.find(o => o.id === item.office_id);
+                            const isCurrent = !item.effective_to;
+                            return `
+                                <div class="timeline-item ${isCurrent ? 'current' : ''}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">${office?.office_name || 'Unknown Office'}</span>
+                                            ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+                                        </div>
+                                        <div class="timeline-date">
+                                            ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
+                                        </div>
+                                        ${item.transfer_reason ? `<div class="timeline-reason">${item.transfer_reason}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Department History
+        if (history.department_history && history.department_history.length > 0) {
+            html += `
+                <div class="history-section">
+                    <h4>Department History</h4>
+                    <div class="history-timeline">
+                        ${history.department_history.map((item, idx) => {
+                            const dept = departments.find(d => d.id === item.department_id);
+                            const desig = designations.find(d => d.id === item.designation_id);
+                            const isCurrent = !item.effective_to;
+                            return `
+                                <div class="timeline-item ${isCurrent ? 'current' : ''}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">${dept?.department_name || 'Unknown'}</span>
+                                            ${desig ? `<span class="timeline-subtitle">${desig.designation_name}</span>` : ''}
+                                            ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+                                        </div>
+                                        <div class="timeline-date">
+                                            ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
+                                        </div>
+                                        ${item.transfer_type ? `<span class="transfer-type-badge ${item.transfer_type}">${capitalizeFirst(item.transfer_type)}</span>` : ''}
+                                        ${item.transfer_reason ? `<div class="timeline-reason">${item.transfer_reason}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Manager History
+        if (history.manager_history && history.manager_history.length > 0) {
+            html += `
+                <div class="history-section">
+                    <h4>Manager History</h4>
+                    <div class="history-timeline">
+                        ${history.manager_history.map((item, idx) => {
+                            const manager = employees.find(e => e.user_id === item.manager_user_id);
+                            const isCurrent = !item.effective_to;
+                            return `
+                                <div class="timeline-item ${isCurrent ? 'current' : ''}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">${manager ? `${manager.first_name} ${manager.last_name}` : (item.manager_user_id ? 'Unknown Manager' : 'No Manager')}</span>
+                                            ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+                                        </div>
+                                        <div class="timeline-date">
+                                            ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
+                                        </div>
+                                        ${item.change_reason ? `<div class="timeline-reason">${item.change_reason}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!history.office_history?.length && !history.department_history?.length && !history.manager_history?.length) {
+            html += '<div class="empty-state"><p>No transfer history found</p></div>';
+        }
+
+        content.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error loading transfer history:', error);
+        content.innerHTML = '<div class="empty-state"><p>Error loading transfer history</p></div>';
+    }
 }

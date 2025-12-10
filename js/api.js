@@ -1094,8 +1094,9 @@ class API {
         return this.request(`/hrms/attendance/regularization${query}`);
     }
 
-    async getPendingRegularizations() {
-        return this.request('/hrms/attendance/regularization/pending');
+    async getPendingRegularizations(all = false) {
+        const query = all ? '?all=true' : '';
+        return this.request(`/hrms/attendance/regularization/pending${query}`);
     }
 
     async approveRegularization(id, rejection_reason = null) {
@@ -1505,6 +1506,90 @@ class API {
 
     async getCurrentOfficeAssignment(employeeId) {
         return this.request(`/hrms/employee-transfers/${employeeId}/current`);
+    }
+
+    async getOfficeAssignmentsForPeriod(employeeId, startDate, endDate) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/period?startDate=${startDate}&endDate=${endDate}`);
+    }
+
+    async getEmployeeTransferSummary(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/summary`);
+    }
+
+    async initializeEmployeeOfficeHistory(employeeId, officeId, effectiveFrom) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/initialize`, {
+            method: 'POST',
+            body: JSON.stringify({ office_id: officeId, effective_from: effectiveFrom })
+        });
+    }
+
+    async getTransfersByOffice(officeId, startDate = null, endDate = null) {
+        let query = '';
+        if (startDate) query += `startDate=${startDate}`;
+        if (endDate) query += `${query ? '&' : ''}endDate=${endDate}`;
+        return this.request(`/hrms/employee-transfers/by-office/${officeId}${query ? '?' + query : ''}`);
+    }
+
+    // --- Department Transfers ---
+    async changeDepartment(request) {
+        return this.request('/hrms/employee-transfers/department', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getEmployeeDepartmentHistory(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/department-history`);
+    }
+
+    async getCurrentDepartmentAssignment(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/current-department`);
+    }
+
+    // --- Manager Changes ---
+    async changeManager(request) {
+        return this.request('/hrms/employee-transfers/manager', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getEmployeeManagerHistory(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/manager-history`);
+    }
+
+    async getCurrentManagerAssignment(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/current-manager`);
+    }
+
+    // --- Comprehensive Transfers ---
+    async getEmployeeFullTransferHistory(employeeId) {
+        return this.request(`/hrms/employee-transfers/${employeeId}/full-history`);
+    }
+
+    async comprehensiveTransfer(request) {
+        return this.request('/hrms/employee-transfers/comprehensive', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    // --- Leave Approval (with all parameter for admin) ---
+    async getPendingLeaveApprovalsAll(all = false) {
+        const query = all ? '?all=true' : '';
+        return this.request(`/hrms/leave/pending-approvals${query}`);
+    }
+
+    // --- Regularization Approval (with all parameter for admin) ---
+    async getPendingRegularizationsAll(all = false) {
+        const query = all ? '?all=true' : '';
+        return this.request(`/hrms/attendance/regularization/pending${query}`);
+    }
+
+    // --- Overtime Approval (with all parameter for admin) ---
+    async getPendingOvertimeRequestsAll(all = false) {
+        const query = all ? '?all=true' : '';
+        return this.request(`/hrms/attendance/overtime/pending${query}`);
     }
 
     // --- Location Tax Rules ---

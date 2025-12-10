@@ -1,5 +1,6 @@
 let currentUser = null;
 let isAdmin = false;
+let isSuperAdmin = false;
 let isManager = false;
 let leaveTypes = [];
 let employees = [];
@@ -24,7 +25,8 @@ async function initializePage() {
             return;
         }
 
-        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || currentUser.roles?.includes('SUPERADMIN');
+        isSuperAdmin = currentUser.roles?.includes('SUPERADMIN');
+        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || isSuperAdmin;
         isManager = currentUser.roles?.includes('HRMS_MANAGER');
 
         // Show/hide admin elements
@@ -215,6 +217,12 @@ async function loadPendingRequests() {
 
         let url = `/hrms/leave/pending-approvals`;
         const params = [];
+
+        // SUPERADMIN and HRMS_ADMIN can see ALL pending requests, not just their direct reports
+        if (isAdmin) {
+            params.push('all=true');
+        }
+
         if (status) params.push(`status=${status}`);
         if (department) params.push(`departmentId=${department}`);
         if (params.length) url += '?' + params.join('&');
@@ -245,13 +253,25 @@ function updateLeaveRequestsTable(requests) {
         return;
     }
 
-    tbody.innerHTML = requests.map(req => `
+    tbody.innerHTML = requests.map(req => {
+        // Determine if current user can approve this request
+        // SUPERADMIN can approve anyone (including self)
+        // HRMS_ADMIN can approve anyone except self
+        // Manager can approve only direct reports (backend handles this filtering)
+        const isOwnRequest = req.employeeUserId === currentUser?.userId || req.employeeEmail === currentUser?.email;
+        const canApprove = req.status === 'Pending' && (
+            isSuperAdmin ||  // SUPERADMIN can approve anyone including self
+            (isAdmin && !isOwnRequest) ||  // HRMS_ADMIN can approve anyone except self
+            (!isAdmin && isManager)  // Manager - backend already filtered to their direct reports
+        );
+
+        return `
         <tr>
             <td class="employee-cell">
                 <div class="employee-info">
                     <div class="avatar">${getInitials(req.employeeName)}</div>
                     <div class="details">
-                        <span class="name">${req.employeeName}</span>
+                        <span class="name">${req.employeeName}${isOwnRequest ? ' (You)' : ''}</span>
                         <span class="email">${req.employeeEmail || ''}</span>
                     </div>
                 </div>
@@ -264,7 +284,7 @@ function updateLeaveRequestsTable(requests) {
             <td><span class="status-badge status-${req.status?.toLowerCase()}">${req.status}</span></td>
             <td>
                 <div class="action-buttons">
-                    ${req.status === 'Pending' ? `
+                    ${canApprove ? `
                     <button class="action-btn success" onclick="showApproveModal('${req.id}')" title="Approve">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -286,7 +306,7 @@ function updateLeaveRequestsTable(requests) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 async function loadLeaveBalances() {

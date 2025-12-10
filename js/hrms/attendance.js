@@ -1,4 +1,7 @@
 let userRole = 'HRMS_USER';
+let isSuperAdmin = false;
+let isAdmin = false;
+let currentUser = null;
 let pendingRejectionId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -9,11 +12,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('hrms', '../');
 
-    const user = api.getUser();
-    if (user && user.roles) {
-        if (user.roles.includes('SUPERADMIN') || user.roles.includes('HRMS_ADMIN')) {
+    currentUser = api.getUser();
+    if (currentUser && currentUser.roles) {
+        isSuperAdmin = currentUser.roles.includes('SUPERADMIN');
+        isAdmin = currentUser.roles.includes('HRMS_ADMIN') || isSuperAdmin;
+
+        if (isSuperAdmin || currentUser.roles.includes('HRMS_ADMIN')) {
             userRole = 'HRMS_ADMIN';
-        } else if (user.roles.includes('HRMS_MANAGER')) {
+        } else if (currentUser.roles.includes('HRMS_MANAGER')) {
             userRole = 'HRMS_MANAGER';
         }
     }
@@ -212,19 +218,29 @@ async function loadPendingApprovals() {
     tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        const pending = await api.getPendingRegularizations();
+        // SUPERADMIN and HRMS_ADMIN can see ALL pending requests
+        const pending = await api.getPendingRegularizations(isAdmin);
 
         if (!pending || pending.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No pending regularization requests</p></td></tr>';
             return;
         }
 
-        tbody.innerHTML = pending.map(r => `
+        tbody.innerHTML = pending.map(r => {
+            // Determine if current user can approve this request
+            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+            const canApprove = (
+                isSuperAdmin ||  // SUPERADMIN can approve anyone including self
+                (isAdmin && !isOwnRequest) ||  // HRMS_ADMIN can approve anyone except self
+                (!isAdmin && userRole === 'HRMS_MANAGER')  // Manager - backend filters to direct reports
+            );
+
+            return `
             <tr>
                 <td>
                     <div class="employee-info">
                         <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
-                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}${isOwnRequest ? ' (You)' : ''}</div>
                     </div>
                 </td>
                 <td>${formatDate(r.date)}</td>
@@ -232,6 +248,7 @@ async function loadPendingApprovals() {
                 <td>${formatTime(r.requested_check_out)}</td>
                 <td>${escapeHtml(r.reason) || '-'}</td>
                 <td>
+                    ${canApprove ? `
                     <button class="action-btn success" onclick="approveRegularizationRequest('${r.id}')" data-tooltip="Approve">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"/>
@@ -243,9 +260,10 @@ async function loadPendingApprovals() {
                             <line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
                     </button>
+                    ` : '<span class="text-muted">Cannot approve</span>'}
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
 
     } catch (error) {
         console.error('Error loading pending approvals:', error);

@@ -282,9 +282,10 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Reporting Manager</label>
-                                    <select id="reportingManagerId">
+                                    <select id="reportingManagerId" onchange="onManagerChange()">
                                         <option value="">None</option>
                                     </select>
+                                    <small class="validation-message" id="managerValidationMsg" style="color: #dc3545; display: none;"></small>
                                 </div>
                                 <div class="form-group">
                                     <label>Employment Type <span class="required">*</span></label>
@@ -624,6 +625,192 @@
                     <button class="btn btn-primary" onclick="saveEmployeeSalary()" id="saveSalaryBtn">
                         <span id="saveSalaryBtnText">Save Salary</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Employee Modal -->
+    <div class="modal" id="transferModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Transfer Employee</h3>
+                    <button class="close-btn" onclick="closeModal('transferModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee Info Header -->
+                    <div class="transfer-employee-header">
+                        <div class="employee-info">
+                            <div class="employee-avatar" id="transferEmployeeAvatar">-</div>
+                            <div class="employee-details">
+                                <h4 id="transferEmployeeName">-</h4>
+                                <p id="transferEmployeeCode">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Assignment -->
+                    <div class="current-assignment-section">
+                        <h4>Current Assignment</h4>
+                        <div class="assignment-grid">
+                            <div class="assignment-item">
+                                <span class="assignment-label">Office</span>
+                                <span class="assignment-value" id="currentOfficeName">-</span>
+                            </div>
+                            <div class="assignment-item">
+                                <span class="assignment-label">Department</span>
+                                <span class="assignment-value" id="currentDepartmentName">-</span>
+                            </div>
+                            <div class="assignment-item">
+                                <span class="assignment-label">Designation</span>
+                                <span class="assignment-value" id="currentDesignationName">-</span>
+                            </div>
+                            <div class="assignment-item">
+                                <span class="assignment-label">Manager</span>
+                                <span class="assignment-value" id="currentManagerName">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="transferForm">
+                        <input type="hidden" id="transferEmployeeId">
+
+                        <!-- Transfer Details -->
+                        <div class="form-section">
+                            <h4>Transfer Details</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Transfer Type <span class="required">*</span></label>
+                                    <select id="transferType" required>
+                                        <option value="transfer">Transfer</option>
+                                        <option value="promotion">Promotion</option>
+                                        <option value="demotion">Demotion</option>
+                                        <option value="deputation">Deputation</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Effective Date <span class="required">*</span></label>
+                                    <input type="date" id="transferEffectiveDate" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Transfer Reason</label>
+                                <textarea id="transferReason" rows="2" placeholder="Optional reason for transfer..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- What to Change Section -->
+                        <div class="form-section">
+                            <h4>Select Changes</h4>
+                            <div class="change-options">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="changeOffice" onchange="toggleTransferSection('officeChangeSection', this)">
+                                    <span>Change Office</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="changeDepartment" onchange="toggleTransferSection('departmentChangeSection', this)">
+                                    <span>Change Department</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="changeManager" onchange="toggleTransferSection('managerChangeSection', this)">
+                                    <span>Change Manager</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="reviseSalary" onchange="toggleTransferSection('salaryRevisionSection', this)">
+                                    <span>Revise Salary</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Office Change Section -->
+                        <div class="form-section conditional-section" id="officeChangeSection" style="display: none;">
+                            <h4>New Office</h4>
+                            <div class="form-group">
+                                <label>Select New Office <span class="required">*</span></label>
+                                <select id="newOfficeId">
+                                    <option value="">Select new office...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Department Change Section -->
+                        <div class="form-section conditional-section" id="departmentChangeSection" style="display: none;">
+                            <h4>New Department & Designation</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>New Department <span class="required">*</span></label>
+                                    <select id="newDepartmentId" onchange="onNewDepartmentChange()">
+                                        <option value="">Select new department...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>New Designation</label>
+                                    <select id="newDesignationId">
+                                        <option value="">Select department first...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manager Change Section -->
+                        <div class="form-section conditional-section" id="managerChangeSection" style="display: none;">
+                            <h4>New Reporting Manager</h4>
+                            <div class="form-group">
+                                <label>New Manager</label>
+                                <select id="newManagerUserId" onchange="onTransferManagerChange()">
+                                    <option value="">No manager (CEO/Top level)</option>
+                                </select>
+                                <small class="validation-message" id="transferManagerValidationMsg" style="color: #dc3545; display: none;"></small>
+                            </div>
+                        </div>
+
+                        <!-- Salary Revision Section -->
+                        <div class="form-section conditional-section" id="salaryRevisionSection" style="display: none;">
+                            <h4>Salary Revision</h4>
+                            <div class="form-group">
+                                <label>New Annual CTC</label>
+                                <div class="input-with-prefix">
+                                    <span class="input-prefix">₹</span>
+                                    <input type="number" id="newCTC" min="0" step="1" placeholder="Enter new CTC...">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('transferModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitTransfer()" id="submitTransferBtn">Submit Transfer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer History Modal -->
+    <div class="modal" id="transferHistoryModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Transfer History</h3>
+                    <button class="close-btn" onclick="closeModal('transferHistoryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="transferHistoryContent">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('transferHistoryModal')">Close</button>
                 </div>
             </div>
         </div>
