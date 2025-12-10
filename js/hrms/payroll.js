@@ -16,6 +16,8 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
+// Modal should only be closed via the close button, not by clicking on backdrop
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
     await initializePage();
@@ -440,7 +442,10 @@ async function viewDraftDetails(draftId) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payslips generated yet</td></tr>';
         } else {
             tbody.innerHTML = payslips.map(p => `
-                <tr>
+                <tr class="draft-payslip-row"
+                    data-code="${(p.employee_code || '').toLowerCase()}"
+                    data-name="${(p.employee_name || '').toLowerCase()}"
+                    data-dept="${(p.department_name || '').toLowerCase()}">
                     <td><code>${p.employee_code || '-'}</code></td>
                     <td>${p.employee_name || 'Unknown'}</td>
                     <td>${p.department_name || '-'}</td>
@@ -458,6 +463,13 @@ async function viewDraftDetails(draftId) {
                 </tr>
             `).join('');
         }
+
+        // Store payslips data for export
+        window.currentDraftPayslips = payslips;
+
+        // Clear search input
+        const searchInput = document.getElementById('draftPayslipSearch');
+        if (searchInput) searchInput.value = '';
 
         // Store current draft ID for finalization
         modal.dataset.draftId = draftId;
@@ -588,6 +600,16 @@ async function viewDraftPayslip(payslipId) {
                                 <span>Total Deductions</span>
                                 <span style="font-weight: 600; color: var(--danger-color);">${formatCurrency(payslip.total_deductions)}</span>
                             </div>
+                            ${payslip.loan_deductions > 0 ? `
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>Loan Deductions</span>
+                                <span style="font-weight: 600; color: var(--danger-color);">${formatCurrency(payslip.loan_deductions)}</span>
+                            </div>
+                            ` : ''}
+                            <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
+                                <span style="font-weight: 700;">Net Pay</span>
+                                <span style="font-weight: 700; color: var(--primary-color); font-size: 1.1rem;">${formatCurrency(payslip.net_pay)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -622,11 +644,14 @@ async function viewDraftPayslip(payslipId) {
                     <div>
                         <h5 style="margin: 0 0 0.75rem 0; color: var(--danger-color);">Deductions</h5>
                         <table class="data-table" style="width: 100%;">
-                            <tbody>${deductionsHtml}</tbody>
+                            <tbody>
+                                ${deductionsHtml}
+                                ${payslip.loan_deductions > 0 ? `<tr><td>Loan EMI</td><td class="text-right">${formatCurrency(payslip.loan_deductions)}</td></tr>` : ''}
+                            </tbody>
                             <tfoot>
                                 <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
                                     <td>Total Deductions</td>
-                                    <td class="text-right">${formatCurrency(payslip.total_deductions)}</td>
+                                    <td class="text-right">${formatCurrency(payslip.total_deductions + (payslip.loan_deductions || 0))}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -636,32 +661,33 @@ async function viewDraftPayslip(payslipId) {
         }
 
         contentDiv.innerHTML = `
-            <div class="payslip-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                <h4 style="margin: 0 0 0.5rem 0;">${payslip.employee_name || 'Employee'}</h4>
-                <p style="margin: 0; color: var(--text-muted);">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
+            <div class="payslip-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'}</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
+                </div>
+                <div style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border-radius: 6px; text-align: right;">
+                    <div style="font-size: 0.65rem; opacity: 0.9;">Net Pay</div>
+                    <div style="font-size: 1.1rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</div>
+                </div>
             </div>
 
-            <div class="payslip-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Working Days</div>
-                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.total_working_days || 0}</div>
+            <div class="payslip-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted);">Working Days</div>
+                    <div style="font-size: 1rem; font-weight: 600;">${payslip.total_working_days || 0}</div>
                 </div>
-                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Days Worked</div>
-                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.days_worked || 0}</div>
+                <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted);">Days Worked</div>
+                    <div style="font-size: 1rem; font-weight: 600;">${payslip.days_worked || 0}</div>
                 </div>
-                <div class="summary-item" style="padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">LOP Days</div>
-                    <div style="font-size: 1.25rem; font-weight: 600;">${payslip.lop_days || 0}</div>
+                <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
+                    <div style="font-size: 0.65rem; color: var(--text-muted);">LOP Days</div>
+                    <div style="font-size: 1rem; font-weight: 600;">${payslip.lop_days || 0}</div>
                 </div>
             </div>
 
             ${structureBreakdownHtml}
-
-            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--primary-color); color: white; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 1.1rem;">Net Pay</span>
-                <span style="font-size: 1.5rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</span>
-            </div>
         `;
 
         openModal('payslipModal');
@@ -679,10 +705,11 @@ function groupItemsByStructure(items) {
     const groupMap = new Map();
 
     for (const item of items) {
-        // Use structure_id or a special key for items without structure
-        const key = item.structure_id || 'no-structure';
+        // Group by period dates (not structure_id) to handle same structure with different salaries
+        // This is critical for mid-period appraisals where structure stays same but CTC changes
+        const periodKey = `${item.period_start || 'none'}_${item.period_end || 'none'}`;
 
-        if (!groupMap.has(key)) {
+        if (!groupMap.has(periodKey)) {
             const group = {
                 structure_id: item.structure_id,
                 structure_name: item.structure_name || 'Standard',
@@ -690,11 +717,11 @@ function groupItemsByStructure(items) {
                 period_end: item.period_end,
                 items: []
             };
-            groupMap.set(key, group);
+            groupMap.set(periodKey, group);
             groups.push(group);
         }
 
-        groupMap.get(key).items.push(item);
+        groupMap.get(periodKey).items.push(item);
     }
 
     // Sort groups by period_start date
@@ -1092,17 +1119,17 @@ function updateLoansTable(loans) {
         <tr>
             <td class="employee-cell">
                 <div class="employee-info">
-                    <div class="avatar">${getInitials(loan.employeeName)}</div>
+                    <div class="avatar">${getInitials(loan.employee_name || loan.employee_code)}</div>
                     <div class="details">
-                        <span class="name">${loan.employeeName}</span>
+                        <span class="name">${loan.employee_name || loan.employee_code || 'Unknown'}</span>
                     </div>
                 </div>
             </td>
-            <td>${formatLoanType(loan.loanType)}</td>
-            <td>${formatCurrency(loan.principalAmount)}</td>
-            <td>${formatCurrency(loan.emiAmount)}</td>
-            <td>${formatCurrency(loan.remainingBalance)}</td>
-            <td>${formatDate(loan.startDate)}</td>
+            <td>${formatLoanType(loan.loan_type)}</td>
+            <td>${formatCurrency(loan.principal_amount)}</td>
+            <td>${formatCurrency(loan.emi_amount)}</td>
+            <td>${formatCurrency(loan.outstanding_amount)}</td>
+            <td>${formatDate(loan.start_date)}</td>
             <td><span class="status-badge status-${loan.status?.toLowerCase()}">${loan.status}</span></td>
             <td>
                 <div class="action-buttons">
@@ -1155,7 +1182,7 @@ async function loadEmployees() {
         if (select) {
             select.innerHTML = '<option value="">Select Employee</option>';
             employees.forEach(emp => {
-                select.innerHTML += `<option value="${emp.id}">${emp.firstName} ${emp.lastName}</option>`;
+                select.innerHTML += `<option value="${emp.id}">${emp.first_name} ${emp.last_name}</option>`;
             });
         }
     } catch (error) {
@@ -1440,17 +1467,17 @@ async function saveLoan() {
     try {
         showLoading();
         const data = {
-            loanType: document.getElementById('loanType').value,
-            principalAmount: parseFloat(document.getElementById('loanAmount').value),
-            interestRate: parseFloat(document.getElementById('interestRate').value) || 0,
-            emiAmount: parseFloat(document.getElementById('emiAmount').value),
-            startDate: document.getElementById('loanStartDate').value,
-            numberOfInstallments: parseInt(document.getElementById('numberOfInstallments').value),
+            loan_type: document.getElementById('loanType').value,
+            principal_amount: parseFloat(document.getElementById('loanAmount').value),
+            interest_rate: parseFloat(document.getElementById('interestRate').value) || 0,
+            emi_amount: parseFloat(document.getElementById('emiAmount').value),
+            start_date: document.getElementById('loanStartDate').value,
+            tenure_months: parseInt(document.getElementById('numberOfInstallments').value),
             reason: document.getElementById('loanReason').value
         };
 
         if (isAdmin) {
-            data.employeeId = document.getElementById('loanEmployee').value;
+            data.employee_id = document.getElementById('loanEmployee').value;
         }
 
         await api.request('/hrms/payroll-processing/loans', {
@@ -2193,6 +2220,93 @@ async function processPayrollRun(runId) {
         showToast(error.message || 'Failed to process payroll', 'error');
         hideLoading();
     }
+}
+
+// ======================================
+// Draft Payslip Search and Export
+// ======================================
+
+/**
+ * Filter draft payslips based on search query
+ * @param {string} query - Search query
+ */
+function filterDraftPayslips(query) {
+    const rows = document.querySelectorAll('.draft-payslip-row');
+    const searchTerm = query.toLowerCase().trim();
+
+    rows.forEach(row => {
+        if (!searchTerm) {
+            row.classList.remove('hidden');
+            return;
+        }
+
+        const code = row.dataset.code || '';
+        const name = row.dataset.name || '';
+        const dept = row.dataset.dept || '';
+
+        const matches = code.includes(searchTerm) ||
+                       name.includes(searchTerm) ||
+                       dept.includes(searchTerm);
+
+        if (matches) {
+            row.classList.remove('hidden');
+        } else {
+            row.classList.add('hidden');
+        }
+    });
+}
+
+/**
+ * Export current draft payslips to CSV
+ */
+function exportDraftToCSV() {
+    const payslips = window.currentDraftPayslips;
+    if (!payslips || payslips.length === 0) {
+        showToast('No payslips to export', 'warning');
+        return;
+    }
+
+    // Build CSV content
+    const headers = ['Employee Code', 'Employee Name', 'Department', 'Gross Earnings', 'Total Deductions', 'Net Pay'];
+    const rows = payslips.map(p => [
+        p.employee_code || '',
+        p.employee_name || '',
+        p.department_name || '',
+        p.gross_earnings || 0,
+        p.total_deductions || 0,
+        p.net_pay || 0
+    ]);
+
+    // Create CSV string
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma
+            const str = String(cell);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        }).join(','))
+    ].join('\n');
+
+    // Get draft info for filename
+    const modal = document.getElementById('draftDetailsModal');
+    const title = document.getElementById('draftDetailTitle')?.textContent || 'PayrollDraft';
+    const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`Exported ${payslips.length} payslips to ${filename}`, 'success');
 }
 
 // Event listeners
