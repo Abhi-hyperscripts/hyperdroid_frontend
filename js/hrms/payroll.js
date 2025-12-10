@@ -102,24 +102,18 @@ function setupTabs() {
 }
 
 function setDefaultPayrollDates() {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+    // This function was used for the old Run Payroll modal which has been removed.
+    // Now payroll is processed through drafts. Keeping function for compatibility.
+    // Set draft filter defaults if elements exist
+    const draftYear = document.getElementById('draftFilterYear');
+    const draftMonth = document.getElementById('draftFilterMonth');
 
-    document.getElementById('payrollMonth').value = currentMonth;
-    document.getElementById('payrollYear').value = currentYear;
-
-    // Set period start to 1st of month
-    const periodStart = new Date(currentYear, currentMonth - 1, 1);
-    document.getElementById('periodStart').value = periodStart.toISOString().split('T')[0];
-
-    // Set period end to last day of month
-    const periodEnd = new Date(currentYear, currentMonth, 0);
-    document.getElementById('periodEnd').value = periodEnd.toISOString().split('T')[0];
-
-    // Set pay date to 1st of next month
-    const payDate = new Date(currentYear, currentMonth, 1);
-    document.getElementById('payDate').value = payDate.toISOString().split('T')[0];
+    if (draftYear) {
+        draftYear.value = new Date().getFullYear();
+    }
+    if (draftMonth) {
+        draftMonth.value = ''; // All months by default
+    }
 }
 
 async function loadMyPayslips() {
@@ -141,7 +135,13 @@ async function loadMyPayslips() {
 
         updateMyPayslipsTable(payslips);
     } catch (error) {
-        console.error('Error loading payslips:', error);
+        // If user has no employee profile (e.g., admin users), just show empty state
+        if (error.message?.includes('Employee profile not found') || error.message?.includes('not found')) {
+            console.log('User has no employee profile - showing empty payslips');
+            updateMyPayslipsTable([]);
+        } else {
+            console.error('Error loading payslips:', error);
+        }
     }
 }
 
