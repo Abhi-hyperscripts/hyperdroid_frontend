@@ -360,7 +360,7 @@ function updateDesignationsTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="7">
+                <td colspan="9">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <path d="M20 7h-9"></path>
@@ -380,7 +380,9 @@ function updateDesignationsTable() {
             <td><strong>${escapeHtml(desig.designation_name)}</strong></td>
             <td><code>${escapeHtml(desig.designation_code)}</code></td>
             <td>${escapeHtml(desig.department_name || 'All')}</td>
+            <td>${escapeHtml(desig.role_category || '-')}</td>
             <td>Level ${desig.level || 1}</td>
+            <td>${desig.is_manager ? '<span class="status-badge status-active">Yes</span>' : '<span class="status-badge status-inactive">No</span>'}</td>
             <td>${desig.employee_count || 0}</td>
             <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -636,6 +638,9 @@ function editDesignation(id) {
     document.getElementById('designationCode').value = desig.designation_code;
     document.getElementById('desigDepartment').value = desig.department_id || '';
     document.getElementById('desigLevel').value = desig.level || 1;
+    document.getElementById('desigRoleCategory').value = desig.role_category || '';
+    document.getElementById('desigIsManager').checked = desig.is_manager || false;
+    document.getElementById('desigIsManagerLabel').textContent = desig.is_manager ? 'Yes' : 'No';
     document.getElementById('designationDescription').value = desig.description || '';
     document.getElementById('designationIsActive').value = desig.is_active ? 'true' : 'false';
 
@@ -876,6 +881,8 @@ async function saveDesignation() {
             designation_code: document.getElementById('designationCode').value,
             department_id: departmentId,
             level: parseInt(document.getElementById('desigLevel').value) || 1,
+            role_category: document.getElementById('desigRoleCategory').value || null,
+            is_manager: document.getElementById('desigIsManager').checked,
             description: document.getElementById('designationDescription').value,
             is_active: document.getElementById('designationIsActive').value === 'true'
         };
@@ -1113,6 +1120,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('holidayYear')?.addEventListener('change', loadHolidays);
     document.getElementById('holidayOffice')?.addEventListener('change', updateHolidaysTable);
     document.getElementById('holidayType')?.addEventListener('change', updateHolidaysTable);
+
+    // Toggle switch label updates
+    document.getElementById('desigIsManager')?.addEventListener('change', function() {
+        document.getElementById('desigIsManagerLabel').textContent = this.checked ? 'Yes' : 'No';
+    });
 });
 
 // ============================================

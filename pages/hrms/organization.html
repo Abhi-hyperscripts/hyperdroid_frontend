@@ -200,7 +200,9 @@
                             <th>Designation</th>
                             <th>Code</th>
                             <th>Department</th>
+                            <th>Category</th>
                             <th>Level</th>
+                            <th>Manager</th>
                             <th>Employees</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -208,7 +210,7 @@
                     </thead>
                     <tbody id="designationsTable">
                         <tr class="empty-state">
-                            <td colspan="7">
+                            <td colspan="9">
                                 <div class="empty-message">
                                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                         <path d="M20 7h-9"></path>
@@ -539,14 +541,42 @@
                             </div>
                             <div class="form-row two-col">
                                 <div class="form-group">
-                                    <label for="desigDepartment">Department</label>
-                                    <select id="desigDepartment" name="departmentId" class="form-control">
-                                        <option value="">All Departments</option>
+                                    <label for="desigDepartment">Department *</label>
+                                    <select id="desigDepartment" name="departmentId" class="form-control" required>
+                                        <option value="">Select Department *</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="desigLevel">Level</label>
                                     <input type="number" id="desigLevel" name="level" class="form-control" min="1" max="20" value="1">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="desigRoleCategory">Role Category</label>
+                                    <select id="desigRoleCategory" name="roleCategory" class="form-control">
+                                        <option value="">Select Category</option>
+                                        <option value="Executive">Executive</option>
+                                        <option value="Technical">Technical</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Sales">Sales</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Support">Support</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="desigIsManager">Manager Position</label>
+                                    <div class="switch-container" style="margin-top: 8px;">
+                                        <label class="switch">
+                                            <input type="checkbox" id="desigIsManager" name="isManager">
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span class="switch-label" id="desigIsManagerLabel">No</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-row">
