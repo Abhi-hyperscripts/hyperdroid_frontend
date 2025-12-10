@@ -381,8 +381,8 @@ function updateLeaveTypesTable() {
     const searchTerm = document.getElementById('leaveTypeSearch')?.value?.toLowerCase() || '';
 
     const filtered = leaveTypes.filter(t =>
-        t.name.toLowerCase().includes(searchTerm) ||
-        t.code.toLowerCase().includes(searchTerm)
+        (t.leave_name || '').toLowerCase().includes(searchTerm) ||
+        (t.leave_code || '').toLowerCase().includes(searchTerm)
     );
 
     if (filtered.length === 0) {
@@ -405,13 +405,13 @@ function updateLeaveTypesTable() {
 
     tbody.innerHTML = filtered.map(type => `
         <tr>
-            <td><strong>${type.name}</strong></td>
-            <td><code>${type.code}</code></td>
-            <td>${type.defaultDaysPerYear}</td>
-            <td>${type.allowCarryForward ? 'Yes' : 'No'}</td>
-            <td>${type.maxCarryForwardDays || '-'}</td>
-            <td>${type.isPaidLeave ? 'Yes' : 'No'}</td>
-            <td><span class="status-badge status-${type.isActive ? 'active' : 'inactive'}">${type.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><strong>${type.leave_name}</strong></td>
+            <td><code>${type.leave_code}</code></td>
+            <td>${type.default_days_per_year}</td>
+            <td>${type.carry_forward_enabled ? 'Yes' : 'No'}</td>
+            <td>${type.max_carry_forward_days || '-'}</td>
+            <td>${type.is_paid ? 'Yes' : 'No'}</td>
+            <td><span class="status-badge status-${type.is_active ? 'active' : 'inactive'}">${type.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editLeaveType('${type.id}')" title="Edit">
@@ -482,17 +482,17 @@ function editLeaveType(id) {
     if (!type) return;
 
     document.getElementById('leaveTypeId').value = type.id;
-    document.getElementById('typeName').value = type.name;
-    document.getElementById('typeCode').value = type.code;
+    document.getElementById('typeName').value = type.leave_name;
+    document.getElementById('typeCode').value = type.leave_code;
     document.getElementById('typeDescription').value = type.description || '';
-    document.getElementById('defaultDays').value = type.defaultDaysPerYear;
-    document.getElementById('maxDaysPerRequest').value = type.maxDaysPerRequest || 0;
-    document.getElementById('carryForward').value = type.allowCarryForward ? 'true' : 'false';
-    document.getElementById('maxCarryForward').value = type.maxCarryForwardDays || 0;
-    document.getElementById('isPaid').value = type.isPaidLeave ? 'true' : 'false';
-    document.getElementById('requiresApproval').value = type.requiresApproval ? 'true' : 'false';
-    document.getElementById('allowHalfDay').value = type.allowHalfDay ? 'true' : 'false';
-    document.getElementById('typeIsActive').value = type.isActive ? 'true' : 'false';
+    document.getElementById('defaultDays').value = type.default_days_per_year;
+    document.getElementById('maxDaysPerRequest').value = type.max_consecutive_days || 0;
+    document.getElementById('carryForward').value = type.carry_forward_enabled ? 'true' : 'false';
+    document.getElementById('maxCarryForward').value = type.max_carry_forward_days || 0;
+    document.getElementById('isPaid').value = type.is_paid ? 'true' : 'false';
+    document.getElementById('requiresApproval').value = type.requires_approval ? 'true' : 'false';
+    document.getElementById('allowHalfDay').value = type.allow_half_day ? 'true' : 'false';
+    document.getElementById('typeIsActive').value = type.is_active ? 'true' : 'false';
 
     document.getElementById('leaveTypeModalTitle').textContent = 'Edit Leave Type';
     document.getElementById('leaveTypeModal').classList.add('active');
@@ -602,17 +602,17 @@ async function saveLeaveType() {
         showLoading();
         const id = document.getElementById('leaveTypeId').value;
         const data = {
-            name: document.getElementById('typeName').value,
-            code: document.getElementById('typeCode').value,
+            leave_name: document.getElementById('typeName').value,
+            leave_code: document.getElementById('typeCode').value,
             description: document.getElementById('typeDescription').value,
-            defaultDaysPerYear: parseInt(document.getElementById('defaultDays').value),
-            maxDaysPerRequest: parseInt(document.getElementById('maxDaysPerRequest').value) || null,
-            allowCarryForward: document.getElementById('carryForward').value === 'true',
-            maxCarryForwardDays: parseInt(document.getElementById('maxCarryForward').value) || 0,
-            isPaidLeave: document.getElementById('isPaid').value === 'true',
-            requiresApproval: document.getElementById('requiresApproval').value === 'true',
-            allowHalfDay: document.getElementById('allowHalfDay').value === 'true',
-            isActive: document.getElementById('typeIsActive').value === 'true'
+            default_days_per_year: parseInt(document.getElementById('defaultDays').value),
+            max_consecutive_days: parseInt(document.getElementById('maxDaysPerRequest').value) || null,
+            carry_forward_enabled: document.getElementById('carryForward').value === 'true',
+            max_carry_forward_days: parseInt(document.getElementById('maxCarryForward').value) || 0,
+            is_paid: document.getElementById('isPaid').value === 'true',
+            requires_approval: document.getElementById('requiresApproval').value === 'true',
+            allow_half_day: document.getElementById('allowHalfDay').value === 'true',
+            is_active: document.getElementById('typeIsActive').value === 'true'
         };
 
         if (id) {
