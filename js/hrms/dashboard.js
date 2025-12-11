@@ -99,8 +99,28 @@ async function checkSetupStatus() {
         }
     } catch (error) {
         console.error('Error checking setup status:', error);
-        // If error, assume setup is complete to not block users
-        isSetupComplete = true;
+        // If error, assume setup is NOT complete - disable cards that require setup
+        isSetupComplete = false;
+        hasBasicSetup = false;
+
+        // Disable cards that require setup
+        const cardsToDisable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardReports', 'cardPayroll'];
+        cardsToDisable.forEach(cardId => {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.add('disabled');
+            }
+        });
+
+        // Show warning banner
+        const banner = document.getElementById('setupWarningBanner');
+        if (banner) {
+            banner.style.display = 'flex';
+        }
+        const message = document.getElementById('setupWarningMessage');
+        if (message) {
+            message.textContent = 'Please complete organization setup before accessing other features.';
+        }
     }
 }
 

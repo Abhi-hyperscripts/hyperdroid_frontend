@@ -2740,7 +2740,16 @@ async function openArrearsModal() {
  */
 async function refreshArrears() {
     try {
-        const versionId = structureVersions[0]?.id; // Get latest version ID if available
+        // Get latest version ID if available - but don't error if none exists
+        const versionId = structureVersions && structureVersions.length > 0
+            ? structureVersions[0]?.id
+            : null;
+
+        // Only validate version ID if we're trying to use one
+        if (versionId && !isValidGuid(versionId)) {
+            console.warn('Invalid version ID format, fetching all arrears');
+        }
+
         const arrears = await api.getPendingArrears(versionId);
         currentArrearsList = arrears || [];
         selectedArrearsIds.clear();
@@ -2749,7 +2758,15 @@ async function refreshArrears() {
         updateArrearsButtons();
     } catch (error) {
         console.error('Error refreshing arrears:', error);
-        showToast(error.message || 'Failed to refresh arrears', 'error');
+        // Extract user-friendly error message
+        const errorMessage = error.error || error.message || 'Failed to refresh arrears';
+        showToast(errorMessage, 'error');
+        // Reset state on error
+        currentArrearsList = [];
+        selectedArrearsIds.clear();
+        updateArrearsTable();
+        updateArrearsSummary();
+        updateArrearsButtons();
     }
 }
 
@@ -2893,6 +2910,12 @@ function updateArrearsButtons() {
  * Apply single arrears
  */
 async function applySingleArrears(arrearsId) {
+    // Validate arrears ID
+    if (!arrearsId || !isValidGuid(arrearsId)) {
+        showToast('Invalid arrears ID', 'error');
+        return;
+    }
+
     if (!confirm('Are you sure you want to apply this arrears to the next payroll?')) return;
 
     try {
@@ -2903,7 +2926,8 @@ async function applySingleArrears(arrearsId) {
         hideLoading();
     } catch (error) {
         console.error('Error applying arrears:', error);
-        showToast(error.message || 'Failed to apply arrears', 'error');
+        const errorMessage = error.error || error.message || 'Failed to apply arrears';
+        showToast(errorMessage, 'error');
         hideLoading();
     }
 }
@@ -2912,6 +2936,12 @@ async function applySingleArrears(arrearsId) {
  * Cancel single arrears
  */
 async function cancelSingleArrears(arrearsId) {
+    // Validate arrears ID
+    if (!arrearsId || !isValidGuid(arrearsId)) {
+        showToast('Invalid arrears ID', 'error');
+        return;
+    }
+
     if (!confirm('Are you sure you want to cancel this arrears?')) return;
 
     try {
@@ -2922,7 +2952,8 @@ async function cancelSingleArrears(arrearsId) {
         hideLoading();
     } catch (error) {
         console.error('Error cancelling arrears:', error);
-        showToast(error.message || 'Failed to cancel arrears', 'error');
+        const errorMessage = error.error || error.message || 'Failed to cancel arrears';
+        showToast(errorMessage, 'error');
         hideLoading();
     }
 }
@@ -2931,30 +2962,47 @@ async function cancelSingleArrears(arrearsId) {
  * Apply selected arrears
  */
 async function applySelectedArrears() {
-    if (selectedArrearsIds.size === 0) return;
+    if (selectedArrearsIds.size === 0) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
 
-    if (!confirm(`Are you sure you want to apply ${selectedArrearsIds.size} arrears to the next payroll?`)) return;
+    // Filter out invalid IDs
+    const validIds = Array.from(selectedArrearsIds).filter(id => isValidGuid(id));
+    if (validIds.length === 0) {
+        showToast('No valid arrears IDs selected', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to apply ${validIds.length} arrears to the next payroll?`)) return;
 
     try {
         showLoading();
         let successCount = 0;
         let errorCount = 0;
+        const errors = [];
 
-        for (const arrearsId of selectedArrearsIds) {
+        for (const arrearsId of validIds) {
             try {
                 await api.applyArrears(arrearsId);
                 successCount++;
             } catch (e) {
                 errorCount++;
+                errors.push(e.error || e.message || 'Unknown error');
             }
         }
 
-        showToast(`Applied ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, successCount > 0 ? 'success' : 'error');
+        if (successCount > 0) {
+            showToast(`Applied ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 'success');
+        } else {
+            showToast(`Failed to apply arrears: ${errors[0] || 'Unknown error'}`, 'error');
+        }
         await refreshArrears();
         hideLoading();
     } catch (error) {
         console.error('Error applying arrears:', error);
-        showToast(error.message || 'Failed to apply arrears', 'error');
+        const errorMessage = error.error || error.message || 'Failed to apply arrears';
+        showToast(errorMessage, 'error');
         hideLoading();
     }
 }
@@ -2963,30 +3011,47 @@ async function applySelectedArrears() {
  * Cancel selected arrears
  */
 async function cancelSelectedArrears() {
-    if (selectedArrearsIds.size === 0) return;
+    if (selectedArrearsIds.size === 0) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
 
-    if (!confirm(`Are you sure you want to cancel ${selectedArrearsIds.size} arrears?`)) return;
+    // Filter out invalid IDs
+    const validIds = Array.from(selectedArrearsIds).filter(id => isValidGuid(id));
+    if (validIds.length === 0) {
+        showToast('No valid arrears IDs selected', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to cancel ${validIds.length} arrears?`)) return;
 
     try {
         showLoading();
         let successCount = 0;
         let errorCount = 0;
+        const errors = [];
 
-        for (const arrearsId of selectedArrearsIds) {
+        for (const arrearsId of validIds) {
             try {
                 await api.cancelArrears(arrearsId);
                 successCount++;
             } catch (e) {
                 errorCount++;
+                errors.push(e.error || e.message || 'Unknown error');
             }
         }
 
-        showToast(`Cancelled ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, successCount > 0 ? 'success' : 'error');
+        if (successCount > 0) {
+            showToast(`Cancelled ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 'success');
+        } else {
+            showToast(`Failed to cancel arrears: ${errors[0] || 'Unknown error'}`, 'error');
+        }
         await refreshArrears();
         hideLoading();
     } catch (error) {
         console.error('Error cancelling arrears:', error);
-        showToast(error.message || 'Failed to cancel arrears', 'error');
+        const errorMessage = error.error || error.message || 'Failed to cancel arrears';
+        showToast(errorMessage, 'error');
         hideLoading();
     }
 }
@@ -3077,12 +3142,65 @@ async function loadBulkAssignFilters() {
 }
 
 /**
+ * Validate if a string is a valid GUID/UUID format
+ */
+function isValidGuid(value) {
+    if (!value || value === '') return false;
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return guidRegex.test(value);
+}
+
+/**
+ * Parse GUID from dropdown value, returns null if invalid
+ */
+function parseGuidOrNull(value) {
+    if (!value || value === '' || value === 'undefined' || value === 'null') {
+        return null;
+    }
+    if (!isValidGuid(value)) {
+        console.warn(`Invalid GUID format: ${value}`);
+        return null;
+    }
+    return value;
+}
+
+/**
  * Preview bulk assignment
  */
 async function previewBulkAssignment() {
     const effectiveFrom = document.getElementById('bulkEffectiveFrom').value;
     if (!effectiveFrom) {
         showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    // Parse and validate filter values
+    const officeId = parseGuidOrNull(document.getElementById('bulkOfficeId').value);
+    const departmentId = parseGuidOrNull(document.getElementById('bulkDepartmentId').value);
+    const designationId = parseGuidOrNull(document.getElementById('bulkDesignationId').value);
+
+    // At least one filter must be selected
+    if (!officeId && !departmentId && !designationId) {
+        // Don't show error if this is an auto-triggered change event
+        // Just reset the preview section silently
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+        return;
+    }
+
+    // Validate effective date is not too old or too far in future
+    const effectiveDate = new Date(effectiveFrom);
+    const today = new Date();
+    const minDate = new Date(today.getFullYear() - 5, 0, 1); // 5 years ago
+    const maxDate = new Date(today.getFullYear() + 2, 11, 31); // 2 years from now
+
+    if (effectiveDate < minDate) {
+        showToast('Effective date cannot be more than 5 years in the past', 'error');
+        return;
+    }
+    if (effectiveDate > maxDate) {
+        showToast('Effective date cannot be more than 2 years in the future', 'error');
         return;
     }
 
@@ -3093,12 +3211,12 @@ async function previewBulkAssignment() {
             structure_id: bulkAssignStructureId,
             version_number: bulkAssignVersionNumber,
             effective_from: effectiveFrom,
-            office_id: document.getElementById('bulkOfficeId').value || null,
-            department_id: document.getElementById('bulkDepartmentId').value || null,
-            designation_id: document.getElementById('bulkDesignationId').value || null,
+            office_id: officeId,
+            department_id: departmentId,
+            designation_id: designationId,
             preview_only: true,
             calculate_arrears: document.getElementById('bulkCalculateArrears').checked,
-            reason: document.getElementById('bulkReason').value
+            reason: document.getElementById('bulkReason').value || null
         };
 
         bulkPreviewResult = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
@@ -3112,22 +3230,22 @@ async function previewBulkAssignment() {
 
         // Update preview table
         const tbody = document.getElementById('bulkPreviewTable');
-        const employees = bulkPreviewResult.employees || [];
+        const employees = bulkPreviewResult.employee_details || bulkPreviewResult.employees || [];
 
         if (employees.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No employees matched</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No employees matched the selected criteria</td></tr>';
         } else {
             tbody.innerHTML = employees.slice(0, 20).map(e => `
-                <tr class="${e.will_be_assigned ? '' : 'text-muted'}">
+                <tr class="${e.status !== 'skipped' ? '' : 'text-muted'}">
                     <td>
-                        <strong>${e.employee_name}</strong>
-                        <br><small class="text-muted">${e.employee_code}</small>
+                        <strong>${e.employee_name || 'N/A'}</strong>
+                        <br><small class="text-muted">${e.employee_code || ''}</small>
                     </td>
-                    <td>${e.current_structure || '-'}</td>
+                    <td>${e.current_structure_name || e.current_structure || '-'}</td>
                     <td>₹${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
-                    <td>${e.will_be_assigned ?
-                        `₹${(e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
-                        '<span class="text-muted">Already assigned</span>'}</td>
+                    <td>${e.status !== 'skipped' ?
+                        `₹${(e.arrears_amount || e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
+                        `<span class="text-muted">${e.error_message || 'Skipped'}</span>`}</td>
                 </tr>
             `).join('');
 
@@ -3137,12 +3255,21 @@ async function previewBulkAssignment() {
         }
 
         // Enable execute button if there are employees to assign
-        document.getElementById('executeBulkBtn').disabled = (bulkPreviewResult.employees_to_assign || 0) === 0;
+        const toAssign = bulkPreviewResult.employees_to_update || bulkPreviewResult.employees_to_assign || 0;
+        document.getElementById('executeBulkBtn').disabled = toAssign === 0;
 
         hideLoading();
     } catch (error) {
         console.error('Error previewing bulk assignment:', error);
-        showToast(error.message || 'Failed to preview assignment', 'error');
+        // Extract user-friendly error message from API response
+        const errorMessage = error.error || error.message || 'Failed to preview assignment';
+        showToast(errorMessage, 'error');
+
+        // Reset preview section on error
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+
         hideLoading();
     }
 }
@@ -3151,8 +3278,53 @@ async function previewBulkAssignment() {
  * Execute bulk assignment
  */
 async function executeBulkAssignment() {
+    // Validate preview result exists
     if (!bulkPreviewResult || bulkPreviewResult.employees_to_assign === 0) {
-        showToast('No employees to assign', 'error');
+        showToast('No employees to assign. Please preview first.', 'error');
+        return;
+    }
+
+    // Validate structure ID and version number
+    if (!bulkAssignStructureId || !isValidGuid(bulkAssignStructureId)) {
+        showToast('Invalid structure ID', 'error');
+        return;
+    }
+
+    if (!bulkAssignVersionNumber || bulkAssignVersionNumber <= 0) {
+        showToast('Invalid version number', 'error');
+        return;
+    }
+
+    // Validate effective date
+    const effectiveFrom = document.getElementById('bulkEffectiveFrom').value;
+    if (!effectiveFrom) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    // Date range validation
+    const effectiveDate = new Date(effectiveFrom);
+    const today = new Date();
+    const minDate = new Date(today.getFullYear() - 5, 0, 1);
+    const maxDate = new Date(today.getFullYear() + 2, 11, 31);
+
+    if (effectiveDate < minDate) {
+        showToast('Effective date cannot be more than 5 years in the past', 'error');
+        return;
+    }
+    if (effectiveDate > maxDate) {
+        showToast('Effective date cannot be more than 2 years in the future', 'error');
+        return;
+    }
+
+    // Parse and validate GUIDs
+    const officeId = parseGuidOrNull(document.getElementById('bulkOfficeId').value);
+    const departmentId = parseGuidOrNull(document.getElementById('bulkDepartmentId').value);
+    const designationId = parseGuidOrNull(document.getElementById('bulkDesignationId').value);
+
+    // At least one filter must be specified
+    if (!officeId && !departmentId && !designationId) {
+        showToast('At least one filter (office, department, or designation) must be selected', 'error');
         return;
     }
 
@@ -3166,13 +3338,13 @@ async function executeBulkAssignment() {
         const request = {
             structure_id: bulkAssignStructureId,
             version_number: bulkAssignVersionNumber,
-            effective_from: document.getElementById('bulkEffectiveFrom').value,
-            office_id: document.getElementById('bulkOfficeId').value || null,
-            department_id: document.getElementById('bulkDepartmentId').value || null,
-            designation_id: document.getElementById('bulkDesignationId').value || null,
+            effective_from: effectiveFrom,
+            office_id: officeId,
+            department_id: departmentId,
+            designation_id: designationId,
             preview_only: false,  // Actually execute
             calculate_arrears: document.getElementById('bulkCalculateArrears').checked,
-            reason: document.getElementById('bulkReason').value
+            reason: document.getElementById('bulkReason').value || null
         };
 
         const result = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
@@ -3186,7 +3358,8 @@ async function executeBulkAssignment() {
         hideLoading();
     } catch (error) {
         console.error('Error executing bulk assignment:', error);
-        showToast(error.message || 'Failed to execute assignment', 'error');
+        const errorMessage = error.error || error.message || 'Failed to execute assignment';
+        showToast(errorMessage, 'error');
         hideLoading();
     }
 }

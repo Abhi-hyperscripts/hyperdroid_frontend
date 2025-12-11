@@ -115,7 +115,7 @@
     <!-- Create/Edit Employee Modal -->
     <div class="modal" id="employeeModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
+            <div class="modal-content employee-wizard-modal">
                 <div class="modal-header">
                     <h3 id="employeeModalTitle">Add Employee</h3>
                     <button class="close-btn" onclick="closeModal('employeeModal')">
@@ -125,52 +125,74 @@
                         </svg>
                     </button>
                 </div>
+
+                <!-- Wizard Steps Navigation -->
+                <div class="wizard-steps">
+                    <div class="wizard-step active" data-step="1" onclick="goToEmployeeStep(1)">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Personal</div>
+                    </div>
+                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step" data-step="2" onclick="goToEmployeeStep(2)">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Employment</div>
+                    </div>
+                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step" data-step="3" onclick="goToEmployeeStep(3)">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Banking</div>
+                    </div>
+                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step" data-step="4" onclick="goToEmployeeStep(4)">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Documents</div>
+                    </div>
+                </div>
+
                 <div class="modal-body">
                     <form id="employeeForm">
                         <input type="hidden" id="employeeId">
 
-                        <!-- User Selection (for new employees) -->
-                        <div class="form-section" id="userSelectionSection">
-                            <h4>Select User Account</h4>
-                            <div class="form-group">
-                                <label>User Account <span class="required">*</span></label>
-                                <input type="hidden" id="userSelect" required>
-                                <div class="user-search-dropdown" id="userSearchDropdown">
-                                    <div class="user-search-selected" id="userSearchSelected" onclick="toggleUserDropdown()">
-                                        <span class="selected-user-text">Select a user...</span>
-                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div class="user-search-panel" id="userSearchPanel">
-                                        <div class="search-box-modern">
-                                            <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <circle cx="11" cy="11" r="8"/>
-                                                <path d="m21 21-4.35-4.35"/>
+                        <!-- Step 1: Personal Information -->
+                        <div class="wizard-panel active" id="employeeStep1">
+                            <!-- User Selection (for new employees) -->
+                            <div class="form-section" id="userSelectionSection">
+                                <div class="form-group">
+                                    <label>User Account <span class="required">*</span></label>
+                                    <input type="hidden" id="userSelect" required>
+                                    <div class="user-search-dropdown" id="userSearchDropdown">
+                                        <div class="user-search-selected" id="userSearchSelected" onclick="toggleUserDropdown()">
+                                            <span class="selected-user-text">Select a user...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
-                                            <input type="text" id="userSearchInput" placeholder="Search by name or email..." oninput="filterUserList()">
-                                            <button type="button" class="clear-search-btn" id="clearUserSearchBtn" style="display: none;" onclick="clearUserSearch()">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </div>
+                                        <div class="user-search-panel" id="userSearchPanel">
+                                            <div class="search-box-modern">
+                                                <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
                                                 </svg>
-                                            </button>
-                                        </div>
-                                        <div class="user-list-header">
-                                            <span id="userCountDisplay">0 users</span>
-                                        </div>
-                                        <div id="userSearchList" class="users-list-modern">
-                                            <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading users...</p>
+                                                <input type="text" id="userSearchInput" placeholder="Search by name or email..." oninput="filterUserList()">
+                                                <button type="button" class="clear-search-btn" id="clearUserSearchBtn" style="display: none;" onclick="clearUserSearch()">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="user-list-header">
+                                                <span id="userCountDisplay">0 users</span>
+                                            </div>
+                                            <div id="userSearchList" class="users-list-modern">
+                                                <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading users...</p>
+                                            </div>
                                         </div>
                                     </div>
+                                    <small class="form-text">Only users without employee profiles are shown</small>
                                 </div>
-                                <small class="form-text">Only users without employee profiles are shown</small>
                             </div>
-                        </div>
 
-                        <!-- Personal Information -->
-                        <div class="form-section">
-                            <h4>Personal Information</h4>
                             <!-- User Info Display (read-only from Auth service) -->
                             <div class="form-row user-info-display" id="userInfoDisplay" style="display: none;">
                                 <input type="hidden" id="firstName">
@@ -186,52 +208,43 @@
                                 </div>
                             </div>
 
-                            <!-- Employee Photo Upload -->
-                            <div class="form-row photo-row">
-                                <div class="form-group photo-upload-group">
-                                    <label>Employee Photo</label>
-                                    <div class="photo-upload-container">
-                                        <div class="photo-preview" id="photoPreview">
-                                            <div class="photo-placeholder" id="photoPlaceholder">
-                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                    <circle cx="12" cy="7" r="4"/>
-                                                </svg>
-                                                <span>No Photo</span>
+                            <!-- Photo and Basic Info in two columns -->
+                            <div class="wizard-two-col">
+                                <div class="wizard-col">
+                                    <div class="form-group photo-upload-group-compact">
+                                        <label>Photo</label>
+                                        <div class="photo-upload-compact">
+                                            <div class="photo-preview-sm" id="photoPreview">
+                                                <div class="photo-placeholder" id="photoPlaceholder">
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                        <circle cx="12" cy="7" r="4"/>
+                                                    </svg>
+                                                </div>
+                                                <img id="photoImage" src="" alt="Employee Photo" style="display: none;">
                                             </div>
-                                            <img id="photoImage" src="" alt="Employee Photo" style="display: none;">
+                                            <div class="photo-btns">
+                                                <input type="file" id="photo-file" accept=".jpg,.jpeg,.png" hidden onchange="handlePhotoSelect(this)">
+                                                <button type="button" class="btn btn-outline btn-xs" onclick="triggerFileUpload('photo')">Upload</button>
+                                                <button type="button" class="btn btn-danger btn-xs" id="removePhotoBtn" onclick="removePhoto()" style="display: none;">Remove</button>
+                                            </div>
                                         </div>
-                                        <div class="photo-actions">
-                                            <input type="file" id="photo-file" accept=".jpg,.jpeg,.png" hidden onchange="handlePhotoSelect(this)">
-                                            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerFileUpload('photo')">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17 8 12 3 7 8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                                </svg>
-                                                Upload Photo
-                                            </button>
-                                            <button type="button" class="btn btn-danger btn-sm" id="removePhotoBtn" onclick="removePhoto()" style="display: none;">
-                                                Remove
-                                            </button>
-                                            <small class="photo-hint">JPG or PNG, max 5MB</small>
-                                        </div>
+                                        <input type="hidden" id="photo-doc-id">
                                     </div>
-                                    <input type="hidden" id="photo-doc-id">
+                                </div>
+                                <div class="wizard-col">
+                                    <div class="form-group">
+                                        <label>Employee Code <span class="required">*</span></label>
+                                        <input type="text" id="employeeCode" required placeholder="EMP001">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Work Phone</label>
+                                        <input type="tel" id="workPhone" placeholder="+91-9876543210">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Employee Code <span class="required">*</span></label>
-                                    <input type="text" id="employeeCode" required placeholder="EMP001">
-                                </div>
-                                <div class="form-group">
-                                    <label>Work Phone</label>
-                                    <input type="tel" id="workPhone" placeholder="+91-9876543210">
-                                </div>
-                            </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Date of Birth</label>
                                     <input type="date" id="dateOfBirth">
@@ -248,10 +261,9 @@
                             </div>
                         </div>
 
-                        <!-- Employment Details -->
-                        <div class="form-section">
-                            <h4>Employment Details</h4>
-                            <div class="form-row">
+                        <!-- Step 2: Employment Details -->
+                        <div class="wizard-panel" id="employeeStep2">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Office <span class="required">*</span></label>
                                     <select id="officeId" required onchange="updateForOfficeChange()">
@@ -265,7 +277,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Designation <span class="required">*</span></label>
                                     <select id="designationId" required>
@@ -279,7 +291,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Reporting Manager</label>
                                     <select id="reportingManagerId" onchange="onManagerChange()">
@@ -298,7 +310,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Date of Joining <span class="required">*</span></label>
                                     <input type="date" id="dateOfJoining" required>
@@ -310,10 +322,10 @@
                             </div>
                         </div>
 
-                        <!-- Banking Details -->
-                        <div class="form-section" id="bankingSection">
-                            <h4>Banking Details (Salary Account)</h4>
-                            <div class="form-row">
+                        <!-- Step 3: Banking Details -->
+                        <div class="wizard-panel" id="employeeStep3">
+                            <p class="wizard-step-hint">Bank account details for salary disbursement</p>
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Account Holder Name <span class="required">*</span></label>
                                     <input type="text" id="accountHolderName" placeholder="Name as per bank account">
@@ -323,7 +335,7 @@
                                     <input type="text" id="bankName" placeholder="e.g. HDFC Bank">
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>Account Number <span class="required">*</span></label>
                                     <input type="text" id="accountNumber" placeholder="Bank account number">
@@ -333,7 +345,7 @@
                                     <input type="text" id="confirmAccountNumber" placeholder="Re-enter account number">
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label>IFSC Code <span class="required">*</span></label>
                                     <input type="text" id="ifscCode" placeholder="e.g. HDFC0001234" pattern="^[A-Z]{4}0[A-Z0-9]{6}$" style="text-transform: uppercase;">
@@ -346,104 +358,100 @@
                             <input type="hidden" id="bankAccountId">
                         </div>
 
-                        <!-- Identity Documents -->
-                        <div class="form-section" id="documentsSection">
-                            <h4>Identity Documents</h4>
-                            <p class="form-section-hint">PAN Card and Aadhar Card are required for payroll processing.</p>
-                            <div class="document-grid" id="documentUploadGrid">
+                        <!-- Step 4: Identity Documents -->
+                        <div class="wizard-panel" id="employeeStep4">
+                            <p class="wizard-step-hint">PAN and Aadhar are required for payroll processing</p>
+                            <div class="document-grid-compact" id="documentUploadGrid">
                                 <!-- PAN Card -->
-                                <div class="document-item" data-doc-type="pan">
-                                    <div class="doc-header">
+                                <div class="document-item-compact" data-doc-type="pan">
+                                    <div class="doc-header-compact">
                                         <span class="doc-label">PAN Card <span class="required">*</span></span>
                                         <span class="doc-status" id="pan-status"></span>
                                     </div>
-                                    <div class="doc-upload-area" id="pan-upload">
-                                        <input type="file" id="pan-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan', this)">
-                                        <button type="button" class="upload-btn" onclick="triggerFileUpload('pan')">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                <polyline points="17 8 12 3 7 8"/>
-                                                <line x1="12" y1="3" x2="12" y2="15"/>
-                                            </svg>
-                                            Upload
-                                        </button>
-                                    </div>
-                                    <div class="doc-preview" id="pan-preview" style="display:none">
-                                        <span class="file-name"></span>
-                                        <button type="button" class="remove-btn" onclick="removeDocument('pan')">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                                <line x1="6" y1="6" x2="18" y2="18"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="doc-fields">
-                                        <input type="text" id="pan-number" placeholder="PAN Number (e.g. ABCDE1234F)" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
+                                    <div class="doc-row">
+                                        <input type="text" id="pan-number" placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
+                                        <div class="doc-upload-compact">
+                                            <input type="file" id="pan-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan', this)">
+                                            <button type="button" class="upload-btn-sm" id="pan-upload" onclick="triggerFileUpload('pan')">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17 8 12 3 7 8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                            </button>
+                                            <div class="doc-preview-inline" id="pan-preview" style="display:none">
+                                                <span class="file-name"></span>
+                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('pan')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="hidden" id="pan-doc-id">
                                 </div>
 
                                 <!-- Aadhar Card -->
-                                <div class="document-item" data-doc-type="aadhar">
-                                    <div class="doc-header">
+                                <div class="document-item-compact" data-doc-type="aadhar">
+                                    <div class="doc-header-compact">
                                         <span class="doc-label">Aadhar Card <span class="required">*</span></span>
                                         <span class="doc-status" id="aadhar-status"></span>
                                     </div>
-                                    <div class="doc-upload-area" id="aadhar-upload">
-                                        <input type="file" id="aadhar-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar', this)">
-                                        <button type="button" class="upload-btn" onclick="triggerFileUpload('aadhar')">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                <polyline points="17 8 12 3 7 8"/>
-                                                <line x1="12" y1="3" x2="12" y2="15"/>
-                                            </svg>
-                                            Upload
-                                        </button>
-                                    </div>
-                                    <div class="doc-preview" id="aadhar-preview" style="display:none">
-                                        <span class="file-name"></span>
-                                        <button type="button" class="remove-btn" onclick="removeDocument('aadhar')">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                                <line x1="6" y1="6" x2="18" y2="18"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="doc-fields">
-                                        <input type="text" id="aadhar-number" placeholder="Aadhar Number (12 digits)" pattern="[0-9]{12}" maxlength="12">
+                                    <div class="doc-row">
+                                        <input type="text" id="aadhar-number" placeholder="12 digit number" pattern="[0-9]{12}" maxlength="12">
+                                        <div class="doc-upload-compact">
+                                            <input type="file" id="aadhar-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar', this)">
+                                            <button type="button" class="upload-btn-sm" id="aadhar-upload" onclick="triggerFileUpload('aadhar')">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17 8 12 3 7 8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                            </button>
+                                            <div class="doc-preview-inline" id="aadhar-preview" style="display:none">
+                                                <span class="file-name"></span>
+                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="hidden" id="aadhar-doc-id">
                                 </div>
 
                                 <!-- Passport (Optional) -->
-                                <div class="document-item" data-doc-type="passport">
-                                    <div class="doc-header">
-                                        <span class="doc-label">Passport</span>
+                                <div class="document-item-compact" data-doc-type="passport">
+                                    <div class="doc-header-compact">
+                                        <span class="doc-label">Passport <span class="optional-badge">Optional</span></span>
                                         <span class="doc-status" id="passport-status"></span>
                                     </div>
-                                    <div class="doc-upload-area" id="passport-upload">
-                                        <input type="file" id="passport-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('passport', this)">
-                                        <button type="button" class="upload-btn" onclick="triggerFileUpload('passport')">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                <polyline points="17 8 12 3 7 8"/>
-                                                <line x1="12" y1="3" x2="12" y2="15"/>
-                                            </svg>
-                                            Upload
-                                        </button>
-                                    </div>
-                                    <div class="doc-preview" id="passport-preview" style="display:none">
-                                        <span class="file-name"></span>
-                                        <button type="button" class="remove-btn" onclick="removeDocument('passport')">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                                <line x1="6" y1="6" x2="18" y2="18"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="doc-fields">
-                                        <input type="text" id="passport-number" placeholder="Passport Number" style="text-transform: uppercase;">
-                                        <input type="date" id="passport-expiry" placeholder="Expiry Date" title="Passport Expiry Date">
+                                    <div class="doc-row">
+                                        <input type="text" id="passport-number" placeholder="Passport Number" style="text-transform: uppercase; flex: 1;">
+                                        <input type="date" id="passport-expiry" title="Expiry Date" style="flex: 1;">
+                                        <div class="doc-upload-compact">
+                                            <input type="file" id="passport-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('passport', this)">
+                                            <button type="button" class="upload-btn-sm" id="passport-upload" onclick="triggerFileUpload('passport')">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17 8 12 3 7 8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                            </button>
+                                            <div class="doc-preview-inline" id="passport-preview" style="display:none">
+                                                <span class="file-name"></span>
+                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('passport')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="hidden" id="passport-doc-id">
                                 </div>
@@ -451,9 +459,25 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('employeeModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+
+                <!-- Wizard Navigation Footer -->
+                <div class="modal-footer wizard-footer">
+                    <button class="btn btn-outline" id="empWizardPrevBtn" onclick="prevEmployeeStep()" style="display: none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        Back
+                    </button>
+                    <div class="wizard-footer-spacer"></div>
+                    <button class="btn btn-primary" id="empWizardNextBtn" onclick="nextEmployeeStep()">
+                        Next
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <button class="btn btn-primary" id="empWizardSaveBtn" onclick="saveEmployee()" style="display: none;">
+                        Save Employee
+                    </button>
                 </div>
             </div>
         </div>

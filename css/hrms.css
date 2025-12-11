@@ -1694,10 +1694,10 @@
 
 /* Salary Structure Components - Compact layout */
 .structure-component-row {
-    margin-bottom: 6px;
-    padding: 6px 8px;
+    margin-bottom: 5px;
+    padding: 6px;
     background: #f9fafb;
-    border-radius: 6px;
+    border-radius: 5px;
     border: 1px solid #e5e7eb;
 }
 
@@ -1709,7 +1709,8 @@
 }
 
 .structure-component-row .component-row > .form-group {
-    margin-bottom: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -2592,11 +2593,12 @@
 /* Compact structure component rows in modals */
 .modal-body .structure-component-row {
     margin-bottom: 4px !important;
-    padding: 5px 6px !important;
+    padding: 5px !important;
 }
 
 .modal-body .structure-component-row .component-row {
     gap: 5px !important;
+    margin: 0 !important;
 }
 
 .modal-body .structure-component-row select,
@@ -2604,6 +2606,7 @@
     height: 28px !important;
     font-size: 0.75rem !important;
     padding: 4px 6px !important;
+    margin: 0 !important;
 }
 
 .modal-body .structure-component-row select {
@@ -3530,4 +3533,360 @@ input:checked + .slider:before {
     font-size: 14px;
     color: #666;
     font-weight: 500;
+}
+
+/* ================================================
+   Employee Wizard Modal Styles
+   ================================================ */
+
+.employee-wizard-modal {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.employee-wizard-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    min-height: 320px;
+    max-height: calc(90vh - 180px);
+}
+
+/* Wizard Steps Navigation */
+.wizard-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 0;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 12px;
+    transition: all 0.2s ease;
+}
+
+.wizard-step .step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.wizard-step .step-label {
+    font-size: 0.68rem;
+    color: #6b7280;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.wizard-step.active .step-number {
+    background: #111;
+    color: #fff;
+}
+
+.wizard-step.active .step-label {
+    color: #111;
+    font-weight: 600;
+}
+
+.wizard-step.completed .step-number {
+    background: #10b981;
+    color: #fff;
+}
+
+.wizard-step.completed .step-label {
+    color: #10b981;
+}
+
+.wizard-step:hover:not(.active) .step-number {
+    background: #d1d5db;
+}
+
+.wizard-step-connector {
+    width: 40px;
+    height: 2px;
+    background: #e5e7eb;
+    margin: 0 4px;
+}
+
+.wizard-step.completed + .wizard-step-connector {
+    background: #10b981;
+}
+
+/* Wizard Panels */
+.wizard-panel {
+    display: none;
+}
+
+.wizard-panel.active {
+    display: block;
+}
+
+.wizard-step-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Wizard Two Column Layout */
+.wizard-two-col {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 12px;
+}
+
+.wizard-col {
+    flex: 1;
+}
+
+/* Compact Photo Upload for Wizard */
+.photo-upload-group-compact {
+    margin-bottom: 0;
+}
+
+.photo-upload-compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.photo-preview-sm {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.photo-preview-sm .photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.photo-preview-sm .photo-placeholder svg {
+    width: 28px;
+    height: 28px;
+}
+
+.photo-preview-sm .photo-placeholder span {
+    display: none;
+}
+
+.photo-preview-sm img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.btn-xs {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+    height: auto !important;
+}
+
+/* Wizard Footer */
+.wizard-footer {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px !important;
+    border-top: 1px solid #e5e7eb;
+}
+
+.wizard-footer-spacer {
+    flex: 1;
+}
+
+.wizard-footer .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wizard-footer .btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Compact Document Grid for Wizard */
+.document-grid-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.document-item-compact {
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.doc-header-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.doc-header-compact .doc-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.optional-badge {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.doc-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.doc-row input[type="text"],
+.doc-row input[type="date"] {
+    flex: 1;
+    min-width: 0;
+}
+
+.doc-upload-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.upload-btn-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #6b7280;
+}
+
+.upload-btn-sm:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.upload-btn-sm.has-file {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.doc-preview-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #ecfdf5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 120px;
+}
+
+.doc-preview-inline .file-name {
+    font-size: 0.68rem;
+    color: #059669;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.remove-btn-sm {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #fee2e2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.remove-btn-sm:hover {
+    background: #fecaca;
+}
+
+/* Responsive adjustments for wizard */
+@media (max-width: 600px) {
+    .wizard-steps {
+        padding: 10px 12px;
+    }
+
+    .wizard-step {
+        padding: 4px 8px;
+    }
+
+    .wizard-step .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+
+    .wizard-step .step-label {
+        font-size: 0.6rem;
+    }
+
+    .wizard-step-connector {
+        width: 20px;
+    }
+
+    .wizard-two-col {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .doc-row {
+        flex-wrap: wrap;
+    }
 }

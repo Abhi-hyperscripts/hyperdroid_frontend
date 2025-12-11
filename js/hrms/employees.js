@@ -210,6 +210,9 @@ async function openCreateEmployeeModal() {
     document.getElementById('employeeId').value = '';
     document.getElementById('userSelectionSection').style.display = 'block';
 
+    // Reset wizard to step 1
+    resetEmployeeWizard();
+
     // Hide user info display until user is selected
     document.getElementById('userInfoDisplay').style.display = 'none';
 
@@ -425,6 +428,9 @@ async function editEmployee(id) {
     document.getElementById('employeeModalTitle').textContent = 'Edit Employee';
     document.getElementById('employeeId').value = id;
     document.getElementById('userSelectionSection').style.display = 'none';
+
+    // Reset wizard to step 1
+    resetEmployeeWizard();
 
     // Fill basic form fields first
     document.getElementById('employeeCode').value = emp.employee_code || '';
@@ -1959,4 +1965,157 @@ async function viewTransferHistory(employeeId) {
         console.error('Error loading transfer history:', error);
         content.innerHTML = '<div class="empty-state"><p>Error loading transfer history</p></div>';
     }
+}
+
+// ============================================
+// Employee Wizard Navigation Functions
+// ============================================
+
+let currentEmployeeStep = 1;
+const totalEmployeeSteps = 4;
+
+function goToEmployeeStep(stepNumber) {
+    // Validate current step before moving forward
+    if (stepNumber > currentEmployeeStep && !validateEmployeeStep(currentEmployeeStep)) {
+        return;
+    }
+
+    // Update step indicators
+    for (let i = 1; i <= totalEmployeeSteps; i++) {
+        const stepEl = document.getElementById(`emp-step-${i}`);
+        if (!stepEl) continue;
+
+        stepEl.classList.remove('active', 'completed');
+        if (i < stepNumber) {
+            stepEl.classList.add('completed');
+        } else if (i === stepNumber) {
+            stepEl.classList.add('active');
+        }
+    }
+
+    // Update panels
+    for (let i = 1; i <= totalEmployeeSteps; i++) {
+        const panelEl = document.getElementById(`emp-panel-${i}`);
+        if (!panelEl) continue;
+
+        panelEl.classList.remove('active');
+        if (i === stepNumber) {
+            panelEl.classList.add('active');
+        }
+    }
+
+    // Update navigation buttons
+    const backBtn = document.getElementById('empWizardBackBtn');
+    const nextBtn = document.getElementById('empWizardNextBtn');
+    const saveBtn = document.getElementById('empWizardSaveBtn');
+
+    if (backBtn) backBtn.style.display = stepNumber === 1 ? 'none' : 'inline-flex';
+    if (nextBtn) nextBtn.style.display = stepNumber === totalEmployeeSteps ? 'none' : 'inline-flex';
+    if (saveBtn) saveBtn.style.display = stepNumber === totalEmployeeSteps ? 'inline-flex' : 'none';
+
+    currentEmployeeStep = stepNumber;
+}
+
+function nextEmployeeStep() {
+    if (currentEmployeeStep < totalEmployeeSteps) {
+        goToEmployeeStep(currentEmployeeStep + 1);
+    }
+}
+
+function prevEmployeeStep() {
+    if (currentEmployeeStep > 1) {
+        goToEmployeeStep(currentEmployeeStep - 1);
+    }
+}
+
+function validateEmployeeStep(stepNumber) {
+    switch (stepNumber) {
+        case 1: // Personal Information
+            return validatePersonalStep();
+        case 2: // Employment Details
+            return validateEmploymentStep();
+        case 3: // Banking Details
+            return validateBankingStep();
+        case 4: // Documents
+            return true; // Documents are optional
+        default:
+            return true;
+    }
+}
+
+function validatePersonalStep() {
+    const employeeId = document.getElementById('employeeId').value;
+    const isEdit = !!employeeId;
+
+    // For new employees, user must be selected
+    if (!isEdit) {
+        const userId = document.getElementById('userSelect').value;
+        if (!userId) {
+            showToast('Please select a user account', 'error');
+            return false;
+        }
+    }
+
+    // Employee code is required
+    const employeeCode = document.getElementById('employeeCode').value;
+    if (!employeeCode.trim()) {
+        showToast('Employee code is required', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+function validateEmploymentStep() {
+    const officeId = document.getElementById('officeId').value;
+    const departmentId = document.getElementById('departmentId').value;
+    const designationId = document.getElementById('designationId').value;
+    const hireDate = document.getElementById('dateOfJoining').value;
+
+    if (!officeId) {
+        showToast('Please select an office', 'error');
+        return false;
+    }
+
+    if (!departmentId) {
+        showToast('Please select a department', 'error');
+        return false;
+    }
+
+    if (!designationId) {
+        showToast('Please select a designation', 'error');
+        return false;
+    }
+
+    if (!hireDate) {
+        showToast('Please enter the date of joining', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+function validateBankingStep() {
+    // Banking is optional, but if account number is provided, validate
+    const accountNumber = document.getElementById('accountNumber').value;
+    const confirmAccountNumber = document.getElementById('confirmAccountNumber').value;
+    const ifscCode = document.getElementById('ifscCode').value;
+
+    if (accountNumber && accountNumber !== confirmAccountNumber) {
+        showToast('Account numbers do not match', 'error');
+        return false;
+    }
+
+    if (ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
+        showToast('Invalid IFSC code format', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// Reset wizard to step 1 when opening modal
+function resetEmployeeWizard() {
+    currentEmployeeStep = 1;
+    goToEmployeeStep(1);
 }
