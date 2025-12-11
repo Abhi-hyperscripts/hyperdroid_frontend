@@ -212,7 +212,7 @@
                             <div class="wizard-two-col">
                                 <div class="wizard-col">
                                     <div class="form-group photo-upload-group-compact">
-                                        <label>Photo</label>
+                                        <label>Photo <span class="required">*</span></label>
                                         <div class="photo-upload-compact">
                                             <div class="photo-preview-sm" id="photoPreview">
                                                 <div class="photo-placeholder" id="photoPlaceholder">
@@ -238,16 +238,16 @@
                                         <input type="text" id="employeeCode" required placeholder="EMP001">
                                     </div>
                                     <div class="form-group">
-                                        <label>Work Phone</label>
-                                        <input type="tel" id="workPhone" placeholder="+91-9876543210">
+                                        <label>Work Phone <span class="required">*</span></label>
+                                        <input type="tel" id="workPhone" placeholder="+91-9876543210" required>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-row two-col">
                                 <div class="form-group">
-                                    <label>Date of Birth</label>
-                                    <input type="date" id="dateOfBirth">
+                                    <label>Date of Birth <span class="required">*</span></label>
+                                    <input type="date" id="dateOfBirth" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Gender</label>
@@ -316,8 +316,8 @@
                                     <input type="date" id="dateOfJoining" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Probation End Date</label>
-                                    <input type="date" id="probationEndDate">
+                                    <label>Probation End Date <span class="required">*</span></label>
+                                    <input type="date" id="probationEndDate" required>
                                 </div>
                             </div>
                         </div>
@@ -360,7 +360,7 @@
 
                         <!-- Step 4: Identity Documents -->
                         <div class="wizard-panel" id="employeeStep4">
-                            <p class="wizard-step-hint">PAN and Aadhar are required for payroll processing</p>
+                            <p class="wizard-step-hint">Photo, PAN Card (front & back), and Aadhar Card (front & back) are mandatory</p>
                             <div class="document-grid-compact" id="documentUploadGrid">
                                 <!-- PAN Card -->
                                 <div class="document-item-compact" data-doc-type="pan">
@@ -370,27 +370,57 @@
                                     </div>
                                     <div class="doc-row">
                                         <input type="text" id="pan-number" placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
-                                        <div class="doc-upload-compact">
-                                            <input type="file" id="pan-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan', this)">
-                                            <button type="button" class="upload-btn-sm" id="pan-upload" onclick="triggerFileUpload('pan')">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17 8 12 3 7 8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                                </svg>
-                                            </button>
-                                            <div class="doc-preview-inline" id="pan-preview" style="display:none">
-                                                <span class="file-name"></span>
-                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('pan')">
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </div>
+                                    <div class="doc-row doc-row-uploads">
+                                        <!-- PAN Front -->
+                                        <div class="doc-upload-item">
+                                            <span class="upload-label">Front</span>
+                                            <div class="doc-upload-compact">
+                                                <input type="file" id="pan_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_front', this)">
+                                                <button type="button" class="upload-btn-sm" id="pan_front-upload" onclick="triggerFileUpload('pan_front')">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                        <polyline points="17 8 12 3 7 8"/>
+                                                        <line x1="12" y1="3" x2="12" y2="15"/>
                                                     </svg>
                                                 </button>
+                                                <div class="doc-preview-inline" id="pan_front-preview" style="display:none">
+                                                    <span class="file-name"></span>
+                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('pan_front')">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
+                                            <input type="hidden" id="pan_front-doc-id">
+                                        </div>
+                                        <!-- PAN Back -->
+                                        <div class="doc-upload-item">
+                                            <span class="upload-label">Back</span>
+                                            <div class="doc-upload-compact">
+                                                <input type="file" id="pan_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_back', this)">
+                                                <button type="button" class="upload-btn-sm" id="pan_back-upload" onclick="triggerFileUpload('pan_back')">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                        <polyline points="17 8 12 3 7 8"/>
+                                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                                    </svg>
+                                                </button>
+                                                <div class="doc-preview-inline" id="pan_back-preview" style="display:none">
+                                                    <span class="file-name"></span>
+                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('pan_back')">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" id="pan_back-doc-id">
                                         </div>
                                     </div>
-                                    <input type="hidden" id="pan-doc-id">
                                 </div>
 
                                 <!-- Aadhar Card -->
@@ -401,27 +431,57 @@
                                     </div>
                                     <div class="doc-row">
                                         <input type="text" id="aadhar-number" placeholder="12 digit number" pattern="[0-9]{12}" maxlength="12">
-                                        <div class="doc-upload-compact">
-                                            <input type="file" id="aadhar-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar', this)">
-                                            <button type="button" class="upload-btn-sm" id="aadhar-upload" onclick="triggerFileUpload('aadhar')">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17 8 12 3 7 8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                                </svg>
-                                            </button>
-                                            <div class="doc-preview-inline" id="aadhar-preview" style="display:none">
-                                                <span class="file-name"></span>
-                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar')">
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </div>
+                                    <div class="doc-row doc-row-uploads">
+                                        <!-- Aadhar Front -->
+                                        <div class="doc-upload-item">
+                                            <span class="upload-label">Front</span>
+                                            <div class="doc-upload-compact">
+                                                <input type="file" id="aadhar_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_front', this)">
+                                                <button type="button" class="upload-btn-sm" id="aadhar_front-upload" onclick="triggerFileUpload('aadhar_front')">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                        <polyline points="17 8 12 3 7 8"/>
+                                                        <line x1="12" y1="3" x2="12" y2="15"/>
                                                     </svg>
                                                 </button>
+                                                <div class="doc-preview-inline" id="aadhar_front-preview" style="display:none">
+                                                    <span class="file-name"></span>
+                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar_front')">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
+                                            <input type="hidden" id="aadhar_front-doc-id">
+                                        </div>
+                                        <!-- Aadhar Back -->
+                                        <div class="doc-upload-item">
+                                            <span class="upload-label">Back</span>
+                                            <div class="doc-upload-compact">
+                                                <input type="file" id="aadhar_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_back', this)">
+                                                <button type="button" class="upload-btn-sm" id="aadhar_back-upload" onclick="triggerFileUpload('aadhar_back')">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                        <polyline points="17 8 12 3 7 8"/>
+                                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                                    </svg>
+                                                </button>
+                                                <div class="doc-preview-inline" id="aadhar_back-preview" style="display:none">
+                                                    <span class="file-name"></span>
+                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar_back')">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" id="aadhar_back-doc-id">
                                         </div>
                                     </div>
-                                    <input type="hidden" id="aadhar-doc-id">
                                 </div>
 
                                 <!-- Passport (Optional) -->

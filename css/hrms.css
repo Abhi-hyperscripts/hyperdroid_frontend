@@ -1112,13 +1112,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 6px 10px;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 6px;
     background: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 42px;
+    min-height: 34px;
 }
 
 .user-search-selected:hover {
@@ -1132,7 +1132,7 @@
 }
 
 .user-search-selected .selected-user-text {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: #374151;
     flex: 1;
     white-space: nowrap;
@@ -1184,14 +1184,14 @@
 }
 
 .user-search-panel .users-list-modern {
-    max-height: 250px;
-    border-radius: 0 0 8px 8px;
+    max-height: 180px;
+    border-radius: 0 0 6px 6px;
 }
 
 .user-search-panel .user-select-item {
-    padding: 8px 12px;
+    padding: 5px 10px;
     height: auto;
-    min-height: 36px;
+    min-height: 28px;
 }
 
 .user-search-panel .user-select-item:hover {
@@ -1211,13 +1211,13 @@
 .user-search-panel .user-info-compact {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     flex: 1;
     min-width: 0;
 }
 
 .user-search-panel .user-name-compact {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: #111827;
     white-space: nowrap;
@@ -1226,7 +1226,7 @@
 }
 
 .user-search-panel .user-email-compact {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #6b7280;
     white-space: nowrap;
     overflow: hidden;
@@ -3889,4 +3889,38 @@ input:checked + .slider:before {
     .doc-row {
         flex-wrap: wrap;
     }
+}
+
+/* Document upload front/back layout */
+.doc-row-uploads {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.doc-upload-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-upload-item .upload-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    min-width: 35px;
+}
+
+/* Employee photo in table and view modal */
+.employee-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.employee-avatar-large-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
 }

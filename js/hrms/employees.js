@@ -85,9 +85,36 @@ async function loadEmployees() {
         updateStats();
         renderEmployees();
 
+        // Preload employee photos in the background
+        preloadEmployeePhotos();
+
     } catch (error) {
         console.error('Error loading employees:', error);
         tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading employees</p></td></tr>';
+    }
+}
+
+// Preload photos for all employees (background task)
+async function preloadEmployeePhotos() {
+    for (const emp of employees) {
+        if (!employeePhotoCache[emp.id]) {
+            try {
+                const documents = await api.getEmployeeDocuments(emp.id);
+                const photoDoc = documents.find(d => d.document_type === 'profile_photo');
+                if (photoDoc) {
+                    const downloadUrl = await api.getEmployeeDocumentDownloadUrl(emp.id, photoDoc.id);
+                    const photoUrl = downloadUrl.url || downloadUrl;
+                    employeePhotoCache[emp.id] = photoUrl;
+                    // Update the table cell if it exists
+                    const photoCell = document.getElementById(`emp-photo-${emp.id}`);
+                    if (photoCell) {
+                        photoCell.innerHTML = `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+                    }
+                }
+            } catch (e) {
+                // Silent fail - just use initials
+            }
+        }
     }
 }
 
@@ -146,11 +173,17 @@ function renderEmployees() {
         const desig = designations.find(d => d.id === emp.designation_id);
         const office = offices.find(o => o.id === emp.office_id);
 
+        // Get photo from cache if available
+        const photoUrl = employeePhotoCache[emp.id];
+        const photoHtml = photoUrl
+            ? `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`
+            : `<div class="employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>`;
+
         return `
             <tr>
                 <td>
                     <div class="employee-info">
-                        <div class="employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>
+                        <div id="emp-photo-${emp.id}">${photoHtml}</div>
                         <div>
                             <div class="employee-name">${emp.first_name} ${emp.last_name}</div>
                             <div class="employee-code">${emp.employee_code}</div>
@@ -491,8 +524,21 @@ async function saveEmployee() {
     const id = document.getElementById('employeeId').value;
     const isEdit = !!id;
 
-    // Validate bank details
-    if (!validateBankDetails()) {
+    // Validate all steps before saving
+    if (!validatePersonalStep()) {
+        goToEmployeeStep(1);
+        return;
+    }
+    if (!validateEmploymentStep()) {
+        goToEmployeeStep(2);
+        return;
+    }
+    if (!validateBankingStep()) {
+        goToEmployeeStep(3);
+        return;
+    }
+    if (!validateDocumentsStep()) {
+        goToEmployeeStep(4);
         return;
     }
 
@@ -500,8 +546,8 @@ async function saveEmployee() {
     // These fields are managed by the Auth service and sourced from there
     const data = {
         employee_code: document.getElementById('employeeCode').value,
-        work_phone: document.getElementById('workPhone').value || null,
-        date_of_birth: document.getElementById('dateOfBirth').value || null,
+        work_phone: document.getElementById('workPhone').value,
+        date_of_birth: document.getElementById('dateOfBirth').value,
         gender: document.getElementById('gender').value || null,
         department_id: document.getElementById('departmentId').value,
         designation_id: document.getElementById('designationId').value,
@@ -510,7 +556,7 @@ async function saveEmployee() {
         reporting_manager_id: document.getElementById('reportingManagerId').value || null,
         employment_type: document.getElementById('employmentType').value,
         hire_date: document.getElementById('dateOfJoining').value,
-        probation_end_date: document.getElementById('probationEndDate').value || null
+        probation_end_date: document.getElementById('probationEndDate').value
     };
 
     if (!isEdit) {
@@ -539,8 +585,8 @@ async function saveEmployee() {
             showToast('Employee saved but bank account failed: ' + bankError.message, 'error');
         }
 
-        // Upload pending documents
-        const docTypes = ['pan', 'aadhar', 'passport', 'photo'];
+        // Upload pending documents (all types including front/back)
+        const docTypes = ['pan_front', 'pan_back', 'aadhar_front', 'aadhar_back', 'passport', 'photo'];
         for (const docType of docTypes) {
             if (pendingDocuments[docType]) {
                 try {
@@ -590,9 +636,31 @@ async function viewEmployee(id) {
         const office = offices.find(o => o.id === emp.office_id);
         const shift = shifts.find(s => s.id === emp.shift_id);
 
+        // Try to get employee photo
+        let photoHtml = `<div class="employee-avatar-large">${getInitials(emp.first_name, emp.last_name)}</div>`;
+
+        // Check cache first, then fetch
+        if (employeePhotoCache[id]) {
+            photoHtml = `<img class="employee-avatar-large-img" src="${employeePhotoCache[id]}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+        } else {
+            // Try to fetch photo from documents
+            try {
+                const documents = await api.getEmployeeDocuments(id);
+                const photoDoc = documents.find(d => d.document_type === 'profile_photo');
+                if (photoDoc) {
+                    const downloadUrl = await api.getEmployeeDocumentDownloadUrl(id, photoDoc.id);
+                    const photoUrl = downloadUrl.url || downloadUrl;
+                    employeePhotoCache[id] = photoUrl;
+                    photoHtml = `<img class="employee-avatar-large-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+                }
+            } catch (e) {
+                console.log('Could not load photo:', e);
+            }
+        }
+
         content.innerHTML = `
             <div class="employee-view-header">
-                <div class="employee-avatar-large">${getInitials(emp.first_name, emp.last_name)}</div>
+                ${photoHtml}
                 <div>
                     <h2>${emp.first_name} ${emp.last_name}</h2>
                     <p>${emp.employee_code} | ${desig?.designation_name || '-'}</p>
@@ -815,11 +883,16 @@ function showToast(message, type = 'success') {
 
 // Store pending uploads (files selected but not yet uploaded)
 let pendingDocuments = {
-    pan: null,
-    aadhar: null,
+    pan_front: null,
+    pan_back: null,
+    aadhar_front: null,
+    aadhar_back: null,
     passport: null,
     photo: null
 };
+
+// Cache for employee photo URLs (employeeId -> photoUrl)
+let employeePhotoCache = {};
 
 // Existing documents loaded when editing
 let existingDocuments = {};
@@ -963,19 +1036,41 @@ function removePhoto() {
 
 async function uploadDocument(employeeId, docType, file) {
     const docTypeMap = {
-        'pan': 'pan_card',
-        'aadhar': 'aadhar_card',
+        'pan_front': 'pan_front',
+        'pan_back': 'pan_back',
+        'aadhar_front': 'aadhar_front',
+        'aadhar_back': 'aadhar_back',
         'passport': 'passport',
-        'photo': 'employee_photo'
+        'photo': 'profile_photo'
     };
 
-    const docNumber = document.getElementById(`${docType}-number`)?.value || null;
-    const expiryDate = document.getElementById(`${docType}-expiry`)?.value || null;
+    // Determine which number field to use
+    let docNumber = null;
+    let expiryDate = null;
+
+    if (docType.startsWith('pan')) {
+        docNumber = document.getElementById('pan-number')?.value || null;
+    } else if (docType.startsWith('aadhar')) {
+        docNumber = document.getElementById('aadhar-number')?.value || null;
+    } else if (docType === 'passport') {
+        docNumber = document.getElementById('passport-number')?.value || null;
+        expiryDate = document.getElementById('passport-expiry')?.value || null;
+    }
+
+    // Create a readable name for the document
+    const docNames = {
+        'pan_front': 'PAN Card (Front)',
+        'pan_back': 'PAN Card (Back)',
+        'aadhar_front': 'Aadhar Card (Front)',
+        'aadhar_back': 'Aadhar Card (Back)',
+        'passport': 'Passport',
+        'photo': 'Profile Photo'
+    };
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('document_type', docTypeMap[docType]);
-    formData.append('document_name', `${docType.charAt(0).toUpperCase() + docType.slice(1)} - ${file.name}`);
+    formData.append('document_name', `${docNames[docType] || docType} - ${file.name}`);
     if (docNumber) formData.append('document_number', docNumber);
     if (expiryDate) formData.append('expiry_date', expiryDate);
 
@@ -988,11 +1083,14 @@ async function loadEmployeeDocuments(employeeId) {
         existingDocuments = {};
 
         for (const doc of documents) {
+            // Map backend document types to frontend element IDs
             const docTypeMap = {
-                'pan_card': 'pan',
-                'aadhar_card': 'aadhar',
+                'pan_front': 'pan_front',
+                'pan_back': 'pan_back',
+                'aadhar_front': 'aadhar_front',
+                'aadhar_back': 'aadhar_back',
                 'passport': 'passport',
-                'employee_photo': 'photo'
+                'profile_photo': 'photo'
             };
 
             const docType = docTypeMap[doc.document_type];
@@ -1009,10 +1107,14 @@ async function loadEmployeeDocuments(employeeId) {
                         const photoPlaceholder = document.getElementById('photoPlaceholder');
                         const removeBtn = document.getElementById('removePhotoBtn');
 
-                        photoImage.src = downloadUrl.url || downloadUrl;
+                        const photoUrl = downloadUrl.url || downloadUrl;
+                        photoImage.src = photoUrl;
                         photoImage.style.display = 'block';
                         photoPlaceholder.style.display = 'none';
                         removeBtn.style.display = 'inline-flex';
+
+                        // Cache photo URL for table display
+                        employeePhotoCache[employeeId] = photoUrl;
                     } catch (e) {
                         console.error('Error loading photo:', e);
                     }
@@ -1022,7 +1124,6 @@ async function loadEmployeeDocuments(employeeId) {
                 // Show as uploaded
                 const previewEl = document.getElementById(`${docType}-preview`);
                 const uploadArea = document.getElementById(`${docType}-upload`);
-                const statusEl = document.getElementById(`${docType}-status`);
 
                 if (previewEl && uploadArea) {
                     previewEl.querySelector('.file-name').textContent = doc.file_name || 'Uploaded';
@@ -1030,24 +1131,54 @@ async function loadEmployeeDocuments(employeeId) {
                     uploadArea.style.display = 'none';
                 }
 
-                if (statusEl) {
-                    statusEl.textContent = doc.verification_status === 'verified' ? 'Verified' : 'Uploaded';
-                    statusEl.className = `doc-status ${doc.verification_status === 'verified' ? 'verified' : 'uploaded'}`;
+                // Set document number for pan/aadhar (shared across front/back)
+                if (docType.startsWith('pan')) {
+                    const docNumberEl = document.getElementById('pan-number');
+                    if (docNumberEl && doc.document_number) {
+                        docNumberEl.value = doc.document_number;
+                    }
+                } else if (docType.startsWith('aadhar')) {
+                    const docNumberEl = document.getElementById('aadhar-number');
+                    if (docNumberEl && doc.document_number) {
+                        docNumberEl.value = doc.document_number;
+                    }
+                } else if (docType === 'passport') {
+                    const docNumberEl = document.getElementById('passport-number');
+                    if (docNumberEl && doc.document_number) {
+                        docNumberEl.value = doc.document_number;
+                    }
+                    const expiryEl = document.getElementById('passport-expiry');
+                    if (expiryEl && doc.expiry_date) {
+                        expiryEl.value = doc.expiry_date.split('T')[0];
+                    }
                 }
 
-                // Set document number if available
-                const docNumberEl = document.getElementById(`${docType}-number`);
-                if (docNumberEl && doc.document_number) {
-                    docNumberEl.value = doc.document_number;
-                }
+                const docIdEl = document.getElementById(`${docType}-doc-id`);
+                if (docIdEl) docIdEl.value = doc.id;
+            }
+        }
 
-                // Set expiry date if available
-                const expiryEl = document.getElementById(`${docType}-expiry`);
-                if (expiryEl && doc.expiry_date) {
-                    expiryEl.value = doc.expiry_date.split('T')[0];
-                }
+        // Update PAN status if both front and back are uploaded
+        const panStatus = document.getElementById('pan-status');
+        if (panStatus) {
+            if (existingDocuments['pan_front'] && existingDocuments['pan_back']) {
+                panStatus.textContent = 'Complete';
+                panStatus.className = 'doc-status uploaded';
+            } else if (existingDocuments['pan_front'] || existingDocuments['pan_back']) {
+                panStatus.textContent = 'Partial';
+                panStatus.className = 'doc-status pending';
+            }
+        }
 
-                document.getElementById(`${docType}-doc-id`).value = doc.id;
+        // Update Aadhar status if both front and back are uploaded
+        const aadharStatus = document.getElementById('aadhar-status');
+        if (aadharStatus) {
+            if (existingDocuments['aadhar_front'] && existingDocuments['aadhar_back']) {
+                aadharStatus.textContent = 'Complete';
+                aadharStatus.className = 'doc-status uploaded';
+            } else if (existingDocuments['aadhar_front'] || existingDocuments['aadhar_back']) {
+                aadharStatus.textContent = 'Partial';
+                aadharStatus.className = 'doc-status pending';
             }
         }
     } catch (error) {
@@ -1133,11 +1264,11 @@ async function saveBankAccount(employeeId) {
 
 function resetDocumentsAndBanking() {
     // Reset pending documents
-    pendingDocuments = { pan: null, aadhar: null, passport: null, photo: null };
+    pendingDocuments = { pan_front: null, pan_back: null, aadhar_front: null, aadhar_back: null, passport: null, photo: null };
     existingDocuments = {};
 
-    // Reset file inputs
-    ['pan', 'aadhar', 'passport', 'photo'].forEach(docType => {
+    // Reset file inputs for all document types
+    ['pan_front', 'pan_back', 'aadhar_front', 'aadhar_back', 'passport', 'photo'].forEach(docType => {
         const input = document.getElementById(`${docType}-file`);
         if (input) input.value = '';
 
@@ -1155,7 +1286,10 @@ function resetDocumentsAndBanking() {
 
         const docIdEl = document.getElementById(`${docType}-doc-id`);
         if (docIdEl) docIdEl.value = '';
+    });
 
+    // Reset document number and expiry fields
+    ['pan', 'aadhar', 'passport'].forEach(docType => {
         const numberEl = document.getElementById(`${docType}-number`);
         if (numberEl) numberEl.value = '';
 
@@ -1980,22 +2114,21 @@ function goToEmployeeStep(stepNumber) {
         return;
     }
 
-    // Update step indicators
-    for (let i = 1; i <= totalEmployeeSteps; i++) {
-        const stepEl = document.getElementById(`emp-step-${i}`);
-        if (!stepEl) continue;
-
+    // Update step indicators (using data-step attribute)
+    const wizardSteps = document.querySelectorAll('#employeeModal .wizard-step');
+    wizardSteps.forEach(stepEl => {
+        const step = parseInt(stepEl.getAttribute('data-step'));
         stepEl.classList.remove('active', 'completed');
-        if (i < stepNumber) {
+        if (step < stepNumber) {
             stepEl.classList.add('completed');
-        } else if (i === stepNumber) {
+        } else if (step === stepNumber) {
             stepEl.classList.add('active');
         }
-    }
+    });
 
-    // Update panels
+    // Update panels (using employeeStep1, employeeStep2, etc.)
     for (let i = 1; i <= totalEmployeeSteps; i++) {
-        const panelEl = document.getElementById(`emp-panel-${i}`);
+        const panelEl = document.getElementById(`employeeStep${i}`);
         if (!panelEl) continue;
 
         panelEl.classList.remove('active');
@@ -2037,10 +2170,52 @@ function validateEmployeeStep(stepNumber) {
         case 3: // Banking Details
             return validateBankingStep();
         case 4: // Documents
-            return true; // Documents are optional
+            return validateDocumentsStep();
         default:
             return true;
     }
+}
+
+function validateDocumentsStep() {
+    const employeeId = document.getElementById('employeeId').value;
+    const isEdit = !!employeeId;
+
+    // Check for photo - either pending upload or existing document
+    const hasPhoto = pendingDocuments.photo || (existingDocuments.photo && !existingDocuments.photo.markedForDeletion);
+    if (!hasPhoto) {
+        showToast('Employee photo is required', 'error');
+        return false;
+    }
+
+    // Check for PAN front - either pending upload or existing document
+    const hasPanFront = pendingDocuments.pan_front || (existingDocuments.pan_front && !existingDocuments.pan_front.markedForDeletion);
+    if (!hasPanFront) {
+        showToast('PAN Card front is required', 'error');
+        return false;
+    }
+
+    // Check for PAN back - either pending upload or existing document
+    const hasPanBack = pendingDocuments.pan_back || (existingDocuments.pan_back && !existingDocuments.pan_back.markedForDeletion);
+    if (!hasPanBack) {
+        showToast('PAN Card back is required', 'error');
+        return false;
+    }
+
+    // Check for Aadhar front - either pending upload or existing document
+    const hasAadharFront = pendingDocuments.aadhar_front || (existingDocuments.aadhar_front && !existingDocuments.aadhar_front.markedForDeletion);
+    if (!hasAadharFront) {
+        showToast('Aadhar Card front is required', 'error');
+        return false;
+    }
+
+    // Check for Aadhar back - either pending upload or existing document
+    const hasAadharBack = pendingDocuments.aadhar_back || (existingDocuments.aadhar_back && !existingDocuments.aadhar_back.markedForDeletion);
+    if (!hasAadharBack) {
+        showToast('Aadhar Card back is required', 'error');
+        return false;
+    }
+
+    return true;
 }
 
 function validatePersonalStep() {
@@ -2063,6 +2238,20 @@ function validatePersonalStep() {
         return false;
     }
 
+    // Phone number is mandatory
+    const workPhone = document.getElementById('workPhone').value;
+    if (!workPhone || !workPhone.trim()) {
+        showToast('Phone number is required', 'error');
+        return false;
+    }
+
+    // Date of birth is mandatory
+    const dateOfBirth = document.getElementById('dateOfBirth').value;
+    if (!dateOfBirth) {
+        showToast('Date of birth is required', 'error');
+        return false;
+    }
+
     return true;
 }
 
@@ -2071,6 +2260,7 @@ function validateEmploymentStep() {
     const departmentId = document.getElementById('departmentId').value;
     const designationId = document.getElementById('designationId').value;
     const hireDate = document.getElementById('dateOfJoining').value;
+    const probationEndDate = document.getElementById('probationEndDate').value;
 
     if (!officeId) {
         showToast('Please select an office', 'error');
@@ -2088,7 +2278,18 @@ function validateEmploymentStep() {
     }
 
     if (!hireDate) {
-        showToast('Please enter the date of joining', 'error');
+        showToast('Date of joining is required', 'error');
+        return false;
+    }
+
+    if (!probationEndDate) {
+        showToast('Probation end date is required', 'error');
+        return false;
+    }
+
+    // Validate probation end date is after joining date
+    if (hireDate && probationEndDate && new Date(probationEndDate) <= new Date(hireDate)) {
+        showToast('Probation end date must be after date of joining', 'error');
         return false;
     }
 

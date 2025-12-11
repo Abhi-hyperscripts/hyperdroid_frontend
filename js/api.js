@@ -1015,7 +1015,7 @@ class API {
     async uploadEmployeeDocument(employeeId, formData) {
         // Special handling for multipart form data - don't set Content-Type header
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`${this._getBaseUrl('/hrms/')}/hrms/employees/${employeeId}/documents`, {
+        const response = await fetch(`${this._getBaseUrl('/hrms/')}/employees/${employeeId}/documents`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`
