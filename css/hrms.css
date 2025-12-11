@@ -1692,19 +1692,19 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-/* Salary Structure Components - Fixed layout */
+/* Salary Structure Components - Compact layout */
 .structure-component-row {
-    margin-bottom: 12px;
-    padding: 12px;
+    margin-bottom: 6px;
+    padding: 6px 8px;
     background: #f9fafb;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #e5e7eb;
 }
 
 .structure-component-row .component-row {
     display: flex !important;
     flex-wrap: nowrap !important;
-    gap: 10px;
+    gap: 6px;
     align-items: center;
 }
 
@@ -1717,30 +1717,30 @@
 
 .structure-component-row .component-row > .form-group:first-child {
     flex: 2.5 !important;
-    min-width: 180px;
+    min-width: 160px;
 }
 
 .structure-component-row .component-row > .form-group:nth-child(2) {
     flex: 1.2 !important;
-    min-width: 110px;
+    min-width: 100px;
 }
 
 .structure-component-row .component-row > .form-group:nth-child(3) {
     flex: 1 !important;
-    min-width: 80px;
+    min-width: 70px;
 }
 
 /* Reset appearance for structure component selects */
 .structure-component-row select.component-select,
 .structure-component-row select.calc-type-select,
 .structure-component-row .form-group select {
-    font-size: 0.85rem !important;
+    font-size: 0.78rem !important;
     width: 100% !important;
-    padding: 8px 28px 8px 10px !important;
+    padding: 5px 24px 5px 8px !important;
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     background-color: #fff !important;
-    height: 36px !important;
+    height: 30px !important;
     color: #333 !important;
     cursor: pointer;
     /* Re-enable native appearance for proper dropdown */
@@ -1749,8 +1749,8 @@
     appearance: none !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
-    background-position: right 8px center !important;
-    background-size: 14px !important;
+    background-position: right 6px center !important;
+    background-size: 12px !important;
 }
 
 .structure-component-row select.component-select:focus,
@@ -1770,13 +1770,13 @@
 .structure-component-row input.percentage-value,
 .structure-component-row input.fixed-value,
 .structure-component-row .form-group input {
-    font-size: 0.85rem !important;
+    font-size: 0.78rem !important;
     width: 100% !important;
-    padding: 8px 10px !important;
+    padding: 5px 8px !important;
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     background-color: #fff !important;
-    height: 36px !important;
+    height: 30px !important;
 }
 
 .structure-component-row input:focus {
@@ -1787,12 +1787,12 @@
 
 .structure-component-row .btn-danger,
 .structure-component-row button.btn-danger {
-    padding: 6px !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    max-width: 32px !important;
-    height: 32px !important;
-    flex: 0 0 32px !important;
+    padding: 4px !important;
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    flex: 0 0 26px !important;
     flex-shrink: 0 !important;
     flex-grow: 0 !important;
     align-self: center !important;
@@ -1800,16 +1800,59 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     box-sizing: border-box !important;
 }
 
 .structure-component-row .btn-danger svg {
+    width: 14px !important;
+    height: 14px !important;
     margin: 0 !important;
 }
 
+/* Components Header with inline Add button */
+.components-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.components-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.btn-add-component {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #333;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-add-component:hover {
+    background: #e5e5e5;
+    border-color: #ccc;
+}
+
+.btn-add-component svg {
+    width: 12px;
+    height: 12px;
+}
+
 .components-list {
-    margin-bottom: 12px;
+    margin-bottom: 0;
     max-height: 280px;
     overflow-y: auto;
 }
@@ -2546,34 +2589,43 @@
     min-height: 50px !important;
 }
 
-/* Compact structure component rows */
+/* Compact structure component rows in modals */
 .modal-body .structure-component-row {
-    margin-bottom: 6px !important;
-    padding: 8px !important;
+    margin-bottom: 4px !important;
+    padding: 5px 6px !important;
 }
 
 .modal-body .structure-component-row .component-row {
-    gap: 6px !important;
+    gap: 5px !important;
 }
 
 .modal-body .structure-component-row select,
 .modal-body .structure-component-row input {
-    height: 30px !important;
-    font-size: 0.78rem !important;
-    padding: 4px 8px !important;
+    height: 28px !important;
+    font-size: 0.75rem !important;
+    padding: 4px 6px !important;
+}
+
+.modal-body .structure-component-row select {
+    padding-right: 22px !important;
 }
 
 .modal-body .structure-component-row .btn-danger {
-    width: 26px !important;
-    min-width: 26px !important;
-    max-width: 26px !important;
-    height: 26px !important;
-    padding: 4px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    height: 24px !important;
+    padding: 3px !important;
+}
+
+.modal-body .structure-component-row .btn-danger svg {
+    width: 12px !important;
+    height: 12px !important;
 }
 
 .modal-body .components-list {
-    max-height: 200px !important;
-    margin-bottom: 8px !important;
+    max-height: 220px !important;
+    margin-bottom: 0 !important;
 }
 
 /* Compact buttons in modals */

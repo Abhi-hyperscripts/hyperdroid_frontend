@@ -637,16 +637,13 @@
                 <form id="structureForm">
                     <input type="hidden" id="structureId" name="id">
                     <div class="form-section">
-                        <h3>Basic Information</h3>
-                        <div class="form-row">
+                        <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="structureOffice">Office *</label>
                                 <select id="structureOffice" name="office_id" class="form-control" required>
                                     <option value="">Select Office</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="structureName">Structure Name *</label>
                                 <input type="text" id="structureName" name="name" class="form-control" required placeholder="e.g., Standard Employee">
@@ -659,10 +656,10 @@
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="structureDescription">Description</label>
-                                <textarea id="structureDescription" name="description" class="form-control" rows="2"></textarea>
+                                <textarea id="structureDescription" name="description" class="form-control" rows="1"></textarea>
                             </div>
                             <div class="form-group">
-                                <label for="structureIsDefault">Set as Default for Office</label>
+                                <label for="structureIsDefault">Default for Office</label>
                                 <select id="structureIsDefault" name="is_default" class="form-control">
                                     <option value="false">No</option>
                                     <option value="true">Yes</option>
@@ -671,18 +668,23 @@
                         </div>
                     </div>
                     <div class="form-section">
-                        <h3>Components</h3>
+                        <div class="components-header">
+                            <span class="components-title">Components</span>
+                            <button type="button" class="btn-add-component" onclick="addStructureComponent()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add
+                            </button>
+                        </div>
                         <div class="components-list" id="structureComponents">
                             <!-- Dynamically populated -->
                         </div>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="addStructureComponent()">
-                            + Add Component
-                        </button>
                     </div>
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('structureModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveSalaryStructure()">Save Structure</button>
                 </div>
             </div>
