@@ -982,6 +982,12 @@ function updateSalaryStructuresTable() {
             <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
+                    <button class="action-btn" onclick="viewStructureVersions('${s.id}')" title="Version History">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
                     <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -2306,3 +2312,402 @@ document.getElementById('structureOfficeFilter')?.addEventListener('change', loa
 document.getElementById('componentSearch')?.addEventListener('input', updateComponentsTables);
 document.getElementById('componentType')?.addEventListener('change', updateComponentsTables);
 document.getElementById('loanStatus')?.addEventListener('change', loadLoans);
+
+// =====================================================
+// SALARY STRUCTURE VERSIONING FUNCTIONS
+// =====================================================
+
+let currentVersionStructureId = null;
+let currentVersionStructureName = '';
+let structureVersions = [];
+
+/**
+ * View structure versions - opens version history modal
+ */
+async function viewStructureVersions(structureId) {
+    try {
+        showLoading();
+        currentVersionStructureId = structureId;
+
+        // First, ensure structure has at least version 1 (migrate if needed)
+        await api.request(`/hrms/payroll/structures/${structureId}/ensure-version`, {
+            method: 'POST'
+        });
+
+        // Load versions
+        const versions = await api.request(`/hrms/payroll/structures/${structureId}/versions`);
+        structureVersions = versions || [];
+
+        // Get structure name
+        const structure = structures.find(s => s.id === structureId);
+        currentVersionStructureName = structure?.structure_name || 'Structure';
+
+        // Update modal
+        document.getElementById('versionHistoryTitle').textContent = `Version History - ${currentVersionStructureName}`;
+
+        updateVersionHistoryTable(structureVersions);
+
+        openModal('versionHistoryModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading structure versions:', error);
+        showToast(error.message || 'Failed to load version history', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Update version history table with versions data
+ */
+function updateVersionHistoryTable(versions) {
+    const tbody = document.getElementById('versionHistoryTable');
+    if (!tbody) return;
+
+    if (!versions || versions.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="6">
+                    <div class="empty-message">
+                        <p>No versions found</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = versions.map((v, index) => {
+        const isCurrent = index === 0; // First version is most recent
+        return `
+        <tr class="${isCurrent ? 'current-version' : ''}">
+            <td>
+                <strong>v${v.version_number}</strong>
+                ${isCurrent ? '<span class="badge-current">Current</span>' : ''}
+            </td>
+            <td>${formatDate(v.effective_from)}</td>
+            <td>${v.effective_to ? formatDate(v.effective_to) : '<span class="text-muted">Ongoing</span>'}</td>
+            <td>${v.components?.length || 0} components</td>
+            <td>${v.change_reason || '-'}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="viewVersionDetails('${v.id}')" title="View Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                    ${v.version_number > 1 ? `
+                    <button class="action-btn" onclick="compareVersions('${currentVersionStructureId}', ${v.version_number - 1}, ${v.version_number})" title="Compare with Previous">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/**
+ * View detailed version information
+ */
+async function viewVersionDetails(versionId) {
+    try {
+        showLoading();
+        const version = await api.request(`/hrms/payroll/structures/versions/${versionId}`);
+
+        if (!version) {
+            showToast('Version not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Show version details in an alert or another modal
+        const components = version.components || [];
+        let componentsList = components.map(c => {
+            const valueStr = c.calculation_type === 'percentage'
+                ? `${c.percentage}% of ${c.calculation_base || 'basic'}`
+                : `₹${c.fixed_amount?.toFixed(2) || '0.00'}`;
+            return `${c.component_name} (${c.component_code}): ${valueStr}`;
+        }).join('\n');
+
+        alert(`Version ${version.version_number} Details\n` +
+              `\nEffective From: ${formatDate(version.effective_from)}` +
+              `\nEffective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}` +
+              `\nChange Reason: ${version.change_reason || 'N/A'}` +
+              `\n\nComponents:\n${componentsList}`);
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading version details:', error);
+        showToast(error.message || 'Failed to load version details', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Compare two versions
+ */
+async function compareVersions(structureId, fromVersion, toVersion) {
+    try {
+        showLoading();
+        const diff = await api.request(`/hrms/payroll/structures/${structureId}/versions/compare?fromVersion=${fromVersion}&toVersion=${toVersion}`);
+
+        if (!diff) {
+            showToast('Could not compare versions', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Build comparison summary
+        let summary = `Version ${fromVersion} → Version ${toVersion}\n\n`;
+
+        if (diff.added_components?.length > 0) {
+            summary += `ADDED (${diff.added_components.length}):\n`;
+            diff.added_components.forEach(c => {
+                summary += `  + ${c.component_name} (${c.component_code})\n`;
+            });
+        }
+
+        if (diff.removed_components?.length > 0) {
+            summary += `\nREMOVED (${diff.removed_components.length}):\n`;
+            diff.removed_components.forEach(c => {
+                summary += `  - ${c.component_name} (${c.component_code})\n`;
+            });
+        }
+
+        if (diff.modified_components?.length > 0) {
+            summary += `\nMODIFIED (${diff.modified_components.length}):\n`;
+            diff.modified_components.forEach(c => {
+                summary += `  ~ ${c.component_name}: ${c.old_value} → ${c.new_value}\n`;
+            });
+        }
+
+        if (diff.unchanged_components?.length > 0) {
+            summary += `\nUNCHANGED: ${diff.unchanged_components.length} components\n`;
+        }
+
+        alert(summary);
+        hideLoading();
+    } catch (error) {
+        console.error('Error comparing versions:', error);
+        showToast(error.message || 'Failed to compare versions', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Show create new version modal
+ */
+function showCreateVersionModal() {
+    if (!currentVersionStructureId) {
+        showToast('No structure selected', 'error');
+        return;
+    }
+
+    // Reset form
+    document.getElementById('newVersionForm').reset();
+
+    // Set default effective date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('versionEffectiveDate').value = tomorrow.toISOString().split('T')[0];
+
+    // Populate components from latest version
+    populateNewVersionComponents();
+
+    document.getElementById('createVersionModalTitle').textContent = `Create New Version - ${currentVersionStructureName}`;
+    openModal('createVersionModal');
+}
+
+/**
+ * Populate components for new version based on current version
+ */
+function populateNewVersionComponents() {
+    const container = document.getElementById('newVersionComponents');
+    if (!container) return;
+
+    // Get latest version's components
+    const latestVersion = structureVersions[0];
+    const existingComponents = latestVersion?.components || [];
+
+    // Build component checkboxes with values
+    container.innerHTML = components.map(c => {
+        const existingComp = existingComponents.find(ec => ec.component_id === c.id);
+        const isSelected = !!existingComp;
+        const value = existingComp?.percentage || existingComp?.fixed_amount || '';
+        const calcType = existingComp?.calculation_type || 'percentage';
+
+        return `
+        <div class="version-component-row">
+            <label class="checkbox-label">
+                <input type="checkbox" name="versionComponent" value="${c.id}" ${isSelected ? 'checked' : ''}
+                       data-name="${c.component_name || c.name}" data-code="${c.component_code || c.code}"
+                       data-type="${c.component_type || c.category}">
+                <span>${c.component_name || c.name} (${c.component_code || c.code})</span>
+                <span class="component-badge component-${c.component_type || c.category}">${c.component_type || c.category}</span>
+            </label>
+            <div class="component-value-inputs">
+                <select class="form-control form-control-sm version-calc-type" data-component-id="${c.id}">
+                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>% of Basic</option>
+                    <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+                </select>
+                <input type="number" class="form-control form-control-sm version-value" data-component-id="${c.id}"
+                       value="${value}" placeholder="${calcType === 'percentage' ? '%' : '₹'}" step="0.01" min="0">
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/**
+ * Save new version
+ */
+async function saveNewVersion() {
+    const form = document.getElementById('newVersionForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const effectiveDate = document.getElementById('versionEffectiveDate').value;
+    const changeReason = document.getElementById('versionChangeReason').value;
+
+    if (!effectiveDate) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    // Collect selected components with values
+    const selectedComponents = [];
+    document.querySelectorAll('input[name="versionComponent"]:checked').forEach((checkbox, index) => {
+        const componentId = checkbox.value;
+        const calcTypeSelect = document.querySelector(`.version-calc-type[data-component-id="${componentId}"]`);
+        const valueInput = document.querySelector(`.version-value[data-component-id="${componentId}"]`);
+
+        const calcType = calcTypeSelect?.value || 'percentage';
+        const value = parseFloat(valueInput?.value) || 0;
+
+        if (value > 0) {
+            selectedComponents.push({
+                component_id: componentId,
+                calculation_order: index + 1,
+                calculation_type: calcType,
+                percentage_of_basic: calcType === 'percentage' ? value : null,
+                fixed_amount: calcType === 'fixed' ? value : null,
+                is_active: true
+            });
+        }
+    });
+
+    if (selectedComponents.length === 0) {
+        showToast('Please select at least one component with a value', 'error');
+        return;
+    }
+
+    // Determine new version number
+    const latestVersion = structureVersions[0];
+    const newVersionNumber = (latestVersion?.version_number || 0) + 1;
+
+    try {
+        showLoading();
+
+        const data = {
+            structure_id: currentVersionStructureId,
+            version_number: newVersionNumber,
+            effective_from: effectiveDate,
+            change_reason: changeReason,
+            components: selectedComponents
+        };
+
+        await api.request(`/hrms/payroll/structures/${currentVersionStructureId}/versions`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        closeModal('createVersionModal');
+        showToast(`Version ${newVersionNumber} created successfully`, 'success');
+
+        // Reload versions
+        await viewStructureVersions(currentVersionStructureId);
+        hideLoading();
+    } catch (error) {
+        console.error('Error creating version:', error);
+        showToast(error.message || 'Failed to create version', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Preview versioned salary calculation
+ */
+async function previewVersionedSalary() {
+    if (!currentVersionStructureId) {
+        showToast('No structure selected', 'error');
+        return;
+    }
+
+    const ctc = parseFloat(prompt('Enter CTC for preview calculation:', '1200000'));
+    if (!ctc || ctc <= 0) {
+        return;
+    }
+
+    const periodStart = prompt('Enter period start date (YYYY-MM-DD):', new Date().toISOString().slice(0, 8) + '01');
+    const periodEnd = prompt('Enter period end date (YYYY-MM-DD):', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10));
+
+    if (!periodStart || !periodEnd) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const breakdown = await api.request(`/hrms/payroll/structures/${currentVersionStructureId}/versions/calculate`, {
+            method: 'POST',
+            body: JSON.stringify({
+                ctc: ctc,
+                period_start: periodStart,
+                period_end: periodEnd
+            })
+        });
+
+        // Display breakdown
+        let summary = `Versioned Salary Calculation\n`;
+        summary += `=====================================\n`;
+        summary += `CTC: ₹${ctc.toLocaleString()}\n`;
+        summary += `Period: ${periodStart} to ${periodEnd}\n`;
+        summary += `Total Working Days: ${breakdown.total_working_days}\n`;
+        summary += `=====================================\n\n`;
+
+        if (breakdown.version_periods?.length > 0) {
+            breakdown.version_periods.forEach(vp => {
+                summary += `Version ${vp.version_number} (${vp.period_start} to ${vp.period_end})\n`;
+                summary += `  Days: ${vp.days_in_period}, Proration: ${(vp.proration_factor * 100).toFixed(1)}%\n`;
+            });
+            summary += `\n`;
+        }
+
+        summary += `COMPONENT BREAKDOWN:\n`;
+        breakdown.component_breakdowns?.forEach(cb => {
+            const partialMarker = cb.is_partial ? ' (PARTIAL)' : '';
+            summary += `  ${cb.component_name}: ₹${cb.prorated_amount.toFixed(2)}${partialMarker}\n`;
+            if (cb.version_amounts?.length > 1) {
+                cb.version_amounts.forEach(va => {
+                    summary += `    v${va.version_number}: ₹${va.amount.toFixed(2)} x ${(va.proration_factor * 100).toFixed(1)}% = ₹${va.prorated_amount.toFixed(2)}\n`;
+                });
+            }
+        });
+
+        summary += `\n=====================================\n`;
+        summary += `TOTAL GROSS: ₹${breakdown.total_gross?.toFixed(2) || '0.00'}\n`;
+        summary += `TOTAL DEDUCTIONS: ₹${breakdown.total_deductions?.toFixed(2) || '0.00'}\n`;
+        summary += `NET PAY: ₹${breakdown.net_pay?.toFixed(2) || '0.00'}\n`;
+
+        alert(summary);
+        hideLoading();
+    } catch (error) {
+        console.error('Error previewing versioned salary:', error);
+        showToast(error.message || 'Failed to preview calculation', 'error');
+        hideLoading();
+    }
+}
