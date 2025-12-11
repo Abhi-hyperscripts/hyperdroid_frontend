@@ -137,7 +137,8 @@ async function loadAllData() {
 
 async function loadOffices() {
     try {
-        const response = await api.request('/hrms/offices');
+        const showInactive = document.getElementById('showInactiveOffices')?.checked || false;
+        const response = await api.request(`/hrms/offices?includeInactive=${showInactive}`);
         offices = Array.isArray(response) ? response : (response?.data || []);
 
         // Update stats by office type (with null checks for when not on Offices tab)

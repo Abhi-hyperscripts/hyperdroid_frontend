@@ -53,6 +53,10 @@
                     </svg>
                     <input type="text" id="officeSearch" placeholder="Search offices...">
                 </div>
+                <label class="toggle-inactive-label">
+                    <input type="checkbox" id="showInactiveOffices" onchange="loadOffices()">
+                    <span>Show Inactive</span>
+                </label>
                 <button class="btn btn-primary" onclick="showCreateOfficeModal()" id="createOfficeBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>

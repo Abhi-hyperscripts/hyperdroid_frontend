@@ -1253,6 +1253,36 @@
     font-size: 0.85rem;
 }
 
+/* Toggle Inactive Label */
+.toggle-inactive-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.toggle-inactive-label:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.toggle-inactive-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #111827;
+}
+
+.toggle-inactive-label span {
+    user-select: none;
+}
+
 /* Time Picker Styling - Black & White Theme */
 .flatpickr-calendar {
     font-family: inherit;
