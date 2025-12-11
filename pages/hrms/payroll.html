@@ -980,6 +980,21 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="openArrearsModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Manage Arrears
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="openBulkAssignModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Bulk Assign
+                    </button>
                     <button type="button" class="btn btn-outline" onclick="previewVersionedSalary()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -1040,6 +1055,313 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeModal('createVersionModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveNewVersion()">Create Version</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrears Management Modal -->
+    <div class="modal" id="arrearsModal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="arrearsModalTitle">Version Arrears Management</h5>
+                    <button class="close-btn" onclick="closeModal('arrearsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="version-info-banner" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <span style="color: #856404;">Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
+                    </div>
+
+                    <div class="arrears-summary" id="arrearsSummary" style="display: none; margin: 16px 0; padding: 16px; background: #e8f4fd; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <span class="text-muted">Total Employees Affected</span>
+                                <h4 id="arrearsEmployeeCount" style="margin: 4px 0;">0</h4>
+                            </div>
+                            <div>
+                                <span class="text-muted">Total Arrears Amount</span>
+                                <h4 id="arrearsTotalAmount" style="margin: 4px 0; color: #2ECC71;">₹0.00</h4>
+                            </div>
+                            <div>
+                                <span class="text-muted">Pending Arrears</span>
+                                <h4 id="arrearsPendingCount" style="margin: 4px 0; color: #E74C3C;">0</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container" style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllArrears" onchange="toggleAllArrears()"></th>
+                                    <th>Employee</th>
+                                    <th>Month/Year</th>
+                                    <th>Old Gross</th>
+                                    <th>New Gross</th>
+                                    <th>Arrears</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arrearsTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <p>No arrears found</p>
+                                            <small class="text-muted">Arrears are created when versions have retrospective effective dates</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="refreshArrears()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="cancelSelectedArrears()" id="cancelArrearsBtn" disabled>
+                        Cancel Selected
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="applySelectedArrears()" id="applyArrearsBtn" disabled>
+                        Apply Selected to Payroll
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Assignment Modal -->
+    <div class="modal" id="bulkAssignModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkAssignModalTitle">Bulk Version Assignment</h5>
+                    <button class="close-btn" onclick="closeModal('bulkAssignModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="version-info-banner">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>Assign a salary structure version to multiple employees at once. Filter by office, department, or designation.</span>
+                    </div>
+
+                    <form id="bulkAssignForm">
+                        <div class="form-section">
+                            <h3>Filter Employees</h3>
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label for="bulkOfficeId">Office</label>
+                                    <select id="bulkOfficeId" class="form-control" onchange="previewBulkAssignment()">
+                                        <option value="">All Offices</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bulkDepartmentId">Department</label>
+                                    <select id="bulkDepartmentId" class="form-control" onchange="previewBulkAssignment()">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bulkDesignationId">Designation</label>
+                                    <select id="bulkDesignationId" class="form-control" onchange="previewBulkAssignment()">
+                                        <option value="">All Designations</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Assignment Details</h3>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="bulkEffectiveFrom">Effective From *</label>
+                                    <input type="date" id="bulkEffectiveFrom" class="form-control" required onchange="previewBulkAssignment()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bulkReason">Reason</label>
+                                    <input type="text" id="bulkReason" class="form-control" placeholder="e.g., FY 2025-26 structure update">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="bulkCalculateArrears" checked>
+                                    <span>Calculate arrears for affected employees</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section" id="bulkPreviewSection" style="display: none;">
+                            <h3>Preview</h3>
+                            <div class="bulk-preview-summary" style="display: flex; gap: 24px; margin-bottom: 16px;">
+                                <div style="padding: 12px; background: #e8f4fd; border-radius: 8px; flex: 1;">
+                                    <span class="text-muted">Employees Matched</span>
+                                    <h4 id="bulkMatchedCount" style="margin: 4px 0;">0</h4>
+                                </div>
+                                <div style="padding: 12px; background: #d4edda; border-radius: 8px; flex: 1;">
+                                    <span class="text-muted">To Be Assigned</span>
+                                    <h4 id="bulkToAssignCount" style="margin: 4px 0; color: #2ECC71;">0</h4>
+                                </div>
+                                <div style="padding: 12px; background: #fff3cd; border-radius: 8px; flex: 1;">
+                                    <span class="text-muted">Est. Arrears</span>
+                                    <h4 id="bulkEstArrears" style="margin: 4px 0; color: #856404;">₹0.00</h4>
+                                </div>
+                            </div>
+                            <div class="data-table-container" style="max-height: 200px; overflow-y: auto;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Current Structure</th>
+                                            <th>CTC</th>
+                                            <th>Est. Arrears</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bulkPreviewTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('bulkAssignModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="previewBulkAssignment()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="executeBulkAssignment()" id="executeBulkBtn" disabled>
+                        Execute Assignment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version Comparison Modal -->
+    <div class="modal" id="versionCompareModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="versionCompareTitle">Version Comparison</h5>
+                    <button class="close-btn" onclick="closeModal('versionCompareModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="comparison-header" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="text-align: center; flex: 1;">
+                            <span class="text-muted">From Version</span>
+                            <h4 id="compareFromVersion" style="margin: 4px 0;">v1</h4>
+                            <small id="compareFromDate" class="text-muted">-</small>
+                        </div>
+                        <div style="display: flex; align-items: center; padding: 0 24px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                        <div style="text-align: center; flex: 1;">
+                            <span class="text-muted">To Version</span>
+                            <h4 id="compareToVersion" style="margin: 4px 0;">v2</h4>
+                            <small id="compareToDate" class="text-muted">-</small>
+                        </div>
+                    </div>
+
+                    <div class="comparison-summary" style="display: flex; gap: 12px; margin-bottom: 24px;">
+                        <span class="badge" id="addedCount" style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 16px;">
+                            + 0 Added
+                        </span>
+                        <span class="badge" id="removedCount" style="background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 16px;">
+                            - 0 Removed
+                        </span>
+                        <span class="badge" id="modifiedCount" style="background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 16px;">
+                            ~ 0 Modified
+                        </span>
+                        <span class="badge" id="unchangedCount" style="background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 16px;">
+                            = 0 Unchanged
+                        </span>
+                    </div>
+
+                    <div class="comparison-details">
+                        <!-- Added Components -->
+                        <div id="addedSection" style="display: none; margin-bottom: 16px;">
+                            <h4 style="color: #155724; margin-bottom: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Added Components
+                            </h4>
+                            <div id="addedList" style="background: #d4edda; padding: 12px; border-radius: 8px;"></div>
+                        </div>
+
+                        <!-- Removed Components -->
+                        <div id="removedSection" style="display: none; margin-bottom: 16px;">
+                            <h4 style="color: #721c24; margin-bottom: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Removed Components
+                            </h4>
+                            <div id="removedList" style="background: #f8d7da; padding: 12px; border-radius: 8px;"></div>
+                        </div>
+
+                        <!-- Modified Components -->
+                        <div id="modifiedSection" style="display: none; margin-bottom: 16px;">
+                            <h4 style="color: #856404; margin-bottom: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Modified Components
+                            </h4>
+                            <div id="modifiedList" style="background: #fff3cd; padding: 12px; border-radius: 8px;"></div>
+                        </div>
+
+                        <!-- Unchanged Components -->
+                        <div id="unchangedSection" style="display: none;">
+                            <h4 style="color: #383d41; margin-bottom: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Unchanged Components
+                            </h4>
+                            <div id="unchangedList" style="background: #e2e3e5; padding: 12px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('versionCompareModal')">Close</button>
                 </div>
             </div>
         </div>

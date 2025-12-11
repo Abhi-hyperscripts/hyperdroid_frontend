@@ -1651,6 +1651,105 @@ class API {
             body: JSON.stringify(request)
         });
     }
+
+    // --- Salary Structure Versioning ---
+    async getStructureVersions(structureId) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions`);
+    }
+
+    async getStructureVersion(structureId, versionNumber) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}`);
+    }
+
+    async getStructureVersionById(versionId) {
+        return this.request(`/hrms/payroll/structures/versions/${versionId}`);
+    }
+
+    async getCurrentStructureVersion(structureId) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/current`);
+    }
+
+    async getEffectiveStructureVersion(structureId, date) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/effective?date=${date}`);
+    }
+
+    async createStructureVersion(structureId, versionData) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions`, {
+            method: 'POST',
+            body: JSON.stringify(versionData)
+        });
+    }
+
+    async updateStructureVersion(structureId, versionNumber, versionData) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}`, {
+            method: 'PUT',
+            body: JSON.stringify(versionData)
+        });
+    }
+
+    async deleteStructureVersion(structureId, versionNumber) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async activateStructureVersion(structureId, versionNumber) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}/activate`, {
+            method: 'POST'
+        });
+    }
+
+    async calculateVersionedSalary(structureId, versionNumber, request) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}/calculate`, {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    // --- Version Arrears ---
+    async calculateVersionArrears(versionId, autoApply = false) {
+        return this.request(`/hrms/payroll/structures/versions/${versionId}/calculate-arrears?autoApply=${autoApply}`, {
+            method: 'POST'
+        });
+    }
+
+    async getPendingArrears(versionId = null) {
+        const query = versionId ? `?versionId=${versionId}` : '';
+        return this.request(`/hrms/payroll/structures/arrears/pending${query}`);
+    }
+
+    async getEmployeeArrears(employeeId) {
+        return this.request(`/hrms/payroll/structures/arrears/employee/${employeeId}`);
+    }
+
+    async applyArrears(arrearsId) {
+        return this.request(`/hrms/payroll/structures/arrears/${arrearsId}/apply`, {
+            method: 'POST'
+        });
+    }
+
+    async cancelArrears(arrearsId) {
+        return this.request(`/hrms/payroll/structures/arrears/${arrearsId}/cancel`, {
+            method: 'POST'
+        });
+    }
+
+    // --- Bulk Version Assignment ---
+    async bulkAssignVersion(structureId, versionNumber, request) {
+        return this.request(`/hrms/payroll/structures/${structureId}/versions/${versionNumber}/bulk-assign`, {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    // --- Version Snapshot & Comparison ---
+    async getVersionSnapshot(versionId) {
+        return this.request(`/hrms/payroll/structures/versions/${versionId}/snapshot`);
+    }
+
+    async compareVersionSnapshots(fromVersionId, toVersionId) {
+        return this.request(`/hrms/payroll/structures/versions/compare-snapshots?fromVersionId=${fromVersionId}&toVersionId=${toVersionId}`);
+    }
 }
 
 // Export singleton instance

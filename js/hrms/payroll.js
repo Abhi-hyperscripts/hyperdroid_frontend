@@ -2711,3 +2711,628 @@ async function previewVersionedSalary() {
         hideLoading();
     }
 }
+
+// ============================================
+// ARREARS MANAGEMENT
+// ============================================
+
+let currentArrearsList = [];
+let selectedArrearsIds = new Set();
+
+/**
+ * Open arrears management modal
+ */
+async function openArrearsModal() {
+    try {
+        showLoading();
+        await refreshArrears();
+        openModal('arrearsModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error opening arrears modal:', error);
+        showToast(error.message || 'Failed to load arrears', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Refresh arrears list
+ */
+async function refreshArrears() {
+    try {
+        const versionId = structureVersions[0]?.id; // Get latest version ID if available
+        const arrears = await api.getPendingArrears(versionId);
+        currentArrearsList = arrears || [];
+        selectedArrearsIds.clear();
+        updateArrearsTable();
+        updateArrearsSummary();
+        updateArrearsButtons();
+    } catch (error) {
+        console.error('Error refreshing arrears:', error);
+        showToast(error.message || 'Failed to refresh arrears', 'error');
+    }
+}
+
+/**
+ * Update arrears summary section
+ */
+function updateArrearsSummary() {
+    const summary = document.getElementById('arrearsSummary');
+    if (!currentArrearsList || currentArrearsList.length === 0) {
+        summary.style.display = 'none';
+        return;
+    }
+
+    summary.style.display = 'block';
+
+    const uniqueEmployees = new Set(currentArrearsList.map(a => a.employee_id));
+    const totalAmount = currentArrearsList.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
+    const pendingCount = currentArrearsList.filter(a => a.status === 'pending').length;
+
+    document.getElementById('arrearsEmployeeCount').textContent = uniqueEmployees.size;
+    document.getElementById('arrearsTotalAmount').textContent = `₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('arrearsPendingCount').textContent = pendingCount;
+}
+
+/**
+ * Update arrears table
+ */
+function updateArrearsTable() {
+    const tbody = document.getElementById('arrearsTable');
+    if (!tbody) return;
+
+    if (!currentArrearsList || currentArrearsList.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <p>No arrears found</p>
+                        <small class="text-muted">Arrears are created when versions have retrospective effective dates</small>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = currentArrearsList.map(a => {
+        const isPending = a.status === 'pending';
+        const statusBadge = getArrearsStatusBadge(a.status);
+        return `
+        <tr class="${isPending ? '' : 'text-muted'}">
+            <td>
+                <input type="checkbox" class="arrears-checkbox" value="${a.id}"
+                       ${isPending ? '' : 'disabled'}
+                       ${selectedArrearsIds.has(a.id) ? 'checked' : ''}
+                       onchange="toggleArrearsSelection('${a.id}')">
+            </td>
+            <td>
+                <strong>${a.employee_name || 'Unknown'}</strong>
+                <br><small class="text-muted">${a.employee_code || ''}</small>
+            </td>
+            <td>${getMonthName(a.payroll_month)} ${a.payroll_year}</td>
+            <td>₹${(a.old_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>₹${(a.new_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="${a.arrears_amount > 0 ? 'text-success' : 'text-danger'}">
+                <strong>₹${(a.arrears_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+                ${isPending ? `
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="applySingleArrears('${a.id}')" title="Apply">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    <button class="action-btn" onclick="cancelSingleArrears('${a.id}')" title="Cancel">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                ` : '-'}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/**
+ * Get status badge HTML
+ */
+function getArrearsStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="badge" style="background: #fff3cd; color: #856404;">Pending</span>',
+        'applied': '<span class="badge" style="background: #d4edda; color: #155724;">Applied</span>',
+        'cancelled': '<span class="badge" style="background: #f8d7da; color: #721c24;">Cancelled</span>'
+    };
+    return badges[status] || badges['pending'];
+}
+
+/**
+ * Toggle all arrears selection
+ */
+function toggleAllArrears() {
+    const selectAll = document.getElementById('selectAllArrears');
+    const checkboxes = document.querySelectorAll('.arrears-checkbox:not(:disabled)');
+
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+        if (selectAll.checked) {
+            selectedArrearsIds.add(cb.value);
+        } else {
+            selectedArrearsIds.delete(cb.value);
+        }
+    });
+
+    updateArrearsButtons();
+}
+
+/**
+ * Toggle single arrears selection
+ */
+function toggleArrearsSelection(arrearsId) {
+    if (selectedArrearsIds.has(arrearsId)) {
+        selectedArrearsIds.delete(arrearsId);
+    } else {
+        selectedArrearsIds.add(arrearsId);
+    }
+    updateArrearsButtons();
+}
+
+/**
+ * Update arrears action buttons state
+ */
+function updateArrearsButtons() {
+    const hasSelection = selectedArrearsIds.size > 0;
+    document.getElementById('applyArrearsBtn').disabled = !hasSelection;
+    document.getElementById('cancelArrearsBtn').disabled = !hasSelection;
+}
+
+/**
+ * Apply single arrears
+ */
+async function applySingleArrears(arrearsId) {
+    if (!confirm('Are you sure you want to apply this arrears to the next payroll?')) return;
+
+    try {
+        showLoading();
+        await api.applyArrears(arrearsId);
+        showToast('Arrears applied successfully', 'success');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        showToast(error.message || 'Failed to apply arrears', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Cancel single arrears
+ */
+async function cancelSingleArrears(arrearsId) {
+    if (!confirm('Are you sure you want to cancel this arrears?')) return;
+
+    try {
+        showLoading();
+        await api.cancelArrears(arrearsId);
+        showToast('Arrears cancelled', 'success');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        showToast(error.message || 'Failed to cancel arrears', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Apply selected arrears
+ */
+async function applySelectedArrears() {
+    if (selectedArrearsIds.size === 0) return;
+
+    if (!confirm(`Are you sure you want to apply ${selectedArrearsIds.size} arrears to the next payroll?`)) return;
+
+    try {
+        showLoading();
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const arrearsId of selectedArrearsIds) {
+            try {
+                await api.applyArrears(arrearsId);
+                successCount++;
+            } catch (e) {
+                errorCount++;
+            }
+        }
+
+        showToast(`Applied ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, successCount > 0 ? 'success' : 'error');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        showToast(error.message || 'Failed to apply arrears', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Cancel selected arrears
+ */
+async function cancelSelectedArrears() {
+    if (selectedArrearsIds.size === 0) return;
+
+    if (!confirm(`Are you sure you want to cancel ${selectedArrearsIds.size} arrears?`)) return;
+
+    try {
+        showLoading();
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const arrearsId of selectedArrearsIds) {
+            try {
+                await api.cancelArrears(arrearsId);
+                successCount++;
+            } catch (e) {
+                errorCount++;
+            }
+        }
+
+        showToast(`Cancelled ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, successCount > 0 ? 'success' : 'error');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        showToast(error.message || 'Failed to cancel arrears', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Get month name from month number
+ */
+function getMonthName(monthNumber) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[monthNumber - 1] || '';
+}
+
+// ============================================
+// BULK VERSION ASSIGNMENT
+// ============================================
+
+let bulkAssignStructureId = null;
+let bulkAssignVersionNumber = null;
+let bulkPreviewResult = null;
+
+/**
+ * Open bulk assignment modal
+ */
+async function openBulkAssignModal() {
+    if (!currentVersionStructureId) {
+        showToast('Please select a structure first', 'error');
+        return;
+    }
+
+    bulkAssignStructureId = currentVersionStructureId;
+    bulkAssignVersionNumber = structureVersions[0]?.version_number || 1;
+
+    try {
+        showLoading();
+
+        // Load offices, departments, designations for filters
+        await loadBulkAssignFilters();
+
+        // Reset form
+        document.getElementById('bulkAssignForm').reset();
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+
+        // Set default effective date
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('bulkEffectiveFrom').value = tomorrow.toISOString().split('T')[0];
+
+        // Update title
+        document.getElementById('bulkAssignModalTitle').textContent =
+            `Bulk Assign - ${currentVersionStructureName} v${bulkAssignVersionNumber}`;
+
+        openModal('bulkAssignModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error opening bulk assign modal:', error);
+        showToast(error.message || 'Failed to load bulk assignment', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Load filters for bulk assignment
+ */
+async function loadBulkAssignFilters() {
+    try {
+        // Load offices
+        const officesData = await api.getHrmsOffices();
+        const officeSelect = document.getElementById('bulkOfficeId');
+        officeSelect.innerHTML = '<option value="">All Offices</option>' +
+            (officesData || []).map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
+
+        // Load departments
+        const departmentsData = await api.getHrmsDepartments();
+        const deptSelect = document.getElementById('bulkDepartmentId');
+        deptSelect.innerHTML = '<option value="">All Departments</option>' +
+            (departmentsData || []).map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+
+        // Load designations
+        const designationsData = await api.getHrmsDesignations();
+        const desigSelect = document.getElementById('bulkDesignationId');
+        desigSelect.innerHTML = '<option value="">All Designations</option>' +
+            (designationsData || []).map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+    } catch (error) {
+        console.error('Error loading bulk assign filters:', error);
+    }
+}
+
+/**
+ * Preview bulk assignment
+ */
+async function previewBulkAssignment() {
+    const effectiveFrom = document.getElementById('bulkEffectiveFrom').value;
+    if (!effectiveFrom) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const request = {
+            structure_id: bulkAssignStructureId,
+            version_number: bulkAssignVersionNumber,
+            effective_from: effectiveFrom,
+            office_id: document.getElementById('bulkOfficeId').value || null,
+            department_id: document.getElementById('bulkDepartmentId').value || null,
+            designation_id: document.getElementById('bulkDesignationId').value || null,
+            preview_only: true,
+            calculate_arrears: document.getElementById('bulkCalculateArrears').checked,
+            reason: document.getElementById('bulkReason').value
+        };
+
+        bulkPreviewResult = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
+
+        // Update preview UI
+        document.getElementById('bulkPreviewSection').style.display = 'block';
+        document.getElementById('bulkMatchedCount').textContent = bulkPreviewResult.total_employees_matched || 0;
+        document.getElementById('bulkToAssignCount').textContent = bulkPreviewResult.employees_to_assign || 0;
+        document.getElementById('bulkEstArrears').textContent =
+            `₹${(bulkPreviewResult.estimated_arrears_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+        // Update preview table
+        const tbody = document.getElementById('bulkPreviewTable');
+        const employees = bulkPreviewResult.employees || [];
+
+        if (employees.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No employees matched</td></tr>';
+        } else {
+            tbody.innerHTML = employees.slice(0, 20).map(e => `
+                <tr class="${e.will_be_assigned ? '' : 'text-muted'}">
+                    <td>
+                        <strong>${e.employee_name}</strong>
+                        <br><small class="text-muted">${e.employee_code}</small>
+                    </td>
+                    <td>${e.current_structure || '-'}</td>
+                    <td>₹${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
+                    <td>${e.will_be_assigned ?
+                        `₹${(e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
+                        '<span class="text-muted">Already assigned</span>'}</td>
+                </tr>
+            `).join('');
+
+            if (employees.length > 20) {
+                tbody.innerHTML += `<tr><td colspan="4" class="text-center text-muted">...and ${employees.length - 20} more</td></tr>`;
+            }
+        }
+
+        // Enable execute button if there are employees to assign
+        document.getElementById('executeBulkBtn').disabled = (bulkPreviewResult.employees_to_assign || 0) === 0;
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error previewing bulk assignment:', error);
+        showToast(error.message || 'Failed to preview assignment', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Execute bulk assignment
+ */
+async function executeBulkAssignment() {
+    if (!bulkPreviewResult || bulkPreviewResult.employees_to_assign === 0) {
+        showToast('No employees to assign', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const request = {
+            structure_id: bulkAssignStructureId,
+            version_number: bulkAssignVersionNumber,
+            effective_from: document.getElementById('bulkEffectiveFrom').value,
+            office_id: document.getElementById('bulkOfficeId').value || null,
+            department_id: document.getElementById('bulkDepartmentId').value || null,
+            designation_id: document.getElementById('bulkDesignationId').value || null,
+            preview_only: false,  // Actually execute
+            calculate_arrears: document.getElementById('bulkCalculateArrears').checked,
+            reason: document.getElementById('bulkReason').value
+        };
+
+        const result = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
+
+        closeModal('bulkAssignModal');
+        showToast(`Successfully assigned structure to ${result.employees_assigned || result.employees_to_assign} employees`, 'success');
+
+        // Refresh data
+        await loadStructures();
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error executing bulk assignment:', error);
+        showToast(error.message || 'Failed to execute assignment', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// ENHANCED VERSION COMPARISON
+// ============================================
+
+/**
+ * Enhanced version comparison with visual diff
+ */
+async function showVersionComparison(fromVersionId, toVersionId) {
+    try {
+        showLoading();
+
+        const comparison = await api.compareVersionSnapshots(fromVersionId, toVersionId);
+
+        if (!comparison) {
+            showToast('Could not compare versions', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Update header
+        document.getElementById('compareFromVersion').textContent = `v${comparison.from_version?.version_number || '?'}`;
+        document.getElementById('compareToVersion').textContent = `v${comparison.to_version?.version_number || '?'}`;
+        document.getElementById('compareFromDate').textContent = formatDate(comparison.from_version?.effective_from);
+        document.getElementById('compareToDate').textContent = formatDate(comparison.to_version?.effective_from);
+
+        // Update summary badges
+        const summary = comparison.summary || {};
+        document.getElementById('addedCount').textContent = `+ ${summary.components_added || 0} Added`;
+        document.getElementById('removedCount').textContent = `- ${summary.components_removed || 0} Removed`;
+        document.getElementById('modifiedCount').textContent = `~ ${summary.components_modified || 0} Modified`;
+        document.getElementById('unchangedCount').textContent = `= ${summary.components_unchanged || 0} Unchanged`;
+
+        // Render added components
+        const addedSection = document.getElementById('addedSection');
+        const addedList = document.getElementById('addedList');
+        if (comparison.added_components?.length > 0) {
+            addedSection.style.display = 'block';
+            addedList.innerHTML = comparison.added_components.map(c => `
+                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <strong>${c.component_name}</strong> (${c.component_code})
+                    <br><small class="text-muted">
+                        ${c.new_values?.percentage_of_basic ? `${c.new_values.percentage_of_basic}% of Basic` : ''}
+                        ${c.new_values?.fixed_amount ? `₹${c.new_values.fixed_amount}` : ''}
+                    </small>
+                </div>
+            `).join('');
+        } else {
+            addedSection.style.display = 'none';
+        }
+
+        // Render removed components
+        const removedSection = document.getElementById('removedSection');
+        const removedList = document.getElementById('removedList');
+        if (comparison.removed_components?.length > 0) {
+            removedSection.style.display = 'block';
+            removedList.innerHTML = comparison.removed_components.map(c => `
+                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <strong>${c.component_name}</strong> (${c.component_code})
+                </div>
+            `).join('');
+        } else {
+            removedSection.style.display = 'none';
+        }
+
+        // Render modified components
+        const modifiedSection = document.getElementById('modifiedSection');
+        const modifiedList = document.getElementById('modifiedList');
+        if (comparison.modified_components?.length > 0) {
+            modifiedSection.style.display = 'block';
+            modifiedList.innerHTML = comparison.modified_components.map(c => `
+                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <strong>${c.component_name}</strong> (${c.component_code})
+                    ${(c.changes || []).map(change => `
+                        <div style="margin-left: 16px; margin-top: 4px;">
+                            <small>
+                                <span class="text-muted">${change.field}:</span>
+                                <span style="text-decoration: line-through; color: #721c24;">${formatChangeValue(change.old_value)}</span>
+                                →
+                                <span style="color: #155724; font-weight: 600;">${formatChangeValue(change.new_value)}</span>
+                            </small>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        } else {
+            modifiedSection.style.display = 'none';
+        }
+
+        // Render unchanged components
+        const unchangedSection = document.getElementById('unchangedSection');
+        const unchangedList = document.getElementById('unchangedList');
+        if (comparison.unchanged_components?.length > 0) {
+            unchangedSection.style.display = 'block';
+            unchangedList.innerHTML = `<small class="text-muted">${comparison.unchanged_components.join(', ')}</small>`;
+        } else {
+            unchangedSection.style.display = 'none';
+        }
+
+        openModal('versionCompareModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error comparing versions:', error);
+        showToast(error.message || 'Failed to compare versions', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Format change value for display
+ */
+function formatChangeValue(value) {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value === 'number') {
+        if (value % 1 !== 0) return value.toFixed(2);
+        return value.toString();
+    }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+}
+
+/**
+ * Override compareVersions to use new visual modal
+ */
+async function compareVersionsVisual(structureId, fromVersion, toVersion) {
+    try {
+        showLoading();
+
+        // Get version IDs from version numbers
+        const versions = await api.getStructureVersions(structureId);
+        const fromVersionObj = versions.find(v => v.version_number === fromVersion);
+        const toVersionObj = versions.find(v => v.version_number === toVersion);
+
+        if (!fromVersionObj || !toVersionObj) {
+            showToast('Could not find version details', 'error');
+            hideLoading();
+            return;
+        }
+
+        await showVersionComparison(fromVersionObj.id, toVersionObj.id);
+    } catch (error) {
+        console.error('Error comparing versions:', error);
+        showToast(error.message || 'Failed to compare versions', 'error');
+        hideLoading();
+    }
+}
