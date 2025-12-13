@@ -1,5 +1,4 @@
 let currentUser = null;
-let isAdmin = false;
 let employees = [];
 let offices = [];
 let components = [];
@@ -37,21 +36,11 @@ async function initializePage() {
             return;
         }
 
-        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || currentUser.roles?.includes('SUPERADMIN');
+        // Initialize RBAC
+        hrmsRoles.init();
 
-        // Show/hide admin elements
-        if (isAdmin) {
-            document.getElementById('adminActions').style.display = 'flex';
-            document.getElementById('payrollDraftsTab').style.display = 'block';
-            document.getElementById('payrollRunsTab').style.display = 'block';
-            document.getElementById('salaryTab').style.display = 'block';
-            document.getElementById('componentsTab').style.display = 'block';
-            document.getElementById('createStructureBtn').style.display = 'inline-flex';
-            document.getElementById('createComponentBtn').style.display = 'inline-flex';
-            document.getElementById('loanEmployeeRow').style.display = 'block';
-        } else {
-            document.getElementById('loanEmployeeRow').style.display = 'none';
-        }
+        // Apply RBAC visibility
+        applyPayrollRBAC();
 
         // Setup tabs
         setupTabs();
@@ -62,7 +51,7 @@ async function initializePage() {
             loadOffices()
         ]);
 
-        if (isAdmin) {
+        if (hrmsRoles.isHRAdmin()) {
             await Promise.all([
                 loadPayrollDrafts(),
                 loadPayrollRuns(),
@@ -82,6 +71,59 @@ async function initializePage() {
         console.error('Error initializing page:', error);
         showToast('Failed to load page data', 'error');
         hideLoading();
+    }
+}
+
+// Apply RBAC visibility rules for payroll page
+function applyPayrollRBAC() {
+    const isHRAdminRole = hrmsRoles.isHRAdmin();
+
+    // Admin actions header
+    const adminActions = document.getElementById('adminActions');
+    if (adminActions) {
+        adminActions.style.display = isHRAdminRole ? 'flex' : 'none';
+    }
+
+    // Payroll Drafts tab - HR Admin only
+    const payrollDraftsTab = document.getElementById('payrollDraftsTab');
+    if (payrollDraftsTab) {
+        payrollDraftsTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
+
+    // Payroll Runs tab - HR Admin only
+    const payrollRunsTab = document.getElementById('payrollRunsTab');
+    if (payrollRunsTab) {
+        payrollRunsTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
+
+    // Salary Structures tab - HR Admin only
+    const salaryTab = document.getElementById('salaryTab');
+    if (salaryTab) {
+        salaryTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
+
+    // Payroll Components tab - HR Admin only
+    const componentsTab = document.getElementById('componentsTab');
+    if (componentsTab) {
+        componentsTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
+
+    // Create Structure button - HR Admin only
+    const createStructureBtn = document.getElementById('createStructureBtn');
+    if (createStructureBtn) {
+        createStructureBtn.style.display = isHRAdminRole ? 'inline-flex' : 'none';
+    }
+
+    // Create Component button - HR Admin only
+    const createComponentBtn = document.getElementById('createComponentBtn');
+    if (createComponentBtn) {
+        createComponentBtn.style.display = isHRAdminRole ? 'inline-flex' : 'none';
+    }
+
+    // Loan Employee Row (for admin creating loans for employees) - HR Admin only
+    const loanEmployeeRow = document.getElementById('loanEmployeeRow');
+    if (loanEmployeeRow) {
+        loanEmployeeRow.style.display = isHRAdminRole ? 'block' : 'none';
     }
 }
 
@@ -1092,7 +1134,7 @@ function updateDeductionsTable(deductions) {
 async function loadLoans() {
     try {
         const status = document.getElementById('loanStatus')?.value || '';
-        let url = isAdmin ? '/hrms/payroll-processing/loans' : '/hrms/payroll-processing/my-loans';
+        let url = hrmsRoles.isHRAdmin() ? '/hrms/payroll-processing/loans' : '/hrms/payroll-processing/my-loans';
         if (status) url += `?status=${status}`;
 
         const response = await api.request(url);
@@ -1217,6 +1259,9 @@ function showCreateStructureModal() {
     // Reset is_default select
     const isDefaultSelect = document.getElementById('structureIsDefault');
     if (isDefaultSelect) isDefaultSelect.value = 'false';
+    // Reset status to active for new structures
+    const isActiveCheckbox = document.getElementById('structureIsActive');
+    if (isActiveCheckbox) isActiveCheckbox.checked = true;
     document.getElementById('structureModal').classList.add('active');
 }
 
@@ -1246,6 +1291,12 @@ async function editSalaryStructure(structureId) {
         const isDefaultSelect = document.getElementById('structureIsDefault');
         if (isDefaultSelect) {
             isDefaultSelect.value = structure.is_default ? 'true' : 'false';
+        }
+
+        // Set is_active checkbox
+        const isActiveCheckbox = document.getElementById('structureIsActive');
+        if (isActiveCheckbox) {
+            isActiveCheckbox.checked = structure.is_active !== false; // Default to true if not set
         }
 
         // Load and populate structure components
@@ -1321,7 +1372,7 @@ async function saveSalaryStructure() {
             description: document.getElementById('structureDescription').value,
             office_id: officeId,
             is_default: isDefault,
-            is_active: true,
+            is_active: document.getElementById('structureIsActive')?.checked !== false,
             components: structureComponents
         };
 
@@ -1353,6 +1404,9 @@ function showCreateComponentModal() {
     document.getElementById('componentForm').reset();
     document.getElementById('componentId').value = '';
     document.getElementById('componentModalTitle').textContent = 'Create Salary Component';
+    // Reset status to active for new components
+    const isActiveCheckbox = document.getElementById('componentIsActive');
+    if (isActiveCheckbox) isActiveCheckbox.checked = true;
     document.getElementById('componentModal').classList.add('active');
     // Reset percentage fields visibility
     togglePercentageFields();
@@ -1412,7 +1466,8 @@ async function saveComponent() {
             calculation_type: calculationType,
             is_taxable: document.getElementById('isTaxable').value === 'true',
             is_statutory: document.getElementById('isStatutory').value === 'true',
-            description: document.getElementById('componentDescription').value
+            description: document.getElementById('componentDescription').value,
+            is_active: document.getElementById('componentIsActive')?.checked !== false
         };
 
         // Add percentage fields if calculation type is percentage
@@ -1464,7 +1519,7 @@ async function saveLoan() {
             reason: document.getElementById('loanReason').value
         };
 
-        if (isAdmin) {
+        if (hrmsRoles.isHRAdmin()) {
             data.employee_id = document.getElementById('loanEmployee').value;
         }
 
@@ -1488,12 +1543,28 @@ async function viewPayslip(payslipId) {
     try {
         showLoading();
         currentPayslipId = payslipId;
-        const payslip = await api.request(`/hrms/payroll-processing/payslips/${payslipId}`);
+        // Fetch with includeItems=true to get location breakdowns
+        const payslip = await api.request(`/hrms/payroll-processing/payslips/${payslipId}?includeItems=true`);
+
+        // Check for multi-location indicator
+        const isMultiLocation = payslip.is_multi_location || payslip.isMultiLocation || false;
+        const locationBreakdowns = payslip.location_breakdowns || payslip.locationBreakdowns || [];
+
+        // Multi-location badge if applicable
+        const multiLocationBadge = isMultiLocation
+            ? `<span class="multi-location-badge" title="Employee worked at multiple locations during this period">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                Multi-Location
+               </span>`
+            : '';
 
         document.getElementById('payslipContent').innerHTML = `
             <div class="payslip-header">
                 <h3>${payslip.companyName || 'Company Name'}</h3>
-                <p>Payslip for ${getMonthName(payslip.month)} ${payslip.year}</p>
+                <p>Payslip for ${getMonthName(payslip.month)} ${payslip.year} ${multiLocationBadge}</p>
             </div>
             <div class="payslip-employee">
                 <div class="info-row">
@@ -1551,6 +1622,75 @@ async function viewPayslip(payslipId) {
             </div>
         `;
 
+        // Handle multi-location breakdown display
+        const locationSection = document.getElementById('locationBreakdownSection');
+        const locationCards = document.getElementById('locationCards');
+
+        if (isMultiLocation && locationBreakdowns.length > 0) {
+            locationSection.style.display = 'block';
+
+            locationCards.innerHTML = locationBreakdowns.map(loc => {
+                const officeName = loc.office_name || loc.officeName || 'Office';
+                const officeCode = loc.office_code || loc.officeCode || '';
+                const periodStart = loc.period_start || loc.periodStart;
+                const periodEnd = loc.period_end || loc.periodEnd;
+                const daysWorked = loc.days_worked || loc.daysWorked || 0;
+                const prorationFactor = loc.proration_factor || loc.prorationFactor || 0;
+                const grossEarnings = loc.gross_earnings || loc.grossEarnings || 0;
+                const locationTaxes = loc.location_taxes || loc.locationTaxes || 0;
+                const netPay = loc.net_pay || loc.netPay || 0;
+                const taxItems = loc.tax_items || loc.taxItems || [];
+
+                return `
+                    <div class="location-card">
+                        <div class="location-header">
+                            <div class="location-name">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                ${officeName}
+                            </div>
+                            <span class="location-code">${officeCode}</span>
+                        </div>
+                        <div class="location-period">
+                            ${formatDate(periodStart)} - ${formatDate(periodEnd)}
+                        </div>
+                        <div class="location-stats">
+                            <div class="loc-stat">
+                                <span class="loc-value">${daysWorked}</span>
+                                <span class="loc-label">Days</span>
+                            </div>
+                            <div class="loc-stat">
+                                <span class="loc-value">${(prorationFactor * 100).toFixed(0)}%</span>
+                                <span class="loc-label">Proration</span>
+                            </div>
+                            <div class="loc-stat">
+                                <span class="loc-value">${formatCurrency(grossEarnings)}</span>
+                                <span class="loc-label">Gross</span>
+                            </div>
+                        </div>
+                        ${taxItems.length > 0 ? `
+                            <div class="location-taxes">
+                                <div class="tax-label">Location Taxes: ${formatCurrency(locationTaxes)}</div>
+                                ${taxItems.map(tax => `
+                                    <div class="tax-item">
+                                        <span>${tax.tax_name || tax.taxName} ${tax.jurisdiction_code ? `(${tax.jurisdiction_code})` : ''}</span>
+                                        <span>${formatCurrency(tax.tax_amount || tax.taxAmount)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="location-net">
+                            Net: ${formatCurrency(netPay)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            locationSection.style.display = 'none';
+        }
+
         document.getElementById('payslipModal').classList.add('active');
         hideLoading();
     } catch (error) {
@@ -1589,6 +1729,12 @@ function editComponent(componentId) {
     document.getElementById('isTaxable').value = (component.is_taxable !== undefined ? component.is_taxable : component.isTaxable) ? 'true' : 'false';
     document.getElementById('isStatutory').value = (component.is_statutory !== undefined ? component.is_statutory : component.isStatutory) ? 'true' : 'false';
     document.getElementById('componentDescription').value = component.description || '';
+
+    // Set is_active checkbox
+    const isActiveCheckbox = document.getElementById('componentIsActive');
+    if (isActiveCheckbox) {
+        isActiveCheckbox.checked = component.is_active !== false; // Default to true if not set
+    }
 
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
     document.getElementById('componentModal').classList.add('active');
@@ -1774,12 +1920,7 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // Store current payroll run for modal actions
 let currentPayrollRunId = null;

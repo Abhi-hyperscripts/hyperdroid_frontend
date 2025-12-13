@@ -780,10 +780,185 @@ class API {
 
     // ==================== HRMS API ====================
 
+    // ==================== HRMS Self-Service (ESS) ====================
+
     // Self-Service Dashboard
     async getHrmsDashboard() {
         return this.request('/hrms/self-service/dashboard');
     }
+
+    // --- My Profile (ESS) ---
+    async getMyHrmsProfile() {
+        return this.request('/hrms/self-service/my-profile');
+    }
+
+    async getMyHrmsProfilePersonal() {
+        return this.request('/hrms/self-service/my-profile/personal');
+    }
+
+    async getMyHrmsProfileBankAccounts() {
+        return this.request('/hrms/self-service/my-profile/bank-accounts');
+    }
+
+    async getMyHrmsProfileStatutory() {
+        return this.request('/hrms/self-service/my-profile/statutory');
+    }
+
+    async getMyHrmsProfileDocuments() {
+        return this.request('/hrms/self-service/my-profile/documents');
+    }
+
+    // --- Profile Update Requests (ESS) ---
+    async createProfileUpdateRequest(request) {
+        return this.request('/hrms/self-service/profile/requests', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getMyProfileUpdateRequests(status = null) {
+        const query = status ? `?status=${status}` : '';
+        return this.request(`/hrms/self-service/profile/requests${query}`);
+    }
+
+    async cancelProfileUpdateRequest(requestId) {
+        return this.request(`/hrms/self-service/profile/requests/${requestId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getPendingProfileUpdateRequests() {
+        return this.request('/hrms/self-service/profile/requests/pending');
+    }
+
+    async reviewProfileUpdateRequest(requestId, approve, rejectionReason = null) {
+        return this.request(`/hrms/self-service/profile/requests/${requestId}/review`, {
+            method: 'POST',
+            body: JSON.stringify({ approve, rejection_reason: rejectionReason })
+        });
+    }
+
+    // --- Announcements (ESS) ---
+    async getHrmsAnnouncements(unreadOnly = false, limit = 20) {
+        return this.request(`/hrms/self-service/announcements?unreadOnly=${unreadOnly}&limit=${limit}`);
+    }
+
+    async getHrmsAnnouncement(announcementId) {
+        return this.request(`/hrms/self-service/announcements/${announcementId}`);
+    }
+
+    async markAnnouncementAsRead(announcementId) {
+        return this.request(`/hrms/self-service/announcements/${announcementId}/read`, {
+            method: 'POST'
+        });
+    }
+
+    async createHrmsAnnouncement(announcement) {
+        return this.request('/hrms/self-service/announcements', {
+            method: 'POST',
+            body: JSON.stringify(announcement)
+        });
+    }
+
+    async updateHrmsAnnouncement(announcementId, announcement) {
+        return this.request(`/hrms/self-service/announcements/${announcementId}`, {
+            method: 'PUT',
+            body: JSON.stringify(announcement)
+        });
+    }
+
+    async deleteHrmsAnnouncement(announcementId) {
+        return this.request(`/hrms/self-service/announcements/${announcementId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- Notifications (ESS) ---
+    async getHrmsNotifications(unreadOnly = false, limit = 20) {
+        return this.request(`/hrms/self-service/notifications?unreadOnly=${unreadOnly}&limit=${limit}`);
+    }
+
+    async getHrmsUnreadNotificationCount() {
+        return this.request('/hrms/self-service/notifications/unread-count');
+    }
+
+    async markHrmsNotificationAsRead(notificationId) {
+        return this.request(`/hrms/self-service/notifications/${notificationId}/read`, {
+            method: 'POST'
+        });
+    }
+
+    async markAllHrmsNotificationsAsRead() {
+        return this.request('/hrms/self-service/notifications/read-all', {
+            method: 'POST'
+        });
+    }
+
+    // --- Team Directory (ESS) ---
+    async getTeamDirectory(departmentId = null, officeId = null, search = null) {
+        const params = new URLSearchParams();
+        if (departmentId) params.append('departmentId', departmentId);
+        if (officeId) params.append('officeId', officeId);
+        if (search) params.append('search', search);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/hrms/self-service/directory${query}`);
+    }
+
+    // --- Organization Chart (ESS) ---
+    async getOrgChart(rootEmployeeId = null) {
+        const query = rootEmployeeId ? `?rootEmployeeId=${rootEmployeeId}` : '';
+        return this.request(`/hrms/self-service/org-chart${query}`);
+    }
+
+    // --- Attendance Clock In/Out (ESS) ---
+    async hrmsClockIn(data = {}) {
+        return this.request('/hrms/attendance/clock-in', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async hrmsClockOut(data = {}) {
+        return this.request('/hrms/attendance/clock-out', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async getMyTodayAttendance() {
+        return this.request('/hrms/attendance/today');
+    }
+
+    // --- Dashboard Widgets (ESS) ---
+    async getUpcomingHolidays(count = 5) {
+        return this.request(`/hrms/holidays/upcoming?count=${count}`);
+    }
+
+    async getDashboardBirthdays(days = 30) {
+        return this.request(`/hrms/reports/dashboard/birthdays?days=${days}`);
+    }
+
+    async getDashboardAnniversaries(days = 30) {
+        return this.request(`/hrms/reports/dashboard/anniversaries?days=${days}`);
+    }
+
+    async getDashboardQuickStats() {
+        return this.request('/hrms/reports/dashboard/quick-stats');
+    }
+
+    async getDashboardProbationEnding(days = 30) {
+        return this.request(`/hrms/reports/dashboard/probation-ending?days=${days}`);
+    }
+
+    async getDashboardNewJoiners(days = 30) {
+        return this.request(`/hrms/reports/dashboard/new-joiners?days=${days}`);
+    }
+
+    async getDashboardExits(days = 30) {
+        return this.request(`/hrms/reports/dashboard/exits?days=${days}`);
+    }
+
+    // ==================== HRMS Admin/Manager APIs ====================
 
     // --- Offices ---
     async getHrmsOffices() {

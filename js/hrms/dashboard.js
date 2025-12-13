@@ -1,5 +1,4 @@
 // HRMS Dashboard JavaScript
-let userRole = 'HRMS_USER';
 let currentEmployee = null;
 let isClockedIn = false;
 let isSetupComplete = false;
@@ -13,15 +12,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Determine user role
-    const user = api.getUser();
-    if (user && user.roles) {
-        if (user.roles.includes('SUPERADMIN') || user.roles.includes('HRMS_ADMIN')) {
-            userRole = 'HRMS_ADMIN';
-        } else if (user.roles.includes('HRMS_MANAGER')) {
-            userRole = 'HRMS_MANAGER';
-        }
-    }
+    // Initialize RBAC
+    hrmsRoles.init();
+
+    // Apply RBAC visibility
+    applyDashboardRBAC();
 
     // Start clock
     updateClock();
@@ -33,6 +28,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load dashboard data
     await loadDashboard();
 });
+
+/**
+ * Apply RBAC visibility to dashboard elements
+ */
+function applyDashboardRBAC() {
+    // Setup warning banner - only show to HR admins
+    hrmsRoles.setElementVisibility('setupWarningBanner', hrmsRoles.isHRAdmin());
+
+    // Stats grid - show org stats only to HR users and above
+    const statsGrid = document.getElementById('statsGrid');
+    if (statsGrid) {
+        // For basic users, hide org-level stats (they can still see the grid but values will be '-')
+        if (hrmsRoles.isBasicUser()) {
+            statsGrid.style.display = 'none';
+        }
+    }
+
+    // Quick action cards visibility based on role
+    // Organization - only HR users
+    hrmsRoles.setElementVisibility('cardOrganization', hrmsRoles.canAccessOrganization());
+
+    // Employees - HR users and managers
+    hrmsRoles.setElementVisibility('cardEmployees', hrmsRoles.canAccessEmployees());
+
+    // Payroll admin section - HR users only (basic users can still see own payslips via self-service)
+    const payrollCard = document.getElementById('cardPayroll');
+    if (payrollCard) {
+        if (!hrmsRoles.canViewAllPayroll() && !hrmsRoles.isManager()) {
+            // For basic users, change onclick to go to self-service payslips
+            payrollCard.onclick = function() { navigateTo('self-service.html#payslips'); };
+        }
+    }
+
+    // Reports - HR users and managers only
+    hrmsRoles.setElementVisibility('cardReports', hrmsRoles.canAccessReports());
+
+    // Attendance - all users can view (own or team)
+    // But change behavior based on role
+    const attendanceCard = document.getElementById('cardAttendance');
+    if (attendanceCard && hrmsRoles.isBasicUser()) {
+        // For basic users, go to self-service attendance
+        attendanceCard.onclick = function() { navigateTo('self-service.html#attendance'); };
+    }
+
+    // Leave - all users can access (own or team)
+    const leaveCard = document.getElementById('cardLeave');
+    if (leaveCard && hrmsRoles.isBasicUser()) {
+        // For basic users, go to self-service leave
+        leaveCard.onclick = function() { navigateTo('self-service.html#leave'); };
+    }
+
+    console.log('Dashboard RBAC applied:', hrmsRoles.getDebugInfo());
+}
 
 async function checkSetupStatus() {
     try {
@@ -173,13 +221,14 @@ async function loadDashboard() {
         }
 
         // Show clock section for ANY user with an employee profile
-        if (hasEmployeeProfile || userRole === 'HRMS_USER') {
+        if (hasEmployeeProfile || hrmsRoles.isBasicUser()) {
             document.getElementById('clockSection').style.display = 'block';
             await loadEmployeeAttendance();
         }
 
         // Load stats based on role
-        if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
+        // HR users and managers can see org-level stats
+        if (hrmsRoles.isHRUser() || hrmsRoles.isManager()) {
             await loadAdminStats();
         } else {
             await loadEmployeeStats();
@@ -319,11 +368,11 @@ async function handleClock() {
 async function loadRecentLeaveRequests() {
     const tbody = document.getElementById('recentLeaveRequests');
     try {
-        // For admin/manager, show pending approvals
-        // For employee, show their own requests
+        // For HR users/manager, show pending approvals
+        // For basic employee, show their own requests
         let requests = [];
 
-        if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
+        if (hrmsRoles.canApproveLeave()) {
             const response = await api.request('/hrms/leave/pending-approvals');
             requests = Array.isArray(response) ? response : (response?.data || []);
         } else {
@@ -438,23 +487,4 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${type === 'success'
-                ? '<polyline points="20 6 9 17 4 12"/>'
-                : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
-        </svg>
-        ${message}
-    `;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+// Local showToast removed - using unified toast.js instead

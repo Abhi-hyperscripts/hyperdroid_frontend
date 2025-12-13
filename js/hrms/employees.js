@@ -7,7 +7,6 @@ let availableUsers = [];
 let filteredUsers = [];
 let selectedUserId = null;
 let currentViewEmployee = null;
-let userRole = 'HRMS_USER';
 const USER_BATCH_SIZE = 50;
 let displayedUserCount = 0;
 
@@ -19,20 +18,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('hrms', '../');
 
-    // Determine user role
-    const user = api.getUser();
-    if (user && user.roles) {
-        if (user.roles.includes('SUPERADMIN') || user.roles.includes('HRMS_ADMIN')) {
-            userRole = 'HRMS_ADMIN';
-            document.getElementById('createEmployeeBtn').style.display = 'flex';
-        } else if (user.roles.includes('HRMS_MANAGER')) {
-            userRole = 'HRMS_MANAGER';
-        }
+    // Initialize RBAC
+    hrmsRoles.init();
+
+    // Check if user has access to employees page
+    if (!hrmsRoles.canAccessEmployees()) {
+        showToast('You do not have access to the Employees page', 'error');
+        window.location.href = 'dashboard.html';
+        return;
     }
+
+    // Apply RBAC visibility
+    applyEmployeesRBAC();
 
     await loadFormData();
     await loadEmployees();
 });
+
+/**
+ * Apply RBAC visibility to employees page elements
+ */
+function applyEmployeesRBAC() {
+    // Show create button only for HR Admin
+    hrmsRoles.setElementVisibility('createEmployeeBtn', hrmsRoles.canCreateEmployee());
+
+    console.log('Employees RBAC applied:', hrmsRoles.getDebugInfo());
+}
 
 async function loadFormData() {
     try {
@@ -210,7 +221,7 @@ function renderEmployees() {
                                 <polyline points="12 6 12 12 16 14"/>
                             </svg>
                         </button>
-                        ${userRole === 'HRMS_ADMIN' ? `
+                        ${hrmsRoles.canEditEmployee() ? `
                             <button class="action-btn" onclick="editEmployee('${emp.id}')" data-tooltip="Edit">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -723,7 +734,7 @@ async function viewEmployee(id) {
             </div>
         `;
 
-        document.getElementById('editFromViewBtn').style.display = userRole === 'HRMS_ADMIN' ? 'block' : 'none';
+        document.getElementById('editFromViewBtn').style.display = hrmsRoles.canEditEmployee() ? 'block' : 'none';
 
     } catch (error) {
         content.innerHTML = '<div class="empty-state"><p>Error loading employee details</p></div>';
@@ -776,10 +787,15 @@ function updateDepartmentsForOffice(officeId) {
     }
 
     // Filter departments by selected office (or show those without office_id for backward compatibility)
-    const filteredDepts = departments.filter(d => !d.office_id || d.office_id === officeId);
+    // Also filter out departments that have no designations
+    const filteredDepts = departments.filter(d => {
+        const matchesOffice = !d.office_id || d.office_id === officeId;
+        const hasDesignations = designations.some(desig => desig.department_id === d.id);
+        return matchesOffice && hasDesignations;
+    });
 
     if (filteredDepts.length === 0) {
-        deptSelect.innerHTML = '<option value="">No departments for this office</option>';
+        deptSelect.innerHTML = '<option value="">No departments with designations for this office</option>';
         return;
     }
 
@@ -859,23 +875,7 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
-        </svg>
-        ${message}
-    `;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // ============================================
 // Document Upload Functions
@@ -1344,9 +1344,15 @@ async function openSalaryModal(employeeId) {
     document.getElementById('saveSalaryBtnText').textContent = 'Save Salary';
     currentEmployeeSalary = null;
 
-    // Set employee info in header
-    const initials = (employee.first_name?.[0] || '') + (employee.last_name?.[0] || '');
-    document.getElementById('salaryEmployeeAvatar').textContent = initials.toUpperCase() || '-';
+    // Set employee info in header (with photo if available)
+    const initials = getInitials(employee.first_name, employee.last_name);
+    const photoUrl = employeePhotoCache[employeeId];
+    const avatarEl = document.getElementById('salaryEmployeeAvatar');
+    if (photoUrl) {
+        avatarEl.innerHTML = `<img src="${photoUrl}" alt="${employee.first_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${initials}'">`;
+    } else {
+        avatarEl.textContent = initials || '-';
+    }
     document.getElementById('salaryEmployeeName').textContent =
         `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
     document.getElementById('salaryEmployeeDesignation').textContent =
@@ -1595,9 +1601,15 @@ async function openTransferModal(employeeId) {
 
     currentTransferEmployee = employee;
 
-    // Set employee info
+    // Set employee info (with photo if available)
     const initials = getInitials(employee.first_name, employee.last_name);
-    document.getElementById('transferEmployeeAvatar').textContent = initials;
+    const photoUrl = employeePhotoCache[employeeId];
+    const avatarEl = document.getElementById('transferEmployeeAvatar');
+    if (photoUrl) {
+        avatarEl.innerHTML = `<img src="${photoUrl}" alt="${employee.first_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${initials}'">`;
+    } else {
+        avatarEl.textContent = initials || '-';
+    }
     document.getElementById('transferEmployeeName').textContent =
         `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
     document.getElementById('transferEmployeeCode').textContent = employee.employee_code || '-';
@@ -1645,10 +1657,13 @@ function populateTransferDropdowns(employee) {
         offices.filter(o => o.id !== employee.office_id)
             .map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
 
-    // Populate department dropdown
+    // Populate department dropdown (only departments with designations)
     const deptSelect = document.getElementById('newDepartmentId');
+    const deptsWithDesignations = departments.filter(d =>
+        designations.some(desig => desig.department_id === d.id)
+    );
     deptSelect.innerHTML = '<option value="">Select new department...</option>' +
-        departments.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+        deptsWithDesignations.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
 
     // Populate designation dropdown (initially empty until department selected)
     document.getElementById('newDesignationId').innerHTML = '<option value="">Select department first...</option>';
@@ -1971,9 +1986,16 @@ async function viewTransferHistory(employeeId) {
         const history = await api.getEmployeeFullTransferHistory(employeeId);
         const employee = employees.find(e => e.id === employeeId);
 
+        // Get photo if available
+        const photoUrl = employeePhotoCache[employeeId];
+        const initials = getInitials(employee?.first_name, employee?.last_name);
+        const avatarHtml = photoUrl
+            ? `<img src="${photoUrl}" alt="${employee?.first_name}" class="employee-avatar-large-img" style="width:60px;height:60px;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${initials}</div>'">`
+            : `<div class="employee-avatar-large">${initials}</div>`;
+
         let html = `
             <div class="transfer-history-header">
-                <div class="employee-avatar-large">${getInitials(employee?.first_name, employee?.last_name)}</div>
+                ${avatarHtml}
                 <div>
                     <h3>${employee?.first_name || ''} ${employee?.last_name || ''}</h3>
                     <p>${employee?.employee_code || ''}</p>

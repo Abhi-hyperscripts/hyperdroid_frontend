@@ -1,10 +1,13 @@
 let currentUser = null;
-let isAdmin = false;
-let isSuperAdmin = false;
-let isManager = false;
 let leaveTypes = [];
 let employees = [];
 let departments = [];
+
+// Employee search dropdown state (virtual scrolling)
+let filteredEmployees = [];
+let displayedEmployeeCount = 0;
+let selectedEmployeeId = null;
+const EMPLOYEE_BATCH_SIZE = 20;
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
@@ -25,20 +28,11 @@ async function initializePage() {
             return;
         }
 
-        isSuperAdmin = currentUser.roles?.includes('SUPERADMIN');
-        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || isSuperAdmin;
-        isManager = currentUser.roles?.includes('HRMS_MANAGER');
+        // Initialize RBAC
+        hrmsRoles.init();
 
-        // Show/hide admin elements
-        if (isAdmin) {
-            document.getElementById('adminActions').style.display = 'flex';
-            document.getElementById('leaveTypesTab').style.display = 'block';
-            document.getElementById('allocateBtn').style.display = 'inline-flex';
-        }
-
-        if (isAdmin || isManager) {
-            document.getElementById('leaveRequestsTab').style.display = 'block';
-        }
+        // Apply RBAC visibility
+        applyLeaveRBAC();
 
         // Setup tabs
         setupTabs();
@@ -50,7 +44,7 @@ async function initializePage() {
             loadDepartments()
         ]);
 
-        if (isAdmin || isManager) {
+        if (hrmsRoles.canApproveLeave()) {
             await loadPendingRequests();
             await loadEmployees();
         }
@@ -68,6 +62,33 @@ async function initializePage() {
     }
 }
 
+// Apply RBAC visibility rules for leave page
+function applyLeaveRBAC() {
+    // Admin actions (Create Leave Type button)
+    const adminActions = document.getElementById('adminActions');
+    if (adminActions) {
+        adminActions.style.display = hrmsRoles.isHRAdmin() ? 'flex' : 'none';
+    }
+
+    // Leave Types tab - HR Admin only
+    const leaveTypesTab = document.getElementById('leaveTypesTab');
+    if (leaveTypesTab) {
+        leaveTypesTab.style.display = hrmsRoles.isHRAdmin() ? 'block' : 'none';
+    }
+
+    // Allocate button - HR Admin only
+    const allocateBtn = document.getElementById('allocateBtn');
+    if (allocateBtn) {
+        allocateBtn.style.display = hrmsRoles.isHRAdmin() ? 'inline-flex' : 'none';
+    }
+
+    // Leave Requests tab (approvals) - visible to managers and HR admins
+    const leaveRequestsTab = document.getElementById('leaveRequestsTab');
+    if (leaveRequestsTab) {
+        leaveRequestsTab.style.display = hrmsRoles.canApproveLeave() ? 'block' : 'none';
+    }
+}
+
 function setupTabs() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
@@ -82,7 +103,7 @@ function setupTabs() {
             document.getElementById(tabId).classList.add('active');
 
             // Load data for tab
-            if (tabId === 'leave-balance' && (isAdmin || isManager)) {
+            if (tabId === 'leave-balance' && hrmsRoles.canApproveLeave()) {
                 loadLeaveBalances();
             }
         });
@@ -110,8 +131,8 @@ async function loadLeaveTypes() {
             }
         });
 
-        // Update leave types table if admin
-        if (isAdmin) {
+        // Update leave types table if HR admin
+        if (hrmsRoles.isHRAdmin()) {
             updateLeaveTypesTable();
         }
 
@@ -226,8 +247,8 @@ async function loadPendingRequests() {
         let url = `/hrms/leave/pending-approvals`;
         const params = [];
 
-        // SUPERADMIN and HRMS_ADMIN can see ALL pending requests, not just their direct reports
-        if (isAdmin) {
+        // SUPERADMIN and HRMS_HR_ADMIN can see ALL pending requests, not just their direct reports
+        if (hrmsRoles.isHRAdmin()) {
             params.push('all=true');
         }
 
@@ -274,13 +295,13 @@ function updateLeaveRequestsTable(requests) {
 
         // Determine if current user can approve this request
         // SUPERADMIN can approve anyone (including self)
-        // HRMS_ADMIN can approve anyone except self
+        // HRMS_HR_ADMIN can approve anyone except self
         // Manager can approve only direct reports (backend handles this filtering)
         const isOwnRequest = employeeUserId === currentUser?.userId || employeeEmail === currentUser?.email;
         const canApprove = status.toLowerCase() === 'pending' && (
-            isSuperAdmin ||  // SUPERADMIN can approve anyone including self
-            (isAdmin && !isOwnRequest) ||  // HRMS_ADMIN can approve anyone except self
-            (!isAdmin && isManager)  // Manager - backend already filtered to their direct reports
+            hrmsRoles.isSuperAdmin() ||  // SUPERADMIN can approve anyone including self
+            (hrmsRoles.isHRAdmin() && !isOwnRequest) ||  // HR_ADMIN can approve anyone except self
+            (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())  // Manager - backend already filtered to their direct reports
         );
 
         return `
@@ -338,13 +359,74 @@ async function loadLeaveBalances() {
         if (department) url += `&departmentId=${department}`;
 
         const response = await api.request(url);
-        const balances = Array.isArray(response) ? response : (response?.data || []);
-        updateLeaveBalanceTable(balances);
+        const rawBalances = Array.isArray(response) ? response : (response?.data || []);
+
+        // Transform raw LeaveBalance records to aggregated format per employee
+        const aggregated = transformLeaveBalancesToAggregated(rawBalances);
+        updateLeaveBalanceTable(aggregated);
         hideLoading();
     } catch (error) {
         console.error('Error loading leave balances:', error);
         hideLoading();
     }
+}
+
+/**
+ * Transform raw LeaveBalance records from backend to aggregated format per employee.
+ * Backend returns: [{ employee_id, employee_name, leave_type_code, available_days, ... }, ...]
+ * Frontend expects: [{ employee_id, employee_name, annual_leave, sick_leave, casual_leave, ... }, ...]
+ */
+function transformLeaveBalancesToAggregated(rawBalances) {
+    if (!rawBalances || rawBalances.length === 0) return [];
+
+    // Map leave_type_code to property names for display
+    const codeToProperty = {
+        'EL': 'annual_leave',      // Earned Leave → Annual Leave
+        'BL': 'annual_leave',      // Base Leave → Annual Leave (alternative)
+        'SL': 'sick_leave',        // Sick Leave
+        'CL': 'casual_leave',      // Casual Leave
+        'CO': 'comp_off',          // Comp Off
+        'LWP': 'lop',              // Leave Without Pay
+        'LOP': 'lop',              // Loss of Pay (alias)
+        'UL': 'lop',               // Unpaid Leave
+        'PL': 'paternity_leave',   // Paternity Leave
+        'ML': 'maternity_leave'    // Maternity Leave
+    };
+
+    // Group by employee_id
+    const employeeMap = new Map();
+
+    for (const balance of rawBalances) {
+        const empId = balance.employee_id;
+
+        if (!employeeMap.has(empId)) {
+            employeeMap.set(empId, {
+                employee_id: empId,
+                employee_name: balance.employee_name || 'Unknown',
+                user_id: balance.user_id,
+                department_name: balance.department_name || '-',
+                annual_leave: '-',
+                sick_leave: '-',
+                casual_leave: '-',
+                comp_off: '-',
+                lop: '-',
+                paternity_leave: '-',
+                maternity_leave: '-'
+            });
+        }
+
+        const employee = employeeMap.get(empId);
+        const code = (balance.leave_type_code || '').toUpperCase();
+        const propName = codeToProperty[code];
+
+        if (propName) {
+            // Use available_days for display (total - used - pending)
+            const available = balance.available_days ?? balance.total_days ?? 0;
+            employee[propName] = available;
+        }
+    }
+
+    return Array.from(employeeMap.values());
 }
 
 function updateLeaveBalanceTable(balances) {
@@ -366,25 +448,36 @@ function updateLeaveBalanceTable(balances) {
         return;
     }
 
-    tbody.innerHTML = balances.map(emp => `
+    tbody.innerHTML = balances.map(emp => {
+        // Support both snake_case (backend) and camelCase property names
+        const employeeName = emp.employee_name || emp.employeeName || 'Unknown';
+        const departmentName = emp.department_name || emp.departmentName || '-';
+        const employeeId = emp.employee_id || emp.employeeId;
+        const annualLeave = emp.annual_leave ?? emp.annualLeave ?? '-';
+        const sickLeave = emp.sick_leave ?? emp.sickLeave ?? '-';
+        const casualLeave = emp.casual_leave ?? emp.casualLeave ?? '-';
+        const compOff = emp.comp_off ?? emp.compOff ?? '-';
+        const lop = emp.lop ?? '-';
+
+        return `
         <tr>
             <td class="employee-cell">
                 <div class="employee-info">
-                    <div class="avatar">${getInitials(emp.employeeName)}</div>
+                    <div class="avatar">${getInitials(employeeName)}</div>
                     <div class="details">
-                        <span class="name">${emp.employeeName}</span>
+                        <span class="name">${employeeName}</span>
                     </div>
                 </div>
             </td>
-            <td>${emp.departmentName || '-'}</td>
-            <td>${emp.annualLeave ?? '-'}</td>
-            <td>${emp.sickLeave ?? '-'}</td>
-            <td>${emp.casualLeave ?? '-'}</td>
-            <td>${emp.compOff ?? '-'}</td>
-            <td>${emp.lop ?? '-'}</td>
+            <td>${departmentName}</td>
+            <td>${annualLeave}</td>
+            <td>${sickLeave}</td>
+            <td>${casualLeave}</td>
+            <td>${compOff}</td>
+            <td>${lop}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewEmployeeBalance('${emp.employeeId}')" title="View Details">
+                    <button class="action-btn" onclick="viewEmployeeBalance('${employeeId}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
@@ -393,7 +486,7 @@ function updateLeaveBalanceTable(balances) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 function updateLeaveTypesTable() {
@@ -408,7 +501,7 @@ function updateLeaveTypesTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="8">
+                <td colspan="9">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -431,6 +524,7 @@ function updateLeaveTypesTable() {
             <td>${type.carry_forward_enabled ? 'Yes' : 'No'}</td>
             <td>${type.max_carry_forward_days || '-'}</td>
             <td>${type.is_paid ? 'Yes' : 'No'}</td>
+            <td>${type.prorate_on_joining ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${type.is_active ? 'active' : 'inactive'}">${type.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
@@ -473,15 +567,206 @@ async function loadEmployees() {
         const response = await api.request('/hrms/employees');
         employees = response || [];
 
-        const select = document.getElementById('allocEmployee');
-        if (select) {
-            select.innerHTML = '<option value="">Select Employee</option>';
-            employees.forEach(emp => {
-                select.innerHTML += `<option value="${emp.id}">${emp.firstName} ${emp.lastName}</option>`;
-            });
-        }
+        // Initialize the searchable dropdown
+        filteredEmployees = [...employees];
+        displayedEmployeeCount = 0;
+        selectedEmployeeId = null;
+
+        // Display employees in the searchable list
+        displayEmployeeList(filteredEmployees, false);
+        setupEmployeeListScroll();
     } catch (error) {
         console.error('Error loading employees:', error);
+        const list = document.getElementById('employeeSearchList');
+        if (list) {
+            list.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Failed to load employees</p>';
+        }
+    }
+}
+
+// ===== Searchable Employee Dropdown Functions =====
+
+function toggleEmployeeDropdown() {
+    const dropdown = document.getElementById('employeeSearchDropdown');
+    dropdown.classList.toggle('open');
+
+    if (dropdown.classList.contains('open')) {
+        document.getElementById('employeeSearchInput').focus();
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeEmployeeDropdownOnOutsideClick);
+        }, 0);
+    } else {
+        document.removeEventListener('click', closeEmployeeDropdownOnOutsideClick);
+    }
+}
+
+function closeEmployeeDropdownOnOutsideClick(e) {
+    const dropdown = document.getElementById('employeeSearchDropdown');
+    if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.removeEventListener('click', closeEmployeeDropdownOnOutsideClick);
+    }
+}
+
+function resetEmployeeDropdown() {
+    const selectedText = document.querySelector('.employee-search-selected .selected-employee-text');
+    if (selectedText) {
+        selectedText.textContent = 'Select an employee...';
+        selectedText.classList.add('placeholder');
+    }
+    const searchInput = document.getElementById('employeeSearchInput');
+    if (searchInput) searchInput.value = '';
+    const clearBtn = document.getElementById('clearEmployeeSearchBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const dropdown = document.getElementById('employeeSearchDropdown');
+    if (dropdown) dropdown.classList.remove('open');
+
+    // Reset hidden input
+    const hiddenInput = document.getElementById('allocEmployee');
+    if (hiddenInput) hiddenInput.value = '';
+
+    selectedEmployeeId = null;
+    filteredEmployees = [...employees];
+    displayedEmployeeCount = 0;
+    displayEmployeeList(filteredEmployees, false);
+}
+
+function filterEmployeeList() {
+    const searchTerm = document.getElementById('employeeSearchInput').value.toLowerCase();
+    const clearBtn = document.getElementById('clearEmployeeSearchBtn');
+
+    clearBtn.style.display = searchTerm ? 'flex' : 'none';
+
+    filteredEmployees = employees.filter(emp => {
+        const firstName = (emp.first_name || emp.firstName || '').toLowerCase();
+        const lastName = (emp.last_name || emp.lastName || '').toLowerCase();
+        const email = (emp.email || '').toLowerCase();
+        const deptName = (emp.department_name || emp.departmentName || '').toLowerCase();
+
+        return firstName.includes(searchTerm) ||
+               lastName.includes(searchTerm) ||
+               email.includes(searchTerm) ||
+               deptName.includes(searchTerm);
+    });
+
+    displayedEmployeeCount = 0;
+    displayEmployeeList(filteredEmployees, false);
+}
+
+function clearEmployeeSearch() {
+    document.getElementById('employeeSearchInput').value = '';
+    document.getElementById('clearEmployeeSearchBtn').style.display = 'none';
+    filteredEmployees = [...employees];
+    displayedEmployeeCount = 0;
+    displayEmployeeList(filteredEmployees, false);
+}
+
+function displayEmployeeList(empList, append = false) {
+    const list = document.getElementById('employeeSearchList');
+    const countDisplay = document.getElementById('employeeCountDisplay');
+
+    if (!list) return;
+
+    const totalEmployees = employees.length;
+    const filteredCount = empList.length;
+    countDisplay.textContent = filteredCount === totalEmployees
+        ? `${totalEmployees} employee${totalEmployees !== 1 ? 's' : ''}`
+        : `${filteredCount} of ${totalEmployees} employees`;
+
+    if (empList.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">No employees found</p>';
+        return;
+    }
+
+    const startIndex = append ? displayedEmployeeCount : 0;
+    const endIndex = Math.min(startIndex + EMPLOYEE_BATCH_SIZE, empList.length);
+    const batch = empList.slice(startIndex, endIndex);
+
+    const batchHTML = batch.map(emp => {
+        const firstName = emp.first_name || emp.firstName || '';
+        const lastName = emp.last_name || emp.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim() || 'Unknown';
+        const email = emp.email || '';
+        const deptName = emp.department_name || emp.departmentName || '';
+        const isSelected = selectedEmployeeId === emp.id;
+
+        return `
+            <div class="employee-select-item ${isSelected ? 'selected' : ''}"
+                 data-employee-id="${emp.id}"
+                 onclick="selectEmployee('${emp.id}')">
+                <div class="employee-info-compact">
+                    <span class="employee-name-compact">${fullName}</span>
+                    <div class="employee-meta-compact">
+                        <span class="employee-email-compact">${email}</span>
+                        ${deptName ? `<span class="employee-dept-compact">${deptName}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (append) {
+        const loadingIndicator = document.getElementById('employee-loading-indicator');
+        if (loadingIndicator) loadingIndicator.remove();
+        list.insertAdjacentHTML('beforeend', batchHTML);
+    } else {
+        list.innerHTML = batchHTML;
+    }
+
+    displayedEmployeeCount = endIndex;
+
+    // Show "scroll for more" indicator if there are more employees
+    if (displayedEmployeeCount < empList.length) {
+        list.insertAdjacentHTML('beforeend',
+            '<div id="employee-loading-indicator" style="text-align: center; padding: 12px; color: #999; font-size: 0.75rem;">Scroll for more...</div>');
+    }
+}
+
+function setupEmployeeListScroll() {
+    const list = document.getElementById('employeeSearchList');
+    if (!list) return;
+
+    list.onscroll = () => {
+        const scrollTop = list.scrollTop;
+        const scrollHeight = list.scrollHeight;
+        const clientHeight = list.clientHeight;
+
+        // Load more when near bottom
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            if (displayedEmployeeCount < filteredEmployees.length) {
+                displayEmployeeList(filteredEmployees, true);
+            }
+        }
+    };
+}
+
+function selectEmployee(employeeId) {
+    selectedEmployeeId = employeeId;
+    const emp = employees.find(e => e.id === employeeId);
+
+    if (emp) {
+        // Update hidden input
+        document.getElementById('allocEmployee').value = employeeId;
+
+        // Update selected text
+        const firstName = emp.first_name || emp.firstName || '';
+        const lastName = emp.last_name || emp.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim() || emp.email || 'Unknown';
+        const deptName = emp.department_name || emp.departmentName || '';
+
+        const selectedText = document.querySelector('.employee-search-selected .selected-employee-text');
+        selectedText.textContent = deptName ? `${fullName} (${deptName})` : fullName;
+        selectedText.classList.remove('placeholder');
+
+        // Update list to show selected state
+        document.querySelectorAll('.employee-search-panel .employee-select-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.employeeId === employeeId);
+        });
+
+        // Close dropdown
+        document.getElementById('employeeSearchDropdown').classList.remove('open');
+        document.removeEventListener('click', closeEmployeeDropdownOnOutsideClick);
     }
 }
 
@@ -514,6 +799,7 @@ function editLeaveType(id) {
     document.getElementById('isPaid').value = type.is_paid ? 'true' : 'false';
     document.getElementById('requiresApproval').value = type.requires_approval ? 'true' : 'false';
     document.getElementById('allowHalfDay').value = type.allow_half_day ? 'true' : 'false';
+    document.getElementById('prorateOnJoining').value = type.prorate_on_joining ? 'true' : 'false';
     document.getElementById('typeIsActive').value = type.is_active ? 'true' : 'false';
 
     document.getElementById('leaveTypeModalTitle').textContent = 'Edit Leave Type';
@@ -522,6 +808,7 @@ function editLeaveType(id) {
 
 function showAllocateLeaveModal() {
     document.getElementById('allocateLeaveForm').reset();
+    resetEmployeeDropdown();
     document.getElementById('allocateLeaveModal').classList.add('active');
 }
 
@@ -634,6 +921,7 @@ async function saveLeaveType() {
             is_paid: document.getElementById('isPaid').value === 'true',
             requires_approval: document.getElementById('requiresApproval').value === 'true',
             allow_half_day: document.getElementById('allowHalfDay').value === 'true',
+            prorate_on_joining: document.getElementById('prorateOnJoining').value === 'true',
             is_active: document.getElementById('typeIsActive').value === 'true'
         };
 
@@ -670,19 +958,42 @@ async function saveLeaveAllocation() {
 
     try {
         showLoading();
+
+        const allocatedDays = parseFloat(document.getElementById('allocDays').value);
+        const carryForwardDays = parseFloat(document.getElementById('allocCarryForward').value) || 0;
+        const notes = document.getElementById('allocNotes').value;
+
+        // Build request for the balances/adjust endpoint
         const data = {
-            employeeId: document.getElementById('allocEmployee').value,
-            leaveTypeId: document.getElementById('allocLeaveType').value,
+            employee_id: document.getElementById('allocEmployee').value,
+            leave_type_id: document.getElementById('allocLeaveType').value,
             year: parseInt(document.getElementById('allocYear').value),
-            allocatedDays: parseFloat(document.getElementById('allocDays').value),
-            carryForwardDays: parseFloat(document.getElementById('allocCarryForward').value) || 0,
-            notes: document.getElementById('allocNotes').value
+            days: allocatedDays,
+            adjustment_type: 'credit',
+            reason: notes || 'Manual allocation by HR'
         };
 
-        await api.request('/hrms/leave-balances/allocate', {
+        await api.request('/hrms/leave-types/balances/adjust', {
             method: 'POST',
             body: JSON.stringify(data)
         });
+
+        // If carry forward days are specified, make a second request
+        if (carryForwardDays > 0) {
+            const carryForwardData = {
+                employee_id: document.getElementById('allocEmployee').value,
+                leave_type_id: document.getElementById('allocLeaveType').value,
+                year: parseInt(document.getElementById('allocYear').value),
+                days: carryForwardDays,
+                adjustment_type: 'carry_forward',
+                reason: notes || 'Carry forward allocation by HR'
+            };
+
+            await api.request('/hrms/leave-types/balances/adjust', {
+                method: 'POST',
+                body: JSON.stringify(carryForwardData)
+            });
+        }
 
         closeModal('allocateLeaveModal');
         showToast('Leave allocated successfully', 'success');
@@ -742,68 +1053,327 @@ async function viewLeaveDetails(requestId) {
         showLoading();
         const leave = await api.request(`/hrms/leave/requests/${requestId}`);
 
+        // Support both snake_case (backend) and camelCase property names
+        const employeeName = leave.employee_name || leave.employeeName || 'N/A';
+        const leaveTypeName = leave.leave_type_name || leave.leaveTypeName || 'N/A';
+        const fromDate = leave.start_date || leave.fromDate;
+        const toDate = leave.end_date || leave.toDate;
+        const numberOfDays = leave.total_days || leave.numberOfDays || 'N/A';
+        const halfDayType = leave.half_day_type || leave.halfDayType || null;
+        const reason = leave.reason || '';
+        const status = leave.status || 'pending';
+        const appliedOn = leave.created_at || leave.appliedOn;
+        const approvedBy = leave.approved_by || leave.approvedBy;
+        const approverName = leave.approver_name || leave.approverName;
+        const approvedOn = leave.approved_at || leave.approvedOn;
+        const comments = leave.rejection_reason || leave.comments;
+        const contactDuringLeave = leave.contact_during_leave || leave.contactDuringLeave;
+
         document.getElementById('leaveDetails').innerHTML = `
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <label>Employee</label>
-                    <span>${leave.employeeName || 'N/A'}</span>
+            <div class="leave-detail-card">
+                <div class="leave-detail-header">
+                    <div class="leave-type-badge">${leaveTypeName}</div>
+                    <span class="status-badge status-${status.toLowerCase()}">${status}</span>
                 </div>
-                <div class="detail-item">
-                    <label>Leave Type</label>
-                    <span>${leave.leaveTypeName}</span>
+
+                <div class="leave-detail-grid">
+                    <div class="leave-detail-row">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Employee</span>
+                            <span class="detail-value">${employeeName}</span>
+                        </div>
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span class="detail-value">${numberOfDays} day${numberOfDays !== 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+
+                    <div class="leave-detail-row">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">From Date</span>
+                            <span class="detail-value">${formatDate(fromDate)}</span>
+                        </div>
+                        <div class="leave-detail-item">
+                            <span class="detail-label">To Date</span>
+                            <span class="detail-value">${formatDate(toDate)}</span>
+                        </div>
+                    </div>
+
+                    <div class="leave-detail-row">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Half Day</span>
+                            <span class="detail-value">${halfDayType ? (halfDayType === 'first' ? 'First Half' : 'Second Half') : 'No'}</span>
+                        </div>
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Applied On</span>
+                            <span class="detail-value">${formatDateTime(appliedOn)}</span>
+                        </div>
+                    </div>
+
+                    <div class="leave-detail-row full-width">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Reason</span>
+                            <span class="detail-value reason-text">${reason || '-'}</span>
+                        </div>
+                    </div>
+
+                    ${contactDuringLeave ? `
+                    <div class="leave-detail-row full-width">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">Contact During Leave</span>
+                            <span class="detail-value">${contactDuringLeave}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${approvedBy ? `
+                    <div class="leave-detail-divider"></div>
+                    <div class="leave-detail-row">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">${status.toLowerCase() === 'approved' ? 'Approved' : 'Reviewed'} By</span>
+                            <span class="detail-value">${approverName || approvedBy}</span>
+                        </div>
+                        <div class="leave-detail-item">
+                            <span class="detail-label">${status.toLowerCase() === 'approved' ? 'Approved' : 'Reviewed'} On</span>
+                            <span class="detail-value">${formatDateTime(approvedOn)}</span>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${comments ? `
+                    <div class="leave-detail-row full-width">
+                        <div class="leave-detail-item">
+                            <span class="detail-label">${status.toLowerCase() === 'rejected' ? 'Rejection Reason' : 'Comments'}</span>
+                            <span class="detail-value reason-text">${comments}</span>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
-                <div class="detail-item">
-                    <label>From Date</label>
-                    <span>${formatDate(leave.fromDate)}</span>
-                </div>
-                <div class="detail-item">
-                    <label>To Date</label>
-                    <span>${formatDate(leave.toDate)}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Number of Days</label>
-                    <span>${leave.numberOfDays}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Half Day</label>
-                    <span>${leave.halfDayType || 'No'}</span>
-                </div>
-                <div class="detail-item full-width">
-                    <label>Reason</label>
-                    <span>${leave.reason}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Status</label>
-                    <span class="status-badge status-${leave.status?.toLowerCase()}">${leave.status}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Applied On</label>
-                    <span>${formatDateTime(leave.appliedOn)}</span>
-                </div>
-                ${leave.approvedBy ? `
-                <div class="detail-item">
-                    <label>Approved By</label>
-                    <span>${leave.approverName || leave.approvedBy}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Approved On</label>
-                    <span>${formatDateTime(leave.approvedOn)}</span>
-                </div>
-                ` : ''}
-                ${leave.comments ? `
-                <div class="detail-item full-width">
-                    <label>Comments</label>
-                    <span>${leave.comments}</span>
-                </div>
-                ` : ''}
             </div>
         `;
+
+        // Show/hide the View Calculation button based on whether calculation log is available
+        const footer = document.getElementById('leaveDetailsFooter');
+        const hasCalculationLog = leave.day_calculation_log && (
+            leave.day_calculation_log.daily_breakdown?.length > 0 ||
+            leave.day_calculation_log.dailyBreakdown?.length > 0
+        );
+
+        if (hasCalculationLog) {
+            footer.style.display = 'flex';
+            footer.innerHTML = `
+                <button type="button" class="btn btn-outline" onclick="viewLeaveCalculationBreakdown('${leave.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    View Calculation Details
+                </button>
+            `;
+        } else {
+            footer.style.display = 'none';
+        }
 
         document.getElementById('viewLeaveModal').classList.add('active');
         hideLoading();
     } catch (error) {
         console.error('Error loading leave details:', error);
         showToast('Failed to load leave details', 'error');
+        hideLoading();
+    }
+}
+
+async function viewLeaveCalculationBreakdown(requestId) {
+    try {
+        showLoading();
+        const leave = await api.request(`/hrms/leave/requests/${requestId}`);
+
+        const log = leave.day_calculation_log;
+        if (!log) {
+            showToast('No calculation details available for this leave request', 'info');
+            hideLoading();
+            return;
+        }
+
+        // Support both snake_case and camelCase
+        const totalDays = log.total_days ?? log.totalDays ?? 0;
+        const workingDays = log.working_days ?? log.workingDays ?? 0;
+        const weekendDays = log.weekend_days ?? log.weekendDays ?? 0;
+        const holidayDays = log.holiday_days ?? log.holidayDays ?? 0;
+        const hasMultipleOffices = log.has_multiple_offices ?? log.hasMultipleOffices ?? false;
+        const dailyBreakdown = log.daily_breakdown ?? log.dailyBreakdown ?? [];
+
+        // Update summary stats
+        document.getElementById('calcTotalDays').textContent = totalDays;
+        document.getElementById('calcWorkingDays').textContent = workingDays;
+        document.getElementById('calcWeekendDays').textContent = weekendDays;
+        document.getElementById('calcHolidayDays').textContent = holidayDays;
+
+        // Show multi-location indicator if applicable
+        document.getElementById('multiLocationIndicator').style.display = hasMultipleOffices ? 'flex' : 'none';
+
+        // Render day-by-day breakdown
+        const calendarEl = document.getElementById('calculationCalendar');
+
+        if (dailyBreakdown.length === 0) {
+            calendarEl.innerHTML = '<p class="no-data-message">No day-by-day breakdown available</p>';
+        } else {
+            calendarEl.innerHTML = dailyBreakdown.map(day => {
+                const date = day.date;
+                const isWeekend = day.is_weekend ?? day.isWeekend ?? false;
+                const isHoliday = day.is_holiday ?? day.isHoliday ?? false;
+                const isWorkingDay = day.is_working_day ?? day.isWorkingDay ?? false;
+                const reason = day.reason ?? '';
+                const officeName = day.office_name ?? day.officeName ?? '';
+                const shiftName = day.shift_name ?? day.shiftName ?? '';
+                const effectiveWeekendDays = day.effective_weekend_days ?? day.effectiveWeekendDays ?? [];
+
+                let dayClass = '';
+                if (isWorkingDay) dayClass = 'working';
+                else if (isHoliday) dayClass = 'holiday';
+                else if (isWeekend) dayClass = 'weekend';
+
+                return `
+                    <div class="calc-day ${dayClass}">
+                        <div class="day-date">${formatShortDate(date)}</div>
+                        <div class="day-name">${getDayName(date)}</div>
+                        <div class="day-status">${isWorkingDay ? '✓ Counted' : '✗ Not Counted'}</div>
+                        <div class="day-reason">${escapeHtml(reason) || (isHoliday ? 'Holiday' : (isWeekend ? 'Weekend' : ''))}</div>
+                        <div class="day-details">
+                            ${officeName ? `<small>Office: ${escapeHtml(officeName)}</small>` : ''}
+                            ${shiftName ? `<small>Shift: ${escapeHtml(shiftName)}</small>` : ''}
+                            ${effectiveWeekendDays.length > 0 ? `<small>Weekend: ${effectiveWeekendDays.join(', ')}</small>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Close the details modal and open the calculation modal
+        closeModal('viewLeaveModal');
+        document.getElementById('leaveCalculationModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading calculation breakdown:', error);
+        showToast('Failed to load calculation details', 'error');
+        hideLoading();
+    }
+}
+
+function formatShortDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function getDayName(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+}
+
+async function viewEmployeeBalance(employeeId) {
+    try {
+        showLoading();
+        const year = document.getElementById('balanceYear')?.value || new Date().getFullYear();
+
+        // Fetch employee's leave balances
+        const response = await api.request(`/hrms/leave-types/balances?year=${year}&employeeId=${employeeId}`);
+        const balances = Array.isArray(response) ? response : (response?.data || []);
+
+        if (balances.length === 0) {
+            showToast('No leave balance data found for this employee', 'info');
+            hideLoading();
+            return;
+        }
+
+        // Get employee info from first balance record
+        const employeeName = balances[0]?.employee_name || 'Unknown Employee';
+        const departmentName = balances[0]?.department_name || '-';
+
+        // Build balance cards HTML
+        const balanceCardsHtml = balances.map(balance => {
+            const leaveTypeName = balance.leave_type_name || balance.leaveTypeName || 'Unknown';
+            const leaveTypeCode = balance.leave_type_code || balance.leaveTypeCode || '';
+            const totalDays = balance.total_days ?? balance.totalDays ?? 0;
+            const usedDays = balance.used_days ?? balance.usedDays ?? 0;
+            const pendingDays = balance.pending_days ?? balance.pendingDays ?? 0;
+            const availableDays = balance.available_days ?? balance.availableDays ?? (totalDays - usedDays - pendingDays);
+            const carryForward = balance.carry_forward_days ?? balance.carryForwardDays ?? 0;
+
+            // Calculate percentage for progress bar
+            const usedPercent = totalDays > 0 ? Math.min((usedDays / totalDays) * 100, 100) : 0;
+            const pendingPercent = totalDays > 0 ? Math.min((pendingDays / totalDays) * 100, 100) : 0;
+
+            return `
+                <div class="balance-card">
+                    <div class="balance-card-header">
+                        <span class="leave-type-name">${leaveTypeName}</span>
+                        <span class="leave-type-code">${leaveTypeCode}</span>
+                    </div>
+                    <div class="balance-card-body">
+                        <div class="balance-main">
+                            <span class="balance-available">${availableDays}</span>
+                            <span class="balance-total">/ ${totalDays} days</span>
+                        </div>
+                        <div class="balance-progress">
+                            <div class="progress-bar">
+                                <div class="progress-used" style="width: ${usedPercent}%"></div>
+                                <div class="progress-pending" style="width: ${pendingPercent}%; left: ${usedPercent}%"></div>
+                            </div>
+                        </div>
+                        <div class="balance-breakdown">
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Used</span>
+                                <span class="breakdown-value used">${usedDays}</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Pending</span>
+                                <span class="breakdown-value pending">${pendingDays}</span>
+                            </div>
+                            ${carryForward > 0 ? `
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Carry Fwd</span>
+                                <span class="breakdown-value carry">${carryForward}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Check if employee has profile photo
+        const userId = balances[0]?.user_id;
+        const profilePhotoUrl = userId ? `${CONFIG.authApiBaseUrl}/api/users/${userId}/photo` : null;
+
+        document.getElementById('employeeBalanceDetails').innerHTML = `
+            <div class="employee-balance-card compact">
+                <div class="employee-balance-header compact">
+                    ${profilePhotoUrl ?
+                        `<img src="${profilePhotoUrl}" class="employee-avatar-img-modal" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt="${employeeName}">
+                         <div class="employee-avatar-modal" style="display:none;">${getInitials(employeeName)}</div>` :
+                        `<div class="employee-avatar-modal">${getInitials(employeeName)}</div>`
+                    }
+                    <div class="employee-info-modal">
+                        <span class="employee-name-modal">${employeeName}</span>
+                        <span class="department-badge-modal">${departmentName}</span>
+                    </div>
+                    <div class="year-badge-modal">${year}</div>
+                </div>
+                <div class="balance-cards-grid compact">
+                    ${balanceCardsHtml}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('viewEmployeeBalanceModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading employee balance:', error);
+        showToast('Failed to load employee balance details', 'error');
         hideLoading();
     }
 }
@@ -854,12 +1424,7 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // Search handlers
 document.getElementById('leaveTypeSearch')?.addEventListener('input', updateLeaveTypesTable);

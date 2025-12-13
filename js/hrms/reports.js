@@ -1,6 +1,5 @@
 // Reports Page JavaScript
 let currentUser = null;
-let isAdmin = false;
 let currentReportType = null;
 let reportData = [];
 let offices = [];
@@ -142,7 +141,18 @@ async function initializePage() {
             return;
         }
 
-        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || currentUser.roles?.includes('SUPERADMIN');
+        // Initialize RBAC
+        hrmsRoles.init();
+
+        // Check page access - only HR users, managers, and admins can access reports
+        if (!hrmsRoles.canAccessReports()) {
+            showToast('You do not have access to the Reports page', 'error');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // Apply RBAC visibility
+        applyReportsRBAC();
 
         // Set default dates
         const today = new Date();
@@ -160,6 +170,26 @@ async function initializePage() {
         console.error('Error initializing page:', error);
         showToast('Failed to load page data', 'error');
         hideLoading();
+    }
+}
+
+// Apply RBAC visibility rules for reports page
+function applyReportsRBAC() {
+    // Export buttons - only HR Admin can export
+    const exportBtns = document.querySelectorAll('.export-btn, [onclick*="exportReport"]');
+    exportBtns.forEach(btn => {
+        if (!hrmsRoles.isHRAdmin()) {
+            btn.style.display = 'none';
+        }
+    });
+
+    // Manager users see only team-relevant reports - hide certain report categories
+    if (hrmsRoles.isManager() && !hrmsRoles.isHRUser() && !hrmsRoles.isHRAdmin()) {
+        // Hide payroll reports for managers (they shouldn't see salary data)
+        const payrollSection = document.getElementById('payroll-reports');
+        if (payrollSection) {
+            payrollSection.style.display = 'none';
+        }
     }
 }
 
@@ -583,9 +613,4 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
+// Local showToast removed - using unified toast.js instead

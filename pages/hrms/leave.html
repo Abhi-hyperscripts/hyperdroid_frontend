@@ -266,13 +266,14 @@
                             <th>Carry Forward</th>
                             <th>Max Carry</th>
                             <th>Paid</th>
+                            <th>Prorated</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="leaveTypesTable">
                         <tr class="empty-state">
-                            <td colspan="8">
+                            <td colspan="9">
                                 <div class="empty-message">
                                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -354,7 +355,6 @@
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('applyLeaveModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="submitLeaveApplication()">Submit Application</button>
                 </div>
             </div>
@@ -442,6 +442,16 @@
                                 </select>
                             </div>
                             <div class="form-group">
+                                <label for="prorateOnJoining">Prorate on Joining</label>
+                                <select id="prorateOnJoining" name="prorateOnJoining" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                                <small class="form-text text-muted">If Yes, mid-year joiners get prorated leaves based on weeks remaining</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="typeIsActive">Status</label>
                                 <select id="typeIsActive" name="isActive" class="form-control">
                                     <option value="true">Active</option>
@@ -453,7 +463,6 @@
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveTypeModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveLeaveType()">Save Leave Type</button>
                 </div>
             </div>
@@ -478,10 +487,37 @@
                     <div class="form-section">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="allocEmployee">Employee *</label>
-                                <select id="allocEmployee" name="employeeId" class="form-control" required>
-                                    <option value="">Select Employee</option>
-                                </select>
+                                <label>Employee <span class="required">*</span></label>
+                                <input type="hidden" id="allocEmployee" name="employeeId" required>
+                                <div class="employee-search-dropdown" id="employeeSearchDropdown">
+                                    <div class="employee-search-selected" id="employeeSearchSelected" onclick="toggleEmployeeDropdown()">
+                                        <span class="selected-employee-text">Select an employee...</span>
+                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="employee-search-panel" id="employeeSearchPanel">
+                                        <div class="search-box-modern">
+                                            <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="m21 21-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" id="employeeSearchInput" placeholder="Search by name or email..." oninput="filterEmployeeList()">
+                                            <button type="button" class="clear-search-btn" id="clearEmployeeSearchBtn" style="display: none;" onclick="clearEmployeeSearch()">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="employee-list-header">
+                                            <span id="employeeCountDisplay">0 employees</span>
+                                        </div>
+                                        <div id="employeeSearchList" class="employees-list-modern">
+                                            <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading employees...</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-row two-col">
@@ -519,7 +555,6 @@
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('allocateLeaveModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveLeaveAllocation()">Allocate Leave</button>
                 </div>
             </div>
@@ -551,7 +586,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('leaveActionModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" id="confirmActionBtn" onclick="confirmLeaveAction()">Confirm</button>
                 </div>
             </div>
@@ -560,7 +594,7 @@
 
     <!-- View Leave Details Modal -->
     <div class="modal" id="viewLeaveModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Leave Request Details</h5>
@@ -576,8 +610,89 @@
                         <!-- Filled dynamically -->
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('viewLeaveModal')">Close</button>
+                <div class="modal-footer" id="leaveDetailsFooter" style="display: none;">
+                    <!-- View Calculation button added dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Calculation Breakdown Modal -->
+    <div class="modal" id="leaveCalculationModal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Leave Calculation Breakdown</h5>
+                    <button class="close-btn" onclick="closeModal('leaveCalculationModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Summary Stats -->
+                    <div class="calculation-summary">
+                        <div class="calc-stat">
+                            <span class="calc-value" id="calcTotalDays">0</span>
+                            <span class="calc-label">Total Days</span>
+                        </div>
+                        <div class="calc-stat working">
+                            <span class="calc-value" id="calcWorkingDays">0</span>
+                            <span class="calc-label">Working Days</span>
+                        </div>
+                        <div class="calc-stat weekend">
+                            <span class="calc-value" id="calcWeekendDays">0</span>
+                            <span class="calc-label">Weekend Days</span>
+                        </div>
+                        <div class="calc-stat holiday">
+                            <span class="calc-value" id="calcHolidayDays">0</span>
+                            <span class="calc-label">Holiday Days</span>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Location Indicator -->
+                    <div id="multiLocationIndicator" class="multi-location-alert" style="display:none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>This leave spans multiple offices with different weekend policies</span>
+                    </div>
+
+                    <!-- Day-by-Day Calendar Grid -->
+                    <div class="calculation-calendar" id="calculationCalendar">
+                        <!-- Days rendered by JS -->
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="calculation-legend">
+                        <span class="legend-item"><span class="dot working"></span> Working Day (Counted)</span>
+                        <span class="legend-item"><span class="dot weekend"></span> Weekend (Not Counted)</span>
+                        <span class="legend-item"><span class="dot holiday"></span> Holiday (Not Counted)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Employee Balance Modal -->
+    <div class="modal" id="viewEmployeeBalanceModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Employee Leave Balance</h5>
+                    <button class="close-btn" onclick="closeModal('viewEmployeeBalanceModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="employeeBalanceDetails">
+                        <!-- Filled dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -593,6 +708,8 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/leave.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Chart - HRMS</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-ess.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="ess-container">
+        <h1 class="page-title">Organization Chart</h1>
+
+        <div class="org-chart-container">
+            <div class="org-chart-toolbar">
+                <div class="org-chart-search">
+                    <input type="text" id="searchInput" placeholder="Search employee..." oninput="debounceSearch()">
+                </div>
+                <div class="org-chart-actions">
+                    <button class="org-chart-btn" onclick="expandAll()">Expand All</button>
+                    <button class="org-chart-btn" onclick="collapseAll()">Collapse All</button>
+                    <button class="org-chart-btn" onclick="resetChart()">Reset</button>
+                </div>
+            </div>
+
+            <div class="org-tree" id="orgTree">
+                <div class="ess-loading">
+                    <div class="spinner"></div>
+                    <span>Loading organization chart...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ess-back-link">
+            <a href="self-service.html" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Back to Self-Service
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Detail Modal -->
+    <div class="modal-overlay" id="employeeModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Employee Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="employeeDetails" class="employee-details"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/org-chart.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

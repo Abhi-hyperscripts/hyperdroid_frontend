@@ -1,6 +1,3 @@
-let userRole = 'HRMS_USER';
-let isSuperAdmin = false;
-let isAdmin = false;
 let currentUser = null;
 let pendingRejectionId = null;
 
@@ -12,25 +9,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('hrms', '../');
 
+    // Initialize RBAC
+    hrmsRoles.init();
     currentUser = api.getUser();
-    if (currentUser && currentUser.roles) {
-        isSuperAdmin = currentUser.roles.includes('SUPERADMIN');
-        isAdmin = currentUser.roles.includes('HRMS_ADMIN') || isSuperAdmin;
 
-        if (isSuperAdmin || currentUser.roles.includes('HRMS_ADMIN')) {
-            userRole = 'HRMS_ADMIN';
-        } else if (currentUser.roles.includes('HRMS_MANAGER')) {
-            userRole = 'HRMS_MANAGER';
-        }
-    }
-
-    // Show Approvals tab for admins and managers
-    if (userRole === 'HRMS_ADMIN' || userRole === 'HRMS_MANAGER') {
-        const approvalsTab = document.getElementById('approvalsTab');
-        if (approvalsTab) {
-            approvalsTab.style.display = 'inline-block';
-        }
-    }
+    // Apply RBAC visibility
+    applyAttendanceRBAC();
 
     // Set default date
     document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
@@ -45,6 +29,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadAttendance();
 });
+
+// Apply RBAC visibility rules for attendance page
+function applyAttendanceRBAC() {
+    // Daily View tab - visible to HR users, managers, admins (team/org-wide view)
+    const dailyTab = document.querySelector('[data-tab="daily"]');
+    if (dailyTab) {
+        // Users can only see My Attendance tab
+        if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin()) {
+            dailyTab.style.display = 'none';
+        }
+    }
+
+    // Approvals tab - visible to managers and HR admins
+    const approvalsTab = document.getElementById('approvalsTab');
+    if (approvalsTab) {
+        if (hrmsRoles.canApproveAttendance()) {
+            approvalsTab.style.display = 'inline-block';
+        } else {
+            approvalsTab.style.display = 'none';
+        }
+    }
+
+    // If user is basic HRMS_USER, switch to My Attendance tab by default
+    if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin()) {
+        switchTab('myAttendance');
+    }
+}
 
 function switchTab(tabName) {
     document.querySelectorAll('.hrms-tab').forEach(t => t.classList.remove('active'));
@@ -218,8 +229,8 @@ async function loadPendingApprovals() {
     tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        // SUPERADMIN and HRMS_ADMIN can see ALL pending requests
-        const pending = await api.getPendingRegularizations(isAdmin);
+        // SUPERADMIN and HRMS_HR_ADMIN can see ALL pending requests
+        const pending = await api.getPendingRegularizations(hrmsRoles.isHRAdmin());
 
         if (!pending || pending.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No pending regularization requests</p></td></tr>';
@@ -230,9 +241,9 @@ async function loadPendingApprovals() {
             // Determine if current user can approve this request
             const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
             const canApprove = (
-                isSuperAdmin ||  // SUPERADMIN can approve anyone including self
-                (isAdmin && !isOwnRequest) ||  // HRMS_ADMIN can approve anyone except self
-                (!isAdmin && userRole === 'HRMS_MANAGER')  // Manager - backend filters to direct reports
+                hrmsRoles.isSuperAdmin() ||  // SUPERADMIN can approve anyone including self
+                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||  // HR_ADMIN can approve anyone except self
+                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())  // Manager - backend filters to direct reports
             );
 
             return `
@@ -394,19 +405,4 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
-        </svg>
-        ${message}
-    `;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+// Local showToast removed - using unified toast.js instead

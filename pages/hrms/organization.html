@@ -40,6 +40,7 @@
             <button class="tab-btn" data-tab="departments">Departments</button>
             <button class="tab-btn" data-tab="designations">Designations</button>
             <button class="tab-btn" data-tab="shifts">Shifts</button>
+            <button class="tab-btn" data-tab="shift-rosters">Shift Rosters</button>
             <button class="tab-btn" data-tab="holidays">Holidays</button>
         </div>
 
@@ -150,7 +151,7 @@
                             <th>Department Name</th>
                             <th>Code</th>
                             <th>Office</th>
-                            <th>Head</th>
+                            <th>Designations</th>
                             <th>Employees</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -206,7 +207,7 @@
                             <th>Department</th>
                             <th>Category</th>
                             <th>Level</th>
-                            <th>Manager</th>
+                            <th>Roles</th>
                             <th>Employees</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -264,19 +265,80 @@
                             <th>Office</th>
                             <th>Timing</th>
                             <th>Working Hours</th>
+                            <th>Weekend Days</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="shiftsTable">
                         <tr class="empty-state">
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="empty-message">
                                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
                                     <p>No shifts configured</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Shift Rosters Tab -->
+        <div class="tab-content" id="shift-rosters">
+            <div class="filters-bar">
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="rosterSearch" placeholder="Search employee...">
+                </div>
+                <div class="filter-group">
+                    <select id="rosterOffice" class="form-select">
+                        <option value="">All Offices</option>
+                    </select>
+                    <select id="rosterShift" class="form-select">
+                        <option value="">All Shifts</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="showCreateRosterModal()" id="createRosterBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Assign Roster
+                </button>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Shift</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Weekend Days</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rostersTable">
+                        <tr class="empty-state">
+                            <td colspan="8">
+                                <div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <p>No shift rosters configured</p>
                                 </div>
                             </td>
                         </tr>
@@ -427,11 +489,17 @@
                                 <input type="email" id="officeEmail" name="email" class="form-control" required placeholder="office@company.com">
                             </div>
                             <div class="form-group">
-                                <label for="officeIsActive">Status *</label>
-                                <select id="officeIsActive" name="isActive" class="form-control" required>
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
+                                <div class="status-toggle-row">
+                                    <label>Status</label>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">Inactive</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="officeIsActive" name="isActive" checked>
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Active</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-row three-col">
@@ -452,7 +520,6 @@
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('officeModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveOffice()">Save Office</button>
                 </div>
             </div>
@@ -503,18 +570,23 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="departmentIsActive">Status</label>
-                                    <select id="departmentIsActive" name="isActive" class="form-control">
-                                        <option value="true">Active</option>
-                                        <option value="false">Inactive</option>
-                                    </select>
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="departmentIsActive" name="isActive" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('departmentModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save Department</button>
                 </div>
             </div>
@@ -555,31 +627,77 @@
                                     <input type="number" id="desigLevel" name="level" class="form-control" min="1" max="20" value="1">
                                 </div>
                             </div>
-                            <div class="form-row two-col">
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="desigRoleCategory">Role Category</label>
-                                    <select id="desigRoleCategory" name="roleCategory" class="form-control">
-                                        <option value="">Select Category</option>
-                                        <option value="Executive">Executive</option>
-                                        <option value="Technical">Technical</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Finance">Finance</option>
-                                        <option value="Sales">Sales</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="Operations">Operations</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Support">Support</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="desigIsManager">Manager Position</label>
-                                    <div class="switch-container" style="margin-top: 8px;">
-                                        <label class="switch">
-                                            <input type="checkbox" id="desigIsManager" name="isManager">
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <span class="switch-label" id="desigIsManagerLabel">No</span>
+                                    <label>Default HRMS Roles</label>
+                                    <small class="form-text" style="margin-bottom: 8px;">Select the roles that employees with this designation will automatically receive.</small>
+                                    <div class="hrms-roles-grid">
+                                        <div class="role-category-group">
+                                            <div class="role-category-label">Organizational Roles</div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">USER</span>
+                                                    <span class="role-desc">Basic self-service access (always assigned)</span>
+                                                </div>
+                                                <label class="role-toggle disabled">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_USER" checked disabled>
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">MANAGER</span>
+                                                    <span class="role-desc">Approve team leaves & attendance</span>
+                                                </div>
+                                                <label class="role-toggle">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_MANAGER" id="roleHrmsManager">
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">ADMIN</span>
+                                                    <span class="role-desc">Full administrative access</span>
+                                                </div>
+                                                <label class="role-toggle">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_ADMIN" id="roleHrmsAdmin">
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="role-category-group">
+                                            <div class="role-category-label">HR Department Roles</div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">HR_USER</span>
+                                                    <span class="role-desc">Basic HR read access</span>
+                                                </div>
+                                                <label class="role-toggle">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_USER" id="roleHrmsHrUser">
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">HR_ADMIN</span>
+                                                    <span class="role-desc">Full HR operations (employee CRUD, transfers)</span>
+                                                </div>
+                                                <label class="role-toggle">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_ADMIN" id="roleHrmsHrAdmin">
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                            <div class="role-toggle-item">
+                                                <div class="role-toggle-info">
+                                                    <span class="role-name">HR_MANAGER</span>
+                                                    <span class="role-desc">HR department manager</span>
+                                                </div>
+                                                <label class="role-toggle">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_MANAGER" id="roleHrmsHrManager">
+                                                    <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -591,18 +709,23 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="designationIsActive">Status</label>
-                                    <select id="designationIsActive" name="isActive" class="form-control">
-                                        <option value="true">Active</option>
-                                        <option value="false">Inactive</option>
-                                    </select>
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="designationIsActive" name="isActive" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('designationModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveDesignation()">Save Designation</button>
                 </div>
             </div>
@@ -698,18 +821,23 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="shiftIsActive">Status</label>
-                                    <select id="shiftIsActive" name="isActive" class="form-control">
-                                        <option value="true">Active</option>
-                                        <option value="false">Inactive</option>
-                                    </select>
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="shiftIsActive" name="isActive" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('shiftModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveShift()">Save Shift</button>
                 </div>
             </div>
@@ -769,8 +897,84 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('holidayModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveHoliday()">Save Holiday</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Roster Modal -->
+    <div id="rosterModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rosterModalTitle">Assign Shift Roster</h5>
+                    <button class="close-btn" onclick="closeModal('rosterModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rosterForm">
+                        <input type="hidden" id="rosterId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="rosterEmployee">Employee *</label>
+                                    <select id="rosterEmployee" name="employee_id" class="form-control" required>
+                                        <option value="">Select Employee</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rosterShiftId">Shift *</label>
+                                    <select id="rosterShiftId" name="shift_id" class="form-control" required>
+                                        <option value="">Select Shift</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="rosterStartDate">Start Date *</label>
+                                    <input type="date" id="rosterStartDate" name="start_date" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rosterEndDate">End Date</label>
+                                    <input type="date" id="rosterEndDate" name="end_date" class="form-control">
+                                    <small class="form-text">Leave empty for ongoing assignment</small>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="rosterType">Roster Type</label>
+                                    <select id="rosterType" name="roster_type" class="form-control">
+                                        <option value="scheduled">Scheduled</option>
+                                        <option value="temporary">Temporary</option>
+                                        <option value="swap">Swap</option>
+                                        <option value="override">Override</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rosterNotes">Notes</label>
+                                    <input type="text" id="rosterNotes" name="notes" class="form-control" placeholder="Optional notes">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="rosterIsActive" name="is_active" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
                 </div>
             </div>
         </div>
@@ -786,6 +990,8 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/organization.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
@@ -864,6 +1070,251 @@
 
         .holidays-calendar {
             margin-bottom: 24px;
+        }
+
+        /* HRMS Roles Grid Styles */
+        .hrms-roles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .role-category-group {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .role-category-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Role Toggle Item - container for each role */
+        .role-toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .role-toggle-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .role-toggle-item:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .role-toggle-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .role-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            display: block;
+        }
+
+        .role-desc {
+            font-size: 11px;
+            color: #666;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Small Toggle Switch for Roles */
+        .role-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        .role-toggle input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .role-toggle-track {
+            width: 36px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        .role-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .role-toggle input:checked + .role-toggle-track {
+            background: #333;
+        }
+
+        .role-toggle input:checked + .role-toggle-track .role-toggle-thumb {
+            transform: translateX(16px);
+        }
+
+        .role-toggle.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .role-toggle.disabled .role-toggle-track {
+            background: #333;
+        }
+
+        /* Status Toggle Styles */
+        .status-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .status-label.active {
+            color: #333;
+        }
+
+        .status-label.inactive {
+            color: #666;
+        }
+
+        .status-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .status-toggle input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .status-toggle-track {
+            width: 36px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        .status-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .status-toggle input:checked + .status-toggle-track {
+            background: #333;
+        }
+
+        .status-toggle input:checked + .status-toggle-track .status-toggle-thumb {
+            transform: translateX(16px);
+        }
+
+        /* Responsive for smaller screens */
+        @media (max-width: 768px) {
+            .hrms-roles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Role Tags for Table Display */
+        .role-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-right: 3px;
+            margin-bottom: 2px;
+        }
+
+        .role-user {
+            background: #e9ecef;
+            color: #666;
+        }
+
+        .role-manager {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .role-admin {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .role-hr {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .role-hr-admin {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .role-hr-manager {
+            background: #e2d5f3;
+            color: #5b2d90;
+        }
+
+        .role-default {
+            background: #e9ecef;
+            color: #495057;
         }
     </style>
 

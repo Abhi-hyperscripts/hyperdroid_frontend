@@ -9,13 +9,18 @@ function escapeHtml(text) {
 }
 
 let currentUser = null;
-let isAdmin = false;
 let offices = [];
 let departments = [];
-let designations = [];
+let allDesignations = [];  // Renamed from 'designations' to avoid DOM ID conflict
 let shifts = [];
+let shiftRosters = [];
 let holidays = [];
 let employees = [];
+
+// Helper to check if user can edit (HR Admin)
+function canEditOrganization() {
+    return hrmsRoles.canEditOrganization();
+}
 
 // Convert time string from "9:00 AM" or "09:00 AM" format to "HH:mm:ss" (24-hour TimeSpan format)
 function convertTo24HourFormat(timeStr) {
@@ -78,6 +83,17 @@ async function initializePage() {
             window.location.href = '../login.html';
             return;
         }
+
+        // Initialize RBAC
+        hrmsRoles.init();
+
+        // Check if user has access to organization page
+        if (!hrmsRoles.canAccessOrganization()) {
+            showToast('You do not have access to the Organization page', 'error');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
         currentUser = api.getUser();
 
         if (!currentUser) {
@@ -85,7 +101,8 @@ async function initializePage() {
             return;
         }
 
-        isAdmin = currentUser.roles?.includes('HRMS_ADMIN') || currentUser.roles?.includes('SUPERADMIN');
+        // Apply RBAC visibility
+        applyOrganizationRBAC();
 
         // Setup tabs
         setupTabs();
@@ -93,12 +110,39 @@ async function initializePage() {
         // Load all data
         await loadAllData();
 
+        // Update departments table again now that designations are loaded
+        // (needed because departments table shows designation count)
+        updateDepartmentsTable();
+
         hideLoading();
     } catch (error) {
         console.error('Error initializing page:', error);
         showToast('Failed to load page data', 'error');
         hideLoading();
     }
+}
+
+/**
+ * Apply RBAC visibility to organization page elements
+ */
+function applyOrganizationRBAC() {
+    const canEdit = canEditOrganization();
+
+    // Hide all "Add" buttons if user can't edit
+    const addButtons = [
+        'createOfficeBtn', 'createDepartmentBtn', 'createDesignationBtn',
+        'createShiftBtn', 'createRosterBtn', 'createHolidayBtn'
+    ];
+
+    addButtons.forEach(btnId => {
+        hrmsRoles.setElementVisibility(btnId, canEdit);
+    });
+
+    console.log('Organization RBAC applied:', {
+        canAccessOrganization: hrmsRoles.canAccessOrganization(),
+        canEditOrganization: canEdit,
+        roles: hrmsRoles.getDebugInfo()
+    });
 }
 
 function setupTabs() {
@@ -127,10 +171,12 @@ async function loadAllData() {
         loadDepartments(),
         loadDesignations(),
         loadShifts(),
+        loadShiftRosters(),
         loadHolidays()
     ]);
 
-    if (isAdmin) {
+    // Load employees only if user can edit (for department head selection, etc.)
+    if (canEditOrganization()) {
         await loadEmployees();
     }
 }
@@ -294,12 +340,18 @@ function updateDepartmentsTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(dept => `
-        <tr>
+    tbody.innerHTML = filtered.map(dept => {
+        // Count designations for this department
+        const designationCount = allDesignations.filter(d => d.department_id === dept.id).length;
+        const hasNoDesignations = designationCount === 0;
+        const rowClass = hasNoDesignations ? 'class="no-designations-warning"' : '';
+
+        return `
+        <tr ${rowClass}>
             <td><strong>${escapeHtml(dept.department_name)}</strong></td>
             <td><code>${escapeHtml(dept.department_code)}</code></td>
             <td>${escapeHtml(dept.office_name || '-')}</td>
-            <td>${escapeHtml(dept.head_name || '-')}</td>
+            <td>${hasNoDesignations ? '<span class="designation-count-zero">0 ⚠️</span>' : `<span class="designation-count">${designationCount}</span>`}</td>
             <td>${dept.employee_count || 0}</td>
             <td><span class="status-badge status-${dept.is_active ? 'active' : 'inactive'}">${dept.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -312,8 +364,8 @@ function updateDepartmentsTable() {
                     </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function populateDepartmentSelects() {
@@ -347,7 +399,7 @@ function populateDepartmentSelects() {
 async function loadDesignations() {
     try {
         const response = await api.request('/hrms/designations');
-        designations = Array.isArray(response) ? response : (response?.data || []);
+        allDesignations = Array.isArray(response) ? response : (response?.data || []);
         updateDesignationsTable();
     } catch (error) {
         console.error('Error loading designations:', error);
@@ -359,7 +411,7 @@ function updateDesignationsTable() {
     const searchTerm = document.getElementById('designationSearch')?.value?.toLowerCase() || '';
     const deptFilter = document.getElementById('designationDepartment')?.value || '';
 
-    let filtered = designations.filter(d =>
+    let filtered = allDesignations.filter(d =>
         d.designation_name?.toLowerCase().includes(searchTerm) ||
         d.designation_code?.toLowerCase().includes(searchTerm)
     );
@@ -393,7 +445,7 @@ function updateDesignationsTable() {
             <td>${escapeHtml(desig.department_name || 'All')}</td>
             <td>${escapeHtml(desig.role_category || '-')}</td>
             <td>Level ${desig.level || 1}</td>
-            <td>${desig.is_manager ? '<span class="status-badge status-active">Yes</span>' : '<span class="status-badge status-inactive">No</span>'}</td>
+            <td>${formatHrmsRoles(desig.default_hrms_roles)}</td>
             <td>${desig.employee_count || 0}</td>
             <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -437,7 +489,7 @@ function updateShiftsTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="7">
+                <td colspan="8">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -450,13 +502,17 @@ function updateShiftsTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(shift => `
+    tbody.innerHTML = filtered.map(shift => {
+        // Format weekend days for display
+        const weekendDays = formatWeekendDays(shift.weekend_days);
+        return `
         <tr>
             <td><strong>${escapeHtml(shift.shift_name)}</strong></td>
             <td><code>${escapeHtml(shift.shift_code)}</code></td>
             <td>${escapeHtml(shift.office_name || '-')}</td>
             <td>${escapeHtml(formatTime(shift.start_time))} - ${escapeHtml(formatTime(shift.end_time))}</td>
             <td>${shift.working_hours || calculateWorkingHours(shift.start_time, shift.end_time)} hrs</td>
+            <td><span class="weekend-badge">${escapeHtml(weekendDays)}</span></td>
             <td><span class="status-badge status-${shift.is_active ? 'active' : 'inactive'}">${shift.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
@@ -468,8 +524,135 @@ function updateShiftsTable() {
                     </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
+}
+
+async function loadShiftRosters() {
+    try {
+        const response = await api.request('/hrms/shifts/roster');
+        shiftRosters = Array.isArray(response) ? response : (response?.data || []);
+        updateRostersTable();
+        populateRosterFilters();
+    } catch (error) {
+        console.error('Error loading shift rosters:', error);
+    }
+}
+
+function updateRostersTable() {
+    const tbody = document.getElementById('rostersTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('rosterSearch')?.value?.toLowerCase() || '';
+    const officeFilter = document.getElementById('rosterOffice')?.value || '';
+    const shiftFilter = document.getElementById('rosterShift')?.value || '';
+
+    let filtered = shiftRosters.filter(r =>
+        r.employee_name?.toLowerCase().includes(searchTerm) ||
+        r.employee_code?.toLowerCase().includes(searchTerm) ||
+        r.shift_name?.toLowerCase().includes(searchTerm)
+    );
+
+    if (officeFilter) {
+        filtered = filtered.filter(r => r.office_id === officeFilter);
+    }
+
+    if (shiftFilter) {
+        filtered = filtered.filter(r => r.shift_id === shiftFilter);
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <p>No shift rosters configured</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(roster => {
+        const weekendDays = formatWeekendDays(roster.weekend_days);
+        const rosterTypeClass = getRosterTypeBadgeClass(roster.roster_type);
+        const employeeDisplay = roster.employee_name ?
+            `${escapeHtml(roster.employee_name)} (${escapeHtml(roster.employee_code || '')})` :
+            escapeHtml(roster.employee_code || '-');
+
+        return `
+        <tr>
+            <td><strong>${employeeDisplay}</strong></td>
+            <td>${escapeHtml(roster.shift_name || '-')}</td>
+            <td>${escapeHtml(formatDate(roster.start_date))}</td>
+            <td>${roster.end_date ? escapeHtml(formatDate(roster.end_date)) : '<span class="text-muted">Ongoing</span>'}</td>
+            <td><span class="weekend-badge">${escapeHtml(weekendDays)}</span></td>
+            <td><span class="badge ${escapeHtml(rosterTypeClass)}">${escapeHtml(formatRosterType(roster.roster_type))}</span></td>
+            <td><span class="status-badge status-${roster.is_active ? 'active' : 'inactive'}">${roster.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editRoster('${escapeHtml(roster.id)}')" data-tooltip="Edit Roster">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteRoster('${escapeHtml(roster.id)}')" data-tooltip="Delete Roster">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function populateRosterFilters() {
+    // Populate office filter
+    const officeSelect = document.getElementById('rosterOffice');
+    if (officeSelect) {
+        officeSelect.innerHTML = '<option value="">All Offices</option>';
+        offices.filter(o => o.is_active).forEach(office => {
+            officeSelect.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
+        });
+    }
+
+    // Populate shift filter
+    const shiftSelect = document.getElementById('rosterShift');
+    if (shiftSelect) {
+        shiftSelect.innerHTML = '<option value="">All Shifts</option>';
+        shifts.filter(s => s.is_active).forEach(shift => {
+            shiftSelect.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name)}</option>`;
+        });
+    }
+}
+
+function getRosterTypeBadgeClass(type) {
+    const classes = {
+        'scheduled': 'badge-scheduled',
+        'temporary': 'badge-temporary',
+        'swap': 'badge-swap',
+        'override': 'badge-override'
+    };
+    return classes[type] || 'badge-scheduled';
+}
+
+function formatRosterType(type) {
+    const types = {
+        'scheduled': 'Scheduled',
+        'temporary': 'Temporary',
+        'swap': 'Swap',
+        'override': 'Override'
+    };
+    return types[type] || type || 'Scheduled';
 }
 
 async function loadHolidays() {
@@ -586,7 +769,7 @@ function editOffice(id) {
     document.getElementById('officeLatitude').value = office.latitude || '';
     document.getElementById('officeLongitude').value = office.longitude || '';
     document.getElementById('officeGeofenceRadius').value = office.geofence_radius_meters || 100;
-    document.getElementById('officeIsActive').value = office.is_active ? 'true' : 'false';
+    document.getElementById('officeIsActive').checked = office.is_active !== false;
 
     document.getElementById('officeModalTitle').textContent = 'Edit Office';
     document.getElementById('officeModal').classList.add('active');
@@ -615,7 +798,7 @@ function editDepartment(id) {
     document.getElementById('deptOffice').value = dept.office_id || '';
     document.getElementById('deptHead').value = dept.head_employee_id || '';
     document.getElementById('departmentDescription').value = dept.description || '';
-    document.getElementById('departmentIsActive').value = dept.is_active ? 'true' : 'false';
+    document.getElementById('departmentIsActive').checked = dept.is_active !== false;
 
     document.getElementById('departmentModalTitle').textContent = 'Edit Department';
     document.getElementById('departmentModal').classList.add('active');
@@ -636,14 +819,85 @@ function showCreateDesignationModal() {
 
     document.getElementById('designationForm').reset();
     document.getElementById('designationId').value = '';
-    document.getElementById('desigIsManager').checked = false;
-    document.getElementById('desigIsManagerLabel').textContent = 'No';
+
+    // Reset all HRMS role checkboxes (except HRMS_USER which is always checked and disabled)
+    resetHrmsRoleCheckboxes();
+
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
     document.getElementById('designationModal').classList.add('active');
 }
 
+// Helper function to reset all HRMS role checkboxes
+function resetHrmsRoleCheckboxes() {
+    const roleCheckboxes = document.querySelectorAll('input[name="hrmsRoles"]');
+    roleCheckboxes.forEach(cb => {
+        if (cb.value === 'HRMS_USER') {
+            cb.checked = true; // Always checked
+        } else {
+            cb.checked = false;
+        }
+    });
+}
+
+// Helper function to set HRMS role checkboxes from an array
+function setHrmsRoleCheckboxes(roles) {
+    const roleArray = roles || ['HRMS_USER'];
+    const roleCheckboxes = document.querySelectorAll('input[name="hrmsRoles"]');
+    roleCheckboxes.forEach(cb => {
+        if (cb.value === 'HRMS_USER') {
+            cb.checked = true; // Always checked
+        } else {
+            cb.checked = roleArray.includes(cb.value);
+        }
+    });
+}
+
+// Helper function to get selected HRMS roles as an array
+function getSelectedHrmsRoles() {
+    const roleCheckboxes = document.querySelectorAll('input[name="hrmsRoles"]:checked');
+    const roles = Array.from(roleCheckboxes).map(cb => cb.value);
+    // Ensure HRMS_USER is always included
+    if (!roles.includes('HRMS_USER')) {
+        roles.unshift('HRMS_USER');
+    }
+    return roles;
+}
+
+// Helper function to format HRMS roles for table display
+function formatHrmsRoles(roles) {
+    if (!roles || roles.length === 0) {
+        return '<span class="role-tag role-user">USER</span>';
+    }
+
+    // Short display names for roles
+    const roleShortNames = {
+        'HRMS_USER': 'USER',
+        'HRMS_MANAGER': 'MGR',
+        'HRMS_ADMIN': 'ADMIN',
+        'HRMS_HR_USER': 'HR',
+        'HRMS_HR_ADMIN': 'HR_ADMIN',
+        'HRMS_HR_MANAGER': 'HR_MGR'
+    };
+
+    // CSS classes for different role types
+    const roleClasses = {
+        'HRMS_USER': 'role-user',
+        'HRMS_MANAGER': 'role-manager',
+        'HRMS_ADMIN': 'role-admin',
+        'HRMS_HR_USER': 'role-hr',
+        'HRMS_HR_ADMIN': 'role-hr-admin',
+        'HRMS_HR_MANAGER': 'role-hr-manager'
+    };
+
+    return roles.map(role => {
+        const shortName = roleShortNames[role] || role.replace('HRMS_', '');
+        const cssClass = roleClasses[role] || 'role-default';
+        return `<span class="role-tag ${cssClass}">${escapeHtml(shortName)}</span>`;
+    }).join(' ');
+}
+
 function editDesignation(id) {
-    const desig = designations.find(d => d.id === id);
+    const desig = allDesignations.find(d => d.id === id);
     if (!desig) return;
 
     document.getElementById('designationId').value = desig.id;
@@ -651,11 +905,12 @@ function editDesignation(id) {
     document.getElementById('designationCode').value = desig.designation_code;
     document.getElementById('desigDepartment').value = desig.department_id || '';
     document.getElementById('desigLevel').value = desig.level || 1;
-    document.getElementById('desigRoleCategory').value = desig.role_category || '';
-    document.getElementById('desigIsManager').checked = desig.is_manager || false;
-    document.getElementById('desigIsManagerLabel').textContent = desig.is_manager ? 'Yes' : 'No';
+
+    // Set HRMS role checkboxes based on default_hrms_roles array
+    setHrmsRoleCheckboxes(desig.default_hrms_roles);
+
     document.getElementById('designationDescription').value = desig.description || '';
-    document.getElementById('designationIsActive').value = desig.is_active ? 'true' : 'false';
+    document.getElementById('designationIsActive').checked = desig.is_active !== false;
 
     document.getElementById('designationModalTitle').textContent = 'Edit Designation';
     document.getElementById('designationModal').classList.add('active');
@@ -693,7 +948,7 @@ function editShift(id) {
     document.getElementById('shiftCode').value = shift.shift_code;
     document.getElementById('graceMinutes').value = shift.grace_period_minutes || 15;
     document.getElementById('halfDayHours').value = shift.half_day_hours || 4;
-    document.getElementById('shiftIsActive').value = shift.is_active ? 'true' : 'false';
+    document.getElementById('shiftIsActive').checked = shift.is_active !== false;
 
     // Set working days checkboxes
     // working_days comes from backend as comma-separated string (e.g., "Mon,Tue,Wed,Thu,Fri")
@@ -756,6 +1011,78 @@ function editHoliday(id) {
     document.getElementById('holidayModal').classList.add('active');
 }
 
+function showCreateRosterModal() {
+    // Require at least one shift to exist before creating rosters
+    if (shifts.filter(s => s.is_active).length === 0) {
+        showToast('Please create a shift first before assigning rosters', 'error');
+        return;
+    }
+
+    // Require employees to exist
+    if (employees.length === 0) {
+        showToast('No employees found. Please add employees first.', 'error');
+        return;
+    }
+
+    document.getElementById('rosterForm').reset();
+    document.getElementById('rosterId').value = '';
+    document.getElementById('rosterIsActive').checked = true;
+
+    // Populate employee dropdown
+    populateRosterEmployeeSelect();
+
+    // Populate shift dropdown
+    populateRosterShiftSelect();
+
+    // Set default start date to today
+    document.getElementById('rosterStartDate').value = new Date().toISOString().split('T')[0];
+
+    document.getElementById('rosterModalTitle').textContent = 'Assign Shift Roster';
+    document.getElementById('rosterModal').classList.add('active');
+}
+
+function editRoster(id) {
+    const roster = shiftRosters.find(r => r.id === id);
+    if (!roster) return;
+
+    // Populate dropdowns first
+    populateRosterEmployeeSelect();
+    populateRosterShiftSelect();
+
+    document.getElementById('rosterId').value = roster.id;
+    document.getElementById('rosterEmployee').value = roster.employee_id || '';
+    document.getElementById('rosterShiftId').value = roster.shift_id || '';
+    document.getElementById('rosterStartDate').value = roster.start_date?.split('T')[0] || '';
+    document.getElementById('rosterEndDate').value = roster.end_date?.split('T')[0] || '';
+    document.getElementById('rosterType').value = roster.roster_type || 'scheduled';
+    document.getElementById('rosterNotes').value = roster.notes || '';
+    document.getElementById('rosterIsActive').checked = roster.is_active !== false;
+
+    document.getElementById('rosterModalTitle').textContent = 'Edit Shift Roster';
+    document.getElementById('rosterModal').classList.add('active');
+}
+
+function populateRosterEmployeeSelect() {
+    const select = document.getElementById('rosterEmployee');
+    if (select) {
+        select.innerHTML = '<option value="">Select Employee</option>';
+        employees.forEach(emp => {
+            const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+            select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(name)} (${escapeHtml(emp.employee_code || '')})</option>`;
+        });
+    }
+}
+
+function populateRosterShiftSelect() {
+    const select = document.getElementById('rosterShiftId');
+    if (select) {
+        select.innerHTML = '<option value="">Select Shift</option>';
+        shifts.filter(s => s.is_active).forEach(shift => {
+            select.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name)} (${escapeHtml(shift.shift_code)})</option>`;
+        });
+    }
+}
+
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
@@ -795,7 +1122,7 @@ async function saveOffice() {
             latitude: latitudeVal ? parseFloat(latitudeVal) : null,
             longitude: longitudeVal ? parseFloat(longitudeVal) : null,
             geofence_radius_meters: geofenceVal ? parseInt(geofenceVal) : 100,
-            is_active: document.getElementById('officeIsActive').value === 'true'
+            is_active: document.getElementById('officeIsActive').checked
         };
 
         console.log('Saving office with data:', data);
@@ -843,7 +1170,7 @@ async function saveDepartment() {
             office_id: document.getElementById('deptOffice').value || null,
             head_employee_id: document.getElementById('deptHead').value || null,
             description: document.getElementById('departmentDescription').value,
-            is_active: document.getElementById('departmentIsActive').value === 'true'
+            is_active: document.getElementById('departmentIsActive').checked
         };
 
         if (id) {
@@ -887,15 +1214,18 @@ async function saveDesignation() {
     try {
         showLoading();
         const id = document.getElementById('designationId').value;
+
+        // Get selected HRMS roles
+        const selectedRoles = getSelectedHrmsRoles();
+
         const data = {
             designation_name: document.getElementById('designationName').value,
             designation_code: document.getElementById('designationCode').value,
             department_id: departmentId,
             level: parseInt(document.getElementById('desigLevel').value) || 1,
-            role_category: document.getElementById('desigRoleCategory').value || null,
-            is_manager: document.getElementById('desigIsManager').checked,
+            default_hrms_roles: selectedRoles,
             description: document.getElementById('designationDescription').value,
-            is_active: document.getElementById('designationIsActive').value === 'true'
+            is_active: document.getElementById('designationIsActive').checked
         };
 
         if (id) {
@@ -964,7 +1294,8 @@ async function saveShift() {
             break_duration_minutes: breakDurationMinutes,
             grace_period_minutes: parseInt(document.getElementById('graceMinutes').value) || 15,
             half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4,
-            working_days: selectedWorkingDays || 'Mon,Tue,Wed,Thu,Fri'
+            working_days: selectedWorkingDays || 'Mon,Tue,Wed,Thu,Fri',
+            is_active: document.getElementById('shiftIsActive').checked
         };
 
         if (id) {
@@ -1053,6 +1384,66 @@ async function deleteHoliday(id) {
     }
 }
 
+async function saveRoster() {
+    const form = document.getElementById('rosterForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('rosterId').value;
+        const data = {
+            employee_id: document.getElementById('rosterEmployee').value,
+            shift_id: document.getElementById('rosterShiftId').value,
+            start_date: document.getElementById('rosterStartDate').value,
+            end_date: document.getElementById('rosterEndDate').value || null,
+            roster_type: document.getElementById('rosterType').value,
+            notes: document.getElementById('rosterNotes').value,
+            is_active: document.getElementById('rosterIsActive').checked
+        };
+
+        if (id) {
+            data.id = id;
+            await api.request('/hrms/shifts/roster', {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+        } else {
+            await api.request('/hrms/shifts/roster', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+        }
+
+        closeModal('rosterModal');
+        showToast(`Roster ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadShiftRosters();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving roster:', error);
+        showToast(error.message || 'Failed to save roster', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteRoster(id) {
+    if (!confirm('Are you sure you want to delete this roster assignment?')) return;
+
+    try {
+        showLoading();
+        await api.request(`/hrms/shifts/roster/${id}`, { method: 'DELETE' });
+        showToast('Roster deleted successfully', 'success');
+        await loadShiftRosters();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting roster:', error);
+        showToast(error.message || 'Failed to delete roster', 'error');
+        hideLoading();
+    }
+}
+
 // Utility functions
 function formatDate(dateString) {
     if (!dateString) return '-';
@@ -1094,6 +1485,24 @@ function formatOfficeType(type) {
     return types[type] || type || 'Branch';
 }
 
+function formatWeekendDays(weekendDays) {
+    if (!weekendDays) return 'Sat, Sun';
+    // Handle comma-separated format (e.g., "Sat,Sun" or "Saturday,Sunday")
+    if (typeof weekendDays === 'string') {
+        // Normalize to short form
+        const dayMap = {
+            'saturday': 'Sat', 'sunday': 'Sun', 'monday': 'Mon',
+            'tuesday': 'Tue', 'wednesday': 'Wed', 'thursday': 'Thu', 'friday': 'Fri',
+            'sat': 'Sat', 'sun': 'Sun', 'mon': 'Mon', 'tue': 'Tue',
+            'wed': 'Wed', 'thu': 'Thu', 'fri': 'Fri'
+        };
+        return weekendDays.split(',')
+            .map(d => dayMap[d.trim().toLowerCase()] || d.trim())
+            .join(', ');
+    }
+    return 'Sat, Sun';
+}
+
 function formatHolidayType(type) {
     const types = {
         'public': 'Public/National',
@@ -1118,12 +1527,7 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 5000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // Event listeners - will be attached after DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -1137,6 +1541,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('holidayYear')?.addEventListener('change', loadHolidays);
     document.getElementById('holidayOffice')?.addEventListener('change', updateHolidaysTable);
     document.getElementById('holidayType')?.addEventListener('change', updateHolidaysTable);
+    document.getElementById('rosterSearch')?.addEventListener('input', updateRostersTable);
+    document.getElementById('rosterOffice')?.addEventListener('change', updateRostersTable);
+    document.getElementById('rosterShift')?.addEventListener('change', updateRostersTable);
 
     // Toggle switch label updates
     document.getElementById('desigIsManager')?.addEventListener('change', function() {

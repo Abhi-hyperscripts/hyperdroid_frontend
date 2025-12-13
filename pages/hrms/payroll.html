@@ -522,7 +522,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('createDraftModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="createPayrollDraft()">Create Draft</button>
                 </div>
             </div>
@@ -666,6 +665,19 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="structureIsActive">Status</label>
+                                <div class="toggle-switch">
+                                    <span class="toggle-label">Inactive</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="structureIsActive" name="is_active" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="toggle-label">Active</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-section">
                         <div class="components-header">
@@ -771,11 +783,23 @@
                                 <textarea id="componentDescription" name="description" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="componentIsActive">Status</label>
+                                <div class="toggle-switch">
+                                    <span class="toggle-label">Inactive</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="componentIsActive" name="is_active" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="toggle-label">Active</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('componentModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveComponent()">Save Component</button>
                 </div>
             </div>
@@ -851,7 +875,6 @@
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('loanModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveLoan()">Submit Application</button>
                 </div>
             </div>
@@ -883,6 +906,19 @@
                 <div class="modal-body">
                     <div class="payslip-container" id="payslipContent">
                         <!-- Dynamically populated -->
+                    </div>
+                    <!-- Multi-Location Breakdown Section -->
+                    <div id="locationBreakdownSection" class="location-breakdown-section" style="display:none;">
+                        <h4 class="section-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Multi-Location Breakdown
+                        </h4>
+                        <div class="location-cards" id="locationCards">
+                            <!-- Location cards rendered by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1055,7 +1091,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('createVersionModal')">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveNewVersion()">Create Version</button>
                 </div>
             </div>
@@ -1250,7 +1285,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('bulkAssignModal')">Cancel</button>
                     <button type="button" class="btn btn-secondary" onclick="previewBulkAssignment()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -1379,6 +1413,8 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payroll.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

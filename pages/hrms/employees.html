@@ -562,7 +562,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('viewEmployeeModal')">Close</button>
                     <button class="btn btn-primary" onclick="editFromView()" id="editFromViewBtn">Edit</button>
                 </div>
             </div>
@@ -705,7 +704,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('salaryModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="saveEmployeeSalary()" id="saveSalaryBtn">
                         <span id="saveSalaryBtnText">Save Salary</span>
                     </button>
@@ -792,23 +790,35 @@
                         <!-- What to Change Section -->
                         <div class="form-section">
                             <h4>Select Changes</h4>
-                            <div class="change-options">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="changeOffice" onchange="toggleTransferSection('officeChangeSection', this)">
-                                    <span>Change Office</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="changeDepartment" onchange="toggleTransferSection('departmentChangeSection', this)">
-                                    <span>Change Department</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="changeManager" onchange="toggleTransferSection('managerChangeSection', this)">
-                                    <span>Change Manager</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="reviseSalary" onchange="toggleTransferSection('salaryRevisionSection', this)">
-                                    <span>Revise Salary</span>
-                                </label>
+                            <div class="transfer-toggle-options">
+                                <div class="switch-container">
+                                    <label class="switch">
+                                        <input type="checkbox" id="changeOffice" onchange="toggleTransferSection('officeChangeSection', this)">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="switch-label">Change Office</span>
+                                </div>
+                                <div class="switch-container">
+                                    <label class="switch">
+                                        <input type="checkbox" id="changeDepartment" onchange="toggleTransferSection('departmentChangeSection', this)">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="switch-label">Change Department</span>
+                                </div>
+                                <div class="switch-container">
+                                    <label class="switch">
+                                        <input type="checkbox" id="changeManager" onchange="toggleTransferSection('managerChangeSection', this)">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="switch-label">Change Manager</span>
+                                </div>
+                                <div class="switch-container">
+                                    <label class="switch">
+                                        <input type="checkbox" id="reviseSalary" onchange="toggleTransferSection('salaryRevisionSection', this)">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="switch-label">Revise Salary</span>
+                                </div>
                             </div>
                         </div>
 
@@ -868,7 +878,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('transferModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="submitTransfer()" id="submitTransferBtn">Submit Transfer</button>
                 </div>
             </div>
@@ -889,12 +898,10 @@
                     </button>
                 </div>
                 <div class="modal-body" id="transferHistoryContent">
+                    <!-- Content rendered dynamically by viewTransferHistory() in employees.js -->
                     <div class="loading-spinner">
                         <div class="spinner"></div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('transferHistoryModal')">Close</button>
                 </div>
             </div>
         </div>
@@ -907,6 +914,8 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

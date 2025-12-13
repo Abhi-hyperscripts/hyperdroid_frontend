@@ -293,7 +293,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('regularizationModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="submitRegularization()">Submit Request</button>
                 </div>
             </div>
@@ -340,7 +339,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('overtimeModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="submitOvertime()">Submit Request</button>
                 </div>
             </div>
@@ -369,7 +367,6 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('rejectionModal')">Cancel</button>
                     <button class="btn btn-danger" onclick="confirmRejectRegularization()">Reject Request</button>
                 </div>
             </div>
@@ -383,6 +380,8 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

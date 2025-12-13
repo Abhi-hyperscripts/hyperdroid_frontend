@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Self-Service - HRMS</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-ess.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="ess-container">
+        <!-- Welcome Header -->
+        <div class="ess-header">
+            <div class="ess-welcome">
+                <div class="ess-avatar" id="employeeAvatar">
+                    <span id="avatarInitials">--</span>
+                </div>
+                <div class="ess-welcome-text">
+                    <h1 id="welcomeMessage">Welcome back!</h1>
+                    <p id="employeeInfo">Loading...</p>
+                </div>
+            </div>
+            <div class="ess-header-actions">
+                <a href="notifications.html" class="ess-notification-btn" id="notificationBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Clock In/Out Section -->
+        <div class="ess-clock-section" id="clockSection">
+            <div class="clock-header">
+                <div class="clock-time-display">
+                    <div class="clock-time" id="currentTime">--:--:--</div>
+                    <div class="clock-date" id="currentDate">Loading...</div>
+                </div>
+                <div class="clock-actions">
+                    <div class="clock-status" id="clockStatus">Not checked in</div>
+                    <button class="clock-btn" id="clockBtn" onclick="handleClock()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="clockBtnText">Clock In</span>
+                    </button>
+                </div>
+            </div>
+            <div class="clock-info" id="clockInfo">
+                <span id="checkInTime">Check-in: --:--</span>
+                <span id="workingHours">Working: -- hrs</span>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="ess-stats-grid">
+            <div class="ess-stat-card leave-balance">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="casualLeaveBalance">--</div>
+                    <div class="stat-label">Casual Leave</div>
+                </div>
+            </div>
+            <div class="ess-stat-card leave-balance">
+                <div class="stat-icon sick">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="sickLeaveBalance">--</div>
+                    <div class="stat-label">Sick Leave</div>
+                </div>
+            </div>
+            <div class="ess-stat-card leave-balance">
+                <div class="stat-icon earned">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="earnedLeaveBalance">--</div>
+                    <div class="stat-label">Earned Leave</div>
+                </div>
+            </div>
+            <div class="ess-stat-card pending">
+                <div class="stat-icon pending">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="pendingApprovals">--</div>
+                    <div class="stat-label">Pending Approvals</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="ess-section">
+            <h3 class="ess-section-title">Quick Actions</h3>
+            <div class="ess-quick-actions">
+                <a href="leave.html" class="ess-action-card">
+                    <div class="action-icon apply-leave">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <line x1="12" y1="14" x2="12" y2="18"/>
+                            <line x1="10" y1="16" x2="14" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>Apply Leave</h4>
+                        <p>Request time off</p>
+                    </div>
+                </a>
+                <a href="payroll.html" class="ess-action-card">
+                    <div class="action-icon payslip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>View Payslips</h4>
+                        <p>Salary details</p>
+                    </div>
+                </a>
+                <a href="my-profile.html" class="ess-action-card">
+                    <div class="action-icon profile">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>My Profile</h4>
+                        <p>Personal details</p>
+                    </div>
+                </a>
+                <a href="directory.html" class="ess-action-card">
+                    <div class="action-icon directory">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>Team Directory</h4>
+                        <p>Find colleagues</p>
+                    </div>
+                </a>
+                <a href="org-chart.html" class="ess-action-card">
+                    <div class="action-icon org-chart">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="2" width="6" height="6" rx="1"/>
+                            <rect x="2" y="16" width="6" height="6" rx="1"/>
+                            <rect x="16" y="16" width="6" height="6" rx="1"/>
+                            <line x1="12" y1="8" x2="12" y2="13"/>
+                            <line x1="5" y1="13" x2="19" y2="13"/>
+                            <line x1="5" y1="13" x2="5" y2="16"/>
+                            <line x1="19" y1="13" x2="19" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>Org Chart</h4>
+                        <p>Company structure</p>
+                    </div>
+                </a>
+                <a href="attendance.html" class="ess-action-card">
+                    <div class="action-icon attendance">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="action-text">
+                        <h4>My Attendance</h4>
+                        <p>Attendance history</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Announcements Section -->
+        <div class="ess-section">
+            <div class="ess-section-header">
+                <h3 class="ess-section-title">Recent Announcements</h3>
+                <a href="announcements.html" class="ess-view-all">View All</a>
+            </div>
+            <div class="ess-announcements" id="announcementsList">
+                <div class="ess-loading">
+                    <div class="spinner"></div>
+                    <span>Loading announcements...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Section -->
+        <div class="ess-section">
+            <h3 class="ess-section-title">Upcoming</h3>
+            <div class="ess-upcoming-grid">
+                <div class="ess-upcoming-card">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        Upcoming Holidays
+                    </h4>
+                    <div class="upcoming-list" id="upcomingHolidays">
+                        <div class="ess-loading small">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ess-upcoming-card">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Team Birthdays
+                    </h4>
+                    <div class="upcoming-list" id="upcomingBirthdays">
+                        <div class="ess-loading small">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ess-upcoming-card">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Work Anniversaries
+                    </h4>
+                    <div class="upcoming-list" id="upcomingAnniversaries">
+                        <div class="ess-loading small">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation to Admin Dashboard (for admins) -->
+        <div class="ess-admin-link" id="adminLink" style="display: none;">
+            <a href="dashboard.html" class="admin-dashboard-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Go to Admin Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/self-service.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
