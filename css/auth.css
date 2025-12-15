@@ -1326,9 +1326,9 @@
 .password-requirements {
     margin-top: 12px;
     padding: 12px;
-    background: var(--overlay-subtle);
+    background: var(--bg-elevated);
     border-radius: 8px;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border-color);
 }
 
 .requirement {
@@ -1336,7 +1336,7 @@
     align-items: center;
     gap: 8px;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     padding: 4px 0;
 }
 
@@ -1347,7 +1347,7 @@
 }
 
 .requirement .req-icon.unmet {
-    stroke: var(--border-color);
+    stroke: var(--text-muted);
 }
 
 .requirement .req-icon.met {
@@ -1356,7 +1356,7 @@
 }
 
 .requirement.met {
-    color: var(--color-success);
+    color: var(--color-success-text);
 }
 
 .requirement.met .req-icon.unmet {
@@ -1365,4 +1365,21 @@
 
 .requirement.met .req-icon.met {
     display: block;
+}
+
+/* Dark mode: Use brighter colors for visibility */
+[data-theme="dark"] .requirement {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .requirement.met {
+    color: var(--color-success-text);
+}
+
+[data-theme="dark"] .requirement .req-icon.unmet {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .requirement .req-icon.met {
+    stroke: var(--color-success-text);
 }

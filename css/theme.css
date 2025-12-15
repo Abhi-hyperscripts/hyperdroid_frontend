@@ -50,6 +50,11 @@
   --color-info-dark: #2563eb;
   --color-info-text: #1e40af;
 
+  --color-purple: #8b5cf6;
+  --color-purple-light: #ede9fe;
+  --color-purple-dark: #7c3aed;
+  --color-purple-text: #5b21b6;
+
   /* Accent variants for gradients */
   --color-success-light-accent: #34d399;
   --color-danger-light-accent: #f87171;
@@ -60,8 +65,6 @@
      DEPRECATION NOTE: Prefer --brand-* variables for new components.
      These legacy colors are kept for backward compatibility. */
   --color-primary: #6366f1;      /* Legacy - use --brand-primary instead */
-  --color-purple: #8b5cf6;       /* Legacy - use --brand-secondary instead */
-  --color-purple-light: #a78bfa;
   --color-cyan: #06b6d4;
   --color-cyan-dark: #0891b2;
 
@@ -576,6 +579,15 @@
   --color-danger-light: rgba(239, 68, 68, 0.2);
   --color-warning-light: rgba(245, 158, 11, 0.2);
   --color-info-light: rgba(59, 130, 246, 0.2);
+  --color-purple-light: rgba(139, 92, 246, 0.25);
+
+  /* Secondary/purple text for dark mode visibility */
+  --color-purple-text: #a78bfa;
+
+  /* Semantic text colors (brighter for dark backgrounds) */
+  --color-success-text: #4ade80;  /* Bright green for dark mode visibility */
+  --color-danger-text: #f87171;   /* Brighter red for dark mode */
+  --color-warning-text: #fbbf24;  /* Brighter amber for dark mode */
 
   /* Alpha variants for dark mode */
   --success-alpha-10: rgba(16, 185, 129, 0.15);

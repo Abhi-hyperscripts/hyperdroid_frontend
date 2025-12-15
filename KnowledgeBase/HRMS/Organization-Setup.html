@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Organization Setup Guide | HyperDroid Knowledge Base</title>
+    <!-- Import master theme for brand colors -->
+    <link rel="stylesheet" href="../../css/theme.css">
+    <style>
+        :root {
+            /*
+             * Map documentation variables to theme.css semantic variables.
+             * These automatically adapt to light/dark mode via theme.css.
+             * DO NOT use --gray-* variables as they are inverted in dark mode.
+             */
+            --primary-color: var(--brand-primary);
+            --primary-dark: var(--brand-primary-dark);
+            --primary-light: var(--brand-primary-light);
+            --secondary-color: var(--color-success);
+            --warning-color: var(--color-warning);
+            --danger-color: var(--color-danger);
+            --text-color: var(--text-primary);
+            --text-muted-color: var(--text-secondary);
+            --bg-color: var(--bg-body);
+            --card-bg: var(--bg-card);
+            --code-bg: var(--bg-card-hover);
+            --header-bg: var(--gradient-header);
+            --table-hover: var(--bg-card-hover);
+            --shadow-color: var(--shadow-xs);
+            --shadow-strong: var(--shadow-sm);
+            --border-color: var(--border-color);
+
+            /* Documentation-specific colors (derived from theme) */
+            --tip-bg: var(--color-success-light);
+            --tip-border: var(--color-success);
+            --warning-bg: var(--color-warning-light);
+            --warning-border: var(--color-warning);
+            --important-bg: var(--color-info-light);
+            --important-border: var(--brand-primary);
+            --badge-required-bg: var(--color-danger-light);
+            --badge-required-color: var(--color-danger-text);
+            --badge-optional-bg: var(--color-info-light);
+            --badge-optional-color: var(--color-info-text);
+            --footer-bg: var(--bg-tooltip);
+            --footer-text: var(--text-inverse);
+            --header-text: var(--text-inverse);
+            --nav-hover-text: var(--text-inverse);
+        }
+
+        /*
+         * Dark mode overrides - only for documentation-specific variables
+         * that aren't handled by theme.css semantic variables.
+         */
+        [data-theme="dark"] {
+            --tip-bg: var(--success-alpha-10);
+            --warning-bg: var(--warning-alpha-10);
+            --important-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            --badge-required-bg: var(--danger-alpha-10);
+            --badge-required-color: var(--color-danger-text);
+            --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            --badge-optional-color: var(--brand-primary-light);
+        }
+
+        /* Auto dark mode based on system preference */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --tip-bg: var(--success-alpha-10);
+                --warning-bg: var(--warning-alpha-10);
+                --important-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                --badge-required-bg: var(--danger-alpha-10);
+                --badge-required-color: var(--color-danger-text);
+                --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                --badge-optional-color: var(--brand-primary-light);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        /* Header */
+        header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 28px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--card-bg);
+            padding: 10px 16px;
+            padding-right: 60px; /* Make room for theme toggle */
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px var(--shadow-strong);
+            overflow-x: auto;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 8px;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: nowrap;
+        }
+
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:hover {
+            background: var(--primary-color);
+            color: var(--nav-hover-text);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        /* Sections */
+        section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px var(--shadow-color);
+        }
+
+        section h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        section h2 .section-number {
+            background: var(--primary-color);
+            color: var(--card-bg);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        section h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 18px 0 10px;
+            color: var(--brand-primary);
+        }
+
+        section h4 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 14px 0 8px;
+            color: var(--text-color);
+        }
+
+        /* Screenshots */
+        .screenshot-container {
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px var(--shadow-strong);
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            display: block;
+        }
+
+        .screenshot-caption {
+            background: var(--code-bg);
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+
+        .info-box.tip {
+            background: var(--tip-bg);
+            border-left: 3px solid var(--tip-border);
+        }
+
+        .info-box.warning {
+            background: var(--warning-bg);
+            border-left: 3px solid var(--warning-border);
+        }
+
+        .info-box.important {
+            background: var(--important-bg);
+            border-left: 3px solid var(--important-border);
+        }
+
+        .info-box .icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--code-bg);
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        tr:hover {
+            background: var(--table-hover);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Code */
+        code {
+            background: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Menlo', 'Monaco', monospace;
+            font-size: 0.85em;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 400;
+        }
+
+        .badge-required {
+            background: var(--badge-required-bg);
+            color: var(--badge-required-color);
+        }
+
+        .badge-optional {
+            background: var(--badge-optional-bg);
+            color: var(--badge-optional-color);
+        }
+
+        .badge-admin {
+            background: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        /* Step indicators */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            padding-left: 40px;
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            color: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin: 14px 0;
+        }
+
+        .feature-card {
+            background: var(--code-bg);
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .feature-card p {
+            font-size: 0.75rem;
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Lighter strong text */
+        .info-box strong,
+        .feature-card strong,
+        td strong {
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.3rem;
+            }
+
+            nav ul {
+                gap: 6px;
+            }
+
+            nav a {
+                padding: 5px 10px;
+                font-size: 0.75rem;
+            }
+
+            section {
+                padding: 14px;
+            }
+        }
+
+        /* Scroll Margin for anchors */
+        section[id] {
+            scroll-margin-top: 60px;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            background: var(--primary-color);
+            color: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 2px 10px var(--shadow-strong);
+            transition: transform 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--footer-bg);
+            color: var(--footer-text);
+            text-align: center;
+            padding: 20px 16px;
+            margin-top: 24px;
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: var(--primary-light);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: var(--card-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--shadow-strong);
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-50%) scale(1.05);
+            background: var(--primary-color);
+        }
+
+        .theme-toggle .icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HRMS Organization Setup Guide</h1>
+        <p>Complete guide to configuring your organization structure in HyperDroid HRMS</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#offices">Offices</a></li>
+            <li><a href="#departments">Departments</a></li>
+            <li><a href="#designations">Designations</a></li>
+            <li><a href="#shifts">Shifts</a></li>
+            <li><a href="#shift-rosters">Shift Rosters</a></li>
+            <li><a href="#holidays">Holidays</a></li>
+            <li><a href="#location-taxes">Location Taxes</a></li>
+            <li><a href="#org-chart">Org Chart</a></li>
+            <li><a href="#dark-mode">Dark Mode</a></li>
+        </ul>
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <span class="icon" id="themeIcon">🌙</span>
+        </button>
+    </nav>
+
+    <main>
+        <!-- Overview Section -->
+        <section id="overview">
+            <h2><span class="section-number">0</span> Overview</h2>
+            <p>The Organization Setup page is where you configure the foundational structure of your company in the HRMS system. This includes:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Offices</h4>
+                    <p>Define your physical office locations with addresses, timezones, geofencing, and weekend policies.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Departments</h4>
+                    <p>Create your organizational hierarchy with departments and sub-departments.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Designations</h4>
+                    <p>Set up job titles with salary ranges and role assignments.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Shifts</h4>
+                    <p>Configure work schedules including start/end times, breaks, and working days.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Shift Rosters</h4>
+                    <p>Assign employees to specific shifts with start and end dates.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Holidays</h4>
+                    <p>Manage your holiday calendar with national, regional, and company-specific holidays.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Location Taxes</h4>
+                    <p>Configure location-specific payroll taxes like Professional Tax (PT) for different offices.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Organization Chart</h4>
+                    <p>Visualize your company's reporting structure with an interactive org chart.</p>
+                </div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">ℹ️</span>
+                <div>
+                    <strong>Setup Order Recommendation:</strong> We recommend setting up in this order: Offices → Departments → Designations → Shifts → Holidays → Location Taxes. This ensures all dependencies are available when needed.
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. Offices Section -->
+        <section id="offices">
+            <h2><span class="section-number">1</span> Offices</h2>
+            <p>Offices represent your physical work locations. Each office has its own address, timezone, geofencing settings for attendance tracking, and weekend policy.</p>
+
+            <h3>Offices List View</h3>
+            <p>The Offices tab displays all configured offices in a table format. You can see key information at a glance:</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/offices-tab.png" alt="Offices Tab">
+                <div class="screenshot-caption">Offices tab showing the list of all configured offices with their details</div>
+            </div>
+
+            <h4>Table Columns Explained</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Office Name</strong></td>
+                        <td>The display name of the office (e.g., "Mumbai Headquarters")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>A unique short code for the office (e.g., "MUM-HQ")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Location</strong></td>
+                        <td>City and country where the office is located</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timezone</strong></td>
+                        <td>The timezone used for attendance and scheduling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Weekend Policy</strong></td>
+                        <td>Which days are considered weekends (affects leave calculations)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive status; shows HQ badge for headquarters</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>Edit or delete buttons</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a New Office</h3>
+            <p>Click the <strong>"Add Office"</strong> button to open the Create Office modal.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/office-create-modal.png" alt="Create Office Modal">
+                <div class="screenshot-caption">Create Office modal with all configuration fields</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Office Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Full name of the office (e.g., "Bangalore Tech Park")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique identifier code (e.g., "BLR-TP"). Used in reports.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Address</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Street address of the office</td>
+                    </tr>
+                    <tr>
+                        <td><strong>City</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>City where office is located</td>
+                    </tr>
+                    <tr>
+                        <td><strong>State</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>State/Province (important for location taxes)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Country</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Country where office is located</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Postal Code</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>ZIP/Postal code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phone</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Office contact phone number</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Office contact email address</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timezone</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select from dropdown. Affects attendance timestamps.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Weekend Policy</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Choose which days are weekends:<br>
+                            - <code>sat_sun</code>: Saturday & Sunday<br>
+                            - <code>fri_sat</code>: Friday & Saturday<br>
+                            - <code>sun_only</code>: Sunday only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Latitude & Longitude</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>GPS coordinates for geofencing. Enter manually or use map picker.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Geofence Radius</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Radius in meters for attendance check-in validation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Headquarters</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Toggle ON if this is your main/headquarters office</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Tip:</strong> If geofencing is enabled, employees can only clock in when they are within the specified radius of the office coordinates. Set a reasonable radius (e.g., 100-500 meters) to account for GPS accuracy.
+                </div>
+            </div>
+
+            <h3>Office Status Badges</h3>
+            <p>The Offices list displays visual badges to indicate special configurations:</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/office-badges-final.png" alt="Office Badges">
+                <div class="screenshot-caption">Office badges showing HQ (Headquarters) and Geofencing indicators</div>
+            </div>
+
+            <h4>Badge Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Badge</th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>HQ</strong> (Purple)</td>
+                        <td>This office is marked as Headquarters</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Geofencing</strong> (Blue)</td>
+                        <td>Geofencing is enabled - employees must be within radius to clock in</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Editing an Office</h3>
+            <p>Click the <strong>Edit</strong> (pencil icon) button on any office row to modify its settings. The modal will open with all fields pre-filled with current values.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/office-edit-modal-prefilled.png" alt="Edit Office Modal">
+                <div class="screenshot-caption">Edit Office modal showing pre-filled values for modification</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Tip:</strong> When editing an office, changing the timezone will affect how attendance timestamps are displayed for employees at that location.
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Departments Section -->
+        <section id="departments">
+            <h2><span class="section-number">2</span> Departments</h2>
+            <p>Departments organize your workforce into functional groups. They support hierarchical structures with parent-child relationships.</p>
+
+            <h3>Departments List View</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/departments-tab.png" alt="Departments Tab">
+                <div class="screenshot-caption">Departments tab showing all departments in table format</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Department</strong></td>
+                        <td>Name of the department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parent Department</strong></td>
+                        <td>Shows if this is a sub-department of another</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Head</strong></td>
+                        <td>Department head/manager (if assigned)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employee Count</strong></td>
+                        <td>Number of employees in this department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>Edit or delete buttons</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Department Hierarchy View</h3>
+            <p>Click the <strong>"View Hierarchy"</strong> button to see your organizational structure as a visual tree.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/departments-hierarchy.png" alt="Department Hierarchy">
+                <div class="screenshot-caption">Visual hierarchy view showing parent-child department relationships</div>
+            </div>
+
+            <h3>Creating a New Department</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/department-create-modal.png" alt="Create Department Modal">
+                <div class="screenshot-caption">Create Department modal</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Department Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Full name (e.g., "Software Development")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique code (e.g., "SW-DEV")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parent Department</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Select a parent to make this a sub-department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department Head</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Select an employee to be the department head</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Brief description of the department's function</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Note:</strong> You cannot delete a department that has employees assigned to it. First transfer or remove all employees from the department.
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Designations Section -->
+        <section id="designations">
+            <h2><span class="section-number">3</span> Designations</h2>
+            <p>Designations are job titles with associated salary ranges and optional role assignments. They help standardize job levels across the organization.</p>
+
+            <h3>Designations List View</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/designations-tab.png" alt="Designations Tab">
+                <div class="screenshot-caption">Designations tab showing all job titles with their salary ranges and roles</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Designation</strong></td>
+                        <td>Job title name</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level</strong></td>
+                        <td>Numeric level in hierarchy (higher = more senior)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Salary Range</strong></td>
+                        <td>Min-Max salary for this designation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Roles</strong></td>
+                        <td>System roles auto-assigned to employees with this designation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a New Designation</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/designation-create-modal.png" alt="Create Designation Modal">
+                <div class="screenshot-caption">Create Designation modal with role assignment options</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Designation Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Job title (e.g., "Senior Software Engineer")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Designation Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique code (e.g., "SSE")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Hierarchy level (1-10 typically)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Restrict designation to specific department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Min Salary</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Minimum annual salary for this designation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max Salary</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Maximum annual salary for this designation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Manager</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, employees with this designation automatically get HRMS_MANAGER role</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Role Category</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Category for grouping (e.g., "Technical", "Management")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Job description details</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box important">
+                <span class="icon">ℹ️</span>
+                <div>
+                    <strong>Manager Role:</strong> When "Is Manager" is enabled, any employee assigned this designation will automatically receive the <code>HRMS_MANAGER</code> role, allowing them to approve leave requests and view team attendance.
+                </div>
+            </div>
+
+            <h3>Filtering Designations by Office</h3>
+            <p>Use the <strong>Office filter dropdown</strong> to view designations specific to a particular office location. This is useful when different offices have different job titles.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/designations-office-filter.png" alt="Designations Office Filter">
+                <div class="screenshot-caption">Filtering designations by office using the dropdown filter</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Tip:</strong> Designations can be linked to specific departments. Use the Department dropdown when creating a designation to restrict it to employees of that department only.
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Shifts Section -->
+        <section id="shifts">
+            <h2><span class="section-number">4</span> Shifts</h2>
+            <p>Shifts define work schedules including start/end times, break durations, and working days. Different teams can have different shifts.</p>
+
+            <h3>Shifts List View</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/shifts-tab.png" alt="Shifts Tab">
+                <div class="screenshot-caption">Shifts tab showing all configured shifts with their timings and weekend days</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Shift Name</strong></td>
+                        <td>Name of the shift (e.g., "Day Shift")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timing</strong></td>
+                        <td>Start and end time (e.g., "09:00 - 18:00")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Break</strong></td>
+                        <td>Duration of break in minutes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Weekend Days</strong></td>
+                        <td>Which days are weekends for this shift (e.g., "Sat, Sun")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type</strong></td>
+                        <td>Shows badges for Default, Flexible, or Night shift</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a New Shift</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/shift-create-modal.png" alt="Create Shift Modal">
+                <div class="screenshot-caption">Create Shift modal with working days selection</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Shift Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Display name (e.g., "Morning Shift")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Shift Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique code (e.g., "MORN")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Start Time</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Shift start time (24-hour format)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>End Time</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Shift end time (24-hour format)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Break Duration</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Break time in minutes (deducted from working hours)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Grace Period</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Minutes allowed late before marking as late arrival</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Working Days</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select days employees work (unselected = weekend)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Default</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, new employees are assigned this shift by default</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Flexible</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, start/end times are guidelines only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Night Shift</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, indicates this is a night/overnight shift</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Working Days Toggle Interface</h4>
+            <p>When creating or editing a shift, you'll see a row of day toggles. Click each day to toggle it on/off:</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/shift-working-days-toggle.png" alt="Shift Working Days Toggle">
+                <div class="screenshot-caption">Working days toggle interface - selected days are highlighted</div>
+            </div>
+
+            <ul>
+                <li><strong>Highlighted (ON)</strong>: This is a working day</li>
+                <li><strong>Not highlighted (OFF)</strong>: This is a weekend/off day</li>
+            </ul>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Working Days:</strong> The days you DON'T select become weekend days. For example, if you select Mon-Fri, then Sat-Sun become weekends for this shift. This affects leave day calculations.
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Shift Rosters Section -->
+        <section id="shift-rosters">
+            <h2><span class="section-number">5</span> Shift Rosters</h2>
+            <p>Shift Rosters allow you to assign specific employees to specific shifts for defined time periods. This is useful for rotating shifts or temporary schedule changes.</p>
+
+            <h3>Shift Rosters List View</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/shift-rosters-tab.png" alt="Shift Rosters Tab">
+                <div class="screenshot-caption">Shift Rosters tab showing employee shift assignments</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name and code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Shift</strong></td>
+                        <td>Assigned shift name</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Start Date</strong></td>
+                        <td>When the roster assignment begins</td>
+                    </tr>
+                    <tr>
+                        <td><strong>End Date</strong></td>
+                        <td>When the roster assignment ends (empty = ongoing)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Weekend Days</strong></td>
+                        <td>Weekend days for this roster period</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type</strong></td>
+                        <td>Roster type: Scheduled, Temporary, Swap, or Override</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Roster Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Scheduled</strong></td>
+                        <td>Regular, planned shift assignment</td>
+                        <td>Standard rotation schedules</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Temporary</strong></td>
+                        <td>Short-term shift change</td>
+                        <td>Cover for absent employee</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Swap</strong></td>
+                        <td>Shift swap between employees</td>
+                        <td>Employee-requested schedule swap</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Override</strong></td>
+                        <td>Manual override of default shift</td>
+                        <td>Special circumstances</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Note:</strong> If no employees appear in the dropdown when creating a roster, it means you need to first create employees in the Employees page.
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Holidays Section -->
+        <section id="holidays">
+            <h2><span class="section-number">6</span> Holidays</h2>
+            <p>The Holidays tab manages your company holiday calendar. Holidays affect leave calculations, attendance expectations, and payroll processing.</p>
+
+            <h3>Holidays List View</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/holidays-tab.png" alt="Holidays Tab">
+                <div class="screenshot-caption">Holidays tab showing the holiday calendar with filters</div>
+            </div>
+
+            <h4>Filter Bar</h4>
+            <p>The holidays tab includes a comprehensive filter bar at the top to help you find specific holidays:</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/holidays-filter-bar-fixed.png" alt="Holidays Filter Bar">
+                <div class="screenshot-caption">Holiday filter bar with year, office, and type filters</div>
+            </div>
+
+            <h4>Filter Options</h4>
+            <ul>
+                <li><strong>Year selector:</strong> Filter holidays by year (use arrows or dropdown)</li>
+                <li><strong>Office filter:</strong> Show holidays for specific office or "All Offices"</li>
+                <li><strong>Type filter:</strong> Filter by National, Regional, Restricted, or Company holidays</li>
+                <li><strong>Search:</strong> Type to search holidays by name</li>
+            </ul>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Date</strong></td>
+                        <td>Holiday date and day of week</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Holiday Name</strong></td>
+                        <td>Name of the holiday (e.g., "Diwali")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type</strong></td>
+                        <td>Holiday type with color-coded badge</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td>Which office(s) this holiday applies to</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Optional</strong></td>
+                        <td>Whether holiday is optional/restricted</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>Edit or delete buttons</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a Single Holiday</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/holiday-create-modal.png" alt="Create Holiday Modal">
+                <div class="screenshot-caption">Create Holiday modal for adding a single holiday</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Holiday Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Name of the holiday</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Holiday Date</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Date of the holiday</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Holiday Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>
+                            - <code>National</code>: Country-wide holidays<br>
+                            - <code>Regional</code>: State/region-specific<br>
+                            - <code>Restricted</code>: Optional holidays employees can choose<br>
+                            - <code>Company</code>: Company-specific holidays
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Select specific office or leave empty for all offices</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Optional</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, employees can choose to work on this day</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Additional details about the holiday</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Bulk Adding Holidays</h3>
+            <p>Use the <strong>"Bulk Add"</strong> button to add multiple holidays at once - perfect for setting up an entire year's calendar.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/holiday-bulk-add-modal.png" alt="Bulk Add Holidays Modal">
+                <div class="screenshot-caption">Bulk Add modal allowing up to 20 holidays to be added at once</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Pro Tip:</strong> Use Bulk Add at the start of each year to quickly set up your holiday calendar. You can add up to 20 holidays at a time.
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Location Taxes Section -->
+        <section id="location-taxes">
+            <h2><span class="section-number">7</span> Location Taxes</h2>
+            <p>Location Taxes configure payroll taxes that vary by office location. This is essential for organizations with offices in multiple states, cities, or countries where tax obligations differ.</p>
+
+            <!-- Why Location Taxes Matter -->
+            <h3>Why Location Taxes Matter</h3>
+            <p>Many countries have taxes that vary by geographic location. For example:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>India - Professional Tax (PT)</h4>
+                    <p>Each state has different PT slabs. Maharashtra charges up to ₹200/month, Karnataka charges up to ₹200/month but with different slabs, while some states have no PT at all.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>USA - State/City Taxes</h4>
+                    <p>States like California, New York have state income taxes, while Texas, Florida have none. Some cities (NYC, Philadelphia) have additional city taxes.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Europe - Local Taxes</h4>
+                    <p>Countries like Switzerland have cantonal taxes that vary significantly. German cities have different church tax rates.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Multi-Location Companies</h4>
+                    <p>If your company has offices in Mumbai and Bangalore, employees at each location will have different tax deductions based on state laws.</p>
+                </div>
+            </div>
+
+            <!-- How It Affects Payroll -->
+            <h3>How Location Taxes Affect Payroll</h3>
+            <p>When payroll is processed, the system automatically:</p>
+            <ol class="steps">
+                <li>
+                    <strong>Identifies Employee's Office</strong><br>
+                    Looks up which office the employee is assigned to during the pay period.
+                </li>
+                <li>
+                    <strong>Retrieves Applicable Tax Rules</strong><br>
+                    Finds all active tax rules configured for that office (e.g., Maharashtra PT for Mumbai office).
+                </li>
+                <li>
+                    <strong>Calculates Tax Amounts</strong><br>
+                    Applies each rule based on its calculation type (fixed, percentage, or slab-based) to the employee's salary.
+                </li>
+                <li>
+                    <strong>Deducts from Payslip</strong><br>
+                    Adds the calculated amounts to the employee's payslip as deductions (or employer contributions).
+                </li>
+            </ol>
+
+            <!-- Multi-Location Transfer Scenario -->
+            <div class="info-box warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Employee Transfer Mid-Month:</strong> If an employee transfers between offices during a pay period, the system handles this automatically:
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li>Calculates working days at each location</li>
+                        <li>Prorates salary based on days worked at each office</li>
+                        <li>Applies the respective location's tax rules to each portion</li>
+                        <li>Shows a detailed breakdown on the payslip</li>
+                    </ul>
+                    <p style="margin-top: 8px; margin-bottom: 0;"><em>Example: Employee works 15 days in Mumbai (₹200 PT) and 15 days in Bangalore (₹200 PT with different slabs) = both taxes calculated proportionally.</em></p>
+                </div>
+            </div>
+
+            <!-- Real-World Example -->
+            <h3>Real-World Example: Professional Tax in India</h3>
+            <p>Let's say your company has offices in Mumbai (Maharashtra) and Bangalore (Karnataka). Here's how PT differs:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Monthly Salary</th>
+                        <th>Maharashtra PT</th>
+                        <th>Karnataka PT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Up to ₹7,500</td>
+                        <td>₹0</td>
+                        <td>₹0</td>
+                    </tr>
+                    <tr>
+                        <td>₹7,501 - ₹10,000</td>
+                        <td>₹175</td>
+                        <td>₹0</td>
+                    </tr>
+                    <tr>
+                        <td>₹10,001 - ₹15,000</td>
+                        <td>₹200</td>
+                        <td>₹150</td>
+                    </tr>
+                    <tr>
+                        <td>Above ₹15,000</td>
+                        <td>₹200</td>
+                        <td>₹200</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Note: These are example rates. Actual PT slabs may vary and change over time. Always verify with current government regulations.</p>
+
+            <!-- Configuration Overview -->
+            <h3>Configuration Overview</h3>
+            <div class="info-box important">
+                <span class="icon">ℹ️</span>
+                <div>
+                    <strong>Two-Step Configuration:</strong> Location taxes require two configurations:
+                    <ol>
+                        <li><strong>Tax Types</strong> - Define the categories of taxes (e.g., PT, City Tax, Local Wage Tax)</li>
+                        <li><strong>Office Tax Rules</strong> - Configure how each tax is calculated for each specific office</li>
+                    </ol>
+                    <p style="margin-top: 8px; margin-bottom: 0;">Think of Tax Types as templates, and Office Tax Rules as the actual implementation for each location.</p>
+                </div>
+            </div>
+
+            <h3>7.1 Tax Types Sub-Tab</h3>
+            <p>Tax Types are templates that define categories of location-based taxes. Create tax types first, then configure rules for each office.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/location-taxes-types.png" alt="Tax Types Tab">
+                <div class="screenshot-caption">Tax Types sub-tab showing all configured tax type templates</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Tax Name</strong></td>
+                        <td>Display name of the tax type</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier (e.g., "PT")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deduction From</strong></td>
+                        <td>Whether deducted from Employee or Employer</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Statutory</strong></td>
+                        <td>Whether this is a government-mandated tax</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Creating a Tax Type</h4>
+            <div class="screenshot-container">
+                <img src="images/organization/tax-type-create-modal.png" alt="Create Tax Type Modal">
+                <div class="screenshot-caption">Create Tax Type modal</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Tax Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Full name (e.g., "Professional Tax")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tax Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Short code (e.g., "PT")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deduction From</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>
+                            - <code>Employee</code>: Deducted from employee salary<br>
+                            - <code>Employer</code>: Paid by employer (not deducted from salary)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Statutory</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Mark if this is a government-mandated tax</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Affects Taxable Income</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Whether this deduction affects income tax calculation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Additional details about the tax type</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.2 Office Tax Rules Sub-Tab</h3>
+            <p>Office Tax Rules define how each tax type is calculated for specific offices. This allows different rates/slabs for different locations.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/location-taxes-rules.png" alt="Office Tax Rules Tab">
+                <div class="screenshot-caption">Office Tax Rules sub-tab showing rules configured for each office</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Rule Name</strong></td>
+                        <td>Descriptive name for the rule</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tax Type</strong></td>
+                        <td>Which tax type this rule applies (e.g., PT)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td>Which office this rule applies to</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calculation</strong></td>
+                        <td>How the tax is calculated (Fixed, Percentage, Slab)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td>When this rule becomes effective</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Creating an Office Tax Rule</h4>
+            <div class="screenshot-container">
+                <img src="images/organization/tax-rule-create-modal.png" alt="Create Tax Rule Modal">
+                <div class="screenshot-caption">Create Office Tax Rule modal with calculation options</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select the office this rule applies to</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tax Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select from configured tax types</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rule Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Descriptive name (e.g., "Maharashtra PT")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calculation Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>
+                            - <code>Fixed</code>: Same amount for everyone<br>
+                            - <code>Percentage</code>: Percentage of salary<br>
+                            - <code>Slab</code>: Different amounts for different salary brackets
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fixed Amount</strong></td>
+                        <td>For Fixed type</td>
+                        <td>The fixed deduction amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage Rate</strong></td>
+                        <td>For Percentage type</td>
+                        <td>The percentage rate</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage Of</strong></td>
+                        <td>For Percentage type</td>
+                        <td>Calculate percentage of: Basic, Gross, or Taxable Income</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Slab Configuration</strong></td>
+                        <td>For Slab type</td>
+                        <td>JSON configuration defining salary brackets and rates</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Date when this rule becomes active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective To</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Date when this rule expires (empty = no expiry)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Example: Filled Tax Rule Form</h4>
+            <p>Here's an example of a completed tax rule configuration for Maharashtra Professional Tax:</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/tax-rule-filled.png" alt="Tax Rule Filled Example">
+                <div class="screenshot-caption">Completed tax rule form showing Maharashtra PT configuration</div>
+            </div>
+
+            <h4>Slab Configuration Example</h4>
+            <p>For slab-based calculations like Professional Tax in Maharashtra:</p>
+            <pre style="background: var(--code-bg); padding: 15px; border-radius: 8px; overflow-x: auto; color: var(--text-color);"><code>{
+  "slabs": [
+    { "min_amount": 0, "max_amount": 7500, "value": 0, "calculation_type": "fixed" },
+    { "min_amount": 7501, "max_amount": 10000, "value": 175, "calculation_type": "fixed" },
+    { "min_amount": 10001, "max_amount": null, "value": 200, "calculation_type": "fixed" }
+  ]
+}</code></pre>
+
+            <h3>7.3 Preview Tax Calculation</h3>
+            <p>The <strong>"Preview Tax"</strong> button allows you to test your tax rules by entering a sample salary and seeing the calculated deductions.</p>
+
+            <div class="screenshot-container">
+                <img src="images/organization/preview-tax-results.png" alt="Preview Tax Results">
+                <div class="screenshot-caption">Preview Tax modal showing calculated tax breakdown</div>
+            </div>
+
+            <h4>Preview Fields</h4>
+            <ul>
+                <li><strong>Office:</strong> Select the office to test</li>
+                <li><strong>Gross Salary:</strong> Enter monthly gross salary</li>
+                <li><strong>Basic Salary:</strong> Enter monthly basic salary</li>
+                <li><strong>Taxable Income:</strong> Enter monthly taxable income</li>
+            </ul>
+
+            <p>The preview will show:</p>
+            <ul>
+                <li>Each applicable tax rule and its calculated amount</li>
+                <li>The calculation type used (fixed, percentage, slab)</li>
+                <li>Total employee deductions</li>
+                <li>Total employer contributions</li>
+            </ul>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Testing Tip:</strong> Always use Preview Tax after creating rules to verify calculations are correct before payroll processing.
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. Org Chart Section -->
+        <section id="org-chart">
+            <h2><span class="section-number">8</span> Organization Chart</h2>
+            <p>The Organization Chart provides a visual representation of your company's reporting structure. Access it by clicking the <strong>"Org Chart"</strong> button in the Organization page header.</p>
+
+            <h3>Viewing the Org Chart</h3>
+            <div class="screenshot-container">
+                <img src="images/organization/org-chart-full-expanded.png" alt="Organization Chart">
+                <div class="screenshot-caption">Full organization chart showing reporting hierarchy</div>
+            </div>
+
+            <h4>Org Chart Features</h4>
+            <ul>
+                <li><strong>Hierarchical View:</strong> See the complete reporting structure from top to bottom</li>
+                <li><strong>Employee Cards:</strong> Each node shows employee name, designation, and department</li>
+                <li><strong>Expand/Collapse:</strong> Click on nodes to expand or collapse subtrees</li>
+                <li><strong>Zoom Controls:</strong> Zoom in/out to see different levels of detail</li>
+                <li><strong>Pan Navigation:</strong> Drag to navigate around large org charts</li>
+            </ul>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Tip:</strong> The org chart is automatically generated based on the reporting manager relationships defined in employee profiles. To update the structure, modify the "Reporting Manager" field in each employee's profile.
+                </div>
+            </div>
+        </section>
+
+        <!-- Dark Mode Support Section -->
+        <section id="dark-mode">
+            <h2><span class="section-number">9</span> Dark Mode Support</h2>
+            <p>The HRMS Organization page fully supports dark mode for comfortable viewing in low-light environments.</p>
+
+            <h3>Theme Toggle</h3>
+            <p>Click the <strong>theme toggle button</strong> in the top-right corner of the page (moon/sun icon) to switch between light and dark modes.</p>
+
+            <h3>Dark Mode Examples</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Designations in Dark Mode</h4>
+                    <div class="screenshot-container" style="margin: 10px 0;">
+                        <img src="images/organization/designations-dropdowns-dark-mode.png" alt="Designations Dark Mode">
+                        <div class="screenshot-caption">Designation dropdowns with dark theme</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>Holidays in Dark Mode</h4>
+                    <div class="screenshot-container" style="margin: 10px 0;">
+                        <img src="images/organization/holidays-toolbar-dark-mode.png" alt="Holidays Dark Mode">
+                        <div class="screenshot-caption">Holiday toolbar with dark theme</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">ℹ️</span>
+                <div>
+                    <strong>System Preference:</strong> By default, the theme follows your system's dark/light mode setting. Your manual preference is saved and will persist across sessions.
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section id="summary">
+            <h2><span class="section-number">✓</span> Setup Checklist</h2>
+            <p>Follow this checklist to ensure your organization is fully configured:</p>
+
+            <ol class="steps">
+                <li>
+                    <strong>Create at least one Office</strong><br>
+                    Set up your headquarters or primary office with correct timezone and weekend policy.
+                </li>
+                <li>
+                    <strong>Define your Departments</strong><br>
+                    Create your organizational structure with parent-child relationships if needed.
+                </li>
+                <li>
+                    <strong>Configure Designations</strong><br>
+                    Set up job titles with salary ranges and role assignments.
+                </li>
+                <li>
+                    <strong>Set up Shifts</strong><br>
+                    Create at least one shift (mark as default) with proper working days.
+                </li>
+                <li>
+                    <strong>Add Holidays for the year</strong><br>
+                    Use Bulk Add to quickly populate the holiday calendar.
+                </li>
+                <li>
+                    <strong>Configure Location Taxes (if applicable)</strong><br>
+                    Create tax types and office tax rules for payroll compliance.
+                </li>
+                <li>
+                    <strong>Test with Preview Tax</strong><br>
+                    Verify tax calculations are correct before processing payroll.
+                </li>
+            </ol>
+
+            <div class="info-box tip">
+                <span class="icon">🎉</span>
+                <div>
+                    <strong>You're Ready!</strong> Once all these steps are complete, you can start adding employees and processing payroll.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <a href="#" class="back-to-top" title="Back to Top">↑</a>
+
+    <footer>
+        <p>HyperDroid HRMS Knowledge Base | Last Updated: December 2025</p>
+        <p>Need help? Contact <a href="mailto:support@hyperdroid.io">support@hyperdroid.io</a></p>
+    </footer>
+
+    <script>
+        // Theme handling
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // Check for saved theme preference or system preference
+        function getPreferredTheme() {
+            const saved = localStorage.getItem('kb-theme');
+            if (saved) return saved;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Apply theme
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                themeIcon.textContent = '☀️';
+            } else {
+                html.setAttribute('data-theme', 'light');
+                themeIcon.textContent = '🌙';
+            }
+        }
+
+        // Initialize theme
+        applyTheme(getPreferredTheme());
+
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme') || 'light';
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('kb-theme', newTheme);
+        });
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('kb-theme')) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Show/hide back-to-top button
+        const backToTop = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+        backToTop.style.display = 'none';
+    </script>
+</body>
+</html>

@@ -46,6 +46,24 @@
     border-color: var(--color-danger-dark);
 }
 
+/* Outline button - theme aware */
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+.btn-outline:hover {
+    background-color: var(--hover-overlay);
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+}
+.btn-outline:focus, .btn-outline:active {
+    background-color: var(--active-overlay);
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+    box-shadow: var(--focus-ring);
+}
+
 /* Professional font stack */
 .hrms-container, .modal-content {
     font-family: var(--font-family);
@@ -192,12 +210,22 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 0.85rem;
-    background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
     background-size: 16px;
     cursor: pointer;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+}
+
+/* Dark mode arrow icon for select dropdowns */
+[data-theme="dark"] .filter-group select,
+[data-theme="dark"] .filter-group .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 
 .search-input-wrapper {
@@ -464,11 +492,14 @@
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 500;
+    /* Default theme-aware styling for badges without specific type */
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 .badge-head {
-    background: var(--secondary-transparent);
-    color: var(--brand-secondary);
+    background: var(--color-purple-light);
+    color: var(--color-purple-text);
 }
 
 .badge-regional {

@@ -217,6 +217,11 @@
                     <input type="text" id="designationSearch" placeholder="Search designations...">
                 </div>
                 <div class="filter-group">
+                    <select id="designationOffice" class="form-select">
+                        <option value="">All Offices</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <select id="designationDepartment" class="form-select">
                         <option value="">All Departments</option>
                     </select>
@@ -236,6 +241,7 @@
                         <tr>
                             <th>Designation</th>
                             <th>Code</th>
+                            <th>Office</th>
                             <th>Department</th>
                             <th>Category</th>
                             <th>Level</th>
@@ -247,7 +253,7 @@
                     </thead>
                     <tbody id="designationsTable">
                         <tr class="empty-state">
-                            <td colspan="9">
+                            <td colspan="10">
                                 <div class="empty-message">
                                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                         <path d="M20 7h-9"></path>
@@ -727,13 +733,6 @@
                                 <span class="toggle-slider"></span>
                             </label>
                             <span class="toggle-inline-label">Geofence</span>
-                        </div>
-                        <div class="toggle-inline">
-                            <label class="toggle-switch small">
-                                <input type="checkbox" id="officeIsHeadquarters" name="is_headquarters">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span class="toggle-inline-label">Headquarters</span>
                         </div>
                         <div class="toggle-inline">
                             <label class="toggle-switch small">

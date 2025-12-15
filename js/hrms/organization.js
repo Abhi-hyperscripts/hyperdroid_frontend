@@ -691,14 +691,28 @@ function updateDepartmentsTable() {
 
 function populateDepartmentSelects() {
     const activeDepts = departments.filter(d => d.is_active);
+    const activeOffices = offices.filter(o => o.is_active);
 
-    // Filter dropdown - no "All Departments" option, just departments
+    // Office filter dropdown - with "All Offices" option
+    const officeFilterSelect = document.getElementById('designationOffice');
+    if (officeFilterSelect) {
+        if (activeOffices.length === 0) {
+            officeFilterSelect.innerHTML = '<option value="">No Offices</option>';
+        } else {
+            officeFilterSelect.innerHTML = '<option value="">All Offices</option>';
+            activeOffices.forEach(office => {
+                officeFilterSelect.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
+            });
+        }
+    }
+
+    // Department filter dropdown - with "All Departments" option
     const filterSelect = document.getElementById('designationDepartment');
     if (filterSelect) {
         if (activeDepts.length === 0) {
             filterSelect.innerHTML = '<option value="">No Departments</option>';
         } else {
-            filterSelect.innerHTML = '';
+            filterSelect.innerHTML = '<option value="">All Departments</option>';
             activeDepts.forEach(dept => {
                 filterSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
             });
@@ -881,12 +895,17 @@ async function loadDesignations() {
 function updateDesignationsTable() {
     const tbody = document.getElementById('designationsTable');
     const searchTerm = document.getElementById('designationSearch')?.value?.toLowerCase() || '';
+    const officeFilter = document.getElementById('designationOffice')?.value || '';
     const deptFilter = document.getElementById('designationDepartment')?.value || '';
 
     let filtered = allDesignations.filter(d =>
         d.designation_name?.toLowerCase().includes(searchTerm) ||
         d.designation_code?.toLowerCase().includes(searchTerm)
     );
+
+    if (officeFilter) {
+        filtered = filtered.filter(d => d.office_id === officeFilter);
+    }
 
     if (deptFilter) {
         filtered = filtered.filter(d => d.department_id === deptFilter);
@@ -895,7 +914,7 @@ function updateDesignationsTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="9">
+                <td colspan="10">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <path d="M20 7h-9"></path>
@@ -914,7 +933,8 @@ function updateDesignationsTable() {
         <tr>
             <td><strong>${escapeHtml(desig.designation_name)}</strong></td>
             <td><code>${escapeHtml(desig.designation_code)}</code></td>
-            <td>${escapeHtml(desig.department_name || 'All')}</td>
+            <td>${escapeHtml(desig.office_name || '-')}</td>
+            <td>${escapeHtml(desig.department_name || '-')}</td>
             <td>${escapeHtml(desig.role_category || '-')}</td>
             <td>Level ${desig.level || 1}</td>
             <td>${formatHrmsRoles(desig.default_hrms_roles)}</td>
@@ -1222,7 +1242,6 @@ function showCreateOfficeModal() {
 
     // Reset new fields
     document.getElementById('officeEnableGeofence').checked = false;
-    document.getElementById('officeIsHeadquarters').checked = false;
     document.getElementById('officeIsActive').checked = true;
 
     document.getElementById('officeModal').classList.add('active');
@@ -1255,7 +1274,6 @@ function editOffice(id) {
 
     // Set new toggle fields
     document.getElementById('officeEnableGeofence').checked = office.enable_geofence_attendance === true;
-    document.getElementById('officeIsHeadquarters').checked = office.is_headquarters === true;
     document.getElementById('officeIsActive').checked = office.is_active !== false;
 
     document.getElementById('officeModalTitle').textContent = 'Edit Office';
@@ -1488,12 +1506,15 @@ function populateNestedOfficeDeptDropdown(selectedOfficeId = '', selectedDeptId 
 
     container.innerHTML = html;
 
-    // Update selection text if we have selected values
+    // Update selection text and hidden inputs if we have selected values
     if (selectedOfficeId && selectedDeptId) {
         const office = offices.find(o => o.id === selectedOfficeId);
         const dept = departments.find(d => d.id === selectedDeptId);
         if (office && dept) {
             updateOfficeDeptSelectionText(office.office_name, dept.department_name);
+            // Also set the hidden input values (critical for save to work)
+            document.getElementById('desigOffice').value = selectedOfficeId;
+            document.getElementById('desigDepartment').value = selectedDeptId;
         }
     }
 }
@@ -1913,7 +1934,8 @@ async function saveOffice() {
         const data = {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
-            is_headquarters: document.getElementById('officeIsHeadquarters').checked,
+            // Auto-derive is_headquarters from office_type (dropdown has "head" option)
+            is_headquarters: officeTypeVal === 'head',
             office_type: officeTypeVal,
             timezone: document.getElementById('officeTimezone').value,
             address_line1: document.getElementById('officeAddress').value,
@@ -2333,10 +2355,11 @@ function updateBulkHolidayCount() {
 
 async function saveBulkHolidays() {
     const year = document.getElementById('bulkHolidayYear').value;
-    const officeId = document.getElementById('bulkHolidayOffice').value || null;
+    const selectedOfficeId = document.getElementById('bulkHolidayOffice').value;
     const rows = document.querySelectorAll('#bulkHolidayEntries .bulk-entry-row');
 
-    const holidays = [];
+    // Collect holiday data from rows
+    const holidayData = [];
     let hasErrors = false;
 
     rows.forEach(row => {
@@ -2346,12 +2369,11 @@ async function saveBulkHolidays() {
         const desc = row.querySelector('.holiday-desc').value.trim();
 
         if (name && date) {
-            holidays.push({
+            holidayData.push({
                 holiday_name: name,
                 holiday_date: date,
                 holiday_type: type,
-                description: desc || null,
-                office_id: officeId
+                description: desc || null
             });
         } else if (name || date) {
             hasErrors = true;
@@ -2364,8 +2386,35 @@ async function saveBulkHolidays() {
         return;
     }
 
-    if (holidays.length === 0) {
+    if (holidayData.length === 0) {
         showToast('Please add at least one holiday', 'error');
+        return;
+    }
+
+    // Build final holidays array - if "All Offices" selected, create for each office
+    const holidays = [];
+    const activeOffices = offices.filter(o => o.is_active !== false);
+
+    if (!selectedOfficeId && activeOffices.length > 0) {
+        // "All Offices" selected - create holiday for each office
+        activeOffices.forEach(office => {
+            holidayData.forEach(hd => {
+                holidays.push({
+                    ...hd,
+                    office_id: office.id
+                });
+            });
+        });
+    } else if (selectedOfficeId) {
+        // Specific office selected
+        holidayData.forEach(hd => {
+            holidays.push({
+                ...hd,
+                office_id: selectedOfficeId
+            });
+        });
+    } else {
+        showToast('No offices available. Please create an office first.', 'error');
         return;
     }
 
@@ -2373,7 +2422,11 @@ async function saveBulkHolidays() {
         showLoading();
         await api.createBulkHolidays(holidays);
         closeModal('bulkHolidayModal');
-        showToast(`Successfully added ${holidays.length} holiday(s)`, 'success');
+        const officeCount = !selectedOfficeId ? activeOffices.length : 1;
+        const msg = officeCount > 1
+            ? `Successfully added ${holidayData.length} holiday(s) to ${officeCount} offices`
+            : `Successfully added ${holidayData.length} holiday(s)`;
+        showToast(msg, 'success');
         await loadHolidays();
         hideLoading();
     } catch (error) {
@@ -2616,6 +2669,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('departmentSearch')?.addEventListener('input', updateDepartmentsTable);
     document.getElementById('departmentOffice')?.addEventListener('change', updateDepartmentsTable);
     document.getElementById('designationSearch')?.addEventListener('input', updateDesignationsTable);
+    document.getElementById('designationOffice')?.addEventListener('change', updateDesignationsTable);
     document.getElementById('designationDepartment')?.addEventListener('change', updateDesignationsTable);
     document.getElementById('shiftSearch')?.addEventListener('input', updateShiftsTable);
     document.getElementById('shiftOffice')?.addEventListener('change', updateShiftsTable);
@@ -2867,7 +2921,7 @@ async function loadOfficeTaxRules() {
             response = await api.getOfficeTaxRules(officeFilter, showInactive);
         } else {
             // Load all rules by making a request without office filter
-            response = await api.request(`/hrms/payroll/location-taxes/rules?includeInactive=${showInactive}`);
+            response = await api.request(`/hrms/location-taxes/rules?includeInactive=${showInactive}`);
         }
         taxRules = Array.isArray(response) ? response : (response?.data || []);
         updateTaxRulesTable();
@@ -3114,6 +3168,7 @@ async function saveTaxRule() {
         }
 
         if (id) {
+            data.id = id; // Include ID in request body for backend validation
             await api.updateOfficeTaxRule(id, data);
         } else {
             await api.createOfficeTaxRule(data);
@@ -3326,7 +3381,8 @@ function displayTaxPreviewResults(result) {
     const totalEl = document.getElementById('taxPreviewTotal');
     const resultsDiv = document.getElementById('taxPreviewResults');
 
-    if (!result || !result.tax_calculations || result.tax_calculations.length === 0) {
+    // Backend returns tax_items, not tax_calculations
+    if (!result || !result.tax_items || result.tax_items.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center">No applicable taxes found for this configuration</td>
@@ -3334,12 +3390,12 @@ function displayTaxPreviewResults(result) {
         `;
         totalEl.textContent = formatCurrency(0);
     } else {
-        tbody.innerHTML = result.tax_calculations.map(calc => `
+        tbody.innerHTML = result.tax_items.map(item => `
             <tr>
-                <td>${escapeHtml(calc.tax_type_name || '-')}</td>
-                <td>${escapeHtml(calc.rule_name || '-')}</td>
-                <td>${escapeHtml(calc.calculation_details || '-')}</td>
-                <td><strong>${formatCurrency(calc.amount || 0)}</strong></td>
+                <td>${escapeHtml(item.tax_code || '-')}</td>
+                <td>${escapeHtml(item.rule_name || '-')}</td>
+                <td>${escapeHtml(item.calculation_type || '-')}</td>
+                <td><strong>${formatCurrency(item.tax_amount || 0)}</strong></td>
             </tr>
         `).join('');
         totalEl.textContent = formatCurrency(result.total_tax || 0);

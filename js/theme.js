@@ -43,13 +43,16 @@ const BRAND_CONFIG = {
         // info: '#3b82f6',
 
         // Background colors (light mode defaults shown)
-        // bgBody: '#f5f7fa',        // Main app background
-        // bgCard: '#ffffff',        // Card/panel backgrounds
+        // bgBody: '#0d9488',        // Main app background color
+        // bgCard: '#ffffff',        // Card/panel backgrounds - AUTO-SET when bgBody is colored
         // bgNavbar: '#ffffff',      // Navbar background
         // bgSidebar: '#ffffff',     // Sidebar background
         // bgInput: '#ffffff',       // Input field backgrounds
     }
 };
+
+
+
 
 // ============================================================================
 // THEME ENGINE - DO NOT MODIFY BELOW THIS LINE
@@ -292,26 +295,26 @@ const Theme = {
             '--brand-secondary': secondary,
             '--brand-accent': accent,
 
-            // Semantic colors
+            // Semantic colors - light variants use alpha for dark mode (blends with dark bg), lighten for light mode
             '--color-success': success,
-            '--color-success-light': utils.lighten(success, 35),
+            '--color-success-light': this.isDarkMode() ? utils.rgba(success, 0.2) : utils.lighten(success, 35),
             '--color-success-dark': utils.darken(success, 10),
-            '--color-success-text': utils.darken(success, 25),
+            '--color-success-text': this.isDarkMode() ? utils.lighten(success, 25) : utils.darken(success, 25),
 
             '--color-danger': danger,
-            '--color-danger-light': utils.lighten(danger, 35),
+            '--color-danger-light': this.isDarkMode() ? utils.rgba(danger, 0.2) : utils.lighten(danger, 35),
             '--color-danger-dark': utils.darken(danger, 10),
-            '--color-danger-text': utils.darken(danger, 25),
+            '--color-danger-text': this.isDarkMode() ? utils.lighten(danger, 25) : utils.darken(danger, 25),
 
             '--color-warning': warning,
-            '--color-warning-light': utils.lighten(warning, 35),
+            '--color-warning-light': this.isDarkMode() ? utils.rgba(warning, 0.2) : utils.lighten(warning, 35),
             '--color-warning-dark': utils.darken(warning, 10),
-            '--color-warning-text': utils.darken(warning, 25),
+            '--color-warning-text': this.isDarkMode() ? utils.lighten(warning, 15) : utils.darken(warning, 25),
 
             '--color-info': info,
-            '--color-info-light': utils.lighten(info, 35),
+            '--color-info-light': this.isDarkMode() ? utils.rgba(info, 0.2) : utils.lighten(info, 35),
             '--color-info-dark': utils.darken(info, 10),
-            '--color-info-text': utils.darken(info, 25),
+            '--color-info-text': this.isDarkMode() ? utils.lighten(info, 25) : utils.darken(info, 25),
 
             // Text colors
             '--text-link': primary,
@@ -366,14 +369,42 @@ const Theme = {
             // Auto-generate the page gradient from the background color
             const bgBodyDark = utils.darken(bgBody, 5);
             theme['--gradient-page-bg'] = `linear-gradient(135deg, ${bgBody} 0%, ${bgBodyDark} 100%)`;
-            theme['--bg-card-hover'] = utils.darken(bgBody, 3);
 
-            // Auto-detect if background is dark and set appropriate text colors
+            // Auto-detect background luminance
             const bgRgb = utils.hexToRgb(bgBody);
-            if (bgRgb) {
-                const luminance = (0.299 * bgRgb.r + 0.587 * bgRgb.g + 0.114 * bgRgb.b) / 255;
-                if (luminance < 0.5) {
-                    // Dark background - use light text
+            const bgLuminance = bgRgb ? (0.299 * bgRgb.r + 0.587 * bgRgb.g + 0.114 * bgRgb.b) / 255 : 0.5;
+
+            // AUTO-CONTRAST: If bgCard not explicitly set, auto-set contrasting card color
+            if (!bgCard) {
+                // Use white cards for colored backgrounds (provides best contrast)
+                theme['--bg-card'] = '#ffffff';
+                theme['--bg-card-hover'] = '#f8fafc';
+                theme['--bg-elevated'] = '#ffffff';
+                theme['--bg-input'] = '#ffffff';
+                theme['--bg-sidebar'] = '#ffffff';
+                theme['--bg-navbar'] = '#ffffff';
+                // Override glass effects to solid white (navbar uses glass-bg-strong)
+                theme['--glass-bg'] = '#ffffff';
+                theme['--glass-bg-light'] = '#ffffff';
+                theme['--glass-bg-strong'] = '#ffffff';
+                // CRITICAL: Disable backdrop-filter blur - it shows colored bg through white glass
+                theme['--glass-blur'] = 'none';
+                // Ensure text colors are dark for white cards
+                theme['--text-primary'] = '#1e293b';
+                theme['--text-secondary'] = '#64748b';
+                theme['--text-muted'] = '#94a3b8';
+                // Override card gradients to use neutral colors (prevent color clash)
+                theme['--gradient-card-highlight'] = 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)';
+                // Card borders for definition against colored background
+                theme['--border-color'] = 'rgba(0, 0, 0, 0.1)';
+                theme['--border-color-light'] = 'rgba(0, 0, 0, 0.06)';
+                // Card shadow for better separation from colored background
+                theme['--shadow-md'] = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                theme['--shadow-lg'] = '0 8px 24px rgba(0, 0, 0, 0.2)';
+            } else {
+                theme['--bg-card-hover'] = utils.darken(bgBody, 3);
+                // If background is dark, adjust text colors
+                if (bgLuminance < 0.5) {
                     theme['--text-primary'] = '#f1f5f9';
                     theme['--text-secondary'] = '#94a3b8';
                     theme['--text-muted'] = '#64748b';
@@ -420,18 +451,28 @@ const Theme = {
             console.warn('[Theme] Using fallback colors for invalid values');
         }
 
-        const theme = this.generateTheme(config);
         const root = document.documentElement;
 
         // Determine mode: use provided, stored, system preference, or default to light
+        // IMPORTANT: Set currentMode BEFORE generating theme so isDarkMode() returns correct value
         const resolvedMode = mode || this.currentMode || this.getSystemPreference();
+        this.currentMode = resolvedMode;
+
+        // Generate theme (uses this.isDarkMode() for mode-aware colors)
+        const theme = this.generateTheme(config);
 
         // Set data-theme attribute for CSS dark mode styles
         root.setAttribute('data-theme', resolvedMode);
 
         // Apply all CSS custom properties
+        // Properties that need !important to override dark mode CSS
+        const importantProps = ['--glass-bg', '--glass-bg-light', '--glass-bg-strong', '--glass-blur'];
         Object.entries(theme).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
+            if (importantProps.includes(property)) {
+                root.style.setProperty(property, value, 'important');
+            } else {
+                root.style.setProperty(property, value);
+            }
         });
 
         // Store current config and mode for reference
