@@ -21,27 +21,27 @@
     align-items: center;
     gap: 8px;
     font-size: 18px;
-    color: #1a1a2e;
+    color: var(--text-primary);
 }
 
 .breadcrumb-item {
     cursor: pointer;
-    color: #666;
+    color: var(--text-secondary);
     transition: color 0.2s;
 }
 
 .breadcrumb-item:hover {
-    color: #1a1a2e;
+    color: var(--text-primary);
 }
 
 .breadcrumb-item.active {
-    color: #1a1a2e;
+    color: var(--text-primary);
     font-weight: 600;
     cursor: default;
 }
 
 .breadcrumb-separator {
-    color: #aaa;
+    color: var(--text-muted);
 }
 
 .drive-actions {
@@ -51,7 +51,7 @@
 
 /* Storage Info - Glassmorphism style like Vision cards */
 .storage-info {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
@@ -60,17 +60,17 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-md);
 }
 
 .storage-text {
-    color: #666;
+    color: var(--text-secondary);
     font-size: 14px;
 }
 
 #usedStorage {
-    color: #1a1a2e;
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -83,7 +83,7 @@
 
 /* Drive Items - Glassmorphism style */
 .drive-item {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
@@ -95,14 +95,14 @@
     align-items: center;
     text-align: center;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-md);
 }
 
 .drive-item:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    background: rgba(255, 255, 255, 0.85);
+    box-shadow: var(--shadow-lg);
+    background: var(--bg-card-hover);
 }
 
 .drive-item-icon {
@@ -116,21 +116,21 @@
 }
 
 .drive-item-icon svg {
-    color: #6c5ce7;
+    color: var(--brand-secondary);
     width: 48px;
     height: 48px;
 }
 
 .drive-item.folder .drive-item-icon svg {
-    color: #f39c12;
+    color: var(--color-warning);
 }
 
 .shared-badge {
     position: absolute;
     bottom: -4px;
     right: -8px;
-    background: #27ae60;
-    color: #fff;
+    background: var(--color-success);
+    color: var(--text-inverse);
     font-size: 10px;
     padding: 2px 6px;
     border-radius: 4px;
@@ -145,7 +145,7 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -154,7 +154,7 @@
 
 .drive-item-meta {
     font-size: 12px;
-    color: #888;
+    color: var(--text-muted);
 }
 
 /* Drive Item Action Buttons */
@@ -163,7 +163,7 @@
     gap: 4px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-top: 1px solid var(--border-color-light);
     width: 100%;
     justify-content: center;
 }
@@ -172,19 +172,19 @@
     width: 32px;
     height: 32px;
     border: none;
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--hover-overlay);
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .action-btn:hover {
-    background: rgba(0, 0, 0, 0.08);
-    color: #1a1a2e;
+    background: var(--hover-overlay-strong);
+    color: var(--text-primary);
     transform: scale(1.1);
 }
 
@@ -194,8 +194,8 @@
 }
 
 .action-btn-danger:hover {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    background: var(--color-danger-light);
+    color: var(--color-danger);
 }
 
 /* Mobile - slightly larger touch targets */
@@ -217,17 +217,17 @@
     align-items: center;
     justify-content: center;
     padding: 80px 20px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .empty-state svg {
-    color: #ccc;
+    color: var(--border-color);
     margin-bottom: 16px;
 }
 
 .empty-state p {
     margin: 4px 0;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 /* Loading State */
@@ -237,14 +237,14 @@
     align-items: center;
     justify-content: center;
     padding: 80px 20px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #e0e0e0;
-    border-top-color: #6c5ce7;
+    border: 3px solid var(--border-color-light);
+    border-top-color: var(--brand-secondary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 16px;
@@ -254,18 +254,18 @@
     to { transform: rotate(360deg); }
 }
 
-/* Context Menu - Light style */
+/* Context Menu */
 .context-menu {
     position: fixed;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-elevated);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 8px 0;
     min-width: 180px;
     z-index: 1000;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-xl);
 }
 
 .context-menu-item {
@@ -274,62 +274,62 @@
     gap: 12px;
     padding: 10px 16px;
     cursor: pointer;
-    color: #1a1a2e;
+    color: var(--text-primary);
     font-size: 14px;
     transition: background 0.2s;
 }
 
 .context-menu-item:hover {
-    background: rgba(108, 92, 231, 0.1);
+    background: var(--selected-bg);
 }
 
 .context-menu-item svg {
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .context-menu-item.danger {
-    color: #e74c3c;
+    color: var(--color-danger);
 }
 
 .context-menu-item.danger svg {
-    color: #e74c3c;
+    color: var(--color-danger);
 }
 
 .context-menu-divider {
     height: 1px;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--border-color);
     margin: 8px 0;
 }
 
 /* Upload Dropzone - Light style */
 .upload-dropzone {
-    border: 2px dashed #ccc;
+    border: 2px dashed var(--border-color);
     border-radius: 16px;
     padding: 60px 20px;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--glass-bg-light);
 }
 
 .upload-dropzone:hover,
 .upload-dropzone.dragover {
-    border-color: #6c5ce7;
-    background: rgba(108, 92, 231, 0.05);
+    border-color: var(--brand-secondary);
+    background: var(--selected-bg);
 }
 
 .upload-dropzone svg {
-    color: #1a1a2e;
+    color: var(--text-primary);
     margin-bottom: 16px;
 }
 
 .upload-dropzone p {
     margin: 8px 0;
-    color: #1a1a2e;
+    color: var(--text-primary);
 }
 
 .upload-dropzone p.text-muted {
-    color: #888;
+    color: var(--text-muted);
 }
 
 /* Upload Queue - Light style */
@@ -338,18 +338,18 @@
 }
 
 .upload-queue h6 {
-    color: #1a1a2e;
+    color: var(--text-primary);
     margin-bottom: 12px;
     font-weight: 600;
 }
 
 .upload-item {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 12px;
     margin-bottom: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--hover-overlay-medium);
 }
 
 .upload-item-info {
@@ -359,7 +359,7 @@
 }
 
 .upload-item-name {
-    color: #1a1a2e;
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
@@ -369,13 +369,13 @@
 }
 
 .upload-item-size {
-    color: #888;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
 .upload-item-progress {
     height: 4px;
-    background: #e0e0e0;
+    background: var(--border-color-light);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -383,21 +383,21 @@
 
 .progress-bar {
     height: 100%;
-    background: #1a1a2e;
+    background: var(--brand-primary);
     transition: width 0.3s;
 }
 
 .upload-item-status {
     font-size: 12px;
-    color: #888;
+    color: var(--text-muted);
 }
 
 .upload-item.complete .upload-item-status {
-    color: #27ae60;
+    color: var(--color-success);
 }
 
 .upload-item.error .upload-item-status {
-    color: #e74c3c;
+    color: var(--color-danger);
 }
 
 /* Share Modal - Existing Link Section */
@@ -413,21 +413,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1a1a2e 0%, #333 100%);
+    background: var(--gradient-primary);
     border-radius: 50%;
 }
 
 .share-success-icon svg {
     width: 30px;
     height: 30px;
-    color: white;
-    stroke: white;
+    color: var(--text-inverse);
+    stroke: var(--text-inverse);
 }
 
 .share-success-text {
     font-size: 16px;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--text-primary);
     margin-bottom: 20px;
 }
 
@@ -441,11 +441,11 @@
 .modal-content .share-url-input[type="text"] {
     width: 100% !important;
     padding: 14px 16px !important;
-    background: #f8f9fa !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border-color-light) !important;
     border-radius: 10px !important;
     font-size: 13px !important;
-    color: #1a1a2e !important;
+    color: var(--text-primary) !important;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace !important;
     text-align: center;
     overflow: hidden;
@@ -456,7 +456,7 @@
 
 .share-url-input:focus {
     outline: none;
-    border-color: #1a1a2e !important;
+    border-color: var(--brand-primary) !important;
 }
 
 .share-actions {
@@ -470,8 +470,8 @@
     gap: 8px;
     width: 100%;
     padding: 14px 24px;
-    background: #1a1a2e;
-    color: white;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 10px;
     font-size: 15px;
@@ -481,9 +481,9 @@
 }
 
 .btn-copy-link:hover {
-    background: #333;
+    background: var(--brand-primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-copy-link svg {
@@ -495,8 +495,8 @@
     width: 100%;
     padding: 12px 20px;
     background: transparent;
-    color: #666;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color-light);
     border-radius: 10px;
     font-size: 14px;
     font-weight: 500;
@@ -505,9 +505,9 @@
 }
 
 .btn-revoke:hover {
-    background: #f8f9fa;
-    border-color: rgba(0, 0, 0, 0.2);
-    color: #1a1a2e;
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 /* Navigation Links */
@@ -518,7 +518,7 @@
 }
 
 .nav-link {
-    color: #666;
+    color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
     padding: 8px 16px;
@@ -528,31 +528,31 @@
 }
 
 .nav-link:hover {
-    color: #1a1a2e;
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+    background: var(--hover-overlay-medium);
 }
 
 .nav-link.active {
-    color: #1a1a2e;
-    background: rgba(26, 26, 46, 0.1);
+    color: var(--brand-primary);
+    background: var(--selected-bg);
     font-weight: 600;
 }
 
 /* Folder-First Upload Notice */
 .upload-notice {
-    background: rgba(241, 196, 15, 0.1);
-    border: 1px solid rgba(241, 196, 15, 0.3);
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #856404;
+    color: var(--color-warning-text);
 }
 
 .upload-notice svg {
-    color: #f39c12;
+    color: var(--color-warning);
     flex-shrink: 0;
 }
 

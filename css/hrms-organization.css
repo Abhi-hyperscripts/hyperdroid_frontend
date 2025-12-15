@@ -1,0 +1,457 @@
+/* =============================================================
+   HRMS Organization Styles
+   Extracted from organization.html inline styles
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   BADGES
+   ============================================================= */
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.badge-head {
+    background: var(--gray-950);
+    color: var(--text-inverse);
+}
+
+.badge-branch {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.badge-regional {
+    background: var(--color-success);
+    color: var(--text-inverse);
+}
+
+.badge-satellite {
+    background: var(--warning-alpha-20);
+    color: var(--color-warning-text);
+}
+
+.badge-national {
+    background: var(--color-danger);
+    color: var(--text-inverse);
+}
+
+.badge-optional {
+    background: var(--gray-500);
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   CHECKBOX GROUP
+   ============================================================= */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.checkbox-item input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.form-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   HOLIDAYS CALENDAR
+   ============================================================= */
+.holidays-calendar {
+    margin-bottom: 24px;
+}
+
+/* =============================================================
+   HRMS ROLES GRID - Compact Layout
+   ============================================================= */
+.hrms-roles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.role-category-group {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.role-category-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+/* =============================================================
+   ROLE TOGGLE ITEM - Compact container for each role
+   ============================================================= */
+.role-toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--gray-200);
+    border-radius: 5px;
+    transition: all 0.15s ease;
+}
+
+.role-toggle-item:last-child {
+    margin-bottom: 0;
+}
+
+.role-toggle-item:hover {
+    border-color: var(--color-info);
+    background: var(--gray-50);
+}
+
+.role-toggle-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.role-name {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    display: block;
+}
+
+.role-desc {
+    font-size: 10px;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 1px;
+    line-height: 1.3;
+}
+
+/* =============================================================
+   COMPACT TOGGLE SWITCH FOR ROLES
+   ============================================================= */
+.role-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.role-toggle input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.role-toggle-track {
+    width: 28px;
+    height: 16px;
+    background: var(--toggle-bg);
+    border-radius: 8px;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.role-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--toggle-knob-bg);
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.role-toggle input:checked + .role-toggle-track {
+    background: var(--toggle-bg-checked);
+}
+
+.role-toggle input:checked + .role-toggle-track .role-toggle-thumb {
+    transform: translateX(12px);
+}
+
+.role-toggle.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.role-toggle.disabled .role-toggle-track {
+    background: var(--toggle-bg);
+}
+
+/* =============================================================
+   STATUS TOGGLE STYLES
+   ============================================================= */
+.status-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.status-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.status-label.active {
+    color: var(--text-primary);
+}
+
+.status-label.inactive {
+    color: var(--text-secondary);
+}
+
+.status-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.status-toggle input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.status-toggle-track {
+    width: 36px;
+    height: 20px;
+    background: var(--toggle-bg);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.status-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--toggle-knob-bg);
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.status-toggle input:checked + .status-toggle-track {
+    background: var(--toggle-bg-checked);
+}
+
+.status-toggle input:checked + .status-toggle-track .status-toggle-thumb {
+    transform: translateX(16px);
+}
+
+/* =============================================================
+   ROLE TAGS FOR TABLE DISPLAY
+   ============================================================= */
+.role-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-right: 3px;
+    margin-bottom: 2px;
+}
+
+.role-user {
+    background: var(--gray-200);
+    color: var(--text-secondary);
+}
+
+.role-manager {
+    background: var(--info-alpha-20);
+    color: var(--color-info-dark);
+}
+
+.role-admin {
+    background: var(--success-alpha-20);
+    color: var(--color-success-dark);
+}
+
+.role-hr {
+    background: var(--warning-alpha-20);
+    color: var(--color-warning-text);
+}
+
+.role-hr-admin {
+    background: var(--danger-alpha-20);
+    color: var(--color-danger-dark);
+}
+
+.role-hr-manager {
+    background: var(--purple-alpha-20);
+    color: var(--color-purple-dark);
+}
+
+.role-default {
+    background: var(--gray-200);
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   SUB-TABS STYLES
+   ============================================================= */
+.sub-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--gray-200);
+    padding-bottom: 12px;
+}
+
+.sub-tab-btn {
+    padding: 8px 16px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sub-tab-btn:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+}
+
+.sub-tab-btn.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border-color: var(--btn-primary-bg);
+}
+
+.sub-tab-content {
+    display: none;
+}
+
+.sub-tab-content.active {
+    display: block;
+}
+
+/* =============================================================
+   SLAB ROW STYLES (Tax Configuration)
+   ============================================================= */
+.slab-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--gray-50);
+    border-radius: 6px;
+}
+
+.slab-row .form-control {
+    width: 120px;
+}
+
+.slab-separator {
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.slab-row .btn-danger {
+    padding: 4px 8px;
+    flex-shrink: 0;
+}
+
+/* =============================================================
+   TAX CALCULATION BADGE STYLES
+   ============================================================= */
+.badge-fixed {
+    background: var(--info-alpha-20);
+    color: var(--color-info-dark);
+}
+
+.badge-percentage {
+    background: var(--warning-alpha-20);
+    color: var(--color-orange-dark);
+}
+
+.badge-slab {
+    background: var(--purple-alpha-20);
+    color: var(--color-purple-dark);
+}
+
+.badge-formula {
+    background: var(--success-alpha-20);
+    color: var(--color-success-dark);
+}
+
+/* =============================================================
+   ALERT STYLES FOR MODALS
+   ============================================================= */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.alert-info {
+    background: var(--info-alpha-20);
+    color: var(--color-info-dark);
+    border: 1px solid var(--info-alpha-30);
+}
+
+/* =============================================================
+   MODAL SIZES
+   ============================================================= */
+.modal-xl {
+    max-width: 900px;
+}
+
+/* =============================================================
+   RESPONSIVE STYLES
+   ============================================================= */
+@media (max-width: 768px) {
+    .hrms-roles-grid {
+        grid-template-columns: 1fr;
+    }
+}

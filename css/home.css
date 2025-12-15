@@ -1,0 +1,255 @@
+/* =============================================================
+   Home Page Styles
+   Extracted from home.html inline styles
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   HOME CONTENT CONTAINER
+   ============================================================= */
+.home-content {
+    min-height: calc(100vh - 60px);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =============================================================
+   WELCOME SECTION
+   ============================================================= */
+.welcome-section {
+    text-align: center;
+    margin-bottom: 48px;
+    max-width: 600px;
+}
+
+.welcome-greeting {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.welcome-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.welcome-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* =============================================================
+   APP CARDS GRID
+   ============================================================= */
+.apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 960px;
+    margin-bottom: 48px;
+}
+
+.app-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color-light);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+}
+
+.app-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-color-strong);
+    box-shadow: var(--shadow-xl);
+}
+
+.app-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+/* =============================================================
+   APP ICONS
+   ============================================================= */
+.app-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.app-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.app-card.vision .app-icon {
+    background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
+}
+
+.app-card.vision .app-icon svg {
+    color: var(--text-inverse);
+}
+
+.app-card.drive .app-icon {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-light-accent));
+}
+
+.app-card.drive .app-icon svg {
+    color: var(--text-inverse);
+}
+
+.app-card.admin .app-icon {
+    background: linear-gradient(135deg, var(--color-danger), var(--color-danger-light-accent));
+}
+
+.app-card.admin .app-icon svg {
+    color: var(--text-inverse);
+}
+
+.app-card.chat .app-icon {
+    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
+}
+
+.app-card.chat .app-icon svg {
+    color: var(--text-inverse);
+}
+
+.app-card.hrms .app-icon {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+}
+
+.app-card.hrms .app-icon svg {
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   APP STATUS INDICATORS
+   ============================================================= */
+.app-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--hover-overlay);
+    color: var(--text-muted);
+}
+
+.app-status.online {
+    background: var(--success-alpha-10);
+    color: var(--color-success-dark);
+}
+
+.app-status.offline {
+    background: var(--danger-alpha-10);
+    color: var(--color-danger-dark);
+}
+
+.status-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* =============================================================
+   APP CARD BODY
+   ============================================================= */
+.app-card-body h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.app-card-body p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* =============================================================
+   APP CARD FOOTER
+   ============================================================= */
+.app-card-footer {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.app-card:hover .app-action {
+    color: var(--text-primary);
+}
+
+.app-action svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+}
+
+.app-card:hover .app-action svg {
+    transform: translateX(4px);
+}
+
+/* =============================================================
+   ADMIN CARD VISIBILITY
+   ============================================================= */
+.app-card.admin {
+    display: none;
+}
+
+.app-card.admin.visible {
+    display: block;
+}
+
+/* =============================================================
+   RESPONSIVE - MOBILE
+   ============================================================= */
+@media (max-width: 768px) {
+    .home-content {
+        padding: 24px 16px;
+    }
+
+    .welcome-title {
+        font-size: 1.5rem;
+    }
+
+    .apps-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .app-card {
+        padding: 24px;
+    }
+}

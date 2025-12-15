@@ -136,14 +136,14 @@ async function handleFormSubmit() {
 
     // Basic validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-        showError('Please fill in all fields');
+        Toast.error('Please fill in all fields');
         resetSwipeButton();
         return;
     }
 
     // Password matching validation
     if (password !== confirmPassword) {
-        showError('Passwords do not match');
+        Toast.error('Passwords do not match');
         resetSwipeButton();
         return;
     }
@@ -151,7 +151,7 @@ async function handleFormSubmit() {
     // Password strength validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
     if (!passwordRegex.test(password)) {
-        showError('Password must be at least 8 characters with uppercase, lowercase, digit, and special character (!@#$%^&*)');
+        Toast.error('Password must be at least 8 characters with uppercase, lowercase, digit, and special character (!@#$%^&*)');
         resetSwipeButton();
         return;
     }
@@ -165,32 +165,22 @@ async function handleFormSubmit() {
 
         if (response.success) {
             handleText.textContent = 'Success!';
-            showSuccess('Account created successfully! Redirecting to login...');
+            Toast.success('Account created successfully! Redirecting to login...');
 
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);
         } else {
-            showError(response.message || 'Registration failed');
+            Toast.error(response.message || 'Registration failed');
             resetSwipeButton();
         }
     } catch (error) {
-        showError(error.message || 'An error occurred');
+        Toast.error(error.message || 'An error occurred');
         resetSwipeButton();
     }
 }
 
-function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    errorMessage.classList.add('show');
-}
-
-function showSuccess(message) {
-    successMessage.textContent = message;
-    successMessage.style.display = 'block';
-    successMessage.classList.add('show');
-}
+// Local showError/showSuccess removed - using unified toast.js instead
 
 function resetSwipeButton() {
     if (swipeHandle && swipeTrack) {

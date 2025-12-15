@@ -208,12 +208,12 @@ async function loadDriveContents() {
             updateBreadcrumb(result.current_folder);
             updateUploadButtonState();
         } else {
-            showError(result.message || 'Failed to load drive contents');
+            Toast.error(result.message || 'Failed to load drive contents');
             // Don't clear contents on error - keep showing what we had
         }
     } catch (error) {
         console.error('Error loading drive:', error);
-        showError(error.message);
+        Toast.error(error.message);
         // Don't clear contents on error - keep showing what we had
     } finally {
         showLoading(false);
@@ -416,10 +416,11 @@ function getFileIcon(contentType, fileName) {
 
     // PDF
     if (contentType === 'application/pdf' || ext === 'pdf') {
-        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="1.5">
+        const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--color-danger').trim() || '#ef4444';
+        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${dangerColor}" stroke-width="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
-            <text x="7" y="17" font-size="6" fill="#e74c3c" stroke="none">PDF</text>
+            <text x="7" y="17" font-size="6" fill="${dangerColor}" stroke="none">PDF</text>
         </svg>`;
     }
 
@@ -435,7 +436,8 @@ function getFileIcon(contentType, fileName) {
 
     // Spreadsheet
     if (['xls', 'xlsx', 'csv'].includes(ext)) {
-        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="1.5">
+        const successColor = getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim() || '#10b981';
+        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${successColor}" stroke-width="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
             <line x1="8" y1="13" x2="16" y2="13"/>
@@ -446,7 +448,8 @@ function getFileIcon(contentType, fileName) {
 
     // Archive
     if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="1.5">
+        const warningColor = getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim() || '#f59e0b';
+        return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${warningColor}" stroke-width="1.5">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
             <line x1="12" y1="22.08" x2="12" y2="12"/>
@@ -613,22 +616,22 @@ async function handleRenameFile(e) {
     const newName = document.getElementById('renameFileName').value.trim();
 
     if (!newName) {
-        showError('File name is required');
+        Toast.error('File name is required');
         return;
     }
 
     try {
         const result = await api.renameFile(fileId, newName);
         if (result.success) {
-            showSuccess('File renamed successfully');
+            Toast.success('File renamed successfully');
             closeModal('renameFileModal');
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to rename file');
+            Toast.error(result.message || 'Failed to rename file');
         }
     } catch (error) {
         console.error('Error renaming file:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -639,11 +642,11 @@ async function downloadFile(fileId) {
         if (result.success) {
             window.open(result.url, '_blank');
         } else {
-            showError(result.message || 'Failed to get download URL');
+            Toast.error(result.message || 'Failed to get download URL');
         }
     } catch (error) {
         console.error('Error downloading file:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -651,14 +654,14 @@ async function deleteFile(fileId) {
     try {
         const result = await api.deleteFile(fileId);
         if (result.success) {
-            showSuccess('File deleted successfully');
+            Toast.success('File deleted successfully');
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to delete file');
+            Toast.error(result.message || 'Failed to delete file');
         }
     } catch (error) {
         console.error('Error deleting file:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -667,14 +670,14 @@ async function deleteFolder(folderId) {
     try {
         const result = await api.deleteFolder(folderId, true);
         if (result.success) {
-            showSuccess(`Folder deleted (${result.files_deleted} files, ${result.folders_deleted} folders)`);
+            Toast.success(`Folder deleted (${result.files_deleted} files, ${result.folders_deleted} folders)`);
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to delete folder');
+            Toast.error(result.message || 'Failed to delete folder');
         }
     } catch (error) {
         console.error('Error deleting folder:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -705,7 +708,7 @@ async function handleCreateFolder(e) {
     const description = document.getElementById('folderDescription').value.trim();
 
     if (!name) {
-        showError('Folder name is required');
+        Toast.error('Folder name is required');
         return;
     }
 
@@ -720,16 +723,16 @@ async function handleCreateFolder(e) {
     try {
         const result = await api.createFolder(name, description || null, currentFolderId);
         if (result.success) {
-            showSuccess('Folder created successfully');
+            Toast.success('Folder created successfully');
             closeModal('createFolderModal');
             await loadDriveContents();
         } else {
-            showError(result.message || 'Failed to create folder');
+            Toast.error(result.message || 'Failed to create folder');
             // Don't close modal on error - let user retry or cancel
         }
     } catch (error) {
         console.error('Error creating folder:', error);
-        showError(error.message);
+        Toast.error(error.message);
         // Don't close modal on error - let user retry or cancel
     } finally {
         // Re-enable submit button
@@ -756,22 +759,22 @@ async function handleUpdateFolder(e) {
     const description = document.getElementById('editFolderDescription').value.trim();
 
     if (!name) {
-        showError('Folder name is required');
+        Toast.error('Folder name is required');
         return;
     }
 
     try {
         const result = await api.updateFolder(folderId, name, description || null);
         if (result.success) {
-            showSuccess('Folder updated successfully');
+            Toast.success('Folder updated successfully');
             closeModal('editFolderModal');
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to update folder');
+            Toast.error(result.message || 'Failed to update folder');
         }
     } catch (error) {
         console.error('Error updating folder:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -779,7 +782,7 @@ async function handleUpdateFolder(e) {
 function showUploadModal() {
     // Enforce folder-first upload rule
     if (currentFolderId === null) {
-        showError('Please create or open a folder before uploading files. Files cannot be uploaded to the root directory.');
+        Toast.error('Please create or open a folder before uploading files. Files cannot be uploaded to the root directory.');
         return;
     }
 
@@ -800,7 +803,7 @@ async function handleFileSelect(e) {
     const oversizedFiles = files.filter(f => f.size > MAX_FILE_SIZE);
     if (oversizedFiles.length > 0) {
         const names = oversizedFiles.map(f => `${f.name} (${formatBytes(f.size)})`).join(', ');
-        showError(`The following files exceed the 5GB limit: ${names}`);
+        Toast.error(`The following files exceed the 5GB limit: ${names}`);
         // Filter out oversized files
         const validFiles = files.filter(f => f.size <= MAX_FILE_SIZE);
         if (validFiles.length === 0) {
@@ -878,7 +881,7 @@ async function uploadFile(file, queueItem) {
         }
 
         progressBar.style.width = '100%';
-        progressBar.style.backgroundColor = '#27ae60';
+        progressBar.style.backgroundColor = 'var(--color-success)';
         status.textContent = 'Complete';
         queueItem.classList.add('complete');
 
@@ -886,7 +889,7 @@ async function uploadFile(file, queueItem) {
 
     } catch (error) {
         console.error('Upload error:', error);
-        progressBar.style.backgroundColor = '#e74c3c';
+        progressBar.style.backgroundColor = 'var(--color-danger)';
         status.textContent = 'Failed: ' + error.message;
         queueItem.classList.add('error');
     }
@@ -1077,23 +1080,23 @@ async function handleCreateShare(e) {
             document.getElementById('shareForm').style.display = 'none';
             document.getElementById('shareExistingLink').style.display = 'block';
 
-            showSuccess('Share link created');
+            Toast.success('Share link created');
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to create share link');
+            Toast.error(result.message || 'Failed to create share link');
         }
     } catch (error) {
         console.error('Error creating share:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
 function copyShareLink() {
     const url = document.getElementById('existingShareUrl').value;
     navigator.clipboard.writeText(url).then(() => {
-        showSuccess('Link copied to clipboard');
+        Toast.success('Link copied to clipboard');
     }).catch(() => {
-        showError('Failed to copy link');
+        Toast.error('Failed to copy link');
     });
 }
 
@@ -1105,15 +1108,15 @@ async function revokeCurrentShare() {
     try {
         const result = await api.revokeShareLink(currentShareId);
         if (result.success) {
-            showSuccess('Share link revoked');
+            Toast.success('Share link revoked');
             closeModal('shareModal');
             loadDriveContents();
         } else {
-            showError(result.message || 'Failed to revoke share link');
+            Toast.error(result.message || 'Failed to revoke share link');
         }
     } catch (error) {
         console.error('Error revoking share:', error);
-        showError(error.message);
+        Toast.error(error.message);
     }
 }
 
@@ -1152,13 +1155,6 @@ function showLoading(show) {
     }
 }
 
-function showError(message) {
-    alert('Error: ' + message);
-}
-
-function showSuccess(message) {
-    // Simple alert for now, can be replaced with toast notification
-    console.log('Success:', message);
-}
+// Local showError/showSuccess removed - using unified toast.js instead
 
 // toggleUserDropdown is handled by navigation.js

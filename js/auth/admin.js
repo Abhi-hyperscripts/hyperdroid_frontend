@@ -120,13 +120,13 @@ function showConnectionStatus(status) {
     if (!refreshBtn) return;
 
     if (status === 'connected') {
-        refreshBtn.style.borderColor = 'rgba(39, 174, 96, 0.3)';
+        refreshBtn.style.borderColor = 'var(--success-alpha-30)';
         refreshBtn.title = 'Connected - Real-time updates active';
     } else if (status === 'reconnecting') {
-        refreshBtn.style.borderColor = 'rgba(241, 196, 15, 0.5)';
+        refreshBtn.style.borderColor = 'var(--warning-transparent-strong)';
         refreshBtn.title = 'Reconnecting...';
     } else {
-        refreshBtn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+        refreshBtn.style.borderColor = 'var(--danger-alpha-30)';
         refreshBtn.title = 'Disconnected - Click to refresh manually';
     }
 }
@@ -1227,32 +1227,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ==================== Toast Notifications ====================
-
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${type === 'success'
-                ? '<polyline points="20 6 9 17 4 12"/>'
-                : type === 'error'
-                    ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
-                    : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
-            }
-        </svg>
-        <span>${message}</span>
-    `;
-
-    container.appendChild(toast);
-
-    // Display toast for 5 seconds before fading out
-    setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // ==================== Utility Functions ====================
 

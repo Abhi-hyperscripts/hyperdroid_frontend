@@ -1,0 +1,299 @@
+/* =============================================================
+   HRMS Payroll Styles
+   Extracted from payroll.html inline styles
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   COMPONENT SECTIONS
+   ============================================================= */
+.component-sections {
+    display: grid;
+    gap: 24px;
+}
+
+.component-section h3 {
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   INFO BOX
+   ============================================================= */
+.info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--gray-50);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.info-box svg {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   PAYSLIP CONTAINER
+   ============================================================= */
+.payslip-container {
+    font-size: 14px;
+}
+
+.payslip-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--gray-950);
+}
+
+.payslip-header h3 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.payslip-header p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   PAYSLIP EMPLOYEE INFO
+   ============================================================= */
+.payslip-employee {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--gray-50);
+    border-radius: 8px;
+}
+
+.payslip-employee .info-row {
+    display: flex;
+    gap: 8px;
+}
+
+.payslip-employee .label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.payslip-employee .value {
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   PAYSLIP DETAILS TABLE
+   ============================================================= */
+.payslip-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.payslip-details h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.payslip-details table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payslip-details td {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.payslip-details .amount {
+    text-align: right;
+    font-family: monospace;
+}
+
+.payslip-details .total {
+    font-weight: 600;
+    border-top: 2px solid var(--gray-950);
+}
+
+.payslip-details .total td {
+    padding-top: 12px;
+    border-bottom: none;
+}
+
+/* =============================================================
+   PAYSLIP NET PAY
+   ============================================================= */
+.payslip-net {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--gray-950);
+    color: var(--text-inverse);
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.payslip-net .net-amount {
+    font-family: monospace;
+    font-size: 24px;
+}
+
+/* =============================================================
+   COMPONENTS LIST
+   ============================================================= */
+.components-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* =============================================================
+   VERSION HISTORY STYLES
+   ============================================================= */
+.version-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--info-alpha-20);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--color-info-dark);
+}
+
+.version-info-banner svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.current-version {
+    background: var(--info-alpha-10);
+}
+
+.badge-current {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--color-success);
+    color: var(--text-inverse);
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 8px;
+    text-transform: uppercase;
+}
+
+/* =============================================================
+   VERSION COMPONENT SELECTOR
+   ============================================================= */
+.version-components-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.version-component-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--gray-300);
+}
+
+.version-component-row:hover {
+    background: var(--gray-100);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* =============================================================
+   COMPONENT BADGES
+   ============================================================= */
+.component-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.component-badge.component-earning {
+    background: var(--success-alpha-20);
+    color: var(--color-success-dark);
+}
+
+.component-badge.component-deduction {
+    background: var(--danger-alpha-20);
+    color: var(--color-danger-dark);
+}
+
+/* =============================================================
+   COMPONENT VALUE INPUTS
+   ============================================================= */
+.component-value-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-value-inputs select {
+    width: 120px;
+}
+
+.component-value-inputs input {
+    width: 100px;
+    text-align: right;
+}
+
+.form-control-sm {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+/* =============================================================
+   TEXT UTILITIES
+   ============================================================= */
+.text-muted {
+    color: var(--text-tertiary);
+}
+
+.form-text {
+    font-size: 12px;
+    margin-top: 4px;
+}

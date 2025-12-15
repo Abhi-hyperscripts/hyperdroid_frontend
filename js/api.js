@@ -989,6 +989,10 @@ class API {
         });
     }
 
+    async getOfficeByCode(code) {
+        return this.request(`/hrms/offices/by-code/${encodeURIComponent(code)}`);
+    }
+
     // --- Departments ---
     async getHrmsDepartments() {
         return this.request('/hrms/departments');
@@ -1016,6 +1020,19 @@ class API {
         return this.request(`/hrms/departments/${id}`, {
             method: 'DELETE'
         });
+    }
+
+    async getDepartmentByCode(code) {
+        return this.request(`/hrms/departments/by-code/${encodeURIComponent(code)}`);
+    }
+
+    async getDepartmentHierarchy(officeId = null) {
+        const query = officeId ? `?officeId=${officeId}` : '';
+        return this.request(`/hrms/departments/hierarchy${query}`);
+    }
+
+    async getSubDepartments(departmentId) {
+        return this.request(`/hrms/departments/${departmentId}/sub-departments`);
     }
 
     // --- Designations ---
@@ -1047,6 +1064,10 @@ class API {
         });
     }
 
+    async getDesignationByCode(code) {
+        return this.request(`/hrms/designations/by-code/${encodeURIComponent(code)}`);
+    }
+
     // --- Shifts ---
     async getHrmsShifts() {
         return this.request('/hrms/shifts');
@@ -1073,6 +1094,51 @@ class API {
     async deleteHrmsShift(id) {
         return this.request(`/hrms/shifts/${id}`, {
             method: 'DELETE'
+        });
+    }
+
+    async getShiftByCode(code) {
+        return this.request(`/hrms/shifts/by-code/${encodeURIComponent(code)}`);
+    }
+
+    // --- Employee Shift Rosters ---
+    async getEmployeeShiftRosters(employeeId = null, officeId = null, shiftId = null) {
+        const params = new URLSearchParams();
+        if (employeeId) params.append('employeeId', employeeId);
+        if (officeId) params.append('officeId', officeId);
+        if (shiftId) params.append('shiftId', shiftId);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/hrms/shift-rosters${query}`);
+    }
+
+    async getEmployeeShiftRoster(id) {
+        return this.request(`/hrms/shift-rosters/${id}`);
+    }
+
+    async createEmployeeShiftRoster(roster) {
+        return this.request('/hrms/shift-rosters', {
+            method: 'POST',
+            body: JSON.stringify(roster)
+        });
+    }
+
+    async updateEmployeeShiftRoster(id, roster) {
+        return this.request(`/hrms/shift-rosters/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(roster)
+        });
+    }
+
+    async deleteEmployeeShiftRoster(id) {
+        return this.request(`/hrms/shift-rosters/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async createBulkShiftRosters(rosters) {
+        return this.request('/hrms/shift-rosters/bulk', {
+            method: 'POST',
+            body: JSON.stringify(rosters)
         });
     }
 
@@ -1106,6 +1172,13 @@ class API {
         });
     }
 
+    async createBulkHolidays(holidays) {
+        return this.request('/hrms/holidays/bulk', {
+            method: 'POST',
+            body: JSON.stringify(holidays)
+        });
+    }
+
     // --- Employees ---
     async getHrmsEmployees(includeInactive = false) {
         return this.request(`/hrms/employees?includeInactive=${includeInactive}`);
@@ -1136,6 +1209,13 @@ class API {
     async deleteHrmsEmployee(id) {
         return this.request(`/hrms/employees/${id}`, {
             method: 'DELETE'
+        });
+    }
+
+    async terminateEmployee(id, terminationData) {
+        return this.request(`/hrms/employees/${id}/terminate`, {
+            method: 'POST',
+            body: JSON.stringify(terminationData)
         });
     }
 
@@ -1356,6 +1436,31 @@ class API {
         });
     }
 
+    // --- Leave Encashment ---
+    async encashLeave(request) {
+        return this.request('/hrms/leave/encash', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getEncashableLeaveBalance(employeeId = null) {
+        const query = employeeId ? `?employeeId=${employeeId}` : '';
+        return this.request(`/hrms/leave/encashable-balance${query}`);
+    }
+
+    async getEncashmentHistory(employeeId = null) {
+        const query = employeeId ? `?employeeId=${employeeId}` : '';
+        return this.request(`/hrms/leave/encashment-history${query}`);
+    }
+
+    // --- Team Calendar ---
+    async getTeamLeaveCalendar(startDate, endDate, departmentId = null) {
+        let query = `startDate=${startDate}&endDate=${endDate}`;
+        if (departmentId) query += `&departmentId=${departmentId}`;
+        return this.request(`/hrms/leave/team-calendar?${query}`);
+    }
+
     // --- Salary Structures ---
     async getSalaryStructures() {
         return this.request('/hrms/salary-structures');
@@ -1538,6 +1643,28 @@ class API {
             method: 'POST',
             body: JSON.stringify({ reason })
         });
+    }
+
+    async disburseLoan(id, disbursementMode, referenceNumber) {
+        return this.request(`/hrms/loans/${id}/disburse`, {
+            method: 'POST',
+            body: JSON.stringify({
+                disbursement_mode: disbursementMode,
+                reference_number: referenceNumber
+            })
+        });
+    }
+
+    async getPendingLoans() {
+        return this.request('/hrms/loans?status=pending');
+    }
+
+    async getActiveLoans() {
+        return this.request('/hrms/loans?status=active');
+    }
+
+    async getLoanRepayments(loanId) {
+        return this.request(`/hrms/loans/${loanId}/repayments`);
     }
 
     async getMyLoans() {
@@ -1761,10 +1888,49 @@ class API {
         return this.request(`/hrms/attendance/regularization/pending${query}`);
     }
 
-    // --- Overtime Approval (with all parameter for admin) ---
+    // --- Overtime Management ---
+    async getMyOvertimeRequests() {
+        return this.request('/hrms/attendance/overtime/my');
+    }
+
+    async createOvertimeRequest(request) {
+        return this.request('/hrms/attendance/overtime', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    async getPendingOvertimeRequests() {
+        return this.request('/hrms/attendance/overtime/pending');
+    }
+
     async getPendingOvertimeRequestsAll(all = false) {
         const query = all ? '?all=true' : '';
         return this.request(`/hrms/attendance/overtime/pending${query}`);
+    }
+
+    async approveOvertimeRequest(id) {
+        return this.request(`/hrms/attendance/overtime/${id}/approve`, {
+            method: 'POST'
+        });
+    }
+
+    async rejectOvertimeRequest(id, reason) {
+        return this.request(`/hrms/attendance/overtime/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    }
+
+    async completeOvertime(id, actualStartTime, actualEndTime, notes) {
+        return this.request(`/hrms/attendance/overtime/${id}/complete`, {
+            method: 'POST',
+            body: JSON.stringify({
+                actual_start_time: actualStartTime,
+                actual_end_time: actualEndTime,
+                notes
+            })
+        });
     }
 
     // --- Location Tax Rules ---
@@ -1824,6 +1990,16 @@ class API {
         return this.request('/hrms/location-taxes/calculate-preview', {
             method: 'POST',
             body: JSON.stringify(request)
+        });
+    }
+
+    async copyOfficeTaxRules(sourceOfficeId, targetOfficeId) {
+        return this.request('/hrms/location-taxes/rules/copy', {
+            method: 'POST',
+            body: JSON.stringify({
+                source_office_id: sourceOfficeId,
+                target_office_id: targetOfficeId
+            })
         });
     }
 
@@ -1924,6 +2100,75 @@ class API {
 
     async compareVersionSnapshots(fromVersionId, toVersionId) {
         return this.request(`/hrms/payroll/structures/versions/compare-snapshots?fromVersionId=${fromVersionId}&toVersionId=${toVersionId}`);
+    }
+
+    // --- Report Export ---
+    async exportReport(reportType, format, filters = {}) {
+        const params = new URLSearchParams(filters);
+        params.append('format', format);
+        return this.request(`/hrms/reports/export/${reportType}?${params.toString()}`, {
+            responseType: format === 'pdf' ? 'blob' : 'text'
+        });
+    }
+
+    async generateBankFile(runId) {
+        return this.request(`/hrms/payroll/runs/${runId}/bank-file`);
+    }
+
+    // --- Trend Reports ---
+    async getHeadcountTrend(year) {
+        return this.request(`/hrms/reports/trends/headcount?year=${year}`);
+    }
+
+    async getAttritionTrend(year) {
+        return this.request(`/hrms/reports/trends/attrition?year=${year}`);
+    }
+
+    async getAttendanceTrend(year, officeId = null) {
+        let query = `year=${year}`;
+        if (officeId) query += `&officeId=${officeId}`;
+        return this.request(`/hrms/reports/trends/attendance?${query}`);
+    }
+
+    async getLeaveTrend(year) {
+        return this.request(`/hrms/reports/trends/leave?year=${year}`);
+    }
+
+    async getPayrollTrend(year) {
+        return this.request(`/hrms/reports/trends/payroll?year=${year}`);
+    }
+
+    async getCostCenterTrend(year) {
+        return this.request(`/hrms/reports/trends/cost-center?year=${year}`);
+    }
+
+    // --- Payslip Management ---
+    async getPayslipsForRun(runId) {
+        return this.request(`/hrms/payroll/runs/${runId}/payslips`);
+    }
+
+    async getPayslip(payslipId, includeItems = true) {
+        return this.request(`/hrms/payroll/payslips/${payslipId}?includeItems=${includeItems}`);
+    }
+
+    async getPayslipByNumber(payslipNumber) {
+        return this.request(`/hrms/payroll/payslips/by-number/${payslipNumber}`);
+    }
+
+    async finalizePayslip(payslipId) {
+        return this.request(`/hrms/payroll/payslips/${payslipId}/finalize`, {
+            method: 'POST'
+        });
+    }
+
+    async deletePayslip(payslipId) {
+        return this.request(`/hrms/payroll/payslips/${payslipId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async downloadPayslip(payslipId) {
+        return this.request(`/hrms/payroll/payslips/${payslipId}/download`);
     }
 }
 

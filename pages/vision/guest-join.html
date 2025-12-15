@@ -6,7 +6,9 @@
     <title>Join Meeting - HyperVision</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body>
     <div class="auth-container">
@@ -18,10 +20,10 @@
         <!-- Choice screen for authenticated users -->
         <div class="auth-card" id="authenticatedChoice" style="display: none;">
             <h2>Join Meeting</h2>
-            <p style="text-align: center; color: #666; margin-bottom: 10px;">
+            <p class="text-secondary" style="text-align: center; margin-bottom: 10px;">
                 You are signed in as <strong id="userDisplayName"></strong>
             </p>
-            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            <p class="text-secondary" style="text-align: center; margin-bottom: 30px;">
                 How would you like to join this meeting?
             </p>
 
@@ -29,7 +31,7 @@
                 Join as Myself (Authenticated)
             </button>
 
-            <button id="joinAsGuestBtn" class="btn" style="width: 100%; background-color: #6c757d; color: white;">
+            <button id="joinAsGuestBtn" class="btn btn-secondary" style="width: 100%;">
                 Join as Guest
             </button>
 
@@ -39,7 +41,7 @@
         <!-- Guest join form -->
         <div class="auth-card" id="guestJoinCard">
             <h2>Join Meeting as Guest</h2>
-            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            <p class="text-secondary" style="text-align: center; margin-bottom: 20px;">
                 Enter your name to join the meeting
             </p>
 
@@ -67,6 +69,7 @@
 
     <script src="../../js/config.js"></script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/vision/guest-join.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

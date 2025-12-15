@@ -79,7 +79,7 @@ async function loadDashboard() {
     try {
         const dashboard = await api.getHrmsDashboard();
 
-        if (dashboard) {
+        if (dashboard && dashboard.employee) {
             // Store employee data
             currentEmployee = dashboard.employee;
 
@@ -108,11 +108,72 @@ async function loadDashboard() {
 
             // Show admin link if applicable
             checkAdminAccess();
+        } else {
+            // User doesn't have an employee profile
+            showNoEmployeeProfile();
         }
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        showToast('Failed to load dashboard data', 'error');
+
+        // Check if error is about missing employee profile
+        if (error.message && (error.message.includes('Employee') || error.message.includes('not found'))) {
+            showNoEmployeeProfile();
+        } else {
+            showToast('Failed to load dashboard data', 'error');
+        }
     }
+}
+
+/**
+ * Show message when user doesn't have an employee profile
+ */
+function showNoEmployeeProfile() {
+    // Update welcome section
+    const welcomeEl = document.getElementById('welcomeMessage');
+    if (welcomeEl) {
+        welcomeEl.textContent = 'Welcome!';
+    }
+
+    const infoEl = document.getElementById('employeeInfo');
+    if (infoEl) {
+        infoEl.textContent = 'No employee profile linked';
+    }
+
+    // Update leave balances with N/A
+    const casualEl = document.getElementById('casualLeaveBalance');
+    const sickEl = document.getElementById('sickLeaveBalance');
+    const earnedEl = document.getElementById('earnedLeaveBalance');
+    if (casualEl) casualEl.textContent = 'N/A';
+    if (sickEl) sickEl.textContent = 'N/A';
+    if (earnedEl) earnedEl.textContent = 'N/A';
+
+    // Disable clock button
+    const clockBtn = document.getElementById('clockBtn');
+    if (clockBtn) {
+        clockBtn.disabled = true;
+        clockBtn.classList.add('disabled');
+    }
+
+    const clockBtnText = document.getElementById('clockBtnText');
+    if (clockBtnText) {
+        clockBtnText.textContent = 'No Profile';
+    }
+
+    const statusEl = document.getElementById('clockStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Profile not linked';
+        statusEl.className = 'clock-status';
+    }
+
+    // Show helpful message
+    showToast('Your account is not linked to an employee profile. Please contact HR.', 'warning');
+
+    // Still check admin access
+    checkAdminAccess();
+
+    // Still load announcements and holidays
+    loadAnnouncements();
+    loadUpcomingHolidays();
 }
 
 /**

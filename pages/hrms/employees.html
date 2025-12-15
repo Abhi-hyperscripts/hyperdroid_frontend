@@ -6,8 +6,10 @@
     <title>Employee Management - HRMS - HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
     <nav class="navbar">
@@ -185,7 +187,7 @@
                                                 <span id="userCountDisplay">0 users</span>
                                             </div>
                                             <div id="userSearchList" class="users-list-modern">
-                                                <p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">Loading users...</p>
+                                                <p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">Loading users...</p>
                                             </div>
                                         </div>
                                     </div>
@@ -297,7 +299,7 @@
                                     <select id="reportingManagerId" onchange="onManagerChange()">
                                         <option value="">None</option>
                                     </select>
-                                    <small class="validation-message" id="managerValidationMsg" style="color: #dc3545; display: none;"></small>
+                                    <small class="validation-message text-danger" id="managerValidationMsg" style="display: none;"></small>
                                 </div>
                                 <div class="form-group">
                                     <label>Employment Type <span class="required">*</span></label>
@@ -319,6 +321,24 @@
                                     <label>Probation End Date <span class="required">*</span></label>
                                     <input type="date" id="probationEndDate" required>
                                 </div>
+                            </div>
+
+                            <!-- Geofence Attendance Toggle -->
+                            <div class="geofence-toggle-card employee-geofence">
+                                <div class="toggle-info">
+                                    <div class="toggle-title">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="10" r="3"/>
+                                            <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+                                        </svg>
+                                        Enable Geofence Attendance
+                                    </div>
+                                    <p class="toggle-description">When enabled, this employee must be within the assigned office geofence radius to clock in/out. Overrides office-level setting.</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="enableGeofenceAttendance" name="enable_geofence_attendance">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
                         </div>
 
@@ -860,7 +880,7 @@
                                 <select id="newManagerUserId" onchange="onTransferManagerChange()">
                                     <option value="">No manager (CEO/Top level)</option>
                                 </select>
-                                <small class="validation-message" id="transferManagerValidationMsg" style="color: #dc3545; display: none;"></small>
+                                <small class="validation-message text-danger" id="transferManagerValidationMsg" style="display: none;"></small>
                             </div>
                         </div>
 
@@ -907,6 +927,88 @@
         </div>
     </div>
 
+    <!-- Terminate Employee Modal -->
+    <div class="modal" id="terminateModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header modal-header-danger">
+                    <h5 class="modal-title">Terminate Employee</h5>
+                    <button class="close-btn" onclick="closeModal('terminateModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="terminate-warning">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <div>
+                            <strong>Warning: This action cannot be undone.</strong>
+                            <p>Terminating an employee will deactivate their account and end their employment record.</p>
+                        </div>
+                    </div>
+                    <div class="terminate-employee-info" id="terminateEmployeeInfo">
+                        <!-- Employee info will be populated -->
+                    </div>
+                    <form id="terminateForm">
+                        <input type="hidden" id="terminateEmployeeId">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="lastWorkingDate">Last Working Date *</label>
+                                    <input type="date" id="lastWorkingDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="terminationReason">Termination Reason *</label>
+                                    <select id="terminationReason" class="form-control" required>
+                                        <option value="">Select Reason</option>
+                                        <option value="resignation">Resignation</option>
+                                        <option value="termination">Termination</option>
+                                        <option value="retirement">Retirement</option>
+                                        <option value="contract_end">Contract End</option>
+                                        <option value="layoff">Layoff</option>
+                                        <option value="mutual_separation">Mutual Separation</option>
+                                        <option value="absconding">Absconding</option>
+                                        <option value="death">Death</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="exitInterviewDate">Exit Interview Date</label>
+                                    <input type="date" id="exitInterviewDate" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="settlementDate">Full & Final Settlement Date</label>
+                                    <input type="date" id="settlementDate" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="exitNotes">Exit Notes</label>
+                                <textarea id="exitNotes" class="form-control" rows="3" placeholder="Enter any additional notes about the termination..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="confirmTermination" required>
+                                    <span>I confirm that I want to terminate this employee and understand this action cannot be undone.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="confirmTerminateEmployee()">Terminate Employee</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -915,7 +1017,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

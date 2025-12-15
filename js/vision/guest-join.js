@@ -5,7 +5,7 @@ const meetingId = urlParams.get('id');
 
 // Redirect if no meeting ID
 if (!meetingId) {
-    alert('Meeting ID not provided');
+    Toast.error('Meeting ID not provided');
     window.location.href = '../login.html';
 }
 

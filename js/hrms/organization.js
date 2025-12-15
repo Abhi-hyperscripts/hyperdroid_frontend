@@ -16,10 +16,305 @@ let shifts = [];
 let shiftRosters = [];
 let holidays = [];
 let employees = [];
+let taxTypes = [];
+let taxRules = [];
+
+// Timezone data (comprehensive list of IANA timezones)
+const TIMEZONES = [
+    { value: 'Pacific/Midway', label: 'Midway Island (UTC-11:00)' },
+    { value: 'Pacific/Honolulu', label: 'Hawaii (UTC-10:00)' },
+    { value: 'America/Anchorage', label: 'Alaska (UTC-09:00)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada) (UTC-08:00)' },
+    { value: 'America/Tijuana', label: 'Tijuana (UTC-08:00)' },
+    { value: 'America/Denver', label: 'Mountain Time (US & Canada) (UTC-07:00)' },
+    { value: 'America/Phoenix', label: 'Arizona (UTC-07:00)' },
+    { value: 'America/Chicago', label: 'Central Time (US & Canada) (UTC-06:00)' },
+    { value: 'America/Mexico_City', label: 'Mexico City (UTC-06:00)' },
+    { value: 'America/New_York', label: 'Eastern Time (US & Canada) (UTC-05:00)' },
+    { value: 'America/Bogota', label: 'Bogota (UTC-05:00)' },
+    { value: 'America/Lima', label: 'Lima (UTC-05:00)' },
+    { value: 'America/Caracas', label: 'Caracas (UTC-04:00)' },
+    { value: 'America/Halifax', label: 'Atlantic Time (Canada) (UTC-04:00)' },
+    { value: 'America/Santiago', label: 'Santiago (UTC-04:00)' },
+    { value: 'America/St_Johns', label: 'Newfoundland (UTC-03:30)' },
+    { value: 'America/Sao_Paulo', label: 'Brasilia (UTC-03:00)' },
+    { value: 'America/Buenos_Aires', label: 'Buenos Aires (UTC-03:00)' },
+    { value: 'Atlantic/South_Georgia', label: 'Mid-Atlantic (UTC-02:00)' },
+    { value: 'Atlantic/Azores', label: 'Azores (UTC-01:00)' },
+    { value: 'Atlantic/Cape_Verde', label: 'Cape Verde (UTC-01:00)' },
+    { value: 'UTC', label: 'UTC (UTC+00:00)' },
+    { value: 'Europe/London', label: 'London, Edinburgh (UTC+00:00)' },
+    { value: 'Europe/Dublin', label: 'Dublin (UTC+00:00)' },
+    { value: 'Europe/Lisbon', label: 'Lisbon (UTC+00:00)' },
+    { value: 'Africa/Casablanca', label: 'Casablanca (UTC+00:00)' },
+    { value: 'Europe/Paris', label: 'Paris, Brussels, Amsterdam (UTC+01:00)' },
+    { value: 'Europe/Berlin', label: 'Berlin, Frankfurt (UTC+01:00)' },
+    { value: 'Europe/Madrid', label: 'Madrid (UTC+01:00)' },
+    { value: 'Europe/Rome', label: 'Rome, Milan (UTC+01:00)' },
+    { value: 'Africa/Lagos', label: 'Lagos (UTC+01:00)' },
+    { value: 'Europe/Warsaw', label: 'Warsaw (UTC+01:00)' },
+    { value: 'Europe/Athens', label: 'Athens (UTC+02:00)' },
+    { value: 'Europe/Bucharest', label: 'Bucharest (UTC+02:00)' },
+    { value: 'Europe/Helsinki', label: 'Helsinki (UTC+02:00)' },
+    { value: 'Europe/Istanbul', label: 'Istanbul (UTC+03:00)' },
+    { value: 'Africa/Cairo', label: 'Cairo (UTC+02:00)' },
+    { value: 'Africa/Johannesburg', label: 'Johannesburg (UTC+02:00)' },
+    { value: 'Asia/Jerusalem', label: 'Jerusalem (UTC+02:00)' },
+    { value: 'Europe/Moscow', label: 'Moscow, St. Petersburg (UTC+03:00)' },
+    { value: 'Asia/Kuwait', label: 'Kuwait (UTC+03:00)' },
+    { value: 'Asia/Riyadh', label: 'Riyadh (UTC+03:00)' },
+    { value: 'Africa/Nairobi', label: 'Nairobi (UTC+03:00)' },
+    { value: 'Asia/Baghdad', label: 'Baghdad (UTC+03:00)' },
+    { value: 'Asia/Tehran', label: 'Tehran (UTC+03:30)' },
+    { value: 'Asia/Dubai', label: 'Dubai, Abu Dhabi (UTC+04:00)' },
+    { value: 'Asia/Muscat', label: 'Muscat (UTC+04:00)' },
+    { value: 'Asia/Baku', label: 'Baku (UTC+04:00)' },
+    { value: 'Asia/Kabul', label: 'Kabul (UTC+04:30)' },
+    { value: 'Asia/Karachi', label: 'Karachi (UTC+05:00)' },
+    { value: 'Asia/Tashkent', label: 'Tashkent (UTC+05:00)' },
+    { value: 'Asia/Kolkata', label: 'Mumbai, Kolkata, New Delhi (UTC+05:30)' },
+    { value: 'Asia/Colombo', label: 'Colombo (UTC+05:30)' },
+    { value: 'Asia/Kathmandu', label: 'Kathmandu (UTC+05:45)' },
+    { value: 'Asia/Dhaka', label: 'Dhaka (UTC+06:00)' },
+    { value: 'Asia/Almaty', label: 'Almaty (UTC+06:00)' },
+    { value: 'Asia/Yangon', label: 'Yangon (UTC+06:30)' },
+    { value: 'Asia/Bangkok', label: 'Bangkok (UTC+07:00)' },
+    { value: 'Asia/Jakarta', label: 'Jakarta (UTC+07:00)' },
+    { value: 'Asia/Ho_Chi_Minh', label: 'Ho Chi Minh City (UTC+07:00)' },
+    { value: 'Asia/Singapore', label: 'Singapore (UTC+08:00)' },
+    { value: 'Asia/Hong_Kong', label: 'Hong Kong (UTC+08:00)' },
+    { value: 'Asia/Shanghai', label: 'Beijing, Shanghai (UTC+08:00)' },
+    { value: 'Asia/Taipei', label: 'Taipei (UTC+08:00)' },
+    { value: 'Asia/Kuala_Lumpur', label: 'Kuala Lumpur (UTC+08:00)' },
+    { value: 'Australia/Perth', label: 'Perth (UTC+08:00)' },
+    { value: 'Asia/Seoul', label: 'Seoul (UTC+09:00)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo, Osaka (UTC+09:00)' },
+    { value: 'Australia/Darwin', label: 'Darwin (UTC+09:30)' },
+    { value: 'Australia/Adelaide', label: 'Adelaide (UTC+09:30)' },
+    { value: 'Australia/Brisbane', label: 'Brisbane (UTC+10:00)' },
+    { value: 'Australia/Sydney', label: 'Sydney, Melbourne (UTC+10:00)' },
+    { value: 'Pacific/Guam', label: 'Guam (UTC+10:00)' },
+    { value: 'Pacific/Noumea', label: 'Noumea (UTC+11:00)' },
+    { value: 'Pacific/Auckland', label: 'Auckland, Wellington (UTC+12:00)' },
+    { value: 'Pacific/Fiji', label: 'Fiji (UTC+12:00)' },
+    { value: 'Pacific/Tongatapu', label: 'Nuku\'alofa (UTC+13:00)' }
+];
+
+// Countries data (comprehensive list)
+const COUNTRIES = [
+    { value: 'Afghanistan', code: 'AF' }, { value: 'Albania', code: 'AL' }, { value: 'Algeria', code: 'DZ' },
+    { value: 'Andorra', code: 'AD' }, { value: 'Angola', code: 'AO' }, { value: 'Argentina', code: 'AR' },
+    { value: 'Armenia', code: 'AM' }, { value: 'Australia', code: 'AU' }, { value: 'Austria', code: 'AT' },
+    { value: 'Azerbaijan', code: 'AZ' }, { value: 'Bahamas', code: 'BS' }, { value: 'Bahrain', code: 'BH' },
+    { value: 'Bangladesh', code: 'BD' }, { value: 'Barbados', code: 'BB' }, { value: 'Belarus', code: 'BY' },
+    { value: 'Belgium', code: 'BE' }, { value: 'Belize', code: 'BZ' }, { value: 'Benin', code: 'BJ' },
+    { value: 'Bhutan', code: 'BT' }, { value: 'Bolivia', code: 'BO' }, { value: 'Bosnia and Herzegovina', code: 'BA' },
+    { value: 'Botswana', code: 'BW' }, { value: 'Brazil', code: 'BR' }, { value: 'Brunei', code: 'BN' },
+    { value: 'Bulgaria', code: 'BG' }, { value: 'Burkina Faso', code: 'BF' }, { value: 'Burundi', code: 'BI' },
+    { value: 'Cambodia', code: 'KH' }, { value: 'Cameroon', code: 'CM' }, { value: 'Canada', code: 'CA' },
+    { value: 'Central African Republic', code: 'CF' }, { value: 'Chad', code: 'TD' }, { value: 'Chile', code: 'CL' },
+    { value: 'China', code: 'CN' }, { value: 'Colombia', code: 'CO' }, { value: 'Comoros', code: 'KM' },
+    { value: 'Congo', code: 'CG' }, { value: 'Costa Rica', code: 'CR' }, { value: 'Croatia', code: 'HR' },
+    { value: 'Cuba', code: 'CU' }, { value: 'Cyprus', code: 'CY' }, { value: 'Czech Republic', code: 'CZ' },
+    { value: 'Denmark', code: 'DK' }, { value: 'Djibouti', code: 'DJ' }, { value: 'Dominican Republic', code: 'DO' },
+    { value: 'Ecuador', code: 'EC' }, { value: 'Egypt', code: 'EG' }, { value: 'El Salvador', code: 'SV' },
+    { value: 'Estonia', code: 'EE' }, { value: 'Ethiopia', code: 'ET' }, { value: 'Fiji', code: 'FJ' },
+    { value: 'Finland', code: 'FI' }, { value: 'France', code: 'FR' }, { value: 'Gabon', code: 'GA' },
+    { value: 'Gambia', code: 'GM' }, { value: 'Georgia', code: 'GE' }, { value: 'Germany', code: 'DE' },
+    { value: 'Ghana', code: 'GH' }, { value: 'Greece', code: 'GR' }, { value: 'Guatemala', code: 'GT' },
+    { value: 'Guinea', code: 'GN' }, { value: 'Haiti', code: 'HT' }, { value: 'Honduras', code: 'HN' },
+    { value: 'Hong Kong', code: 'HK' }, { value: 'Hungary', code: 'HU' }, { value: 'Iceland', code: 'IS' },
+    { value: 'India', code: 'IN' }, { value: 'Indonesia', code: 'ID' }, { value: 'Iran', code: 'IR' },
+    { value: 'Iraq', code: 'IQ' }, { value: 'Ireland', code: 'IE' }, { value: 'Israel', code: 'IL' },
+    { value: 'Italy', code: 'IT' }, { value: 'Jamaica', code: 'JM' }, { value: 'Japan', code: 'JP' },
+    { value: 'Jordan', code: 'JO' }, { value: 'Kazakhstan', code: 'KZ' }, { value: 'Kenya', code: 'KE' },
+    { value: 'Kuwait', code: 'KW' }, { value: 'Kyrgyzstan', code: 'KG' }, { value: 'Laos', code: 'LA' },
+    { value: 'Latvia', code: 'LV' }, { value: 'Lebanon', code: 'LB' }, { value: 'Liberia', code: 'LR' },
+    { value: 'Libya', code: 'LY' }, { value: 'Liechtenstein', code: 'LI' }, { value: 'Lithuania', code: 'LT' },
+    { value: 'Luxembourg', code: 'LU' }, { value: 'Macau', code: 'MO' }, { value: 'Madagascar', code: 'MG' },
+    { value: 'Malawi', code: 'MW' }, { value: 'Malaysia', code: 'MY' }, { value: 'Maldives', code: 'MV' },
+    { value: 'Mali', code: 'ML' }, { value: 'Malta', code: 'MT' }, { value: 'Mauritius', code: 'MU' },
+    { value: 'Mexico', code: 'MX' }, { value: 'Moldova', code: 'MD' }, { value: 'Monaco', code: 'MC' },
+    { value: 'Mongolia', code: 'MN' }, { value: 'Montenegro', code: 'ME' }, { value: 'Morocco', code: 'MA' },
+    { value: 'Mozambique', code: 'MZ' }, { value: 'Myanmar', code: 'MM' }, { value: 'Namibia', code: 'NA' },
+    { value: 'Nepal', code: 'NP' }, { value: 'Netherlands', code: 'NL' }, { value: 'New Zealand', code: 'NZ' },
+    { value: 'Nicaragua', code: 'NI' }, { value: 'Niger', code: 'NE' }, { value: 'Nigeria', code: 'NG' },
+    { value: 'North Korea', code: 'KP' }, { value: 'North Macedonia', code: 'MK' }, { value: 'Norway', code: 'NO' },
+    { value: 'Oman', code: 'OM' }, { value: 'Pakistan', code: 'PK' }, { value: 'Panama', code: 'PA' },
+    { value: 'Papua New Guinea', code: 'PG' }, { value: 'Paraguay', code: 'PY' }, { value: 'Peru', code: 'PE' },
+    { value: 'Philippines', code: 'PH' }, { value: 'Poland', code: 'PL' }, { value: 'Portugal', code: 'PT' },
+    { value: 'Qatar', code: 'QA' }, { value: 'Romania', code: 'RO' }, { value: 'Russia', code: 'RU' },
+    { value: 'Rwanda', code: 'RW' }, { value: 'Saudi Arabia', code: 'SA' }, { value: 'Senegal', code: 'SN' },
+    { value: 'Serbia', code: 'RS' }, { value: 'Singapore', code: 'SG' }, { value: 'Slovakia', code: 'SK' },
+    { value: 'Slovenia', code: 'SI' }, { value: 'Somalia', code: 'SO' }, { value: 'South Africa', code: 'ZA' },
+    { value: 'South Korea', code: 'KR' }, { value: 'Spain', code: 'ES' }, { value: 'Sri Lanka', code: 'LK' },
+    { value: 'Sudan', code: 'SD' }, { value: 'Sweden', code: 'SE' }, { value: 'Switzerland', code: 'CH' },
+    { value: 'Syria', code: 'SY' }, { value: 'Taiwan', code: 'TW' }, { value: 'Tajikistan', code: 'TJ' },
+    { value: 'Tanzania', code: 'TZ' }, { value: 'Thailand', code: 'TH' }, { value: 'Togo', code: 'TG' },
+    { value: 'Trinidad and Tobago', code: 'TT' }, { value: 'Tunisia', code: 'TN' }, { value: 'Turkey', code: 'TR' },
+    { value: 'Turkmenistan', code: 'TM' }, { value: 'Uganda', code: 'UG' }, { value: 'Ukraine', code: 'UA' },
+    { value: 'United Arab Emirates', code: 'AE' }, { value: 'United Kingdom', code: 'GB' }, { value: 'United States', code: 'US' },
+    { value: 'Uruguay', code: 'UY' }, { value: 'Uzbekistan', code: 'UZ' }, { value: 'Venezuela', code: 'VE' },
+    { value: 'Vietnam', code: 'VN' }, { value: 'Yemen', code: 'YE' }, { value: 'Zambia', code: 'ZM' },
+    { value: 'Zimbabwe', code: 'ZW' }
+];
+
+// Searchable dropdown functions
+function toggleSearchableDropdown(type) {
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all other dropdowns first
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== `${type}Dropdown`) {
+            d.classList.remove('open');
+        }
+    });
+
+    if (isOpen) {
+        dropdown.classList.remove('open');
+    } else {
+        dropdown.classList.add('open');
+        const searchInput = document.getElementById(`${type}Search`);
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+            if (type === 'timezone') {
+                renderTimezoneOptions();
+            } else if (type === 'country') {
+                renderCountryOptions();
+            }
+        }
+    }
+}
+
+function renderTimezoneOptions(filter = '') {
+    const container = document.getElementById('timezoneOptions');
+    const selectedValue = document.getElementById('officeTimezone').value;
+    const filterLower = filter.toLowerCase();
+
+    const filtered = TIMEZONES.filter(tz =>
+        tz.value.toLowerCase().includes(filterLower) ||
+        tz.label.toLowerCase().includes(filterLower)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No timezones found</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(tz => `
+        <div class="dropdown-option ${tz.value === selectedValue ? 'selected' : ''}"
+             onclick="selectTimezone('${tz.value}', '${escapeHtml(tz.label)}')">
+            <span class="dropdown-option-text">${escapeHtml(tz.label)}</span>
+        </div>
+    `).join('');
+}
+
+function selectTimezone(value, label) {
+    document.getElementById('officeTimezone').value = value;
+    document.getElementById('timezoneSelection').textContent = label;
+    document.getElementById('timezoneSelection').classList.remove('placeholder');
+    document.getElementById('timezoneDropdown').classList.remove('open');
+}
+
+function filterTimezones() {
+    const searchValue = document.getElementById('timezoneSearch').value;
+    renderTimezoneOptions(searchValue);
+}
+
+function renderCountryOptions(filter = '') {
+    const container = document.getElementById('countryOptions');
+    const selectedValue = document.getElementById('officeCountry').value;
+    const filterLower = filter.toLowerCase();
+
+    const filtered = COUNTRIES.filter(c =>
+        c.value.toLowerCase().includes(filterLower) ||
+        c.code.toLowerCase().includes(filterLower)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No countries found</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(c => `
+        <div class="dropdown-option ${c.value === selectedValue ? 'selected' : ''}"
+             onclick="selectCountry('${c.value}')">
+            <span class="dropdown-option-text">${escapeHtml(c.value)}</span>
+            <span class="dropdown-option-subtext">${c.code}</span>
+        </div>
+    `).join('');
+}
+
+function selectCountry(value) {
+    document.getElementById('officeCountry').value = value;
+    document.getElementById('countrySelection').textContent = value;
+    document.getElementById('countrySelection').classList.remove('placeholder');
+    document.getElementById('countryDropdown').classList.remove('open');
+}
+
+function filterCountries() {
+    const searchValue = document.getElementById('countrySearch').value;
+    renderCountryOptions(searchValue);
+}
+
+// Initialize office modal dropdowns
+function initOfficeModalDropdowns(selectedTimezone = 'Asia/Kolkata', selectedCountry = 'India') {
+    // Initialize timezone dropdown
+    const tz = TIMEZONES.find(t => t.value === selectedTimezone);
+    if (tz) {
+        document.getElementById('officeTimezone').value = tz.value;
+        document.getElementById('timezoneSelection').textContent = tz.label;
+        document.getElementById('timezoneSelection').classList.remove('placeholder');
+    } else {
+        document.getElementById('officeTimezone').value = '';
+        document.getElementById('timezoneSelection').textContent = 'Select Timezone';
+        document.getElementById('timezoneSelection').classList.add('placeholder');
+    }
+
+    // Initialize country dropdown
+    if (selectedCountry) {
+        document.getElementById('officeCountry').value = selectedCountry;
+        document.getElementById('countrySelection').textContent = selectedCountry;
+        document.getElementById('countrySelection').classList.remove('placeholder');
+    } else {
+        document.getElementById('officeCountry').value = '';
+        document.getElementById('countrySelection').textContent = 'Select Country';
+        document.getElementById('countrySelection').classList.add('placeholder');
+    }
+
+    renderTimezoneOptions();
+    renderCountryOptions();
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.searchable-dropdown')) {
+        document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+        });
+    }
+});
 
 // Helper to check if user can edit (HR Admin)
 function canEditOrganization() {
     return hrmsRoles.canEditOrganization();
+}
+
+// Modal helper functions
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
 }
 
 // Convert time string from "9:00 AM" or "09:00 AM" format to "HH:mm:ss" (24-hour TimeSpan format)
@@ -161,6 +456,32 @@ function setupTabs() {
             if (tabId === 'holidays') {
                 updateHolidaysTable();
             }
+
+            // Load tax data when switching to location-taxes tab
+            if (tabId === 'location-taxes') {
+                loadTaxTypes();
+                loadOfficeTaxRules();
+            }
+        });
+    });
+
+    // Setup sub-tabs for Location Taxes
+    setupSubTabs();
+}
+
+function setupSubTabs() {
+    const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+    subTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const subtabId = this.dataset.subtab;
+
+            // Update button states
+            subTabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update content visibility
+            document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(subtabId).classList.add('active');
         });
     });
 }
@@ -280,7 +601,7 @@ function updateOfficesTable() {
 }
 
 function populateOfficeSelects() {
-    const selects = ['departmentOffice', 'deptOffice', 'shiftOffice', 'shiftOfficeId', 'holidayOffice', 'holidayOffices'];
+    const selects = ['departmentOffice', 'deptOffice', 'desigOffice', 'shiftOffice', 'shiftOfficeId', 'holidayOffice', 'holidayOffices'];
     selects.forEach(id => {
         const select = document.getElementById(id);
         if (select) {
@@ -395,6 +716,157 @@ function populateDepartmentSelects() {
         });
     }
 }
+
+// ==========================================
+// Department Hierarchy View Functions
+// ==========================================
+
+let currentDepartmentView = 'table';
+
+function switchDepartmentView(view) {
+    currentDepartmentView = view;
+
+    // Update toggle buttons
+    document.getElementById('tableViewBtn').classList.toggle('active', view === 'table');
+    document.getElementById('treeViewBtn').classList.toggle('active', view === 'tree');
+
+    // Show/hide views
+    const tableContainer = document.getElementById('departmentTableContainer');
+    const hierarchyContainer = document.getElementById('departmentHierarchy');
+
+    if (view === 'table') {
+        tableContainer.style.display = 'block';
+        hierarchyContainer.style.display = 'none';
+    } else {
+        tableContainer.style.display = 'none';
+        hierarchyContainer.style.display = 'block';
+        renderDepartmentHierarchy();
+    }
+}
+
+function renderDepartmentHierarchy() {
+    const container = document.getElementById('hierarchyTree');
+    const officeFilter = document.getElementById('departmentOffice')?.value || '';
+
+    let filteredDepts = [...departments];
+    if (officeFilter) {
+        filteredDepts = filteredDepts.filter(d => d.office_id === officeFilter);
+    }
+
+    if (filteredDepts.length === 0) {
+        container.innerHTML = `
+            <div class="hierarchy-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                <p>No departments to display</p>
+            </div>`;
+        return;
+    }
+
+    // Build hierarchy structure
+    const hierarchyMap = buildDepartmentHierarchy(filteredDepts);
+
+    // Render tree
+    container.innerHTML = `<div class="tree-root">${renderHierarchyNodes(hierarchyMap.roots, hierarchyMap.childrenMap)}</div>`;
+
+    // Add event listeners for expand/collapse
+    container.querySelectorAll('.tree-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nodeId = toggle.dataset.id;
+            toggleHierarchyNode(nodeId);
+        });
+    });
+}
+
+function buildDepartmentHierarchy(depts) {
+    const childrenMap = new Map();
+    const roots = [];
+
+    // Initialize children map
+    depts.forEach(dept => {
+        childrenMap.set(dept.id, []);
+    });
+
+    // Build parent-child relationships
+    depts.forEach(dept => {
+        if (dept.parent_department_id && childrenMap.has(dept.parent_department_id)) {
+            childrenMap.get(dept.parent_department_id).push(dept);
+        } else {
+            roots.push(dept);
+        }
+    });
+
+    return { roots, childrenMap };
+}
+
+function renderHierarchyNodes(depts, childrenMap, level = 0) {
+    return depts.map(dept => {
+        const children = childrenMap.get(dept.id) || [];
+        const hasChildren = children.length > 0;
+        const designationCount = allDesignations.filter(d => d.department_id === dept.id).length;
+
+        return `
+        <div class="tree-node" data-id="${dept.id}">
+            <div class="tree-node-content" onclick="editDepartment('${dept.id}')">
+                <span class="tree-toggle ${hasChildren ? '' : 'no-children'}" data-id="${dept.id}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+                <span class="tree-node-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </span>
+                <div class="tree-node-info">
+                    <div class="tree-node-name">${escapeHtml(dept.department_name)}</div>
+                    <div class="tree-node-meta">
+                        <span>Code: ${escapeHtml(dept.department_code)}</span>
+                        <span>${dept.employee_count || 0} employees</span>
+                        <span>${designationCount} designations</span>
+                    </div>
+                </div>
+                <span class="tree-node-badge ${dept.is_active ? '' : 'inactive'}">
+                    ${dept.is_active ? 'Active' : 'Inactive'}
+                </span>
+                <div class="tree-node-actions">
+                    <button class="action-btn" onclick="event.stopPropagation(); editDepartment('${dept.id}')" title="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            ${hasChildren ? `<div class="tree-children collapsed" data-parent="${dept.id}">${renderHierarchyNodes(children, childrenMap, level + 1)}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function toggleHierarchyNode(nodeId) {
+    const toggle = document.querySelector(`.tree-toggle[data-id="${nodeId}"]`);
+    const children = document.querySelector(`.tree-children[data-parent="${nodeId}"]`);
+    const nodeContent = toggle.closest('.tree-node-content');
+
+    if (toggle && children) {
+        const isExpanded = !children.classList.contains('collapsed');
+        children.classList.toggle('collapsed');
+        toggle.classList.toggle('expanded');
+        nodeContent.classList.toggle('expanded');
+
+        // Update toggle icon rotation
+        const svg = toggle.querySelector('svg');
+        svg.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+}
+
+// ==========================================
+// End Department Hierarchy View Functions
+// ==========================================
 
 async function loadDesignations() {
     try {
@@ -744,6 +1216,15 @@ function showCreateOfficeModal() {
     document.getElementById('officeForm').reset();
     document.getElementById('officeId').value = '';
     document.getElementById('officeModalTitle').textContent = 'Create Office';
+
+    // Initialize searchable dropdowns with defaults
+    initOfficeModalDropdowns('Asia/Kolkata', 'India');
+
+    // Reset new fields
+    document.getElementById('officeEnableGeofence').checked = false;
+    document.getElementById('officeIsHeadquarters').checked = false;
+    document.getElementById('officeIsActive').checked = true;
+
     document.getElementById('officeModal').classList.add('active');
 }
 
@@ -758,17 +1239,23 @@ function editOffice(id) {
     document.getElementById('officeName').value = office.office_name;
     document.getElementById('officeCode').value = office.office_code;
     document.getElementById('officeType').value = officeType;
-    document.getElementById('officeTimezone').value = office.timezone || 'Asia/Kolkata';
+
+    // Initialize searchable dropdowns with office values
+    initOfficeModalDropdowns(office.timezone || 'Asia/Kolkata', office.country || 'India');
+
     document.getElementById('officeAddress').value = office.address_line1 || '';
     document.getElementById('officeCity').value = office.city || '';
     document.getElementById('officeState').value = office.state || '';
-    document.getElementById('officeCountry').value = office.country || 'India';
     document.getElementById('officePostalCode').value = office.postal_code || '';
     document.getElementById('officePhone').value = office.phone || '';
     document.getElementById('officeEmail').value = office.email || '';
     document.getElementById('officeLatitude').value = office.latitude || '';
     document.getElementById('officeLongitude').value = office.longitude || '';
     document.getElementById('officeGeofenceRadius').value = office.geofence_radius_meters || 100;
+
+    // Set new toggle fields
+    document.getElementById('officeEnableGeofence').checked = office.enable_geofence_attendance === true;
+    document.getElementById('officeIsHeadquarters').checked = office.is_headquarters === true;
     document.getElementById('officeIsActive').checked = office.is_active !== false;
 
     document.getElementById('officeModalTitle').textContent = 'Edit Office';
@@ -784,6 +1271,10 @@ function showCreateDepartmentModal() {
 
     document.getElementById('departmentForm').reset();
     document.getElementById('departmentId').value = '';
+
+    // Populate office dropdown before showing modal
+    populateOfficeSelects();
+
     document.getElementById('departmentModalTitle').textContent = 'Create Department';
     document.getElementById('departmentModal').classList.add('active');
 }
@@ -791,6 +1282,9 @@ function showCreateDepartmentModal() {
 function editDepartment(id) {
     const dept = departments.find(d => d.id === id);
     if (!dept) return;
+
+    // Populate office dropdown before setting the value
+    populateOfficeSelects();
 
     document.getElementById('departmentId').value = dept.id;
     document.getElementById('departmentName').value = dept.department_name;
@@ -820,11 +1314,315 @@ function showCreateDesignationModal() {
     document.getElementById('designationForm').reset();
     document.getElementById('designationId').value = '';
 
+    // Initialize and reset the nested office-department dropdown
+    initNestedOfficeDeptDropdown();
+    resetOfficeDeptDropdown();
+
     // Reset all HRMS role checkboxes (except HRMS_USER which is always checked and disabled)
     resetHrmsRoleCheckboxes();
 
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
     document.getElementById('designationModal').classList.add('active');
+}
+
+// Reset department dropdown to initial state (requires office selection)
+function resetDesigDepartmentDropdown() {
+    const deptSelect = document.getElementById('desigDepartment');
+    if (deptSelect) {
+        deptSelect.innerHTML = '<option value="">-- Select Office First --</option>';
+        deptSelect.disabled = true;
+    }
+}
+
+// Filter and populate department dropdown based on selected office
+function filterDesigDepartmentsByOffice(officeId) {
+    const deptSelect = document.getElementById('desigDepartment');
+    if (!deptSelect) return;
+
+    if (!officeId) {
+        resetDesigDepartmentDropdown();
+        return;
+    }
+
+    // Filter departments by the selected office
+    const filteredDepts = departments.filter(d => d.is_active && d.office_id === officeId);
+
+    if (filteredDepts.length === 0) {
+        deptSelect.innerHTML = '<option value="">-- No Departments in this Office --</option>';
+        deptSelect.disabled = true;
+        return;
+    }
+
+    // Populate with filtered departments
+    deptSelect.innerHTML = '<option value="">Select Department *</option>';
+    filteredDepts.forEach(dept => {
+        deptSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
+    });
+    deptSelect.disabled = false;
+}
+
+// ============================================
+// Nested Office-Department Dropdown Component
+// ============================================
+
+let nestedDropdownInitialized = false;
+
+function initNestedOfficeDeptDropdown() {
+    const dropdown = document.getElementById('officeDeptDropdown');
+    const trigger = document.getElementById('officeDeptTrigger');
+    const menu = document.getElementById('officeDeptMenu');
+    const searchInput = document.getElementById('officeDeptSearch');
+
+    if (!dropdown || !trigger || nestedDropdownInitialized) return;
+
+    // Toggle dropdown on trigger click
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('open');
+        closeAllNestedDropdowns();
+        if (!isOpen) {
+            dropdown.classList.add('open');
+            searchInput?.focus();
+        }
+    });
+
+    // Search functionality
+    searchInput?.addEventListener('input', function() {
+        filterNestedDropdownItems(this.value);
+    });
+
+    // Prevent closing when clicking inside menu
+    menu?.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function() {
+        closeAllNestedDropdowns();
+    });
+
+    nestedDropdownInitialized = true;
+}
+
+function closeAllNestedDropdowns() {
+    document.querySelectorAll('.nested-dropdown.open').forEach(dd => {
+        dd.classList.remove('open');
+    });
+}
+
+function populateNestedOfficeDeptDropdown(selectedOfficeId = '', selectedDeptId = '') {
+    const container = document.getElementById('officeDeptItems');
+    if (!container) return;
+
+    const activeOffices = offices.filter(o => o.is_active);
+
+    if (activeOffices.length === 0) {
+        container.innerHTML = `
+            <div class="dropdown-no-results">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 21h18"></path>
+                    <path d="M9 8h1"></path><path d="M9 12h1"></path><path d="M9 16h1"></path>
+                    <path d="M14 8h1"></path><path d="M14 12h1"></path><path d="M14 16h1"></path>
+                    <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+                </svg>
+                <p>No offices configured yet</p>
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    activeOffices.forEach(office => {
+        const officeDepts = departments.filter(d => d.is_active && d.office_id === office.id);
+        const deptCount = officeDepts.length;
+        const isExpanded = office.id === selectedOfficeId || deptCount <= 3;
+
+        html += `
+            <div class="dropdown-office-group ${isExpanded ? 'expanded' : ''}" data-office-id="${escapeHtml(office.id)}">
+                <div class="dropdown-office-header" onclick="toggleOfficeGroup('${escapeHtml(office.id)}')">
+                    <svg class="office-expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                    <div class="office-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 21h18"></path>
+                            <path d="M5 21V7l8-4v18"></path>
+                            <path d="M19 21V11l-6-4"></path>
+                            <path d="M9 9v.01"></path><path d="M9 12v.01"></path><path d="M9 15v.01"></path><path d="M9 18v.01"></path>
+                        </svg>
+                    </div>
+                    <div class="office-info">
+                        <div class="office-name">${escapeHtml(office.office_name)}</div>
+                        <div class="office-dept-count">${deptCount} department${deptCount !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+                <div class="dropdown-departments">`;
+
+        if (deptCount === 0) {
+            html += `
+                <div class="dropdown-dept-item" style="cursor: default; opacity: 0.6;">
+                    <div class="dept-info">
+                        <span class="dept-name" style="font-style: italic;">No departments in this office</span>
+                    </div>
+                </div>`;
+        } else {
+            officeDepts.forEach(dept => {
+                const isSelected = dept.id === selectedDeptId;
+                html += `
+                    <div class="dropdown-dept-item ${isSelected ? 'selected' : ''}"
+                         data-office-id="${escapeHtml(office.id)}"
+                         data-dept-id="${escapeHtml(dept.id)}"
+                         onclick="selectOfficeDepartment('${escapeHtml(office.id)}', '${escapeHtml(dept.id)}', '${escapeHtml(office.office_name)}', '${escapeHtml(dept.department_name)}')">
+                        <div class="dept-radio"></div>
+                        <div class="dept-info">
+                            <span class="dept-name">${escapeHtml(dept.department_name)}</span>
+                            <span class="dept-code">${escapeHtml(dept.department_code)}</span>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        html += `
+                </div>
+            </div>`;
+    });
+
+    container.innerHTML = html;
+
+    // Update selection text if we have selected values
+    if (selectedOfficeId && selectedDeptId) {
+        const office = offices.find(o => o.id === selectedOfficeId);
+        const dept = departments.find(d => d.id === selectedDeptId);
+        if (office && dept) {
+            updateOfficeDeptSelectionText(office.office_name, dept.department_name);
+        }
+    }
+}
+
+function toggleOfficeGroup(officeId) {
+    const group = document.querySelector(`.dropdown-office-group[data-office-id="${officeId}"]`);
+    if (group) {
+        group.classList.toggle('expanded');
+    }
+}
+
+function selectOfficeDepartment(officeId, deptId, officeName, deptName) {
+    // Update hidden inputs
+    document.getElementById('desigOffice').value = officeId;
+    document.getElementById('desigDepartment').value = deptId;
+
+    // Update selection text
+    updateOfficeDeptSelectionText(officeName, deptName);
+
+    // Update visual selection
+    document.querySelectorAll('.dropdown-dept-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    const selectedItem = document.querySelector(`.dropdown-dept-item[data-dept-id="${deptId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+    }
+
+    // Close dropdown
+    closeAllNestedDropdowns();
+}
+
+function updateOfficeDeptSelectionText(officeName, deptName) {
+    const textEl = document.getElementById('officeDeptSelectionText');
+    if (textEl) {
+        textEl.textContent = `${officeName} → ${deptName}`;
+        textEl.classList.add('has-value');
+    }
+}
+
+function resetOfficeDeptDropdown() {
+    const textEl = document.getElementById('officeDeptSelectionText');
+    if (textEl) {
+        textEl.textContent = 'Select Office & Department';
+        textEl.classList.remove('has-value');
+    }
+    document.getElementById('desigOffice').value = '';
+    document.getElementById('desigDepartment').value = '';
+
+    // Clear search
+    const searchInput = document.getElementById('officeDeptSearch');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // Repopulate without selection
+    populateNestedOfficeDeptDropdown();
+}
+
+function filterNestedDropdownItems(searchTerm) {
+    const container = document.getElementById('officeDeptItems');
+    if (!container) return;
+
+    const term = searchTerm.toLowerCase().trim();
+
+    if (!term) {
+        // Show all items
+        container.querySelectorAll('.dropdown-office-group').forEach(group => {
+            group.style.display = '';
+            group.querySelectorAll('.dropdown-dept-item').forEach(item => {
+                item.style.display = '';
+            });
+        });
+        return;
+    }
+
+    let hasResults = false;
+
+    container.querySelectorAll('.dropdown-office-group').forEach(group => {
+        const officeId = group.dataset.officeId;
+        const office = offices.find(o => o.id === officeId);
+        const officeName = office?.office_name?.toLowerCase() || '';
+        const officeMatches = officeName.includes(term);
+
+        let groupHasVisibleDept = false;
+
+        group.querySelectorAll('.dropdown-dept-item[data-dept-id]').forEach(item => {
+            const deptId = item.dataset.deptId;
+            const dept = departments.find(d => d.id === deptId);
+            const deptName = dept?.department_name?.toLowerCase() || '';
+            const deptCode = dept?.department_code?.toLowerCase() || '';
+
+            const deptMatches = deptName.includes(term) || deptCode.includes(term);
+
+            if (officeMatches || deptMatches) {
+                item.style.display = '';
+                groupHasVisibleDept = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        if (officeMatches || groupHasVisibleDept) {
+            group.style.display = '';
+            group.classList.add('expanded'); // Auto-expand when searching
+            hasResults = true;
+        } else {
+            group.style.display = 'none';
+        }
+    });
+
+    // Show no results message if needed
+    let noResultsEl = container.querySelector('.dropdown-no-results-search');
+    if (!hasResults) {
+        if (!noResultsEl) {
+            noResultsEl = document.createElement('div');
+            noResultsEl.className = 'dropdown-no-results dropdown-no-results-search';
+            noResultsEl.innerHTML = `
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <p>No matching offices or departments</p>`;
+            container.appendChild(noResultsEl);
+        }
+        noResultsEl.style.display = '';
+    } else if (noResultsEl) {
+        noResultsEl.style.display = 'none';
+    }
 }
 
 // Helper function to reset all HRMS role checkboxes
@@ -903,8 +1701,13 @@ function editDesignation(id) {
     document.getElementById('designationId').value = desig.id;
     document.getElementById('designationName').value = desig.designation_name;
     document.getElementById('designationCode').value = desig.designation_code;
-    document.getElementById('desigDepartment').value = desig.department_id || '';
+
+    // Initialize and populate the nested office-department dropdown with selection
+    initNestedOfficeDeptDropdown();
+    populateNestedOfficeDeptDropdown(desig.office_id || '', desig.department_id || '');
+
     document.getElementById('desigLevel').value = desig.level || 1;
+    document.getElementById('desigCategory').value = desig.role_category || '';
 
     // Set HRMS role checkboxes based on default_hrms_roles array
     setHrmsRoleCheckboxes(desig.default_hrms_roles);
@@ -925,6 +1728,7 @@ function showCreateShiftModal() {
 
     document.getElementById('shiftForm').reset();
     document.getElementById('shiftId').value = '';
+    document.getElementById('shiftEnableGeofence').checked = false;
     document.getElementById('shiftModalTitle').textContent = 'Create Shift';
     document.getElementById('shiftModal').classList.add('active');
 
@@ -949,6 +1753,7 @@ function editShift(id) {
     document.getElementById('graceMinutes').value = shift.grace_period_minutes || 15;
     document.getElementById('halfDayHours').value = shift.half_day_hours || 4;
     document.getElementById('shiftIsActive').checked = shift.is_active !== false;
+    document.getElementById('shiftEnableGeofence').checked = shift.enable_geofence_attendance || false;
 
     // Set working days checkboxes
     // working_days comes from backend as comma-separated string (e.g., "Mon,Tue,Wed,Thu,Fri")
@@ -1102,14 +1907,13 @@ async function saveOffice() {
         const longitudeVal = document.getElementById('officeLongitude').value;
         const geofenceVal = document.getElementById('officeGeofenceRadius').value;
 
-        // Get office_type directly from dropdown
+        // Get office_type from dropdown
         const officeTypeVal = document.getElementById('officeType').value;
-        const isHeadquarters = officeTypeVal === 'head';
 
         const data = {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
-            is_headquarters: isHeadquarters,
+            is_headquarters: document.getElementById('officeIsHeadquarters').checked,
             office_type: officeTypeVal,
             timezone: document.getElementById('officeTimezone').value,
             address_line1: document.getElementById('officeAddress').value,
@@ -1122,6 +1926,7 @@ async function saveOffice() {
             latitude: latitudeVal ? parseFloat(latitudeVal) : null,
             longitude: longitudeVal ? parseFloat(longitudeVal) : null,
             geofence_radius_meters: geofenceVal ? parseInt(geofenceVal) : 100,
+            enable_geofence_attendance: document.getElementById('officeEnableGeofence').checked,
             is_active: document.getElementById('officeIsActive').checked
         };
 
@@ -1204,10 +2009,11 @@ async function saveDesignation() {
         return;
     }
 
-    // Validate department selection
+    // Validate office and department selection (from nested dropdown)
+    const officeId = document.getElementById('desigOffice').value;
     const departmentId = document.getElementById('desigDepartment').value;
-    if (!departmentId) {
-        showToast('Please select a department', 'error');
+    if (!officeId || !departmentId) {
+        showToast('Please select an office and department', 'error');
         return;
     }
 
@@ -1221,8 +2027,10 @@ async function saveDesignation() {
         const data = {
             designation_name: document.getElementById('designationName').value,
             designation_code: document.getElementById('designationCode').value,
+            office_id: officeId,
             department_id: departmentId,
             level: parseInt(document.getElementById('desigLevel').value) || 1,
+            role_category: document.getElementById('desigCategory').value || null,
             default_hrms_roles: selectedRoles,
             description: document.getElementById('designationDescription').value,
             is_active: document.getElementById('designationIsActive').checked
@@ -1295,7 +2103,8 @@ async function saveShift() {
             grace_period_minutes: parseInt(document.getElementById('graceMinutes').value) || 15,
             half_day_hours: parseFloat(document.getElementById('halfDayHours').value) || 4,
             working_days: selectedWorkingDays || 'Mon,Tue,Wed,Thu,Fri',
-            is_active: document.getElementById('shiftIsActive').checked
+            is_active: document.getElementById('shiftIsActive').checked,
+            enable_geofence_attendance: document.getElementById('shiftEnableGeofence').checked
         };
 
         if (id) {
@@ -1444,6 +2253,270 @@ async function deleteRoster(id) {
     }
 }
 
+// ==========================================
+// Bulk Operations Functions
+// ==========================================
+
+let bulkHolidayRowCount = 0;
+let allEmployeesForBulkRoster = [];
+
+function showBulkHolidayModal() {
+    // Populate office dropdown
+    const officeSelect = document.getElementById('bulkHolidayOffice');
+    officeSelect.innerHTML = '<option value="">All Offices</option>';
+    offices.forEach(office => {
+        officeSelect.innerHTML += `<option value="${office.id}">${office.office_name || office.name}</option>`;
+    });
+
+    // Clear and add initial rows
+    document.getElementById('bulkHolidayEntries').innerHTML = '';
+    bulkHolidayRowCount = 0;
+    for (let i = 0; i < 3; i++) {
+        addBulkHolidayRow();
+    }
+    updateBulkHolidayCount();
+
+    openModal('bulkHolidayModal');
+}
+
+function addBulkHolidayRow() {
+    if (bulkHolidayRowCount >= 20) {
+        showToast('Maximum 20 holidays allowed per bulk operation', 'warning');
+        return;
+    }
+
+    const container = document.getElementById('bulkHolidayEntries');
+    const row = document.createElement('div');
+    row.className = 'bulk-entry-row';
+    row.innerHTML = `
+        <input type="text" class="form-control holiday-name" placeholder="Holiday name *" required>
+        <input type="date" class="form-control holiday-date" required>
+        <select class="form-control holiday-type">
+            <option value="public">Public</option>
+            <option value="regional">Regional</option>
+            <option value="restricted">Restricted</option>
+            <option value="company">Company</option>
+        </select>
+        <input type="text" class="form-control holiday-desc" placeholder="Description (optional)">
+        <button type="button" class="remove-entry-btn" onclick="removeBulkHolidayRow(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    `;
+    container.appendChild(row);
+    bulkHolidayRowCount++;
+    updateBulkHolidayCount();
+}
+
+function removeBulkHolidayRow(btn) {
+    if (bulkHolidayRowCount <= 1) {
+        showToast('At least one holiday row is required', 'warning');
+        return;
+    }
+    btn.closest('.bulk-entry-row').remove();
+    bulkHolidayRowCount--;
+    updateBulkHolidayCount();
+}
+
+function updateBulkHolidayCount() {
+    const rows = document.querySelectorAll('#bulkHolidayEntries .bulk-entry-row');
+    let validCount = 0;
+    rows.forEach(row => {
+        const name = row.querySelector('.holiday-name').value.trim();
+        const date = row.querySelector('.holiday-date').value;
+        if (name && date) validCount++;
+    });
+    document.getElementById('bulkHolidayCount').textContent = `${validCount} holiday(s) to add`;
+}
+
+async function saveBulkHolidays() {
+    const year = document.getElementById('bulkHolidayYear').value;
+    const officeId = document.getElementById('bulkHolidayOffice').value || null;
+    const rows = document.querySelectorAll('#bulkHolidayEntries .bulk-entry-row');
+
+    const holidays = [];
+    let hasErrors = false;
+
+    rows.forEach(row => {
+        const name = row.querySelector('.holiday-name').value.trim();
+        const date = row.querySelector('.holiday-date').value;
+        const type = row.querySelector('.holiday-type').value;
+        const desc = row.querySelector('.holiday-desc').value.trim();
+
+        if (name && date) {
+            holidays.push({
+                holiday_name: name,
+                holiday_date: date,
+                holiday_type: type,
+                description: desc || null,
+                office_id: officeId
+            });
+        } else if (name || date) {
+            hasErrors = true;
+            row.style.borderColor = 'var(--color-danger-dark)';
+        }
+    });
+
+    if (hasErrors) {
+        showToast('Please fill in both name and date for all holidays', 'error');
+        return;
+    }
+
+    if (holidays.length === 0) {
+        showToast('Please add at least one holiday', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.createBulkHolidays(holidays);
+        closeModal('bulkHolidayModal');
+        showToast(`Successfully added ${holidays.length} holiday(s)`, 'success');
+        await loadHolidays();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving bulk holidays:', error);
+        showToast(error.message || 'Failed to save holidays', 'error');
+        hideLoading();
+    }
+}
+
+async function showBulkRosterModal() {
+    // Populate shift dropdown
+    const shiftSelect = document.getElementById('bulkRosterShift');
+    shiftSelect.innerHTML = '<option value="">Select Shift</option>';
+    shifts.forEach(shift => {
+        shiftSelect.innerHTML += `<option value="${shift.id}">${shift.shift_name || shift.name}</option>`;
+    });
+
+    // Populate department filter
+    const deptFilter = document.getElementById('bulkRosterDepartmentFilter');
+    deptFilter.innerHTML = '<option value="">All Departments</option>';
+    departments.forEach(dept => {
+        deptFilter.innerHTML += `<option value="${dept.id}">${dept.department_name || dept.name}</option>`;
+    });
+
+    // Set default start date to today
+    document.getElementById('bulkRosterStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('bulkRosterEndDate').value = '';
+
+    // Load employees
+    await loadBulkRosterEmployees();
+    updateBulkRosterCount();
+
+    openModal('bulkRosterModal');
+}
+
+async function loadBulkRosterEmployees() {
+    try {
+        const response = await api.getHrmsEmployees();
+        allEmployeesForBulkRoster = Array.isArray(response) ? response : (response?.data || []);
+        allEmployeesForBulkRoster = allEmployeesForBulkRoster.filter(e => e.employment_status === 'active');
+        renderBulkRosterEmployees();
+    } catch (error) {
+        console.error('Error loading employees:', error);
+        showToast('Failed to load employees', 'error');
+    }
+}
+
+function renderBulkRosterEmployees() {
+    const container = document.getElementById('bulkRosterEmployees');
+    const deptFilter = document.getElementById('bulkRosterDepartmentFilter').value;
+
+    container.innerHTML = '';
+    allEmployeesForBulkRoster.forEach(emp => {
+        const deptMatch = !deptFilter || emp.department_id === deptFilter;
+        const deptName = departments.find(d => d.id === emp.department_id)?.department_name || 'No Dept';
+
+        const item = document.createElement('label');
+        item.className = `employee-checkbox-item${deptMatch ? '' : ' hidden'}`;
+        item.innerHTML = `
+            <input type="checkbox" value="${emp.id}" onchange="updateBulkRosterCount()">
+            <span class="employee-checkbox-label">
+                ${emp.first_name} ${emp.last_name || ''}
+                <span class="employee-checkbox-dept">${deptName}</span>
+            </span>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function filterBulkRosterEmployees() {
+    renderBulkRosterEmployees();
+    updateBulkRosterCount();
+}
+
+function selectAllBulkRosterEmployees() {
+    const checkboxes = document.querySelectorAll('#bulkRosterEmployees .employee-checkbox-item:not(.hidden) input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = true);
+    updateBulkRosterCount();
+}
+
+function deselectAllBulkRosterEmployees() {
+    const checkboxes = document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateBulkRosterCount();
+}
+
+function updateBulkRosterCount() {
+    const checked = document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]:checked').length;
+    document.getElementById('bulkRosterCount').textContent = `${checked} employee(s) selected`;
+}
+
+async function saveBulkRosters() {
+    const shiftId = document.getElementById('bulkRosterShift').value;
+    const rosterType = document.getElementById('bulkRosterType').value;
+    const startDate = document.getElementById('bulkRosterStartDate').value;
+    const endDate = document.getElementById('bulkRosterEndDate').value || null;
+
+    if (!shiftId) {
+        showToast('Please select a shift', 'error');
+        return;
+    }
+
+    if (!startDate) {
+        showToast('Please select a start date', 'error');
+        return;
+    }
+
+    const selectedEmployees = Array.from(
+        document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]:checked')
+    ).map(cb => cb.value);
+
+    if (selectedEmployees.length === 0) {
+        showToast('Please select at least one employee', 'error');
+        return;
+    }
+
+    const rosters = selectedEmployees.map(empId => ({
+        employee_id: empId,
+        shift_id: shiftId,
+        start_date: startDate,
+        end_date: endDate,
+        roster_type: rosterType,
+        is_active: true
+    }));
+
+    try {
+        showLoading();
+        await api.createBulkShiftRosters(rosters);
+        closeModal('bulkRosterModal');
+        showToast(`Successfully assigned shift to ${selectedEmployees.length} employee(s)`, 'success');
+        await loadShiftRosters();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving bulk rosters:', error);
+        showToast(error.message || 'Failed to assign rosters', 'error');
+        hideLoading();
+    }
+}
+
+// ==========================================
+// End Bulk Operations Functions
+// ==========================================
+
 // Utility functions
 function formatDate(dateString) {
     if (!dateString) return '-';
@@ -1472,7 +2545,15 @@ function calculateWorkingHours(start, end) {
     if (!start || !end) return 0;
     const [sh, sm] = start.split(':').map(Number);
     const [eh, em] = end.split(':').map(Number);
-    return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    let startMinutes = sh * 60 + sm;
+    let endMinutes = eh * 60 + em;
+
+    // Handle overnight/night shifts (e.g., 22:00 - 06:00)
+    if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60; // Add 24 hours
+    }
+
+    return (endMinutes - startMinutes) / 60;
 }
 
 function formatOfficeType(type) {
@@ -1545,6 +2626,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('rosterOffice')?.addEventListener('change', updateRostersTable);
     document.getElementById('rosterShift')?.addEventListener('change', updateRostersTable);
 
+    // Designation modal: Office -> Department dependency
+    document.getElementById('desigOffice')?.addEventListener('change', function() {
+        filterDesigDepartmentsByOffice(this.value);
+    });
+
     // Toggle switch label updates
     document.getElementById('desigIsManager')?.addEventListener('change', function() {
         document.getElementById('desigIsManagerLabel').textContent = this.checked ? 'Yes' : 'No';
@@ -1595,3 +2681,675 @@ function setTimePickerValue(inputId, timeValue) {
         input.value = timeValue;
     }
 }
+
+// ============================================
+// Location Tax Management
+// ============================================
+
+async function loadTaxTypes() {
+    try {
+        const showInactive = document.getElementById('showInactiveTaxTypes')?.checked || false;
+        const response = await api.getLocationTaxTypes(showInactive);
+        taxTypes = Array.isArray(response) ? response : (response?.data || []);
+        updateTaxTypesTable();
+        populateTaxTypeSelects();
+    } catch (error) {
+        console.error('Error loading tax types:', error);
+        showToast('Failed to load tax types', 'error');
+    }
+}
+
+function updateTaxTypesTable() {
+    const tbody = document.getElementById('taxTypesTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('taxTypeSearch')?.value?.toLowerCase() || '';
+
+    const filtered = taxTypes.filter(t =>
+        t.tax_name?.toLowerCase().includes(searchTerm) ||
+        t.tax_code?.toLowerCase().includes(searchTerm) ||
+        t.description?.toLowerCase().includes(searchTerm)
+    );
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="6">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M4 7h16M4 12h16M4 17h10"></path>
+                        </svg>
+                        <p>No tax types configured</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(taxType => `
+        <tr>
+            <td><strong>${escapeHtml(taxType.tax_name)}</strong></td>
+            <td><code>${escapeHtml(taxType.tax_code)}</code></td>
+            <td><span class="badge badge-${escapeHtml(taxType.deduction_from || 'employee')}">${escapeHtml(formatDeductionFrom(taxType.deduction_from))}</span></td>
+            <td>${escapeHtml(taxType.description || '-')}</td>
+            <td><span class="status-badge status-${taxType.is_active ? 'active' : 'inactive'}">${taxType.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Edit Tax Type">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Delete Tax Type">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function populateTaxTypeSelects() {
+    const selects = ['taxRuleTaxType', 'taxRuleTaxTypeId'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const firstOption = id === 'taxRuleTaxType' ? '<option value="">All Tax Types</option>' : '<option value="">Select Tax Type</option>';
+            select.innerHTML = firstOption;
+            taxTypes.filter(t => t.is_active).forEach(taxType => {
+                select.innerHTML += `<option value="${escapeHtml(taxType.id)}">${escapeHtml(taxType.tax_name)} (${escapeHtml(taxType.tax_code)})</option>`;
+            });
+        }
+    });
+}
+
+function formatDeductionFrom(deductionFrom) {
+    const map = {
+        'employee': 'Employee',
+        'employer': 'Employer',
+        'both': 'Both'
+    };
+    return map[deductionFrom] || 'Employee';
+}
+
+// Tax Type Modal Functions
+function showCreateTaxTypeModal() {
+    document.getElementById('taxTypeForm').reset();
+    document.getElementById('taxTypeId').value = '';
+    document.getElementById('taxTypeIsActive').checked = true;
+    document.getElementById('taxTypeModalTitle').textContent = 'Create Tax Type';
+    document.getElementById('taxTypeModal').classList.add('active');
+}
+
+function editTaxType(id) {
+    const taxType = taxTypes.find(t => t.id === id);
+    if (!taxType) return;
+
+    document.getElementById('taxTypeId').value = taxType.id;
+    document.getElementById('taxTypeName').value = taxType.tax_name || '';
+    document.getElementById('taxTypeCode').value = taxType.tax_code || '';
+    document.getElementById('taxTypeDeductionFrom').value = taxType.deduction_from || 'employee';
+    document.getElementById('taxTypeDisplayOrder').value = taxType.display_order || 0;
+    document.getElementById('taxTypeDescription').value = taxType.description || '';
+    document.getElementById('taxTypeIsActive').checked = taxType.is_active !== false;
+
+    document.getElementById('taxTypeModalTitle').textContent = 'Edit Tax Type';
+    document.getElementById('taxTypeModal').classList.add('active');
+}
+
+async function saveTaxType() {
+    const form = document.getElementById('taxTypeForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('taxTypeId').value;
+        const data = {
+            tax_name: document.getElementById('taxTypeName').value,
+            tax_code: document.getElementById('taxTypeCode').value,
+            deduction_from: document.getElementById('taxTypeDeductionFrom').value,
+            display_order: parseInt(document.getElementById('taxTypeDisplayOrder').value) || 0,
+            description: document.getElementById('taxTypeDescription').value,
+            is_active: document.getElementById('taxTypeIsActive').checked
+        };
+
+        if (id) {
+            await api.updateLocationTaxType(id, data);
+        } else {
+            await api.createLocationTaxType(data);
+        }
+
+        closeModal('taxTypeModal');
+        showToast(`Tax type ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadTaxTypes();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving tax type:', error);
+        showToast(error.message || 'Failed to save tax type', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteTaxType(id) {
+    if (!confirm('Are you sure you want to delete this tax type? This may affect associated tax rules.')) return;
+
+    try {
+        showLoading();
+        await api.deleteLocationTaxType(id);
+        showToast('Tax type deleted successfully', 'success');
+        await loadTaxTypes();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting tax type:', error);
+        showToast(error.message || 'Failed to delete tax type', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// Office Tax Rules Management
+// ============================================
+
+async function loadOfficeTaxRules() {
+    try {
+        const officeFilter = document.getElementById('taxRuleOffice')?.value || '';
+        const showInactive = document.getElementById('showInactiveTaxRules')?.checked || false;
+
+        let response;
+        if (officeFilter) {
+            response = await api.getOfficeTaxRules(officeFilter, showInactive);
+        } else {
+            // Load all rules by making a request without office filter
+            response = await api.request(`/hrms/payroll/location-taxes/rules?includeInactive=${showInactive}`);
+        }
+        taxRules = Array.isArray(response) ? response : (response?.data || []);
+        updateTaxRulesTable();
+        populateTaxRuleOfficeSelects();
+    } catch (error) {
+        console.error('Error loading tax rules:', error);
+        showToast('Failed to load tax rules', 'error');
+    }
+}
+
+function updateTaxRulesTable() {
+    const tbody = document.getElementById('taxRulesTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('taxRuleSearch')?.value?.toLowerCase() || '';
+    const taxTypeFilter = document.getElementById('taxRuleTaxType')?.value || '';
+
+    let filtered = taxRules.filter(r =>
+        r.rule_name?.toLowerCase().includes(searchTerm) ||
+        r.tax_code?.toLowerCase().includes(searchTerm) ||
+        r.jurisdiction_name?.toLowerCase().includes(searchTerm)
+    );
+
+    if (taxTypeFilter) {
+        filtered = filtered.filter(r => r.tax_type_id === taxTypeFilter);
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="9">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p>No tax rules configured</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(rule => {
+        const officeName = getOfficeName(rule.office_id);
+        const taxTypeName = getTaxTypeName(rule.tax_type_id);
+        const calcBadge = getCalculationBadge(rule.calculation_type);
+        const amountDisplay = formatAmountDisplay(rule);
+
+        return `
+        <tr>
+            <td>${escapeHtml(officeName)}</td>
+            <td>${escapeHtml(taxTypeName)}</td>
+            <td><strong>${escapeHtml(rule.rule_name || '-')}</strong></td>
+            <td>${escapeHtml(rule.jurisdiction_name || '-')} <small>(${escapeHtml(rule.jurisdiction_level || '-')})</small></td>
+            <td><span class="badge ${escapeHtml(calcBadge.class)}">${escapeHtml(calcBadge.label)}</span></td>
+            <td>${amountDisplay}</td>
+            <td>${escapeHtml(formatDate(rule.effective_from))}</td>
+            <td><span class="status-badge status-${rule.is_active ? 'active' : 'inactive'}">${rule.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Edit Rule">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Delete Rule">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getTaxTypeName(taxTypeId) {
+    if (!taxTypeId) return 'Unknown';
+    const taxType = taxTypes.find(t => t.id === taxTypeId);
+    return taxType?.tax_name || 'Unknown';
+}
+
+function getCalculationBadge(calcType) {
+    const badges = {
+        'fixed': { class: 'badge-fixed', label: 'Fixed' },
+        'percentage': { class: 'badge-percentage', label: 'Percentage' },
+        'slab': { class: 'badge-slab', label: 'Slab' },
+        'formula': { class: 'badge-formula', label: 'Formula' }
+    };
+    return badges[calcType] || { class: 'badge-fixed', label: 'Fixed' };
+}
+
+function formatAmountDisplay(rule) {
+    switch (rule.calculation_type) {
+        case 'fixed':
+            return `<strong>${formatCurrency(rule.fixed_amount || 0)}</strong>`;
+        case 'percentage':
+            return `<strong>${rule.percentage || 0}%</strong> of ${rule.percentage_of || 'gross'}`;
+        case 'slab':
+            return '<em>Slab based</em>';
+        case 'formula':
+            return '<em>Formula</em>';
+        default:
+            return '-';
+    }
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+}
+
+function populateTaxRuleOfficeSelects() {
+    const selects = ['taxRuleOffice', 'taxRuleOfficeId', 'copySourceOffice', 'copyTargetOffice', 'previewOffice'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const firstOption = (id === 'taxRuleOffice') ? '<option value="">All Offices</option>' : '<option value="">Select Office</option>';
+            select.innerHTML = firstOption;
+            offices.filter(o => o.is_active).forEach(office => {
+                select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
+            });
+        }
+    });
+}
+
+// Tax Rule Modal Functions
+function showCreateTaxRuleModal() {
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first', 'error');
+        return;
+    }
+
+    if (taxTypes.filter(t => t.is_active).length === 0) {
+        showToast('Please create a tax type first', 'error');
+        return;
+    }
+
+    document.getElementById('taxRuleForm').reset();
+    document.getElementById('taxRuleId').value = '';
+    document.getElementById('taxRuleIsActive').checked = true;
+    document.getElementById('taxRuleEffectiveFrom').value = new Date().toISOString().split('T')[0];
+
+    // Populate dropdowns
+    populateTaxRuleOfficeSelects();
+    populateTaxTypeSelects();
+
+    // Reset calculation fields visibility
+    toggleCalculationFields();
+
+    // Reset slab rows
+    resetSlabRows();
+
+    document.getElementById('taxRuleModalTitle').textContent = 'Create Tax Rule';
+    document.getElementById('taxRuleModal').classList.add('active');
+}
+
+function editTaxRule(id) {
+    const rule = taxRules.find(r => r.id === id);
+    if (!rule) return;
+
+    // Populate dropdowns first
+    populateTaxRuleOfficeSelects();
+    populateTaxTypeSelects();
+
+    document.getElementById('taxRuleId').value = rule.id;
+    document.getElementById('taxRuleOfficeId').value = rule.office_id || '';
+    document.getElementById('taxRuleTaxTypeId').value = rule.tax_type_id || '';
+    document.getElementById('taxRuleName').value = rule.rule_name || '';
+    document.getElementById('taxRuleCode').value = rule.tax_code || '';
+    document.getElementById('taxRuleJurisdictionLevel').value = rule.jurisdiction_level || 'state';
+    document.getElementById('taxRuleJurisdictionName').value = rule.jurisdiction_name || '';
+    document.getElementById('taxRuleJurisdictionCode').value = rule.jurisdiction_code || '';
+    document.getElementById('taxRuleCalculationType').value = rule.calculation_type || 'fixed';
+    document.getElementById('taxRuleFixedAmount').value = rule.fixed_amount || '';
+    document.getElementById('taxRulePercentage').value = rule.percentage || '';
+    document.getElementById('taxRulePercentageOf').value = rule.percentage_of || 'gross';
+    document.getElementById('taxRuleFormula').value = rule.formula_expression || '';
+    document.getElementById('taxRuleEffectiveFrom').value = rule.effective_from?.split('T')[0] || '';
+    document.getElementById('taxRuleEffectiveTo').value = rule.effective_to?.split('T')[0] || '';
+    document.getElementById('taxRuleNotes').value = rule.notes || '';
+    document.getElementById('taxRuleIsActive').checked = rule.is_active !== false;
+
+    // Toggle calculation fields visibility
+    toggleCalculationFields();
+
+    // Populate slab rows if calculation type is slab
+    if (rule.calculation_type === 'slab' && rule.slab_config) {
+        populateSlabRows(rule.slab_config);
+    }
+
+    document.getElementById('taxRuleModalTitle').textContent = 'Edit Tax Rule';
+    document.getElementById('taxRuleModal').classList.add('active');
+}
+
+async function saveTaxRule() {
+    const form = document.getElementById('taxRuleForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('taxRuleId').value;
+        const calculationType = document.getElementById('taxRuleCalculationType').value;
+
+        const data = {
+            office_id: document.getElementById('taxRuleOfficeId').value,
+            tax_type_id: document.getElementById('taxRuleTaxTypeId').value,
+            rule_name: document.getElementById('taxRuleName').value,
+            tax_code: document.getElementById('taxRuleCode').value,
+            jurisdiction_level: document.getElementById('taxRuleJurisdictionLevel').value,
+            jurisdiction_name: document.getElementById('taxRuleJurisdictionName').value,
+            jurisdiction_code: document.getElementById('taxRuleJurisdictionCode').value,
+            calculation_type: calculationType,
+            effective_from: document.getElementById('taxRuleEffectiveFrom').value,
+            effective_to: document.getElementById('taxRuleEffectiveTo').value || null,
+            notes: document.getElementById('taxRuleNotes').value,
+            is_active: document.getElementById('taxRuleIsActive').checked
+        };
+
+        // Add calculation-specific fields
+        switch (calculationType) {
+            case 'fixed':
+                data.fixed_amount = parseFloat(document.getElementById('taxRuleFixedAmount').value) || 0;
+                break;
+            case 'percentage':
+                data.percentage = parseFloat(document.getElementById('taxRulePercentage').value) || 0;
+                data.percentage_of = document.getElementById('taxRulePercentageOf').value;
+                break;
+            case 'slab':
+                data.slab_config = getSlabConfig();
+                break;
+            case 'formula':
+                data.formula_expression = document.getElementById('taxRuleFormula').value;
+                break;
+        }
+
+        if (id) {
+            await api.updateOfficeTaxRule(id, data);
+        } else {
+            await api.createOfficeTaxRule(data);
+        }
+
+        closeModal('taxRuleModal');
+        showToast(`Tax rule ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving tax rule:', error);
+        showToast(error.message || 'Failed to save tax rule', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteTaxRule(id) {
+    if (!confirm('Are you sure you want to delete this tax rule?')) return;
+
+    try {
+        showLoading();
+        await api.deleteOfficeTaxRule(id);
+        showToast('Tax rule deleted successfully', 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting tax rule:', error);
+        showToast(error.message || 'Failed to delete tax rule', 'error');
+        hideLoading();
+    }
+}
+
+// Toggle calculation fields based on type
+function toggleCalculationFields() {
+    const calcType = document.getElementById('taxRuleCalculationType').value;
+
+    document.getElementById('fixedAmountFields').style.display = calcType === 'fixed' ? 'flex' : 'none';
+    document.getElementById('percentageFields').style.display = calcType === 'percentage' ? 'flex' : 'none';
+    document.getElementById('slabFields').style.display = calcType === 'slab' ? 'block' : 'none';
+    document.getElementById('formulaFields').style.display = calcType === 'formula' ? 'flex' : 'none';
+}
+
+// Slab row management
+function addSlabRow() {
+    const container = document.getElementById('slabContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'slab-row';
+    newRow.innerHTML = `
+        <input type="number" class="form-control slab-from" placeholder="From" min="0">
+        <span class="slab-separator">to</span>
+        <input type="number" class="form-control slab-to" placeholder="To" min="0">
+        <span class="slab-separator">=</span>
+        <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeSlabRow(button) {
+    const container = document.getElementById('slabContainer');
+    if (container.children.length > 1) {
+        button.closest('.slab-row').remove();
+    } else {
+        showToast('At least one slab row is required', 'error');
+    }
+}
+
+function resetSlabRows() {
+    const container = document.getElementById('slabContainer');
+    container.innerHTML = `
+        <div class="slab-row">
+            <input type="number" class="form-control slab-from" placeholder="From" min="0">
+            <span class="slab-separator">to</span>
+            <input type="number" class="form-control slab-to" placeholder="To" min="0">
+            <span class="slab-separator">=</span>
+            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `;
+}
+
+function populateSlabRows(slabConfig) {
+    const container = document.getElementById('slabContainer');
+    container.innerHTML = '';
+
+    const slabs = typeof slabConfig === 'string' ? JSON.parse(slabConfig) : slabConfig;
+    if (!Array.isArray(slabs) || slabs.length === 0) {
+        resetSlabRows();
+        return;
+    }
+
+    slabs.forEach(slab => {
+        const row = document.createElement('div');
+        row.className = 'slab-row';
+        row.innerHTML = `
+            <input type="number" class="form-control slab-from" placeholder="From" min="0" value="${slab.from || ''}">
+            <span class="slab-separator">to</span>
+            <input type="number" class="form-control slab-to" placeholder="To" min="0" value="${slab.to || ''}">
+            <span class="slab-separator">=</span>
+            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01" value="${slab.amount || ''}">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function getSlabConfig() {
+    const slabs = [];
+    document.querySelectorAll('#slabContainer .slab-row').forEach(row => {
+        const from = parseFloat(row.querySelector('.slab-from').value) || 0;
+        const to = parseFloat(row.querySelector('.slab-to').value) || 0;
+        const amount = parseFloat(row.querySelector('.slab-amount').value) || 0;
+        slabs.push({ from, to, amount });
+    });
+    return slabs;
+}
+
+// Copy Tax Rules
+function showCopyTaxRulesModal() {
+    if (offices.filter(o => o.is_active).length < 2) {
+        showToast('You need at least 2 offices to copy tax rules', 'error');
+        return;
+    }
+
+    document.getElementById('copyTaxRulesForm').reset();
+    populateTaxRuleOfficeSelects();
+    document.getElementById('copyTaxRulesModal').classList.add('active');
+}
+
+async function copyTaxRules() {
+    const sourceOffice = document.getElementById('copySourceOffice').value;
+    const targetOffice = document.getElementById('copyTargetOffice').value;
+
+    if (!sourceOffice || !targetOffice) {
+        showToast('Please select both source and target offices', 'error');
+        return;
+    }
+
+    if (sourceOffice === targetOffice) {
+        showToast('Source and target offices must be different', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.copyOfficeTaxRules(sourceOffice, targetOffice);
+        closeModal('copyTaxRulesModal');
+        showToast('Tax rules copied successfully', 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error copying tax rules:', error);
+        showToast(error.message || 'Failed to copy tax rules', 'error');
+        hideLoading();
+    }
+}
+
+// Tax Preview
+function showTaxPreviewModal() {
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('No offices configured', 'error');
+        return;
+    }
+
+    document.getElementById('taxPreviewForm').reset();
+    document.getElementById('taxPreviewResults').style.display = 'none';
+    document.getElementById('previewEffectiveDate').value = new Date().toISOString().split('T')[0];
+    populateTaxRuleOfficeSelects();
+    document.getElementById('taxPreviewModal').classList.add('active');
+}
+
+async function calculateTaxPreview() {
+    const officeId = document.getElementById('previewOffice').value;
+    const effectiveDate = document.getElementById('previewEffectiveDate').value;
+    const grossSalary = parseFloat(document.getElementById('previewGrossSalary').value) || 0;
+
+    if (!officeId || !effectiveDate || !grossSalary) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const request = {
+            office_id: officeId,
+            effective_date: effectiveDate,
+            basic_salary: parseFloat(document.getElementById('previewBasicSalary').value) || 0,
+            gross_salary: grossSalary,
+            taxable_income: parseFloat(document.getElementById('previewTaxableIncome').value) || grossSalary
+        };
+
+        const result = await api.calculateTaxPreview(request);
+        displayTaxPreviewResults(result);
+        hideLoading();
+    } catch (error) {
+        console.error('Error calculating tax preview:', error);
+        showToast(error.message || 'Failed to calculate tax preview', 'error');
+        hideLoading();
+    }
+}
+
+function displayTaxPreviewResults(result) {
+    const tbody = document.getElementById('taxPreviewResultsTable');
+    const totalEl = document.getElementById('taxPreviewTotal');
+    const resultsDiv = document.getElementById('taxPreviewResults');
+
+    if (!result || !result.tax_calculations || result.tax_calculations.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center">No applicable taxes found for this configuration</td>
+            </tr>
+        `;
+        totalEl.textContent = formatCurrency(0);
+    } else {
+        tbody.innerHTML = result.tax_calculations.map(calc => `
+            <tr>
+                <td>${escapeHtml(calc.tax_type_name || '-')}</td>
+                <td>${escapeHtml(calc.rule_name || '-')}</td>
+                <td>${escapeHtml(calc.calculation_details || '-')}</td>
+                <td><strong>${formatCurrency(calc.amount || 0)}</strong></td>
+            </tr>
+        `).join('');
+        totalEl.textContent = formatCurrency(result.total_tax || 0);
+    }
+
+    resultsDiv.style.display = 'block';
+}
+
+// Add search event listeners for tax management
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('taxTypeSearch')?.addEventListener('input', updateTaxTypesTable);
+    document.getElementById('taxRuleSearch')?.addEventListener('input', updateTaxRulesTable);
+});

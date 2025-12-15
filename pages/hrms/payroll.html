@@ -6,8 +6,11 @@
     <title>Payroll - HRMS | HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
     <nav class="navbar">
@@ -881,6 +884,94 @@
         </div>
     </div>
 
+    <!-- View Loan Modal -->
+    <div class="modal" id="viewLoanModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Loan Details</h5>
+                    <button class="close-btn" onclick="closeModal('viewLoanModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="loanDetailsContent">
+                        <!-- Loan details will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer" id="loanActionsFooter">
+                    <!-- Action buttons will be populated based on loan status and user role -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Loan Modal -->
+    <div class="modal" id="rejectLoanModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Loan Application</h5>
+                    <button class="close-btn" onclick="closeModal('rejectLoanModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectLoanId">
+                    <div class="form-group">
+                        <label for="rejectionReason">Rejection Reason *</label>
+                        <textarea id="rejectionReason" class="form-control" rows="3" required placeholder="Please provide a reason for rejection"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="confirmRejectLoan()">Reject Loan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disburse Loan Modal -->
+    <div class="modal" id="disburseLoanModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Disburse Loan</h5>
+                    <button class="close-btn" onclick="closeModal('disburseLoanModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="disburseLoanId">
+                    <div class="form-group">
+                        <label for="disbursementMode">Disbursement Mode *</label>
+                        <select id="disbursementMode" class="form-control" required>
+                            <option value="">Select Mode</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="disbursementReference">Reference Number</label>
+                        <input type="text" id="disbursementReference" class="form-control" placeholder="Transaction/Cheque number">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="confirmDisburseLoan()">Confirm Disbursement</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- View Payslip Modal -->
     <div class="modal" id="payslipModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1111,16 +1202,16 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="version-info-banner" style="background: #fff3cd; border-left: 4px solid #ffc107;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2">
+                    <div class="version-info-banner" style="background: var(--color-warning-light); border-left: 4px solid var(--color-warning);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning-text)" stroke-width="2">
                             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                             <line x1="12" y1="9" x2="12" y2="13"></line>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        <span style="color: #856404;">Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
+                        <span class="text-warning-dark">Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
                     </div>
 
-                    <div class="arrears-summary" id="arrearsSummary" style="display: none; margin: 16px 0; padding: 16px; background: #e8f4fd; border-radius: 8px;">
+                    <div class="arrears-summary" id="arrearsSummary" style="display: none; margin: 16px 0; padding: 16px; background: var(--color-info-light); border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                             <div>
                                 <span class="text-muted">Total Employees Affected</span>
@@ -1128,11 +1219,11 @@
                             </div>
                             <div>
                                 <span class="text-muted">Total Arrears Amount</span>
-                                <h4 id="arrearsTotalAmount" style="margin: 4px 0; color: #2ECC71;">₹0.00</h4>
+                                <h4 id="arrearsTotalAmount" class="text-success" style="margin: 4px 0;">₹0.00</h4>
                             </div>
                             <div>
                                 <span class="text-muted">Pending Arrears</span>
-                                <h4 id="arrearsPendingCount" style="margin: 4px 0; color: #E74C3C;">0</h4>
+                                <h4 id="arrearsPendingCount" class="text-danger" style="margin: 4px 0;">0</h4>
                             </div>
                         </div>
                     </div>
@@ -1254,17 +1345,17 @@
                         <div class="form-section" id="bulkPreviewSection" style="display: none;">
                             <h3>Preview</h3>
                             <div class="bulk-preview-summary" style="display: flex; gap: 24px; margin-bottom: 16px;">
-                                <div style="padding: 12px; background: #e8f4fd; border-radius: 8px; flex: 1;">
+                                <div style="padding: 12px; background: var(--color-info-light); border-radius: 8px; flex: 1;">
                                     <span class="text-muted">Employees Matched</span>
                                     <h4 id="bulkMatchedCount" style="margin: 4px 0;">0</h4>
                                 </div>
-                                <div style="padding: 12px; background: #d4edda; border-radius: 8px; flex: 1;">
+                                <div style="padding: 12px; background: var(--color-success-light); border-radius: 8px; flex: 1;">
                                     <span class="text-muted">To Be Assigned</span>
-                                    <h4 id="bulkToAssignCount" style="margin: 4px 0; color: #2ECC71;">0</h4>
+                                    <h4 id="bulkToAssignCount" class="text-success" style="margin: 4px 0;">0</h4>
                                 </div>
-                                <div style="padding: 12px; background: #fff3cd; border-radius: 8px; flex: 1;">
+                                <div style="padding: 12px; background: var(--color-warning-light); border-radius: 8px; flex: 1;">
                                     <span class="text-muted">Est. Arrears</span>
-                                    <h4 id="bulkEstArrears" style="margin: 4px 0; color: #856404;">₹0.00</h4>
+                                    <h4 id="bulkEstArrears" class="text-warning-dark" style="margin: 4px 0;">₹0.00</h4>
                                 </div>
                             </div>
                             <div class="data-table-container" style="max-height: 200px; overflow-y: auto;">
@@ -1314,14 +1405,14 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="comparison-header" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                    <div class="comparison-header" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
                         <div style="text-align: center; flex: 1;">
                             <span class="text-muted">From Version</span>
                             <h4 id="compareFromVersion" style="margin: 4px 0;">v1</h4>
                             <small id="compareFromDate" class="text-muted">-</small>
                         </div>
                         <div style="display: flex; align-items: center; padding: 0 24px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
@@ -1334,16 +1425,16 @@
                     </div>
 
                     <div class="comparison-summary" style="display: flex; gap: 12px; margin-bottom: 24px;">
-                        <span class="badge" id="addedCount" style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 16px;">
+                        <span class="badge" id="addedCount" style="background: var(--color-success-light); color: var(--color-success-text); padding: 6px 12px; border-radius: 16px;">
                             + 0 Added
                         </span>
-                        <span class="badge" id="removedCount" style="background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 16px;">
+                        <span class="badge" id="removedCount" style="background: var(--color-danger-light); color: var(--color-danger-text); padding: 6px 12px; border-radius: 16px;">
                             - 0 Removed
                         </span>
-                        <span class="badge" id="modifiedCount" style="background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 16px;">
+                        <span class="badge" id="modifiedCount" style="background: var(--color-warning-light); color: var(--color-warning-text); padding: 6px 12px; border-radius: 16px;">
                             ~ 0 Modified
                         </span>
-                        <span class="badge" id="unchangedCount" style="background: #e2e3e5; color: #383d41; padding: 6px 12px; border-radius: 16px;">
+                        <span class="badge" id="unchangedCount" style="background: var(--gray-200); color: var(--gray-700); padding: 6px 12px; border-radius: 16px;">
                             = 0 Unchanged
                         </span>
                     </div>
@@ -1351,48 +1442,48 @@
                     <div class="comparison-details">
                         <!-- Added Components -->
                         <div id="addedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 style="color: #155724; margin-bottom: 8px;">
+                            <h4 class="text-success-dark" style="margin-bottom: 8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Added Components
                             </h4>
-                            <div id="addedList" style="background: #d4edda; padding: 12px; border-radius: 8px;"></div>
+                            <div id="addedList" style="background: var(--color-success-light); padding: 12px; border-radius: 8px;"></div>
                         </div>
 
                         <!-- Removed Components -->
                         <div id="removedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 style="color: #721c24; margin-bottom: 8px;">
+                            <h4 class="text-danger-dark" style="margin-bottom: 8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Removed Components
                             </h4>
-                            <div id="removedList" style="background: #f8d7da; padding: 12px; border-radius: 8px;"></div>
+                            <div id="removedList" style="background: var(--color-danger-light); padding: 12px; border-radius: 8px;"></div>
                         </div>
 
                         <!-- Modified Components -->
                         <div id="modifiedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 style="color: #856404; margin-bottom: 8px;">
+                            <h4 class="text-warning-dark" style="margin-bottom: 8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
                                 Modified Components
                             </h4>
-                            <div id="modifiedList" style="background: #fff3cd; padding: 12px; border-radius: 8px;"></div>
+                            <div id="modifiedList" style="background: var(--color-warning-light); padding: 12px; border-radius: 8px;"></div>
                         </div>
 
                         <!-- Unchanged Components -->
                         <div id="unchangedSection" style="display: none;">
-                            <h4 style="color: #383d41; margin-bottom: 8px;">
+                            <h4 style="color: var(--gray-700); margin-bottom: 8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                                 Unchanged Components
                             </h4>
-                            <div id="unchangedList" style="background: #e2e3e5; padding: 12px; border-radius: 8px;"></div>
+                            <div id="unchangedList" style="background: var(--gray-200); padding: 12px; border-radius: 8px;"></div>
                         </div>
                     </div>
                 </div>
@@ -1414,272 +1505,8 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payroll.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
-
-    <style>
-        /* Additional payroll-specific styles */
-        .component-sections {
-            display: grid;
-            gap: 24px;
-        }
-
-        .component-section h3 {
-            margin-bottom: 16px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .info-box {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .info-box svg {
-            flex-shrink: 0;
-            color: #666;
-        }
-
-        .payslip-container {
-            font-size: 14px;
-        }
-
-        .payslip-header {
-            text-align: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #000;
-        }
-
-        .payslip-header h3 {
-            margin: 0 0 4px;
-            font-size: 20px;
-        }
-
-        .payslip-header p {
-            margin: 0;
-            color: #666;
-        }
-
-        .payslip-employee {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-            padding: 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .payslip-employee .info-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .payslip-employee .label {
-            font-weight: 500;
-            color: #666;
-        }
-
-        .payslip-employee .value {
-            color: #333;
-        }
-
-        .payslip-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-
-        .payslip-details h4 {
-            margin: 0 0 12px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .payslip-details table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .payslip-details td {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .payslip-details .amount {
-            text-align: right;
-            font-family: monospace;
-        }
-
-        .payslip-details .total {
-            font-weight: 600;
-            border-top: 2px solid #000;
-        }
-
-        .payslip-details .total td {
-            padding-top: 12px;
-            border-bottom: none;
-        }
-
-        .payslip-net {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            background: #000;
-            color: #fff;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .payslip-net .net-amount {
-            font-family: monospace;
-            font-size: 24px;
-        }
-
-        .components-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        /* Version History Styles */
-        .version-info-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 12px 16px;
-            background: #e8f4fd;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: #0066cc;
-        }
-
-        .version-info-banner svg {
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .current-version {
-            background: #f0f9ff;
-        }
-
-        .badge-current {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #10b981;
-            color: white;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-left: 8px;
-            text-transform: uppercase;
-        }
-
-        /* Version Component Selector */
-        .version-components-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-
-        .version-component-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .version-component-row:hover {
-            background: #f0f4f8;
-        }
-
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .checkbox-label input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .component-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .component-badge.component-earning {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .component-badge.component-deduction {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .component-value-inputs {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .component-value-inputs select {
-            width: 120px;
-        }
-
-        .component-value-inputs input {
-            width: 100px;
-            text-align: right;
-        }
-
-        .form-control-sm {
-            padding: 6px 10px;
-            font-size: 13px;
-        }
-
-        /* Text utilities */
-        .text-muted {
-            color: #6c757d;
-        }
-
-        .form-text {
-            font-size: 12px;
-            margin-top: 4px;
-        }
-    </style>
 </body>
 </html>

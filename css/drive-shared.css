@@ -1,0 +1,541 @@
+/* =============================================================
+   Drive Shared Page Styles
+   Extracted from shared.html inline styles
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   BODY & CONTAINER
+   ============================================================= */
+body.shared-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-300) 100%);
+}
+
+.shared-container {
+    max-width: 600px;
+    width: 100%;
+    margin: 20px;
+    padding: 40px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color-light);
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================
+   SHARED HEADER
+   ============================================================= */
+.shared-logo {
+    height: 50px;
+    margin-bottom: 20px;
+}
+
+.shared-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.shared-icon-svg {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
+    border-radius: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.shared-icon-svg svg {
+    width: 44px;
+    height: 44px;
+    color: var(--text-inverse);
+    stroke: var(--text-inverse);
+}
+
+.shared-icon-svg.folder-icon {
+    background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.shared-title {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+}
+
+.shared-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    letter-spacing: -0.01em;
+}
+
+/* =============================================================
+   FILE CARD
+   ============================================================= */
+.file-card {
+    background: var(--bg-card-transparent);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color-light);
+    text-align: left;
+}
+
+.file-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.file-icon-large {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
+    border-radius: 12px;
+    color: var(--text-inverse);
+}
+
+.file-icon-large svg {
+    width: 28px;
+    height: 28px;
+}
+
+.file-details {
+    flex: 1;
+}
+
+.file-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.file-meta {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* =============================================================
+   DOWNLOAD BUTTON
+   ============================================================= */
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 32px;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    background: var(--btn-primary-hover);
+    color: var(--btn-primary-text);
+}
+
+.download-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* =============================================================
+   FOLDER FILES LIST
+   ============================================================= */
+.folder-files-list {
+    margin-top: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.folder-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-tertiary-transparent);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color-lighter);
+    transition: all 0.2s ease;
+}
+
+.folder-file-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(4px);
+}
+
+.folder-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.folder-file-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--overlay-strong);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.folder-file-icon svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-primary);
+}
+
+.folder-file-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.folder-file-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-file-size {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.folder-file-download {
+    padding: 8px 16px;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.folder-file-download:hover {
+    background: var(--btn-primary-hover);
+    color: var(--btn-primary-text);
+}
+
+/* =============================================================
+   PASSWORD FORM
+   ============================================================= */
+.password-form {
+    text-align: left;
+}
+
+.password-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.password-form input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color-medium);
+    border-radius: 10px;
+    font-size: 15px;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.password-form input:focus {
+    outline: none;
+    border-color: var(--gray-900);
+    box-shadow: 0 0 0 3px var(--overlay-strong);
+}
+
+/* =============================================================
+   ERROR STATE
+   ============================================================= */
+.error-state {
+    text-align: center;
+}
+
+.error-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--danger-alpha-10);
+    border-radius: 50%;
+    color: var(--color-danger);
+}
+
+.error-icon svg {
+    width: 40px;
+    height: 40px;
+}
+
+.error-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.error-message {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   LOADING STATE
+   ============================================================= */
+.spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--overlay-medium);
+    border-top-color: var(--gray-900);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   VIEW ONLY NOTICE
+   ============================================================= */
+.view-only-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--warning-alpha-15);
+    border-radius: 10px;
+    color: var(--color-warning-text);
+    font-size: 14px;
+    margin-top: 16px;
+}
+
+.view-only-notice svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* =============================================================
+   RESPONSIVE - TABLET
+   ============================================================= */
+@media (max-width: 768px) {
+    .shared-container {
+        margin: 10px;
+        padding: 24px 20px;
+        border-radius: 12px;
+    }
+
+    .shared-logo {
+        height: 40px;
+        margin-bottom: 16px;
+    }
+
+    .shared-icon-svg {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+
+    .shared-icon-svg svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .shared-subtitle {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .file-card {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .file-card-header {
+        gap: 12px;
+    }
+
+    .file-icon-large {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+    }
+
+    .file-icon-large svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .file-name {
+        font-size: 14px;
+    }
+
+    .file-meta {
+        font-size: 12px;
+    }
+
+    .download-btn {
+        padding: 14px 24px;
+        font-size: 15px;
+        border-radius: 10px;
+    }
+
+    .folder-files-list {
+        max-height: 250px;
+    }
+
+    .folder-file-item {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .folder-file-info {
+        width: 100%;
+    }
+
+    .folder-file-download {
+        width: 100%;
+        text-align: center;
+        padding: 10px 16px;
+    }
+
+    .folder-file-name {
+        font-size: 13px;
+    }
+
+    .password-form input {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    .view-only-notice {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+/* =============================================================
+   RESPONSIVE - MOBILE
+   ============================================================= */
+@media (max-width: 480px) {
+    .shared-container {
+        margin: 10px;
+        padding: 20px 16px;
+    }
+
+    .shared-logo {
+        height: 36px;
+    }
+
+    .shared-icon-svg {
+        width: 56px;
+        height: 56px;
+    }
+
+    .shared-icon-svg svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    .shared-subtitle {
+        font-size: 13px;
+    }
+
+    .file-card {
+        padding: 14px;
+    }
+
+    .file-icon-large {
+        width: 44px;
+        height: 44px;
+    }
+
+    .file-name {
+        font-size: 13px;
+    }
+
+    .download-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+}

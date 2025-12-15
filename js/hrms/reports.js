@@ -550,11 +550,12 @@ async function exportReport(format) {
     try {
         showLoading();
         const config = reportConfig[currentReportType];
+        const columns = Object.keys(reportData[0]).map(k => formatFieldName(k));
 
         if (format === 'csv') {
-            exportToCSV(Object.keys(reportData[0]).map(k => formatFieldName(k)), reportData, config.title);
+            exportToCSV(columns, reportData, config.title);
         } else if (format === 'pdf') {
-            showToast('PDF export coming soon', 'info');
+            exportToPDF(columns, reportData, config.title);
         }
 
         hideLoading();
@@ -563,6 +564,96 @@ async function exportReport(format) {
         showToast('Failed to export report', 'error');
         hideLoading();
     }
+}
+
+function exportToPDF(columns, data, title) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for better table fit
+
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text(title, 14, 15);
+
+    // Add date and filters info
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    const fromDate = document.getElementById('reportDateFrom').value;
+    const toDate = document.getElementById('reportDateTo').value;
+    const officeName = document.getElementById('reportOffice').options[document.getElementById('reportOffice').selectedIndex].text;
+    const deptName = document.getElementById('reportDepartment').options[document.getElementById('reportDepartment').selectedIndex].text;
+
+    let filterText = `Period: ${fromDate || 'All'} to ${toDate || 'All'}`;
+    if (officeName !== 'All Offices') filterText += ` | Office: ${officeName}`;
+    if (deptName !== 'All Departments') filterText += ` | Department: ${deptName}`;
+    doc.text(filterText, 14, 22);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+
+    // Prepare table data
+    const dataKeys = Object.keys(data[0]);
+    const tableData = data.map(row => {
+        return dataKeys.map(key => {
+            let value = row[key] ?? '-';
+            // Format currency values
+            if (typeof value === 'number' && (key.toLowerCase().includes('amount') ||
+                key.toLowerCase().includes('salary') || key.toLowerCase().includes('gross') ||
+                key.toLowerCase().includes('net') || key.toLowerCase().includes('ctc') ||
+                key.toLowerCase().includes('pay') || key.toLowerCase().includes('emi'))) {
+                value = formatCurrency(value);
+            }
+            // Format percentages
+            if (typeof value === 'number' && (key.toLowerCase().includes('rate') ||
+                key.toLowerCase().includes('percentage'))) {
+                value = value.toFixed(1) + '%';
+            }
+            // Format dates
+            if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                value = new Date(value).toLocaleDateString('en-IN');
+            }
+            return String(value);
+        });
+    });
+
+    // Generate table
+    doc.autoTable({
+        head: [columns],
+        body: tableData,
+        startY: 35,
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: {
+            fillColor: [0, 0, 0],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]
+        },
+        didDrawPage: function(data) {
+            // Footer with page numbers
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.text(
+                `Page ${data.pageNumber} of ${pageCount}`,
+                doc.internal.pageSize.getWidth() / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+            doc.text(
+                'HyperDroid HRMS',
+                14,
+                doc.internal.pageSize.getHeight() - 10
+            );
+        }
+    });
+
+    // Save PDF
+    const filename = `${title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+
+    showToast('PDF exported successfully', 'success');
 }
 
 function exportToCSV(columns, data, filename) {

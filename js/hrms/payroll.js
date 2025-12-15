@@ -549,9 +549,9 @@ async function viewDraftPayslip(payslipId) {
 
         if (hasMultipleStructures) {
             structureBreakdownHtml = `
-                <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
-                    <strong style="color: #856404;">Mid-Period Structure Change</strong>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #856404;">
+                <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: var(--color-warning-light); border: 1px solid var(--color-warning); border-radius: 8px;">
+                    <strong class="text-warning-dark">Mid-Period Structure Change</strong>
+                    <p class="text-warning-dark" style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">
                         This employee had a salary structure change during the pay period.
                         Components are shown separately for each structure for compliance purposes.
                     </p>
@@ -708,7 +708,7 @@ async function viewDraftPayslip(payslipId) {
                     <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'}</h4>
                     <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                 </div>
-                <div style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border-radius: 6px; text-align: right;">
+                <div style="padding: 0.5rem 1rem; background: var(--primary-color); color: var(--text-inverse); border-radius: 6px; text-align: right;">
                     <div style="font-size: 0.65rem; opacity: 0.9;">Net Pay</div>
                     <div style="font-size: 1.1rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</div>
                 </div>
@@ -1163,34 +1163,67 @@ function updateLoansTable(loans) {
         return;
     }
 
-    tbody.innerHTML = loans.map(loan => `
-        <tr>
-            <td class="employee-cell">
-                <div class="employee-info">
-                    <div class="avatar">${getInitials(loan.employee_name || loan.employee_code)}</div>
-                    <div class="details">
-                        <span class="name">${loan.employee_name || loan.employee_code || 'Unknown'}</span>
+    tbody.innerHTML = loans.map(loan => {
+        const status = loan.status?.toLowerCase();
+        const isAdmin = hrmsRoles.isHRAdmin();
+
+        // Build action buttons based on status and role
+        let actionButtons = `
+            <button class="action-btn" onclick="viewLoan('${loan.id}')" title="View">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </button>
+        `;
+
+        if (isAdmin && status === 'pending') {
+            actionButtons += `
+                <button class="action-btn success" onclick="approveLoan('${loan.id}')" title="Approve">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </button>
+                <button class="action-btn danger" onclick="showRejectLoanModal('${loan.id}')" title="Reject">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+        } else if (isAdmin && status === 'approved') {
+            actionButtons += `
+                <button class="action-btn primary" onclick="showDisburseLoanModal('${loan.id}')" title="Disburse">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </button>
+            `;
+        }
+
+        return `
+            <tr>
+                <td class="employee-cell">
+                    <div class="employee-info">
+                        <div class="avatar">${getInitials(loan.employee_name || loan.employee_code)}</div>
+                        <div class="details">
+                            <span class="name">${loan.employee_name || loan.employee_code || 'Unknown'}</span>
+                        </div>
                     </div>
-                </div>
-            </td>
-            <td>${formatLoanType(loan.loan_type)}</td>
-            <td>${formatCurrency(loan.principal_amount)}</td>
-            <td>${formatCurrency(loan.emi_amount)}</td>
-            <td>${formatCurrency(loan.outstanding_amount)}</td>
-            <td>${formatDate(loan.start_date)}</td>
-            <td><span class="status-badge status-${loan.status?.toLowerCase()}">${loan.status}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="viewLoan('${loan.id}')" title="View">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+                </td>
+                <td>${formatLoanType(loan.loan_type)}</td>
+                <td>${formatCurrency(loan.principal_amount)}</td>
+                <td>${formatCurrency(loan.emi_amount)}</td>
+                <td>${formatCurrency(loan.outstanding_amount)}</td>
+                <td>${formatDate(loan.start_date)}</td>
+                <td><span class="status-badge status-${status}">${loan.status}</span></td>
+                <td>
+                    <div class="action-buttons">${actionButtons}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 async function loadOffices() {
@@ -1535,6 +1568,236 @@ async function saveLoan() {
     } catch (error) {
         console.error('Error saving loan:', error);
         showToast(error.message || 'Failed to submit loan application', 'error');
+        hideLoading();
+    }
+}
+
+let currentLoanId = null;
+
+async function viewLoan(loanId) {
+    try {
+        showLoading();
+        currentLoanId = loanId;
+
+        // Use the payroll-processing endpoint which is used elsewhere in the file
+        const loan = await api.request(`/hrms/payroll-processing/loans/${loanId}`);
+
+        if (!loan) {
+            showToast('Loan not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Build loan details HTML
+        const detailsHtml = `
+            <div class="loan-details-grid">
+                <div class="detail-section">
+                    <h4>Applicant Information</h4>
+                    <div class="info-row">
+                        <span class="label">Employee:</span>
+                        <span class="value">${loan.employee_name || loan.employee_code || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Employee ID:</span>
+                        <span class="value">${loan.employee_code || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Department:</span>
+                        <span class="value">${loan.department_name || 'N/A'}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Loan Details</h4>
+                    <div class="info-row">
+                        <span class="label">Loan Type:</span>
+                        <span class="value">${formatLoanType(loan.loan_type)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Principal Amount:</span>
+                        <span class="value">${formatCurrency(loan.principal_amount)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Interest Rate:</span>
+                        <span class="value">${loan.interest_rate || 0}%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">EMI Amount:</span>
+                        <span class="value">${formatCurrency(loan.emi_amount)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Tenure:</span>
+                        <span class="value">${loan.tenure_months || 'N/A'} months</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Outstanding Amount:</span>
+                        <span class="value">${formatCurrency(loan.outstanding_amount)}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Status & Dates</h4>
+                    <div class="info-row">
+                        <span class="label">Status:</span>
+                        <span class="value"><span class="status-badge status-${loan.status?.toLowerCase()}">${loan.status}</span></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Applied Date:</span>
+                        <span class="value">${formatDate(loan.applied_date || loan.created_at)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Start Date:</span>
+                        <span class="value">${formatDate(loan.start_date)}</span>
+                    </div>
+                    ${loan.approved_date ? `
+                    <div class="info-row">
+                        <span class="label">Approved Date:</span>
+                        <span class="value">${formatDate(loan.approved_date)}</span>
+                    </div>` : ''}
+                    ${loan.disbursed_date ? `
+                    <div class="info-row">
+                        <span class="label">Disbursed Date:</span>
+                        <span class="value">${formatDate(loan.disbursed_date)}</span>
+                    </div>` : ''}
+                </div>
+
+                ${loan.reason ? `
+                <div class="detail-section full-width">
+                    <h4>Reason</h4>
+                    <p>${loan.reason}</p>
+                </div>` : ''}
+
+                ${loan.rejection_reason ? `
+                <div class="detail-section full-width">
+                    <h4>Rejection Reason</h4>
+                    <p class="text-danger">${loan.rejection_reason}</p>
+                </div>` : ''}
+            </div>
+        `;
+
+        document.getElementById('loanDetailsContent').innerHTML = detailsHtml;
+
+        // Build action buttons based on status and role
+        let actionsHtml = '';
+        const status = loan.status?.toLowerCase();
+
+        if (hrmsRoles.isHRAdmin()) {
+            if (status === 'pending') {
+                actionsHtml = `
+                    <button type="button" class="btn btn-success" onclick="approveLoan('${loanId}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Approve
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="showRejectLoanModal('${loanId}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Reject
+                    </button>
+                `;
+            } else if (status === 'approved') {
+                actionsHtml = `
+                    <button type="button" class="btn btn-primary" onclick="showDisburseLoanModal('${loanId}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Disburse
+                    </button>
+                `;
+            }
+        }
+
+        actionsHtml += `<button type="button" class="btn btn-secondary" onclick="closeModal('viewLoanModal')">Close</button>`;
+        document.getElementById('loanActionsFooter').innerHTML = actionsHtml;
+
+        document.getElementById('viewLoanModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading loan details:', error);
+        showToast('Failed to load loan details', 'error');
+        hideLoading();
+    }
+}
+
+async function approveLoan(loanId) {
+    if (!confirm('Are you sure you want to approve this loan application?')) return;
+
+    try {
+        showLoading();
+        await api.approveLoan(loanId);
+        closeModal('viewLoanModal');
+        showToast('Loan approved successfully', 'success');
+        await loadLoans();
+        hideLoading();
+    } catch (error) {
+        console.error('Error approving loan:', error);
+        showToast(error.message || 'Failed to approve loan', 'error');
+        hideLoading();
+    }
+}
+
+function showRejectLoanModal(loanId) {
+    document.getElementById('rejectLoanId').value = loanId;
+    document.getElementById('rejectionReason').value = '';
+    closeModal('viewLoanModal');
+    document.getElementById('rejectLoanModal').classList.add('active');
+}
+
+async function confirmRejectLoan() {
+    const loanId = document.getElementById('rejectLoanId').value;
+    const reason = document.getElementById('rejectionReason').value.trim();
+
+    if (!reason) {
+        showToast('Please provide a rejection reason', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.rejectLoan(loanId, reason);
+        closeModal('rejectLoanModal');
+        showToast('Loan rejected', 'success');
+        await loadLoans();
+        hideLoading();
+    } catch (error) {
+        console.error('Error rejecting loan:', error);
+        showToast(error.message || 'Failed to reject loan', 'error');
+        hideLoading();
+    }
+}
+
+function showDisburseLoanModal(loanId) {
+    document.getElementById('disburseLoanId').value = loanId;
+    document.getElementById('disbursementMode').value = '';
+    document.getElementById('disbursementReference').value = '';
+    closeModal('viewLoanModal');
+    document.getElementById('disburseLoanModal').classList.add('active');
+}
+
+async function confirmDisburseLoan() {
+    const loanId = document.getElementById('disburseLoanId').value;
+    const mode = document.getElementById('disbursementMode').value;
+    const reference = document.getElementById('disbursementReference').value.trim();
+
+    if (!mode) {
+        showToast('Please select a disbursement mode', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.disburseLoan(loanId, mode, reference);
+        closeModal('disburseLoanModal');
+        showToast('Loan disbursed successfully', 'success');
+        await loadLoans();
+        hideLoading();
+    } catch (error) {
+        console.error('Error disbursing loan:', error);
+        showToast(error.message || 'Failed to disburse loan', 'error');
         hideLoading();
     }
 }
@@ -3000,9 +3263,9 @@ function updateArrearsTable() {
  */
 function getArrearsStatusBadge(status) {
     const badges = {
-        'pending': '<span class="badge" style="background: #fff3cd; color: #856404;">Pending</span>',
-        'applied': '<span class="badge" style="background: #d4edda; color: #155724;">Applied</span>',
-        'cancelled': '<span class="badge" style="background: #f8d7da; color: #721c24;">Cancelled</span>'
+        'pending': '<span class="badge" style="background: var(--color-warning-light); color: var(--color-warning-text);">Pending</span>',
+        'applied': '<span class="badge" style="background: var(--color-success-light); color: var(--color-success-text);">Applied</span>',
+        'cancelled': '<span class="badge" style="background: var(--color-danger-light); color: var(--color-danger-text);">Cancelled</span>'
     };
     return badges[status] || badges['pending'];
 }
@@ -3543,7 +3806,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
         if (comparison.added_components?.length > 0) {
             addedSection.style.display = 'block';
             addedList.innerHTML = comparison.added_components.map(c => `
-                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
                     <strong>${c.component_name}</strong> (${c.component_code})
                     <br><small class="text-muted">
                         ${c.new_values?.percentage_of_basic ? `${c.new_values.percentage_of_basic}% of Basic` : ''}
@@ -3561,7 +3824,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
         if (comparison.removed_components?.length > 0) {
             removedSection.style.display = 'block';
             removedList.innerHTML = comparison.removed_components.map(c => `
-                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
                     <strong>${c.component_name}</strong> (${c.component_code})
                 </div>
             `).join('');
@@ -3575,15 +3838,15 @@ async function showVersionComparison(fromVersionId, toVersionId) {
         if (comparison.modified_components?.length > 0) {
             modifiedSection.style.display = 'block';
             modifiedList.innerHTML = comparison.modified_components.map(c => `
-                <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
                     <strong>${c.component_name}</strong> (${c.component_code})
                     ${(c.changes || []).map(change => `
                         <div style="margin-left: 16px; margin-top: 4px;">
                             <small>
                                 <span class="text-muted">${change.field}:</span>
-                                <span style="text-decoration: line-through; color: #721c24;">${formatChangeValue(change.old_value)}</span>
+                                <span class="text-danger-dark" style="text-decoration: line-through;">${formatChangeValue(change.old_value)}</span>
                                 →
-                                <span style="color: #155724; font-weight: 600;">${formatChangeValue(change.new_value)}</span>
+                                <span class="text-success-dark" style="font-weight: 600;">${formatChangeValue(change.new_value)}</span>
                             </small>
                         </div>
                     `).join('')}

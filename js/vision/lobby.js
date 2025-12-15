@@ -21,7 +21,7 @@ const urlParams = new URLSearchParams(window.location.search);
 meetingId = urlParams.get('id');
 
 if (!meetingId) {
-    alert('Invalid meeting link');
+    Toast.error('Invalid meeting link');
     window.location.href = 'dashboard.html';
 }
 
@@ -35,7 +35,7 @@ async function initializeLobby() {
         meetingData = await api.getMeetingStatus(meetingId);
 
         if (!meetingData) {
-            alert('Meeting not found');
+            Toast.error('Meeting not found');
             window.location.href = 'dashboard.html';
             return;
         }
@@ -64,12 +64,12 @@ async function initializeLobby() {
 
                     // Update title
                     document.querySelector('.lobby-title').textContent = 'Access Denied';
-                    document.querySelector('.lobby-title').style.color = '#000';
+                    document.querySelector('.lobby-title').style.color = 'var(--text-primary)';
 
                     // Update subtitle with elegant message
                     const subtitle = document.querySelector('.lobby-subtitle');
                     subtitle.textContent = 'You do not have permission to join this meeting';
-                    subtitle.style.color = '#666';
+                    subtitle.style.color = 'var(--text-secondary)';
                     subtitle.style.marginBottom = '24px';
 
                     // Update status message with elegant styling
@@ -93,7 +93,7 @@ async function initializeLobby() {
                 }
             } catch (error) {
                 console.error('Error checking meeting access:', error);
-                alert('Failed to verify meeting access: ' + error.message);
+                Toast.error('Failed to verify meeting access: ' + error.message);
                 window.location.href = 'dashboard.html';
                 return;
             }
@@ -104,7 +104,7 @@ async function initializeLobby() {
 
     } catch (error) {
         console.error('Error initializing lobby:', error);
-        alert('Failed to join lobby: ' + error.message);
+        Toast.error('Failed to join lobby: ' + error.message);
     }
 }
 
@@ -197,7 +197,7 @@ function updateParticipantsList() {
     count.textContent = participants.size;
 
     if (participants.size === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center;">You are the first one here</p>';
+        container.innerHTML = '<p class="text-muted" style="text-align: center;">You are the first one here</p>';
         return;
     }
 
@@ -222,13 +222,13 @@ function updateParticipantsList() {
 function showMeetingStartedNotification(message) {
     const statusDiv = document.querySelector('.lobby-status');
     statusDiv.className = 'lobby-status';
-    statusDiv.style.background = '#d4edda';
-    statusDiv.style.borderColor = '#28a745';
-    statusDiv.style.color = '#155724';
+    statusDiv.style.background = 'var(--color-success-light)';
+    statusDiv.style.borderColor = 'var(--color-success)';
+    statusDiv.style.color = 'var(--color-success-text)';
     statusDiv.innerHTML = `
         <div style="margin-bottom: 10px;">✓ ${message}</div>
         <button onclick="window.location.replace('meeting.html?id=${meetingId}')"
-                style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                style="background: var(--color-success); color: var(--text-inverse); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
             Join Meeting Now
         </button>
     `;
@@ -329,7 +329,7 @@ async function requestPermissions() {
         await initializeDevices();
         document.getElementById('permissionRequest').style.display = 'none';
     } catch (error) {
-        showError('Failed to get camera/microphone access: ' + error.message);
+        Toast.error('Failed to get camera/microphone access: ' + error.message);
     }
 }
 
@@ -360,12 +360,12 @@ async function initializeDevices() {
         console.error('Error initializing devices:', error);
 
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            showError('Camera and microphone access denied. Please allow access and try again.');
+            Toast.error('Camera and microphone access denied. Please allow access and try again.');
             showPermissionRequest();
         } else if (error.name === 'NotFoundError') {
-            showError('No camera or microphone found. Please connect devices and try again.');
+            Toast.error('No camera or microphone found. Please connect devices and try again.');
         } else {
-            showError('Failed to initialize devices: ' + error.message);
+            Toast.error('Failed to initialize devices: ' + error.message);
         }
     }
 }
@@ -409,13 +409,14 @@ function monitorAudioLevel() {
     if (indicator) {
         indicator.style.width = percentage + '%';
 
-        // Change color based on level
+        // Change color based on level - using CSS variables
+        const styles = getComputedStyle(document.documentElement);
         if (percentage > 70) {
-            indicator.style.background = '#28a745'; // Green for good level
+            indicator.style.background = styles.getPropertyValue('--color-success').trim() || '#10b981';
         } else if (percentage > 30) {
-            indicator.style.background = '#ffc107'; // Yellow for medium
+            indicator.style.background = styles.getPropertyValue('--color-warning').trim() || '#f59e0b';
         } else {
-            indicator.style.background = '#6c757d'; // Gray for low
+            indicator.style.background = styles.getPropertyValue('--gray-500').trim() || '#6b7280';
         }
     }
 
@@ -511,7 +512,7 @@ async function toggleCamera() {
 
                 videoElement.srcObject = localStream;
             } catch (error) {
-                showError('Failed to enable camera: ' + error.message);
+                Toast.error('Failed to enable camera: ' + error.message);
                 cameraEnabled = false;
                 return;
             }
@@ -562,7 +563,7 @@ async function toggleMicrophone() {
                 // Reinitialize audio monitoring
                 initializeAudioLevelMonitoring();
             } catch (error) {
-                showError('Failed to enable microphone: ' + error.message);
+                Toast.error('Failed to enable microphone: ' + error.message);
                 microphoneEnabled = false;
                 return;
             }
@@ -624,7 +625,7 @@ async function changeCamera() {
             videoTrack.enabled = false;
         }
     } catch (error) {
-        showError('Failed to change camera: ' + error.message);
+        Toast.error('Failed to change camera: ' + error.message);
     }
 }
 
@@ -671,7 +672,7 @@ async function changeMicrophone() {
             audioTrack.enabled = false;
         }
     } catch (error) {
-        showError('Failed to change microphone: ' + error.message);
+        Toast.error('Failed to change microphone: ' + error.message);
     }
 }
 
@@ -691,7 +692,7 @@ async function changeSpeaker() {
             console.warn('Browser does not support speaker selection');
         }
     } catch (error) {
-        showError('Failed to change speaker: ' + error.message);
+        Toast.error('Failed to change speaker: ' + error.message);
     }
 }
 
@@ -701,12 +702,12 @@ async function proceedToMeeting() {
     try {
         meetingData = await api.getMeetingStatus(meetingId);
         if (!meetingData) {
-            showError('Failed to load meeting details');
+            Toast.error('Failed to load meeting details');
             return;
         }
     } catch (error) {
         console.error('Error loading meeting data:', error);
-        showError('Failed to load meeting details: ' + error.message);
+        Toast.error('Failed to load meeting details: ' + error.message);
         return;
     }
 
@@ -849,17 +850,7 @@ function cancelJoin() {
     }
 }
 
-// Show error message
-function showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        errorElement.style.display = 'none';
-    }, 5000);
-}
+// Local showError removed - using unified toast.js instead
 
 // Clean up on page unload
 window.addEventListener('beforeunload', async () => {

@@ -163,6 +163,17 @@ const Navigation = {
                     `).join('')}
                 </div>
                 <div class="user-dropdown-divider"></div>
+                <div class="user-dropdown-item dark-mode-toggle" onclick="Navigation.toggleDarkMode(event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <span class="dark-mode-label">Dark Mode</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle" ${this.isDarkMode() ? 'checked' : ''}>
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
+                <div class="user-dropdown-divider"></div>
                 <button class="user-dropdown-item logout-btn" onclick="Navigation.logout()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -216,6 +227,41 @@ const Navigation = {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    },
+
+    /**
+     * Check if dark mode is currently enabled
+     */
+    isDarkMode() {
+        const savedMode = localStorage.getItem('theme-mode');
+        if (savedMode) {
+            return savedMode === 'dark';
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    },
+
+    /**
+     * Toggle dark mode on/off
+     */
+    toggleDarkMode(event) {
+        if (event) {
+            event.stopPropagation();
+        }
+
+        const isDark = this.isDarkMode();
+        const newMode = isDark ? 'light' : 'dark';
+
+        // Save preference
+        localStorage.setItem('theme-mode', newMode);
+
+        // Apply theme
+        document.documentElement.setAttribute('data-theme', newMode);
+
+        // Update checkbox state
+        const checkbox = document.getElementById('darkModeToggle');
+        if (checkbox) {
+            checkbox.checked = !isDark;
+        }
     }
 };
 

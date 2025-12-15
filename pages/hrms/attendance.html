@@ -6,8 +6,11 @@
     <title>Attendance - HRMS - HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-attendance.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
     <nav class="navbar">
@@ -204,20 +207,49 @@
             </div>
 
             <div class="data-table-container">
+                <h4 style="margin-bottom: 16px;">My Overtime Requests</h4>
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Planned Hours</th>
-                            <th>Actual Hours</th>
-                            <th>Reason</th>
+                            <th>Planned Start</th>
+                            <th>Planned End</th>
+                            <th>Actual Start</th>
+                            <th>Actual End</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="overtimeTableBody">
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pending Overtime Approvals (Manager/Admin Only) -->
+            <div class="data-table-container admin-only" style="margin-top: 24px;">
+                <h4 style="margin-bottom: 16px;">Pending Overtime Approvals</h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Date</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Reason</th>
+                            <th>Task/Project</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingOvertimeTableBody">
+                        <tr>
+                            <td colspan="7">
                                 <div class="loading-spinner">
                                     <div class="spinner"></div>
                                 </div>
@@ -373,6 +405,72 @@
         </div>
     </div>
 
+    <!-- Overtime Rejection Modal -->
+    <div class="modal" id="overtimeRejectionModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Reject Overtime Request</h3>
+                    <button class="close-btn" onclick="closeModal('overtimeRejectionModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="overtimeRejectionForm">
+                        <div class="form-group">
+                            <label>Reason for Rejection</label>
+                            <textarea id="overtimeRejectionReason" placeholder="Provide reason for rejecting this overtime request..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" onclick="confirmRejectOvertime()">Reject Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Overtime Modal -->
+    <div class="modal" id="completeOvertimeModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Complete Overtime</h3>
+                    <button class="close-btn" onclick="closeModal('completeOvertimeModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="completeOvertimeForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Actual Start Time <span class="required">*</span></label>
+                                <input type="time" id="actualOtStartTime" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Actual End Time <span class="required">*</span></label>
+                                <input type="time" id="actualOtEndTime" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="completeOtNotes" placeholder="Any additional notes about the overtime work..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="submitCompleteOvertime()">Mark Complete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -381,40 +479,8 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
-
-    <style>
-        .hrms-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        }
-        .hrms-tab {
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-            position: relative;
-        }
-        .hrms-tab:hover { color: #000; background: rgba(0, 0, 0, 0.03); }
-        .hrms-tab.active { color: #000; }
-        .hrms-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #000;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
 </body>
 </html>

@@ -1,0 +1,56 @@
+/* =============================================================
+   HRMS Attendance Styles
+   Extracted from attendance.html inline styles
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   TABS (Attendance-specific overrides)
+   ============================================================= */
+.hrms-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.hrms-tab {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+}
+
+.hrms-tab:hover {
+    color: var(--text-primary);
+    background: var(--overlay-subtle);
+}
+
+.hrms-tab.active {
+    color: var(--text-primary);
+}
+
+.hrms-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gray-950);
+}
+
+/* =============================================================
+   TAB CONTENT
+   ============================================================= */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}

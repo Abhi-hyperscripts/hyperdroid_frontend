@@ -153,7 +153,7 @@ async function handleFormSubmit() {
 
     // Basic validation
     if (!email || !password) {
-        showError('Please enter both email and password');
+        Toast.error('Please enter both email and password');
         resetSwipeButton();
         return;
     }
@@ -171,20 +171,16 @@ async function handleFormSubmit() {
                 window.location.href = 'home.html';
             }, 500);
         } else {
-            showError(response.message || 'Login failed');
+            Toast.error(response.message || 'Login failed');
             resetSwipeButton();
         }
     } catch (error) {
-        showError(error.message || 'An error occurred');
+        Toast.error(error.message || 'An error occurred');
         resetSwipeButton();
     }
 }
 
-function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    errorMessage.classList.add('show');
-}
+// Local showError removed - using unified toast.js instead
 
 function resetSwipeButton() {
     if (swipeHandle && swipeTrack) {

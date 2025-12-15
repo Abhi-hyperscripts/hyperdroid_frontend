@@ -397,7 +397,7 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         document.getElementById('createProjectForm').reset();
         loadAllProjects();
     } catch (error) {
-        alert('Failed to create project: ' + error.message);
+        Toast.error('Failed to create project: ' + error.message);
     }
 });
 
@@ -981,7 +981,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     e.preventDefault();
 
     if (!currentProjectId) {
-        alert('Please select a project first');
+        Toast.warning('Please select a project first');
         return;
     }
 
@@ -1005,7 +1005,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
 
     // Validate host for hosted meetings
     if (selectedMeetingType === 'hosted' && !hostUserId) {
-        alert('Please select a host for the hosted meeting');
+        Toast.warning('Please select a host for the hosted meeting');
         return;
     }
 
@@ -1041,7 +1041,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
         createMeetingSelectedParticipants = [];
         loadAllProjects();
     } catch (error) {
-        alert('Failed to create meeting: ' + error.message);
+        Toast.error('Failed to create meeting: ' + error.message);
     }
 });
 
@@ -1052,7 +1052,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
 async function confirmDeleteProject(projectId) {
     const meetings = await api.getProjectMeetings(projectId);
     if (meetings && meetings.length > 0) {
-        alert(`Cannot delete project. Please delete all ${meetings.length} meeting(s) individually first.`);
+        Toast.warning(`Cannot delete project. Please delete all ${meetings.length} meeting(s) individually first.`);
         return;
     }
 
@@ -1061,7 +1061,7 @@ async function confirmDeleteProject(projectId) {
             await api.deleteProject(projectId);
             loadAllProjects();
         } catch (error) {
-            alert('Failed to delete project: ' + error.message);
+            Toast.error('Failed to delete project: ' + error.message);
         }
     }
 }
@@ -1083,7 +1083,7 @@ async function deleteMeeting(meetingId) {
         await api.deleteMeeting(meetingId);
         loadAllProjects();
     } catch (error) {
-        alert('Failed to delete meeting: ' + error.message);
+        Toast.error('Failed to delete meeting: ' + error.message);
     }
 }
 
@@ -1092,7 +1092,7 @@ async function permanentDeleteMeeting(meetingId) {
         await api.permanentDeleteMeeting(meetingId);
         loadAllProjects();
     } catch (error) {
-        alert('Failed to permanently delete meeting: ' + error.message);
+        Toast.error('Failed to permanently delete meeting: ' + error.message);
     }
 }
 
@@ -1132,27 +1132,7 @@ function fallbackCopyToClipboard(text, successMessage) {
     showToast(successMessage);
 }
 
-function showToast(message) {
-    // Remove any existing toast
-    const existingToast = document.querySelector('.toast-notification');
-    if (existingToast) {
-        existingToast.remove();
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    // Trigger animation
-    setTimeout(() => toast.classList.add('show'), 10);
-
-    // Remove after 2 seconds
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
-}
+// Local showToast removed - using unified toast.js instead
 
 async function handleAutoRecordingToggle(meetingId, value) {
     try {
@@ -1160,7 +1140,7 @@ async function handleAutoRecordingToggle(meetingId, value) {
         console.log(`Auto-recording ${value ? 'enabled' : 'disabled'} for meeting ${meetingId}`);
     } catch (error) {
         console.error('Failed to toggle auto-recording:', error);
-        alert('Failed to toggle auto-recording: ' + error.message);
+        Toast.error('Failed to toggle auto-recording: ' + error.message);
         const checkbox = document.getElementById(`autoRecording-${meetingId}`);
         if (checkbox) {
             checkbox.checked = !value;
@@ -1197,7 +1177,7 @@ async function loadRegisteredUsers() {
     } catch (error) {
         console.error('Error loading users:', error);
         document.getElementById('registeredUsersList').innerHTML =
-            '<p style="color: #dc3545; text-align: center;">Failed to load users</p>';
+            '<p class="text-danger" style="text-align: center;">Failed to load users</p>';
     }
 }
 
@@ -1217,7 +1197,7 @@ function displayRegisteredUsers(users, append = false) {
         : `${filteredCount} of ${totalUsers} users`;
 
     if (currentFilteredUsers.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">No users found</p>';
+        list.innerHTML = '<p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">No users found</p>';
         return;
     }
 
@@ -1259,7 +1239,7 @@ function displayRegisteredUsers(users, append = false) {
     displayedCount = endIndex;
 
     if (displayedCount < currentFilteredUsers.length) {
-        const loadingHTML = '<div id="loading-indicator" style="text-align: center; padding: 12px; color: #999; font-size: 0.75rem;">Scroll for more...</div>';
+        const loadingHTML = '<div id="loading-indicator" class="text-muted" style="text-align: center; padding: 12px; font-size: 0.75rem;">Scroll for more...</div>';
         list.insertAdjacentHTML('beforeend', loadingHTML);
     }
 }
@@ -1369,7 +1349,7 @@ async function handleParticipantToggle(checkbox) {
     const isChecked = checkbox.checked;
 
     if (!userEmail) {
-        alert('Invalid user email');
+        Toast.error('Invalid user email');
         checkbox.checked = !isChecked;
         return;
     }
@@ -1396,7 +1376,7 @@ async function handleParticipantToggle(checkbox) {
     } catch (error) {
         checkbox.checked = !isChecked;
         checkbox.disabled = false;
-        alert(`Failed to ${isChecked ? 'add' : 'remove'} participant: ${error.message}`);
+        Toast.error(`Failed to ${isChecked ? 'add' : 'remove'} participant: ${error.message}`);
     }
 }
 
@@ -1430,7 +1410,7 @@ async function playRecording(meetingId) {
         const recordings = await api.getMeetingRecordings(meetingId);
 
         if (!recordings || recordings.length === 0) {
-            alert('No recordings found for this meeting');
+            Toast.info('No recordings found for this meeting');
             return;
         }
 
@@ -1503,7 +1483,7 @@ async function playRecording(meetingId) {
         modal.classList.add('active');
     } catch (error) {
         console.error('Error loading recordings:', error);
-        alert('Failed to load recordings: ' + error.message);
+        Toast.error('Failed to load recordings: ' + error.message);
     }
 }
 
@@ -1540,7 +1520,7 @@ function copyRecordingUrl(url) {
                 </svg>
                 Copied!
             `;
-            btn.style.color = '#10b981';
+            btn.style.color = 'var(--color-success)';
             setTimeout(() => {
                 btn.innerHTML = originalHTML;
                 btn.style.color = '';
@@ -1548,7 +1528,7 @@ function copyRecordingUrl(url) {
         }
     }).catch(err => {
         console.error('Failed to copy URL:', err);
-        alert('Failed to copy URL. Please copy manually: ' + url);
+        Toast.error('Failed to copy URL. Please copy manually: ' + url);
     });
 }
 
@@ -1599,7 +1579,7 @@ async function showMeetingSettingsModal(meetingId, type) {
         }
 
         if (!meeting) {
-            alert('Meeting not found');
+            Toast.error('Meeting not found');
             return;
         }
 
@@ -1658,7 +1638,7 @@ async function showMeetingSettingsModal(meetingId, type) {
 
     } catch (error) {
         console.error('Error loading meeting settings:', error);
-        alert('Failed to load meeting settings: ' + error.message);
+        Toast.error('Failed to load meeting settings: ' + error.message);
     }
 }
 
@@ -1798,7 +1778,7 @@ async function toggleSettingsParticipantSelection(event, email) {
         updateSettingsParticipantsCount();
         renderSettingsParticipantsOptions();
     } catch (error) {
-        alert(`Failed to ${isCurrentlySelected ? 'remove' : 'add'} participant: ${error.message}`);
+        Toast.error(`Failed to ${isCurrentlySelected ? 'remove' : 'add'} participant: ${error.message}`);
     }
 }
 
@@ -2159,7 +2139,7 @@ async function saveMeetingSettings() {
     const autoRecording = document.getElementById('settingsAutoRecording').checked;
 
     if (type === 'hosted' && !hostUserId) {
-        alert('Host is required for hosted meetings');
+        Toast.warning('Host is required for hosted meetings');
         return;
     }
 
@@ -2186,7 +2166,7 @@ async function saveMeetingSettings() {
 
     } catch (error) {
         console.error('Error saving meeting settings:', error);
-        alert('Failed to save settings: ' + error.message);
+        Toast.error('Failed to save settings: ' + error.message);
     } finally {
         saveBtn.textContent = originalText;
         saveBtn.disabled = false;

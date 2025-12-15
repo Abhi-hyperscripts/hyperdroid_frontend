@@ -270,9 +270,30 @@ async function loadAdminStats() {
             document.getElementById('pendingApprovals').textContent = '-';
         }
 
-        // Attendance stats would come from dashboard API
-        document.getElementById('presentToday').textContent = '-';
-        document.getElementById('onLeave').textContent = '-';
+        // Load today's attendance stats
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const teamAttendance = await api.request(`/hrms/attendance/team?date=${today}`);
+            const attendanceList = Array.isArray(teamAttendance) ? teamAttendance : (teamAttendance?.data || []);
+
+            // Count present employees (those with check_in_time)
+            const presentCount = attendanceList.filter(a => a.check_in_time).length;
+            document.getElementById('presentToday').textContent = presentCount;
+        } catch (e) {
+            console.log('Could not load attendance stats:', e);
+            document.getElementById('presentToday').textContent = '0';
+        }
+
+        // Load today's approved leave count
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
+            const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
+            document.getElementById('onLeave').textContent = leaveList.length || 0;
+        } catch (e) {
+            console.log('Could not load leave stats:', e);
+            document.getElementById('onLeave').textContent = '0';
+        }
 
     } catch (error) {
         console.error('Error loading admin stats:', error);
@@ -384,7 +405,7 @@ async function loadRecentLeaveRequests() {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-state">
-                        <p style="color: #888; font-size: 0.85rem;">No leave requests found</p>
+                        <p class="text-muted" style="font-size: 0.85rem;">No leave requests found</p>
                     </td>
                 </tr>
             `;
@@ -417,7 +438,7 @@ async function loadRecentLeaveRequests() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="empty-state">
-                    <p style="color: #888; font-size: 0.85rem;">Unable to load leave requests</p>
+                    <p class="text-muted" style="font-size: 0.85rem;">Unable to load leave requests</p>
                 </td>
             </tr>
         `;
@@ -442,20 +463,20 @@ async function loadUpcomingEvents() {
 
         if (upcomingHolidays.length > 0) {
             holidaysContainer.innerHTML = upcomingHolidays.map(h => `
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color-light);">
                     <span style="font-size: 0.85rem;">${h.holiday_name}</span>
-                    <span style="font-size: 0.8rem; color: #888;">${formatDate(h.holiday_date)}</span>
+                    <span class="text-muted" style="font-size: 0.8rem;">${formatDate(h.holiday_date)}</span>
                 </div>
             `).join('');
         } else {
-            holidaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">No upcoming holidays</p>';
+            holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">No upcoming holidays</p>';
         }
     } catch (error) {
-        holidaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Unable to load holidays</p>';
+        holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Unable to load holidays</p>';
     }
 
     // Birthdays feature - show placeholder for now (requires backend API)
-    birthdaysContainer.innerHTML = '<p style="color: #888; font-size: 0.85rem;">Feature coming soon</p>';
+    birthdaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Feature coming soon</p>';
 }
 
 function refreshDashboard() {

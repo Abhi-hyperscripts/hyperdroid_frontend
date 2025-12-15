@@ -1,0 +1,239 @@
+/**
+ * Unified Tooltip System for HyperDroid
+ *
+ * Usage:
+ *   Add data-tooltip="Your tooltip text" to any element
+ *
+ *   Position variants (add class):
+ *     - data-tooltip-position="top" (default)
+ *     - data-tooltip-position="bottom"
+ *     - data-tooltip-position="left"
+ *     - data-tooltip-position="right"
+ *
+ * Example:
+ *   <button data-tooltip="Click to save" data-tooltip-position="bottom">Save</button>
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BASE TOOLTIP STYLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip] {
+    position: relative;
+}
+
+/* Tooltip bubble */
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    padding: 6px 10px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+    z-index: var(--z-tooltip, 700);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--tooltip-border);
+}
+
+/* Tooltip arrow */
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    border: 5px solid transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    pointer-events: none;
+    z-index: var(--z-tooltip, 700);
+}
+
+/* Show on hover */
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Hide empty tooltips */
+[data-tooltip=""]::after,
+[data-tooltip=""]::before {
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POSITION: TOP (default)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip]::after,
+[data-tooltip][data-tooltip-position="top"]::after {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    margin-bottom: 8px;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip][data-tooltip-position="top"]:hover::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip]::before,
+[data-tooltip][data-tooltip-position="top"]::before {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: var(--tooltip-bg);
+    margin-bottom: -2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POSITION: BOTTOM
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip][data-tooltip-position="bottom"]::after {
+    top: 100%;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+[data-tooltip][data-tooltip-position="bottom"]:hover::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip][data-tooltip-position="bottom"]::before {
+    top: 100%;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: transparent;
+    border-bottom-color: var(--tooltip-bg);
+    margin-top: -2px;
+    margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POSITION: LEFT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip][data-tooltip-position="left"]::after {
+    right: 100%;
+    left: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%) translateX(4px);
+    margin-right: 8px;
+    margin-bottom: 0;
+}
+
+[data-tooltip][data-tooltip-position="left"]:hover::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+[data-tooltip][data-tooltip-position="left"]::before {
+    right: 100%;
+    left: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-left-color: var(--tooltip-bg);
+    margin-right: -2px;
+    margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POSITION: RIGHT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip][data-tooltip-position="right"]::after {
+    left: 100%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%) translateX(-4px);
+    margin-left: 8px;
+    margin-bottom: 0;
+}
+
+[data-tooltip][data-tooltip-position="right"]:hover::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+[data-tooltip][data-tooltip-position="right"]::before {
+    left: 100%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-right-color: var(--tooltip-bg);
+    margin-left: -2px;
+    margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FOCUS SUPPORT (for accessibility)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip]:focus::after,
+[data-tooltip]:focus::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+[data-tooltip]:focus::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip][data-tooltip-position="bottom"]:focus::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+[data-tooltip][data-tooltip-position="left"]:focus::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+[data-tooltip][data-tooltip-position="right"]:focus::after {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MULTILINE TOOLTIPS
+   Add data-tooltip-multiline class for wrapped text
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[data-tooltip][data-tooltip-multiline]::after {
+    white-space: normal;
+    max-width: 250px;
+    text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LEGACY SUPPORT: title attribute tooltips
+   Override browser default for consistent styling
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Note: Native title attribute cannot be fully styled with CSS alone.
+ * For consistent styling, use data-tooltip attribute instead.
+ *
+ * The JavaScript helper below can convert title to data-tooltip:
+ *
+ * document.querySelectorAll('[title]').forEach(el => {
+ *     if (!el.hasAttribute('data-tooltip')) {
+ *         el.setAttribute('data-tooltip', el.getAttribute('title'));
+ *         el.removeAttribute('title');
+ *     }
+ * });
+ */

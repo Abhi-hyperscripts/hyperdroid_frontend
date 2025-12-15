@@ -99,15 +99,23 @@ async function markAllRead() {
 }
 
 function getNotificationIcon(type) {
+    const styles = getComputedStyle(document.documentElement);
+    const successColor = styles.getPropertyValue('--color-success').trim() || '#10b981';
+    const dangerColor = styles.getPropertyValue('--color-danger').trim() || '#ef4444';
+    const primaryColor = styles.getPropertyValue('--brand-primary').trim() || '#3b82f6';
+    const accentColor = styles.getPropertyValue('--brand-accent').trim() || '#8b5cf6';
+    const warningColor = styles.getPropertyValue('--color-warning').trim() || '#f59e0b';
+    const mutedColor = styles.getPropertyValue('--gray-500').trim() || '#64748b';
+
     const icons = {
-        'leave_approved': `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-        'leave_rejected': `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
-        'regularization': `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-        'payslip': `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
-        'profile_update': `<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-        'loan': `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+        'leave_approved': `<svg viewBox="0 0 24 24" fill="none" stroke="${successColor}" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+        'leave_rejected': `<svg viewBox="0 0 24 24" fill="none" stroke="${dangerColor}" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        'regularization': `<svg viewBox="0 0 24 24" fill="none" stroke="${primaryColor}" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+        'payslip': `<svg viewBox="0 0 24 24" fill="none" stroke="${successColor}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+        'profile_update': `<svg viewBox="0 0 24 24" fill="none" stroke="${accentColor}" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+        'loan': `<svg viewBox="0 0 24 24" fill="none" stroke="${warningColor}" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
     };
-    return icons[type] || `<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+    return icons[type] || `<svg viewBox="0 0 24 24" fill="none" stroke="${mutedColor}" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
 }
 
 function formatTimeAgo(dateStr) {

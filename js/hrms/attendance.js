@@ -71,7 +71,12 @@ function switchTab(tabName) {
         case 'daily': loadAttendance(); break;
         case 'myAttendance': loadMyAttendance(); break;
         case 'regularization': loadRegularizations(); break;
-        case 'overtime': loadOvertimeRequests(); break;
+        case 'overtime':
+            loadOvertimeRequests();
+            if (hrmsRoles.isManager() || hrmsRoles.isHRAdmin() || hrmsRoles.isSuperAdmin()) {
+                loadPendingOvertimeApprovals();
+            }
+            break;
         case 'approvals': loadPendingApprovals(); break;
     }
 }
@@ -213,14 +218,38 @@ async function loadRegularizations() {
 
 async function loadOvertimeRequests() {
     const tbody = document.getElementById('overtimeTableBody');
-    tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        // Note: Overtime feature not yet implemented in backend
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Overtime tracking coming soon</p></td></tr>';
+        const requests = await api.getMyOvertimeRequests();
+
+        if (!requests || requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No overtime requests found</p></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = requests.map(r => `
+            <tr>
+                <td>${formatDate(r.date)}</td>
+                <td>${formatTime(r.planned_start_time)}</td>
+                <td>${formatTime(r.planned_end_time)}</td>
+                <td>${r.actual_start_time ? formatTime(r.actual_start_time) : '-'}</td>
+                <td>${r.actual_end_time ? formatTime(r.actual_end_time) : '-'}</td>
+                <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
+                <td>
+                    ${r.status?.toLowerCase() === 'approved' ? `
+                    <button class="action-btn primary" onclick="openCompleteOvertimeModal('${r.id}')" data-tooltip="Mark Complete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </button>
+                    ` : '-'}
+                </td>
+            </tr>
+        `).join('');
     } catch (error) {
         console.error('Error loading overtime:', error);
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading requests</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading overtime requests</p></td></tr>';
     }
 }
 
@@ -357,16 +386,156 @@ async function submitOvertime() {
     const startTime = document.getElementById('otStartTime').value;
     const endTime = document.getElementById('otEndTime').value;
     const reason = document.getElementById('otReason').value;
-    const task = document.getElementById('otTask').value;
+    const task = document.getElementById('otTask')?.value || '';
 
     if (!date || !startTime || !endTime || !reason) {
         showToast('Please fill all required fields', 'error');
         return;
     }
 
-    // Note: Overtime feature not yet implemented in backend
-    showToast('Overtime feature coming soon', 'info');
-    closeModal('overtimeModal');
+    try {
+        await api.createOvertimeRequest({
+            date: date,
+            planned_start_time: `${date}T${startTime}:00`,
+            planned_end_time: `${date}T${endTime}:00`,
+            reason: reason,
+            task_reference: task
+        });
+
+        showToast('Overtime request submitted successfully', 'success');
+        closeModal('overtimeModal');
+        loadOvertimeRequests();
+    } catch (error) {
+        console.error('Error submitting overtime request:', error);
+        showToast(error.message || 'Error submitting overtime request', 'error');
+    }
+}
+
+// Overtime approval functions
+let pendingOvertimeRejectionId = null;
+
+async function loadPendingOvertimeApprovals() {
+    const tbody = document.getElementById('pendingOvertimeTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+    try {
+        const pending = await api.getPendingOvertimeRequestsAll(hrmsRoles.isHRAdmin());
+
+        if (!pending || pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No pending overtime requests</p></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = pending.map(r => {
+            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+            const canApprove = (
+                hrmsRoles.isSuperAdmin() ||
+                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
+                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
+            );
+
+            return `
+            <tr>
+                <td>
+                    <div class="employee-info">
+                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}${isOwnRequest ? ' (You)' : ''}</div>
+                    </div>
+                </td>
+                <td>${formatDate(r.date)}</td>
+                <td>${formatTime(r.planned_start_time)}</td>
+                <td>${formatTime(r.planned_end_time)}</td>
+                <td>${escapeHtml(r.reason) || '-'}</td>
+                <td>${escapeHtml(r.task_reference) || '-'}</td>
+                <td>
+                    ${canApprove ? `
+                    <button class="action-btn success" onclick="approveOvertimeRequest('${r.id}')" data-tooltip="Approve">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="openOvertimeRejectModal('${r.id}')" data-tooltip="Reject">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                    ` : '<span class="text-muted">Cannot approve</span>'}
+                </td>
+            </tr>
+        `}).join('');
+
+    } catch (error) {
+        console.error('Error loading pending overtime approvals:', error);
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading pending requests</p></td></tr>';
+    }
+}
+
+async function approveOvertimeRequest(id) {
+    try {
+        await api.approveOvertimeRequest(id);
+        showToast('Overtime request approved', 'success');
+        loadPendingOvertimeApprovals();
+    } catch (error) {
+        showToast(error.message || 'Error approving request', 'error');
+    }
+}
+
+function openOvertimeRejectModal(id) {
+    pendingOvertimeRejectionId = id;
+    document.getElementById('overtimeRejectionReason').value = '';
+    openModal('overtimeRejectionModal');
+}
+
+async function confirmRejectOvertime() {
+    if (!pendingOvertimeRejectionId) return;
+
+    const reason = document.getElementById('overtimeRejectionReason').value;
+
+    try {
+        await api.rejectOvertimeRequest(pendingOvertimeRejectionId, reason);
+        showToast('Overtime request rejected', 'success');
+        closeModal('overtimeRejectionModal');
+        pendingOvertimeRejectionId = null;
+        loadPendingOvertimeApprovals();
+    } catch (error) {
+        showToast(error.message || 'Error rejecting request', 'error');
+    }
+}
+
+// Complete overtime functions
+let currentOvertimeId = null;
+
+function openCompleteOvertimeModal(id) {
+    currentOvertimeId = id;
+    document.getElementById('completeOvertimeForm')?.reset();
+    openModal('completeOvertimeModal');
+}
+
+async function submitCompleteOvertime() {
+    if (!currentOvertimeId) return;
+
+    const actualStartTime = document.getElementById('actualOtStartTime').value;
+    const actualEndTime = document.getElementById('actualOtEndTime').value;
+    const notes = document.getElementById('completeOtNotes').value;
+
+    if (!actualStartTime || !actualEndTime) {
+        showToast('Please fill actual start and end times', 'error');
+        return;
+    }
+
+    try {
+        await api.completeOvertime(currentOvertimeId, actualStartTime, actualEndTime, notes);
+        showToast('Overtime marked as complete', 'success');
+        closeModal('completeOvertimeModal');
+        currentOvertimeId = null;
+        loadOvertimeRequests();
+    } catch (error) {
+        console.error('Error completing overtime:', error);
+        showToast(error.message || 'Error completing overtime', 'error');
+    }
 }
 
 // Utility functions

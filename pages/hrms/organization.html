@@ -7,8 +7,11 @@
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-organization.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
     <nav class="navbar">
@@ -42,6 +45,7 @@
             <button class="tab-btn" data-tab="shifts">Shifts</button>
             <button class="tab-btn" data-tab="shift-rosters">Shift Rosters</button>
             <button class="tab-btn" data-tab="holidays">Holidays</button>
+            <button class="tab-btn" data-tab="location-taxes">Location Taxes</button>
         </div>
 
         <!-- Offices Tab -->
@@ -135,6 +139,27 @@
                         <option value="">All Offices</option>
                     </select>
                 </div>
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" id="tableViewBtn" onclick="switchDepartmentView('table')" title="Table View">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="3" y1="15" x2="21" y2="15"></line>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
+                    </button>
+                    <button class="view-toggle-btn" id="treeViewBtn" onclick="switchDepartmentView('tree')" title="Hierarchy View">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="8" y2="12"></line>
+                            <line x1="16" y1="12" x2="19" y2="12"></line>
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="5" cy="12" r="2"></circle>
+                            <circle cx="19" cy="12" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                    </button>
+                </div>
                 <button class="btn btn-primary" onclick="showCreateDepartmentModal()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -144,7 +169,14 @@
                 </button>
             </div>
 
-            <div class="data-table-container">
+            <!-- Department Hierarchy Tree View -->
+            <div class="department-hierarchy" id="departmentHierarchy" style="display: none;">
+                <div class="hierarchy-tree" id="hierarchyTree">
+                    <!-- Tree structure will be rendered here -->
+                </div>
+            </div>
+
+            <div class="data-table-container" id="departmentTableContainer">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -305,6 +337,15 @@
                         <option value="">All Shifts</option>
                     </select>
                 </div>
+                <button class="btn btn-outline" onclick="showBulkRosterModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Bulk Assign
+                </button>
                 <button class="btn btn-primary" onclick="showCreateRosterModal()" id="createRosterBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -367,6 +408,13 @@
                         <option value="company">Company Holiday</option>
                     </select>
                 </div>
+                <button class="btn btn-outline" onclick="showBulkHolidayModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                    Bulk Add
+                </button>
                 <button class="btn btn-primary" onclick="showCreateHolidayModal()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -410,6 +458,145 @@
                 </table>
             </div>
         </div>
+
+        <!-- Location Taxes Tab -->
+        <div class="tab-content" id="location-taxes">
+            <!-- Sub-tabs for Tax Types and Office Tax Rules -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" data-subtab="tax-types">Tax Types</button>
+                <button class="sub-tab-btn" data-subtab="office-tax-rules">Office Tax Rules</button>
+            </div>
+
+            <!-- Tax Types Sub-tab -->
+            <div class="sub-tab-content active" id="tax-types">
+                <div class="filters-bar">
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="taxTypeSearch" placeholder="Search tax types...">
+                    </div>
+                    <label class="toggle-inactive-label">
+                        <input type="checkbox" id="showInactiveTaxTypes" onchange="loadTaxTypes()">
+                        <span>Show Inactive</span>
+                    </label>
+                    <button class="btn btn-primary" onclick="showCreateTaxTypeModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Tax Type
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tax Name</th>
+                                <th>Code</th>
+                                <th>Deduction From</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taxTypesTable">
+                            <tr class="empty-state">
+                                <td colspan="6">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M4 7h16M4 12h16M4 17h10"></path>
+                                        </svg>
+                                        <p>No tax types configured</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Office Tax Rules Sub-tab -->
+            <div class="sub-tab-content" id="office-tax-rules">
+                <div class="filters-bar">
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="taxRuleSearch" placeholder="Search tax rules...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="taxRuleOffice" class="form-select" onchange="loadOfficeTaxRules()">
+                            <option value="">All Offices</option>
+                        </select>
+                        <select id="taxRuleTaxType" class="form-select" onchange="loadOfficeTaxRules()">
+                            <option value="">All Tax Types</option>
+                        </select>
+                    </div>
+                    <label class="toggle-inactive-label">
+                        <input type="checkbox" id="showInactiveTaxRules" onchange="loadOfficeTaxRules()">
+                        <span>Show Inactive</span>
+                    </label>
+                    <button class="btn btn-secondary" onclick="showCopyTaxRulesModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Rules
+                    </button>
+                    <button class="btn btn-secondary" onclick="showTaxPreviewModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        Preview Tax
+                    </button>
+                    <button class="btn btn-primary" onclick="showCreateTaxRuleModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Tax Rule
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Office</th>
+                                <th>Tax Type</th>
+                                <th>Rule Name</th>
+                                <th>Jurisdiction</th>
+                                <th>Calculation</th>
+                                <th>Amount/Rate</th>
+                                <th>Effective From</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taxRulesTable">
+                            <tr class="empty-state">
+                                <td colspan="9">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <p>No tax rules configured</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Create/Edit Office Modal -->
@@ -420,107 +607,149 @@
                     <h5 class="modal-title" id="officeModalTitle">Create Office</h5>
                     <button class="close-btn" onclick="closeModal('officeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body office-modal-compact">
                 <form id="officeForm">
                     <input type="hidden" id="officeId" name="id">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="officeName">Office Name *</label>
-                                <input type="text" id="officeName" name="name" class="form-control" required placeholder="e.g., Head Office">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeCode">Code *</label>
-                                <input type="text" id="officeCode" name="code" class="form-control" required placeholder="e.g., HO">
-                            </div>
+
+                    <!-- Row 1: Name, Code, Type -->
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="officeName">Office Name *</label>
+                            <input type="text" id="officeName" name="name" class="form-control" required placeholder="Mumbai Headquarters">
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="officeType">Type *</label>
-                                <select id="officeType" name="type" class="form-control" required>
-                                    <option value="head">Head Office</option>
-                                    <option value="branch">Branch Office</option>
-                                    <option value="regional">Regional Office</option>
-                                    <option value="satellite">Satellite Office</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="officeTimezone">Timezone *</label>
-                                <select id="officeTimezone" name="timezone" class="form-control" required>
-                                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                                    <option value="America/New_York">America/New_York (EST)</option>
-                                    <option value="Europe/London">Europe/London (GMT)</option>
-                                    <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                                    <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
-                                </select>
-                            </div>
+                        <div class="form-group">
+                            <label for="officeCode">Code *</label>
+                            <input type="text" id="officeCode" name="code" class="form-control" required placeholder="MUM-HQ" style="text-transform: uppercase;">
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="officeAddress">Address *</label>
-                                <input type="text" id="officeAddress" name="address" class="form-control" required placeholder="Full office address">
-                            </div>
+                        <div class="form-group">
+                            <label for="officeType">Type *</label>
+                            <select id="officeType" name="type" class="form-control" required>
+                                <option value="">Select</option>
+                                <option value="head">Headquarters</option>
+                                <option value="regional">Regional</option>
+                                <option value="branch">Branch</option>
+                                <option value="satellite">Satellite</option>
+                            </select>
                         </div>
-                        <div class="form-row four-col">
-                            <div class="form-group">
-                                <label for="officeCity">City *</label>
-                                <input type="text" id="officeCity" name="city" class="form-control" required placeholder="City">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeState">State *</label>
-                                <input type="text" id="officeState" name="state" class="form-control" required placeholder="State">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeCountry">Country *</label>
-                                <input type="text" id="officeCountry" name="country" class="form-control" required value="India">
-                            </div>
-                            <div class="form-group">
-                                <label for="officePostalCode">Postal Code *</label>
-                                <input type="text" id="officePostalCode" name="postal_code" class="form-control" required placeholder="Postal Code">
-                            </div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="officePhone">Phone *</label>
-                                <input type="tel" id="officePhone" name="phone" class="form-control" required placeholder="+91-XXXX-XXXXXX">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeEmail">Email *</label>
-                                <input type="email" id="officeEmail" name="email" class="form-control" required placeholder="office@company.com">
-                            </div>
-                            <div class="form-group">
-                                <div class="status-toggle-row">
-                                    <label>Status</label>
-                                    <div class="status-toggle-container">
-                                        <span class="status-label inactive">Inactive</span>
-                                        <label class="status-toggle">
-                                            <input type="checkbox" id="officeIsActive" name="isActive" checked>
-                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                        </label>
-                                        <span class="status-label active">Active</span>
-                                    </div>
+                    </div>
+
+                    <!-- Row 2: Timezone, Phone, Email -->
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="officeTimezoneSearch">Timezone *</label>
+                            <div class="searchable-dropdown" id="timezoneDropdown">
+                                <div class="searchable-dropdown-trigger" id="timezoneTrigger" onclick="toggleSearchableDropdown('timezone')">
+                                    <span class="dropdown-selection" id="timezoneSelection">Select Timezone</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
+                                <div class="searchable-dropdown-menu" id="timezoneMenu">
+                                    <div class="dropdown-search-box">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        <input type="text" id="timezoneSearch" class="dropdown-search-input" placeholder="Search..." oninput="filterTimezones()">
+                                    </div>
+                                    <div class="dropdown-options" id="timezoneOptions"></div>
+                                </div>
+                                <input type="hidden" id="officeTimezone" name="timezone" required>
                             </div>
                         </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="officeLatitude">Latitude *</label>
-                                <input type="number" id="officeLatitude" name="latitude" class="form-control" required step="0.000001" placeholder="19.0760">
+                        <div class="form-group">
+                            <label for="officePhone">Phone</label>
+                            <input type="tel" id="officePhone" name="phone" class="form-control" placeholder="+91-22-12345678">
+                        </div>
+                        <div class="form-group">
+                            <label for="officeEmail">Email</label>
+                            <input type="email" id="officeEmail" name="email" class="form-control" placeholder="office@company.com">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Address (full width) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="officeAddress">Street Address</label>
+                            <input type="text" id="officeAddress" name="address" class="form-control" placeholder="123 Business Park, Main Street">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: City, State, Country, Postal -->
+                    <div class="form-row four-col">
+                        <div class="form-group">
+                            <label for="officeCity">City *</label>
+                            <input type="text" id="officeCity" name="city" class="form-control" required placeholder="Mumbai">
+                        </div>
+                        <div class="form-group">
+                            <label for="officeState">State</label>
+                            <input type="text" id="officeState" name="state" class="form-control" placeholder="Maharashtra">
+                        </div>
+                        <div class="form-group">
+                            <label for="officeCountrySearch">Country *</label>
+                            <div class="searchable-dropdown" id="countryDropdown">
+                                <div class="searchable-dropdown-trigger" id="countryTrigger" onclick="toggleSearchableDropdown('country')">
+                                    <span class="dropdown-selection" id="countrySelection">Select</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
+                                <div class="searchable-dropdown-menu" id="countryMenu">
+                                    <div class="dropdown-search-box">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        <input type="text" id="countrySearch" class="dropdown-search-input" placeholder="Search..." oninput="filterCountries()">
+                                    </div>
+                                    <div class="dropdown-options" id="countryOptions"></div>
+                                </div>
+                                <input type="hidden" id="officeCountry" name="country" required>
                             </div>
-                            <div class="form-group">
-                                <label for="officeLongitude">Longitude *</label>
-                                <input type="number" id="officeLongitude" name="longitude" class="form-control" required step="0.000001" placeholder="72.8777">
-                            </div>
-                            <div class="form-group">
-                                <label for="officeGeofenceRadius">Geofence (m) *</label>
-                                <input type="number" id="officeGeofenceRadius" name="geofence_radius_meters" class="form-control" required min="50" max="5000" value="100" placeholder="100">
-                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="officePostalCode">Postal</label>
+                            <input type="text" id="officePostalCode" name="postal_code" class="form-control" placeholder="400001">
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Geofence - Lat, Long, Radius -->
+                    <div class="form-row three-col geofence-row">
+                        <div class="form-group">
+                            <label for="officeLatitude">Latitude</label>
+                            <input type="number" id="officeLatitude" name="latitude" class="form-control" step="0.000001" placeholder="19.0760">
+                        </div>
+                        <div class="form-group">
+                            <label for="officeLongitude">Longitude</label>
+                            <input type="number" id="officeLongitude" name="longitude" class="form-control" step="0.000001" placeholder="72.8777">
+                        </div>
+                        <div class="form-group">
+                            <label for="officeGeofenceRadius">Radius (m)</label>
+                            <input type="number" id="officeGeofenceRadius" name="geofence_radius_meters" class="form-control" min="50" max="5000" value="100" placeholder="100">
+                        </div>
+                    </div>
+
+                    <!-- Row 6: All settings toggles inline -->
+                    <div class="form-row office-toggles-row">
+                        <div class="toggle-inline">
+                            <label class="toggle-switch small">
+                                <input type="checkbox" id="officeEnableGeofence" name="enable_geofence_attendance">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-inline-label">Geofence</span>
+                        </div>
+                        <div class="toggle-inline">
+                            <label class="toggle-switch small">
+                                <input type="checkbox" id="officeIsHeadquarters" name="is_headquarters">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-inline-label">Headquarters</span>
+                        </div>
+                        <div class="toggle-inline">
+                            <label class="toggle-switch small">
+                                <input type="checkbox" id="officeIsActive" name="isActive" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-inline-label">Active</span>
                         </div>
                     </div>
                 </form>
             </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="saveOffice()">Save Office</button>
+                    <button type="button" class="btn btn-primary" onclick="saveOffice()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Office
+                    </button>
                 </div>
             </div>
         </div>
@@ -615,16 +844,44 @@
                                     <input type="text" id="designationCode" name="code" class="form-control" required placeholder="e.g., SE">
                                 </div>
                             </div>
-                            <div class="form-row two-col">
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="desigDepartment">Department *</label>
-                                    <select id="desigDepartment" name="departmentId" class="form-control" required>
-                                        <option value="">Select Department *</option>
-                                    </select>
+                                    <label>Office & Department *</label>
+                                    <div class="nested-dropdown" id="officeDeptDropdown">
+                                        <div class="nested-dropdown-trigger" id="officeDeptTrigger">
+                                            <div class="nested-dropdown-selection">
+                                                <span class="selection-text" id="officeDeptSelectionText">Select Office & Department</span>
+                                            </div>
+                                            <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="nested-dropdown-menu" id="officeDeptMenu">
+                                            <div class="dropdown-search-wrapper">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"></circle>
+                                                    <path d="m21 21-4.35-4.35"></path>
+                                                </svg>
+                                                <input type="text" class="dropdown-search" id="officeDeptSearch" placeholder="Search offices or departments...">
+                                            </div>
+                                            <div class="dropdown-items-container" id="officeDeptItems">
+                                                <!-- Items populated by JS -->
+                                            </div>
+                                        </div>
+                                        <!-- Hidden inputs to store selected values -->
+                                        <input type="hidden" id="desigOffice" name="officeId" required>
+                                        <input type="hidden" id="desigDepartment" name="departmentId" required>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="form-row two-col">
                                 <div class="form-group">
                                     <label for="desigLevel">Level</label>
                                     <input type="number" id="desigLevel" name="level" class="form-control" min="1" max="20" value="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="desigCategory">Category</label>
+                                    <input type="text" id="desigCategory" name="roleCategory" class="form-control" placeholder="e.g., Technical, Management">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -669,7 +926,7 @@
                                             <div class="role-category-label">HR Department Roles</div>
                                             <div class="role-toggle-item">
                                                 <div class="role-toggle-info">
-                                                    <span class="role-name">HR_USER</span>
+                                                    <span class="role-name">HR USER</span>
                                                     <span class="role-desc">Basic HR read access</span>
                                                 </div>
                                                 <label class="role-toggle">
@@ -679,21 +936,21 @@
                                             </div>
                                             <div class="role-toggle-item">
                                                 <div class="role-toggle-info">
-                                                    <span class="role-name">HR_ADMIN</span>
-                                                    <span class="role-desc">Full HR operations (employee CRUD, transfers)</span>
+                                                    <span class="role-name">HR MANAGER</span>
+                                                    <span class="role-desc">HR department manager</span>
                                                 </div>
                                                 <label class="role-toggle">
-                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_ADMIN" id="roleHrmsHrAdmin">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_MANAGER" id="roleHrmsHrManager">
                                                     <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
                                                 </label>
                                             </div>
                                             <div class="role-toggle-item">
                                                 <div class="role-toggle-info">
-                                                    <span class="role-name">HR_MANAGER</span>
-                                                    <span class="role-desc">HR department manager</span>
+                                                    <span class="role-name">HR ADMIN</span>
+                                                    <span class="role-desc">Full HR operations (employee CRUD, transfers)</span>
                                                 </div>
                                                 <label class="role-toggle">
-                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_MANAGER" id="roleHrmsHrManager">
+                                                    <input type="checkbox" name="hrmsRoles" value="HRMS_HR_ADMIN" id="roleHrmsHrAdmin">
                                                     <span class="role-toggle-track"><span class="role-toggle-thumb"></span></span>
                                                 </label>
                                             </div>
@@ -819,19 +1076,20 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <div class="status-toggle-row">
-                                        <label>Status</label>
-                                        <div class="status-toggle-container">
-                                            <span class="status-label inactive">Inactive</span>
-                                            <label class="status-toggle">
-                                                <input type="checkbox" id="shiftIsActive" name="isActive" checked>
-                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                            </label>
-                                            <span class="status-label active">Active</span>
-                                        </div>
-                                    </div>
+                            <div class="form-row office-toggles-row">
+                                <div class="toggle-inline">
+                                    <label class="toggle-switch small">
+                                        <input type="checkbox" id="shiftEnableGeofence" name="enable_geofence_attendance">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="toggle-inline-label">Geofence Attendance</span>
+                                </div>
+                                <div class="toggle-inline">
+                                    <label class="toggle-switch small">
+                                        <input type="checkbox" id="shiftIsActive" name="isActive" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="toggle-inline-label">Active</span>
                                 </div>
                             </div>
                         </div>
@@ -980,6 +1238,456 @@
         </div>
     </div>
 
+    <!-- Bulk Holiday Modal -->
+    <div id="bulkHolidayModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Add Holidays</h5>
+                    <button class="close-btn" onclick="closeModal('bulkHolidayModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="bulk-info-bar">
+                        <p>Add multiple holidays at once. You can add up to 20 holidays in a single operation.</p>
+                    </div>
+                    <div class="form-row two-col" style="margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label for="bulkHolidayYear">Year *</label>
+                            <select id="bulkHolidayYear" class="form-control">
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bulkHolidayOffice">Apply to Office *</label>
+                            <select id="bulkHolidayOffice" class="form-control">
+                                <option value="">All Offices</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bulk-entries-container" id="bulkHolidayEntries">
+                        <!-- Dynamic holiday entries will be added here -->
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="addBulkHolidayRow()" style="margin-top: 12px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Another Holiday
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <span class="bulk-count" id="bulkHolidayCount">0 holidays to add</span>
+                    <button type="button" class="btn btn-primary" onclick="saveBulkHolidays()">Add All Holidays</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Roster Modal -->
+    <div id="bulkRosterModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Assign Shift Rosters</h5>
+                    <button class="close-btn" onclick="closeModal('bulkRosterModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="bulk-info-bar">
+                        <p>Assign the same shift to multiple employees at once.</p>
+                    </div>
+                    <form id="bulkRosterForm">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="bulkRosterShift">Shift *</label>
+                                <select id="bulkRosterShift" class="form-control" required>
+                                    <option value="">Select Shift</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bulkRosterType">Roster Type</label>
+                                <select id="bulkRosterType" class="form-control">
+                                    <option value="scheduled">Scheduled</option>
+                                    <option value="temporary">Temporary</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="bulkRosterStartDate">Start Date *</label>
+                                <input type="date" id="bulkRosterStartDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="bulkRosterEndDate">End Date</label>
+                                <input type="date" id="bulkRosterEndDate" class="form-control">
+                                <small class="form-text">Leave empty for ongoing assignment</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Employees *</label>
+                            <div class="employee-filter-row">
+                                <select id="bulkRosterDepartmentFilter" class="form-control" onchange="filterBulkRosterEmployees()">
+                                    <option value="">All Departments</option>
+                                </select>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="selectAllBulkRosterEmployees()">Select All</button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="deselectAllBulkRosterEmployees()">Deselect All</button>
+                            </div>
+                            <div class="employee-checkbox-grid" id="bulkRosterEmployees">
+                                <!-- Employee checkboxes will be populated here -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <span class="bulk-count" id="bulkRosterCount">0 employees selected</span>
+                    <button type="button" class="btn btn-primary" onclick="saveBulkRosters()">Assign Rosters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Tax Type Modal -->
+    <div id="taxTypeModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxTypeModalTitle">Create Tax Type</h5>
+                    <button class="close-btn" onclick="closeModal('taxTypeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxTypeForm">
+                        <input type="hidden" id="taxTypeId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="taxTypeName">Tax Name *</label>
+                                    <input type="text" id="taxTypeName" name="tax_name" class="form-control" required placeholder="e.g., Professional Tax">
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxTypeCode">Tax Code *</label>
+                                    <input type="text" id="taxTypeCode" name="tax_code" class="form-control" required placeholder="e.g., PT">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="taxTypeDeductionFrom">Deduction From *</label>
+                                    <select id="taxTypeDeductionFrom" name="deduction_from" class="form-control" required>
+                                        <option value="employee">Employee</option>
+                                        <option value="employer">Employer</option>
+                                        <option value="both">Both</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxTypeDisplayOrder">Display Order</label>
+                                    <input type="number" id="taxTypeDisplayOrder" name="display_order" class="form-control" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="taxTypeDescription">Description</label>
+                                    <textarea id="taxTypeDescription" name="description" class="form-control" rows="2" placeholder="Brief description of this tax type"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="taxTypeIsActive" name="is_active" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveTaxType()">Save Tax Type</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Tax Rule Modal -->
+    <div id="taxRuleModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxRuleModalTitle">Create Tax Rule</h5>
+                    <button class="close-btn" onclick="closeModal('taxRuleModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxRuleForm">
+                        <input type="hidden" id="taxRuleId" name="id">
+                        <div class="form-section">
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label for="taxRuleOfficeId">Office *</label>
+                                    <select id="taxRuleOfficeId" name="office_id" class="form-control" required>
+                                        <option value="">Select Office</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleTaxTypeId">Tax Type *</label>
+                                    <select id="taxRuleTaxTypeId" name="tax_type_id" class="form-control" required>
+                                        <option value="">Select Tax Type</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleName">Rule Name *</label>
+                                    <input type="text" id="taxRuleName" name="rule_name" class="form-control" required placeholder="e.g., Maharashtra PT">
+                                </div>
+                            </div>
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label for="taxRuleCode">Tax Code</label>
+                                    <input type="text" id="taxRuleCode" name="tax_code" class="form-control" placeholder="e.g., MH-PT">
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleJurisdictionLevel">Jurisdiction Level *</label>
+                                    <select id="taxRuleJurisdictionLevel" name="jurisdiction_level" class="form-control" required>
+                                        <option value="federal">Federal</option>
+                                        <option value="state" selected>State</option>
+                                        <option value="province">Province</option>
+                                        <option value="city">City</option>
+                                        <option value="county">County</option>
+                                        <option value="local">Local</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleJurisdictionName">Jurisdiction Name *</label>
+                                    <input type="text" id="taxRuleJurisdictionName" name="jurisdiction_name" class="form-control" required placeholder="e.g., Maharashtra">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="taxRuleJurisdictionCode">Jurisdiction Code</label>
+                                    <input type="text" id="taxRuleJurisdictionCode" name="jurisdiction_code" class="form-control" placeholder="e.g., MH">
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleCalculationType">Calculation Type *</label>
+                                    <select id="taxRuleCalculationType" name="calculation_type" class="form-control" required onchange="toggleCalculationFields()">
+                                        <option value="fixed">Fixed Amount</option>
+                                        <option value="percentage">Percentage</option>
+                                        <option value="slab">Slab Based</option>
+                                        <option value="formula">Custom Formula</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Fixed Amount Fields -->
+                            <div class="form-row" id="fixedAmountFields">
+                                <div class="form-group">
+                                    <label for="taxRuleFixedAmount">Fixed Amount *</label>
+                                    <input type="number" id="taxRuleFixedAmount" name="fixed_amount" class="form-control" step="0.01" min="0" placeholder="e.g., 200">
+                                </div>
+                            </div>
+
+                            <!-- Percentage Fields -->
+                            <div class="form-row two-col" id="percentageFields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="taxRulePercentage">Percentage *</label>
+                                    <input type="number" id="taxRulePercentage" name="percentage" class="form-control" step="0.01" min="0" max="100" placeholder="e.g., 12.5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRulePercentageOf">Percentage Of *</label>
+                                    <select id="taxRulePercentageOf" name="percentage_of" class="form-control">
+                                        <option value="basic">Basic Salary</option>
+                                        <option value="gross">Gross Salary</option>
+                                        <option value="taxable">Taxable Income</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Slab Fields -->
+                            <div id="slabFields" style="display: none;">
+                                <div class="form-group">
+                                    <label>Tax Slabs</label>
+                                    <small class="form-text" style="margin-bottom: 8px;">Define income slabs and corresponding tax amounts</small>
+                                    <div id="slabContainer">
+                                        <div class="slab-row">
+                                            <input type="number" class="form-control slab-from" placeholder="From" min="0">
+                                            <span class="slab-separator">to</span>
+                                            <input type="number" class="form-control slab-to" placeholder="To" min="0">
+                                            <span class="slab-separator">=</span>
+                                            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addSlabRow()" style="margin-top: 8px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Add Slab
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Formula Fields -->
+                            <div class="form-row" id="formulaFields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="taxRuleFormula">Formula Expression</label>
+                                    <textarea id="taxRuleFormula" name="formula_expression" class="form-control" rows="2" placeholder="e.g., (gross * 0.12) - 10000"></textarea>
+                                    <small class="form-text">Variables: basic, gross, taxable, hra, da</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label for="taxRuleEffectiveFrom">Effective From *</label>
+                                    <input type="date" id="taxRuleEffectiveFrom" name="effective_from" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRuleEffectiveTo">Effective To</label>
+                                    <input type="date" id="taxRuleEffectiveTo" name="effective_to" class="form-control">
+                                    <small class="form-text">Leave empty for no end date</small>
+                                </div>
+                                <div class="form-group">
+                                    <div class="status-toggle-row">
+                                        <label>Status</label>
+                                        <div class="status-toggle-container">
+                                            <span class="status-label inactive">Inactive</span>
+                                            <label class="status-toggle">
+                                                <input type="checkbox" id="taxRuleIsActive" name="is_active" checked>
+                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                            </label>
+                                            <span class="status-label active">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="taxRuleNotes">Notes</label>
+                                    <textarea id="taxRuleNotes" name="notes" class="form-control" rows="2" placeholder="Additional notes about this rule"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveTaxRule()">Save Tax Rule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Tax Rules Modal -->
+    <div id="copyTaxRulesModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Copy Tax Rules</h5>
+                    <button class="close-btn" onclick="closeModal('copyTaxRulesModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="copyTaxRulesForm">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="copySourceOffice">Source Office *</label>
+                                <select id="copySourceOffice" name="source_office_id" class="form-control" required>
+                                    <option value="">Select Source Office</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="copyTargetOffice">Target Office *</label>
+                                <select id="copyTargetOffice" name="target_office_id" class="form-control" required>
+                                    <option value="">Select Target Office</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-info" style="margin-top: 12px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                This will copy all active tax rules from the source office to the target office. Existing rules in the target office will not be affected.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="copyTaxRules()">Copy Rules</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Preview Modal -->
+    <div id="taxPreviewModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tax Calculation Preview</h5>
+                    <button class="close-btn" onclick="closeModal('taxPreviewModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxPreviewForm">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="previewOffice">Office *</label>
+                                    <select id="previewOffice" name="office_id" class="form-control" required>
+                                        <option value="">Select Office</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="previewEffectiveDate">Effective Date *</label>
+                                    <input type="date" id="previewEffectiveDate" name="effective_date" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-row three-col">
+                                <div class="form-group">
+                                    <label for="previewBasicSalary">Basic Salary</label>
+                                    <input type="number" id="previewBasicSalary" name="basic_salary" class="form-control" step="0.01" min="0" placeholder="e.g., 50000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="previewGrossSalary">Gross Salary *</label>
+                                    <input type="number" id="previewGrossSalary" name="gross_salary" class="form-control" step="0.01" min="0" required placeholder="e.g., 100000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="previewTaxableIncome">Taxable Income</label>
+                                    <input type="number" id="previewTaxableIncome" name="taxable_income" class="form-control" step="0.01" min="0" placeholder="e.g., 90000">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="calculateTaxPreview()">Calculate</button>
+                        </div>
+                    </form>
+
+                    <div id="taxPreviewResults" style="display: none; margin-top: 20px;">
+                        <h6>Tax Calculation Results</h6>
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tax Type</th>
+                                        <th>Rule</th>
+                                        <th>Calculation</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="taxPreviewResultsTable">
+                                </tbody>
+                                <tfoot>
+                                    <tr style="font-weight: bold; background: var(--gray-50);">
+                                        <td colspan="3">Total Tax</td>
+                                        <td id="taxPreviewTotal">0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
@@ -991,332 +1699,9 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/organization.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
-
-    <style>
-        /* Organization-specific styles */
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .badge-head {
-            background: #000;
-            color: #fff;
-        }
-
-        .badge-branch {
-            background: #e3e3e3;
-            color: #333;
-        }
-
-        .badge-regional {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-satellite {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-national {
-            background: #dc3545;
-            color: #fff;
-        }
-
-        .badge-regional {
-            background: #28a745;
-            color: #fff;
-        }
-
-        .badge-optional {
-            background: #6c757d;
-            color: #fff;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding: 8px 0;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .checkbox-item input {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .form-text {
-            display: block;
-            margin-top: 4px;
-            font-size: 11px;
-            color: #666;
-        }
-
-        .holidays-calendar {
-            margin-bottom: 24px;
-        }
-
-        /* HRMS Roles Grid Styles */
-        .hrms-roles-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 8px;
-        }
-
-        .role-category-group {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 16px;
-        }
-
-        .role-category-label {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #666;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        /* Role Toggle Item - container for each role */
-        .role-toggle-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            transition: all 0.15s ease;
-        }
-
-        .role-toggle-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .role-toggle-item:hover {
-            border-color: #007bff;
-            background: #f8f9ff;
-        }
-
-        .role-toggle-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .role-name {
-            font-weight: 600;
-            font-size: 13px;
-            color: #333;
-            display: block;
-        }
-
-        .role-desc {
-            font-size: 11px;
-            color: #666;
-            display: block;
-            margin-top: 2px;
-        }
-
-        /* Small Toggle Switch for Roles */
-        .role-toggle {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            cursor: pointer;
-            flex-shrink: 0;
-            margin-left: 12px;
-        }
-
-        .role-toggle input[type="checkbox"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .role-toggle-track {
-            width: 36px;
-            height: 20px;
-            background: #ccc;
-            border-radius: 10px;
-            position: relative;
-            transition: background 0.2s ease;
-        }
-
-        .role-toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .role-toggle input:checked + .role-toggle-track {
-            background: #333;
-        }
-
-        .role-toggle input:checked + .role-toggle-track .role-toggle-thumb {
-            transform: translateX(16px);
-        }
-
-        .role-toggle.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .role-toggle.disabled .role-toggle-track {
-            background: #333;
-        }
-
-        /* Status Toggle Styles */
-        .status-toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .status-toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-label {
-            font-size: 12px;
-            color: #999;
-            font-weight: 500;
-        }
-
-        .status-label.active {
-            color: #333;
-        }
-
-        .status-label.inactive {
-            color: #666;
-        }
-
-        .status-toggle {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .status-toggle input[type="checkbox"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .status-toggle-track {
-            width: 36px;
-            height: 20px;
-            background: #ccc;
-            border-radius: 10px;
-            position: relative;
-            transition: background 0.2s ease;
-        }
-
-        .status-toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .status-toggle input:checked + .status-toggle-track {
-            background: #333;
-        }
-
-        .status-toggle input:checked + .status-toggle-track .status-toggle-thumb {
-            transform: translateX(16px);
-        }
-
-        /* Responsive for smaller screens */
-        @media (max-width: 768px) {
-            .hrms-roles-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Role Tags for Table Display */
-        .role-tag {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-right: 3px;
-            margin-bottom: 2px;
-        }
-
-        .role-user {
-            background: #e9ecef;
-            color: #666;
-        }
-
-        .role-manager {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .role-admin {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .role-hr {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .role-hr-admin {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .role-hr-manager {
-            background: #e2d5f3;
-            color: #5b2d90;
-        }
-
-        .role-default {
-            background: #e9ecef;
-            color: #495057;
-        }
-    </style>
 
     <!-- Flatpickr for Time Picker -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

@@ -105,6 +105,8 @@ function setupTabs() {
             // Load data for tab
             if (tabId === 'leave-balance' && hrmsRoles.canApproveLeave()) {
                 loadLeaveBalances();
+            } else if (tabId === 'team-calendar') {
+                initializeTeamCalendar();
             }
         });
     });
@@ -579,7 +581,7 @@ async function loadEmployees() {
         console.error('Error loading employees:', error);
         const list = document.getElementById('employeeSearchList');
         if (list) {
-            list.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Failed to load employees</p>';
+            list.innerHTML = '<p class="text-danger" style="text-align: center; padding: 20px;">Failed to load employees</p>';
         }
     }
 }
@@ -675,7 +677,7 @@ function displayEmployeeList(empList, append = false) {
         : `${filteredCount} of ${totalEmployees} employees`;
 
     if (empList.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">No employees found</p>';
+        list.innerHTML = '<p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">No employees found</p>';
         return;
     }
 
@@ -719,7 +721,7 @@ function displayEmployeeList(empList, append = false) {
     // Show "scroll for more" indicator if there are more employees
     if (displayedEmployeeCount < empList.length) {
         list.insertAdjacentHTML('beforeend',
-            '<div id="employee-loading-indicator" style="text-align: center; padding: 12px; color: #999; font-size: 0.75rem;">Scroll for more...</div>');
+            '<div id="employee-loading-indicator" class="text-muted" style="text-align: center; padding: 12px; font-size: 0.75rem;">Scroll for more...</div>');
     }
 }
 
@@ -1434,3 +1436,257 @@ document.getElementById('requestStatus')?.addEventListener('change', loadPending
 document.getElementById('requestDepartment')?.addEventListener('change', loadPendingRequests);
 document.getElementById('balanceYear')?.addEventListener('change', loadLeaveBalances);
 document.getElementById('balanceDepartment')?.addEventListener('change', loadLeaveBalances);
+
+// ==========================================
+// Leave Encashment Functions
+// ==========================================
+
+let encashableBalances = [];
+let dailyRate = 0;
+
+async function showEncashLeaveModal() {
+    try {
+        showLoading();
+        document.getElementById('encashLeaveForm').reset();
+
+        // Load encashable leave balance
+        const balances = await api.getEncashableLeaveBalance();
+        encashableBalances = balances || [];
+
+        // Populate leave type dropdown with encashable types only
+        const select = document.getElementById('encashLeaveType');
+        select.innerHTML = '<option value="">Select Leave Type</option>';
+
+        if (encashableBalances.length === 0) {
+            document.getElementById('encashBalanceInfo').innerHTML = `
+                <div class="alert alert-info">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>No leave types are available for encashment at this time.</span>
+                </div>
+            `;
+        } else {
+            encashableBalances.forEach(b => {
+                if (b.encashable_days > 0) {
+                    select.innerHTML += `<option value="${b.leave_type_id}" data-balance="${b.encashable_days}" data-rate="${b.daily_rate || 0}">${b.leave_type_name} (${b.encashable_days} days available)</option>`;
+                }
+            });
+
+            document.getElementById('encashBalanceInfo').innerHTML = `
+                <div class="alert alert-success">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>You have leave balance available for encashment.</span>
+                </div>
+            `;
+        }
+
+        document.getElementById('encashAvailableDays').textContent = 'Available: 0 days';
+        document.getElementById('encashAmountPreview').textContent = '--';
+
+        openModal('encashLeaveModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading encashable balance:', error);
+        showToast('Failed to load encashable leave balance', 'error');
+        hideLoading();
+    }
+}
+
+function updateEncashPreview() {
+    const select = document.getElementById('encashLeaveType');
+    const selectedOption = select.options[select.selectedIndex];
+    const daysInput = document.getElementById('encashDays');
+
+    if (!selectedOption || !selectedOption.value) {
+        document.getElementById('encashAvailableDays').textContent = 'Available: 0 days';
+        document.getElementById('encashAmountPreview').textContent = '--';
+        return;
+    }
+
+    const availableDays = parseFloat(selectedOption.dataset.balance) || 0;
+    dailyRate = parseFloat(selectedOption.dataset.rate) || 0;
+
+    document.getElementById('encashAvailableDays').textContent = `Available: ${availableDays} days`;
+    daysInput.max = availableDays;
+
+    const days = parseFloat(daysInput.value) || 0;
+    if (days > 0 && dailyRate > 0) {
+        const estimatedAmount = days * dailyRate;
+        document.getElementById('encashAmountPreview').textContent = formatCurrency(estimatedAmount);
+    } else if (days > 0) {
+        document.getElementById('encashAmountPreview').textContent = 'Rate not configured';
+    } else {
+        document.getElementById('encashAmountPreview').textContent = '--';
+    }
+}
+
+async function submitLeaveEncashment() {
+    const form = document.getElementById('encashLeaveForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const leaveTypeId = document.getElementById('encashLeaveType').value;
+    const days = parseFloat(document.getElementById('encashDays').value);
+    const reason = document.getElementById('encashReason').value;
+
+    if (!leaveTypeId) {
+        showToast('Please select a leave type', 'error');
+        return;
+    }
+
+    if (!days || days <= 0) {
+        showToast('Please enter valid number of days', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.encashLeave({
+            leave_type_id: leaveTypeId,
+            days: days,
+            reason: reason
+        });
+
+        closeModal('encashLeaveModal');
+        showToast('Leave encashment request submitted successfully', 'success');
+        await loadMyLeaveRequests();
+        hideLoading();
+    } catch (error) {
+        console.error('Error submitting encashment:', error);
+        showToast(error.message || 'Failed to submit encashment request', 'error');
+        hideLoading();
+    }
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
+// ==========================================
+// Team Calendar Functions
+// ==========================================
+
+let calendarData = [];
+let calendarInitialized = false;
+
+function initializeTeamCalendar() {
+    if (!calendarInitialized) {
+        // Set default month to current month
+        const now = new Date();
+        const monthInput = document.getElementById('calendarMonth');
+        if (monthInput) {
+            monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        // Populate department filter
+        const deptSelect = document.getElementById('calendarDepartment');
+        if (deptSelect && departments.length > 0) {
+            deptSelect.innerHTML = '<option value="">All Departments</option>';
+            departments.forEach(d => {
+                deptSelect.innerHTML += `<option value="${d.id}">${d.department_name || d.name}</option>`;
+            });
+        }
+
+        calendarInitialized = true;
+    }
+
+    loadTeamCalendar();
+}
+
+async function loadTeamCalendar() {
+    const monthInput = document.getElementById('calendarMonth');
+    const deptSelect = document.getElementById('calendarDepartment');
+
+    if (!monthInput || !monthInput.value) {
+        return;
+    }
+
+    const [year, month] = monthInput.value.split('-');
+    const startDate = `${year}-${month}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${month}-${lastDay}`;
+    const departmentId = deptSelect?.value || null;
+
+    try {
+        showLoading();
+        const data = await api.getTeamLeaveCalendar(startDate, endDate, departmentId);
+        calendarData = data || [];
+        renderTeamCalendar(parseInt(year), parseInt(month));
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading team calendar:', error);
+        showToast('Failed to load team calendar', 'error');
+        hideLoading();
+    }
+}
+
+function renderTeamCalendar(year, month) {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+
+    // Render calendar header (days of week)
+    const headerHtml = `
+        <div class="calendar-weekdays">
+            <div class="weekday">Sun</div>
+            <div class="weekday">Mon</div>
+            <div class="weekday">Tue</div>
+            <div class="weekday">Wed</div>
+            <div class="weekday">Thu</div>
+            <div class="weekday">Fri</div>
+            <div class="weekday">Sat</div>
+        </div>
+    `;
+    document.getElementById('calendarHeader').innerHTML = headerHtml;
+
+    // Build calendar grid
+    let gridHtml = '<div class="calendar-days">';
+
+    // Empty cells for days before the first day of month
+    for (let i = 0; i < firstDayOfWeek; i++) {
+        gridHtml += '<div class="calendar-day empty"></div>';
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const leavesOnDay = getLeaveEntriesForDate(dateStr);
+        const isWeekend = new Date(year, month - 1, day).getDay() === 0 || new Date(year, month - 1, day).getDay() === 6;
+
+        gridHtml += `
+            <div class="calendar-day ${isWeekend ? 'weekend' : ''} ${leavesOnDay.length > 0 ? 'has-leaves' : ''}">
+                <div class="day-number">${day}</div>
+                <div class="day-leaves">
+                    ${leavesOnDay.slice(0, 3).map(l => `
+                        <div class="leave-entry ${l.status?.toLowerCase()}" title="${l.employee_name}: ${l.leave_type_name}">
+                            <span class="leave-employee">${getInitials(l.employee_name)}</span>
+                        </div>
+                    `).join('')}
+                    ${leavesOnDay.length > 3 ? `<div class="leave-entry more">+${leavesOnDay.length - 3}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    gridHtml += '</div>';
+    document.getElementById('calendarGrid').innerHTML = gridHtml;
+}
+
+function getLeaveEntriesForDate(dateStr) {
+    const date = new Date(dateStr);
+    return calendarData.filter(leave => {
+        const fromDate = new Date(leave.from_date);
+        const toDate = new Date(leave.to_date);
+        return date >= fromDate && date <= toDate;
+    });
+}

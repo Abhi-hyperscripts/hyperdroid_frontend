@@ -227,7 +227,7 @@ function renderConversations(convos) {
 
     if (!convos || convos.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #666;">
+            <div class="text-secondary" style="text-align: center; padding: 40px 20px;">
                 <p>${showingArchived ? 'No archived conversations' : 'No conversations yet'}</p>
                 <p style="font-size: 13px;">${showingArchived ? 'Archived chats will appear here' : 'Start a new chat to begin messaging'}</p>
             </div>
@@ -405,7 +405,7 @@ function renderMessages(messages) {
 
     if (!messages || messages.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #999;">
+            <div class="text-muted" style="text-align: center; padding: 40px;">
                 <p>No messages yet</p>
                 <p style="font-size: 13px;">Send a message to start the conversation</p>
             </div>
@@ -680,7 +680,7 @@ function renderUserSearchResults(users) {
     );
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div style="padding: 16px; text-align: center; color: #666;">No users found</div>';
+        container.innerHTML = '<div class="text-secondary" style="padding: 16px; text-align: center;">No users found</div>';
     } else {
         container.innerHTML = filtered.map(user => {
             const displayName = user.display_name || user.email;
@@ -942,10 +942,10 @@ function showChatInfo() {
                     ${getInitials(conv.group_name)}
                 </div>
                 <h3 style="margin: 0 0 4px;">${escapeHtml(conv.group_name)}</h3>
-                <p style="color: #666; margin: 0;">${conv.participants?.length || 0} members</p>
+                <p class="text-secondary" style="margin: 0;">${conv.participants?.length || 0} members</p>
             </div>
             <div style="margin-bottom: 16px;">
-                <h4 style="font-size: 14px; color: #666; margin-bottom: 12px;">Members</h4>
+                <h4 class="text-secondary" style="font-size: 14px; margin-bottom: 12px;">Members</h4>
                 ${(conv.participants || []).map(p => `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
                         <div class="conversation-avatar" style="width: 36px; height: 36px; min-width: 36px; font-size: 13px;">
@@ -953,7 +953,7 @@ function showChatInfo() {
                         </div>
                         <div>
                             <div style="font-weight: 500;">${escapeHtml(p.user_name || p.user_email)}</div>
-                            ${p.role === 'admin' ? '<span style="font-size: 11px; color: #666;">Admin</span>' : ''}
+                            ${p.role === 'admin' ? '<span class="text-secondary" style="font-size: 11px;">Admin</span>' : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -968,7 +968,7 @@ function showChatInfo() {
                     ${getInitials(otherUser?.user_name || otherUser?.user_email)}
                 </div>
                 <h3 style="margin: 0 0 4px;">${escapeHtml(otherUser?.user_name || otherUser?.user_email || 'Unknown')}</h3>
-                <p style="color: #666; margin: 0;">${otherUser?.user_email || ''}</p>
+                <p class="text-secondary" style="margin: 0;">${otherUser?.user_email || ''}</p>
             </div>
         `;
         leaveBtn.style.display = 'none';
@@ -1148,33 +1148,7 @@ function goBackToList() {
 
 window.addEventListener('resize', handleResponsive);
 
-// ============================================
-// Toast Notifications
-// ============================================
-
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${type === 'success'
-                ? '<polyline points="20 6 9 17 4 12"/>'
-                : type === 'error'
-                    ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
-                    : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
-            }
-        </svg>
-        <span>${message}</span>
-    `;
-    container.appendChild(toast);
-
-    // Display toast for 5 seconds before fading out
-    setTimeout(() => {
-        toast.style.animation = 'toastSlideIn 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
+// Local showToast removed - using unified toast.js instead
 
 // ============================================
 // File Attachment Handling

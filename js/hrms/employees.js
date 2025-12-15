@@ -240,6 +240,15 @@ function renderEmployees() {
                                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                                 </svg>
                             </button>
+                            ${emp.employment_status === 'active' ? `
+                            <button class="action-btn danger" onclick="showTerminateModal('${emp.id}')" data-tooltip="Terminate">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                            </button>
+                            ` : ''}
                         ` : ''}
                     </div>
                 </td>
@@ -294,7 +303,7 @@ async function openCreateEmployeeModal() {
     } catch (error) {
         console.error('Error loading available users:', error);
         document.getElementById('userSearchList').innerHTML =
-            '<p style="text-align: center; color: #dc3545; padding: 20px;">Failed to load users</p>';
+            '<p class="text-danger" style="text-align: center; padding: 20px;">Failed to load users</p>';
     }
 
     // Load managers
@@ -377,7 +386,7 @@ function displayUserList(users, append = false) {
         : `${filteredCount} of ${totalUsers} users`;
 
     if (users.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.75rem; padding: 20px;">No users found</p>';
+        list.innerHTML = '<p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">No users found</p>';
         return;
     }
 
@@ -411,7 +420,7 @@ function displayUserList(users, append = false) {
 
     if (displayedUserCount < users.length) {
         list.insertAdjacentHTML('beforeend',
-            '<div id="user-loading-indicator" style="text-align: center; padding: 12px; color: #999; font-size: 0.75rem;">Scroll for more...</div>');
+            '<div id="user-loading-indicator" class="text-muted" style="text-align: center; padding: 12px; font-size: 0.75rem;">Scroll for more...</div>');
     }
 }
 
@@ -495,6 +504,7 @@ async function editEmployee(id) {
     document.getElementById('employmentType').value = emp.employment_type || 'full_time';
     document.getElementById('dateOfJoining').value = emp.hire_date?.split('T')[0] || '';
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
+    document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
 
     // Set Office and trigger cascading dropdown updates
     document.getElementById('officeId').value = emp.office_id || '';
@@ -567,7 +577,8 @@ async function saveEmployee() {
         reporting_manager_id: document.getElementById('reportingManagerId').value || null,
         employment_type: document.getElementById('employmentType').value,
         hire_date: document.getElementById('dateOfJoining').value,
-        probation_end_date: document.getElementById('probationEndDate').value
+        probation_end_date: document.getElementById('probationEndDate').value,
+        enable_geofence_attendance: document.getElementById('enableGeofenceAttendance').checked
     };
 
     if (!isEdit) {
@@ -2341,4 +2352,168 @@ function validateBankingStep() {
 function resetEmployeeWizard() {
     currentEmployeeStep = 1;
     goToEmployeeStep(1);
+}
+
+// ============================================
+// Employee Termination Functions
+// ============================================
+
+let terminatingEmployeeId = null;
+
+/**
+ * Show the termination modal with employee information
+ */
+function showTerminateModal(employeeId) {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    // Store the employee ID for later
+    terminatingEmployeeId = employeeId;
+
+    // Get department and designation info
+    const dept = departments.find(d => d.id === employee.department_id);
+    const desig = designations.find(d => d.id === employee.designation_id);
+
+    // Populate employee info in the modal
+    const employeeInfoEl = document.getElementById('terminateEmployeeInfo');
+    if (employeeInfoEl) {
+        // Get photo from cache if available
+        const photoUrl = employeePhotoCache[employee.id];
+        const photoHtml = photoUrl
+            ? `<img class="terminate-employee-avatar-img" src="${photoUrl}" alt="${employee.first_name}" onerror="this.outerHTML='<div class=\\'terminate-employee-avatar\\'>${getInitials(employee.first_name, employee.last_name)}</div>'">`
+            : `<div class="terminate-employee-avatar">${getInitials(employee.first_name, employee.last_name)}</div>`;
+
+        employeeInfoEl.innerHTML = `
+            <div class="terminate-employee-card">
+                ${photoHtml}
+                <div class="terminate-employee-details">
+                    <h4>${employee.first_name} ${employee.last_name}</h4>
+                    <p class="employee-code">${employee.employee_code}</p>
+                    <p>${desig?.designation_name || '-'} • ${dept?.department_name || '-'}</p>
+                    <p class="join-date">Joined: ${formatDate(employee.hire_date)}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Reset the form
+    const form = document.getElementById('terminateForm');
+    if (form) {
+        form.reset();
+    }
+
+    // Set default last working date to today
+    const lastWorkingDateEl = document.getElementById('lastWorkingDate');
+    if (lastWorkingDateEl) {
+        lastWorkingDateEl.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Set default settlement date to 30 days from today
+    const settlementDateEl = document.getElementById('settlementDate');
+    if (settlementDateEl) {
+        const settlementDate = new Date();
+        settlementDate.setDate(settlementDate.getDate() + 30);
+        settlementDateEl.value = settlementDate.toISOString().split('T')[0];
+    }
+
+    // Uncheck confirmation
+    const confirmCheckbox = document.getElementById('confirmTermination');
+    if (confirmCheckbox) {
+        confirmCheckbox.checked = false;
+    }
+
+    // Open the modal
+    openModal('terminateModal');
+}
+
+/**
+ * Validate and submit employee termination
+ */
+async function confirmTerminateEmployee() {
+    if (!terminatingEmployeeId) {
+        showToast('No employee selected for termination', 'error');
+        return;
+    }
+
+    // Validate required fields
+    const lastWorkingDate = document.getElementById('lastWorkingDate').value;
+    const terminationReason = document.getElementById('terminationReason').value;
+    const confirmCheckbox = document.getElementById('confirmTermination');
+
+    if (!lastWorkingDate) {
+        showToast('Last working date is required', 'error');
+        return;
+    }
+
+    if (!terminationReason) {
+        showToast('Termination reason is required', 'error');
+        return;
+    }
+
+    if (!confirmCheckbox || !confirmCheckbox.checked) {
+        showToast('Please confirm that you understand this action is irreversible', 'error');
+        return;
+    }
+
+    // Validate last working date is not in the future (too far)
+    const lastWorkDate = new Date(lastWorkingDate);
+    const threeMonthsFromNow = new Date();
+    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+
+    if (lastWorkDate > threeMonthsFromNow) {
+        showToast('Last working date cannot be more than 3 months in the future', 'error');
+        return;
+    }
+
+    // Get optional fields
+    const exitInterviewDate = document.getElementById('exitInterviewDate').value;
+    const settlementDate = document.getElementById('settlementDate').value;
+    const exitNotes = document.getElementById('exitNotes').value;
+
+    // Prepare termination data
+    const terminationData = {
+        last_working_date: lastWorkingDate,
+        termination_reason: terminationReason,
+        exit_interview_date: exitInterviewDate || null,
+        settlement_date: settlementDate || null,
+        exit_notes: exitNotes || null
+    };
+
+    // Disable the terminate button and show loading
+    const terminateBtn = document.querySelector('#terminateModal .btn-danger');
+    const originalText = terminateBtn.textContent;
+    terminateBtn.disabled = true;
+    terminateBtn.textContent = 'Processing...';
+
+    try {
+        await api.terminateEmployee(terminatingEmployeeId, terminationData);
+
+        showToast('Employee terminated successfully', 'success');
+        closeModal('terminateModal');
+
+        // Reset the terminating employee ID
+        terminatingEmployeeId = null;
+
+        // Reload employees list
+        await loadEmployees();
+
+    } catch (error) {
+        console.error('Error terminating employee:', error);
+        showToast(error.message || 'Failed to terminate employee', 'error');
+    } finally {
+        // Re-enable the button
+        terminateBtn.disabled = false;
+        terminateBtn.textContent = originalText;
+    }
+}
+
+/**
+ * Close the termination modal
+ */
+function closeTerminationModal() {
+    terminatingEmployeeId = null;
+    closeModal('terminateModal');
 }

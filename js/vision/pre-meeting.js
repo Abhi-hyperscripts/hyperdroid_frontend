@@ -15,7 +15,7 @@ const urlParams = new URLSearchParams(window.location.search);
 meetingId = urlParams.get('id');
 
 if (!meetingId) {
-    alert('Meeting ID is required');
+    Toast.error('Meeting ID is required');
     window.location.href = 'dashboard.html';
 }
 
@@ -70,7 +70,7 @@ async function requestPermissions() {
         await initializeDevices();
         document.getElementById('permissionRequest').style.display = 'none';
     } catch (error) {
-        showError('Failed to get camera/microphone access: ' + error.message);
+        Toast.error('Failed to get camera/microphone access: ' + error.message);
     }
 }
 
@@ -101,12 +101,12 @@ async function initializeDevices() {
         console.error('Error initializing devices:', error);
 
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            showError('Camera and microphone access denied. Please allow access and try again.');
+            Toast.error('Camera and microphone access denied. Please allow access and try again.');
             showPermissionRequest();
         } else if (error.name === 'NotFoundError') {
-            showError('No camera or microphone found. Please connect devices and try again.');
+            Toast.error('No camera or microphone found. Please connect devices and try again.');
         } else {
-            showError('Failed to initialize devices: ' + error.message);
+            Toast.error('Failed to initialize devices: ' + error.message);
         }
     }
 }
@@ -150,13 +150,14 @@ function monitorAudioLevel() {
     if (indicator) {
         indicator.style.width = percentage + '%';
 
-        // Change color based on level
+        // Change color based on level - using CSS variables
+        const styles = getComputedStyle(document.documentElement);
         if (percentage > 70) {
-            indicator.style.background = '#28a745'; // Green for good level
+            indicator.style.background = styles.getPropertyValue('--color-success').trim() || '#10b981';
         } else if (percentage > 30) {
-            indicator.style.background = '#ffc107'; // Yellow for medium
+            indicator.style.background = styles.getPropertyValue('--color-warning').trim() || '#f59e0b';
         } else {
-            indicator.style.background = '#6c757d'; // Gray for low
+            indicator.style.background = styles.getPropertyValue('--gray-500').trim() || '#6b7280';
         }
     }
 
@@ -252,7 +253,7 @@ async function toggleCamera() {
 
                 videoElement.srcObject = localStream;
             } catch (error) {
-                showError('Failed to enable camera: ' + error.message);
+                Toast.error('Failed to enable camera: ' + error.message);
                 cameraEnabled = false;
                 return;
             }
@@ -303,7 +304,7 @@ async function toggleMicrophone() {
                 // Reinitialize audio monitoring
                 initializeAudioLevelMonitoring();
             } catch (error) {
-                showError('Failed to enable microphone: ' + error.message);
+                Toast.error('Failed to enable microphone: ' + error.message);
                 microphoneEnabled = false;
                 return;
             }
@@ -365,7 +366,7 @@ async function changeCamera() {
             videoTrack.enabled = false;
         }
     } catch (error) {
-        showError('Failed to change camera: ' + error.message);
+        Toast.error('Failed to change camera: ' + error.message);
     }
 }
 
@@ -412,7 +413,7 @@ async function changeMicrophone() {
             audioTrack.enabled = false;
         }
     } catch (error) {
-        showError('Failed to change microphone: ' + error.message);
+        Toast.error('Failed to change microphone: ' + error.message);
     }
 }
 
@@ -432,7 +433,7 @@ async function changeSpeaker() {
             console.warn('Browser does not support speaker selection');
         }
     } catch (error) {
-        showError('Failed to change speaker: ' + error.message);
+        Toast.error('Failed to change speaker: ' + error.message);
     }
 }
 
@@ -477,7 +478,7 @@ async function joinMeeting() {
                 window.location.href = `meeting.html?id=${meetingId}`;
             }
         } else {
-            showError('Failed to check meeting status');
+            Toast.error('Failed to check meeting status');
         }
     } catch (error) {
         console.error('Error checking meeting status:', error);
@@ -506,17 +507,7 @@ function cancelJoin() {
     }
 }
 
-// Show error message
-function showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        errorElement.style.display = 'none';
-    }, 5000);
-}
+// Local showError removed - using unified toast.js instead
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {

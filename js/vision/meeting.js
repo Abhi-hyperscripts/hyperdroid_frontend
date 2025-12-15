@@ -122,7 +122,7 @@ const urlParams = new URLSearchParams(window.location.search);
 meetingId = urlParams.get('id');
 
 if (!meetingId) {
-    alert('Meeting ID not provided');
+    Toast.error('Meeting ID not provided');
     window.location.href = '../login.html';
 }
 
@@ -142,7 +142,7 @@ async function initializeMeeting() {
         const meetingStatus = await api.getMeetingStatus(meetingId);
 
         if (!meetingStatus) {
-            alert('Meeting not found');
+            Toast.error('Meeting not found');
             window.location.href = 'dashboard.html';
             return;
         }
@@ -178,7 +178,7 @@ async function initializeMeeting() {
 
             // Verify guest is joining the correct meeting
             if (guestMeetingId !== meetingId) {
-                alert('Invalid guest session');
+                Toast.error('Invalid guest session');
                 sessionStorage.clear();
                 window.location.href = `guest-join.html?id=${meetingId}`;
                 return;
@@ -225,7 +225,7 @@ async function initializeMeeting() {
 
     } catch (error) {
         console.error('Error initializing meeting:', error);
-        alert('Failed to join meeting: ' + error.message);
+        Toast.error('Failed to join meeting: ' + error.message);
 
         if (isGuest) {
             sessionStorage.clear();
@@ -388,7 +388,7 @@ async function connectToLiveKit(wsUrl, token) {
                 } else {
                     message += 'Please allow camera access in your browser settings and refresh the page.';
                 }
-                alert(message);
+                Toast.warning(message, 10000);
             }
         }
 
@@ -554,7 +554,7 @@ function setupSignalREventHandlers() {
 
         // Check if it's the current user who was removed
         if (room && room.localParticipant.identity === data.participantIdentity) {
-            alert(`You have been removed from the meeting by the host (${data.removedBy})`);
+            Toast.error(`You have been removed from the meeting by the host (${data.removedBy})`);
 
             // Disconnect and redirect
             room.disconnect();
@@ -1188,7 +1188,7 @@ async function toggleMic() {
             } else {
                 message += 'Please check your browser permissions and try again.';
             }
-            alert(message);
+            Toast.warning(message, 10000);
         } else {
             // For other errors, try to re-acquire mic permission
             try {
@@ -1208,7 +1208,7 @@ async function toggleMic() {
                 } else {
                     message += 'Please refresh the page and try again.';
                 }
-                alert(message);
+                Toast.warning(message, 10000);
             }
         }
     } finally {
@@ -1288,7 +1288,7 @@ async function toggleCamera() {
             } else {
                 message += 'Please allow camera access in your browser settings and refresh the page.';
             }
-            alert(message);
+            Toast.warning(message, 10000);
         } else if (error.name === 'NotReadableError' || error.message?.includes('in use') || error.message?.includes('Could not start')) {
             let message = 'Camera is not available.\n\n';
             if (isMobile) {
@@ -1302,7 +1302,7 @@ async function toggleCamera() {
             } else {
                 message += 'The camera may be in use by another application. Close other apps and try again.';
             }
-            alert(message);
+            Toast.warning(message, 10000);
         } else {
             // For other errors, try to re-acquire camera permission
             try {
@@ -1322,7 +1322,7 @@ async function toggleCamera() {
                 } else {
                     message += 'Please refresh the page and try again.';
                 }
-                alert(message);
+                Toast.warning(message, 10000);
             }
         }
     } finally {
@@ -1338,7 +1338,7 @@ async function toggleScreenShare() {
 
     // Don't allow starting screen share if someone else is already sharing
     if (!isSharing && isAnyoneScreenSharing) {
-        alert('Someone else is already sharing their screen. Please wait until they stop.');
+        Toast.warning('Someone else is already sharing their screen. Please wait until they stop.');
         return;
     }
 
@@ -1405,7 +1405,7 @@ async function startRecording() {
         });
 
         if (tracks.length === 0) {
-            alert('No tracks available to record. Please enable your camera or microphone.');
+            Toast.warning('No tracks available to record. Please enable your camera or microphone.');
             return;
         }
 
@@ -1460,7 +1460,7 @@ async function startRecording() {
         console.log('Recording started');
     } catch (error) {
         console.error('Error starting recording:', error);
-        alert('Failed to start recording: ' + error.message);
+        Toast.error('Failed to start recording: ' + error.message);
     }
 }
 
@@ -1473,7 +1473,7 @@ function pauseRecording() {
         // Update UI
         const recordBtn = document.getElementById('recordBtn');
         recordBtn.innerHTML = '▶️ Resume';
-        document.getElementById('recordingStatus').style.color = '#ffc107';
+        document.getElementById('recordingStatus').style.color = 'var(--color-warning)';
         document.getElementById('recordingStatus').innerHTML = '⏸️ Paused... <span id="recordingTime">00:00</span>';
 
         // Stop timer
@@ -1495,7 +1495,7 @@ function resumeRecording() {
         // Update UI
         const recordBtn = document.getElementById('recordBtn');
         recordBtn.innerHTML = '⏸️ Pause';
-        document.getElementById('recordingStatus').style.color = '#dc3545';
+        document.getElementById('recordingStatus').style.color = 'var(--color-danger)';
         document.getElementById('recordingStatus').innerHTML = '🔴 Recording... <span id="recordingTime">00:00</span>';
 
         // Restart timer
@@ -1683,7 +1683,7 @@ function addChatMessage(sender, message, type = 'text') {
     textDiv.textContent = message;
 
     if (type === 'system') {
-        senderDiv.style.color = '#999';
+        senderDiv.style.color = 'var(--text-muted)';
         textDiv.style.fontStyle = 'italic';
     }
 
@@ -1837,7 +1837,7 @@ function captureScreenShareScreenshot() {
     const container = document.getElementById('screenShareContainer');
 
     if (!video || video.readyState < 2) {
-        alert('Screen share video is not ready. Please try again.');
+        Toast.warning('Screen share video is not ready. Please try again.');
         return;
     }
 
@@ -1851,7 +1851,7 @@ function captureScreenShareScreenshot() {
         const ctx = canvas.getContext('2d');
 
         // Fill with black background
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gray-950').trim() || '#09090b';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Save context state
@@ -1915,12 +1915,12 @@ function captureScreenShareScreenshot() {
 
                 console.log('Screenshot captured with zoom:', screenShareZoom, 'pan:', screenSharePanX, screenSharePanY);
             } else {
-                alert('Failed to capture screenshot. Please try again.');
+                Toast.error('Failed to capture screenshot. Please try again.');
             }
         }, 'image/png');
     } catch (error) {
         console.error('Error capturing screenshot:', error);
-        alert('Failed to capture screenshot: ' + error.message);
+        Toast.error('Failed to capture screenshot: ' + error.message);
     }
 }
 
@@ -1932,7 +1932,7 @@ function copyMeetingLink() {
         const btn = document.getElementById('copyLinkBtn');
         const originalText = btn.textContent;
         btn.textContent = '✓ Link Copied!';
-        btn.style.backgroundColor = '#28a745';
+        btn.style.backgroundColor = 'var(--color-success)';
 
         setTimeout(() => {
             btn.textContent = originalText;
@@ -1940,7 +1940,7 @@ function copyMeetingLink() {
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy link:', err);
-        alert('Failed to copy link. Please copy manually: ' + meetingUrl);
+        Toast.error('Failed to copy link. Please copy manually: ' + meetingUrl);
     });
 }
 
@@ -1994,7 +1994,7 @@ function showStartMeetingButton() {
     const startButton = document.createElement('button');
     startButton.id = 'startMeetingBtn';
     startButton.className = 'control-btn';
-    startButton.style.cssText = 'background: #28a745; color: white; font-weight: bold; padding: 12px 24px; border-radius: 6px; margin-right: 10px;';
+    startButton.style.cssText = 'background: var(--color-success); color: var(--text-inverse); font-weight: bold; padding: 12px 24px; border-radius: 6px; margin-right: 10px;';
     startButton.innerHTML = '▶️ Start Meeting';
     startButton.onclick = startMeetingAsHost;
 
@@ -2019,11 +2019,11 @@ async function startMeetingAsHost() {
             }
 
             // Show success message
-            alert('Meeting started! Participants in the lobby can now join.');
+            Toast.success('Meeting started! Participants in the lobby can now join.');
         }
     } catch (error) {
         console.error('Error starting meeting:', error);
-        alert('Failed to start meeting: ' + error.message);
+        Toast.error('Failed to start meeting: ' + error.message);
     }
 }
 
@@ -2131,7 +2131,7 @@ async function togglePictureInPicture() {
 
     try {
         if (!document.pictureInPictureEnabled) {
-            alert('Picture-in-Picture is not supported in your browser');
+            Toast.warning('Picture-in-Picture is not supported in your browser');
             return;
         }
 
@@ -2154,12 +2154,12 @@ async function togglePictureInPicture() {
                 if (pipBtn) pipBtn.classList.add('active');
                 pipEnabled = true;
             } else {
-                alert('No active video available for Picture-in-Picture mode');
+                Toast.warning('No active video available for Picture-in-Picture mode');
             }
         }
     } catch (error) {
         console.error('Error toggling Picture-in-Picture:', error);
-        alert('Failed to toggle Picture-in-Picture: ' + error.message);
+        Toast.error('Failed to toggle Picture-in-Picture: ' + error.message);
     }
 }
 
@@ -2484,9 +2484,10 @@ async function processVideoFrame() {
         if (backgroundImage && backgroundImage.complete) {
             canvasCtx.drawImage(backgroundImage, 0, 0, 640, 480);
         } else if (currentBackground === 'gradient') {
+            const styles = getComputedStyle(document.documentElement);
             const gradient = canvasCtx.createLinearGradient(0, 0, 640, 480);
-            gradient.addColorStop(0, '#667eea');
-            gradient.addColorStop(1, '#764ba2');
+            gradient.addColorStop(0, styles.getPropertyValue('--brand-accent').trim() || '#6366f1');
+            gradient.addColorStop(1, styles.getPropertyValue('--brand-secondary').trim() || '#8b5cf6');
             canvasCtx.fillStyle = gradient;
             canvasCtx.fillRect(0, 0, 640, 480);
         }
@@ -2581,7 +2582,7 @@ async function setBackground(type) {
 
             } catch (bgError) {
                 console.warn('Virtual background failed, using fallback:', bgError);
-                alert(`Virtual backgrounds require BodyPix library. Using blur as fallback.\n\nError: ${bgError.message}`);
+                Toast.warning(`Virtual backgrounds require BodyPix library. Using blur as fallback. Error: ${bgError.message}`, 8000);
 
                 // Fallback to blur
                 participantDiv.style.filter = 'blur(8px)';
@@ -2606,7 +2607,7 @@ async function setBackground(type) {
 
     } catch (error) {
         console.error('Error applying background:', error);
-        alert('Failed to apply background effect: ' + error.message);
+        Toast.error('Failed to apply background effect: ' + error.message);
 
         // Try to restore original video
         await stopVirtualBackground();
@@ -2960,7 +2961,7 @@ function renderParticipantsList(participants, hostUserId) {
     const listContainer = document.getElementById('participantsList');
 
     if (!participants || participants.length === 0) {
-        listContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No participants</p>';
+        listContainer.innerHTML = '<p class="text-muted" style="text-align: center; padding: 20px;">No participants</p>';
         return;
     }
 
@@ -3023,7 +3024,7 @@ async function muteParticipant(participantIdentity) {
         const livekitParticipant = room.remoteParticipants.get(participantIdentity);
 
         if (!livekitParticipant) {
-            alert('Cannot mute: Participant not found in the room');
+            Toast.error('Cannot mute: Participant not found in the room');
             return;
         }
 
@@ -3036,7 +3037,7 @@ async function muteParticipant(participantIdentity) {
         });
 
         if (!audioTrackSid) {
-            alert('Cannot mute: No audio track found for this participant');
+            Toast.error('Cannot mute: No audio track found for this participant');
             return;
         }
 
@@ -3047,7 +3048,7 @@ async function muteParticipant(participantIdentity) {
         await loadParticipants();
     } catch (error) {
         console.error('Error muting participant:', error);
-        alert('Failed to mute participant: ' + error.message);
+        Toast.error('Failed to mute participant: ' + error.message);
     }
 }
 
@@ -3070,7 +3071,7 @@ async function muteAllParticipants() {
         await loadParticipants();
     } catch (error) {
         console.error('Error muting all participants:', error);
-        alert('Failed to mute all participants: ' + error.message);
+        Toast.error('Failed to mute all participants: ' + error.message);
     }
 }
 
@@ -3099,7 +3100,7 @@ async function kickParticipant(participantIdentity) {
         }, 500);
     } catch (error) {
         console.error('Error removing participant:', error);
-        alert('Failed to remove participant: ' + error.message);
+        Toast.error('Failed to remove participant: ' + error.message);
     }
 }
 
