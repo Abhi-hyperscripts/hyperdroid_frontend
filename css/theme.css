@@ -56,9 +56,11 @@
   --color-warning-light-accent: #fbbf24;
   --color-orange: #f97316;
 
-  /* Additional accent colors */
-  --color-primary: #6366f1;
-  --color-purple: #8b5cf6;
+  /* Additional accent colors
+     DEPRECATION NOTE: Prefer --brand-* variables for new components.
+     These legacy colors are kept for backward compatibility. */
+  --color-primary: #6366f1;      /* Legacy - use --brand-primary instead */
+  --color-purple: #8b5cf6;       /* Legacy - use --brand-secondary instead */
   --color-purple-light: #a78bfa;
   --color-cyan: #06b6d4;
   --color-cyan-dark: #0891b2;
@@ -411,10 +413,10 @@
   --avatar-size-xl: 64px;
   --avatar-size-2xl: 96px;
 
-  /* Avatar colors - consistent brand color in both modes */
+  /* Avatar colors - text is auto-calculated by theme.js for contrast */
   --avatar-bg: var(--brand-primary);
   --avatar-bg-hover: var(--brand-primary-dark);
-  --avatar-text: #ffffff;
+  --avatar-text: #ffffff;  /* Overridden by theme.js getContrastColor() */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      BADGE & TAG STYLES
@@ -470,7 +472,7 @@
      ═══════════════════════════════════════════════════════════════════════════ */
   --btn-primary-bg: var(--gray-900);
   --btn-primary-hover: var(--gray-700);
-  --btn-primary-text: var(--text-inverse);
+  /* --btn-primary-text is defined in BUTTON TEXT COLORS section above */
   --tooltip-bg: var(--gray-900);
   --tooltip-text: #ffffff;
   --tooltip-border: var(--gray-700);
@@ -606,14 +608,14 @@
 
 /* User Avatar - add ring effect for visibility in dark mode */
 [data-theme="dark"] .user-avatar {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, var(--brand-primary-light) 0%, var(--brand-primary) 100%);
+  border: 2px solid var(--white-50);
+  box-shadow: 0 0 0 2px var(--info-alpha-10), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .user-avatar:hover {
-  border-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.4), 0 6px 16px rgba(0, 0, 0, 0.5);
+  border-color: var(--white-70);
+  box-shadow: 0 0 0 3px var(--info-alpha-10), 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* Search Box - fix background visibility in dark mode */

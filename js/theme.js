@@ -353,6 +353,11 @@ const Theme = {
 
             // Header/gradient text (for colored backgrounds)
             '--header-text': utils.getContrastColor(primary),
+
+            // Avatar colors (accessibility - auto-contrast for brand-colored avatars)
+            '--avatar-bg': primary,
+            '--avatar-bg-hover': primaryDark,
+            '--avatar-text': utils.getContrastColor(primary),
         };
 
         // Add background colors only if explicitly set (preserves CSS defaults otherwise)
