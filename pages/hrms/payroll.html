@@ -35,89 +35,20 @@
                 <h1>Payroll Management</h1>
             </div>
             <div class="header-actions" id="adminActions" style="display: none;">
-                <button class="btn btn-primary" onclick="showSalaryStructureModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Salary Structure
-                </button>
+                <!-- Admin actions for payroll processing -->
             </div>
         </div>
 
         <!-- Tabs -->
         <div class="hrms-tabs">
-            <button class="tab-btn active" data-tab="my-payslips">My Payslips</button>
-            <button class="tab-btn" data-tab="payroll-drafts" id="payrollDraftsTab" style="display: none;">Payroll Drafts</button>
+            <button class="tab-btn active" data-tab="payroll-drafts" id="payrollDraftsTab" style="display: none;">Payroll Drafts</button>
             <button class="tab-btn" data-tab="payroll-runs" id="payrollRunsTab" style="display: none;">Finalized Runs</button>
-            <button class="tab-btn" data-tab="salary-structures" id="salaryTab" style="display: none;">Salary Structures</button>
-            <button class="tab-btn" data-tab="components" id="componentsTab" style="display: none;">Components</button>
             <button class="tab-btn" data-tab="loans" id="loansTab">Loans & Advances</button>
-        </div>
-
-        <!-- My Payslips Tab -->
-        <div class="tab-content active" id="my-payslips">
-            <div class="filters-bar">
-                <div class="filter-group">
-                    <select id="payslipYear" class="form-select">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Salary Summary -->
-            <div class="stats-row" id="mySalaryStats">
-                <div class="stat-card">
-                    <div class="stat-value" id="lastGross">₹0</div>
-                    <div class="stat-label">Last Gross Salary</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="lastDeductions">₹0</div>
-                    <div class="stat-label">Total Deductions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="lastNet">₹0</div>
-                    <div class="stat-label">Net Salary</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="ytdEarnings">₹0</div>
-                    <div class="stat-label">YTD Earnings</div>
-                </div>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Month</th>
-                            <th>Pay Period</th>
-                            <th>Gross Salary</th>
-                            <th>Deductions</th>
-                            <th>Net Salary</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="myPayslipsTable">
-                        <tr class="empty-state">
-                            <td colspan="7">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                                    </svg>
-                                    <p>No payslips found</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <button class="tab-btn" data-tab="all-payslips" id="allPayslipsTab" style="display: none;">All Payslips</button>
         </div>
 
         <!-- Payroll Drafts Tab -->
-        <div class="tab-content" id="payroll-drafts">
+        <div class="tab-content active" id="payroll-drafts">
             <div class="filters-bar">
                 <div class="filter-group">
                     <select id="draftYear" class="form-select" onchange="loadPayrollDrafts()">
@@ -247,140 +178,6 @@
             </div>
         </div>
 
-        <!-- Salary Structures Tab -->
-        <div class="tab-content" id="salary-structures">
-            <!-- Office filter cards for salary structures -->
-            <div class="office-structure-status" id="officeStructureStatus">
-                <!-- Dynamically populated by JavaScript -->
-            </div>
-
-            <div class="filters-bar">
-                <div class="filter-group">
-                    <select id="structureOfficeFilter" class="form-select">
-                        <option value="">All Offices</option>
-                    </select>
-                </div>
-                <div class="search-box-modern">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="structureSearch" placeholder="Search structures...">
-                </div>
-                <button class="btn btn-primary" onclick="showCreateStructureModal()" id="createStructureBtn" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Create Structure
-                </button>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Office</th>
-                            <th>Structure Name</th>
-                            <th>Code</th>
-                            <th>Components</th>
-                            <th>Employees</th>
-                            <th>Default</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="salaryStructuresTable">
-                        <tr class="empty-state">
-                            <td colspan="8">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                    </svg>
-                                    <p>No salary structures defined</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Components Tab -->
-        <div class="tab-content" id="components">
-            <div class="filters-bar">
-                <div class="search-box-modern">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="componentSearch" placeholder="Search components...">
-                </div>
-                <div class="filter-group">
-                    <select id="componentType" class="form-select">
-                        <option value="">All Types</option>
-                        <option value="earning">Earnings</option>
-                        <option value="deduction">Deductions</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary" onclick="showCreateComponentModal()" id="createComponentBtn" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add Component
-                </button>
-            </div>
-
-            <div class="component-sections">
-                <div class="component-section">
-                    <h3>Earnings</h3>
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Component Name</th>
-                                    <th>Code</th>
-                                    <th>Type</th>
-                                    <th>Taxable</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="earningsTable">
-                                <tr class="empty-state">
-                                    <td colspan="6"><p>No earnings components</p></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="component-section">
-                    <h3>Deductions</h3>
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Component Name</th>
-                                    <th>Code</th>
-                                    <th>Type</th>
-                                    <th>Pre-Tax</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="deductionsTable">
-                                <tr class="empty-state">
-                                    <td colspan="6"><p>No deduction components</p></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Loans Tab -->
         <div class="tab-content" id="loans">
             <div class="filters-bar">
@@ -431,6 +228,104 @@
                                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                                     </svg>
                                     <p>No loans found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- All Payslips Tab (HR Admin) -->
+        <div class="tab-content" id="all-payslips">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <select id="allPayslipsYear" class="form-select">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                    <select id="allPayslipsMonth" class="form-select">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="allPayslipsOffice" class="form-select">
+                        <option value="">All Offices</option>
+                    </select>
+                    <select id="allPayslipsDepartment" class="form-select">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="allPayslipsSearch" placeholder="Search by employee name or code...">
+                </div>
+                <button class="btn btn-secondary" onclick="loadAllPayslips()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="stats-row" id="allPayslipsStats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPayslipsCount">0</div>
+                    <div class="stat-label">Total Payslips</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalGrossAmount">₹0</div>
+                    <div class="stat-label">Total Gross</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalNetAmount">₹0</div>
+                    <div class="stat-label">Total Net</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgNetSalary">₹0</div>
+                    <div class="stat-label">Avg Net Salary</div>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Emp Code</th>
+                            <th>Department</th>
+                            <th>Month/Year</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allPayslipsTable">
+                        <tr class="empty-state">
+                            <td colspan="9">
+                                <div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    <p>Select filters and search to find payslips</p>
                                 </div>
                             </td>
                         </tr>
@@ -670,14 +565,16 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="structureIsActive">Status</label>
-                                <div class="toggle-switch">
-                                    <span class="toggle-label">Inactive</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="structureIsActive" name="is_active" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                    <span class="toggle-label">Active</span>
+                                <div class="status-toggle-row">
+                                    <label>Status</label>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">Inactive</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="structureIsActive" name="is_active" checked>
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Active</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -788,14 +685,16 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="componentIsActive">Status</label>
-                                <div class="toggle-switch">
-                                    <span class="toggle-label">Inactive</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="componentIsActive" name="is_active" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                    <span class="toggle-label">Active</span>
+                                <div class="status-toggle-row">
+                                    <label>Status</label>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">Inactive</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="componentIsActive" name="is_active" checked>
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Active</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

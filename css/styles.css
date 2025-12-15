@@ -3368,11 +3368,12 @@ body:has(.pre-meeting-container) {
 
 .tab-content {
     display: none;
-    animation: fadeIn 0.4s ease;
+    animation: fadeIn 0.4s ease forwards;
 }
 
 .tab-content.active {
     display: block;
+    opacity: 1;
 }
 
 @keyframes fadeIn {

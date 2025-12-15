@@ -19,6 +19,23 @@ let employees = [];
 let taxTypes = [];
 let taxRules = [];
 
+// Salary Components and Structures
+let components = [];
+let structures = [];
+let structureComponentCounter = 0;
+let currentVersionStructureId = '';
+let currentVersionStructureName = '';
+let structureVersions = [];
+
+// Arrears management
+let currentArrearsList = [];
+let selectedArrearsIds = new Set();
+
+// Bulk assignment
+let bulkAssignStructureId = null;
+let bulkAssignVersionNumber = null;
+let bulkPreviewResult = null;
+
 // Timezone data (comprehensive list of IANA timezones)
 const TIMEZONES = [
     { value: 'Pacific/Midway', label: 'Midway Island (UTC-11:00)' },
@@ -426,7 +443,8 @@ function applyOrganizationRBAC() {
     // Hide all "Add" buttons if user can't edit
     const addButtons = [
         'createOfficeBtn', 'createDepartmentBtn', 'createDesignationBtn',
-        'createShiftBtn', 'createRosterBtn', 'createHolidayBtn'
+        'createShiftBtn', 'createRosterBtn', 'createHolidayBtn',
+        'createStructureBtn', 'createComponentBtn'
     ];
 
     addButtons.forEach(btnId => {
@@ -461,6 +479,16 @@ function setupTabs() {
             if (tabId === 'location-taxes') {
                 loadTaxTypes();
                 loadOfficeTaxRules();
+            }
+
+            // Load salary components when switching to salary-components tab
+            if (tabId === 'salary-components') {
+                loadComponents();
+            }
+
+            // Load salary structures when switching to salary-structures tab
+            if (tabId === 'salary-structures') {
+                loadSalaryStructures();
             }
         });
     });
@@ -3408,4 +3436,1457 @@ function displayTaxPreviewResults(result) {
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('taxTypeSearch')?.addEventListener('input', updateTaxTypesTable);
     document.getElementById('taxRuleSearch')?.addEventListener('input', updateTaxRulesTable);
+
+    // Add event listeners for salary components
+    document.getElementById('componentSearch')?.addEventListener('input', updateComponentsTables);
+    document.getElementById('componentType')?.addEventListener('change', updateComponentsTables);
+
+    // Add event listeners for salary structures
+    document.getElementById('structureSearch')?.addEventListener('input', updateSalaryStructuresTable);
+    document.getElementById('structureOfficeFilter')?.addEventListener('change', loadSalaryStructures);
+
+    // Add event listener for calculation type change in component modal
+    const calcTypeSelect = document.getElementById('calculationType');
+    if (calcTypeSelect) {
+        calcTypeSelect.addEventListener('change', togglePercentageFields);
+    }
 });
+
+// ============================================
+// SALARY COMPONENTS FUNCTIONS
+// ============================================
+
+async function loadComponents() {
+    try {
+        const response = await api.request('/hrms/payroll/components');
+        components = response || [];
+        updateComponentsTables();
+    } catch (error) {
+        console.error('Error loading components:', error);
+    }
+}
+
+function updateComponentsTables() {
+    const searchTerm = document.getElementById('componentSearch')?.value?.toLowerCase() || '';
+    const typeFilter = document.getElementById('componentType')?.value || '';
+
+    const filtered = components.filter(c => {
+        const name = c.component_name || c.name || '';
+        const code = c.component_code || c.code || '';
+        const type = c.component_type || c.category || '';
+        const matchesSearch = name.toLowerCase().includes(searchTerm) ||
+                             code.toLowerCase().includes(searchTerm);
+        const matchesType = !typeFilter || type === typeFilter;
+        return matchesSearch && matchesType;
+    });
+
+    const earnings = filtered.filter(c => (c.component_type || c.category) === 'earning');
+    const deductions = filtered.filter(c => (c.component_type || c.category) === 'deduction');
+
+    updateEarningsTable(earnings);
+    updateDeductionsTable(deductions);
+}
+
+function updateEarningsTable(earnings) {
+    const tbody = document.getElementById('earningsTable');
+    if (!tbody) return;
+
+    if (!earnings || earnings.length === 0) {
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No earnings components</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = earnings.map(c => `
+        <tr>
+            <td><strong>${c.component_name || c.name}</strong></td>
+            <td><code>${c.component_code || c.code}</code></td>
+            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
+            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateDeductionsTable(deductions) {
+    const tbody = document.getElementById('deductionsTable');
+    if (!tbody) return;
+
+    if (!deductions || deductions.length === 0) {
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No deduction components</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = deductions.map(c => `
+        <tr>
+            <td><strong>${c.component_name || c.name}</strong></td>
+            <td><code>${c.component_code || c.code}</code></td>
+            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${(c.is_pre_tax !== undefined ? c.is_pre_tax : c.isPreTax) ? 'Yes' : 'No'}</td>
+            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function showCreateComponentModal() {
+    document.getElementById('componentForm').reset();
+    document.getElementById('componentId').value = '';
+    document.getElementById('componentModalTitle').textContent = 'Create Salary Component';
+    // Reset status to active for new components
+    const isActiveCheckbox = document.getElementById('componentIsActive');
+    if (isActiveCheckbox) isActiveCheckbox.checked = true;
+    document.getElementById('componentModal').classList.add('active');
+    // Reset percentage fields visibility
+    togglePercentageFields();
+}
+
+function togglePercentageFields() {
+    const calcType = document.getElementById('calculationType')?.value;
+    const percentageRow = document.getElementById('percentageFieldsRow');
+    const percentageInput = document.getElementById('componentPercentage');
+
+    if (!percentageRow || !percentageInput) return;
+
+    if (calcType === 'percentage') {
+        percentageRow.style.display = 'flex';
+        percentageInput.required = true;
+    } else {
+        percentageRow.style.display = 'none';
+        percentageInput.required = false;
+        percentageInput.value = '';
+    }
+}
+
+function editComponent(componentId) {
+    const component = components.find(c => c.id === componentId);
+    if (!component) return;
+
+    document.getElementById('componentId').value = component.id;
+    document.getElementById('componentName').value = component.component_name || component.name || '';
+    document.getElementById('componentCode').value = component.component_code || component.code || '';
+    document.getElementById('componentCategory').value = component.component_type || component.category || 'earning';
+    document.getElementById('calculationType').value = component.calculation_type || component.calculationType || 'fixed';
+    document.getElementById('isTaxable').value = (component.is_taxable !== undefined ? component.is_taxable : component.isTaxable) ? 'true' : 'false';
+    document.getElementById('isStatutory').value = (component.is_statutory !== undefined ? component.is_statutory : component.isStatutory) ? 'true' : 'false';
+    document.getElementById('componentDescription').value = component.description || '';
+
+    // Set is_active checkbox
+    const isActiveCheckbox = document.getElementById('componentIsActive');
+    if (isActiveCheckbox) {
+        isActiveCheckbox.checked = component.is_active !== false;
+    }
+
+    // Handle percentage fields
+    togglePercentageFields();
+    if (component.calculation_type === 'percentage') {
+        document.getElementById('componentPercentage').value = component.percentage || '';
+        document.getElementById('calculationBase').value = component.calculation_base || 'basic';
+    }
+
+    document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
+    document.getElementById('componentModal').classList.add('active');
+}
+
+async function saveComponent() {
+    const form = document.getElementById('componentForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('componentId').value;
+        const calculationType = document.getElementById('calculationType').value;
+        const data = {
+            component_name: document.getElementById('componentName').value,
+            component_code: document.getElementById('componentCode').value,
+            component_type: document.getElementById('componentCategory').value,
+            calculation_type: calculationType,
+            is_taxable: document.getElementById('isTaxable').value === 'true',
+            is_statutory: document.getElementById('isStatutory').value === 'true',
+            description: document.getElementById('componentDescription').value,
+            is_active: document.getElementById('componentIsActive')?.checked !== false
+        };
+
+        // Add percentage fields if calculation type is percentage
+        if (calculationType === 'percentage') {
+            data.percentage = parseFloat(document.getElementById('componentPercentage').value) || 0;
+            data.calculation_base = document.getElementById('calculationBase').value;
+        }
+
+        if (id) {
+            data.id = id;
+            await api.request(`/hrms/payroll/components/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+        } else {
+            await api.request('/hrms/payroll/components', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+        }
+
+        closeModal('componentModal');
+        showToast(`Component ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadComponents();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving component:', error);
+        showToast(error.message || 'Failed to save component', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// SALARY STRUCTURES FUNCTIONS
+// ============================================
+
+async function loadSalaryStructures() {
+    try {
+        const officeFilter = document.getElementById('structureOfficeFilter')?.value || '';
+        let url = '/hrms/payroll/structures';
+        if (officeFilter) {
+            url = `/hrms/payroll/structures/office/${officeFilter}`;
+        }
+
+        const response = await api.request(url);
+        structures = response || [];
+        updateSalaryStructuresTable();
+
+        // Also load setup status to display office structure status
+        await loadOfficeStructureStatus();
+    } catch (error) {
+        console.error('Error loading salary structures:', error);
+    }
+}
+
+async function loadOfficeStructureStatus() {
+    try {
+        const response = await api.request('/hrms/dashboard/setup-status');
+        if (response && response.office_salary_structure_status) {
+            updateOfficeStructureStatusCards(response.office_salary_structure_status);
+        }
+    } catch (error) {
+        console.error('Error loading office structure status:', error);
+    }
+}
+
+function updateOfficeStructureStatusCards(statusList) {
+    const container = document.getElementById('officeStructureStatus');
+    if (!container) return;
+
+    if (!statusList || statusList.length === 0) {
+        container.innerHTML = '<p class="text-muted">No offices configured yet.</p>';
+        return;
+    }
+
+    container.innerHTML = statusList.map(status => `
+        <div class="office-status-card ${status.has_salary_structure ? 'complete' : 'incomplete'}">
+            <div class="office-status-header">
+                <span class="office-name">${status.office_name}</span>
+                <span class="status-icon">
+                    ${status.has_salary_structure ?
+                        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>' :
+                        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+                    }
+                </span>
+            </div>
+            <div class="office-status-details">
+                <span class="structure-count">${status.structure_count} structure(s)</span>
+                ${status.has_default_structure ?
+                    '<span class="has-default">Default set</span>' :
+                    '<span class="no-default">No default</span>'
+                }
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSalaryStructuresTable() {
+    const tbody = document.getElementById('salaryStructuresTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('structureSearch')?.value?.toLowerCase() || '';
+
+    const filtered = structures.filter(s =>
+        (s.structure_name || '').toLowerCase().includes(searchTerm) ||
+        (s.structure_code || '').toLowerCase().includes(searchTerm) ||
+        (s.office_name || '').toLowerCase().includes(searchTerm)
+    );
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        </svg>
+                        <p>No salary structures defined</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(s => `
+        <tr>
+            <td><strong>${s.office_name || 'N/A'}</strong></td>
+            <td><strong>${s.structure_name}</strong></td>
+            <td><code>${s.structure_code || '-'}</code></td>
+            <td>${s.component_count || 0} component${s.component_count !== 1 ? 's' : ''}</td>
+            <td>${s.employee_count || 0}</td>
+            <td>
+                ${s.is_default ?
+                    '<span class="status-badge status-default">Default</span>' :
+                    '<span class="text-muted">-</span>'
+                }
+            </td>
+            <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="viewStructureVersions('${s.id}')" title="Version History">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                    <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function showCreateStructureModal() {
+    document.getElementById('structureForm').reset();
+    document.getElementById('structureId').value = '';
+    document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
+    document.getElementById('structureComponents').innerHTML = '';
+    structureComponentCounter = 0;
+    // Reset office dropdown
+    const officeSelect = document.getElementById('structureOffice');
+    if (officeSelect) officeSelect.value = '';
+    // Reset is_default select
+    const isDefaultSelect = document.getElementById('structureIsDefault');
+    if (isDefaultSelect) isDefaultSelect.value = 'false';
+    // Reset status to active for new structures
+    const isActiveCheckbox = document.getElementById('structureIsActive');
+    if (isActiveCheckbox) isActiveCheckbox.checked = true;
+    document.getElementById('structureModal').classList.add('active');
+}
+
+async function editSalaryStructure(structureId) {
+    try {
+        showLoading();
+        const structure = await api.request(`/hrms/payroll/structures/${structureId}`);
+
+        if (!structure) {
+            showToast('Structure not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        document.getElementById('structureId').value = structure.id;
+        document.getElementById('structureName').value = structure.structure_name || '';
+        document.getElementById('structureCode').value = structure.structure_code || '';
+        document.getElementById('structureDescription').value = structure.description || '';
+
+        // Set office dropdown
+        const officeSelect = document.getElementById('structureOffice');
+        if (officeSelect && structure.office_id) {
+            officeSelect.value = structure.office_id;
+        }
+
+        // Set is_default select
+        const isDefaultSelect = document.getElementById('structureIsDefault');
+        if (isDefaultSelect) {
+            isDefaultSelect.value = structure.is_default ? 'true' : 'false';
+        }
+
+        // Set is_active checkbox
+        const isActiveCheckbox = document.getElementById('structureIsActive');
+        if (isActiveCheckbox) {
+            isActiveCheckbox.checked = structure.is_active !== false;
+        }
+
+        // Load and populate structure components
+        if (structure.components && structure.components.length > 0) {
+            populateStructureComponents(structure.components);
+        } else {
+            document.getElementById('structureComponents').innerHTML = '';
+            structureComponentCounter = 0;
+        }
+
+        document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
+        document.getElementById('structureModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading structure:', error);
+        showToast('Failed to load structure details', 'error');
+        hideLoading();
+    }
+}
+
+async function saveSalaryStructure() {
+    const form = document.getElementById('structureForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const officeId = document.getElementById('structureOffice')?.value;
+    if (!officeId) {
+        showToast('Please select an office for this salary structure', 'error');
+        return;
+    }
+
+    // Get structure components
+    const structureComponents = getStructureComponents();
+
+    // Validate that at least one component is added with a value
+    if (!structureComponents || structureComponents.length === 0) {
+        showToast('Please add at least one salary component with values', 'error');
+        return;
+    }
+
+    // Validate that all components have proper values
+    const invalidComponents = structureComponents.filter(c => {
+        if (c.calculation_type === 'percentage') {
+            return !c.percentage || c.percentage <= 0;
+        } else {
+            return !c.fixed_amount || c.fixed_amount <= 0;
+        }
+    });
+
+    if (invalidComponents.length > 0) {
+        showToast('All components must have a value greater than 0', 'error');
+        return;
+    }
+
+    // Validate that at least one earning component is present
+    const hasEarningComponent = structureComponents.some(c => c.component_type === 'earning');
+    if (!hasEarningComponent) {
+        showToast('Salary structure must have at least one earning component (e.g., Basic Salary)', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('structureId').value;
+        const isDefaultSelect = document.getElementById('structureIsDefault');
+        const isDefault = isDefaultSelect ? isDefaultSelect.value === 'true' : false;
+
+        const data = {
+            structure_name: document.getElementById('structureName').value,
+            structure_code: document.getElementById('structureCode').value,
+            description: document.getElementById('structureDescription').value,
+            office_id: officeId,
+            is_default: isDefault,
+            is_active: document.getElementById('structureIsActive')?.checked !== false,
+            components: structureComponents
+        };
+
+        if (id) {
+            data.id = id;
+            await api.request(`/hrms/payroll/structures/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+        } else {
+            await api.request('/hrms/payroll/structures', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+        }
+
+        closeModal('structureModal');
+        showToast(`Salary structure ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadSalaryStructures();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving structure:', error);
+        showToast(error.message || 'Failed to save salary structure', 'error');
+        hideLoading();
+    }
+}
+
+// Structure component management
+function addStructureComponent() {
+    const container = document.getElementById('structureComponents');
+    const componentId = `sc_${structureComponentCounter++}`;
+
+    const componentHtml = `
+        <div class="structure-component-row" id="${componentId}">
+            <div class="form-row component-row">
+                <div class="form-group" style="flex: 2;">
+                    <select class="form-control component-select" required>
+                        <option value="">Select Component</option>
+                        ${components.map(c => `<option value="${c.id}" data-type="${c.component_type || c.category}">${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select class="form-control calc-type-select" onchange="toggleComponentValueFields(this, '${componentId}')">
+                        <option value="percentage">% of Basic</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                </div>
+                <div class="form-group value-field" style="flex: 1;">
+                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeStructureComponent('${componentId}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', componentHtml);
+}
+
+function removeStructureComponent(componentId) {
+    const element = document.getElementById(componentId);
+    if (element) {
+        element.remove();
+    }
+}
+
+function toggleComponentValueFields(select, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    if (select.value === 'percentage') {
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+        fixedInput.value = '';
+    } else {
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+        percentageInput.value = '';
+    }
+}
+
+function getStructureComponents() {
+    const container = document.getElementById('structureComponents');
+    const rows = container.querySelectorAll('.structure-component-row');
+    const componentsList = [];
+
+    rows.forEach((row, index) => {
+        const componentSelect = row.querySelector('.component-select');
+        const calcTypeSelect = row.querySelector('.calc-type-select');
+        const percentageInput = row.querySelector('.percentage-value');
+        const fixedInput = row.querySelector('.fixed-value');
+
+        if (componentSelect.value) {
+            // Get component_type from the selected option's data-type attribute
+            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+            const componentType = selectedOption?.getAttribute('data-type') || '';
+
+            componentsList.push({
+                component_id: componentSelect.value,
+                component_type: componentType,
+                calculation_type: calcTypeSelect.value,
+                percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
+                fixed_amount: calcTypeSelect.value === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
+                display_order: index + 1
+            });
+        }
+    });
+
+    return componentsList;
+}
+
+function populateStructureComponents(structureComponents) {
+    const container = document.getElementById('structureComponents');
+    container.innerHTML = '';
+    structureComponentCounter = 0;
+
+    if (structureComponents && structureComponents.length > 0) {
+        structureComponents.forEach(sc => {
+            addStructureComponent();
+            const lastRow = container.lastElementChild;
+            if (lastRow) {
+                lastRow.querySelector('.component-select').value = sc.component_id;
+                lastRow.querySelector('.calc-type-select').value = sc.calculation_type || 'percentage';
+
+                const percentageInput = lastRow.querySelector('.percentage-value');
+                const fixedInput = lastRow.querySelector('.fixed-value');
+
+                if (sc.calculation_type === 'fixed') {
+                    percentageInput.style.display = 'none';
+                    percentageInput.disabled = true;
+                    fixedInput.style.display = 'block';
+                    fixedInput.disabled = false;
+                    fixedInput.value = sc.fixed_amount || '';
+                } else {
+                    percentageInput.style.display = 'block';
+                    percentageInput.disabled = false;
+                    fixedInput.style.display = 'none';
+                    fixedInput.disabled = true;
+                    percentageInput.value = sc.percentage || '';
+                }
+            }
+        });
+    }
+}
+
+// ============================================
+// VERSION HISTORY FUNCTIONS
+// ============================================
+
+async function viewStructureVersions(structureId) {
+    try {
+        showLoading();
+        currentVersionStructureId = structureId;
+
+        // First, ensure structure has at least version 1 (migrate if needed)
+        await api.request(`/hrms/payroll/structures/${structureId}/ensure-version`, {
+            method: 'POST'
+        });
+
+        // Load versions
+        const versions = await api.request(`/hrms/payroll/structures/${structureId}/versions`);
+        structureVersions = versions || [];
+
+        // Get structure name
+        const structure = structures.find(s => s.id === structureId);
+        currentVersionStructureName = structure?.structure_name || 'Structure';
+
+        // Update modal
+        document.getElementById('versionHistoryTitle').textContent = `Version History - ${currentVersionStructureName}`;
+
+        updateVersionHistoryTable(structureVersions);
+
+        openModal('versionHistoryModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading structure versions:', error);
+        showToast(error.message || 'Failed to load version history', 'error');
+        hideLoading();
+    }
+}
+
+function updateVersionHistoryTable(versions) {
+    const tbody = document.getElementById('versionHistoryTable');
+    if (!tbody) return;
+
+    if (!versions || versions.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="6">
+                    <div class="empty-message">
+                        <p>No versions found</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = versions.map((v, index) => {
+        const isCurrent = index === 0;
+        return `
+        <tr class="${isCurrent ? 'current-version' : ''}">
+            <td>
+                <strong>v${v.version_number}</strong>
+                ${isCurrent ? '<span class="badge-current">Current</span>' : ''}
+            </td>
+            <td>${formatDate(v.effective_from)}</td>
+            <td>${v.effective_to ? formatDate(v.effective_to) : '<span class="text-muted">Ongoing</span>'}</td>
+            <td>${v.components?.length || 0} components</td>
+            <td>${v.change_reason || '-'}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="viewVersionDetails('${v.id}')" title="View Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                    ${v.version_number > 1 ? `
+                    <button class="action-btn" onclick="compareVersions('${currentVersionStructureId}', ${v.version_number - 1}, ${v.version_number})" title="Compare with Previous">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function viewVersionDetails(versionId) {
+    try {
+        showLoading();
+        const version = await api.request(`/hrms/payroll/structures/versions/${versionId}`);
+
+        if (!version) {
+            showToast('Version not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        const components = version.components || [];
+        let componentsList = components.map(c => {
+            const valueStr = c.calculation_type === 'percentage'
+                ? `${c.percentage}% of ${c.calculation_base || 'basic'}`
+                : `₹${c.fixed_amount?.toFixed(2) || '0.00'}`;
+            return `${c.component_name} (${c.component_code}): ${valueStr}`;
+        }).join('\n');
+
+        alert(`Version ${version.version_number} Details\n` +
+              `\nEffective From: ${formatDate(version.effective_from)}` +
+              `\nEffective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}` +
+              `\nChange Reason: ${version.change_reason || 'N/A'}` +
+              `\n\nComponents:\n${componentsList}`);
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading version details:', error);
+        showToast(error.message || 'Failed to load version details', 'error');
+        hideLoading();
+    }
+}
+
+async function compareVersions(structureId, fromVersion, toVersion) {
+    try {
+        showLoading();
+        const diff = await api.request(`/hrms/payroll/structures/${structureId}/versions/compare?fromVersion=${fromVersion}&toVersion=${toVersion}`);
+
+        if (!diff) {
+            showToast('Could not compare versions', 'error');
+            hideLoading();
+            return;
+        }
+
+        let summary = `Version ${fromVersion} → Version ${toVersion}\n\n`;
+
+        if (diff.added_components?.length > 0) {
+            summary += `ADDED (${diff.added_components.length}):\n`;
+            diff.added_components.forEach(c => {
+                summary += `  + ${c.component_name} (${c.component_code})\n`;
+            });
+        }
+
+        if (diff.removed_components?.length > 0) {
+            summary += `\nREMOVED (${diff.removed_components.length}):\n`;
+            diff.removed_components.forEach(c => {
+                summary += `  - ${c.component_name} (${c.component_code})\n`;
+            });
+        }
+
+        if (diff.modified_components?.length > 0) {
+            summary += `\nMODIFIED (${diff.modified_components.length}):\n`;
+            diff.modified_components.forEach(c => {
+                summary += `  ~ ${c.component_name}: ${c.old_value} → ${c.new_value}\n`;
+            });
+        }
+
+        if (diff.unchanged_components?.length > 0) {
+            summary += `\nUNCHANGED: ${diff.unchanged_components.length} components\n`;
+        }
+
+        alert(summary);
+        hideLoading();
+    } catch (error) {
+        console.error('Error comparing versions:', error);
+        showToast(error.message || 'Failed to compare versions', 'error');
+        hideLoading();
+    }
+}
+
+function showCreateVersionModal() {
+    if (!currentVersionStructureId) {
+        showToast('No structure selected', 'error');
+        return;
+    }
+
+    document.getElementById('newVersionForm').reset();
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('versionEffectiveDate').value = tomorrow.toISOString().split('T')[0];
+
+    populateNewVersionComponents();
+
+    document.getElementById('createVersionModalTitle').textContent = `Create New Version - ${currentVersionStructureName}`;
+    openModal('createVersionModal');
+}
+
+function populateNewVersionComponents() {
+    const container = document.getElementById('newVersionComponents');
+    if (!container) return;
+
+    const latestVersion = structureVersions[0];
+    const existingComponents = latestVersion?.components || [];
+
+    container.innerHTML = components.map(c => {
+        const existingComp = existingComponents.find(ec => ec.component_id === c.id);
+        const isSelected = !!existingComp;
+        const value = existingComp?.percentage || existingComp?.fixed_amount || '';
+        const calcType = existingComp?.calculation_type || 'percentage';
+
+        return `
+        <div class="version-component-row">
+            <label class="checkbox-label">
+                <input type="checkbox" name="versionComponent" value="${c.id}" ${isSelected ? 'checked' : ''}
+                       data-name="${c.component_name || c.name}" data-code="${c.component_code || c.code}"
+                       data-type="${c.component_type || c.category}">
+                <span>${c.component_name || c.name} (${c.component_code || c.code})</span>
+                <span class="component-badge component-${c.component_type || c.category}">${c.component_type || c.category}</span>
+            </label>
+            <div class="component-value-inputs">
+                <select class="form-control form-control-sm version-calc-type" data-component-id="${c.id}">
+                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>% of Basic</option>
+                    <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+                </select>
+                <input type="number" class="form-control form-control-sm version-value" data-component-id="${c.id}"
+                       value="${value}" placeholder="${calcType === 'percentage' ? '%' : '₹'}" step="0.01" min="0">
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function saveNewVersion() {
+    const form = document.getElementById('newVersionForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const effectiveDate = document.getElementById('versionEffectiveDate').value;
+    const changeReason = document.getElementById('versionChangeReason').value;
+
+    if (!effectiveDate) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    const selectedComponents = [];
+    document.querySelectorAll('input[name="versionComponent"]:checked').forEach((checkbox, index) => {
+        const componentId = checkbox.value;
+        const calcTypeSelect = document.querySelector(`.version-calc-type[data-component-id="${componentId}"]`);
+        const valueInput = document.querySelector(`.version-value[data-component-id="${componentId}"]`);
+
+        const calcType = calcTypeSelect?.value || 'percentage';
+        const value = parseFloat(valueInput?.value) || 0;
+
+        if (value > 0) {
+            selectedComponents.push({
+                component_id: componentId,
+                calculation_order: index + 1,
+                calculation_type: calcType,
+                percentage_of_basic: calcType === 'percentage' ? value : null,
+                fixed_amount: calcType === 'fixed' ? value : null,
+                is_active: true
+            });
+        }
+    });
+
+    if (selectedComponents.length === 0) {
+        showToast('Please select at least one component with a value', 'error');
+        return;
+    }
+
+    const latestVersion = structureVersions[0];
+    const newVersionNumber = (latestVersion?.version_number || 0) + 1;
+
+    try {
+        showLoading();
+
+        const data = {
+            structure_id: currentVersionStructureId,
+            version_number: newVersionNumber,
+            effective_from: effectiveDate,
+            change_reason: changeReason,
+            components: selectedComponents
+        };
+
+        await api.request(`/hrms/payroll/structures/${currentVersionStructureId}/versions`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        closeModal('createVersionModal');
+        showToast(`Version ${newVersionNumber} created successfully`, 'success');
+
+        await viewStructureVersions(currentVersionStructureId);
+        hideLoading();
+    } catch (error) {
+        console.error('Error creating version:', error);
+        showToast(error.message || 'Failed to create version', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// ARREARS MANAGEMENT
+// ============================================
+
+async function openArrearsModal() {
+    try {
+        showLoading();
+        await refreshArrears();
+        openModal('arrearsModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error opening arrears modal:', error);
+        showToast(error.message || 'Failed to load arrears', 'error');
+        hideLoading();
+    }
+}
+
+async function refreshArrears() {
+    try {
+        const versionId = structureVersions && structureVersions.length > 0
+            ? structureVersions[0]?.id
+            : null;
+
+        if (versionId && !isValidGuid(versionId)) {
+            console.warn('Invalid version ID format, fetching all arrears');
+        }
+
+        const arrears = await api.getPendingArrears(versionId);
+        currentArrearsList = arrears || [];
+        selectedArrearsIds.clear();
+        updateArrearsTable();
+        updateArrearsSummary();
+        updateArrearsButtons();
+    } catch (error) {
+        console.error('Error refreshing arrears:', error);
+        const errorMessage = error.error || error.message || 'Failed to refresh arrears';
+        showToast(errorMessage, 'error');
+        currentArrearsList = [];
+        selectedArrearsIds.clear();
+        updateArrearsTable();
+        updateArrearsSummary();
+        updateArrearsButtons();
+    }
+}
+
+function updateArrearsSummary() {
+    const summary = document.getElementById('arrearsSummary');
+    if (!summary) return;
+
+    if (!currentArrearsList || currentArrearsList.length === 0) {
+        summary.style.display = 'none';
+        return;
+    }
+
+    summary.style.display = 'block';
+
+    const uniqueEmployees = new Set(currentArrearsList.map(a => a.employee_id));
+    const totalAmount = currentArrearsList.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
+    const pendingCount = currentArrearsList.filter(a => a.status === 'pending').length;
+
+    const employeeCountEl = document.getElementById('arrearsEmployeeCount');
+    const totalAmountEl = document.getElementById('arrearsTotalAmount');
+    const pendingCountEl = document.getElementById('arrearsPendingCount');
+
+    if (employeeCountEl) employeeCountEl.textContent = uniqueEmployees.size;
+    if (totalAmountEl) totalAmountEl.textContent = `₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (pendingCountEl) pendingCountEl.textContent = pendingCount;
+}
+
+function updateArrearsTable() {
+    const tbody = document.getElementById('arrearsTable');
+    if (!tbody) return;
+
+    if (!currentArrearsList || currentArrearsList.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <p>No arrears found</p>
+                        <small class="text-muted">Arrears are created when versions have retrospective effective dates</small>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = currentArrearsList.map(a => {
+        const isPending = a.status === 'pending';
+        const statusBadge = getArrearsStatusBadge(a.status);
+        return `
+        <tr class="${isPending ? '' : 'text-muted'}">
+            <td>
+                <input type="checkbox" class="arrears-checkbox" value="${a.id}"
+                       ${isPending ? '' : 'disabled'}
+                       ${selectedArrearsIds.has(a.id) ? 'checked' : ''}
+                       onchange="toggleArrearsSelection('${a.id}')">
+            </td>
+            <td>
+                <strong>${a.employee_name || 'Unknown'}</strong>
+                <br><small class="text-muted">${a.employee_code || ''}</small>
+            </td>
+            <td>${getMonthNameShort(a.payroll_month)} ${a.payroll_year}</td>
+            <td>₹${(a.old_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>₹${(a.new_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="${a.arrears_amount > 0 ? 'text-success' : 'text-danger'}">
+                <strong>₹${(a.arrears_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+                ${isPending ? `
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="applySingleArrears('${a.id}')" title="Apply">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    <button class="action-btn" onclick="cancelSingleArrears('${a.id}')" title="Cancel">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                ` : '-'}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getArrearsStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="badge" style="background: var(--color-warning-light); color: var(--color-warning-text);">Pending</span>',
+        'applied': '<span class="badge" style="background: var(--color-success-light); color: var(--color-success-text);">Applied</span>',
+        'cancelled': '<span class="badge" style="background: var(--color-danger-light); color: var(--color-danger-text);">Cancelled</span>'
+    };
+    return badges[status] || badges['pending'];
+}
+
+function getMonthNameShort(monthNumber) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[monthNumber - 1] || '';
+}
+
+function toggleAllArrears() {
+    const selectAll = document.getElementById('selectAllArrears');
+    const checkboxes = document.querySelectorAll('.arrears-checkbox:not(:disabled)');
+
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+        if (selectAll.checked) {
+            selectedArrearsIds.add(cb.value);
+        } else {
+            selectedArrearsIds.delete(cb.value);
+        }
+    });
+
+    updateArrearsButtons();
+}
+
+function toggleArrearsSelection(arrearsId) {
+    if (selectedArrearsIds.has(arrearsId)) {
+        selectedArrearsIds.delete(arrearsId);
+    } else {
+        selectedArrearsIds.add(arrearsId);
+    }
+    updateArrearsButtons();
+}
+
+function updateArrearsButtons() {
+    const hasSelection = selectedArrearsIds.size > 0;
+    const applyBtn = document.getElementById('applyArrearsBtn');
+    const cancelBtn = document.getElementById('cancelArrearsBtn');
+    if (applyBtn) applyBtn.disabled = !hasSelection;
+    if (cancelBtn) cancelBtn.disabled = !hasSelection;
+}
+
+async function applySingleArrears(arrearsId) {
+    if (!arrearsId || !isValidGuid(arrearsId)) {
+        showToast('Invalid arrears ID', 'error');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to apply this arrears to the next payroll?')) return;
+
+    try {
+        showLoading();
+        await api.applyArrears(arrearsId);
+        showToast('Arrears applied successfully', 'success');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        const errorMessage = error.error || error.message || 'Failed to apply arrears';
+        showToast(errorMessage, 'error');
+        hideLoading();
+    }
+}
+
+async function cancelSingleArrears(arrearsId) {
+    if (!arrearsId || !isValidGuid(arrearsId)) {
+        showToast('Invalid arrears ID', 'error');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to cancel this arrears?')) return;
+
+    try {
+        showLoading();
+        await api.cancelArrears(arrearsId);
+        showToast('Arrears cancelled', 'success');
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        const errorMessage = error.error || error.message || 'Failed to cancel arrears';
+        showToast(errorMessage, 'error');
+        hideLoading();
+    }
+}
+
+async function applySelectedArrears() {
+    if (selectedArrearsIds.size === 0) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
+
+    const validIds = Array.from(selectedArrearsIds).filter(id => isValidGuid(id));
+    if (validIds.length === 0) {
+        showToast('No valid arrears IDs selected', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to apply ${validIds.length} arrears to the next payroll?`)) return;
+
+    try {
+        showLoading();
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const arrearsId of validIds) {
+            try {
+                await api.applyArrears(arrearsId);
+                successCount++;
+            } catch (e) {
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            showToast(`Applied ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 'success');
+        } else {
+            showToast('Failed to apply arrears', 'error');
+        }
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        showToast(error.message || 'Failed to apply arrears', 'error');
+        hideLoading();
+    }
+}
+
+async function cancelSelectedArrears() {
+    if (selectedArrearsIds.size === 0) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
+
+    const validIds = Array.from(selectedArrearsIds).filter(id => isValidGuid(id));
+    if (validIds.length === 0) {
+        showToast('No valid arrears IDs selected', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to cancel ${validIds.length} arrears?`)) return;
+
+    try {
+        showLoading();
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const arrearsId of validIds) {
+            try {
+                await api.cancelArrears(arrearsId);
+                successCount++;
+            } catch (e) {
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            showToast(`Cancelled ${successCount} arrears${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 'success');
+        } else {
+            showToast('Failed to cancel arrears', 'error');
+        }
+        await refreshArrears();
+        hideLoading();
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        showToast(error.message || 'Failed to cancel arrears', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// BULK VERSION ASSIGNMENT
+// ============================================
+
+async function openBulkAssignModal() {
+    if (!currentVersionStructureId) {
+        showToast('Please select a structure first', 'error');
+        return;
+    }
+
+    bulkAssignStructureId = currentVersionStructureId;
+    bulkAssignVersionNumber = structureVersions[0]?.version_number || 1;
+
+    try {
+        showLoading();
+
+        await loadBulkAssignFilters();
+
+        document.getElementById('bulkAssignForm').reset();
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('bulkEffectiveFrom').value = tomorrow.toISOString().split('T')[0];
+
+        document.getElementById('bulkAssignModalTitle').textContent =
+            `Bulk Assign - ${currentVersionStructureName} v${bulkAssignVersionNumber}`;
+
+        openModal('bulkAssignModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error opening bulk assign modal:', error);
+        showToast(error.message || 'Failed to load bulk assignment', 'error');
+        hideLoading();
+    }
+}
+
+async function loadBulkAssignFilters() {
+    try {
+        const officeSelect = document.getElementById('bulkOfficeId');
+        if (officeSelect) {
+            officeSelect.innerHTML = '<option value="">All Offices</option>' +
+                (offices || []).map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
+        }
+
+        const deptSelect = document.getElementById('bulkDepartmentId');
+        if (deptSelect) {
+            deptSelect.innerHTML = '<option value="">All Departments</option>' +
+                (departments || []).map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+        }
+
+        const desigSelect = document.getElementById('bulkDesignationId');
+        if (desigSelect) {
+            desigSelect.innerHTML = '<option value="">All Designations</option>' +
+                (allDesignations || []).map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading bulk assign filters:', error);
+    }
+}
+
+function isValidGuid(value) {
+    if (!value || value === '') return false;
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return guidRegex.test(value);
+}
+
+function parseGuidOrNull(value) {
+    if (!value || value === '' || value === 'undefined' || value === 'null') {
+        return null;
+    }
+    if (!isValidGuid(value)) {
+        console.warn(`Invalid GUID format: ${value}`);
+        return null;
+    }
+    return value;
+}
+
+async function previewBulkAssignment() {
+    const effectiveFrom = document.getElementById('bulkEffectiveFrom').value;
+    if (!effectiveFrom) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    const officeId = parseGuidOrNull(document.getElementById('bulkOfficeId').value);
+    const departmentId = parseGuidOrNull(document.getElementById('bulkDepartmentId').value);
+    const designationId = parseGuidOrNull(document.getElementById('bulkDesignationId').value);
+
+    if (!officeId && !departmentId && !designationId) {
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const request = {
+            structure_id: bulkAssignStructureId,
+            version_number: bulkAssignVersionNumber,
+            effective_from: effectiveFrom,
+            office_id: officeId,
+            department_id: departmentId,
+            designation_id: designationId,
+            preview_only: true,
+            calculate_arrears: document.getElementById('bulkCalculateArrears')?.checked || false,
+            reason: document.getElementById('bulkReason')?.value || null
+        };
+
+        bulkPreviewResult = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
+
+        document.getElementById('bulkPreviewSection').style.display = 'block';
+        document.getElementById('bulkMatchedCount').textContent = bulkPreviewResult.total_employees_matched || 0;
+        document.getElementById('bulkToAssignCount').textContent = bulkPreviewResult.employees_to_assign || 0;
+        document.getElementById('bulkEstArrears').textContent =
+            `₹${(bulkPreviewResult.estimated_arrears_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+        const tbody = document.getElementById('bulkPreviewTable');
+        const employees = bulkPreviewResult.employee_details || bulkPreviewResult.employees || [];
+
+        if (employees.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No employees matched the selected criteria</td></tr>';
+        } else {
+            tbody.innerHTML = employees.slice(0, 20).map(e => `
+                <tr class="${e.status !== 'skipped' ? '' : 'text-muted'}">
+                    <td>
+                        <strong>${e.employee_name || 'N/A'}</strong>
+                        <br><small class="text-muted">${e.employee_code || ''}</small>
+                    </td>
+                    <td>${e.current_structure_name || e.current_structure || '-'}</td>
+                    <td>₹${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
+                    <td>${e.status !== 'skipped' ?
+                        `₹${(e.arrears_amount || e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
+                        `<span class="text-muted">${e.error_message || 'Skipped'}</span>`}</td>
+                </tr>
+            `).join('');
+
+            if (employees.length > 20) {
+                tbody.innerHTML += `<tr><td colspan="4" class="text-center text-muted">...and ${employees.length - 20} more</td></tr>`;
+            }
+        }
+
+        const toAssign = bulkPreviewResult.employees_to_update || bulkPreviewResult.employees_to_assign || 0;
+        document.getElementById('executeBulkBtn').disabled = toAssign === 0;
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error previewing bulk assignment:', error);
+        const errorMessage = error.error || error.message || 'Failed to preview assignment';
+        showToast(errorMessage, 'error');
+
+        document.getElementById('bulkPreviewSection').style.display = 'none';
+        document.getElementById('executeBulkBtn').disabled = true;
+        bulkPreviewResult = null;
+
+        hideLoading();
+    }
+}
+
+async function executeBulkAssignment() {
+    if (!bulkPreviewResult || bulkPreviewResult.employees_to_assign === 0) {
+        showToast('No employees to assign. Please preview first.', 'error');
+        return;
+    }
+
+    if (!bulkAssignStructureId || !isValidGuid(bulkAssignStructureId)) {
+        showToast('Invalid structure ID', 'error');
+        return;
+    }
+
+    if (!bulkAssignVersionNumber || bulkAssignVersionNumber <= 0) {
+        showToast('Invalid version number', 'error');
+        return;
+    }
+
+    const effectiveFrom = document.getElementById('bulkEffectiveFrom').value;
+    if (!effectiveFrom) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    const officeId = parseGuidOrNull(document.getElementById('bulkOfficeId').value);
+    const departmentId = parseGuidOrNull(document.getElementById('bulkDepartmentId').value);
+    const designationId = parseGuidOrNull(document.getElementById('bulkDesignationId').value);
+
+    if (!officeId && !departmentId && !designationId) {
+        showToast('At least one filter (office, department, or designation) must be selected', 'error');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const request = {
+            structure_id: bulkAssignStructureId,
+            version_number: bulkAssignVersionNumber,
+            effective_from: effectiveFrom,
+            office_id: officeId,
+            department_id: departmentId,
+            designation_id: designationId,
+            preview_only: false,
+            calculate_arrears: document.getElementById('bulkCalculateArrears')?.checked || false,
+            reason: document.getElementById('bulkReason')?.value || null
+        };
+
+        const result = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
+
+        closeModal('bulkAssignModal');
+        showToast(`Successfully assigned structure to ${result.employees_assigned || result.employees_to_assign} employees`, 'success');
+
+        await loadSalaryStructures();
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error executing bulk assignment:', error);
+        const errorMessage = error.error || error.message || 'Failed to execute assignment';
+        showToast(errorMessage, 'error');
+        hideLoading();
+    }
+}

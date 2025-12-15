@@ -46,17 +46,12 @@ async function initializePage() {
         setupTabs();
 
         // Load initial data
-        await Promise.all([
-            loadMyPayslips(),
-            loadOffices()
-        ]);
+        await loadOffices();
 
         if (hrmsRoles.isHRAdmin()) {
             await Promise.all([
                 loadPayrollDrafts(),
                 loadPayrollRuns(),
-                loadComponents(),
-                loadSalaryStructures(),
                 loadEmployees()
             ]);
         }
@@ -156,83 +151,6 @@ function setDefaultPayrollDates() {
     if (draftMonth) {
         draftMonth.value = ''; // All months by default
     }
-}
-
-async function loadMyPayslips() {
-    try {
-        const year = document.getElementById('payslipYear').value;
-        const response = await api.request(`/hrms/payroll-processing/my-payslips?year=${year}`);
-        const payslips = response || [];
-
-        // Update stats
-        if (payslips.length > 0) {
-            const lastPayslip = payslips[0];
-            document.getElementById('lastGross').textContent = formatCurrency(lastPayslip.grossSalary);
-            document.getElementById('lastDeductions').textContent = formatCurrency(lastPayslip.totalDeductions);
-            document.getElementById('lastNet').textContent = formatCurrency(lastPayslip.netSalary);
-
-            const ytd = payslips.reduce((sum, p) => sum + (p.netSalary || 0), 0);
-            document.getElementById('ytdEarnings').textContent = formatCurrency(ytd);
-        }
-
-        updateMyPayslipsTable(payslips);
-    } catch (error) {
-        // If user has no employee profile (e.g., admin users), just show empty state
-        if (error.message?.includes('Employee profile not found') || error.message?.includes('not found')) {
-            console.log('User has no employee profile - showing empty payslips');
-            updateMyPayslipsTable([]);
-        } else {
-            console.error('Error loading payslips:', error);
-        }
-    }
-}
-
-function updateMyPayslipsTable(payslips) {
-    const tbody = document.getElementById('myPayslipsTable');
-
-    if (!payslips || payslips.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-state">
-                <td colspan="7">
-                    <div class="empty-message">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                        <p>No payslips found</p>
-                    </div>
-                </td>
-            </tr>`;
-        return;
-    }
-
-    tbody.innerHTML = payslips.map(slip => `
-        <tr>
-            <td><strong>${getMonthName(slip.month)} ${slip.year}</strong></td>
-            <td>${formatDate(slip.periodStart)} - ${formatDate(slip.periodEnd)}</td>
-            <td>${formatCurrency(slip.grossSalary)}</td>
-            <td>${formatCurrency(slip.totalDeductions)}</td>
-            <td><strong>${formatCurrency(slip.netSalary)}</strong></td>
-            <td><span class="status-badge status-${slip.status?.toLowerCase()}">${slip.status}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="viewPayslip('${slip.id}')" title="View Payslip">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
-                    <button class="action-btn" onclick="downloadPayslipById('${slip.id}')" title="Download">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
 }
 
 async function loadPayrollRuns() {

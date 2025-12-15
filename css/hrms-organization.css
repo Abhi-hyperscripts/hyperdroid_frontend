@@ -421,6 +421,32 @@
 }
 
 /* =============================================================
+   COMPONENT SECTIONS (for Salary Components tab)
+   ============================================================= */
+.component-sections {
+    display: grid;
+    gap: 24px;
+}
+
+.component-section h3 {
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   SALARY STRUCTURES TAB
+   ============================================================= */
+.structure-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* =============================================================
    RESPONSIVE STYLES
    ============================================================= */
 @media (max-width: 768px) {

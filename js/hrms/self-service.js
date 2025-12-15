@@ -9,6 +9,10 @@ let workingHoursInterval = null;
 let clockedIn = false;
 let checkInTime = null;
 
+// Payslip variables
+let myPayslips = [];
+let currentPayslipId = null;
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -21,6 +25,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize navigation
         if (typeof Navigation !== 'undefined') {
             Navigation.init();
+        }
+
+        // Setup tabs
+        setupTabs();
+
+        // Setup payslip year change listener
+        const payslipYearSelect = document.getElementById('payslipYear');
+        if (payslipYearSelect) {
+            payslipYearSelect.addEventListener('change', loadMyPayslips);
         }
 
         // Start clock display
@@ -773,3 +786,428 @@ window.addEventListener('beforeunload', () => {
     if (clockInterval) clearInterval(clockInterval);
     if (workingHoursInterval) clearInterval(workingHoursInterval);
 });
+
+// ==========================================
+// TAB FUNCTIONALITY
+// ==========================================
+
+/**
+ * Setup tab switching functionality
+ */
+function setupTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+
+            // Update active states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            this.classList.add('active');
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Load data when switching to My Payslips tab
+            if (tabId === 'my-payslips') {
+                loadMyPayslips();
+            }
+        });
+    });
+}
+
+/**
+ * Switch to the My Payslips tab (called from Quick Actions)
+ */
+function switchToPayslipsTab() {
+    const payslipsTabBtn = document.querySelector('[data-tab="my-payslips"]');
+    if (payslipsTabBtn) {
+        payslipsTabBtn.click();
+    }
+}
+
+// ==========================================
+// MY PAYSLIPS FUNCTIONALITY
+// ==========================================
+
+/**
+ * Load my payslips for the selected year
+ */
+async function loadMyPayslips() {
+    try {
+        const year = document.getElementById('payslipYear')?.value || new Date().getFullYear();
+        const response = await api.request(`/hrms/payroll-processing/my-payslips?year=${year}`);
+        myPayslips = response || [];
+
+        // Update stats
+        if (myPayslips.length > 0) {
+            const lastPayslip = myPayslips[0];
+            const lastGrossEl = document.getElementById('lastGross');
+            const lastDeductionsEl = document.getElementById('lastDeductions');
+            const lastNetEl = document.getElementById('lastNet');
+            const ytdEl = document.getElementById('ytdEarnings');
+
+            if (lastGrossEl) lastGrossEl.textContent = formatCurrency(lastPayslip.grossSalary || lastPayslip.gross_salary || 0);
+            if (lastDeductionsEl) lastDeductionsEl.textContent = formatCurrency(lastPayslip.totalDeductions || lastPayslip.total_deductions || 0);
+            if (lastNetEl) lastNetEl.textContent = formatCurrency(lastPayslip.netSalary || lastPayslip.net_salary || 0);
+
+            const ytd = myPayslips.reduce((sum, p) => sum + (p.netSalary || p.net_salary || 0), 0);
+            if (ytdEl) ytdEl.textContent = formatCurrency(ytd);
+        } else {
+            // Reset stats to zero
+            document.getElementById('lastGross').textContent = '₹0';
+            document.getElementById('lastDeductions').textContent = '₹0';
+            document.getElementById('lastNet').textContent = '₹0';
+            document.getElementById('ytdEarnings').textContent = '₹0';
+        }
+
+        updateMyPayslipsTable(myPayslips);
+    } catch (error) {
+        // If user has no employee profile (e.g., admin users), just show empty state
+        if (error.message?.includes('Employee profile not found') || error.message?.includes('not found')) {
+            console.log('User has no employee profile - showing empty payslips');
+            updateMyPayslipsTable([]);
+        } else {
+            console.error('Error loading payslips:', error);
+            showToast('Failed to load payslips', 'error');
+        }
+    }
+}
+
+/**
+ * Update the payslips table
+ */
+function updateMyPayslipsTable(payslips) {
+    const tbody = document.getElementById('myPayslipsTable');
+    if (!tbody) return;
+
+    if (!payslips || payslips.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="7">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <p>No payslips found for this year</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = payslips.map(slip => {
+        const month = slip.month || slip.payroll_month;
+        const year = slip.year || slip.payroll_year;
+        const periodStart = slip.periodStart || slip.period_start || slip.pay_period_start;
+        const periodEnd = slip.periodEnd || slip.period_end || slip.pay_period_end;
+        const grossSalary = slip.grossSalary || slip.gross_salary || slip.gross_earnings || 0;
+        const totalDeductions = slip.totalDeductions || slip.total_deductions || 0;
+        const netSalary = slip.netSalary || slip.net_salary || slip.net_pay || 0;
+        const status = slip.status || 'finalized';
+
+        return `
+            <tr>
+                <td><strong>${getMonthName(month)} ${year}</strong></td>
+                <td>${formatPayslipDate(periodStart)} - ${formatPayslipDate(periodEnd)}</td>
+                <td>${formatCurrency(grossSalary)}</td>
+                <td>${formatCurrency(totalDeductions)}</td>
+                <td><strong>${formatCurrency(netSalary)}</strong></td>
+                <td><span class="status-badge status-${status.toLowerCase()}">${capitalizeFirst(status)}</span></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="viewPayslip('${slip.id}')" title="View Payslip">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                        <button class="action-btn" onclick="downloadPayslipById('${slip.id}')" title="Download">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * View payslip details
+ */
+async function viewPayslip(payslipId) {
+    try {
+        currentPayslipId = payslipId;
+        // Fetch with includeItems=true to get location breakdowns
+        const payslip = await api.request(`/hrms/payroll-processing/payslips/${payslipId}?includeItems=true`);
+
+        // Check for multi-location indicator
+        const isMultiLocation = payslip.is_multi_location || payslip.isMultiLocation || false;
+        const locationBreakdowns = payslip.location_breakdowns || payslip.locationBreakdowns || [];
+
+        // Multi-location badge if applicable
+        const multiLocationBadge = isMultiLocation
+            ? `<span class="multi-location-badge" title="Employee worked at multiple locations during this period">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                Multi-Location
+               </span>`
+            : '';
+
+        const month = payslip.month || payslip.payroll_month;
+        const year = payslip.year || payslip.payroll_year;
+        const employeeName = payslip.employeeName || payslip.employee_name || 'Employee';
+        const employeeCode = payslip.employeeCode || payslip.employee_code || 'N/A';
+        const departmentName = payslip.departmentName || payslip.department_name || 'N/A';
+        const periodStart = payslip.periodStart || payslip.period_start || payslip.pay_period_start;
+        const periodEnd = payslip.periodEnd || payslip.period_end || payslip.pay_period_end;
+        const grossSalary = payslip.grossSalary || payslip.gross_salary || payslip.gross_earnings || 0;
+        const totalDeductions = payslip.totalDeductions || payslip.total_deductions || 0;
+        const netSalary = payslip.netSalary || payslip.net_salary || payslip.net_pay || 0;
+        const earnings = payslip.earnings || payslip.earning_items || [];
+        const deductions = payslip.deductions || payslip.deduction_items || [];
+
+        const payslipDetailsEl = document.getElementById('payslipDetails');
+        if (payslipDetailsEl) {
+            payslipDetailsEl.innerHTML = `
+                <div class="payslip-header">
+                    <h3>${payslip.companyName || 'Company'}</h3>
+                    <p>Payslip for ${getMonthName(month)} ${year} ${multiLocationBadge}</p>
+                </div>
+                <div class="payslip-employee">
+                    <div class="info-row">
+                        <span class="label">Employee Name:</span>
+                        <span class="value">${escapeHtml(employeeName)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Employee ID:</span>
+                        <span class="value">${escapeHtml(employeeCode)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Department:</span>
+                        <span class="value">${escapeHtml(departmentName)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Pay Period:</span>
+                        <span class="value">${formatPayslipDate(periodStart)} - ${formatPayslipDate(periodEnd)}</span>
+                    </div>
+                </div>
+                <div class="payslip-details">
+                    <div class="earnings-section">
+                        <h4>Earnings</h4>
+                        <table>
+                            ${earnings.map(e => `
+                                <tr>
+                                    <td>${e.componentName || e.component_name || e.name || ''}</td>
+                                    <td class="amount">${formatCurrency(e.amount || 0)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="total">
+                                <td>Gross Salary</td>
+                                <td class="amount">${formatCurrency(grossSalary)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="deductions-section">
+                        <h4>Deductions</h4>
+                        <table>
+                            ${deductions.map(d => `
+                                <tr>
+                                    <td>${d.componentName || d.component_name || d.name || ''}</td>
+                                    <td class="amount">${formatCurrency(d.amount || 0)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="total">
+                                <td>Total Deductions</td>
+                                <td class="amount">${formatCurrency(totalDeductions)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="payslip-net">
+                    <span>Net Pay:</span>
+                    <span class="net-amount">${formatCurrency(netSalary)}</span>
+                </div>
+                ${isMultiLocation && locationBreakdowns.length > 0 ? renderLocationBreakdowns(locationBreakdowns) : ''}
+            `;
+        }
+
+        openModal('payslipModal');
+    } catch (error) {
+        console.error('Error loading payslip:', error);
+        showToast('Failed to load payslip', 'error');
+    }
+}
+
+/**
+ * Render multi-location breakdown section
+ */
+function renderLocationBreakdowns(locationBreakdowns) {
+    return `
+        <div class="location-breakdown-section" style="margin-top: 20px;">
+            <h4 style="margin-bottom: 15px; color: var(--text-primary);">Multi-Location Breakdown</h4>
+            <div class="location-cards" style="display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                ${locationBreakdowns.map(loc => {
+                    const officeName = loc.office_name || loc.officeName || 'Office';
+                    const officeCode = loc.office_code || loc.officeCode || '';
+                    const periodStart = loc.period_start || loc.periodStart;
+                    const periodEnd = loc.period_end || loc.periodEnd;
+                    const daysWorked = loc.days_worked || loc.daysWorked || 0;
+                    const prorationFactor = loc.proration_factor || loc.prorationFactor || 0;
+                    const grossEarnings = loc.gross_earnings || loc.grossEarnings || 0;
+                    const locationTaxes = loc.location_taxes || loc.locationTaxes || 0;
+                    const netPay = loc.net_pay || loc.netPay || 0;
+                    const taxItems = loc.tax_items || loc.taxItems || [];
+
+                    return `
+                        <div class="location-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div class="location-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="location-name" style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    ${escapeHtml(officeName)}
+                                </div>
+                                <span class="location-code" style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(officeCode)}</span>
+                            </div>
+                            <div class="location-period" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+                                ${formatPayslipDate(periodStart)} - ${formatPayslipDate(periodEnd)}
+                            </div>
+                            <div class="location-stats" style="display: flex; gap: 15px; margin-bottom: 10px;">
+                                <div class="loc-stat" style="text-align: center;">
+                                    <span class="loc-value" style="display: block; font-weight: 600; font-size: 1.1rem;">${daysWorked}</span>
+                                    <span class="loc-label" style="font-size: 0.75rem; color: var(--text-secondary);">Days</span>
+                                </div>
+                                <div class="loc-stat" style="text-align: center;">
+                                    <span class="loc-value" style="display: block; font-weight: 600; font-size: 1.1rem;">${(prorationFactor * 100).toFixed(0)}%</span>
+                                    <span class="loc-label" style="font-size: 0.75rem; color: var(--text-secondary);">Proration</span>
+                                </div>
+                                <div class="loc-stat" style="text-align: center;">
+                                    <span class="loc-value" style="display: block; font-weight: 600; font-size: 1.1rem;">${formatCurrency(grossEarnings)}</span>
+                                    <span class="loc-label" style="font-size: 0.75rem; color: var(--text-secondary);">Gross</span>
+                                </div>
+                            </div>
+                            ${taxItems.length > 0 ? `
+                                <div class="location-taxes" style="background: var(--bg-tertiary); padding: 10px; border-radius: 6px; margin-top: 10px;">
+                                    <div class="tax-label" style="font-weight: 500; font-size: 0.85rem; margin-bottom: 5px;">Location Taxes: ${formatCurrency(locationTaxes)}</div>
+                                    ${taxItems.map(tax => `
+                                        <div class="tax-item" style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+                                            <span>${tax.tax_name || tax.taxName} ${tax.jurisdiction_code ? `(${tax.jurisdiction_code})` : ''}</span>
+                                            <span>${formatCurrency(tax.tax_amount || tax.taxAmount)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="location-net" style="text-align: right; font-weight: 600; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+                                Net: ${formatCurrency(netPay)}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Download current payslip
+ */
+async function downloadPayslip() {
+    if (currentPayslipId) {
+        await downloadPayslipById(currentPayslipId);
+    }
+}
+
+/**
+ * Download payslip by ID
+ */
+async function downloadPayslipById(payslipId) {
+    try {
+        showToast('Generating payslip PDF...', 'info');
+        // In a real implementation, this would call an API to generate PDF
+        const baseUrl = api.getBaseUrl ? api.getBaseUrl('/hrms') : '';
+        window.open(`${baseUrl}/hrms/payroll-processing/payslips/${payslipId}/download`, '_blank');
+    } catch (error) {
+        console.error('Error downloading payslip:', error);
+        showToast('Failed to download payslip', 'error');
+    }
+}
+
+// ==========================================
+// HELPER FUNCTIONS FOR PAYSLIPS
+// ==========================================
+
+/**
+ * Format currency
+ */
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return '₹0';
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
+/**
+ * Get month name
+ */
+function getMonthName(month) {
+    const months = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[month] || 'Unknown';
+}
+
+/**
+ * Format date for payslip display
+ */
+function formatPayslipDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+/**
+ * Capitalize first letter
+ */
+function capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+/**
+ * Open modal
+ */
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+/**
+ * Close modal
+ */
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}

@@ -46,6 +46,15 @@
             </div>
         </div>
 
+        <!-- Tab Navigation -->
+        <div class="hrms-tabs">
+            <button class="tab-btn active" data-tab="ess-dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="my-payslips">My Payslips</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="ess-dashboard" class="tab-content active">
+
         <!-- Clock In/Out Section -->
         <div class="ess-clock-section" id="clockSection">
             <div class="clock-header">
@@ -142,7 +151,7 @@
                         <p>Request time off</p>
                     </div>
                 </a>
-                <a href="payroll.html" class="ess-action-card">
+                <a href="#" class="ess-action-card" onclick="switchToPayslipsTab(); return false;">
                     <div class="action-icon payslip">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
@@ -289,6 +298,94 @@
                 Go to Admin Dashboard
             </a>
         </div>
+
+        </div> <!-- End Dashboard Tab -->
+
+        <!-- My Payslips Tab -->
+        <div id="my-payslips" class="tab-content">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <select id="payslipYear" class="form-select">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Salary Summary -->
+            <div class="stats-row" id="mySalaryStats">
+                <div class="stat-card">
+                    <div class="stat-value" id="lastGross">₹0</div>
+                    <div class="stat-label">Last Gross Salary</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastDeductions">₹0</div>
+                    <div class="stat-label">Total Deductions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastNet">₹0</div>
+                    <div class="stat-label">Net Salary</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="ytdEarnings">₹0</div>
+                    <div class="stat-label">YTD Earnings</div>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Pay Period</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myPayslipsTable">
+                        <tr class="empty-state">
+                            <td colspan="7">
+                                <div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    <p>No payslips found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div> <!-- End My Payslips Tab -->
+
+        <!-- Payslip View Modal -->
+        <div class="modal" id="payslipModal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Payslip Details</h2>
+                    <button class="modal-close" onclick="closeModal('payslipModal')">&times;</button>
+                </div>
+                <div class="modal-body" id="payslipDetails">
+                    <!-- Payslip content loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('payslipModal')">Close</button>
+                    <button type="button" class="btn btn-primary" id="downloadPayslipBtn" onclick="downloadPayslip()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Toast Container -->
