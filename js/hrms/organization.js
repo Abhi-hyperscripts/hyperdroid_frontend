@@ -629,14 +629,16 @@ function updateOfficesTable() {
 }
 
 function populateOfficeSelects() {
-    const selects = ['departmentOffice', 'deptOffice', 'desigOffice', 'shiftOffice', 'shiftOfficeId', 'holidayOffice', 'holidayOffices'];
+    const selects = ['departmentOffice', 'deptOffice', 'desigOffice', 'shiftOffice', 'shiftOfficeId', 'holidayOffice', 'holidayOffices', 'structureOffice', 'structureOfficeFilter'];
     selects.forEach(id => {
         const select = document.getElementById(id);
         if (select) {
-            // Special handling for holidayOffices - keep "All Offices" as first option
+            // Special handling for filter dropdowns - show "All Offices" as first option
             let firstOption;
             if (id === 'holidayOffices') {
                 firstOption = '<option value="">All Offices (National Holiday)</option>';
+            } else if (id === 'structureOfficeFilter') {
+                firstOption = '<option value="">All Offices</option>';
             } else {
                 firstOption = '<option value="">Select Office</option>';
             }
