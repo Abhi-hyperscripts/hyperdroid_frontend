@@ -487,7 +487,9 @@ function setupTabs() {
             }
 
             // Load salary structures when switching to salary-structures tab
+            // Also load components so they can be added to structures
             if (tabId === 'salary-structures') {
+                loadComponents();
                 loadSalaryStructures();
             }
         });
