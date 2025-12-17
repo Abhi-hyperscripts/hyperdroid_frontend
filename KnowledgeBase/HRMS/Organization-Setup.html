@@ -11,7 +11,6 @@
             /*
              * Map documentation variables to theme.css semantic variables.
              * These automatically adapt to light/dark mode via theme.css.
-             * DO NOT use --gray-* variables as they are inverted in dark mode.
              */
             --primary-color: var(--brand-primary);
             --primary-dark: var(--brand-primary-dark);
@@ -30,7 +29,7 @@
             --shadow-strong: var(--shadow-sm);
             --border-color: var(--border-color);
 
-            /* Documentation-specific colors (derived from theme) */
+            /* Documentation-specific colors */
             --tip-bg: var(--color-success-light);
             --tip-border: var(--color-success);
             --warning-bg: var(--color-warning-light);
@@ -41,16 +40,14 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--color-info-light);
             --badge-optional-color: var(--color-info-text);
-            --footer-bg: var(--bg-tooltip);
+            --footer-bg: var(--brand-primary-dark, var(--bg-tooltip));
             --footer-text: var(--text-inverse);
+            --footer-link: var(--brand-primary-light, #93c5fd);
             --header-text: var(--text-inverse);
             --nav-hover-text: var(--text-inverse);
         }
 
-        /*
-         * Dark mode overrides - only for documentation-specific variables
-         * that aren't handled by theme.css semantic variables.
-         */
+        /* Dark mode overrides */
         [data-theme="dark"] {
             --tip-bg: var(--success-alpha-10);
             --warning-bg: var(--warning-alpha-10);
@@ -61,7 +58,6 @@
             --badge-optional-color: var(--brand-primary-light);
         }
 
-        /* Auto dark mode based on system preference */
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) {
                 --tip-bg: var(--success-alpha-10);
@@ -90,10 +86,14 @@
 
         /* Header */
         header {
+            position: sticky;
+            top: 0;
             background: var(--header-bg);
             color: var(--header-text);
             padding: 28px 20px;
             text-align: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         header h1 {
@@ -107,48 +107,289 @@
             opacity: 0.9;
         }
 
-        /* Navigation */
-        nav {
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 100vh;
             background: var(--card-bg);
-            padding: 10px 16px;
-            padding-right: 60px; /* Make room for theme toggle */
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
             position: sticky;
             top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px var(--shadow-strong);
-            overflow-x: auto;
+            padding: 16px 16px 16px 16px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            background: var(--card-bg);
+            z-index: 10;
         }
 
-        nav ul {
-            list-style: none;
+        .sidebar-header-top {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 8px;
-            max-width: 1200px;
-            margin: 0 auto;
-            flex-wrap: nowrap;
         }
 
-        nav a {
-            color: var(--text-color);
-            text-decoration: none;
-            font-weight: 400;
-            font-size: 0.8rem;
-            padding: 6px 12px;
+        .sidebar-header h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            font-size: 0.7rem;
+            color: var(--text-muted-color);
+            margin-top: 4px;
+        }
+
+        .sidebar-header .theme-toggle {
+            background: transparent;
+            border: none;
+            padding: 6px;
+            cursor: pointer;
             border-radius: 6px;
             transition: all 0.2s;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        nav a:hover {
+        .sidebar-header .theme-toggle:hover {
+            background: var(--table-hover);
+        }
+
+        .sidebar-header .theme-toggle .icon {
+            font-size: 1.1rem;
+        }
+
+        .nav-group {
+            margin-bottom: 8px;
+        }
+
+        .nav-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .nav-group-header:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-group-header .chevron {
+            transition: transform 0.2s;
+            font-size: 0.6rem;
+        }
+
+        .nav-group.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .nav-group.collapsed .nav-group-items {
+            display: none;
+        }
+
+        .nav-group-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-group-items li {
+            margin: 0;
+        }
+
+        .nav-group-items a {
+            display: block;
+            padding: 6px 16px 6px 24px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.78rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-group-items a:hover {
+            background: var(--table-hover);
+            color: var(--primary-color);
+            border-left-color: var(--primary-light);
+        }
+
+        .nav-group-items a.active {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-left-color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .nav-group-items .section-num {
+            display: inline-block;
+            width: 22px;
+            font-size: 0.7rem;
+            color: var(--text-muted-color);
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1001;
             background: var(--primary-color);
-            color: var(--nav-hover-text);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px var(--shadow-strong);
         }
 
-        /* Main Content */
+        .menu-toggle:hover {
+            background: var(--primary-dark);
+        }
+
+        .hamburger-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-line + .hamburger-line {
+            margin-top: 5px;
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Sidebar overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Main Content - adjusted for sidebar */
         main {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 24px 16px;
+            margin-left: 240px;
+            padding: 24px 48px 40px 32px;
+            max-width: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 70px 16px 70px;
+            }
+
+            header {
+                padding-left: 60px;
+            }
+
+            .sidebar-header h2 {
+                font-size: 1rem;
+            }
+
+            .sidebar-header {
+                padding-left: 56px;
+            }
+
+            footer {
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 8px;
+                padding: 16px 20px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                background: var(--footer-bg) !important;
+            }
+
+            footer p {
+                width: 100%;
+                text-align: center;
+                line-height: 1.4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Mobile table scrolling */
+            section {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 500px;
+            }
         }
 
         /* Sections */
@@ -158,6 +399,7 @@
             padding: 20px;
             margin-bottom: 24px;
             box-shadow: 0 2px 12px var(--shadow-color);
+            overflow-x: auto;
         }
 
         section h2 {
@@ -292,6 +534,14 @@
             font-size: 0.85em;
         }
 
+        pre {
+            background: var(--code-bg);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: var(--text-color);
+        }
+
         /* Badges */
         .badge {
             display: inline-block;
@@ -385,33 +635,24 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.3rem;
-            }
-
-            nav ul {
-                gap: 6px;
-            }
-
-            nav a {
-                padding: 5px 10px;
-                font-size: 0.75rem;
-            }
-
             section {
                 padding: 14px;
             }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* Scroll Margin for anchors */
+        /* Scroll margin for direct URL access */
         section[id] {
-            scroll-margin-top: 60px;
+            scroll-margin-top: 120px;
         }
 
         /* Back to top */
         .back-to-top {
             position: fixed;
-            bottom: 20px;
+            bottom: 40px;
             right: 20px;
             width: 36px;
             height: 36px;
@@ -425,6 +666,7 @@
             box-shadow: 0 2px 10px var(--shadow-strong);
             transition: transform 0.2s;
             font-size: 0.9rem;
+            z-index: 60;
         }
 
         .back-to-top:hover {
@@ -433,78 +675,131 @@
 
         /* Footer */
         footer {
+            position: fixed;
+            bottom: 0;
+            left: 240px;
+            right: 0;
             background: var(--footer-bg);
             color: var(--footer-text);
             text-align: center;
-            padding: 20px 16px;
-            margin-top: 24px;
-            font-size: 0.8rem;
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            z-index: 50;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        footer p {
+            margin: 0;
         }
 
         footer a {
-            color: var(--primary-light);
+            color: var(--footer-link);
+            text-decoration: underline;
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            position: absolute;
-            top: 50%;
-            right: 16px;
-            transform: translateY(-50%);
-            z-index: 10;
-            background: var(--card-bg);
-            border: 2px solid var(--primary-color);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px var(--shadow-strong);
-            transition: all 0.3s;
-        }
-
-        .theme-toggle:hover {
-            transform: translateY(-50%) scale(1.05);
-            background: var(--primary-color);
-        }
-
-        .theme-toggle .icon {
-            font-size: 1rem;
-            line-height: 1;
+        footer a:hover {
+            color: white;
         }
     </style>
 </head>
 <body>
     <header>
         <h1>HRMS Organization Setup Guide</h1>
-        <p>Complete guide to configuring your organization structure in HyperDroid HRMS</p>
+        <p>Configure your company's organizational structure, offices, departments, and more</p>
     </header>
 
-    <nav>
-        <ul>
-            <li><a href="#overview">Overview</a></li>
-            <li><a href="#offices">Offices</a></li>
-            <li><a href="#departments">Departments</a></li>
-            <li><a href="#designations">Designations</a></li>
-            <li><a href="#shifts">Shifts</a></li>
-            <li><a href="#shift-rosters">Shift Rosters</a></li>
-            <li><a href="#holidays">Holidays</a></li>
-            <li><a href="#location-taxes">Location Taxes</a></li>
-            <li><a href="#org-chart">Org Chart</a></li>
-            <li><a href="#dark-mode">Dark Mode</a></li>
-        </ul>
-        <!-- Theme Toggle Button -->
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-            <span class="icon" id="themeIcon">🌙</span>
-        </button>
-    </nav>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-top">
+                <h2>Organization Setup</h2>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <span class="icon" id="themeIcon">&#127769;</span>
+                </button>
+            </div>
+            <p>HyperDroid HRMS Guide</p>
+        </div>
+
+        <!-- Getting Started -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Getting Started
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#overview"><span class="section-num">1</span> Overview</a></li>
+            </ul>
+        </nav>
+
+        <!-- Core Setup -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Core Setup
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#offices"><span class="section-num">2</span> Offices</a></li>
+                <li><a href="#departments"><span class="section-num">3</span> Departments</a></li>
+                <li><a href="#designations"><span class="section-num">4</span> Designations</a></li>
+            </ul>
+        </nav>
+
+        <!-- Time Management -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Time Management
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#shifts"><span class="section-num">5</span> Shifts</a></li>
+                <li><a href="#shift-rosters"><span class="section-num">6</span> Shift Rosters</a></li>
+                <li><a href="#holidays"><span class="section-num">7</span> Holidays</a></li>
+            </ul>
+        </nav>
+
+        <!-- Advanced -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Advanced Features
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#location-taxes"><span class="section-num">8</span> Location Taxes</a></li>
+                <li><a href="#org-chart"><span class="section-num">9</span> Organization Chart</a></li>
+            </ul>
+        </nav>
+
+        <!-- Reference -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Reference
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#dark-mode"><span class="section-num">10</span> Dark Mode Support</a></li>
+                <li><a href="#summary"><span class="section-num">&#10003;</span> Setup Checklist</a></li>
+            </ul>
+        </nav>
+    </aside>
 
     <main>
         <!-- Overview Section -->
         <section id="overview">
-            <h2><span class="section-number">0</span> Overview</h2>
+            <h2><span class="section-number">1</span> Overview</h2>
             <p>The Organization Setup page is where you configure the foundational structure of your company in the HRMS system. This includes:</p>
 
             <div class="feature-grid">
@@ -543,16 +838,16 @@
             </div>
 
             <div class="info-box important">
-                <span class="icon">ℹ️</span>
+                <span class="icon">&#8505;&#65039;</span>
                 <div>
-                    <strong>Setup Order Recommendation:</strong> We recommend setting up in this order: Offices → Departments → Designations → Shifts → Holidays → Location Taxes. This ensures all dependencies are available when needed.
+                    <strong>Setup Order Recommendation:</strong> We recommend setting up in this order: Offices &#8594; Departments &#8594; Designations &#8594; Shifts &#8594; Holidays &#8594; Location Taxes. This ensures all dependencies are available when needed.
                 </div>
             </div>
         </section>
 
         <!-- 1. Offices Section -->
         <section id="offices">
-            <h2><span class="section-number">1</span> Offices</h2>
+            <h2><span class="section-number">2</span> Offices</h2>
             <p>Offices represent your physical work locations. Each office has its own address, timezone, geofencing settings for attendance tracking, and weekend policy.</p>
 
             <h3>Offices List View</h3>
@@ -675,12 +970,12 @@
                         <td><strong>Weekend Policy</strong></td>
                         <td><span class="badge badge-required">Required</span></td>
                         <td>Choose which days are weekends:<br>
-                            - <code>sat_sun</code>: Saturday & Sunday<br>
-                            - <code>fri_sat</code>: Friday & Saturday<br>
+                            - <code>sat_sun</code>: Saturday &amp; Sunday<br>
+                            - <code>fri_sat</code>: Friday &amp; Saturday<br>
                             - <code>sun_only</code>: Sunday only</td>
                     </tr>
                     <tr>
-                        <td><strong>Latitude & Longitude</strong></td>
+                        <td><strong>Latitude &amp; Longitude</strong></td>
                         <td><span class="badge badge-optional">Optional</span></td>
                         <td>GPS coordinates for geofencing. Enter manually or use map picker.</td>
                     </tr>
@@ -698,7 +993,7 @@
             </table>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Tip:</strong> If geofencing is enabled, employees can only clock in when they are within the specified radius of the office coordinates. Set a reasonable radius (e.g., 100-500 meters) to account for GPS accuracy.
                 </div>
@@ -741,7 +1036,7 @@
             </div>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Tip:</strong> When editing an office, changing the timezone will affect how attendance timestamps are displayed for employees at that location.
                 </div>
@@ -750,7 +1045,7 @@
 
         <!-- 2. Departments Section -->
         <section id="departments">
-            <h2><span class="section-number">2</span> Departments</h2>
+            <h2><span class="section-number">3</span> Departments</h2>
             <p>Departments organize your workforce into functional groups. They support hierarchical structures with parent-child relationships.</p>
 
             <h3>Departments List View</h3>
@@ -852,7 +1147,7 @@
             </table>
 
             <div class="info-box warning">
-                <span class="icon">⚠️</span>
+                <span class="icon">&#9888;&#65039;</span>
                 <div>
                     <strong>Note:</strong> You cannot delete a department that has employees assigned to it. First transfer or remove all employees from the department.
                 </div>
@@ -861,7 +1156,7 @@
 
         <!-- 3. Designations Section -->
         <section id="designations">
-            <h2><span class="section-number">3</span> Designations</h2>
+            <h2><span class="section-number">4</span> Designations</h2>
             <p>Designations are job titles with associated salary ranges and optional role assignments. They help standardize job levels across the organization.</p>
 
             <h3>Designations List View</h3>
@@ -971,7 +1266,7 @@
             </table>
 
             <div class="info-box important">
-                <span class="icon">ℹ️</span>
+                <span class="icon">&#8505;&#65039;</span>
                 <div>
                     <strong>Manager Role:</strong> When "Is Manager" is enabled, any employee assigned this designation will automatically receive the <code>HRMS_MANAGER</code> role, allowing them to approve leave requests and view team attendance.
                 </div>
@@ -986,7 +1281,7 @@
             </div>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Tip:</strong> Designations can be linked to specific departments. Use the Department dropdown when creating a designation to restrict it to employees of that department only.
                 </div>
@@ -995,7 +1290,7 @@
 
         <!-- 4. Shifts Section -->
         <section id="shifts">
-            <h2><span class="section-number">4</span> Shifts</h2>
+            <h2><span class="section-number">5</span> Shifts</h2>
             <p>Shifts define work schedules including start/end times, break durations, and working days. Different teams can have different shifts.</p>
 
             <h3>Shifts List View</h3>
@@ -1127,7 +1422,7 @@
             </ul>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Working Days:</strong> The days you DON'T select become weekend days. For example, if you select Mon-Fri, then Sat-Sun become weekends for this shift. This affects leave day calculations.
                 </div>
@@ -1136,7 +1431,7 @@
 
         <!-- 5. Shift Rosters Section -->
         <section id="shift-rosters">
-            <h2><span class="section-number">5</span> Shift Rosters</h2>
+            <h2><span class="section-number">6</span> Shift Rosters</h2>
             <p>Shift Rosters allow you to assign specific employees to specific shifts for defined time periods. This is useful for rotating shifts or temporary schedule changes.</p>
 
             <h3>Shift Rosters List View</h3>
@@ -1219,7 +1514,7 @@
             </table>
 
             <div class="info-box warning">
-                <span class="icon">⚠️</span>
+                <span class="icon">&#9888;&#65039;</span>
                 <div>
                     <strong>Note:</strong> If no employees appear in the dropdown when creating a roster, it means you need to first create employees in the Employees page.
                 </div>
@@ -1228,7 +1523,7 @@
 
         <!-- 6. Holidays Section -->
         <section id="holidays">
-            <h2><span class="section-number">6</span> Holidays</h2>
+            <h2><span class="section-number">7</span> Holidays</h2>
             <p>The Holidays tab manages your company holiday calendar. Holidays affect leave calculations, attendance expectations, and payroll processing.</p>
 
             <h3>Holidays List View</h3>
@@ -1352,7 +1647,7 @@
             </div>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Pro Tip:</strong> Use Bulk Add at the start of each year to quickly set up your holiday calendar. You can add up to 20 holidays at a time.
                 </div>
@@ -1361,17 +1656,16 @@
 
         <!-- 7. Location Taxes Section -->
         <section id="location-taxes">
-            <h2><span class="section-number">7</span> Location Taxes</h2>
+            <h2><span class="section-number">8</span> Location Taxes</h2>
             <p>Location Taxes configure payroll taxes that vary by office location. This is essential for organizations with offices in multiple states, cities, or countries where tax obligations differ.</p>
 
-            <!-- Why Location Taxes Matter -->
             <h3>Why Location Taxes Matter</h3>
             <p>Many countries have taxes that vary by geographic location. For example:</p>
 
             <div class="feature-grid">
                 <div class="feature-card">
                     <h4>India - Professional Tax (PT)</h4>
-                    <p>Each state has different PT slabs. Maharashtra charges up to ₹200/month, Karnataka charges up to ₹200/month but with different slabs, while some states have no PT at all.</p>
+                    <p>Each state has different PT slabs. Maharashtra charges up to &#8377;200/month, Karnataka charges up to &#8377;200/month but with different slabs, while some states have no PT at all.</p>
                 </div>
                 <div class="feature-card">
                     <h4>USA - State/City Taxes</h4>
@@ -1387,7 +1681,6 @@
                 </div>
             </div>
 
-            <!-- How It Affects Payroll -->
             <h3>How Location Taxes Affect Payroll</h3>
             <p>When payroll is processed, the system automatically:</p>
             <ol class="steps">
@@ -1409,9 +1702,8 @@
                 </li>
             </ol>
 
-            <!-- Multi-Location Transfer Scenario -->
             <div class="info-box warning">
-                <span class="icon">⚠️</span>
+                <span class="icon">&#9888;&#65039;</span>
                 <div>
                     <strong>Employee Transfer Mid-Month:</strong> If an employee transfers between offices during a pay period, the system handles this automatically:
                     <ul style="margin-top: 8px; margin-bottom: 0;">
@@ -1420,11 +1712,10 @@
                         <li>Applies the respective location's tax rules to each portion</li>
                         <li>Shows a detailed breakdown on the payslip</li>
                     </ul>
-                    <p style="margin-top: 8px; margin-bottom: 0;"><em>Example: Employee works 15 days in Mumbai (₹200 PT) and 15 days in Bangalore (₹200 PT with different slabs) = both taxes calculated proportionally.</em></p>
+                    <p style="margin-top: 8px; margin-bottom: 0;"><em>Example: Employee works 15 days in Mumbai (&#8377;200 PT) and 15 days in Bangalore (&#8377;200 PT with different slabs) = both taxes calculated proportionally.</em></p>
                 </div>
             </div>
 
-            <!-- Real-World Example -->
             <h3>Real-World Example: Professional Tax in India</h3>
             <p>Let's say your company has offices in Mumbai (Maharashtra) and Bangalore (Karnataka). Here's how PT differs:</p>
 
@@ -1438,33 +1729,32 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Up to ₹7,500</td>
-                        <td>₹0</td>
-                        <td>₹0</td>
+                        <td>Up to &#8377;7,500</td>
+                        <td>&#8377;0</td>
+                        <td>&#8377;0</td>
                     </tr>
                     <tr>
-                        <td>₹7,501 - ₹10,000</td>
-                        <td>₹175</td>
-                        <td>₹0</td>
+                        <td>&#8377;7,501 - &#8377;10,000</td>
+                        <td>&#8377;175</td>
+                        <td>&#8377;0</td>
                     </tr>
                     <tr>
-                        <td>₹10,001 - ₹15,000</td>
-                        <td>₹200</td>
-                        <td>₹150</td>
+                        <td>&#8377;10,001 - &#8377;15,000</td>
+                        <td>&#8377;200</td>
+                        <td>&#8377;150</td>
                     </tr>
                     <tr>
-                        <td>Above ₹15,000</td>
-                        <td>₹200</td>
-                        <td>₹200</td>
+                        <td>Above &#8377;15,000</td>
+                        <td>&#8377;200</td>
+                        <td>&#8377;200</td>
                     </tr>
                 </tbody>
             </table>
             <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Note: These are example rates. Actual PT slabs may vary and change over time. Always verify with current government regulations.</p>
 
-            <!-- Configuration Overview -->
             <h3>Configuration Overview</h3>
             <div class="info-box important">
-                <span class="icon">ℹ️</span>
+                <span class="icon">&#8505;&#65039;</span>
                 <div>
                     <strong>Two-Step Configuration:</strong> Location taxes require two configurations:
                     <ol>
@@ -1692,7 +1982,7 @@
 
             <h4>Slab Configuration Example</h4>
             <p>For slab-based calculations like Professional Tax in Maharashtra:</p>
-            <pre style="background: var(--code-bg); padding: 15px; border-radius: 8px; overflow-x: auto; color: var(--text-color);"><code>{
+            <pre><code>{
   "slabs": [
     { "min_amount": 0, "max_amount": 7500, "value": 0, "calculation_type": "fixed" },
     { "min_amount": 7501, "max_amount": 10000, "value": 175, "calculation_type": "fixed" },
@@ -1725,7 +2015,7 @@
             </ul>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Testing Tip:</strong> Always use Preview Tax after creating rules to verify calculations are correct before payroll processing.
                 </div>
@@ -1734,7 +2024,7 @@
 
         <!-- 8. Org Chart Section -->
         <section id="org-chart">
-            <h2><span class="section-number">8</span> Organization Chart</h2>
+            <h2><span class="section-number">9</span> Organization Chart</h2>
             <p>The Organization Chart provides a visual representation of your company's reporting structure. Access it by clicking the <strong>"Org Chart"</strong> button in the Organization page header.</p>
 
             <h3>Viewing the Org Chart</h3>
@@ -1753,7 +2043,7 @@
             </ul>
 
             <div class="info-box tip">
-                <span class="icon">💡</span>
+                <span class="icon">&#128161;</span>
                 <div>
                     <strong>Tip:</strong> The org chart is automatically generated based on the reporting manager relationships defined in employee profiles. To update the structure, modify the "Reporting Manager" field in each employee's profile.
                 </div>
@@ -1762,11 +2052,11 @@
 
         <!-- Dark Mode Support Section -->
         <section id="dark-mode">
-            <h2><span class="section-number">9</span> Dark Mode Support</h2>
+            <h2><span class="section-number">10</span> Dark Mode Support</h2>
             <p>The HRMS Organization page fully supports dark mode for comfortable viewing in low-light environments.</p>
 
             <h3>Theme Toggle</h3>
-            <p>Click the <strong>theme toggle button</strong> in the top-right corner of the page (moon/sun icon) to switch between light and dark modes.</p>
+            <p>Click the <strong>theme toggle button</strong> in the sidebar header (moon/sun icon) to switch between light and dark modes.</p>
 
             <h3>Dark Mode Examples</h3>
             <div class="feature-grid">
@@ -1787,7 +2077,7 @@
             </div>
 
             <div class="info-box important">
-                <span class="icon">ℹ️</span>
+                <span class="icon">&#8505;&#65039;</span>
                 <div>
                     <strong>System Preference:</strong> By default, the theme follows your system's dark/light mode setting. Your manual preference is saved and will persist across sessions.
                 </div>
@@ -1796,7 +2086,7 @@
 
         <!-- Summary Section -->
         <section id="summary">
-            <h2><span class="section-number">✓</span> Setup Checklist</h2>
+            <h2><span class="section-number">&#10003;</span> Setup Checklist</h2>
             <p>Follow this checklist to ensure your organization is fully configured:</p>
 
             <ol class="steps">
@@ -1831,7 +2121,7 @@
             </ol>
 
             <div class="info-box tip">
-                <span class="icon">🎉</span>
+                <span class="icon">&#127881;</span>
                 <div>
                     <strong>You're Ready!</strong> Once all these steps are complete, you can start adding employees and processing payroll.
                 </div>
@@ -1839,7 +2129,7 @@
         </section>
     </main>
 
-    <a href="#" class="back-to-top" title="Back to Top">↑</a>
+    <a href="#" class="back-to-top" title="Back to Top">&#8593;</a>
 
     <footer>
         <p>HyperDroid HRMS Knowledge Base | Last Updated: December 2025</p>
@@ -1847,33 +2137,33 @@
     </footer>
 
     <script>
-        // Theme handling
+        // ===== DOM Elements =====
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        // Check for saved theme preference or system preference
+        // ===== Theme Handling =====
         function getPreferredTheme() {
             const saved = localStorage.getItem('kb-theme');
             if (saved) return saved;
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
-        // Apply theme
         function applyTheme(theme) {
             if (theme === 'dark') {
                 html.setAttribute('data-theme', 'dark');
-                themeIcon.textContent = '☀️';
+                themeIcon.textContent = '\u2600\uFE0F';
             } else {
                 html.setAttribute('data-theme', 'light');
-                themeIcon.textContent = '🌙';
+                themeIcon.textContent = '\uD83C\uDF19';
             }
         }
 
-        // Initialize theme
         applyTheme(getPreferredTheme());
 
-        // Toggle theme
         themeToggle.addEventListener('click', () => {
             const current = html.getAttribute('data-theme') || 'light';
             const newTheme = current === 'dark' ? 'light' : 'dark';
@@ -1881,25 +2171,139 @@
             localStorage.setItem('kb-theme', newTheme);
         });
 
-        // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!localStorage.getItem('kb-theme')) {
                 applyTheme(e.matches ? 'dark' : 'light');
             }
         });
 
-        // Smooth scroll for navigation links
-        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+        // ===== Collapsible Navigation Groups =====
+        function toggleNavGroup(header) {
+            const group = header.parentElement;
+            group.classList.toggle('collapsed');
+
+            // Save collapsed state to localStorage
+            const groupIndex = Array.from(document.querySelectorAll('.nav-group')).indexOf(group);
+            const collapsedGroups = JSON.parse(localStorage.getItem('kb-collapsed-groups-org') || '[]');
+
+            if (group.classList.contains('collapsed')) {
+                if (!collapsedGroups.includes(groupIndex)) {
+                    collapsedGroups.push(groupIndex);
+                }
+            } else {
+                const idx = collapsedGroups.indexOf(groupIndex);
+                if (idx > -1) collapsedGroups.splice(idx, 1);
+            }
+
+            localStorage.setItem('kb-collapsed-groups-org', JSON.stringify(collapsedGroups));
+        }
+
+        // Restore collapsed states on load
+        function restoreCollapsedStates() {
+            const collapsedGroups = JSON.parse(localStorage.getItem('kb-collapsed-groups-org') || '[]');
+            const groups = document.querySelectorAll('.nav-group');
+            collapsedGroups.forEach(idx => {
+                if (groups[idx]) {
+                    groups[idx].classList.add('collapsed');
+                }
+            });
+        }
+        restoreCollapsedStates();
+
+        // ===== Mobile Menu Toggle =====
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+            menuToggle.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+            menuToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuToggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
+
+        // ===== Smooth Scroll for Sidebar Links =====
+        document.querySelectorAll('.sidebar a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
+                    // Close mobile sidebar if open
+                    if (window.innerWidth <= 900) {
+                        closeSidebar();
+                    }
+
+                    // Smooth scroll with offset
+                    const offset = 120;
+                    const targetPosition = target.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
                 }
             });
         });
 
-        // Show/hide back-to-top button
+        // ===== Active Section Highlighting (Intersection Observer) =====
+        const sections = document.querySelectorAll('main > section[id]');
+        const navLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-10% 0px -70% 0px',
+            threshold: 0
+        };
+
+        function setActiveLink(sectionId) {
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + sectionId) {
+                    link.classList.add('active');
+
+                    // Expand the parent group if collapsed
+                    const group = link.closest('.nav-group');
+                    if (group && group.classList.contains('collapsed')) {
+                        group.classList.remove('collapsed');
+                    }
+
+                    // Scroll link into view in sidebar if needed
+                    if (window.innerWidth > 900) {
+                        link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            });
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setActiveLink(entry.target.id);
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        // ===== Back to Top Button =====
         const backToTop = document.querySelector('.back-to-top');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 500) {
@@ -1909,6 +2313,14 @@
             }
         });
         backToTop.style.display = 'none';
+
+        // ===== Handle Resize Events =====
+        window.addEventListener('resize', () => {
+            // Close mobile sidebar when resizing to desktop
+            if (window.innerWidth > 900 && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
     </script>
 </body>
 </html>
