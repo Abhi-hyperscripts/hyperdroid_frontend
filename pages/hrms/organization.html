@@ -1705,6 +1705,10 @@
                         <option value="deduction">Deductions</option>
                     </select>
                 </div>
+                <div class="toggle-wrapper" onclick="toggleShowInactiveComponents()">
+                    <input type="checkbox" id="showInactiveComponents">
+                    <span>Show Inactive</span>
+                </div>
                 <button class="btn btn-primary" onclick="showCreateComponentModal()" id="createComponentBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1724,6 +1728,7 @@
                                     <th>Component Name</th>
                                     <th>Code</th>
                                     <th>Type</th>
+                                    <th>Value</th>
                                     <th>Taxable</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -1731,7 +1736,7 @@
                             </thead>
                             <tbody id="earningsTable">
                                 <tr class="empty-state">
-                                    <td colspan="6"><p>No earnings components</p></td>
+                                    <td colspan="7"><p>No earnings components</p></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1747,6 +1752,7 @@
                                     <th>Component Name</th>
                                     <th>Code</th>
                                     <th>Type</th>
+                                    <th>Value</th>
                                     <th>Pre-Tax</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -1754,7 +1760,7 @@
                             </thead>
                             <tbody id="deductionsTable">
                                 <tr class="empty-state">
-                                    <td colspan="6"><p>No deduction components</p></td>
+                                    <td colspan="7"><p>No deduction components</p></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1782,6 +1788,10 @@
                         <path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input type="text" id="structureSearch" placeholder="Search structures...">
+                </div>
+                <div class="toggle-wrapper" onclick="toggleShowInactiveStructures()">
+                    <input type="checkbox" id="showInactiveStructures">
+                    <span>Show Inactive</span>
                 </div>
                 <button class="btn btn-primary" onclick="showCreateStructureModal()" id="createStructureBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1842,10 +1852,21 @@
                     <div class="form-section">
                         <div class="form-row three-col">
                             <div class="form-group">
-                                <label for="structureOffice">Office *</label>
-                                <select id="structureOffice" name="office_id" class="form-control" required>
-                                    <option value="">Select Office</option>
-                                </select>
+                                <label>Office *</label>
+                                <div class="searchable-dropdown" id="structureOfficeDropdown">
+                                    <div class="searchable-dropdown-trigger" onclick="toggleSearchableDropdown('structureOffice')">
+                                        <span class="dropdown-selection" id="structureOfficeSelection">Select Office</span>
+                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                    </div>
+                                    <div class="searchable-dropdown-menu" id="structureOfficeMenu">
+                                        <div class="dropdown-search-box">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                            <input type="text" id="structureOfficeSearch" class="dropdown-search-input" placeholder="Search offices..." oninput="filterStructureOffices()">
+                                        </div>
+                                        <div class="dropdown-options" id="structureOfficeOptions"></div>
+                                    </div>
+                                    <input type="hidden" id="structureOffice" name="office_id" required>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="structureName">Structure Name *</label>
@@ -1885,9 +1906,41 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Basic Salary Component Selection (Pick ONE) -->
+                    <div class="form-section basic-component-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="basicComponentDropdown">Basic Salary Component <span class="required-asterisk">*</span></label>
+                                <div class="searchable-dropdown" id="basicComponentDropdownContainer">
+                                    <div class="searchable-dropdown-trigger" id="basicComponentDropdownTrigger" onclick="toggleBasicComponentDropdown()">
+                                        <span class="searchable-dropdown-value" id="basicComponentDropdownValue">Select basic component...</span>
+                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="searchable-dropdown-menu" id="basicComponentDropdownMenu">
+                                        <div class="searchable-dropdown-search">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                            <input type="text" id="basicComponentSearchInput" placeholder="Search components..." oninput="filterBasicComponents(this.value)">
+                                        </div>
+                                        <div class="searchable-dropdown-options" id="basicComponentOptions">
+                                            <!-- Dynamically populated -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selectedBasicComponentId" name="basicComponent" value="">
+                                <small class="form-text" id="basicComponentHelpText">Select the basic salary component for this structure</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Components (Pick MANY) -->
                     <div class="form-section">
                         <div class="components-header">
-                            <span class="components-title">Components</span>
+                            <span class="components-title">Other Components</span>
                             <button type="button" class="btn-add-component" onclick="addStructureComponent()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1946,25 +1999,51 @@
                             </div>
                             <div class="form-group">
                                 <label for="calculationType">Calculation Type *</label>
-                                <select id="calculationType" name="calculationType" class="form-control" required>
+                                <select id="calculationType" name="calculationType" class="form-control" required onchange="toggleComponentCalcFields()">
+                                    <option value="percentage">Percentage Based</option>
                                     <option value="fixed">Fixed Amount</option>
-                                    <option value="percentage">Percentage of Basic</option>
                                 </select>
                             </div>
                         </div>
-                        <!-- Percentage fields (shown when calculation type is percentage) -->
-                        <div class="form-row two-col" id="percentageFieldsRow" style="display: none;">
+                        <!-- Is Basic Salary toggle (shown when calculation type is percentage) -->
+                        <div class="form-row" id="isBasicSalaryRow">
                             <div class="form-group">
-                                <label for="componentPercentage">Percentage *</label>
-                                <input type="number" id="componentPercentage" name="percentage" class="form-control" placeholder="e.g., 50" step="0.01" min="0" max="100">
+                                <div class="basic-salary-toggle-row">
+                                    <label class="basic-salary-toggle" title="Toggle to mark this as a Basic Salary component">
+                                        <input type="checkbox" id="isBasicSalary" name="isBasicSalary" onchange="toggleBasicSalaryInfo()">
+                                        <span class="basic-salary-toggle-track"><span class="basic-salary-toggle-thumb"></span></span>
+                                    </label>
+                                    <span class="basic-salary-toggle-label">This is the Basic Salary component</span>
+                                </div>
+                                <small class="form-text" id="basicSalaryHelpText">Check this if this component represents the Basic Salary (calculated as % of CTC). All other percentage-based components will be calculated as % of Basic.</small>
                             </div>
+                        </div>
+                        <!-- Percentage fields (shown when calculation type is percentage) -->
+                        <div class="form-row two-col" id="percentageFieldsRow">
                             <div class="form-group">
-                                <label for="calculationBase">Calculation Base *</label>
-                                <select id="calculationBase" name="calculationBase" class="form-control">
+                                <label for="componentPercentage" id="percentageLabel">Default Percentage *</label>
+                                <input type="number" id="componentPercentage" name="percentage" class="form-control" placeholder="e.g., 50" step="0.01" min="0" max="100">
+                                <small class="form-text" id="percentageHelpText">Percentage of selected base</small>
+                            </div>
+                            <div class="form-group" id="calculationBaseGroup">
+                                <label for="calculationBase">Percentage Of *</label>
+                                <select id="calculationBase" name="calculationBase" class="form-control" onchange="updatePercentageHelpText()">
                                     <option value="basic">Basic Salary</option>
                                     <option value="gross">Gross Salary</option>
                                     <option value="ctc">CTC</option>
                                 </select>
+                                <small class="form-text">Select what this percentage is based on</small>
+                            </div>
+                        </div>
+                        <!-- Fixed Amount fields (shown when calculation type is fixed) -->
+                        <div class="form-row two-col" id="fixedAmountFieldsRow" style="display: none;">
+                            <div class="form-group">
+                                <label for="defaultFixedAmount">Default Amount</label>
+                                <input type="number" id="defaultFixedAmount" name="defaultFixedAmount" class="form-control" placeholder="e.g., 1600" step="0.01" min="0">
+                                <small class="form-text">Fixed amount per month (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty for layout -->
                             </div>
                         </div>
                         <div class="form-row two-col">
@@ -2067,15 +2146,6 @@
                         </svg>
                         Manage Arrears
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="openBulkAssignModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        Bulk Assign
-                    </button>
                     <button type="button" class="btn btn-outline" onclick="previewVersionedSalary()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -2140,6 +2210,103 @@
         </div>
     </div>
 
+    <!-- Version Details Modal -->
+    <div class="modal" id="versionDetailsModal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span id="versionDetailsTitle">Version Details</span>
+                        <span class="version-badge" id="versionBadge">v1</span>
+                    </h5>
+                    <button class="close-btn" onclick="closeModal('versionDetailsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Version Info Cards -->
+                    <div class="version-detail-cards">
+                        <div class="version-detail-card">
+                            <div class="version-detail-icon effective-from">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </div>
+                            <div class="version-detail-content">
+                                <span class="version-detail-label">Effective From</span>
+                                <span class="version-detail-value" id="versionEffectiveFrom">-</span>
+                            </div>
+                        </div>
+                        <div class="version-detail-card">
+                            <div class="version-detail-icon effective-to">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="version-detail-content">
+                                <span class="version-detail-label">Effective To</span>
+                                <span class="version-detail-value" id="versionEffectiveTo">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change Reason -->
+                    <div class="version-reason-section">
+                        <h6 class="section-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            Change Reason
+                        </h6>
+                        <p class="version-reason-text" id="versionChangeReason">-</p>
+                    </div>
+
+                    <!-- Components Table -->
+                    <div class="version-components-section">
+                        <h6 class="section-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            Components
+                            <span class="component-count" id="versionComponentCount">0</span>
+                        </h6>
+                        <div class="version-components-table-wrapper">
+                            <table class="version-components-table">
+                                <thead>
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Type</th>
+                                        <th class="text-right">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="versionComponentsBody">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No components</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Arrears Management Modal -->
     <div class="modal" id="arrearsModal">
         <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -2153,30 +2320,28 @@
                         </svg>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="version-info-banner" style="background: var(--color-warning-light); border-left: 4px solid var(--color-warning);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning-text)" stroke-width="2">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                <div class="modal-body arrears-modal-body">
+                    <div class="arrears-info-alert">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
                         </svg>
-                        <span class="text-warning-dark">Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
+                        <span>Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
                     </div>
 
-                    <div class="arrears-summary" id="arrearsSummary" style="display: none; margin: 16px 0; padding: 16px; background: var(--color-info-light); border-radius: 8px;">
-                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-                            <div>
-                                <span class="text-muted">Total Employees Affected</span>
-                                <h4 id="arrearsEmployeeCount" style="margin: 4px 0;">0</h4>
-                            </div>
-                            <div>
-                                <span class="text-muted">Total Arrears Amount</span>
-                                <h4 id="arrearsTotalAmount" class="text-success" style="margin: 4px 0;">₹0.00</h4>
-                            </div>
-                            <div>
-                                <span class="text-muted">Pending Arrears</span>
-                                <h4 id="arrearsPendingCount" class="text-danger" style="margin: 4px 0;">0</h4>
-                            </div>
+                    <div class="arrears-summary" id="arrearsSummary">
+                        <div class="arrears-stat">
+                            <span class="arrears-stat-label">Total Employees Affected</span>
+                            <span class="arrears-stat-value" id="arrearsEmployeeCount">0</span>
+                        </div>
+                        <div class="arrears-stat">
+                            <span class="arrears-stat-label">Total Arrears Amount</span>
+                            <span class="arrears-stat-value text-success" id="arrearsTotalAmount">₹0.00</span>
+                        </div>
+                        <div class="arrears-stat">
+                            <span class="arrears-stat-label">Pending Arrears</span>
+                            <span class="arrears-stat-value text-warning" id="arrearsPendingCount">0</span>
                         </div>
                     </div>
 
@@ -2207,20 +2372,95 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="refreshArrears()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="modal-footer arrears-modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="refreshArrears()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 4 23 10 17 10"></polyline>
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
                         Refresh
                     </button>
-                    <button type="button" class="btn btn-danger" onclick="cancelSelectedArrears()" id="cancelArrearsBtn" disabled>
-                        Cancel Selected
+                    <div class="arrears-action-buttons">
+                        <button type="button" class="btn btn-sm btn-danger-outline" onclick="cancelSelectedArrears()" id="cancelArrearsBtn" disabled>
+                            Cancel Selected
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="applySelectedArrears()" id="applyArrearsBtn" disabled>
+                            Apply to Payroll
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary Calculation Preview Modal -->
+    <div class="modal" id="salaryPreviewModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Salary Calculation Preview</h5>
+                    <button class="close-btn" onclick="closeModal('salaryPreviewModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="applySelectedArrears()" id="applyArrearsBtn" disabled>
-                        Apply Selected to Payroll
-                    </button>
+                </div>
+                <div class="modal-body salary-preview-body">
+                    <div class="salary-preview-input">
+                        <label for="previewCtcInput">Enter CTC / Annual Gross</label>
+                        <div class="input-with-currency">
+                            <span class="currency-symbol">₹</span>
+                            <input type="number" id="previewCtcInput" placeholder="e.g., 1200000" min="0" step="1000" oninput="calculateSalaryPreview()">
+                        </div>
+                        <small class="text-muted">Enter annual CTC to see monthly salary breakdown</small>
+                    </div>
+
+                    <div class="salary-preview-results" id="salaryPreviewResults" style="display: none;">
+                        <div class="preview-summary-cards">
+                            <div class="preview-card">
+                                <span class="preview-card-label">Monthly Gross</span>
+                                <span class="preview-card-value" id="previewMonthlyGross">₹0</span>
+                            </div>
+                            <div class="preview-card earnings">
+                                <span class="preview-card-label">Total Earnings</span>
+                                <span class="preview-card-value" id="previewTotalEarnings">₹0</span>
+                            </div>
+                            <div class="preview-card deductions">
+                                <span class="preview-card-label">Total Deductions</span>
+                                <span class="preview-card-value" id="previewTotalDeductions">₹0</span>
+                            </div>
+                            <div class="preview-card net">
+                                <span class="preview-card-label">Net Pay</span>
+                                <span class="preview-card-value" id="previewNetPay">₹0</span>
+                            </div>
+                        </div>
+
+                        <div class="preview-breakdown">
+                            <div class="preview-section">
+                                <h4>Earnings</h4>
+                                <div class="preview-table" id="previewEarningsTable">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                            <div class="preview-section">
+                                <h4>Deductions</h4>
+                                <div class="preview-table" id="previewDeductionsTable">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="salary-preview-empty" id="salaryPreviewEmpty">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        <p>Enter a CTC amount to preview salary calculation</p>
+                        <small>Based on the current salary structure components</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2239,9 +2479,9 @@
                         </svg>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="version-info-banner">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="modal-body bulk-assign-body">
+                    <div class="bulk-assign-info">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -2251,7 +2491,7 @@
 
                     <form id="bulkAssignForm">
                         <div class="form-section">
-                            <h3>Filter Employees</h3>
+                            <h4 class="section-title">Filter Employees</h4>
                             <div class="form-row three-col">
                                 <div class="form-group">
                                     <label for="bulkOfficeId">Office</label>
@@ -2275,7 +2515,7 @@
                         </div>
 
                         <div class="form-section">
-                            <h3>Assignment Details</h3>
+                            <h4 class="section-title">Assignment Details</h4>
                             <div class="form-row two-col">
                                 <div class="form-group">
                                     <label for="bulkEffectiveFrom">Effective From *</label>
@@ -2286,16 +2526,17 @@
                                     <input type="text" id="bulkReason" class="form-control" placeholder="e.g., FY 2025-26 structure update">
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="checkbox-label">
+                            <div class="toggle-option">
+                                <label class="toggle-switch">
                                     <input type="checkbox" id="bulkCalculateArrears" checked>
-                                    <span>Calculate arrears for affected employees</span>
+                                    <span class="toggle-slider"></span>
                                 </label>
+                                <span class="toggle-label">Calculate arrears for affected employees</span>
                             </div>
                         </div>
 
                         <div class="form-section" id="bulkPreviewSection" style="display: none;">
-                            <h3>Preview</h3>
+                            <h4 class="section-title">Preview</h4>
                             <div class="bulk-preview-summary" style="display: flex; gap: 24px; margin-bottom: 16px;">
                                 <div style="padding: 12px; background: var(--color-info-light); border-radius: 8px; flex: 1;">
                                     <span class="text-muted">Employees Matched</span>
@@ -2327,15 +2568,15 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="previewBulkAssignment()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="modal-footer bulk-assign-footer">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="previewBulkAssignment()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                         Preview
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="executeBulkAssignment()" id="executeBulkBtn" disabled>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="executeBulkAssignment()" id="executeBulkBtn" disabled>
                         Execute Assignment
                     </button>
                 </div>

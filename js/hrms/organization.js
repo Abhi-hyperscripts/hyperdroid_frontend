@@ -36,6 +36,352 @@ let bulkAssignStructureId = null;
 let bulkAssignVersionNumber = null;
 let bulkPreviewResult = null;
 
+// Store for searchable dropdown instances
+const searchableDropdowns = new Map();
+
+/**
+ * SearchableDropdown - A reusable searchable dropdown component with virtual scroll
+ * Usage:
+ *   const dropdown = new SearchableDropdown(container, {
+ *     options: [{ value: 'val1', label: 'Label 1', description: 'Optional desc' }, ...],
+ *     placeholder: 'Select an option',
+ *     searchPlaceholder: 'Search...',
+ *     onChange: (value, option) => {},
+ *     virtualScroll: true,  // Enable for large lists (100+ items)
+ *     itemHeight: 40        // Height of each item for virtual scroll
+ *   });
+ */
+class SearchableDropdown {
+    constructor(container, options = {}) {
+        this.container = typeof container === 'string' ? document.getElementById(container) : container;
+        if (!this.container) return;
+
+        this.options = options.options || [];
+        this.placeholder = options.placeholder || 'Select an option';
+        this.searchPlaceholder = options.searchPlaceholder || 'Search...';
+        this.onChange = options.onChange || (() => {});
+        this.virtualScroll = options.virtualScroll || false;
+        this.itemHeight = options.itemHeight || 40;
+        this.selectedValue = options.value || null;
+        this.filteredOptions = [...this.options];
+        this.highlightedIndex = -1;
+        this.isOpen = false;
+        this.id = options.id || `sd-${Date.now()}`;
+
+        this.render();
+        this.bindEvents();
+
+        // Store reference
+        searchableDropdowns.set(this.id, this);
+    }
+
+    render() {
+        const selectedOption = this.options.find(o => o.value === this.selectedValue);
+        const displayText = selectedOption ? selectedOption.label : '';
+
+        this.container.innerHTML = `
+            <div class="searchable-dropdown" id="${this.id}">
+                <div class="searchable-dropdown-trigger" tabindex="0">
+                    <span class="selected-text ${!displayText ? 'placeholder' : ''}">${displayText || this.placeholder}</span>
+                    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="searchable-dropdown-menu">
+                    <div class="searchable-dropdown-search">
+                        <input type="text" placeholder="${this.searchPlaceholder}" autocomplete="off">
+                    </div>
+                    <div class="searchable-dropdown-options">
+                        ${this.renderOptions()}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.dropdownEl = this.container.querySelector('.searchable-dropdown');
+        this.triggerEl = this.container.querySelector('.searchable-dropdown-trigger');
+        this.menuEl = this.container.querySelector('.searchable-dropdown-menu');
+        this.searchInput = this.container.querySelector('.searchable-dropdown-search input');
+        this.optionsEl = this.container.querySelector('.searchable-dropdown-options');
+        this.selectedTextEl = this.container.querySelector('.selected-text');
+    }
+
+    renderOptions() {
+        if (this.filteredOptions.length === 0) {
+            return '<div class="searchable-dropdown-no-results">No results found</div>';
+        }
+
+        if (this.virtualScroll && this.filteredOptions.length > 50) {
+            return this.renderVirtualOptions();
+        }
+
+        return this.filteredOptions.map((option, index) => `
+            <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''} ${index === this.highlightedIndex ? 'highlighted' : ''}"
+                 data-value="${escapeHtml(String(option.value))}"
+                 data-index="${index}">
+                <span class="option-label">${escapeHtml(option.label)}</span>
+                ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+        `).join('');
+    }
+
+    renderVirtualOptions() {
+        const totalHeight = this.filteredOptions.length * this.itemHeight;
+        const visibleCount = Math.ceil(220 / this.itemHeight) + 2;
+
+        return `
+            <div class="searchable-dropdown-virtual" style="height: ${totalHeight}px;">
+                <div class="searchable-dropdown-virtual-viewport">
+                    ${this.filteredOptions.slice(0, visibleCount).map((option, index) => `
+                        <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''}"
+                             data-value="${escapeHtml(String(option.value))}"
+                             data-index="${index}"
+                             style="height: ${this.itemHeight}px;">
+                            <span class="option-label">${escapeHtml(option.label)}</span>
+                            ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
+                            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    bindEvents() {
+        // Toggle dropdown
+        this.triggerEl.addEventListener('click', () => this.toggle());
+        this.triggerEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.toggle();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.open();
+            }
+        });
+
+        // Search input
+        this.searchInput.addEventListener('input', (e) => this.filter(e.target.value));
+        this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+        // Option click
+        this.optionsEl.addEventListener('click', (e) => {
+            const optionEl = e.target.closest('.searchable-dropdown-option');
+            if (optionEl) {
+                this.select(optionEl.dataset.value);
+            }
+        });
+
+        // Virtual scroll
+        if (this.virtualScroll) {
+            this.optionsEl.addEventListener('scroll', () => this.handleVirtualScroll());
+        }
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+    }
+
+    handleKeydown(e) {
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.highlightNext();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.highlightPrev();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.highlightedIndex >= 0 && this.filteredOptions[this.highlightedIndex]) {
+                    this.select(this.filteredOptions[this.highlightedIndex].value);
+                }
+                break;
+            case 'Escape':
+                this.close();
+                break;
+        }
+    }
+
+    handleVirtualScroll() {
+        if (!this.virtualScroll) return;
+
+        const scrollTop = this.optionsEl.scrollTop;
+        const startIndex = Math.floor(scrollTop / this.itemHeight);
+        const visibleCount = Math.ceil(220 / this.itemHeight) + 2;
+        const endIndex = Math.min(startIndex + visibleCount, this.filteredOptions.length);
+
+        const viewport = this.optionsEl.querySelector('.searchable-dropdown-virtual-viewport');
+        if (viewport) {
+            viewport.style.top = `${startIndex * this.itemHeight}px`;
+            viewport.innerHTML = this.filteredOptions.slice(startIndex, endIndex).map((option, i) => `
+                <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''}"
+                     data-value="${escapeHtml(String(option.value))}"
+                     data-index="${startIndex + i}"
+                     style="height: ${this.itemHeight}px;">
+                    <span class="option-label">${escapeHtml(option.label)}</span>
+                    ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            `).join('');
+        }
+    }
+
+    highlightNext() {
+        if (this.highlightedIndex < this.filteredOptions.length - 1) {
+            this.highlightedIndex++;
+            this.updateHighlight();
+        }
+    }
+
+    highlightPrev() {
+        if (this.highlightedIndex > 0) {
+            this.highlightedIndex--;
+            this.updateHighlight();
+        }
+    }
+
+    updateHighlight() {
+        const options = this.optionsEl.querySelectorAll('.searchable-dropdown-option');
+        options.forEach((el, i) => {
+            el.classList.toggle('highlighted', i === this.highlightedIndex);
+        });
+
+        // Scroll into view
+        const highlighted = options[this.highlightedIndex];
+        if (highlighted) {
+            highlighted.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    filter(query) {
+        const q = query.toLowerCase().trim();
+        this.filteredOptions = this.options.filter(option => {
+            const label = (option.label || '').toLowerCase();
+            const desc = (option.description || '').toLowerCase();
+            return label.includes(q) || desc.includes(q);
+        });
+        this.highlightedIndex = this.filteredOptions.length > 0 ? 0 : -1;
+        this.optionsEl.innerHTML = this.renderOptions();
+    }
+
+    toggle() {
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+
+    open() {
+        this.isOpen = true;
+        this.dropdownEl.classList.add('open');
+        this.searchInput.value = '';
+        this.filteredOptions = [...this.options];
+        this.optionsEl.innerHTML = this.renderOptions();
+        setTimeout(() => this.searchInput.focus(), 50);
+    }
+
+    close() {
+        this.isOpen = false;
+        this.dropdownEl.classList.remove('open');
+        this.highlightedIndex = -1;
+    }
+
+    select(value) {
+        const option = this.options.find(o => String(o.value) === String(value));
+        if (option) {
+            this.selectedValue = option.value;
+            this.selectedTextEl.textContent = option.label;
+            this.selectedTextEl.classList.remove('placeholder');
+            this.close();
+            this.onChange(option.value, option);
+        }
+    }
+
+    getValue() {
+        return this.selectedValue;
+    }
+
+    setValue(value) {
+        const option = this.options.find(o => String(o.value) === String(value));
+        if (option) {
+            this.selectedValue = option.value;
+            this.selectedTextEl.textContent = option.label;
+            this.selectedTextEl.classList.remove('placeholder');
+        } else {
+            this.selectedValue = null;
+            this.selectedTextEl.textContent = this.placeholder;
+            this.selectedTextEl.classList.add('placeholder');
+        }
+    }
+
+    setOptions(options) {
+        this.options = options;
+        this.filteredOptions = [...options];
+        if (this.selectedValue && !options.find(o => o.value === this.selectedValue)) {
+            this.selectedValue = null;
+            this.selectedTextEl.textContent = this.placeholder;
+            this.selectedTextEl.classList.add('placeholder');
+        }
+        if (this.isOpen) {
+            this.optionsEl.innerHTML = this.renderOptions();
+        }
+    }
+
+    destroy() {
+        searchableDropdowns.delete(this.id);
+        this.container.innerHTML = '';
+    }
+}
+
+// Helper function to create searchable dropdown from existing select element
+function convertToSearchableDropdown(selectId, options = {}) {
+    const select = document.getElementById(selectId);
+    if (!select) return null;
+
+    // Extract options from select
+    const selectOptions = Array.from(select.options).map(opt => ({
+        value: opt.value,
+        label: opt.textContent,
+        description: opt.dataset.description || ''
+    }));
+
+    // Create container
+    const container = document.createElement('div');
+    container.id = `${selectId}-searchable`;
+    select.parentNode.insertBefore(container, select);
+    select.style.display = 'none';
+
+    // Create dropdown
+    const dropdown = new SearchableDropdown(container, {
+        id: selectId,
+        options: selectOptions,
+        value: select.value,
+        placeholder: options.placeholder || 'Select...',
+        searchPlaceholder: options.searchPlaceholder || 'Search...',
+        virtualScroll: options.virtualScroll || selectOptions.length > 50,
+        onChange: (value) => {
+            select.value = value;
+            select.dispatchEvent(new Event('change'));
+            if (options.onChange) options.onChange(value);
+        }
+    });
+
+    return dropdown;
+}
+
 // Timezone data (comprehensive list of IANA timezones)
 const TIMEZONES = [
     { value: 'Pacific/Midway', label: 'Midway Island (UTC-11:00)' },
@@ -200,6 +546,8 @@ function toggleSearchableDropdown(type) {
                 renderTimezoneOptions();
             } else if (type === 'country') {
                 renderCountryOptions();
+            } else if (type === 'structureOffice') {
+                renderStructureOfficeOptions();
             }
         }
     }
@@ -274,6 +622,74 @@ function selectCountry(value) {
 function filterCountries() {
     const searchValue = document.getElementById('countrySearch').value;
     renderCountryOptions(searchValue);
+}
+
+// Structure Office searchable dropdown functions
+function renderStructureOfficeOptions(filter = '') {
+    const container = document.getElementById('structureOfficeOptions');
+    if (!container) return;
+
+    const selectedValue = document.getElementById('structureOffice').value;
+    const filterLower = filter.toLowerCase();
+
+    const filtered = offices.filter(o =>
+        o.office_name.toLowerCase().includes(filterLower) ||
+        (o.office_code && o.office_code.toLowerCase().includes(filterLower)) ||
+        (o.city && o.city.toLowerCase().includes(filterLower))
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No offices found</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(o => `
+        <div class="dropdown-option ${o.id === selectedValue ? 'selected' : ''}"
+             onclick="selectStructureOffice('${o.id}', '${escapeHtml(o.office_name)}')">
+            <span class="dropdown-option-text">${escapeHtml(o.office_name)}</span>
+            <span class="dropdown-option-subtext">${escapeHtml(o.office_code || '')}</span>
+        </div>
+    `).join('');
+}
+
+function selectStructureOffice(value, label) {
+    document.getElementById('structureOffice').value = value;
+    document.getElementById('structureOfficeSelection').textContent = label;
+    document.getElementById('structureOfficeSelection').classList.remove('placeholder');
+    document.getElementById('structureOfficeDropdown').classList.remove('open');
+}
+
+function filterStructureOffices() {
+    const searchValue = document.getElementById('structureOfficeSearch').value;
+    renderStructureOfficeOptions(searchValue);
+}
+
+// Initialize structure modal office dropdown
+function initStructureOfficeDropdown(selectedOfficeId = '') {
+    const selection = document.getElementById('structureOfficeSelection');
+    const hiddenInput = document.getElementById('structureOffice');
+
+    if (!selection || !hiddenInput) {
+        console.warn('Structure office dropdown elements not found');
+        return;
+    }
+
+    if (selectedOfficeId) {
+        const office = offices.find(o => o.id === selectedOfficeId);
+        if (office) {
+            hiddenInput.value = office.id;
+            selection.textContent = office.office_name;
+            selection.classList.remove('placeholder');
+        } else {
+            hiddenInput.value = '';
+            selection.textContent = 'Select Office';
+            selection.classList.add('placeholder');
+        }
+    } else {
+        hiddenInput.value = '';
+        selection.textContent = 'Select Office';
+        selection.classList.add('placeholder');
+    }
 }
 
 // Initialize office modal dropdowns
@@ -3462,11 +3878,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadComponents() {
     try {
-        const response = await api.request('/hrms/payroll/components');
+        const includeInactive = document.getElementById('showInactiveComponents')?.checked || false;
+        const response = await api.request(`/hrms/payroll/components?includeInactive=${includeInactive}`);
         components = response || [];
         updateComponentsTables();
+        // Update the calculation base dropdown to reflect available basic components
+        updateCalculationBaseOptions();
     } catch (error) {
         console.error('Error loading components:', error);
+    }
+}
+
+function toggleShowInactiveComponents() {
+    const checkbox = document.getElementById('showInactiveComponents');
+    checkbox.checked = !checkbox.checked;
+    loadComponents();
+}
+
+// Update the "Percentage Of" dropdown to hide "Basic Salary" if no active basic component exists
+function updateCalculationBaseOptions() {
+    const calculationBaseSelect = document.getElementById('calculationBase');
+    if (!calculationBaseSelect) return;
+
+    // Check if there are any active basic components
+    const activeBasicComponents = components.filter(c => c.is_basic_component === true && c.is_active !== false);
+    const basicOption = calculationBaseSelect.querySelector('option[value="basic"]');
+
+    if (activeBasicComponents.length === 0) {
+        // No active basic component - hide the Basic Salary option entirely
+        if (basicOption) {
+            basicOption.style.display = 'none';
+        }
+        // If current selection is 'basic', switch to 'gross'
+        if (calculationBaseSelect.value === 'basic') {
+            calculationBaseSelect.value = 'gross';
+            updatePercentageHelpText();
+        }
+    } else {
+        // Active basic component exists - show the option
+        if (basicOption) {
+            basicOption.style.display = '';
+            basicOption.textContent = 'Basic Salary';
+        }
     }
 }
 
@@ -3491,22 +3944,53 @@ function updateComponentsTables() {
     updateDeductionsTable(deductions);
 }
 
+// Format component value for display (percentage or fixed amount)
+function formatComponentValue(component) {
+    const calcType = component.calculation_type || component.calculationType || 'fixed';
+    const calcBase = component.calculation_base || component.calculationBase || 'basic';
+    const percentage = component.percentage || 0;
+    const fixedAmount = component.fixed_amount || 0;
+
+    if (calcType === 'percentage') {
+        // Format the base nicely
+        let baseLabel = 'Basic';
+        if (calcBase === 'ctc') baseLabel = 'CTC';
+        else if (calcBase === 'gross') baseLabel = 'Gross';
+        else if (calcBase === 'basic') baseLabel = 'Basic';
+
+        return `<span class="value-badge value-percentage">${percentage}% of ${baseLabel}</span>`;
+    } else {
+        // Fixed amount - show "Not set" if 0
+        if (fixedAmount === 0 || fixedAmount === null) {
+            return `<span class="value-badge value-fixed" style="opacity: 0.6;">Not set</span>`;
+        }
+        return `<span class="value-badge value-fixed">₹${fixedAmount.toLocaleString('en-IN')}</span>`;
+    }
+}
+
 function updateEarningsTable(earnings) {
     const tbody = document.getElementById('earningsTable');
     if (!tbody) return;
 
     if (!earnings || earnings.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No earnings components</p></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><p>No earnings components</p></td></tr>';
         return;
     }
 
-    tbody.innerHTML = earnings.map(c => `
-        <tr>
-            <td><strong>${c.component_name || c.name}</strong></td>
+    tbody.innerHTML = earnings.map(c => {
+        const isActive = c.is_active !== undefined ? c.is_active : c.isActive;
+        const isBasic = c.is_basic_component === true;
+        return `
+        <tr class="${!isActive ? 'row-inactive' : ''}">
+            <td>
+                <strong>${c.component_name || c.name}</strong>
+                ${isBasic ? '<span class="basic-badge">Basic</span>' : ''}
+            </td>
             <td><code>${c.component_code || c.code}</code></td>
             <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${formatComponentValue(c)}</td>
             <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
-            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-badge status-${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
@@ -3518,7 +4002,7 @@ function updateEarningsTable(earnings) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 function updateDeductionsTable(deductions) {
@@ -3526,17 +4010,20 @@ function updateDeductionsTable(deductions) {
     if (!tbody) return;
 
     if (!deductions || deductions.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No deduction components</p></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><p>No deduction components</p></td></tr>';
         return;
     }
 
-    tbody.innerHTML = deductions.map(c => `
-        <tr>
+    tbody.innerHTML = deductions.map(c => {
+        const isActive = c.is_active !== undefined ? c.is_active : c.isActive;
+        return `
+        <tr class="${!isActive ? 'row-inactive' : ''}">
             <td><strong>${c.component_name || c.name}</strong></td>
             <td><code>${c.component_code || c.code}</code></td>
             <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${formatComponentValue(c)}</td>
             <td>${(c.is_pre_tax !== undefined ? c.is_pre_tax : c.isPreTax) ? 'Yes' : 'No'}</td>
-            <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-badge status-${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
@@ -3548,7 +4035,7 @@ function updateDeductionsTable(deductions) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 function showCreateComponentModal() {
@@ -3558,26 +4045,110 @@ function showCreateComponentModal() {
     // Reset status to active for new components
     const isActiveCheckbox = document.getElementById('componentIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
+    // Reset isBasicSalary checkbox
+    const isBasicCheckbox = document.getElementById('isBasicSalary');
+    if (isBasicCheckbox) isBasicCheckbox.checked = false;
+    // Reset calculation base to 'basic' (default for non-Basic components)
+    document.getElementById('calculationBase').value = 'basic';
+    // Update calculation base options based on active basic components
+    updateCalculationBaseOptions();
     document.getElementById('componentModal').classList.add('active');
-    // Reset percentage fields visibility
-    togglePercentageFields();
+    // Reset calculation fields visibility
+    toggleComponentCalcFields();
 }
 
-function togglePercentageFields() {
+function toggleComponentCalcFields() {
     const calcType = document.getElementById('calculationType')?.value;
     const percentageRow = document.getElementById('percentageFieldsRow');
+    const fixedAmountRow = document.getElementById('fixedAmountFieldsRow');
+    const isBasicSalaryRow = document.getElementById('isBasicSalaryRow');
+    const calculationBaseGroup = document.getElementById('calculationBaseGroup');
     const percentageInput = document.getElementById('componentPercentage');
+    const fixedAmountInput = document.getElementById('defaultFixedAmount');
 
-    if (!percentageRow || !percentageInput) return;
+    if (!percentageRow || !fixedAmountRow) return;
 
     if (calcType === 'percentage') {
         percentageRow.style.display = 'flex';
-        percentageInput.required = true;
+        fixedAmountRow.style.display = 'none';
+        if (isBasicSalaryRow) isBasicSalaryRow.style.display = 'block';
+        if (percentageInput) percentageInput.required = true;
+        if (fixedAmountInput) {
+            fixedAmountInput.required = false;
+            fixedAmountInput.value = '';
+        }
+        // Update help text and calculationBaseGroup visibility based on isBasicSalary checkbox
+        toggleBasicSalaryInfo();
     } else {
         percentageRow.style.display = 'none';
-        percentageInput.required = false;
-        percentageInput.value = '';
+        fixedAmountRow.style.display = 'flex';
+        if (isBasicSalaryRow) isBasicSalaryRow.style.display = 'none';
+        // Hide calculation base group for fixed type
+        if (calculationBaseGroup) calculationBaseGroup.style.display = 'none';
+        if (percentageInput) {
+            percentageInput.required = false;
+            percentageInput.value = '';
+        }
+        // Reset isBasicSalary checkbox for fixed type
+        const isBasicCheckbox = document.getElementById('isBasicSalary');
+        if (isBasicCheckbox) isBasicCheckbox.checked = false;
+        // Set calculation base to null for fixed amount
+        document.getElementById('calculationBase').value = '';
     }
+}
+
+// Toggle help text and calculation base based on isBasicSalary checkbox
+function toggleBasicSalaryInfo() {
+    const isBasicSalary = document.getElementById('isBasicSalary')?.checked;
+    const percentageHelpText = document.getElementById('percentageHelpText');
+    const calculationBase = document.getElementById('calculationBase');
+    const calculationBaseGroup = document.getElementById('calculationBaseGroup');
+
+    if (isBasicSalary) {
+        // This is the Basic Salary component - calculated as % of CTC
+        if (percentageHelpText) percentageHelpText.textContent = 'Percentage of CTC (Cost to Company)';
+        if (calculationBase) calculationBase.value = 'ctc';
+        // Hide the dropdown since basic salary is always % of CTC
+        if (calculationBaseGroup) calculationBaseGroup.style.display = 'none';
+    } else {
+        // Regular component - show dropdown to select base (Basic, Gross, or CTC)
+        if (calculationBaseGroup) calculationBaseGroup.style.display = 'block';
+        // Update help text based on selected base
+        updatePercentageHelpText();
+    }
+}
+
+// Update the help text when calculation base changes
+function updatePercentageHelpText() {
+    const calculationBase = document.getElementById('calculationBase');
+    const percentageHelpText = document.getElementById('percentageHelpText');
+
+    if (!calculationBase || !percentageHelpText) return;
+
+    const baseValue = calculationBase.value;
+    switch (baseValue) {
+        case 'ctc':
+            percentageHelpText.textContent = 'Percentage of CTC (Cost to Company)';
+            break;
+        case 'gross':
+            percentageHelpText.textContent = 'Percentage of Gross Salary';
+            break;
+        case 'basic':
+        default:
+            percentageHelpText.textContent = 'Percentage of Basic Salary';
+            break;
+    }
+}
+
+// Keep old function name for backward compatibility
+function togglePercentageFields() {
+    toggleComponentCalcFields();
+}
+
+// Legacy function - no longer needed but kept for compatibility
+function toggleIsBaseField() {
+    // This function is replaced by toggleBasicSalaryInfo
+    toggleBasicSalaryInfo();
 }
 
 function editComponent(componentId) {
@@ -3588,7 +4159,7 @@ function editComponent(componentId) {
     document.getElementById('componentName').value = component.component_name || component.name || '';
     document.getElementById('componentCode').value = component.component_code || component.code || '';
     document.getElementById('componentCategory').value = component.component_type || component.category || 'earning';
-    document.getElementById('calculationType').value = component.calculation_type || component.calculationType || 'fixed';
+    document.getElementById('calculationType').value = component.calculation_type || component.calculationType || 'percentage';
     document.getElementById('isTaxable').value = (component.is_taxable !== undefined ? component.is_taxable : component.isTaxable) ? 'true' : 'false';
     document.getElementById('isStatutory').value = (component.is_statutory !== undefined ? component.is_statutory : component.isStatutory) ? 'true' : 'false';
     document.getElementById('componentDescription').value = component.description || '';
@@ -3599,14 +4170,34 @@ function editComponent(componentId) {
         isActiveCheckbox.checked = component.is_active !== false;
     }
 
-    // Handle percentage fields
-    togglePercentageFields();
+    // Set percentage fields BEFORE triggering toggleComponentCalcFields
     if (component.calculation_type === 'percentage') {
-        document.getElementById('componentPercentage').value = component.percentage || '';
-        document.getElementById('calculationBase').value = component.calculation_base || 'basic';
+        document.getElementById('componentPercentage').value = component.percentage || component.default_percentage || '';
+        // Set calculation base value
+        const calcBaseValue = component.calculation_base || 'basic';
+        document.getElementById('calculationBase').value = calcBaseValue;
+        // Set isBasicSalary checkbox based on is_basic_component flag (or fallback to calculation_base)
+        const isBasicCheckbox = document.getElementById('isBasicSalary');
+        if (isBasicCheckbox) {
+            // Prefer is_basic_component flag if available, otherwise fallback to checking calculation_base
+            isBasicCheckbox.checked = component.is_basic_component === true || calcBaseValue === 'ctc';
+        }
+    }
+
+    // Handle calculation fields visibility (this will also update help text)
+    toggleComponentCalcFields();
+
+    // Set fixed amount field
+    if (component.calculation_type === 'fixed') {
+        const fixedAmountInput = document.getElementById('defaultFixedAmount');
+        if (fixedAmountInput) {
+            fixedAmountInput.value = component.default_fixed_amount || component.fixed_amount || '';
+        }
     }
 
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
+    // Update calculation base options based on active basic components
+    updateCalculationBaseOptions();
     document.getElementById('componentModal').classList.add('active');
 }
 
@@ -3634,8 +4225,71 @@ async function saveComponent() {
 
         // Add percentage fields if calculation type is percentage
         if (calculationType === 'percentage') {
-            data.percentage = parseFloat(document.getElementById('componentPercentage').value) || 0;
-            data.calculation_base = document.getElementById('calculationBase').value;
+            const percentageInputValue = document.getElementById('componentPercentage').value;
+            const percentageValue = parseFloat(percentageInputValue);
+
+            // Validate percentage is required and must be between 0.01 and 100
+            if (!percentageInputValue || percentageInputValue.trim() === '' || isNaN(percentageValue)) {
+                hideLoading();
+                showToast('Percentage is required. Please enter a value.', 'error');
+                return;
+            }
+
+            if (percentageValue <= 0) {
+                hideLoading();
+                showToast('Percentage must be greater than 0', 'error');
+                return;
+            }
+
+            if (percentageValue > 100) {
+                hideLoading();
+                showToast('Percentage must not exceed 100', 'error');
+                return;
+            }
+
+            data.percentage = percentageValue;
+            // calculation_base is set by toggleBasicSalaryInfo() based on isBasicSalary checkbox
+            // 'ctc' if isBasicSalary is checked, 'basic' otherwise
+            data.calculation_base = document.getElementById('calculationBase').value || 'basic';
+            // is_basic_component is true if this is a Basic Salary component (calculated as % of CTC)
+            data.is_basic_component = document.getElementById('isBasicSalary')?.checked || false;
+
+            // Validate: If calculation_base is 'basic', check if at least one basic component exists
+            if (data.calculation_base === 'basic' && !data.is_basic_component) {
+                const basicComponents = components.filter(c => c.is_basic_component === true && c.is_active !== false);
+                if (basicComponents.length === 0) {
+                    hideLoading();
+                    showToast('Cannot create component based on Basic. No component with "is_basic_component" flag exists. Please create a basic component first.', 'error');
+                    return;
+                }
+            }
+        } else {
+            // Fixed amount type - value is required and must be positive
+            const fixedInputValue = document.getElementById('defaultFixedAmount').value;
+            const fixedValue = parseFloat(fixedInputValue);
+
+            // Validate fixed amount is required and must be between 1 and 999,999,999
+            if (!fixedInputValue || fixedInputValue.trim() === '' || isNaN(fixedValue)) {
+                hideLoading();
+                showToast('Fixed amount is required. Please enter a value.', 'error');
+                return;
+            }
+
+            if (fixedValue <= 0) {
+                hideLoading();
+                showToast('Fixed amount must be greater than 0', 'error');
+                return;
+            }
+
+            if (fixedValue > 999999999) {
+                hideLoading();
+                showToast('Fixed amount must not exceed 999,999,999', 'error');
+                return;
+            }
+
+            data.fixed_amount = fixedValue;
+            data.calculation_base = null;
+            data.is_basic_component = false;
         }
 
         if (id) {
@@ -3669,10 +4323,13 @@ async function saveComponent() {
 async function loadSalaryStructures() {
     try {
         const officeFilter = document.getElementById('structureOfficeFilter')?.value || '';
+        const includeInactive = document.getElementById('showInactiveStructures')?.checked || false;
         let url = '/hrms/payroll/structures';
         if (officeFilter) {
             url = `/hrms/payroll/structures/office/${officeFilter}`;
         }
+        // Add includeInactive parameter
+        url += `?includeInactive=${includeInactive}`;
 
         const response = await api.request(url);
         structures = response || [];
@@ -3683,6 +4340,12 @@ async function loadSalaryStructures() {
     } catch (error) {
         console.error('Error loading salary structures:', error);
     }
+}
+
+function toggleShowInactiveStructures() {
+    const checkbox = document.getElementById('showInactiveStructures');
+    checkbox.checked = !checkbox.checked;
+    loadSalaryStructures();
 }
 
 async function loadOfficeStructureStatus() {
@@ -3754,8 +4417,10 @@ function updateSalaryStructuresTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(s => `
-        <tr>
+    tbody.innerHTML = filtered.map(s => {
+        const isActive = s.is_active !== undefined ? s.is_active : true;
+        return `
+        <tr class="${!isActive ? 'row-inactive' : ''}">
             <td><strong>${s.office_name || 'N/A'}</strong></td>
             <td><strong>${s.structure_name}</strong></td>
             <td><code>${s.structure_code || '-'}</code></td>
@@ -3767,7 +4432,7 @@ function updateSalaryStructuresTable() {
                     '<span class="text-muted">-</span>'
                 }
             </td>
-            <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-badge status-${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="viewStructureVersions('${s.id}')" title="Version History">
@@ -3785,7 +4450,7 @@ function updateSalaryStructuresTable() {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;}).join('');
 }
 
 function showCreateStructureModal() {
@@ -3794,17 +4459,192 @@ function showCreateStructureModal() {
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
     document.getElementById('structureComponents').innerHTML = '';
     structureComponentCounter = 0;
-    // Reset office dropdown
-    const officeSelect = document.getElementById('structureOffice');
-    if (officeSelect) officeSelect.value = '';
+    // Reset office searchable dropdown
+    initStructureOfficeDropdown('');
     // Reset is_default select
     const isDefaultSelect = document.getElementById('structureIsDefault');
     if (isDefaultSelect) isDefaultSelect.value = 'false';
     // Reset status to active for new structures
     const isActiveCheckbox = document.getElementById('structureIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
+    // Populate basic components list (none selected for new structure)
+    populateBasicComponentsList(null);
     document.getElementById('structureModal').classList.add('active');
 }
+
+// Populate basic salary components as radio buttons
+// Store basic components for filtering
+let basicComponentsData = [];
+
+function populateBasicComponentsList(selectedBasicComponentId) {
+    const optionsContainer = document.getElementById('basicComponentOptions');
+    const valueDisplay = document.getElementById('basicComponentDropdownValue');
+    const hiddenInput = document.getElementById('selectedBasicComponentId');
+    const helpText = document.getElementById('basicComponentHelpText');
+
+    if (!optionsContainer) return;
+
+    // Filter only basic components (is_basic_component === true)
+    basicComponentsData = components.filter(c => c.is_basic_component === true);
+
+    if (basicComponentsData.length === 0) {
+        optionsContainer.innerHTML = `
+            <div class="searchable-dropdown-empty">
+                No basic components available. <a href="#" onclick="showCreateComponentModal(); closeBasicComponentDropdown(); return false;">Create one</a>
+            </div>
+        `;
+        if (valueDisplay) valueDisplay.textContent = 'No basic components available';
+        if (helpText) helpText.innerHTML = 'No basic salary components available. <a href="#" onclick="showCreateComponentModal(); return false;">Create one first</a>.';
+        return;
+    }
+
+    if (helpText) helpText.textContent = 'Select the basic salary component for this structure';
+
+    // Render options
+    renderBasicComponentOptions(basicComponentsData, selectedBasicComponentId);
+
+    // Set selected value display
+    if (selectedBasicComponentId) {
+        const selected = basicComponentsData.find(c => c.id === selectedBasicComponentId);
+        if (selected && valueDisplay) {
+            const compName = selected.component_name || selected.name || '';
+            const percentage = selected.percentage || selected.default_percentage || 0;
+            valueDisplay.innerHTML = `<span class="selected-component-name">${escapeHtml(compName)}</span> <span class="selected-component-percent">${percentage}%</span>`;
+            valueDisplay.classList.add('has-value');
+        }
+        if (hiddenInput) hiddenInput.value = selectedBasicComponentId;
+    } else {
+        if (valueDisplay) {
+            valueDisplay.textContent = 'Select basic component...';
+            valueDisplay.classList.remove('has-value');
+        }
+        if (hiddenInput) hiddenInput.value = '';
+    }
+}
+
+function renderBasicComponentOptions(componentsList, selectedId) {
+    const optionsContainer = document.getElementById('basicComponentOptions');
+    if (!optionsContainer) return;
+
+    if (componentsList.length === 0) {
+        optionsContainer.innerHTML = `<div class="searchable-dropdown-no-results">No matching components found</div>`;
+        return;
+    }
+
+    optionsContainer.innerHTML = componentsList.map(c => {
+        const isSelected = c.id === selectedId;
+        const compName = c.component_name || c.name || '';
+        const compCode = c.component_code || c.code || '';
+        const percentage = c.percentage || c.default_percentage || 0;
+
+        return `
+            <div class="searchable-dropdown-option ${isSelected ? 'selected' : ''}" onclick="selectBasicComponent('${c.id}')" data-id="${c.id}">
+                <div class="option-info">
+                    <span class="option-name">${escapeHtml(compName)}</span>
+                    <span class="option-details">${escapeHtml(compCode)} • ${percentage}% of CTC</span>
+                </div>
+                <span class="option-percentage">${percentage}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Toggle dropdown visibility
+function toggleBasicComponentDropdown() {
+    const container = document.getElementById('basicComponentDropdownContainer');
+    const menu = document.getElementById('basicComponentDropdownMenu');
+    const searchInput = document.getElementById('basicComponentSearchInput');
+
+    if (container && menu) {
+        const isOpen = container.classList.contains('open');
+
+        // Close any other open dropdowns first
+        document.querySelectorAll('.searchable-dropdown.open').forEach(dd => {
+            if (dd !== container) dd.classList.remove('open');
+        });
+
+        if (isOpen) {
+            container.classList.remove('open');
+        } else {
+            container.classList.add('open');
+            // Focus search input and clear it
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+                // Reset filter
+                renderBasicComponentOptions(basicComponentsData, document.getElementById('selectedBasicComponentId')?.value);
+            }
+        }
+    }
+}
+
+function closeBasicComponentDropdown() {
+    const container = document.getElementById('basicComponentDropdownContainer');
+    if (container) container.classList.remove('open');
+}
+
+// Filter basic components based on search
+function filterBasicComponents(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
+    const selectedId = document.getElementById('selectedBasicComponentId')?.value;
+
+    if (!term) {
+        renderBasicComponentOptions(basicComponentsData, selectedId);
+        return;
+    }
+
+    const filtered = basicComponentsData.filter(c => {
+        const name = (c.component_name || c.name || '').toLowerCase();
+        const code = (c.component_code || c.code || '').toLowerCase();
+        return name.includes(term) || code.includes(term);
+    });
+
+    renderBasicComponentOptions(filtered, selectedId);
+}
+
+// Handle basic component selection
+function selectBasicComponent(componentId) {
+    const hiddenInput = document.getElementById('selectedBasicComponentId');
+    const valueDisplay = document.getElementById('basicComponentDropdownValue');
+
+    // Find the component
+    const component = basicComponentsData.find(c => c.id === componentId);
+
+    if (component) {
+        // Update hidden input
+        if (hiddenInput) hiddenInput.value = componentId;
+
+        // Update display value
+        if (valueDisplay) {
+            const compName = component.component_name || component.name || '';
+            const percentage = component.percentage || component.default_percentage || 0;
+            valueDisplay.innerHTML = `<span class="selected-component-name">${escapeHtml(compName)}</span> <span class="selected-component-percent">${percentage}%</span>`;
+            valueDisplay.classList.add('has-value');
+        }
+
+        // Update option highlighting
+        document.querySelectorAll('#basicComponentOptions .searchable-dropdown-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.id === componentId);
+        });
+    }
+
+    // Close dropdown
+    closeBasicComponentDropdown();
+}
+
+// Get selected basic component
+function getSelectedBasicComponent() {
+    const hiddenInput = document.getElementById('selectedBasicComponentId');
+    return hiddenInput ? hiddenInput.value : null;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('basicComponentDropdownContainer');
+    if (container && !container.contains(e.target)) {
+        container.classList.remove('open');
+    }
+});
 
 async function editSalaryStructure(structureId) {
     try {
@@ -3822,11 +4662,8 @@ async function editSalaryStructure(structureId) {
         document.getElementById('structureCode').value = structure.structure_code || '';
         document.getElementById('structureDescription').value = structure.description || '';
 
-        // Set office dropdown
-        const officeSelect = document.getElementById('structureOffice');
-        if (officeSelect && structure.office_id) {
-            officeSelect.value = structure.office_id;
-        }
+        // Set office searchable dropdown
+        initStructureOfficeDropdown(structure.office_id || '');
 
         // Set is_default select
         const isDefaultSelect = document.getElementById('structureIsDefault');
@@ -3840,9 +4677,28 @@ async function editSalaryStructure(structureId) {
             isActiveCheckbox.checked = structure.is_active !== false;
         }
 
-        // Load and populate structure components
+        // Find basic component from existing structure components
+        let selectedBasicComponentId = null;
+        const nonBasicComponents = [];
+
         if (structure.components && structure.components.length > 0) {
-            populateStructureComponents(structure.components);
+            structure.components.forEach(sc => {
+                // Find the full component details
+                const fullComponent = components.find(c => c.id === sc.component_id);
+                if (fullComponent && fullComponent.is_basic_component === true) {
+                    selectedBasicComponentId = sc.component_id;
+                } else {
+                    nonBasicComponents.push(sc);
+                }
+            });
+        }
+
+        // Populate basic components list with selection
+        populateBasicComponentsList(selectedBasicComponentId);
+
+        // Load and populate non-basic structure components
+        if (nonBasicComponents.length > 0) {
+            populateStructureComponents(nonBasicComponents);
         } else {
             document.getElementById('structureComponents').innerHTML = '';
             structureComponentCounter = 0;
@@ -3871,17 +4727,55 @@ async function saveSalaryStructure() {
         return;
     }
 
-    // Get structure components
-    const structureComponents = getStructureComponents();
+    // VALIDATION 1: Check that a basic salary component is selected
+    const selectedBasicComponentId = getSelectedBasicComponent();
+    if (!selectedBasicComponentId) {
+        showToast('Please select a Basic Salary component for this structure', 'error');
+        return;
+    }
 
-    // Validate that at least one component is added with a value
+    // Get the basic component details
+    const basicComponent = components.find(c => c.id === selectedBasicComponentId);
+    if (!basicComponent) {
+        showToast('Selected Basic Salary component not found', 'error');
+        return;
+    }
+
+    // Get other structure components (non-basic)
+    const otherComponents = getStructureComponents();
+
+    // Build the complete components array starting with the basic component
+    const structureComponents = [];
+
+    // Add the basic salary component first (always at display_order 0)
+    structureComponents.push({
+        component_id: basicComponent.id,
+        component_type: basicComponent.component_type || 'earning',
+        calculation_type: basicComponent.calculation_type || 'percentage',
+        calculation_base: 'ctc', // Basic is always % of CTC
+        is_calculation_base: true, // This IS the base for other calculations
+        percentage: basicComponent.default_percentage || basicComponent.percentage || 0,
+        fixed_amount: null,
+        override_value: null,
+        display_order: 0
+    });
+
+    // Add other components with adjusted display_order
+    otherComponents.forEach((comp, index) => {
+        structureComponents.push({
+            ...comp,
+            display_order: index + 1 // Start from 1 since basic is 0
+        });
+    });
+
+    // Validate that at least basic component exists (should always pass after above check)
     if (!structureComponents || structureComponents.length === 0) {
         showToast('Please add at least one salary component with values', 'error');
         return;
     }
 
-    // Validate that all components have proper values
-    const invalidComponents = structureComponents.filter(c => {
+    // Validate that all non-basic components have proper values
+    const invalidComponents = otherComponents.filter(c => {
         if (c.calculation_type === 'percentage') {
             return !c.percentage || c.percentage <= 0;
         } else {
@@ -3891,13 +4785,6 @@ async function saveSalaryStructure() {
 
     if (invalidComponents.length > 0) {
         showToast('All components must have a value greater than 0', 'error');
-        return;
-    }
-
-    // Validate that at least one earning component is present
-    const hasEarningComponent = structureComponents.some(c => c.component_type === 'earning');
-    if (!hasEarningComponent) {
-        showToast('Salary structure must have at least one earning component (e.g., Basic Salary)', 'error');
         return;
     }
 
@@ -3916,6 +4803,14 @@ async function saveSalaryStructure() {
             is_active: document.getElementById('structureIsActive')?.checked !== false,
             components: structureComponents
         };
+
+        // Debug logging - remove after testing
+        console.log('Saving structure with components:', {
+            basicComponent: basicComponent,
+            otherComponents: otherComponents,
+            totalComponents: structureComponents.length,
+            components: structureComponents
+        });
 
         if (id) {
             data.id = id;
@@ -3950,20 +4845,27 @@ function addStructureComponent() {
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
                 <div class="form-group" style="flex: 2;">
-                    <select class="form-control component-select" required>
-                        <option value="">Select Component</option>
-                        ${components.map(c => `<option value="${c.id}" data-type="${c.component_type || c.category}">${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
-                    </select>
+                    <div class="searchable-dropdown component-dropdown" id="${componentId}_dropdown">
+                        <div class="searchable-dropdown-trigger" onclick="toggleComponentDropdown('${componentId}')">
+                            <span class="dropdown-selection placeholder" id="${componentId}_selection">Select Component</span>
+                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div class="searchable-dropdown-menu" id="${componentId}_menu">
+                            <div class="dropdown-search-box">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="${componentId}_search" class="dropdown-search-input" placeholder="Search components..." oninput="filterComponentOptions('${componentId}')">
+                            </div>
+                            <div class="dropdown-options" id="${componentId}_options"></div>
+                        </div>
+                        <input type="hidden" class="component-select" id="${componentId}_value" data-type="" data-calc-base="" data-calc-type="" required>
+                    </div>
                 </div>
-                <div class="form-group" style="flex: 1;">
-                    <select class="form-control calc-type-select" onchange="toggleComponentValueFields(this, '${componentId}')">
-                        <option value="percentage">% of Basic</option>
-                        <option value="fixed">Fixed Amount</option>
-                    </select>
+                <div class="form-group calc-rule-display" style="flex: 1.5;" id="${componentId}_calc_rule">
+                    <span class="calc-rule-text text-muted">Select a component</span>
                 </div>
-                <div class="form-group value-field" style="flex: 1;">
-                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100">
-                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled>
+                <div class="form-group value-field" style="flex: 1;" id="${componentId}_value_field">
+                    <input type="number" class="form-control override-value" id="${componentId}_override" placeholder="Override" step="0.01" min="0" title="Leave empty to use component default">
+                    <input type="hidden" class="calc-type-select" id="${componentId}_calctype_value" value="">
                 </div>
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeStructureComponent('${componentId}')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3976,6 +4878,226 @@ function addStructureComponent() {
     `;
 
     container.insertAdjacentHTML('beforeend', componentHtml);
+    // Initialize the component dropdown options
+    renderComponentDropdownOptions(componentId);
+}
+
+// Toggle component searchable dropdown
+function toggleComponentDropdown(componentId) {
+    const dropdown = document.getElementById(`${componentId}_dropdown`);
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all other dropdowns first
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== `${componentId}_dropdown`) {
+            d.classList.remove('open');
+        }
+    });
+
+    if (isOpen) {
+        dropdown.classList.remove('open');
+    } else {
+        dropdown.classList.add('open');
+        const searchInput = document.getElementById(`${componentId}_search`);
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+            renderComponentDropdownOptions(componentId);
+        }
+    }
+}
+
+// Render component dropdown options with badges
+function renderComponentDropdownOptions(componentId, filter = '') {
+    const container = document.getElementById(`${componentId}_options`);
+    if (!container) return;
+
+    const selectedValue = document.getElementById(`${componentId}_value`).value;
+    const filterLower = filter.toLowerCase();
+
+    // Exclude basic components - they are selected separately in the "Basic Salary Component" section
+    const filtered = components.filter(c => {
+        // Skip basic components
+        if (c.is_basic_component === true) return false;
+
+        const name = c.component_name || c.name || '';
+        const code = c.component_code || c.code || '';
+        return name.toLowerCase().includes(filterLower) || code.toLowerCase().includes(filterLower);
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No components found</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(c => {
+        const compType = c.component_type || c.category || 'earning';
+        const compName = c.component_name || c.name || '';
+        const compCode = c.component_code || c.code || '';
+        const badgeClass = compType === 'earning' ? 'badge-success' : 'badge-danger';
+        const badgeText = compType === 'earning' ? 'Earning' : 'Deduction';
+
+        return `
+            <div class="dropdown-option ${c.id === selectedValue ? 'selected' : ''}"
+                 onclick="selectComponentOption('${componentId}', '${c.id}', '${escapeHtml(compName)}', '${compType}')">
+                <div class="dropdown-option-content">
+                    <span class="dropdown-option-text">${escapeHtml(compName)} (${escapeHtml(compCode)})</span>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Select a component from dropdown
+function selectComponentOption(componentId, value, label, compType) {
+    const hiddenInput = document.getElementById(`${componentId}_value`);
+    const selection = document.getElementById(`${componentId}_selection`);
+    const dropdown = document.getElementById(`${componentId}_dropdown`);
+    const calcRuleDisplay = document.getElementById(`${componentId}_calc_rule`);
+    const valueField = document.getElementById(`${componentId}_value_field`);
+    const overrideInput = document.getElementById(`${componentId}_override`);
+    const calcTypeHidden = document.getElementById(`${componentId}_calctype_value`);
+
+    // Get the full component details
+    const comp = components.find(c => c.id === value);
+    if (!comp) return;
+
+    // Store component data in hidden input
+    hiddenInput.value = value;
+    hiddenInput.setAttribute('data-type', compType);
+    hiddenInput.setAttribute('data-calc-type', comp.calculation_type || 'percentage');
+    hiddenInput.setAttribute('data-calc-base', comp.calculation_base || 'basic');
+    hiddenInput.setAttribute('data-is-base', comp.is_calculation_base || false);
+
+    // Update selection display
+    selection.textContent = label;
+    selection.classList.remove('placeholder');
+    dropdown.classList.remove('open');
+
+    // Store calculation type in hidden field
+    if (calcTypeHidden) {
+        calcTypeHidden.value = comp.calculation_type || 'percentage';
+    }
+
+    // Build and display the calculation rule
+    const calcType = comp.calculation_type || 'percentage';
+    const calcBase = comp.calculation_base || 'basic';
+    const defaultPct = comp.default_percentage || comp.percentage || 0;
+    const defaultFixed = comp.default_fixed_amount || comp.fixed_amount || 0;
+    const isBase = comp.is_calculation_base === true;
+
+    let ruleText = '';
+    let ruleClass = '';
+
+    if (calcType === 'percentage') {
+        const baseLabel = calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic';
+        if (isBase) {
+            ruleText = `${defaultPct}% of ${baseLabel}`;
+            ruleClass = 'badge-info';
+        } else {
+            ruleText = `${defaultPct}% of ${baseLabel}`;
+            ruleClass = calcBase === 'ctc' ? 'badge-info' : 'badge-warning';
+        }
+    } else {
+        ruleText = defaultFixed > 0 ? `Fixed ₹${defaultFixed.toLocaleString()}` : 'Fixed Amount';
+        ruleClass = 'badge-success';
+    }
+
+    if (calcRuleDisplay) {
+        calcRuleDisplay.innerHTML = `<span class="badge ${ruleClass}">${ruleText}</span>`;
+    }
+
+    // Configure override input
+    if (valueField && overrideInput) {
+        if (isBase && calcBase === 'ctc') {
+            // This is a CTC-based base component (like Basic Salary)
+            // No override needed - auto-calculated from employee's CTC
+            valueField.style.display = 'none';
+            overrideInput.value = '';
+        } else if (calcType === 'percentage') {
+            valueField.style.display = 'block';
+            overrideInput.placeholder = `Override % (default: ${defaultPct})`;
+            overrideInput.value = ''; // Empty means use default
+            overrideInput.max = '100';
+        } else {
+            valueField.style.display = 'block';
+            overrideInput.placeholder = defaultFixed > 0 ? `Override (default: ${defaultFixed})` : 'Enter amount';
+            overrideInput.value = '';
+            overrideInput.removeAttribute('max');
+        }
+    }
+}
+
+// Filter component dropdown options
+function filterComponentOptions(componentId) {
+    const searchValue = document.getElementById(`${componentId}_search`).value;
+    renderComponentDropdownOptions(componentId, searchValue);
+}
+
+// Toggle calculation type dropdown
+function toggleCalcTypeDropdown(componentId) {
+    const dropdown = document.getElementById(`${componentId}_calctype_dropdown`);
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all other dropdowns first
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== `${componentId}_calctype_dropdown`) {
+            d.classList.remove('open');
+        }
+    });
+
+    if (isOpen) {
+        dropdown.classList.remove('open');
+    } else {
+        dropdown.classList.add('open');
+    }
+}
+
+// Select calculation type
+function selectCalcType(componentId, value, label) {
+    const hiddenInput = document.getElementById(`${componentId}_calctype_value`);
+    const selection = document.getElementById(`${componentId}_calctype_selection`);
+    const dropdown = document.getElementById(`${componentId}_calctype_dropdown`);
+    const optionsContainer = document.getElementById(`${componentId}_calctype_options`);
+
+    hiddenInput.value = value;
+    selection.textContent = label;
+    dropdown.classList.remove('open');
+
+    // Update selected state in options
+    optionsContainer.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.textContent.trim() === label) {
+            opt.classList.add('selected');
+        }
+    });
+
+    // Toggle value fields
+    toggleComponentValueFieldsByType(componentId, value);
+}
+
+// Toggle value fields based on calculation type
+function toggleComponentValueFieldsByType(componentId, calcType) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    if (calcType === 'percentage') {
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+        fixedInput.value = '';
+    } else {
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+        percentageInput.value = '';
+    }
 }
 
 function removeStructureComponent(componentId) {
@@ -4015,20 +5137,42 @@ function getStructureComponents() {
     rows.forEach((row, index) => {
         const componentSelect = row.querySelector('.component-select');
         const calcTypeSelect = row.querySelector('.calc-type-select');
-        const percentageInput = row.querySelector('.percentage-value');
-        const fixedInput = row.querySelector('.fixed-value');
+        const overrideInput = row.querySelector('.override-value');
 
         if (componentSelect.value) {
-            // Get component_type from the selected option's data-type attribute
-            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
-            const componentType = selectedOption?.getAttribute('data-type') || '';
+            // Get component data from the hidden input's data attributes
+            const componentType = componentSelect.getAttribute('data-type') || '';
+            const calcType = componentSelect.getAttribute('data-calc-type') || calcTypeSelect?.value || 'percentage';
+            const calcBase = componentSelect.getAttribute('data-calc-base') || 'basic';
+            const isBase = componentSelect.getAttribute('data-is-base') === 'true';
+
+            // Get the override value (if provided)
+            const overrideValue = overrideInput ? parseFloat(overrideInput.value) : null;
+
+            // Get the component's default values
+            const comp = components.find(c => c.id === componentSelect.value);
+            const defaultPct = comp?.default_percentage || comp?.percentage || 0;
+            const defaultFixed = comp?.default_fixed_amount || comp?.fixed_amount || 0;
+
+            // Use override if provided, otherwise use component default
+            let percentage = null;
+            let fixed_amount = null;
+
+            if (calcType === 'percentage') {
+                percentage = (overrideValue !== null && !isNaN(overrideValue)) ? overrideValue : defaultPct;
+            } else {
+                fixed_amount = (overrideValue !== null && !isNaN(overrideValue)) ? overrideValue : defaultFixed;
+            }
 
             componentsList.push({
                 component_id: componentSelect.value,
                 component_type: componentType,
-                calculation_type: calcTypeSelect.value,
-                percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
-                fixed_amount: calcTypeSelect.value === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
+                calculation_type: calcType,
+                calculation_base: calcBase,
+                is_calculation_base: isBase,
+                percentage: percentage,
+                fixed_amount: fixed_amount,
+                override_value: overrideValue,
                 display_order: index + 1
             });
         }
@@ -4047,24 +5191,34 @@ function populateStructureComponents(structureComponents) {
             addStructureComponent();
             const lastRow = container.lastElementChild;
             if (lastRow) {
-                lastRow.querySelector('.component-select').value = sc.component_id;
-                lastRow.querySelector('.calc-type-select').value = sc.calculation_type || 'percentage';
+                const rowId = lastRow.id;
+                const componentSelect = lastRow.querySelector('.component-select');
 
-                const percentageInput = lastRow.querySelector('.percentage-value');
-                const fixedInput = lastRow.querySelector('.fixed-value');
+                // Find the component details
+                const comp = components.find(c => c.id === sc.component_id);
+                if (!comp) return;
 
-                if (sc.calculation_type === 'fixed') {
-                    percentageInput.style.display = 'none';
-                    percentageInput.disabled = true;
-                    fixedInput.style.display = 'block';
-                    fixedInput.disabled = false;
-                    fixedInput.value = sc.fixed_amount || '';
-                } else {
-                    percentageInput.style.display = 'block';
-                    percentageInput.disabled = false;
-                    fixedInput.style.display = 'none';
-                    fixedInput.disabled = true;
-                    percentageInput.value = sc.percentage || '';
+                const compName = comp.component_name || comp.name || '';
+                const compType = comp.component_type || comp.category || 'earning';
+
+                // Simulate selecting the component to trigger all the UI updates
+                selectComponentOption(rowId, sc.component_id, compName, compType);
+
+                // If there's an override value stored, set it
+                const overrideInput = lastRow.querySelector('.override-value');
+                if (overrideInput && sc.override_value !== null && sc.override_value !== undefined) {
+                    overrideInput.value = sc.override_value;
+                } else if (overrideInput) {
+                    // Check if the saved value differs from component default
+                    const calcType = comp.calculation_type || 'percentage';
+                    const defaultPct = comp.default_percentage || comp.percentage || 0;
+                    const defaultFixed = comp.default_fixed_amount || comp.fixed_amount || 0;
+
+                    if (calcType === 'percentage' && sc.percentage && sc.percentage !== defaultPct) {
+                        overrideInput.value = sc.percentage;
+                    } else if (calcType === 'fixed' && sc.fixed_amount && sc.fixed_amount !== defaultFixed) {
+                        overrideInput.value = sc.fixed_amount;
+                    }
                 }
             }
         });
@@ -4169,21 +5323,90 @@ async function viewVersionDetails(versionId) {
             return;
         }
 
-        const components = version.components || [];
-        let componentsList = components.map(c => {
-            const valueStr = c.calculation_type === 'percentage'
-                ? `${c.percentage}% of ${c.calculation_base || 'basic'}`
-                : `₹${c.fixed_amount?.toFixed(2) || '0.00'}`;
-            return `${c.component_name} (${c.component_code}): ${valueStr}`;
-        }).join('\n');
+        // Populate modal header
+        document.getElementById('versionBadge').textContent = `v${version.version_number}`;
 
-        alert(`Version ${version.version_number} Details\n` +
-              `\nEffective From: ${formatDate(version.effective_from)}` +
-              `\nEffective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}` +
-              `\nChange Reason: ${version.change_reason || 'N/A'}` +
-              `\n\nComponents:\n${componentsList}`);
+        // Populate effective dates
+        document.getElementById('versionEffectiveFrom').textContent = formatDate(version.effective_from);
+
+        const effectiveToEl = document.getElementById('versionEffectiveTo');
+        if (version.effective_to) {
+            effectiveToEl.textContent = formatDate(version.effective_to);
+            effectiveToEl.classList.remove('ongoing');
+        } else {
+            effectiveToEl.textContent = 'Ongoing';
+            effectiveToEl.classList.add('ongoing');
+        }
+
+        // Populate change reason
+        const reasonText = document.getElementById('versionChangeReason');
+        if (version.change_reason) {
+            reasonText.textContent = version.change_reason;
+            reasonText.classList.remove('empty');
+        } else {
+            reasonText.textContent = 'No reason provided';
+            reasonText.classList.add('empty');
+        }
+
+        // Populate components table
+        const components = version.components || [];
+        document.getElementById('versionComponentCount').textContent = components.length;
+
+        const tbody = document.getElementById('versionComponentsBody');
+
+        if (components.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3">
+                        <div class="version-components-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            <p>No components in this version</p>
+                        </div>
+                    </td>
+                </tr>`;
+        } else {
+            tbody.innerHTML = components.map(c => {
+                const isEarning = c.component_type === 'earning';
+                const typeClass = isEarning ? 'earning' : 'deduction';
+                const typeLabel = isEarning ? 'Earning' : 'Deduction';
+
+                let valueHtml;
+                if (c.calculation_type === 'percentage') {
+                    let baseLabel = 'Basic';
+                    if (c.calculation_base === 'gross') {
+                        baseLabel = 'Gross';
+                    } else if (c.calculation_base && c.calculation_base !== 'basic') {
+                        baseLabel = c.calculation_base;
+                    }
+                    valueHtml = `
+                        <span class="percentage">${c.percentage || 0}%</span>
+                        <span class="calc-base">of ${baseLabel}</span>`;
+                } else {
+                    valueHtml = `<span class="fixed">₹${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="component-name">
+                                <strong>${c.component_name || 'Unknown'}</strong>
+                                <span class="component-code">${c.component_code || '-'}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="component-type ${typeClass}">${typeLabel}</span>
+                        </td>
+                        <td>
+                            <div class="component-value">${valueHtml}</div>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
 
         hideLoading();
+        openModal('versionDetailsModal');
     } catch (error) {
         console.error('Error loading version details:', error);
         showToast(error.message || 'Failed to load version details', 'error');
@@ -4238,56 +5461,273 @@ async function compareVersions(structureId, fromVersion, toVersion) {
     }
 }
 
-function showCreateVersionModal() {
+async function showCreateVersionModal() {
     if (!currentVersionStructureId) {
         showToast('No structure selected', 'error');
         return;
     }
 
-    document.getElementById('newVersionForm').reset();
+    try {
+        showLoading();
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('versionEffectiveDate').value = tomorrow.toISOString().split('T')[0];
+        // Fetch the BASE structure's components (not version components)
+        // This ensures any edits to the base structure are reflected
+        const baseStructure = await api.request(`/hrms/payroll/structures/${currentVersionStructureId}`);
+        const baseStructureComponents = baseStructure?.components || [];
 
-    populateNewVersionComponents();
+        document.getElementById('newVersionForm').reset();
 
-    document.getElementById('createVersionModalTitle').textContent = `Create New Version - ${currentVersionStructureName}`;
-    openModal('createVersionModal');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('versionEffectiveDate').value = tomorrow.toISOString().split('T')[0];
+
+        // Pass base structure components to pre-select them
+        populateNewVersionComponents(baseStructureComponents);
+
+        document.getElementById('createVersionModalTitle').textContent = `Create New Version - ${currentVersionStructureName}`;
+        openModal('createVersionModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading structure for new version:', error);
+        showToast('Failed to load structure components', 'error');
+        hideLoading();
+    }
 }
 
-function populateNewVersionComponents() {
+function populateNewVersionComponents(baseStructureComponents = []) {
     const container = document.getElementById('newVersionComponents');
     if (!container) return;
 
-    const latestVersion = structureVersions[0];
-    const existingComponents = latestVersion?.components || [];
+    // Use BASE STRUCTURE components for pre-selection (not previous version)
+    // This ensures any edits made to the base structure are reflected in new versions
+    const existingComponents = baseStructureComponents;
 
-    container.innerHTML = components.map(c => {
-        const existingComp = existingComponents.find(ec => ec.component_id === c.id);
-        const isSelected = !!existingComp;
-        const value = existingComp?.percentage || existingComp?.fixed_amount || '';
-        const calcType = existingComp?.calculation_type || 'percentage';
+    // Build table structure
+    container.innerHTML = `
+        <div class="version-components-table">
+            <div class="version-components-header">
+                <div class="col-select"></div>
+                <div class="col-name">Component</div>
+                <div class="col-type">Type</div>
+                <div class="col-calc">Calculation</div>
+                <div class="col-value">Value</div>
+            </div>
+            <div class="version-components-body">
+                ${components.map(c => {
+                    const existingComp = existingComponents.find(ec => ec.component_id === c.id);
+                    const isSelected = !!existingComp;
 
-        return `
-        <div class="version-component-row">
-            <label class="checkbox-label">
-                <input type="checkbox" name="versionComponent" value="${c.id}" ${isSelected ? 'checked' : ''}
-                       data-name="${c.component_name || c.name}" data-code="${c.component_code || c.code}"
-                       data-type="${c.component_type || c.category}">
-                <span>${c.component_name || c.name} (${c.component_code || c.code})</span>
-                <span class="component-badge component-${c.component_type || c.category}">${c.component_type || c.category}</span>
-            </label>
-            <div class="component-value-inputs">
-                <select class="form-control form-control-sm version-calc-type" data-component-id="${c.id}">
-                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>% of Basic</option>
-                    <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
-                </select>
-                <input type="number" class="form-control form-control-sm version-value" data-component-id="${c.id}"
-                       value="${value}" placeholder="${calcType === 'percentage' ? '%' : '₹'}" step="0.01" min="0">
+                    // Use values from base structure component if present
+                    const value = existingComp?.percentage || existingComp?.fixed_amount ||
+                                  c.default_percentage || c.percentage || '';
+                    const calcType = existingComp?.calculation_type || c.calculation_type || 'percentage';
+                    const calcBase = existingComp?.calculation_base || c.calculation_base || 'basic';
+                    const compType = c.component_type || c.category;
+
+                    // Format calculation display based on base
+                    const calcBaseLabel = calcBase === 'gross' ? 'Gross' : calcBase === 'ctc' ? 'CTC' : 'Basic';
+
+                    return `
+                    <div class="version-component-row ${isSelected ? 'selected' : ''}" data-component-id="${c.id}">
+                        <div class="col-select">
+                            <input type="checkbox" name="versionComponent" value="${c.id}" ${isSelected ? 'checked' : ''}
+                                   id="vc_${c.id}"
+                                   data-name="${c.component_name || c.name}"
+                                   data-code="${c.component_code || c.code}"
+                                   data-type="${compType}"
+                                   data-calc-base="${calcBase}"
+                                   onchange="toggleVersionComponentRow(this)">
+                        </div>
+                        <div class="col-name">
+                            <label for="vc_${c.id}">${c.component_name || c.name}</label>
+                            <span class="component-code">${c.component_code || c.code}</span>
+                        </div>
+                        <div class="col-type">
+                            <span class="type-badge type-${compType}">${compType}</span>
+                        </div>
+                        <div class="col-calc">
+                            <select class="version-calc-type" data-component-id="${c.id}" onchange="updateVersionValuePlaceholder(this)">
+                                <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>% of ${calcBaseLabel}</option>
+                                <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed ₹</option>
+                            </select>
+                        </div>
+                        <div class="col-value">
+                            <input type="number" class="version-value" data-component-id="${c.id}"
+                                   value="${isSelected ? value : ''}" placeholder="${calcType === 'percentage' ? '%' : '₹'}"
+                                   step="0.01" min="0">
+                        </div>
+                    </div>`;
+                }).join('')}
             </div>
         </div>`;
-    }).join('');
+}
+
+function toggleVersionComponentRow(checkbox) {
+    const row = checkbox.closest('.version-component-row');
+    if (checkbox.checked) {
+        row.classList.add('selected');
+    } else {
+        row.classList.remove('selected');
+    }
+}
+
+function updateVersionValuePlaceholder(select) {
+    const componentId = select.dataset.componentId;
+    const input = document.querySelector(`.version-value[data-component-id="${componentId}"]`);
+    if (input) {
+        input.placeholder = select.value === 'percentage' ? '%' : '₹';
+    }
+}
+
+// =============================================================================
+// SALARY CALCULATION PREVIEW
+// =============================================================================
+
+function previewVersionedSalary() {
+    // Get the current version's components from structureVersions
+    if (!structureVersions || structureVersions.length === 0) {
+        showToast('No version data available for preview', 'error');
+        return;
+    }
+
+    // Reset the modal
+    document.getElementById('previewCtcInput').value = '';
+    document.getElementById('salaryPreviewResults').style.display = 'none';
+    document.getElementById('salaryPreviewEmpty').style.display = 'block';
+
+    // Show the modal
+    openModal('salaryPreviewModal');
+}
+
+function calculateSalaryPreview() {
+    const ctcInput = document.getElementById('previewCtcInput');
+    const resultsDiv = document.getElementById('salaryPreviewResults');
+    const emptyDiv = document.getElementById('salaryPreviewEmpty');
+
+    const annualCtc = parseFloat(ctcInput.value) || 0;
+
+    if (annualCtc <= 0) {
+        resultsDiv.style.display = 'none';
+        emptyDiv.style.display = 'block';
+        return;
+    }
+
+    // Show results, hide empty state
+    resultsDiv.style.display = 'block';
+    emptyDiv.style.display = 'none';
+
+    const monthlyGross = annualCtc / 12;
+
+    // Get current version components
+    const currentVersion = structureVersions[0];
+    const versionComponents = currentVersion?.components || [];
+
+    let totalEarnings = 0;
+    let totalDeductions = 0;
+    const earningsItems = [];
+    const deductionsItems = [];
+
+    // Calculate Basic first (if percentage-based components exist, we need a base)
+    // For simplicity, we'll use monthly gross as the base for percentage calculations
+    const basicAmount = monthlyGross;
+
+    versionComponents.forEach(comp => {
+        const compName = comp.component_name || comp.name || 'Unknown';
+        const compCode = comp.component_code || comp.code || '';
+        const compType = comp.component_type || comp.type || 'earning';
+        const calcType = comp.calculation_type || 'percentage';
+
+        let amount = 0;
+        let calcDescription = '';
+
+        if (calcType === 'percentage') {
+            const percentage = comp.percentage || comp.percentage_of_basic || 0;
+            amount = (basicAmount * percentage) / 100;
+            calcDescription = `${percentage}% of Basic`;
+        } else {
+            amount = comp.fixed_amount || 0;
+            calcDescription = 'Fixed';
+        }
+
+        const item = {
+            name: compName,
+            code: compCode,
+            amount: amount,
+            calcDescription: calcDescription
+        };
+
+        if (compType === 'earning' || compType === 'Earning') {
+            totalEarnings += amount;
+            earningsItems.push(item);
+        } else {
+            totalDeductions += amount;
+            deductionsItems.push(item);
+        }
+    });
+
+    // If no components, show the gross as Basic
+    if (versionComponents.length === 0) {
+        earningsItems.push({
+            name: 'Basic Salary',
+            code: 'BASIC',
+            amount: monthlyGross,
+            calcDescription: '100%'
+        });
+        totalEarnings = monthlyGross;
+    }
+
+    const netPay = totalEarnings - totalDeductions;
+
+    // Update summary cards
+    document.getElementById('previewMonthlyGross').textContent = formatCurrency(monthlyGross);
+    document.getElementById('previewTotalEarnings').textContent = formatCurrency(totalEarnings);
+    document.getElementById('previewTotalDeductions').textContent = formatCurrency(totalDeductions);
+    document.getElementById('previewNetPay').textContent = formatCurrency(netPay);
+
+    // Update earnings table
+    const earningsTable = document.getElementById('previewEarningsTable');
+    if (earningsItems.length > 0) {
+        earningsTable.innerHTML = earningsItems.map(item => `
+            <div class="preview-row">
+                <div>
+                    <span class="preview-row-name">${item.name}</span>
+                    <span class="preview-row-code">${item.code}</span>
+                </div>
+                <div>
+                    <span class="preview-row-value">${formatCurrency(item.amount)}</span>
+                    <span class="preview-row-calc">${item.calcDescription}</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        earningsTable.innerHTML = '<div class="preview-table-empty">No earnings components</div>';
+    }
+
+    // Update deductions table
+    const deductionsTable = document.getElementById('previewDeductionsTable');
+    if (deductionsItems.length > 0) {
+        deductionsTable.innerHTML = deductionsItems.map(item => `
+            <div class="preview-row">
+                <div>
+                    <span class="preview-row-name">${item.name}</span>
+                    <span class="preview-row-code">${item.code}</span>
+                </div>
+                <div>
+                    <span class="preview-row-value">${formatCurrency(item.amount)}</span>
+                    <span class="preview-row-calc">${item.calcDescription}</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        deductionsTable.innerHTML = '<div class="preview-table-empty">No deduction components</div>';
+    }
+}
+
+function formatCurrency(amount) {
+    return '₹' + amount.toLocaleString('en-IN', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
 }
 
 async function saveNewVersion() {
@@ -4312,6 +5752,7 @@ async function saveNewVersion() {
         const valueInput = document.querySelector(`.version-value[data-component-id="${componentId}"]`);
 
         const calcType = calcTypeSelect?.value || 'percentage';
+        const calcBase = checkbox.getAttribute('data-calc-base') || 'basic';
         const value = parseFloat(valueInput?.value) || 0;
 
         if (value > 0) {
@@ -4319,6 +5760,8 @@ async function saveNewVersion() {
                 component_id: componentId,
                 calculation_order: index + 1,
                 calculation_type: calcType,
+                calculation_base: calcBase,
+                percentage: calcType === 'percentage' ? value : null,
                 percentage_of_basic: calcType === 'percentage' ? value : null,
                 fixed_amount: calcType === 'fixed' ? value : null,
                 is_active: true
