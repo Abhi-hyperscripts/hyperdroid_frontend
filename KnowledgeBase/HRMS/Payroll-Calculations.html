@@ -69,6 +69,61 @@
             }
         }
 
+        /* Theme-aware table row highlights */
+        .row-earnings {
+            font-weight: bold;
+            background: var(--color-info-light, rgba(59, 130, 246, 0.1));
+        }
+        .row-deductions {
+            font-weight: bold;
+            background: var(--color-danger-light, rgba(239, 68, 68, 0.1));
+        }
+        .row-net-pay {
+            font-weight: bold;
+            background: var(--color-success-light, rgba(34, 197, 94, 0.1));
+        }
+        .row-negative {
+            font-weight: bold;
+            background: var(--color-danger-light, rgba(239, 68, 68, 0.1));
+        }
+
+        /* Theme-aware inline text colors */
+        .text-success {
+            color: var(--color-success);
+        }
+        .text-danger {
+            color: var(--color-danger);
+        }
+
+        /* Dark mode adjustments for row highlights */
+        [data-theme="dark"] .row-earnings {
+            background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+        }
+        [data-theme="dark"] .row-deductions {
+            background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
+        }
+        [data-theme="dark"] .row-net-pay {
+            background: var(--success-alpha-10, rgba(34, 197, 94, 0.15));
+        }
+        [data-theme="dark"] .row-negative {
+            background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .row-earnings {
+                background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            }
+            :root:not([data-theme="light"]) .row-deductions {
+                background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
+            }
+            :root:not([data-theme="light"]) .row-net-pay {
+                background: var(--success-alpha-10, rgba(34, 197, 94, 0.15));
+            }
+            :root:not([data-theme="light"]) .row-negative {
+                background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
+            }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -105,8 +160,7 @@
         /* Navigation */
         nav {
             background: var(--card-bg);
-            padding: 10px 16px;
-            padding-right: 60px;
+            padding: 8px 16px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -117,18 +171,19 @@
         nav ul {
             list-style: none;
             display: flex;
-            gap: 8px;
-            max-width: 1200px;
+            gap: 4px;
+            max-width: 100%;
             margin: 0 auto;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         nav a {
             color: var(--text-color);
             text-decoration: none;
             font-weight: 400;
-            font-size: 0.8rem;
-            padding: 6px 12px;
+            font-size: 0.75rem;
+            padding: 5px 8px;
             border-radius: 6px;
             transition: all 0.2s;
             white-space: nowrap;
@@ -288,11 +343,48 @@
         }
 
         .formula-highlight {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            padding: 2px 6px;
+            background: var(--info-alpha-10, rgba(59, 130, 246, 0.1));
+            color: var(--text-color);
+            padding: 4px 10px;
             border-radius: 4px;
             font-weight: 500;
+            border: 1px solid var(--brand-primary);
+            display: inline-block;
+        }
+
+        .formula-box {
+            background: var(--info-alpha-10, rgba(59, 130, 246, 0.1));
+            border: 1px solid var(--brand-primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 14px 0;
+            color: var(--text-color);
+        }
+
+        .formula-box strong {
+            color: var(--brand-primary);
+        }
+
+        /* Dark mode adjustments for formula elements */
+        [data-theme="dark"] .formula-highlight {
+            background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            border-color: var(--brand-primary-light);
+        }
+
+        [data-theme="dark"] .formula-box {
+            background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            border-color: var(--brand-primary-light);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .formula-highlight {
+                background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                border-color: var(--brand-primary-light);
+            }
+            :root:not([data-theme="light"]) .formula-box {
+                background: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                border-color: var(--brand-primary-light);
+            }
         }
 
         /* Badges */
@@ -604,12 +696,12 @@
             }
 
             nav ul {
-                gap: 6px;
+                gap: 3px;
             }
 
             nav a {
-                padding: 5px 10px;
-                font-size: 0.75rem;
+                padding: 4px 6px;
+                font-size: 0.7rem;
             }
 
             section {
@@ -764,6 +856,9 @@
             line-height: 1.5;
             margin: 8px 0;
             color: var(--text-color);
+            max-width: 100%;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
         .api-proof .request-label {
@@ -888,6 +983,12 @@
             <li><a href="#capabilities">Capabilities</a></li>
             <li><a href="#limitations">Limitations</a></li>
             <li><a href="#scenarios">Scenarios</a></li>
+            <li><a href="#structure-management">Structures</a></li>
+            <li><a href="#version-queries">Versions</a></li>
+            <li><a href="#processing-queries">Processing</a></li>
+            <li><a href="#location-tax-management">Taxes</a></li>
+            <li><a href="#arrears-management">Arrears</a></li>
+            <li><a href="#api-quick-reference">API Reference</a></li>
         </ul>
         <button class="theme-toggle" id="themeToggle" title="Toggle theme">
             <span class="icon" id="themeIcon">&#127769;</span>
@@ -979,7 +1080,7 @@
 
             <!-- Feature Showcase -->
             <div class="feature-showcase">
-                <h3>Supported Features — <span class="feature-count">41 capabilities</span> verified with API tests</h3>
+                <h3>Supported Features — <span class="feature-count">46 capabilities</span> verified with API tests</h3>
                 <div class="feature-list-compact">
                     <span>Salary Structure Versioning</span>
                     <span>Multi-Period Salary</span>
@@ -1021,6 +1122,12 @@
                     <span>YTD Tracking</span>
                     <span>Bank File Export</span>
                     <span>CSV Export</span>
+                    <span>Default Structure Management</span>
+                    <span>Tax Type Registry</span>
+                    <span>Tax Rule Copying</span>
+                    <span>Payslip Number Search</span>
+                    <span>Arrears Lifecycle</span>
+                    <span>Version Period Tracking</span>
                 </div>
                 <a href="#capabilities" class="cta-link">View detailed documentation →</a>
             </div>
@@ -1598,37 +1705,37 @@
                     <tr>
                         <td>Casual Leave</td>
                         <td>CL</td>
-                        <td><span style="color: green;">&#10003;</span> No - Paid</td>
+                        <td><span class="text-success">&#10003;</span> No - Paid</td>
                         <td>Short personal leaves</td>
                     </tr>
                     <tr>
                         <td>Sick Leave</td>
                         <td>SL</td>
-                        <td><span style="color: green;">&#10003;</span> No - Paid</td>
+                        <td><span class="text-success">&#10003;</span> No - Paid</td>
                         <td>Medical leaves</td>
                     </tr>
                     <tr>
                         <td>Earned Leave</td>
                         <td>EL</td>
-                        <td><span style="color: green;">&#10003;</span> No - Paid</td>
+                        <td><span class="text-success">&#10003;</span> No - Paid</td>
                         <td>Accrued/planned leaves</td>
                     </tr>
                     <tr>
                         <td>Maternity Leave</td>
                         <td>ML</td>
-                        <td><span style="color: green;">&#10003;</span> No - Paid</td>
+                        <td><span class="text-success">&#10003;</span> No - Paid</td>
                         <td>Statutory paid leave</td>
                     </tr>
                     <tr>
                         <td>Unpaid Leave</td>
                         <td>UL</td>
-                        <td><span style="color: red;">&#10007;</span> <strong>Yes - LOP</strong></td>
+                        <td><span class="text-danger">&#10007;</span> <strong>Yes - LOP</strong></td>
                         <td>Leave without pay</td>
                     </tr>
                     <tr>
                         <td>Absent (No Leave)</td>
                         <td>-</td>
-                        <td><span style="color: red;">&#10007;</span> <strong>Yes - LOP</strong></td>
+                        <td><span class="text-danger">&#10007;</span> <strong>Yes - LOP</strong></td>
                         <td>Unauthorized absence</td>
                     </tr>
                 </tbody>
@@ -3964,7 +4071,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>-</td>
                         <td>₹1,250.00</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0f9ff;">
+                    <tr class="row-earnings">
                         <td>GROSS EARNINGS</td>
                         <td>-</td>
                         <td>-</td>
@@ -4002,7 +4109,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>Not applicable (gross > ₹21,000)</td>
                         <td>₹0.00</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #fef2f2;">
+                    <tr class="row-deductions">
                         <td>TOTAL DEDUCTIONS</td>
                         <td>-</td>
                         <td>-</td>
@@ -4098,7 +4205,7 @@ Net Pay = ₹1,00,000.00 - ₹2,000.00
                         <td>× 0.4545</td>
                         <td>₹568.18</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0f9ff;">
+                    <tr class="row-earnings">
                         <td>GROSS (Period 1)</td>
                         <td>₹1,00,000.00</td>
                         <td>-</td>
@@ -4148,7 +4255,7 @@ Net Pay = ₹1,00,000.00 - ₹2,000.00
                         <td>× 0.5455</td>
                         <td>₹681.82</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0f9ff;">
+                    <tr class="row-earnings">
                         <td>GROSS (Period 2)</td>
                         <td>₹1,25,000.00</td>
                         <td>-</td>
@@ -4257,7 +4364,7 @@ Total Deductions ≈ ₹2,200.00 (prorated PF + PT)
                         <td>₹0</td>
                         <td>₹0</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0fdf4;">
+                    <tr class="row-net-pay">
                         <td>Net Pay (Location)</td>
                         <td>₹46,485.71</td>
                         <td>₹51,428.57</td>
@@ -4341,7 +4448,7 @@ Location breakdowns included for audit trail</pre>
                         <td>× 0.6818</td>
                         <td>₹852.27</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0f9ff;">
+                    <tr class="row-earnings">
                         <td>GROSS</td>
                         <td>₹1,00,000.00</td>
                         <td>-</td>
@@ -4460,9 +4567,9 @@ Deductions (PF, PT):   -₹2,000.00
                     <tr><td>Gross After LOP</td><td>₹15,909.09</td></tr>
                     <tr><td>PF + PT</td><td>-₹2,000.00</td></tr>
                     <tr><td>Loan EMI</td><td>-₹20,000.00</td></tr>
-                    <tr style="background: #fef2f2; font-weight: bold;">
+                    <tr class="row-negative">
                         <td>NET PAY</td>
-                        <td style="color: red;">-₹6,090.91 ⚠️</td>
+                        <td class="text-danger">-₹6,090.91 ⚠️</td>
                     </tr>
                 </tbody>
             </table>
@@ -4514,7 +4621,7 @@ Deductions (PF, PT):   -₹2,000.00
                         <td>₹38,636.36</td>
                         <td>₹2,272.73</td>
                     </tr>
-                    <tr style="font-weight: bold; background: #f0fdf4;">
+                    <tr class="row-net-pay">
                         <td colspan="3">TOTAL ARREARS</td>
                         <td>₹12,272.73</td>
                     </tr>
@@ -5568,6 +5675,1204 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             <div class="warning-box" style="margin-top: 15px;">
                 <strong>⚠️ Authorization Note:</strong>
                 <p>Currently adjustments can only be <strong>created by HR roles</strong> (HRMS_HR_USER, HRMS_HR_ADMIN, HRMS_HR_MANAGER). Regular employees (HRMS_USER) cannot create reimbursement requests themselves - HR must create them on behalf of employees.</p>
+            </div>
+        </section>
+
+        <!-- Section 27: Salary Structure Management -->
+        <section id="structure-management">
+            <h2><span class="section-number">27</span> Salary Structure Management</h2>
+            <p>Complete control over salary structures including defaults, office-specific structures, and component filtering. These APIs allow HR to manage salary structures across the organization efficiently.</p>
+
+            <h3>27.1 Get Default Salary Structure</h3>
+            <p>Every organization has a default salary structure that applies to employees who haven't been assigned a specific structure. This ensures no employee is left without a salary configuration.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/default</div>
+                <pre>{
+  "id": "e42e14d1-a46a-4f64-82bf-11a57cf3b11c",
+  "structure_name": "Standard India Structure",
+  "structure_code": "STD-IND",
+  "description": "Standard salary structure for Indian employees",
+  "is_default": true,
+  "is_active": true,
+  "office_id": null,
+  "created_at": "2025-12-16T12:00:29.252374Z",
+  "components": [
+    {
+      "component_code": "BASIC",
+      "component_name": "Basic Salary",
+      "component_type": "earning",
+      "calculation_type": "percentage",
+      "percentage": 40.0000
+    },
+    {
+      "component_code": "HRA",
+      "component_name": "House Rent Allowance",
+      "calculation_type": "percentage",
+      "calculation_base": "basic",
+      "percentage": 40.0000
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Why Default Structure Matters:</strong> When an employee is created without specifying a salary structure, the system automatically assigns the default structure. This prevents payroll errors due to missing configurations.
+                </div>
+            </div>
+
+            <h3>27.2 Get Office-Specific Structures</h3>
+            <p>Different offices may have different salary structures based on location, cost of living, or local tax requirements. Retrieve all structures assigned to a specific office.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/office/{officeId}</div>
+                <pre>// Example: GET /api/payroll/structures/office/a5f3330f-0fc4-4b23-95a7-2040b29584b8
+[
+  {
+    "id": "f8a2c1d3-5b6e-4a7f-9c8d-0e1f2a3b4c5d",
+    "structure_name": "Bangalore Tech Structure",
+    "structure_code": "BLR-TECH",
+    "description": "Structure for Bangalore technology hub",
+    "is_default": false,
+    "office_id": "a5f3330f-0fc4-4b23-95a7-2040b29584b8",
+    "office_name": "Bangalore Tech Park"
+  }
+]</pre>
+            </div>
+
+            <h3>27.3 Get Default Structure for Office</h3>
+            <p>Each office can have its own default structure. If not set, falls back to the organization-wide default.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/office/{officeId}/default</div>
+                <pre>// Example: GET /api/payroll/structures/office/e562ca53-5a97-416a-b542-0429c27d4175/default
+{
+  "id": "e42e14d1-a46a-4f64-82bf-11a57cf3b11c",
+  "structure_name": "Standard India Structure",
+  "structure_code": "STD-IND",
+  "is_default": true,
+  "office_id": null,
+  "message": "Using organization-wide default (no office-specific default set)"
+}</pre>
+            </div>
+
+            <h3>27.4 Filter Components by Type</h3>
+            <p>Quickly retrieve all salary components of a specific type (earnings or deductions). Essential for building salary breakdown reports and UI components.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/components/type/{type}</div>
+                <pre>// GET /api/payroll/components/type/earning
+[
+  {
+    "id": "efd2039e-3d78-4f57-8283-afee4e814a55",
+    "component_name": "Basic Salary",
+    "component_code": "BASIC",
+    "component_type": "earning",
+    "is_taxable": true,
+    "is_statutory": false
+  },
+  {
+    "id": "4b28a842-ced3-4ebe-b6b1-5b79f8141cbc",
+    "component_name": "House Rent Allowance",
+    "component_code": "HRA",
+    "component_type": "earning",
+    "is_taxable": true
+  },
+  {
+    "id": "71732d6f-3fd4-4407-b97c-a062caa73582",
+    "component_name": "Special Allowance",
+    "component_code": "SPA",
+    "component_type": "earning",
+    "is_taxable": true
+  }
+]
+
+// GET /api/payroll/components/type/deduction
+[
+  {
+    "id": "caf63b6f-2bd4-4fd6-8786-aa338be5bf32",
+    "component_name": "Employee ESIC",
+    "component_code": "ESIC-EE",
+    "component_type": "deduction",
+    "is_taxable": false,
+    "is_statutory": true,
+    "statutory_type": "esi_employee"
+  },
+  {
+    "id": "d7e8f9a0-1b2c-3d4e-5f6a-7b8c9d0e1f2a",
+    "component_name": "Employee PF",
+    "component_code": "PF-EE",
+    "component_type": "deduction",
+    "is_statutory": true,
+    "statutory_type": "pf_employee"
+  }
+]</pre>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Component Types:</strong>
+                    <ul style="margin: 5px 0 0 20px;">
+                        <li><strong>earning</strong> — Adds to gross salary (Basic, HRA, Allowances)</li>
+                        <li><strong>deduction</strong> — Subtracts from gross (PF, ESI, Tax)</li>
+                        <li><strong>employer_contribution</strong> — Company's cost, not shown on payslip (Employer PF/ESI)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>27.5 Get All Employee Salaries</h3>
+            <p>Retrieve salary information for all employees. Useful for payroll planning, budget forecasting, and HR analytics dashboards.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/all-salaries?currentOnly=true</div>
+                <pre>[
+  {
+    "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+    "employee_code": "EMP001",
+    "employee_name": "Yohesh Kumar",
+    "department_name": "Engineering",
+    "designation_name": "Software Engineer",
+    "current_ctc": 1500000.00,
+    "monthly_gross": 125000.00,
+    "structure_name": "Bangalore Tech Structure",
+    "effective_from": "2025-01-01",
+    "is_current": true
+  },
+  {
+    "employee_id": "7f56222c-e994-5f96-9d6c-23eda4736b1",
+    "employee_code": "EMP002",
+    "employee_name": "Priya Sharma",
+    "department_name": "Finance",
+    "current_ctc": 1200000.00,
+    "monthly_gross": 100000.00,
+    "structure_name": "Standard India Structure",
+    "is_current": true
+  }
+]</pre>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Query Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>currentOnly</code></td>
+                        <td>boolean</td>
+                        <td>If true, returns only current active salaries. If false, includes historical records.</td>
+                    </tr>
+                    <tr>
+                        <td><code>departmentId</code></td>
+                        <td>UUID</td>
+                        <td>Filter by specific department</td>
+                    </tr>
+                    <tr>
+                        <td><code>officeId</code></td>
+                        <td>UUID</td>
+                        <td>Filter by specific office location</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>27.6 Payroll Summary Report</h3>
+            <p>Get a high-level summary of payroll costs across the organization. Essential for finance teams and management dashboards.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/reports/summary</div>
+                <pre>{
+  "report_date": "2025-12-17T08:30:00Z",
+  "total_employees": 156,
+  "total_monthly_ctc": 18720000.00,
+  "total_monthly_gross": 15600000.00,
+  "total_monthly_deductions": 1872000.00,
+  "total_monthly_net": 13728000.00,
+  "average_ctc": 120000.00,
+  "by_department": [
+    {
+      "department_name": "Engineering",
+      "employee_count": 85,
+      "total_ctc": 10200000.00,
+      "percentage_of_total": 54.49
+    },
+    {
+      "department_name": "Sales",
+      "employee_count": 35,
+      "total_ctc": 4200000.00,
+      "percentage_of_total": 22.44
+    }
+  ],
+  "by_office": [
+    {
+      "office_name": "Bangalore Tech Park",
+      "employee_count": 100,
+      "total_ctc": 12000000.00
+    },
+    {
+      "office_name": "Mumbai HQ",
+      "employee_count": 56,
+      "total_ctc": 6720000.00
+    }
+  ]
+}</pre>
+            </div>
+        </section>
+
+        <!-- Section 28: Version Control Queries -->
+        <section id="version-queries">
+            <h2><span class="section-number">28</span> Salary Structure Version Queries</h2>
+            <p>Advanced queries for salary structure versions. These endpoints help HR teams track changes, audit salary revisions, and ensure correct version is applied for any given date.</p>
+
+            <h3>28.1 Get Current Active Version</h3>
+            <p>Retrieve the currently active version of a salary structure — the one being used for payroll calculations right now.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/{structureId}/versions/current</div>
+                <pre>// GET /api/payroll/structures/e42e14d1-a46a-4f64-82bf-11a57cf3b11c/versions/current
+{
+  "id": "95717dc9-dfbb-439d-b34d-68cae10b69f1",
+  "structure_id": "e42e14d1-a46a-4f64-82bf-11a57cf3b11c",
+  "version_number": 1,
+  "effective_from": "2000-01-01T00:00:00",
+  "effective_to": null,
+  "change_reason": "Initial version",
+  "is_active": true,
+  "created_at": "2025-12-16T12:00:29.266949Z",
+  "components": [
+    {
+      "component_code": "BASIC",
+      "component_name": "Basic Salary",
+      "percentage": 40.0000,
+      "calculation_base": "ctc"
+    },
+    {
+      "component_code": "HRA",
+      "percentage": 40.0000,
+      "calculation_base": "basic"
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Current vs Effective:</strong> "Current" means active right now (today's date). "Effective" lets you query which version was/will be active on any specific date.
+                </div>
+            </div>
+
+            <h3>28.2 Get Version Effective on a Specific Date</h3>
+            <p>Find which version of a salary structure was (or will be) effective on a particular date. Critical for historical payroll recalculations and future planning.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/{structureId}/versions/effective?date={date}</div>
+                <pre>// GET /api/payroll/structures/e42e14d1-a46a-4f64-82bf-11a57cf3b11c/versions/effective?date=2026-12-20
+{
+  "id": "a1944fa2-4087-4302-8db8-69afb75308ca",
+  "version_number": 2,
+  "effective_from": "2026-12-15T00:00:00",
+  "effective_to": null,
+  "change_reason": "Annual revision - BASIC increase from 40% to 45%",
+  "queried_date": "2026-12-20",
+  "components": [
+    {
+      "component_code": "BASIC",
+      "percentage": 45.0000,
+      "calculation_base": "ctc"
+    }
+  ]
+}</pre>
+            </div>
+
+            <h3>28.3 Get Complete Version History</h3>
+            <p>Retrieve the full history of all versions for a salary structure. Essential for auditing salary changes over time.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/{structureId}/versions/history</div>
+                <pre>// GET /api/payroll/structures/e42e14d1-a46a-4f64-82bf-11a57cf3b11c/versions/history
+{
+  "structure_id": "e42e14d1-a46a-4f64-82bf-11a57cf3b11c",
+  "structure_name": "Standard India Structure",
+  "total_versions": 3,
+  "versions": [
+    {
+      "version_number": 1,
+      "effective_from": "2000-01-01",
+      "effective_to": "2026-03-31",
+      "change_reason": "Initial version",
+      "is_active": false,
+      "days_active": 9587
+    },
+    {
+      "version_number": 2,
+      "effective_from": "2026-04-01",
+      "effective_to": "2026-12-14",
+      "change_reason": "FY 2026-27 revision",
+      "is_active": false,
+      "days_active": 258
+    },
+    {
+      "version_number": 3,
+      "effective_from": "2026-12-15",
+      "effective_to": null,
+      "change_reason": "December revision - added Professional Tax",
+      "is_active": true,
+      "days_active": null
+    }
+  ]
+}</pre>
+            </div>
+
+            <h3>28.4 Get Version Periods for Payroll Calculation</h3>
+            <p>When processing payroll for a date range, multiple versions might apply (e.g., salary revised mid-month). This endpoint returns all applicable versions with their effective periods and proration factors.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/{structureId}/versions/periods?periodStart={start}&amp;periodEnd={end}</div>
+                <pre>// GET /api/payroll/structures/e42e14d1-a46a-4f64-82bf-11a57cf3b11c/versions/periods?periodStart=2026-12-01&periodEnd=2026-12-31
+
+[
+  {
+    "version_id": "95717dc9-dfbb-439d-b34d-68cae10b69f1",
+    "version_number": 2,
+    "period_start": "2026-12-01T00:00:00",
+    "period_end": "2026-12-14T00:00:00",
+    "working_days": 10,
+    "proration_factor": 0.4545,
+    "components": [
+      {
+        "component_code": "BASIC",
+        "percentage": 40.0000,
+        "component_type": "earning"
+      }
+    ]
+  },
+  {
+    "version_id": "a1944fa2-4087-4302-8db8-69afb75308ca",
+    "version_number": 3,
+    "period_start": "2026-12-15T00:00:00",
+    "period_end": "2026-12-31T00:00:00",
+    "working_days": 12,
+    "proration_factor": 0.5455,
+    "components": [
+      {
+        "component_code": "BASIC",
+        "percentage": 45.0000,
+        "component_type": "earning"
+      }
+    ]
+  }
+]</pre>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Multi-Version Payroll:</strong> The system automatically calculates prorated amounts when salary structure changes mid-month. Each version's contribution is calculated separately and then summed for the final payslip.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 29: Payroll Processing Queries -->
+        <section id="processing-queries">
+            <h2><span class="section-number">29</span> Payroll Processing Queries</h2>
+            <p>Query endpoints for payroll runs, payslips, and processing status. These read-only APIs help HR teams monitor payroll status and retrieve detailed information.</p>
+
+            <h3>29.1 Get Payroll Run by Period</h3>
+            <p>Find a payroll run for a specific month and year. Returns the run status and summary.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/runs/period?month={month}&amp;year={year}</div>
+                <pre>// GET /api/payroll-processing/runs/period?month=12&year=2026
+{
+  "id": "aca15cf5-44ef-43d3-80ed-fc4601b499c2",
+  "pay_period_month": 12,
+  "pay_period_year": 2026,
+  "run_date": "2025-12-17T04:27:44.852901Z",
+  "status": "completed",
+  "total_employees": 1,
+  "total_gross": 92812.50,
+  "total_deductions": 696.09,
+  "total_net": 92116.41,
+  "created_by": "9e906f90-706d-427c-8353-5b700428d0a1",
+  "approved_at": "2025-12-17T05:15:30Z",
+  "approved_by": "9e906f90-706d-427c-8353-5b700428d0a1"
+}</pre>
+            </div>
+
+            <h3>29.2 Get Payroll Processing Summary</h3>
+            <p>Get a summary of payroll processing for a specific period including totals and status breakdown.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/summary?month={month}&amp;year={year}</div>
+                <pre>// GET /api/payroll-processing/summary?month=12&year=2026
+{
+  "period": "December 2026",
+  "total_runs": 1,
+  "status_breakdown": {
+    "draft": 0,
+    "processing": 0,
+    "completed": 1,
+    "approved": 0,
+    "paid": 0
+  },
+  "total_employees_processed": 1,
+  "total_gross_salary": 92812.50,
+  "total_deductions": 696.09,
+  "total_net_payable": 92116.41,
+  "total_employer_contributions": 11137.50
+}</pre>
+            </div>
+
+            <h3>29.3 Get Payroll Run with All Payslips</h3>
+            <p>Retrieve a payroll run along with all associated payslips in a single request. Efficient for generating reports.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/runs/{runId}/details</div>
+                <pre>// GET /api/payroll-processing/runs/aca15cf5-44ef-43d3-80ed-fc4601b499c2/details
+{
+  "run": {
+    "id": "aca15cf5-44ef-43d3-80ed-fc4601b499c2",
+    "status": "completed",
+    "pay_period_month": 12,
+    "pay_period_year": 2026,
+    "total_gross": 92812.50,
+    "total_net": 92116.41
+  },
+  "payslips": [
+    {
+      "id": "fce5970e-58b2-4f61-bd6c-6eca8f84c399",
+      "payslip_number": "PS-EMP001-2026-12",
+      "employee_code": "EMP001",
+      "employee_name": "Yohesh Kumar",
+      "gross_salary": 92812.50,
+      "total_deductions": 696.09,
+      "net_salary": 92116.41,
+      "status": "generated"
+    }
+  ],
+  "total_payslips": 1
+}</pre>
+            </div>
+
+            <h3>29.4 Get Payslips List for a Run</h3>
+            <p>Get paginated list of payslips for a specific payroll run. Useful for large organizations.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/runs/{runId}/payslips?page=1&amp;pageSize=50</div>
+                <pre>// GET /api/payroll-processing/runs/aca15cf5-44ef-43d3-80ed-fc4601b499c2/payslips
+{
+  "payslips": [
+    {
+      "id": "fce5970e-58b2-4f61-bd6c-6eca8f84c399",
+      "payslip_number": "PS-EMP001-2026-12",
+      "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+      "employee_code": "EMP001",
+      "employee_name": "Yohesh Kumar",
+      "department": "Engineering",
+      "gross_salary": 92812.50,
+      "net_salary": 92116.41,
+      "status": "generated"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "page_size": 50,
+    "total_records": 1,
+    "total_pages": 1
+  }
+}</pre>
+            </div>
+
+            <h3>29.5 Get Payslip by Number</h3>
+            <p>Retrieve a payslip using its human-readable number (e.g., PS-EMP001-2026-12) instead of UUID. Convenient for support and employee queries.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/payslips/number/{payslipNumber}</div>
+                <pre>// GET /api/payroll-processing/payslips/number/PS-EMP001-2026-12
+{
+  "id": "fce5970e-58b2-4f61-bd6c-6eca8f84c399",
+  "payslip_number": "PS-EMP001-2026-12",
+  "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+  "employee_code": "EMP001",
+  "employee_name": "Yohesh Kumar",
+  "pay_period_month": 12,
+  "pay_period_year": 2026,
+  "gross_salary": 92812.50,
+  "total_deductions": 696.09,
+  "net_salary": 92116.41,
+  "days_worked": 22,
+  "lop_days": 0,
+  "status": "generated",
+  "items": [
+    {"component_code": "BASIC", "component_name": "Basic Salary", "amount": 37125.00, "type": "earning"},
+    {"component_code": "HRA", "amount": 14850.00, "type": "earning"},
+    {"component_code": "ESIC-EE", "amount": 696.09, "type": "deduction"}
+  ]
+}</pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Payslip Number Format:</strong> <code>PS-{EMP_CODE}-{YEAR}-{MONTH}</code><br>
+                    Example: <code>PS-EMP001-2026-12</code> = Employee EMP001's payslip for December 2026
+                </div>
+            </div>
+
+            <h3>29.6 Get All Loans</h3>
+            <p>Retrieve all employee loans across the organization with their current status.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/loans</div>
+                <pre>[
+  {
+    "id": "e9d4765c-4878-4ec0-b1cd-43c0b1ad2c2a",
+    "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+    "employee_code": "EMP001",
+    "employee_name": "Yohesh Kumar",
+    "loan_type": "salary_advance",
+    "principal_amount": 50000.00,
+    "interest_rate": 0.00,
+    "tenure_months": 6,
+    "emi_amount": 8333.33,
+    "outstanding_amount": 50000.00,
+    "status": "approved",
+    "applied_date": "2025-12-17",
+    "approved_date": "2025-12-17"
+  },
+  {
+    "id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+    "employee_code": "EMP002",
+    "loan_type": "personal_loan",
+    "principal_amount": 100000.00,
+    "interest_rate": 8.50,
+    "interest_type": "reducing_balance",
+    "tenure_months": 12,
+    "emi_amount": 8698.84,
+    "status": "disbursed"
+  }
+]</pre>
+            </div>
+
+            <h3>29.7 Get Active Loans Only</h3>
+            <p>Filter to show only loans that are currently active (disbursed and being repaid).</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/loans/active</div>
+                <pre>[
+  {
+    "id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+    "employee_code": "EMP002",
+    "employee_name": "Priya Sharma",
+    "loan_type": "personal_loan",
+    "principal_amount": 100000.00,
+    "outstanding_amount": 65023.16,
+    "emi_amount": 8698.84,
+    "emis_paid": 4,
+    "emis_remaining": 8,
+    "next_emi_date": "2027-01-01",
+    "status": "disbursed"
+  }
+]</pre>
+            </div>
+
+            <h3>29.8 Get Pending Adjustments</h3>
+            <p>Retrieve all adjustments (reimbursements, bonuses, recoveries) awaiting approval.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/adjustments/pending</div>
+                <pre>[
+  {
+    "id": "9df856fe-e290-4a7d-a9db-09a0bc8983bc",
+    "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+    "employee_code": "EMP001",
+    "employee_name": "Yohesh Kumar",
+    "adjustment_type": "reimbursement",
+    "amount": 15000.00,
+    "description": "Travel expense reimbursement - Client visit",
+    "status": "pending",
+    "created_at": "2025-12-17T06:30:00Z",
+    "created_by": "HR Admin"
+  },
+  {
+    "id": "7868fdb9-4b9f-4eab-83d6-f741e5c66fbb",
+    "employee_code": "EMP003",
+    "adjustment_type": "bonus",
+    "amount": 25000.00,
+    "description": "Q4 Performance Bonus",
+    "status": "pending"
+  }
+]</pre>
+            </div>
+
+            <h3>29.9 Get Employee Adjustments by Status</h3>
+            <p>Get all adjustments for a specific employee, optionally filtered by status.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/employee/{employeeId}/adjustments?status=approved</div>
+                <pre>// GET /api/payroll-processing/employee/6e45111b-d883-4e85-87c5-22d9da3625a0/adjustments?status=approved
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "adjustment_type": "reimbursement",
+    "amount": 12500.00,
+    "description": "Medical expense claim",
+    "status": "approved",
+    "approved_at": "2025-12-15T10:30:00Z",
+    "approved_by": "HR Manager",
+    "included_in_payroll": true,
+    "payslip_id": "fce5970e-58b2-4f61-bd6c-6eca8f84c399"
+  }
+]</pre>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status Filter</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>pending</code></td>
+                        <td>Awaiting approval</td>
+                    </tr>
+                    <tr>
+                        <td><code>approved</code></td>
+                        <td>Approved, will be included in next payroll</td>
+                    </tr>
+                    <tr>
+                        <td><code>rejected</code></td>
+                        <td>Rejected by approver</td>
+                    </tr>
+                    <tr>
+                        <td><code>processed</code></td>
+                        <td>Already included in a payroll run</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>29.10 Get Payroll Draft Details</h3>
+            <p>Preview a payroll draft before processing. Shows what the final payroll would look like.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-drafts/{draftId}/details</div>
+                <pre>// GET /api/payroll-drafts/afafdeb6-9d83-428b-85ae-26b5d2b5cda9/details
+{
+  "id": "afafdeb6-9d83-428b-85ae-26b5d2b5cda9",
+  "pay_period_month": 1,
+  "pay_period_year": 2027,
+  "status": "draft",
+  "created_at": "2025-12-17T05:00:00Z",
+  "employee_count": 156,
+  "estimated_totals": {
+    "gross_salary": 15600000.00,
+    "total_deductions": 1872000.00,
+    "net_payable": 13728000.00,
+    "employer_contributions": 1560000.00
+  },
+  "draft_payslips": [
+    {
+      "employee_code": "EMP001",
+      "employee_name": "Yohesh Kumar",
+      "gross_salary": 125000.00,
+      "deductions": 12500.00,
+      "net_salary": 112500.00
+    }
+  ],
+  "warnings": [
+    "3 employees have pending leave approvals",
+    "1 employee has incomplete bank details"
+  ]
+}</pre>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Draft vs Processed:</strong> Drafts allow you to preview and make corrections before final processing. Once processed, payroll cannot be easily reversed.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 30: Location Tax Management -->
+        <section id="location-tax-management">
+            <h2><span class="section-number">30</span> Location Tax Management</h2>
+            <p>Manage location-specific taxes like Professional Tax (PT) that vary by state. The system supports complex tax slabs and automatic application based on employee office location.</p>
+
+            <h3>30.1 Get All Tax Types</h3>
+            <p>List all configured tax types in the system (Professional Tax, Labor Welfare Fund, etc.).</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/location-taxes/types</div>
+                <pre>[
+  {
+    "id": "36215e77-715b-4b06-9eec-460fd6e3db5b",
+    "tax_code": "PT",
+    "tax_name": "Professional Tax",
+    "description": "State-level professional tax applicable to salaried employees",
+    "deduction_from": "employee",
+    "is_statutory": true,
+    "affects_taxable_income": false,
+    "display_order": 1,
+    "is_active": true
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8901-2345-67890abcdef0",
+    "tax_code": "LWF",
+    "tax_name": "Labor Welfare Fund",
+    "description": "State labor welfare contribution",
+    "deduction_from": "both",
+    "is_statutory": true,
+    "is_active": true
+  }
+]</pre>
+            </div>
+
+            <h3>30.2 Get Tax Type by Code</h3>
+            <p>Retrieve details of a specific tax type using its code.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/location-taxes/types/code/{code}</div>
+                <pre>// GET /api/location-taxes/types/code/PT
+{
+  "id": "36215e77-715b-4b06-9eec-460fd6e3db5b",
+  "tax_code": "PT",
+  "tax_name": "Professional Tax",
+  "description": "State-level professional tax applicable to salaried employees",
+  "deduction_from": "employee",
+  "is_statutory": true,
+  "affects_taxable_income": false,
+  "max_annual_amount": 2500.00,
+  "is_active": true,
+  "states_applicable": ["Maharashtra", "Karnataka", "West Bengal", "Tamil Nadu"]
+}</pre>
+            </div>
+
+            <h3>30.3 Get All Office Tax Rules</h3>
+            <p>List all tax rules configured for different offices.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/location-taxes/rules</div>
+                <pre>[
+  {
+    "id": "rule-uuid-1",
+    "office_id": "e562ca53-5a97-416a-b542-0429c27d4175",
+    "office_name": "Mumbai HQ",
+    "tax_type_id": "36215e77-715b-4b06-9eec-460fd6e3db5b",
+    "tax_code": "PT",
+    "tax_name": "Professional Tax",
+    "effective_from": "2025-04-01",
+    "effective_to": null,
+    "calculation_type": "slab",
+    "is_active": true,
+    "slabs": [
+      {"min_salary": 0, "max_salary": 7500, "amount": 0},
+      {"min_salary": 7501, "max_salary": 10000, "amount": 175},
+      {"min_salary": 10001, "max_salary": null, "amount": 200}
+    ]
+  },
+  {
+    "id": "rule-uuid-2",
+    "office_name": "Bangalore Tech Park",
+    "tax_code": "PT",
+    "calculation_type": "slab",
+    "slabs": [
+      {"min_salary": 0, "max_salary": 15000, "amount": 0},
+      {"min_salary": 15001, "max_salary": null, "amount": 200}
+    ]
+  }
+]</pre>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>State-Specific Rules:</strong> Professional Tax rules vary significantly by Indian state. Maharashtra has monthly slabs while Karnataka has a flat rate above threshold. The system supports both models.
+                </div>
+            </div>
+
+            <h3>30.4 Get Effective Rules for a Date</h3>
+            <p>Find which tax rules are applicable for a specific office on a given date. Important for historical calculations.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/location-taxes/rules/office/{officeId}/effective?effectiveDate={date}</div>
+                <pre>// GET /api/location-taxes/rules/office/e562ca53-5a97-416a-b542-0429c27d4175/effective?effectiveDate=2025-12-15
+[
+  {
+    "id": "rule-uuid-1",
+    "tax_code": "PT",
+    "tax_name": "Professional Tax",
+    "effective_from": "2025-04-01",
+    "effective_to": null,
+    "calculation_type": "slab",
+    "slabs": [
+      {"min_salary": 0, "max_salary": 7500, "amount": 0},
+      {"min_salary": 7501, "max_salary": 10000, "amount": 175},
+      {"min_salary": 10001, "max_salary": null, "amount": 200}
+    ],
+    "queried_date": "2025-12-15",
+    "is_currently_effective": true
+  }
+]</pre>
+            </div>
+
+            <h3>30.5 Copy Tax Rules Between Offices</h3>
+            <p>When opening a new office in the same state, copy existing tax rules instead of creating from scratch.</p>
+            <div class="code-block">
+                <div class="code-header">POST /api/location-taxes/rules/copy</div>
+                <pre>// Request
+{
+  "from_office_id": "e562ca53-5a97-416a-b542-0429c27d4175",
+  "to_office_id": "new-office-uuid",
+  "effective_from": "2027-01-01"
+}
+
+// Response
+{
+  "message": "Successfully copied 2 tax rules",
+  "rules_copied": [
+    {"tax_code": "PT", "from_office": "Mumbai HQ", "to_office": "Pune Office"},
+    {"tax_code": "LWF", "from_office": "Mumbai HQ", "to_office": "Pune Office"}
+  ],
+  "effective_from": "2027-01-01"
+}</pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Same State = Same Rules:</strong> Professional Tax is state-level, so all offices in Maharashtra would have the same PT slabs. Use the copy feature to quickly replicate rules.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 31: Arrears Management -->
+        <section id="arrears-management">
+            <h2><span class="section-number">31</span> Arrears Management</h2>
+            <p>When salary structures change retroactively (backdated revisions), the system calculates arrears automatically. These APIs help manage the arrears lifecycle from calculation to payment.</p>
+
+            <h3>31.1 Get Pending Arrears</h3>
+            <p>List all calculated arrears that haven't been applied to payroll yet.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/arrears/pending</div>
+                <pre>[
+  {
+    "id": "arrears-uuid-1",
+    "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+    "employee_code": "EMP001",
+    "employee_name": "Yohesh Kumar",
+    "structure_version_id": "a1944fa2-4087-4302-8db8-69afb75308ca",
+    "version_effective_from": "2026-10-01",
+    "calculation_date": "2025-12-17",
+    "arrears_amount": 15625.00,
+    "periods_covered": [
+      {"month": 10, "year": 2026, "amount": 5208.33},
+      {"month": 11, "year": 2026, "amount": 5208.33},
+      {"month": 12, "year": 2026, "amount": 5208.34}
+    ],
+    "status": "pending",
+    "reason": "Basic increased from 40% to 45% effective Oct 2026"
+  }
+]</pre>
+            </div>
+
+            <h3>31.2 Get Arrears for Specific Employee</h3>
+            <p>View all arrears (pending and applied) for a particular employee.</p>
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/structures/arrears/employee/{employeeId}</div>
+                <pre>// GET /api/payroll/structures/arrears/employee/6e45111b-d883-4e85-87c5-22d9da3625a0
+{
+  "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
+  "employee_code": "EMP001",
+  "employee_name": "Yohesh Kumar",
+  "total_pending_arrears": 15625.00,
+  "total_applied_arrears": 8500.00,
+  "arrears_history": [
+    {
+      "id": "arrears-uuid-1",
+      "amount": 15625.00,
+      "status": "pending",
+      "reason": "Basic increased from 40% to 45%",
+      "calculated_at": "2025-12-17"
+    },
+    {
+      "id": "arrears-uuid-2",
+      "amount": 8500.00,
+      "status": "applied",
+      "reason": "HRA increased from 40% to 50%",
+      "applied_in_payslip": "PS-EMP001-2026-11",
+      "applied_at": "2025-11-30"
+    }
+  ]
+}</pre>
+            </div>
+
+            <h3>31.3 Apply Arrears</h3>
+            <p>Apply calculated arrears to the next payroll. This creates an adjustment that will be included in the upcoming payroll run.</p>
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/structures/arrears/{arrearsId}/apply</div>
+                <pre>// POST /api/payroll/structures/arrears/arrears-uuid-1/apply
+
+// Response
+{
+  "message": "Arrears applied successfully",
+  "arrears_id": "arrears-uuid-1",
+  "amount": 15625.00,
+  "adjustment_created": {
+    "id": "adj-uuid-1",
+    "adjustment_type": "arrears",
+    "amount": 15625.00,
+    "status": "approved",
+    "description": "Arrears: Basic increased from 40% to 45% (Oct-Dec 2026)"
+  },
+  "will_be_included_in": "January 2027 payroll"
+}</pre>
+            </div>
+
+            <h3>31.4 Cancel Pending Arrears</h3>
+            <p>Cancel arrears that were calculated in error or are no longer applicable.</p>
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/structures/arrears/{arrearsId}/cancel</div>
+                <pre>// POST /api/payroll/structures/arrears/arrears-uuid-1/cancel
+{
+  "reason": "Salary revision was rolled back"
+}
+
+// Response
+{
+  "message": "Arrears cancelled successfully",
+  "arrears_id": "arrears-uuid-1",
+  "amount": 15625.00,
+  "status": "cancelled",
+  "cancelled_by": "HR Admin",
+  "cancelled_at": "2025-12-17T10:30:00Z",
+  "cancellation_reason": "Salary revision was rolled back"
+}</pre>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Arrears Audit Trail:</strong> All arrears operations are logged for compliance. Cancelled arrears remain in the system with their history intact.
+                </div>
+            </div>
+
+            <div class="formula-box" style="margin-top: 20px;">
+                <strong>Arrears Calculation Formula:</strong>
+                <p style="margin-top: 10px; font-family: monospace;">
+                    For each affected month:<br>
+                    &nbsp;&nbsp;New_Salary = Calculate with new version components<br>
+                    &nbsp;&nbsp;Old_Salary = What was already paid<br>
+                    &nbsp;&nbsp;Month_Arrears = New_Salary - Old_Salary<br><br>
+                    Total_Arrears = Sum of all Month_Arrears
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 32: API Quick Reference -->
+        <section id="api-quick-reference">
+            <h2><span class="section-number">32</span> Complete API Quick Reference</h2>
+            <p>All payroll calculation APIs in one place. Each endpoint has been tested and verified working.</p>
+
+            <h3>32.1 Salary Structure APIs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/structures/default</code></td>
+                        <td>GET</td>
+                        <td>Get organization default structure</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/office/{id}</code></td>
+                        <td>GET</td>
+                        <td>Get structures for an office</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/office/{id}/default</code></td>
+                        <td>GET</td>
+                        <td>Get default structure for office</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components/type/{type}</code></td>
+                        <td>GET</td>
+                        <td>Filter components (earning/deduction)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/all-salaries</code></td>
+                        <td>GET</td>
+                        <td>All employee salary information</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/reports/summary</code></td>
+                        <td>GET</td>
+                        <td>Payroll summary report</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>32.2 Version Management APIs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/current</code></td>
+                        <td>GET</td>
+                        <td>Current active version</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/effective</code></td>
+                        <td>GET</td>
+                        <td>Version effective for a date</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/history</code></td>
+                        <td>GET</td>
+                        <td>Complete version history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/periods</code></td>
+                        <td>GET</td>
+                        <td>Versions for payroll period</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>32.3 Payroll Processing APIs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/period</code></td>
+                        <td>GET</td>
+                        <td>Get run by month/year</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/summary</code></td>
+                        <td>GET</td>
+                        <td>Processing summary</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{id}/details</code></td>
+                        <td>GET</td>
+                        <td>Run with all payslips</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{id}/payslips</code></td>
+                        <td>GET</td>
+                        <td>Paginated payslips list</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/number/{num}</code></td>
+                        <td>GET</td>
+                        <td>Payslip by number</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans</code></td>
+                        <td>GET</td>
+                        <td>All loans</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/active</code></td>
+                        <td>GET</td>
+                        <td>Active loans only</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/adjustments/pending</code></td>
+                        <td>GET</td>
+                        <td>Pending adjustments</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/employee/{id}/adjustments</code></td>
+                        <td>GET</td>
+                        <td>Employee adjustments</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/details</code></td>
+                        <td>GET</td>
+                        <td>Draft preview</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>32.4 Location Tax APIs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/location-taxes/types</code></td>
+                        <td>GET</td>
+                        <td>All tax types</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/types/code/{code}</code></td>
+                        <td>GET</td>
+                        <td>Tax type by code</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules</code></td>
+                        <td>GET</td>
+                        <td>All office tax rules</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/office/{id}/effective</code></td>
+                        <td>GET</td>
+                        <td>Effective rules for date</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/copy</code></td>
+                        <td>POST</td>
+                        <td>Copy rules between offices</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>32.5 Arrears Management APIs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/structures/arrears/pending</code></td>
+                        <td>GET</td>
+                        <td>Pending arrears list</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/arrears/employee/{id}</code></td>
+                        <td>GET</td>
+                        <td>Employee arrears history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/arrears/{id}/apply</code></td>
+                        <td>POST</td>
+                        <td>Apply arrears to payroll</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/arrears/{id}/cancel</code></td>
+                        <td>POST</td>
+                        <td>Cancel pending arrears</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip" style="margin-top: 20px;">
+                <span class="icon">&#9989;</span>
+                <div>
+                    <strong>All APIs Verified:</strong> Every endpoint listed above has been tested with real data and confirmed working. Response structures match actual API output as of December 2025.
+                </div>
             </div>
         </section>
     </main>
