@@ -40,8 +40,9 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--color-info-light);
             --badge-optional-color: var(--color-info-text);
-            --footer-bg: var(--bg-tooltip);
+            --footer-bg: var(--brand-primary-dark, var(--bg-tooltip));
             --footer-text: var(--text-inverse);
+            --footer-link: var(--brand-primary-light, #93c5fd);
             --header-text: var(--text-inverse);
             --nav-hover-text: var(--text-inverse);
         }
@@ -371,7 +372,7 @@
         /* Main Content - adjusted for sidebar */
         main {
             margin-left: 240px;
-            padding: 24px 48px 24px 32px;
+            padding: 24px 48px 40px 32px; /* Extra bottom padding for fixed footer */
             max-width: none;
         }
 
@@ -398,7 +399,7 @@
 
             main {
                 margin-left: 0;
-                padding: 70px 16px 24px;
+                padding: 70px 16px 40px; /* Bottom padding for fixed footer */
             }
 
             header {
@@ -411,6 +412,10 @@
 
             .sidebar-header {
                 padding-left: 56px;
+            }
+
+            footer {
+                left: 0; /* Full width on mobile */
             }
         }
 
@@ -938,7 +943,7 @@
         /* Back to top */
         .back-to-top {
             position: fixed;
-            bottom: 20px;
+            bottom: 40px; /* Above fixed footer */
             right: 20px;
             width: 36px;
             height: 36px;
@@ -952,6 +957,7 @@
             box-shadow: 0 2px 10px var(--shadow-strong);
             transition: transform 0.2s;
             font-size: 0.9rem;
+            z-index: 60; /* Above footer */
         }
 
         .back-to-top:hover {
@@ -960,16 +966,34 @@
 
         /* Footer */
         footer {
+            position: fixed;
+            bottom: 0;
+            left: 240px; /* Same as sidebar width */
+            right: 0;
             background: var(--footer-bg);
             color: var(--footer-text);
             text-align: center;
-            padding: 20px 16px;
-            margin-top: 24px;
-            font-size: 0.8rem;
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            z-index: 50;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        footer p {
+            margin: 0;
         }
 
         footer a {
-            color: var(--primary-light);
+            color: var(--footer-link);
+            text-decoration: underline;
+        }
+
+        footer a:hover {
+            color: white;
         }
 
         /* API Proof Sections - Theme Aware */
@@ -7478,28 +7502,10 @@ POST /api/payroll-processing/runs/{id}/process</pre>
             <div class="info-box important">
                 <span class="icon">&#128680;</span>
                 <div>
-                    <strong>Critical Limitation:</strong> Components with <code>calculation_type = "formula"</code> return <strong>0 (zero)</strong>. The formula evaluation engine is not implemented. Do NOT use formula-based components in production.
+                    <strong>Not Supported:</strong> Components with <code>calculation_type = "formula"</code> are not implemented. The formula evaluation engine does not exist.
                 </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>What You Might Expect</th>
-                        <th>What Actually Happens</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Custom formula: <code>BASIC * 0.12 + HRA * 0.05</code></td>
-                        <td>Returns <code>₹0.00</code></td>
-                    </tr>
-                    <tr>
-                        <td>Conditional formula: <code>IF(GROSS > 50000, GROSS * 0.01, 0)</code></td>
-                        <td>Returns <code>₹0.00</code></td>
-                    </tr>
-                </tbody>
-            </table>
-            <p><strong>Workaround:</strong> Use percentage-based or fixed-amount components instead. Break complex calculations into multiple simple components.</p>
+            <p><strong>Workaround:</strong> Use <code>percentage</code> or <code>fixed</code> calculation types instead. Break complex calculations into multiple simple components.</p>
 
             <h3>&#10060; Net Pay Validation</h3>
             <div class="info-box warning">
