@@ -251,7 +251,15 @@ async function saveAnnouncement(event) {
 }
 
 async function deleteAnnouncement(id) {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Delete Announcement',
+        message: 'Are you sure you want to delete this announcement?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         await api.deleteHrmsAnnouncement(id);

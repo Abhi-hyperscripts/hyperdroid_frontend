@@ -1032,7 +1032,14 @@ async function confirmLeaveAction() {
 }
 
 async function cancelLeaveRequest(requestId) {
-    if (!confirm('Are you sure you want to cancel this leave request?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Cancel Leave Request',
+        message: 'Are you sure you want to cancel this leave request?',
+        type: 'warning',
+        confirmText: 'Cancel Request',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();

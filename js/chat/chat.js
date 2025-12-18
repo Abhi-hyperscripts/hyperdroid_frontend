@@ -842,7 +842,15 @@ async function unarchiveChat(conversationId) {
 }
 
 async function deleteChat(conversationId) {
-    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Conversation',
+        message: 'Are you sure you want to delete this conversation? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
         return;
     }
 
@@ -984,7 +992,15 @@ function closeChatInfoModal() {
 async function leaveConversation() {
     if (!currentConversationId) return;
 
-    if (!confirm('Are you sure you want to leave this conversation?')) {
+    const confirmed = await Confirm.show({
+        title: 'Leave Conversation',
+        message: 'Are you sure you want to leave this conversation?',
+        type: 'warning',
+        confirmText: 'Leave',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
         return;
     }
 

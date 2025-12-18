@@ -255,12 +255,12 @@
 
 .component-badge.component-earning {
     background: var(--success-alpha-20);
-    color: var(--color-success-dark);
+    color: var(--color-success-text);
 }
 
 .component-badge.component-deduction {
     background: var(--danger-alpha-20);
-    color: var(--color-danger-dark);
+    color: var(--color-danger-text);
 }
 
 /* =============================================================

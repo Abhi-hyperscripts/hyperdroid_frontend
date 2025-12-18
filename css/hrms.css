@@ -537,6 +537,9 @@
 /* Action Buttons */
 .action-buttons {
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
 }
 
@@ -627,6 +630,22 @@
     background: var(--overlay-dark);
     z-index: 9999;
     overflow: hidden;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.modal-dialog {
+    position: relative;
+    z-index: 2;
 }
 
 .modal.active,
@@ -733,12 +752,20 @@
 
 .modal-footer {
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     padding: 12px 16px;
     border-top: 1px solid var(--border-color-light);
     flex-shrink: 0;
     background: var(--bg-card);
+}
+
+.modal-footer .btn {
+    flex: 0 0 auto;
+    width: auto;
 }
 
 /* Form Styles */
@@ -1778,13 +1805,13 @@
 }
 
 .structure-component-row .component-row > .form-group:first-child {
-    flex: 2.5 !important;
-    min-width: 160px;
+    flex: 1.5 !important;
+    min-width: 140px;
 }
 
 .structure-component-row .component-row > .form-group:nth-child(2) {
-    flex: 1.2 !important;
-    min-width: 100px;
+    flex: 0 0 auto !important;
+    min-width: auto;
 }
 
 .structure-component-row .component-row > .form-group:nth-child(3) {
@@ -2379,6 +2406,19 @@
     background: var(--hover-overlay);
 }
 
+.pr-virtual-table tbody tr.clickable-row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pr-virtual-table tbody tr.clickable-row:hover td {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.pr-virtual-table tbody tr.clickable-row:active td {
+    background: rgba(99, 102, 241, 0.15);
+}
+
 /* Cell Styles */
 .pr-emp-cell {
     display: flex;
@@ -2708,11 +2748,15 @@
 .modal-footer {
     padding: 10px 16px !important;
     gap: 8px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
 }
 
 .modal-footer .btn {
     padding: 6px 14px !important;
     font-size: 0.8rem !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
 }
 
 /* Compact stat cards in modals */
@@ -5185,6 +5229,157 @@ input:checked + .slider:before {
     color: var(--color-danger);
 }
 
+/* ==========================================
+   Loan Repayment Schedule Styles
+   ========================================== */
+.repayment-schedule-section {
+    margin-top: 16px;
+}
+
+.repayment-schedule-section h4 {
+    margin-bottom: 16px;
+}
+
+.repayment-schedule-section h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.repayment-history {
+    margin-bottom: 20px;
+}
+
+.projected-schedule {
+    margin-top: 12px;
+}
+
+.schedule-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color-light);
+}
+
+.schedule-summary .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.schedule-summary .summary-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.schedule-summary .summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.schedule-table-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.schedule-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.schedule-table th {
+    background: var(--bg-elevated);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.schedule-table td {
+    padding: 10px 12px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.schedule-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.schedule-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.schedule-table .paid-row {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.schedule-table .paid-row td {
+    color: var(--color-success);
+}
+
+.schedule-table .current-row {
+    background: rgba(99, 102, 241, 0.1);
+    font-weight: 600;
+}
+
+.schedule-table .current-row td {
+    color: var(--color-primary);
+}
+
+.status-badge.status-paid {
+    background: var(--color-success-light);
+    color: var(--color-success);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .schedule-summary {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .schedule-summary .summary-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .schedule-table {
+        font-size: 11px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        padding: 8px;
+    }
+}
+
 /* Action button color variants */
 .action-btn.success {
     color: var(--color-success);
@@ -6661,5 +6856,93 @@ input:checked + .slider:before {
 
     .toggle-switch {
         align-self: flex-end;
+    }
+}
+
+/* ============================================
+   Payslip Modal Footer & Status Styles
+   ============================================ */
+
+.payslip-status-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payslip-status-info .status-label {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.payslip-status-info .status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.payslip-status-info .badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.payslip-status-info .badge-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.payslip-status-info .badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+}
+
+.payslip-status-info .badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+.payslip-status-info .badge-secondary {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6b7280;
+}
+
+/* Modal footer with status and actions */
+#payslipModalFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    gap: 16px;
+}
+
+#payslipModalFooter .footer-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Finalize button specific styling */
+#finalizePayslipBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#finalizePayslipBtn svg {
+    flex-shrink: 0;
+}
+
+/* Responsive for payslip modal footer */
+@media (max-width: 576px) {
+    #payslipModalFooter {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #payslipModalFooter .footer-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 }

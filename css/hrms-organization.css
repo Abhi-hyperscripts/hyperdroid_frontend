@@ -682,7 +682,10 @@
 /* Override input styling */
 .override-value {
     height: 28px;
-    font-size: 12px;
+    font-size: 11px;
+    min-width: 150px;
+    width: 150px;
+    flex-shrink: 0;
 }
 
 .override-value::placeholder {
@@ -1508,10 +1511,10 @@ select option:disabled {
 .version-components-section .section-title {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
-    padding: 14px 16px;
-    font-size: 0.85rem;
+    padding: 10px 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-secondary);
     background: var(--bg-secondary);
@@ -1524,11 +1527,11 @@ select option:disabled {
     justify-content: center;
     background: var(--brand-primary);
     color: #fff;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 11px;
-    font-size: 0.75rem;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    font-size: 0.65rem;
     font-weight: 600;
 }
 
@@ -1550,8 +1553,8 @@ select option:disabled {
 }
 
 .version-components-table th {
-    padding: 10px 16px;
-    font-size: 0.75rem;
+    padding: 6px 12px;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1566,8 +1569,8 @@ select option:disabled {
 }
 
 .version-components-table td {
-    padding: 12px 16px;
-    font-size: 0.875rem;
+    padding: 8px 12px;
+    font-size: 0.75rem;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border-color-light);
     vertical-align: middle;
@@ -1593,16 +1596,16 @@ select option:disabled {
 }
 
 .version-components-table .component-name .component-code {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
 }
 
 .version-components-table .component-type {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
 }
@@ -1633,10 +1636,10 @@ select option:disabled {
 
 .version-components-table .component-value .calc-base {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--text-muted);
     font-weight: 500;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 /* Empty State */
@@ -2391,5 +2394,301 @@ select option:disabled {
 
     .preview-breakdown {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =============================================================
+   VERSION COMPARISON MODAL - Theme-aware styling
+   ============================================================= */
+
+.version-compare-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+}
+
+.version-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 100px;
+}
+
+.version-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.version-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.version-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.version-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.version-arrow svg {
+    stroke: var(--brand-primary);
+}
+
+/* Summary Badges */
+.version-compare-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.compare-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.compare-badge.added {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary);
+}
+
+.compare-badge.removed {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.compare-badge.modified {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.compare-badge.unchanged {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+/* Section Details */
+.version-compare-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.compare-section {
+    display: none;
+}
+
+.compare-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.compare-section-title.added {
+    color: var(--brand-primary);
+}
+
+.compare-section-title.added svg {
+    stroke: var(--brand-primary);
+}
+
+.compare-section-title.removed {
+    color: var(--text-secondary);
+}
+
+.compare-section-title.removed svg {
+    stroke: var(--text-secondary);
+}
+
+.compare-section-title.modified {
+    color: var(--text-secondary);
+}
+
+.compare-section-title.modified svg {
+    stroke: var(--text-secondary);
+}
+
+.compare-section-title.unchanged {
+    color: var(--text-muted);
+}
+
+.compare-section-title.unchanged svg {
+    stroke: var(--text-muted);
+}
+
+/* Component List */
+.compare-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.compare-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.compare-item:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.1);
+}
+
+.compare-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.compare-item-code {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 8px;
+    font-family: var(--font-mono);
+}
+
+.compare-item-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.compare-item-badge.new {
+    background: var(--brand-primary);
+    color: white;
+}
+
+.compare-item-badge.removed {
+    background: var(--text-muted);
+    color: white;
+}
+
+.compare-item-badge.modified {
+    background: var(--brand-primary);
+    color: white;
+}
+
+/* Compact modified item styling */
+.compare-item.compact {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 12px;
+}
+
+.compare-item-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.compare-item-change {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+}
+
+.compare-item-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.change-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.change-old {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.change-new {
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+/* Unchanged list - compact inline style */
+.unchanged-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.unchanged-list .compare-item {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.unchanged-list .compare-item:hover {
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+.unchanged-list .compare-item-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .version-compare-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .version-arrow {
+        transform: rotate(90deg);
+    }
+
+    .version-compare-summary {
+        justify-content: center;
     }
 }

@@ -120,6 +120,12 @@ function applyPayrollRBAC() {
     if (loanEmployeeRow) {
         loanEmployeeRow.style.display = isHRAdminRole ? 'block' : 'none';
     }
+
+    // Arrears tab - HR Admin only
+    const arrearsTab = document.getElementById('arrearsTab');
+    if (arrearsTab) {
+        arrearsTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
 }
 
 function setupTabs() {
@@ -317,7 +323,14 @@ async function createPayrollDraft() {
 }
 
 async function processDraft(draftId) {
-    if (!confirm('Process this draft? This will generate payslips for all eligible employees.')) {
+    const confirmed = await Confirm.show({
+        title: 'Process Draft',
+        message: 'Process this draft? This will generate payslips for all eligible employees.',
+        type: 'info',
+        confirmText: 'Process',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -347,7 +360,14 @@ async function processDraft(draftId) {
 }
 
 async function recalculateDraft(draftId) {
-    if (!confirm('Recalculate this draft? This will regenerate all payslips with current data.')) {
+    const confirmed = await Confirm.show({
+        title: 'Recalculate Draft',
+        message: 'Recalculate this draft? This will regenerate all payslips with current data.',
+        type: 'warning',
+        confirmText: 'Recalculate',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -490,13 +510,13 @@ async function viewDraftPayslip(payslipId) {
                 structureBreakdownHtml += `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-subtle);">
                         <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <h5 style="margin: 0; color: var(--primary-color);">${group.structure_name || 'Salary Structure'}</h5>
+                            <h5 style="margin: 0; color: var(--brand-primary);">${group.structure_name || 'Salary Structure'}</h5>
                             ${periodText ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Period: ${periodText}</p>` : ''}
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
-                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--success-color);">Earnings</h6>
+                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--color-success);">Earnings</h6>
                                 <table class="data-table" style="width: 100%; font-size: 0.85rem;">
                                     <tbody>
                                         ${groupEarnings.length > 0
@@ -518,7 +538,7 @@ async function viewDraftPayslip(payslipId) {
                                 </table>
                             </div>
                             <div>
-                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--danger-color);">Deductions</h6>
+                                <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--color-danger);">Deductions</h6>
                                 <table class="data-table" style="width: 100%; font-size: 0.85rem;">
                                     <tbody>
                                         ${groupDeductions.length > 0
@@ -552,23 +572,23 @@ async function viewDraftPayslip(payslipId) {
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Gross Earnings</span>
-                                <span style="font-weight: 600; color: var(--success-color);">${formatCurrency(payslip.gross_earnings)}</span>
+                                <span style="font-weight: 600; color: var(--color-success);">${formatCurrency(payslip.gross_earnings)}</span>
                             </div>
                         </div>
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Deductions</span>
-                                <span style="font-weight: 600; color: var(--danger-color);">${formatCurrency(payslip.total_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.total_deductions)}</span>
                             </div>
                             ${payslip.loan_deductions > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Loan Deductions</span>
-                                <span style="font-weight: 600; color: var(--danger-color);">${formatCurrency(payslip.loan_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.loan_deductions)}</span>
                             </div>
                             ` : ''}
                             <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
                                 <span style="font-weight: 700;">Net Pay</span>
-                                <span style="font-weight: 700; color: var(--primary-color); font-size: 1.1rem;">${formatCurrency(payslip.net_pay)}</span>
+                                <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${formatCurrency(payslip.net_pay)}</span>
                             </div>
                         </div>
                     </div>
@@ -590,7 +610,7 @@ async function viewDraftPayslip(payslipId) {
             structureBreakdownHtml = `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div>
-                        <h5 style="margin: 0 0 0.75rem 0; color: var(--success-color);">Earnings</h5>
+                        <h5 style="margin: 0 0 0.75rem 0; color: var(--color-success);">Earnings</h5>
                         <table class="data-table" style="width: 100%;">
                             <tbody>${earningsHtml}</tbody>
                             <tfoot>
@@ -602,7 +622,7 @@ async function viewDraftPayslip(payslipId) {
                         </table>
                     </div>
                     <div>
-                        <h5 style="margin: 0 0 0.75rem 0; color: var(--danger-color);">Deductions</h5>
+                        <h5 style="margin: 0 0 0.75rem 0; color: var(--color-danger);">Deductions</h5>
                         <table class="data-table" style="width: 100%;">
                             <tbody>
                                 ${deductionsHtml}
@@ -626,7 +646,7 @@ async function viewDraftPayslip(payslipId) {
                     <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'}</h4>
                     <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                 </div>
-                <div style="padding: 0.5rem 1rem; background: var(--primary-color); color: var(--text-inverse); border-radius: 6px; text-align: right;">
+                <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
                     <div style="font-size: 0.65rem; opacity: 0.9;">Net Pay</div>
                     <div style="font-size: 1.1rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</div>
                 </div>
@@ -695,7 +715,13 @@ function groupItemsByStructure(items) {
 }
 
 async function finalizeDraft(draftId) {
-    const confirmed = confirm('Finalize this draft?\n\nThis will:\n• Move this draft to finalized payroll runs\n• Delete ALL other drafts for this period\n\nThis action cannot be undone.');
+    const confirmed = await Confirm.show({
+        title: 'Finalize Payroll Draft',
+        message: 'Finalize this draft?\n\nThis will:\n• Move this draft to finalized payroll runs\n• Delete ALL other drafts for this period\n\nThis action cannot be undone.',
+        type: 'warning',
+        confirmText: 'Finalize',
+        cancelText: 'Cancel'
+    });
     if (!confirmed) return;
 
     try {
@@ -721,7 +747,14 @@ async function finalizeDraft(draftId) {
 }
 
 async function deleteDraft(draftId) {
-    if (!confirm('Delete this draft? This action cannot be undone.')) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Draft',
+        message: 'Delete this draft? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -1464,6 +1497,7 @@ async function saveLoan() {
             loan_type: document.getElementById('loanType').value,
             principal_amount: parseFloat(document.getElementById('loanAmount').value),
             interest_rate: parseFloat(document.getElementById('interestRate').value) || 0,
+            interest_calculation_type: document.getElementById('interestCalculationType').value || 'simple',
             emi_amount: parseFloat(document.getElementById('emiAmount').value),
             start_date: document.getElementById('loanStartDate').value,
             tenure_months: parseInt(document.getElementById('numberOfInstallments').value),
@@ -1540,6 +1574,10 @@ async function viewLoan(loanId) {
                         <span class="value">${loan.interest_rate || 0}%</span>
                     </div>
                     <div class="info-row">
+                        <span class="label">Interest Type:</span>
+                        <span class="value">${formatInterestCalculationType(loan.interest_calculation_type)}</span>
+                    </div>
+                    <div class="info-row">
                         <span class="label">EMI Amount:</span>
                         <span class="value">${formatCurrency(loan.emi_amount)}</span>
                     </div>
@@ -1590,6 +1628,12 @@ async function viewLoan(loanId) {
                     <h4>Rejection Reason</h4>
                     <p class="text-danger">${loan.rejection_reason}</p>
                 </div>` : ''}
+
+                ${(loan.status === 'active' || loan.status === 'disbursed' || loan.status === 'closed') ? `
+                <div class="detail-section full-width repayment-schedule-section">
+                    <h4>Repayment Schedule</h4>
+                    ${generateRepaymentScheduleHtml(loan)}
+                </div>` : ''}
             </div>
         `;
 
@@ -1629,7 +1673,6 @@ async function viewLoan(loanId) {
             }
         }
 
-        actionsHtml += `<button type="button" class="btn btn-secondary" onclick="closeModal('viewLoanModal')">Close</button>`;
         document.getElementById('loanActionsFooter').innerHTML = actionsHtml;
 
         document.getElementById('viewLoanModal').classList.add('active');
@@ -1642,7 +1685,14 @@ async function viewLoan(loanId) {
 }
 
 async function approveLoan(loanId) {
-    if (!confirm('Are you sure you want to approve this loan application?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Approve Loan',
+        message: 'Are you sure you want to approve this loan application?',
+        type: 'success',
+        confirmText: 'Approve',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -1872,6 +1922,22 @@ async function viewPayslip(payslipId) {
             locationSection.style.display = 'none';
         }
 
+        // Handle payslip status and finalize button visibility
+        const payslipStatus = payslip.status || payslip.Status || 'generated';
+        const statusInfo = document.getElementById('payslipStatusInfo');
+        const finalizeBtn = document.getElementById('finalizePayslipBtn');
+
+        // Display status info
+        const statusBadgeClass = getPayslipStatusBadgeClass(payslipStatus);
+        statusInfo.innerHTML = `
+            <span class="status-label">Status:</span>
+            <span class="status-badge ${statusBadgeClass}">${formatPayslipStatus(payslipStatus)}</span>
+        `;
+
+        // Show finalize button only for non-finalized payslips and if user has admin role
+        const canFinalize = payslipStatus !== 'finalized' && payslipStatus !== 'paid' && isHrAdmin;
+        finalizeBtn.style.display = canFinalize ? 'inline-flex' : 'none';
+
         document.getElementById('payslipModal').classList.add('active');
         hideLoading();
     } catch (error) {
@@ -1879,6 +1945,180 @@ async function viewPayslip(payslipId) {
         showToast('Failed to load payslip', 'error');
         hideLoading();
     }
+}
+
+function getPayslipStatusBadgeClass(status) {
+    switch (status?.toLowerCase()) {
+        case 'generated':
+        case 'draft':
+            return 'badge-warning';
+        case 'finalized':
+            return 'badge-success';
+        case 'paid':
+            return 'badge-info';
+        case 'cancelled':
+            return 'badge-danger';
+        default:
+            return 'badge-secondary';
+    }
+}
+
+function formatPayslipStatus(status) {
+    if (!status) return 'Generated';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+async function finalizePayslip() {
+    if (!currentPayslipId) {
+        showToast('No payslip selected', 'error');
+        return;
+    }
+
+    const confirmed = await Confirm.show({
+        title: 'Finalize Payslip',
+        message: 'Finalize this payslip?\n\nOnce finalized, the payslip cannot be modified. This action cannot be undone.',
+        type: 'warning',
+        confirmText: 'Finalize',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-processing/payslips/${currentPayslipId}/finalize`, {
+            method: 'POST'
+        });
+
+        if (result && !result.error) {
+            showToast('Payslip finalized successfully!', 'success');
+            // Hide finalize button after success
+            document.getElementById('finalizePayslipBtn').style.display = 'none';
+            // Update status display
+            const statusInfo = document.getElementById('payslipStatusInfo');
+            statusInfo.innerHTML = `
+                <span class="status-label">Status:</span>
+                <span class="status-badge badge-success">Finalized</span>
+            `;
+            // Refresh the payslip data if needed
+            await loadAllPayslips();
+            await loadPayrollDrafts();
+        } else {
+            showToast(result?.message || result?.error || 'Failed to finalize payslip', 'error');
+        }
+        hideLoading();
+    } catch (error) {
+        console.error('Error finalizing payslip:', error);
+        showToast(error.message || error.error || 'Failed to finalize payslip', 'error');
+        hideLoading();
+    }
+}
+
+// All Payslips storage
+let allPayslips = [];
+
+async function loadAllPayslips() {
+    try {
+        showLoading();
+        const year = document.getElementById('allPayslipsYear')?.value || new Date().getFullYear();
+        const month = document.getElementById('allPayslipsMonth')?.value || '';
+        const officeId = document.getElementById('allPayslipsOffice')?.value || '';
+        const departmentId = document.getElementById('allPayslipsDepartment')?.value || '';
+        const search = document.getElementById('allPayslipsSearch')?.value || '';
+
+        // Build query parameters
+        let params = [];
+        if (year) params.push(`year=${year}`);
+        if (month) params.push(`month=${month}`);
+        if (officeId) params.push(`officeId=${officeId}`);
+        if (departmentId) params.push(`departmentId=${departmentId}`);
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+
+        const queryString = params.length > 0 ? `?${params.join('&')}` : '';
+        const response = await api.request(`/hrms/payroll-processing/payslips${queryString}`);
+
+        allPayslips = Array.isArray(response) ? response : (response.payslips || response.data || []);
+        updateAllPayslipsTable();
+        updateAllPayslipsStats();
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading all payslips:', error);
+        showToast('Failed to load payslips', 'error');
+        allPayslips = [];
+        updateAllPayslipsTable();
+        updateAllPayslipsStats();
+        hideLoading();
+    }
+}
+
+function updateAllPayslipsTable() {
+    const tbody = document.getElementById('allPayslipsTable');
+    if (!tbody) return;
+
+    if (allPayslips.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="9">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <p>No payslips found for the selected filters</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = allPayslips.map(p => {
+        const employeeName = p.employee_name || p.employeeName || 'N/A';
+        const employeeCode = p.employee_code || p.employeeCode || 'N/A';
+        const departmentName = p.department_name || p.departmentName || 'N/A';
+        const month = p.payroll_month || p.month || p.payrollMonth || '-';
+        const year = p.payroll_year || p.year || p.payrollYear || '-';
+        const grossSalary = p.gross_earnings || p.grossSalary || p.gross || 0;
+        const deductions = p.total_deductions || p.totalDeductions || p.deductions || 0;
+        const netSalary = p.net_pay || p.netSalary || p.net || 0;
+        const status = p.status || 'generated';
+        const statusClass = getPayslipStatusBadgeClass(status);
+
+        return `
+            <tr>
+                <td>${employeeName}</td>
+                <td>${employeeCode}</td>
+                <td>${departmentName}</td>
+                <td>${getMonthName(month)} ${year}</td>
+                <td>${formatCurrency(grossSalary)}</td>
+                <td>${formatCurrency(deductions)}</td>
+                <td>${formatCurrency(netSalary)}</td>
+                <td><span class="status-badge ${statusClass}">${formatPayslipStatus(status)}</span></td>
+                <td>
+                    <button class="action-btn" onclick="viewPayslip('${p.id}')" title="View Payslip">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function updateAllPayslipsStats() {
+    const totalCount = allPayslips.length;
+    const totalGross = allPayslips.reduce((sum, p) => sum + (p.gross_earnings || p.grossSalary || p.gross || 0), 0);
+    const totalNet = allPayslips.reduce((sum, p) => sum + (p.net_pay || p.netSalary || p.net || 0), 0);
+    const avgNet = totalCount > 0 ? totalNet / totalCount : 0;
+
+    const totalCountEl = document.getElementById('totalPayslipsCount');
+    const totalGrossEl = document.getElementById('totalGrossAmount');
+    const totalNetEl = document.getElementById('totalNetAmount');
+    const avgNetEl = document.getElementById('avgNetSalary');
+
+    if (totalCountEl) totalCountEl.textContent = totalCount;
+    if (totalGrossEl) totalGrossEl.textContent = formatCurrency(totalGross);
+    if (totalNetEl) totalNetEl.textContent = formatCurrency(totalNet);
+    if (avgNetEl) avgNetEl.textContent = formatCurrency(avgNet);
 }
 
 async function downloadPayslip() {
@@ -2088,6 +2328,173 @@ function formatLoanType(type) {
     return types[type] || type;
 }
 
+function formatInterestCalculationType(type) {
+    const types = {
+        'simple': 'Simple Interest',
+        'reducing_balance': 'Reducing Balance (EMI)'
+    };
+    return types[type] || type || 'Simple Interest';
+}
+
+/**
+ * Generates repayment schedule HTML for a loan
+ * Shows both actual repayments (if any) and projected schedule
+ */
+function generateRepaymentScheduleHtml(loan) {
+    const principal = loan.principal_amount || 0;
+    const interestRate = loan.interest_rate || 0;
+    const tenure = loan.tenure_months || 12;
+    const emi = loan.emi_amount || 0;
+    const startDate = loan.start_date ? new Date(loan.start_date) : new Date();
+    const interestType = loan.interest_calculation_type || 'simple';
+    const repayments = loan.repayments || [];
+
+    let html = '';
+
+    // Show actual repayments if any
+    if (repayments.length > 0) {
+        html += `
+            <div class="repayment-history">
+                <h5>Payment History</h5>
+                <div class="schedule-table-wrapper">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>EMI #</th>
+                                <th>Date</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Total</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        repayments.forEach(r => {
+            html += `
+                <tr class="paid-row">
+                    <td>${r.emi_number}</td>
+                    <td>${formatDate(r.repayment_date)}</td>
+                    <td>${formatCurrency(r.principal_amount)}</td>
+                    <td>${formatCurrency(r.interest_amount)}</td>
+                    <td>${formatCurrency(r.total_amount)}</td>
+                    <td>${formatCurrency(r.outstanding_after)}</td>
+                    <td><span class="status-badge status-paid">Paid</span></td>
+                </tr>
+            `;
+        });
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    // Generate projected schedule
+    html += `
+        <div class="projected-schedule">
+            <h5>${repayments.length > 0 ? 'Full Schedule' : 'Projected Schedule'}</h5>
+            <div class="schedule-summary">
+                <div class="summary-item">
+                    <span class="summary-label">Principal:</span>
+                    <span class="summary-value">${formatCurrency(principal)}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Interest Rate:</span>
+                    <span class="summary-value">${interestRate}% p.a.</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Tenure:</span>
+                    <span class="summary-value">${tenure} months</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">EMI:</span>
+                    <span class="summary-value">${formatCurrency(emi)}</span>
+                </div>
+            </div>
+            <div class="schedule-table-wrapper">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>EMI #</th>
+                            <th>Due Date</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>EMI</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+
+    // Calculate schedule based on interest type
+    let balance = principal;
+    const monthlyRate = interestRate / 12 / 100;
+    const paidEmis = repayments.length;
+
+    for (let i = 1; i <= tenure; i++) {
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(dueDate.getMonth() + i - 1);
+
+        let interestPortion, principalPortion, emiAmount;
+
+        if (interestType === 'reducing_balance') {
+            // Reducing balance (EMI) calculation
+            interestPortion = balance * monthlyRate;
+            principalPortion = emi - interestPortion;
+            emiAmount = emi;
+        } else {
+            // Simple interest calculation
+            const totalInterest = (principal * interestRate * tenure) / (12 * 100);
+            interestPortion = totalInterest / tenure;
+            principalPortion = principal / tenure;
+            emiAmount = principalPortion + interestPortion;
+        }
+
+        // Handle last EMI to clear balance exactly
+        if (i === tenure) {
+            principalPortion = balance;
+            emiAmount = principalPortion + interestPortion;
+        }
+
+        balance = Math.max(0, balance - principalPortion);
+
+        const isPaid = i <= paidEmis;
+        const rowClass = isPaid ? 'paid-row' : (i === paidEmis + 1 ? 'current-row' : '');
+
+        html += `
+            <tr class="${rowClass}">
+                <td>${i}</td>
+                <td>${formatShortMonth(dueDate)}</td>
+                <td>${formatCurrency(principalPortion)}</td>
+                <td>${formatCurrency(interestPortion)}</td>
+                <td>${formatCurrency(emiAmount)}</td>
+                <td>${formatCurrency(balance)}</td>
+            </tr>
+        `;
+    }
+
+    html += `
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    return html;
+}
+
+/**
+ * Format date to short month format (e.g., "Jan 2026")
+ */
+function formatShortMonth(date) {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 function getInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -2212,6 +2619,9 @@ async function viewPayrollRun(runId) {
         const deleteBtn = document.getElementById('deletePayrollRunBtn');
         const processBtn = document.getElementById('processPayrollRunBtn');
         const downloadBtn = document.getElementById('downloadCsvBtn');
+        const approveBtn = document.getElementById('approvePayrollRunBtn');
+        const markPaidBtn = document.getElementById('markPaidBtn');
+        const bankFileBtn = document.getElementById('downloadBankFileBtn');
 
         if (deleteBtn) {
             deleteBtn.style.display = run.status === 'draft' ? 'inline-flex' : 'none';
@@ -2221,6 +2631,19 @@ async function viewPayrollRun(runId) {
         }
         if (downloadBtn) {
             downloadBtn.style.display = (payslips.length > 0) ? 'inline-flex' : 'none';
+        }
+        if (approveBtn) {
+            // Show Approve button only for 'processed' status
+            approveBtn.style.display = run.status === 'processed' ? 'inline-flex' : 'none';
+        }
+        if (markPaidBtn) {
+            // Show Mark as Paid button only for 'approved' status
+            markPaidBtn.style.display = run.status === 'approved' ? 'inline-flex' : 'none';
+        }
+        if (bankFileBtn) {
+            // Show Bank File button for processed, approved, or paid status (if has payslips)
+            const showBankFile = ['processed', 'approved', 'paid'].includes(run.status) && payslips.length > 0;
+            bankFileBtn.style.display = showBankFile ? 'inline-flex' : 'none';
         }
 
         // Show the modal
@@ -2344,7 +2767,7 @@ function renderVisiblePayslips() {
         if (!slip) continue;
 
         html += `
-            <tr>
+            <tr class="clickable-row" onclick="viewPayslip('${slip.id}')" title="Click to view payslip details">
                 <td class="pr-col-emp">
                     <div class="pr-emp-cell">
                         <span class="pr-emp-name">${slip.employee_name || slip.employee_code || 'N/A'}</span>
@@ -2399,7 +2822,14 @@ function filterPayslips(searchTerm) {
 async function deleteCurrentPayrollRun() {
     if (!currentPayrollRunId) return;
 
-    if (!confirm('Are you sure you want to delete this draft payroll run? This action cannot be undone.')) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Payroll Run',
+        message: 'Are you sure you want to delete this draft payroll run? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -2471,7 +2901,14 @@ async function downloadPayrollCsv() {
 async function processCurrentPayrollRun() {
     if (!currentPayrollRunId) return;
 
-    if (!confirm('Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.')) {
+    const confirmed = await Confirm.show({
+        title: 'Process Payroll Run',
+        message: 'Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.',
+        type: 'info',
+        confirmText: 'Process',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -2503,7 +2940,14 @@ async function processCurrentPayrollRun() {
 
 // Process payroll run - generate payslips for employees
 async function processPayrollRun(runId) {
-    if (!confirm('Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.')) {
+    const confirmed = await Confirm.show({
+        title: 'Process Payroll Run',
+        message: 'Are you sure you want to process this payroll run? This will generate payslips for all eligible employees.',
+        type: 'info',
+        confirmText: 'Process',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -2755,11 +3199,14 @@ async function viewVersionDetails(versionId) {
             return `${c.component_name} (${c.component_code}): ${valueStr}`;
         }).join('\n');
 
-        alert(`Version ${version.version_number} Details\n` +
-              `\nEffective From: ${formatDate(version.effective_from)}` +
-              `\nEffective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}` +
-              `\nChange Reason: ${version.change_reason || 'N/A'}` +
-              `\n\nComponents:\n${componentsList}`);
+        await InfoModal.show({
+            title: `Version ${version.version_number} Details`,
+            message: `Effective From: ${formatDate(version.effective_from)}\n` +
+                     `Effective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}\n` +
+                     `Change Reason: ${version.change_reason || 'N/A'}\n\n` +
+                     `Components:\n${componentsList}`,
+            type: 'info'
+        });
 
         hideLoading();
     } catch (error) {
@@ -2811,7 +3258,11 @@ async function compareVersions(structureId, fromVersion, toVersion) {
             summary += `\nUNCHANGED: ${diff.unchanged_components.length} components\n`;
         }
 
-        alert(summary);
+        await InfoModal.show({
+            title: 'Version Comparison',
+            message: summary,
+            type: 'info'
+        });
         hideLoading();
     } catch (error) {
         console.error('Error comparing versions:', error);
@@ -3025,7 +3476,11 @@ async function previewVersionedSalary() {
         summary += `TOTAL DEDUCTIONS: ₹${breakdown.total_deductions?.toFixed(2) || '0.00'}\n`;
         summary += `NET PAY: ₹${breakdown.net_pay?.toFixed(2) || '0.00'}\n`;
 
-        alert(summary);
+        await InfoModal.show({
+            title: 'Salary Preview',
+            message: summary,
+            type: 'success'
+        });
         hideLoading();
     } catch (error) {
         console.error('Error previewing versioned salary:', error);
@@ -3238,7 +3693,14 @@ async function applySingleArrears(arrearsId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to apply this arrears to the next payroll?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Apply Arrears',
+        message: 'Are you sure you want to apply this arrears to the next payroll?',
+        type: 'info',
+        confirmText: 'Apply',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3264,7 +3726,14 @@ async function cancelSingleArrears(arrearsId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to cancel this arrears?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Cancel Arrears',
+        message: 'Are you sure you want to cancel this arrears?',
+        type: 'danger',
+        confirmText: 'Cancel Arrears',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3296,7 +3765,14 @@ async function applySelectedArrears() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to apply ${validIds.length} arrears to the next payroll?`)) return;
+    const confirmed = await Confirm.show({
+        title: 'Apply Multiple Arrears',
+        message: `Are you sure you want to apply ${validIds.length} arrears to the next payroll?`,
+        type: 'info',
+        confirmText: 'Apply All',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3345,7 +3821,14 @@ async function cancelSelectedArrears() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to cancel ${validIds.length} arrears?`)) return;
+    const confirmed = await Confirm.show({
+        title: 'Cancel Multiple Arrears',
+        message: `Are you sure you want to cancel ${validIds.length} arrears? This action cannot be undone.`,
+        type: 'danger',
+        confirmText: 'Cancel All',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3650,7 +4133,14 @@ async function executeBulkAssignment() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`)) {
+    const confirmed = await Confirm.show({
+        title: 'Bulk Assign Structure',
+        message: `Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`,
+        type: 'warning',
+        confirmText: 'Assign',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
         return;
     }
 
@@ -3828,6 +4318,649 @@ async function compareVersionsVisual(structureId, fromVersion, toVersion) {
     } catch (error) {
         console.error('Error comparing versions:', error);
         showToast(error.message || 'Failed to compare versions', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================================================
+// PAYROLL APPROVAL WORKFLOW FUNCTIONS
+// ============================================================================
+
+/**
+ * Approve a processed payroll run
+ * Backend: POST /api/payroll-processing/runs/{runId}/approve
+ */
+async function approvePayrollRun() {
+    if (!currentPayrollRunId) {
+        showToast('No payroll run selected', 'error');
+        return;
+    }
+
+    const confirmed = await Confirm.show({
+        title: 'Approve Payroll Run',
+        message: 'Are you sure you want to approve this payroll run? This action cannot be undone.',
+        type: 'success',
+        confirmText: 'Approve',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll-processing/runs/${currentPayrollRunId}/approve`, {
+            method: 'POST'
+        });
+
+        showToast('Payroll run approved successfully', 'success');
+
+        // Refresh the payroll runs list
+        await loadPayrollRuns();
+
+        // Close and reopen the modal to show updated status
+        closeModal('payrollRunDetailsModal');
+        await viewPayrollRun(currentPayrollRunId);
+
+    } catch (error) {
+        console.error('Error approving payroll run:', error);
+        showToast(error.message || 'Failed to approve payroll run', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Show the Mark as Paid modal
+ */
+function showMarkPaidModal() {
+    if (!currentPayrollRunId) {
+        showToast('No payroll run selected', 'error');
+        return;
+    }
+
+    // Clear previous input
+    document.getElementById('paymentBatchRef').value = '';
+
+    // Generate a suggested batch reference
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    document.getElementById('paymentBatchRef').placeholder = `e.g., BATCH-${year}-${month}-${day}`;
+
+    openModal('markPaidModal');
+}
+
+/**
+ * Confirm marking the payroll run as paid
+ * Backend: POST /api/payroll-processing/runs/{runId}/mark-paid
+ */
+async function confirmMarkPaid() {
+    if (!currentPayrollRunId) {
+        showToast('No payroll run selected', 'error');
+        return;
+    }
+
+    const batchRef = document.getElementById('paymentBatchRef').value.trim();
+
+    if (!batchRef) {
+        showToast('Payment batch reference is required', 'error');
+        document.getElementById('paymentBatchRef').focus();
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll-processing/runs/${currentPayrollRunId}/mark-paid`, {
+            method: 'POST',
+            body: JSON.stringify({
+                payment_batch_ref: batchRef
+            })
+        });
+
+        showToast('Payroll marked as paid successfully', 'success');
+
+        // Close the mark paid modal
+        closeModal('markPaidModal');
+
+        // Refresh the payroll runs list
+        await loadPayrollRuns();
+
+        // Close and reopen the details modal to show updated status
+        closeModal('payrollRunDetailsModal');
+        await viewPayrollRun(currentPayrollRunId);
+
+    } catch (error) {
+        console.error('Error marking payroll as paid:', error);
+        showToast(error.message || 'Failed to mark payroll as paid', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Download bank transfer file for payroll disbursement
+ * Backend: GET /api/payroll-processing/runs/{runId}/bank-file
+ */
+async function downloadBankFile() {
+    if (!currentPayrollRunId) {
+        showToast('No payroll run selected', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const response = await api.request(`/hrms/payroll-processing/runs/${currentPayrollRunId}/bank-file`);
+
+        if (!response || !response.records) {
+            showToast('No bank file data available', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Generate CSV content
+        const headers = [
+            'Employee Code',
+            'Employee Name',
+            'Bank Name',
+            'Account Number',
+            'IFSC Code',
+            'Net Pay',
+            'Payment Reference'
+        ];
+
+        let csvContent = headers.join(',') + '\n';
+
+        response.records.forEach(record => {
+            const row = [
+                escapeCSVField(record.employee_code || ''),
+                escapeCSVField(record.employee_name || ''),
+                escapeCSVField(record.bank_name || ''),
+                escapeCSVField(record.account_number || ''),
+                escapeCSVField(record.ifsc_code || ''),
+                record.net_pay || 0,
+                escapeCSVField(record.payment_reference || '')
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        // Download the file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = response.file_name || `BankTransfer_${currentPayrollRunId}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+
+        showToast(`Bank file downloaded: ${response.record_count} records, Total: ${formatCurrency(response.total_amount)}`, 'success');
+
+    } catch (error) {
+        console.error('Error downloading bank file:', error);
+        showToast(error.message || 'Failed to download bank file', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Escape a field for CSV format
+ */
+function escapeCSVField(field) {
+    if (field === null || field === undefined) return '';
+    const str = String(field);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+}
+
+// ============================================================================
+// ARREARS MANAGEMENT FUNCTIONS
+// ============================================================================
+
+let arrearsData = [];
+let filteredArrearsData = [];
+let currentArrearsId = null;
+
+/**
+ * Load pending arrears from the API
+ * Backend: GET /api/payroll/structures/arrears/pending
+ */
+async function loadPendingArrears() {
+    try {
+        showLoading();
+
+        const status = document.getElementById('arrearsStatus')?.value || 'pending';
+        const structureId = document.getElementById('arrearsStructure')?.value || '';
+
+        let url = '/hrms/payroll/structures/arrears/pending';
+        const params = [];
+        if (status) params.push(`status=${status}`);
+        if (structureId) params.push(`versionId=${structureId}`);
+        if (params.length > 0) url += '?' + params.join('&');
+
+        const response = await api.request(url);
+        arrearsData = response || [];
+        filteredArrearsData = [...arrearsData];
+
+        // Populate structure filter dropdown
+        populateArrearsStructureFilter();
+
+        // Update stats
+        updateArrearsStats();
+
+        // Render table
+        updateArrearsTable();
+
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading arrears:', error);
+        showToast(error.message || 'Failed to load arrears', 'error');
+        arrearsData = [];
+        filteredArrearsData = [];
+        updateArrearsTable();
+        hideLoading();
+    }
+}
+
+/**
+ * Populate the structure filter dropdown
+ */
+function populateArrearsStructureFilter() {
+    const select = document.getElementById('arrearsStructure');
+    if (!select) return;
+
+    // Get unique structures from arrears data
+    const structureMap = new Map();
+    arrearsData.forEach(arr => {
+        if (arr.structure_id && arr.structure_name) {
+            structureMap.set(arr.structure_id, arr.structure_name);
+        }
+    });
+
+    // Keep the first option
+    select.innerHTML = '<option value="">All Structures</option>';
+
+    structureMap.forEach((name, id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+/**
+ * Update arrears summary statistics
+ */
+function updateArrearsStats() {
+    const totalCount = arrearsData.length;
+    const pendingCount = arrearsData.filter(a => a.status === 'pending').length;
+    const totalAmount = arrearsData.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
+    const uniqueEmployees = new Set(arrearsData.map(a => a.employee_id)).size;
+
+    document.getElementById('totalArrearsCount').textContent = totalCount;
+    document.getElementById('pendingArrearsCount').textContent = pendingCount;
+    document.getElementById('totalArrearsAmount').textContent = formatCurrency(totalAmount);
+    document.getElementById('affectedEmployeesCount').textContent = uniqueEmployees;
+}
+
+/**
+ * Filter arrears table by search term
+ */
+function filterArrearsTable() {
+    const searchTerm = document.getElementById('arrearsSearch')?.value.toLowerCase() || '';
+
+    if (!searchTerm) {
+        filteredArrearsData = [...arrearsData];
+    } else {
+        filteredArrearsData = arrearsData.filter(arr =>
+            (arr.employee_name && arr.employee_name.toLowerCase().includes(searchTerm)) ||
+            (arr.employee_code && arr.employee_code.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    updateArrearsTable();
+}
+
+/**
+ * Update the arrears table display
+ */
+function updateArrearsTable() {
+    const tbody = document.getElementById('arrearsTable');
+    if (!tbody) return;
+
+    if (filteredArrearsData.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="9">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <p>No arrears found</p>
+                        <p class="hint">Arrears are generated when salary structure versions are applied retrospectively</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = filteredArrearsData.map(arr => `
+        <tr>
+            <td>
+                <div class="employee-info">
+                    <span class="employee-name">${arr.employee_name || 'N/A'}</span>
+                    <span class="employee-code">${arr.employee_code || ''}</span>
+                </div>
+            </td>
+            <td>${arr.structure_name || 'N/A'}</td>
+            <td>v${arr.version_number || '?'}</td>
+            <td>${getMonthName(arr.payroll_month)} ${arr.payroll_year}</td>
+            <td class="text-right">${formatCurrency(arr.old_gross)}</td>
+            <td class="text-right">${formatCurrency(arr.new_gross)}</td>
+            <td class="text-right text-success-dark"><strong>${formatCurrency(arr.arrears_amount)}</strong></td>
+            <td><span class="status-badge status-${arr.status}">${arr.status}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="viewArrearsDetails('${arr.id}')" title="View Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                    ${arr.status === 'pending' ? `
+                        <button class="action-btn text-success" onclick="applyArrearsQuick('${arr.id}')" title="Apply">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </button>
+                        <button class="action-btn text-danger" onclick="cancelArrearsQuick('${arr.id}')" title="Cancel">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+/**
+ * View arrears details in modal
+ */
+async function viewArrearsDetails(arrearsId) {
+    try {
+        showLoading();
+        currentArrearsId = arrearsId;
+
+        // Find the arrears in our data
+        const arrears = arrearsData.find(a => a.id === arrearsId);
+        if (!arrears) {
+            showToast('Arrears not found', 'error');
+            hideLoading();
+            return;
+        }
+
+        // Build the details content
+        const content = `
+            <div class="arrears-details" style="font-size: 13px;">
+                <div class="detail-header" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--gray-200);">
+                    <h4 style="margin: 0 0 4px 0; font-size: 15px;">${arrears.employee_name || 'Unknown Employee'}</h4>
+                    <span class="employee-code" style="color: var(--gray-500); font-size: 12px;">${arrears.employee_code || ''}</span>
+                    <span class="status-badge status-${arrears.status}" style="margin-left: 10px; font-size: 11px;">${arrears.status}</span>
+                </div>
+
+                <div class="detail-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <div class="detail-item">
+                        <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Structure</label>
+                        <strong style="font-size: 13px;">${arrears.structure_name || 'N/A'}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Version</label>
+                        <strong style="font-size: 13px;">Version ${arrears.version_number || '?'}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Period</label>
+                        <strong style="font-size: 13px;">${getMonthName(arrears.payroll_month)} ${arrears.payroll_year}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Created</label>
+                        <strong style="font-size: 13px;">${formatDate(arrears.created_at)}</strong>
+                    </div>
+                </div>
+
+                <div class="calculation-breakdown" style="background: var(--gray-50); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <h5 style="margin: 0 0 10px 0; font-size: 13px;">Calculation Breakdown</h5>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                        <span>Old Gross Salary</span>
+                        <span>${formatCurrency(arrears.old_gross)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                        <span>New Gross Salary</span>
+                        <span>${formatCurrency(arrears.new_gross)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                        <span>Old Deductions</span>
+                        <span>${formatCurrency(arrears.old_deductions || 0)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                        <span>New Deductions</span>
+                        <span>${formatCurrency(arrears.new_deductions || 0)}</span>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid var(--gray-300); margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; color: var(--color-success);">
+                        <span>Arrears Amount</span>
+                        <span>${formatCurrency(arrears.arrears_amount)}</span>
+                    </div>
+                </div>
+
+                ${arrears.items && arrears.items.length > 0 ? `
+                    <div class="component-breakdown">
+                        <h5 style="margin: 0 0 10px 0; font-size: 13px;">Component-wise Breakdown</h5>
+                        <table class="data-table" style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 6px 8px;">Component</th>
+                                    <th class="text-right" style="padding: 6px 8px;">Old Amount</th>
+                                    <th class="text-right" style="padding: 6px 8px;">New Amount</th>
+                                    <th class="text-right" style="padding: 6px 8px;">Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${arrears.items.map(item => `
+                                    <tr>
+                                        <td style="padding: 6px 8px;">${item.component_name || item.component_code}</td>
+                                        <td class="text-right" style="padding: 6px 8px;">${formatCurrency(item.old_amount)}</td>
+                                        <td class="text-right" style="padding: 6px 8px;">${formatCurrency(item.new_amount)}</td>
+                                        <td class="text-right ${item.difference > 0 ? 'text-success' : item.difference < 0 ? 'text-danger' : ''}" style="padding: 6px 8px;">${formatCurrency(item.difference)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : ''}
+
+                ${arrears.applied_in_payslip_id ? `
+                    <div class="applied-info" style="margin-top: 12px; padding: 10px; background: var(--color-success-light); border-radius: 8px; font-size: 12px;">
+                        <strong>Applied in Payslip:</strong> ${arrears.applied_in_payslip_number || arrears.applied_in_payslip_id}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        document.getElementById('arrearsDetailsContent').innerHTML = content;
+
+        // Show/hide action buttons based on status
+        const applyBtn = document.getElementById('applyArrearsBtn');
+        const cancelBtn = document.getElementById('cancelArrearsBtn');
+
+        if (applyBtn) {
+            applyBtn.style.display = arrears.status === 'pending' ? 'inline-flex' : 'none';
+        }
+        if (cancelBtn) {
+            cancelBtn.style.display = arrears.status === 'pending' ? 'inline-flex' : 'none';
+        }
+
+        openModal('arrearsDetailsModal');
+        hideLoading();
+    } catch (error) {
+        console.error('Error viewing arrears details:', error);
+        showToast(error.message || 'Failed to load arrears details', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Apply arrears to next payroll
+ * Backend: POST /api/payroll/structures/arrears/{arrearsId}/apply
+ */
+async function applyArrears() {
+    if (!currentArrearsId) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
+
+    const confirmed = await Confirm.show({
+        title: 'Apply Arrears',
+        message: 'Are you sure you want to apply this arrears to the next payroll run?',
+        type: 'info',
+        confirmText: 'Apply',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll/structures/arrears/${currentArrearsId}/apply`, {
+            method: 'POST'
+        });
+
+        showToast('Arrears applied successfully', 'success');
+        closeModal('arrearsDetailsModal');
+        await loadPendingArrears();
+
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        showToast(error.message || 'Failed to apply arrears', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Quick apply arrears from table
+ */
+async function applyArrearsQuick(arrearsId) {
+    const confirmed = await Confirm.show({
+        title: 'Apply Arrears',
+        message: 'Apply this arrears to the next payroll run?',
+        type: 'info',
+        confirmText: 'Apply',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll/structures/arrears/${arrearsId}/apply`, {
+            method: 'POST'
+        });
+
+        showToast('Arrears applied successfully', 'success');
+        await loadPendingArrears();
+
+    } catch (error) {
+        console.error('Error applying arrears:', error);
+        showToast(error.message || 'Failed to apply arrears', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Cancel pending arrears
+ * Backend: POST /api/payroll/structures/arrears/{arrearsId}/cancel
+ */
+async function cancelArrears() {
+    if (!currentArrearsId) {
+        showToast('No arrears selected', 'error');
+        return;
+    }
+
+    const confirmed = await Confirm.show({
+        title: 'Cancel Arrears',
+        message: 'Are you sure you want to cancel this arrears? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Cancel Arrears',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll/structures/arrears/${currentArrearsId}/cancel`, {
+            method: 'POST'
+        });
+
+        showToast('Arrears cancelled successfully', 'success');
+        closeModal('arrearsDetailsModal');
+        await loadPendingArrears();
+
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        showToast(error.message || 'Failed to cancel arrears', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Quick cancel arrears from table
+ */
+async function cancelArrearsQuick(arrearsId) {
+    const confirmed = await Confirm.show({
+        title: 'Cancel Arrears',
+        message: 'Cancel this arrears? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Cancel Arrears',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        await api.request(`/hrms/payroll/structures/arrears/${arrearsId}/cancel`, {
+            method: 'POST'
+        });
+
+        showToast('Arrears cancelled successfully', 'success');
+        await loadPendingArrears();
+
+    } catch (error) {
+        console.error('Error cancelling arrears:', error);
+        showToast(error.message || 'Failed to cancel arrears', 'error');
+    } finally {
         hideLoading();
     }
 }

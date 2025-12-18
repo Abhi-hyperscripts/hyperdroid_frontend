@@ -2648,7 +2648,15 @@ async function saveHoliday() {
 }
 
 async function deleteHoliday(id) {
-    if (!confirm('Are you sure you want to delete this holiday?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Delete Holiday',
+        message: 'Are you sure you want to delete this holiday?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -2708,7 +2716,15 @@ async function saveRoster() {
 }
 
 async function deleteRoster(id) {
-    if (!confirm('Are you sure you want to delete this roster assignment?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Delete Roster',
+        message: 'Are you sure you want to delete this roster assignment?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3340,7 +3356,15 @@ async function saveTaxType() {
 }
 
 async function deleteTaxType(id) {
-    if (!confirm('Are you sure you want to delete this tax type? This may affect associated tax rules.')) return;
+    const confirmed = await Confirm.show({
+        title: 'Delete Tax Type',
+        message: 'Are you sure you want to delete this tax type? This may affect associated tax rules.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -3634,7 +3658,15 @@ async function saveTaxRule() {
 }
 
 async function deleteTaxRule(id) {
-    if (!confirm('Are you sure you want to delete this tax rule?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Delete Tax Rule',
+        message: 'Are you sure you want to delete this tax rule?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -4844,7 +4876,7 @@ function addStructureComponent() {
     const componentHtml = `
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
-                <div class="form-group" style="flex: 2;">
+                <div class="form-group" style="flex: 1;">
                     <div class="searchable-dropdown component-dropdown" id="${componentId}_dropdown">
                         <div class="searchable-dropdown-trigger" onclick="toggleComponentDropdown('${componentId}')">
                             <span class="dropdown-selection placeholder" id="${componentId}_selection">Select Component</span>
@@ -4860,10 +4892,10 @@ function addStructureComponent() {
                         <input type="hidden" class="component-select" id="${componentId}_value" data-type="" data-calc-base="" data-calc-type="" required>
                     </div>
                 </div>
-                <div class="form-group calc-rule-display" style="flex: 1.5;" id="${componentId}_calc_rule">
+                <div class="form-group calc-rule-display" style="flex: 0 0 auto;" id="${componentId}_calc_rule">
                     <span class="calc-rule-text text-muted">Select a component</span>
                 </div>
-                <div class="form-group value-field" style="flex: 1;" id="${componentId}_value_field">
+                <div class="form-group value-field" style="flex: 0 0 auto;" id="${componentId}_value_field">
                     <input type="number" class="form-control override-value" id="${componentId}_override" placeholder="Override" step="0.01" min="0" title="Leave empty to use component default">
                     <input type="hidden" class="calc-type-select" id="${componentId}_calctype_value" value="">
                 </div>
@@ -5425,34 +5457,119 @@ async function compareVersions(structureId, fromVersion, toVersion) {
             return;
         }
 
-        let summary = `Version ${fromVersion} → Version ${toVersion}\n\n`;
+        // Populate the comparison modal
+        document.getElementById('compareFromVersion').textContent = `v${fromVersion}`;
+        document.getElementById('compareToVersion').textContent = `v${toVersion}`;
+        // API returns effective_from at root level for to_version date
+        document.getElementById('compareFromDate').textContent = '';
+        document.getElementById('compareToDate').textContent = diff.effective_from
+            ? formatDate(diff.effective_from) : '';
 
-        if (diff.added_components?.length > 0) {
-            summary += `ADDED (${diff.added_components.length}):\n`;
-            diff.added_components.forEach(c => {
-                summary += `  + ${c.component_name} (${c.component_code})\n`;
-            });
+        // Update summary badges
+        const addedCount = diff.added_components?.length || 0;
+        const removedCount = diff.removed_components?.length || 0;
+        const modifiedCount = diff.modified_components?.length || 0;
+        const unchangedCount = diff.unchanged_components?.length || 0;
+
+        document.getElementById('addedCount').textContent = `+ ${addedCount} Added`;
+        document.getElementById('removedCount').textContent = `- ${removedCount} Removed`;
+        document.getElementById('modifiedCount').textContent = `~ ${modifiedCount} Modified`;
+        document.getElementById('unchangedCount').textContent = `= ${unchangedCount} Unchanged`;
+
+        // Populate Added Components section
+        const addedSection = document.getElementById('addedSection');
+        const addedList = document.getElementById('addedList');
+        if (addedCount > 0) {
+            addedSection.style.display = 'block';
+            addedList.innerHTML = diff.added_components.map(c => `
+                <div class="compare-item">
+                    <div>
+                        <span class="compare-item-name">${c.component_name}</span>
+                        <span class="compare-item-code">${c.component_code}</span>
+                    </div>
+                    <span class="compare-item-badge new">New</span>
+                </div>
+            `).join('');
+        } else {
+            addedSection.style.display = 'none';
         }
 
-        if (diff.removed_components?.length > 0) {
-            summary += `\nREMOVED (${diff.removed_components.length}):\n`;
-            diff.removed_components.forEach(c => {
-                summary += `  - ${c.component_name} (${c.component_code})\n`;
-            });
+        // Populate Removed Components section
+        const removedSection = document.getElementById('removedSection');
+        const removedList = document.getElementById('removedList');
+        if (removedCount > 0) {
+            removedSection.style.display = 'block';
+            removedList.innerHTML = diff.removed_components.map(c => `
+                <div class="compare-item">
+                    <div>
+                        <span class="compare-item-name">${c.component_name}</span>
+                        <span class="compare-item-code">${c.component_code}</span>
+                    </div>
+                    <span class="compare-item-badge removed">Removed</span>
+                </div>
+            `).join('');
+        } else {
+            removedSection.style.display = 'none';
         }
 
-        if (diff.modified_components?.length > 0) {
-            summary += `\nMODIFIED (${diff.modified_components.length}):\n`;
-            diff.modified_components.forEach(c => {
-                summary += `  ~ ${c.component_name}: ${c.old_value} → ${c.new_value}\n`;
-            });
+        // Populate Modified Components section
+        const modifiedSection = document.getElementById('modifiedSection');
+        const modifiedList = document.getElementById('modifiedList');
+        if (modifiedCount > 0) {
+            modifiedSection.style.display = 'block';
+            modifiedList.innerHTML = diff.modified_components.map(c => {
+                // Build change display from API response format
+                let changeText = '';
+                if (c.percentage_changed && c.old_percentage !== null && c.new_percentage !== null) {
+                    changeText = `<span class="change-inline"><span class="change-old">${c.old_percentage}%</span> → <span class="change-new">${c.new_percentage}%</span></span>`;
+                } else if (c.fixed_amount_changed && c.old_fixed_amount !== null && c.new_fixed_amount !== null) {
+                    changeText = `<span class="change-inline"><span class="change-old">₹${c.old_fixed_amount}</span> → <span class="change-new">₹${c.new_fixed_amount}</span></span>`;
+                } else if (c.calculation_type_changed) {
+                    changeText = `<span class="change-inline"><span class="change-old">${c.old_calculation_type}</span> → <span class="change-new">${c.new_calculation_type}</span></span>`;
+                }
+                return `
+                    <div class="compare-item compact">
+                        <div class="compare-item-info">
+                            <span class="compare-item-name">${c.component_name}</span>
+                            <span class="compare-item-code">${c.component_code}</span>
+                        </div>
+                        <div class="compare-item-right">
+                            ${changeText}
+                            <span class="compare-item-badge modified">Modified</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            modifiedSection.style.display = 'none';
         }
 
-        if (diff.unchanged_components?.length > 0) {
-            summary += `\nUNCHANGED: ${diff.unchanged_components.length} components\n`;
+        // Populate Unchanged Components section
+        const unchangedSection = document.getElementById('unchangedSection');
+        const unchangedList = document.getElementById('unchangedList');
+        if (unchangedCount > 0) {
+            unchangedSection.style.display = 'block';
+            // If unchanged_components is an array of objects, map them; otherwise just show count
+            if (Array.isArray(diff.unchanged_components) && typeof diff.unchanged_components[0] === 'object') {
+                unchangedList.innerHTML = diff.unchanged_components.map(c => `
+                    <div class="compare-item">
+                        <span class="compare-item-name">${c.component_name || c.component_code || c}</span>
+                    </div>
+                `).join('');
+            } else {
+                // unchanged_components might just be an array of codes/names
+                unchangedList.innerHTML = diff.unchanged_components.map(name => `
+                    <div class="compare-item">
+                        <span class="compare-item-name">${name}</span>
+                    </div>
+                `).join('');
+            }
+        } else {
+            unchangedSection.style.display = 'none';
         }
 
-        alert(summary);
+        // Open the modal
+        openModal('versionCompareModal');
         hideLoading();
     } catch (error) {
         console.error('Error comparing versions:', error);
@@ -5987,7 +6104,15 @@ async function applySingleArrears(arrearsId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to apply this arrears to the next payroll?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Apply Arrears',
+        message: 'Are you sure you want to apply this arrears to the next payroll?',
+        type: 'info',
+        confirmText: 'Apply',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -6009,7 +6134,15 @@ async function cancelSingleArrears(arrearsId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to cancel this arrears?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Cancel Arrears',
+        message: 'Are you sure you want to cancel this arrears?',
+        type: 'warning',
+        confirmText: 'Cancel Arrears',
+        cancelText: 'Keep'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -6037,7 +6170,15 @@ async function applySelectedArrears() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to apply ${validIds.length} arrears to the next payroll?`)) return;
+    const confirmed = await Confirm.show({
+        title: 'Apply Multiple Arrears',
+        message: `Are you sure you want to apply ${validIds.length} arrears to the next payroll?`,
+        type: 'info',
+        confirmText: 'Apply All',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -6079,7 +6220,15 @@ async function cancelSelectedArrears() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to cancel ${validIds.length} arrears?`)) return;
+    const confirmed = await Confirm.show({
+        title: 'Cancel Multiple Arrears',
+        message: `Are you sure you want to cancel ${validIds.length} arrears?`,
+        type: 'warning',
+        confirmText: 'Cancel All',
+        cancelText: 'Keep'
+    });
+
+    if (!confirmed) return;
 
     try {
         showLoading();
@@ -6303,7 +6452,15 @@ async function executeBulkAssignment() {
         return;
     }
 
-    if (!confirm(`Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`)) {
+    const confirmed = await Confirm.show({
+        title: 'Bulk Assignment',
+        message: `Are you sure you want to assign this structure version to ${bulkPreviewResult.employees_to_assign} employees?`,
+        type: 'info',
+        confirmText: 'Assign',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
         return;
     }
 

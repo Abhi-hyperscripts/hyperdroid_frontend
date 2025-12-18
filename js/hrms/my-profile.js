@@ -442,7 +442,15 @@ async function submitUpdateRequest(event) {
  * Cancel update request
  */
 async function cancelRequest(requestId) {
-    if (!confirm('Are you sure you want to cancel this request?')) {
+    const confirmed = await Confirm.show({
+        title: 'Cancel Request',
+        message: 'Are you sure you want to cancel this request?',
+        type: 'warning',
+        confirmText: 'Yes, Cancel',
+        cancelText: 'No, Keep It'
+    });
+
+    if (!confirmed) {
         return;
     }
 

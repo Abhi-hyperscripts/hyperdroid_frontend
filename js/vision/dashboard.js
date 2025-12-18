@@ -1056,7 +1056,15 @@ async function confirmDeleteProject(projectId) {
         return;
     }
 
-    if (confirm('Are you sure you want to delete this project?')) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Project',
+        message: 'Are you sure you want to delete this project?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (confirmed) {
         try {
             await api.deleteProject(projectId);
             loadAllProjects();
@@ -1066,14 +1074,30 @@ async function confirmDeleteProject(projectId) {
     }
 }
 
-function confirmDeleteMeeting(meetingId) {
-    if (confirm('Are you sure you want to delete this meeting? (This will mark it as inactive)')) {
+async function confirmDeleteMeeting(meetingId) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Meeting',
+        message: 'Are you sure you want to delete this meeting? (This will mark it as inactive)',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (confirmed) {
         deleteMeeting(meetingId);
     }
 }
 
-function confirmPermanentDeleteMeeting(meetingId) {
-    if (confirm('WARNING: This will PERMANENTLY delete this meeting and all associated recordings. This action cannot be undone!\n\nAre you sure you want to permanently delete this meeting?')) {
+async function confirmPermanentDeleteMeeting(meetingId) {
+    const confirmed = await Confirm.show({
+        title: 'Permanent Delete',
+        message: 'WARNING: This will PERMANENTLY delete this meeting and all associated recordings. This action cannot be undone!\n\nAre you sure you want to permanently delete this meeting?',
+        type: 'danger',
+        confirmText: 'Delete Forever',
+        cancelText: 'Cancel'
+    });
+
+    if (confirmed) {
         permanentDeleteMeeting(meetingId);
     }
 }

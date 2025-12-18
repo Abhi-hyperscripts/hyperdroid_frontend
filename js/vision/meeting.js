@@ -1946,7 +1946,14 @@ function copyMeetingLink() {
 
 // Leave meeting
 async function leaveMeeting() {
-    if (confirm('Are you sure you want to leave the meeting?')) {
+    const confirmed = await Confirm.show({
+        title: 'Leave Meeting',
+        message: 'Are you sure you want to leave the meeting?',
+        type: 'warning',
+        confirmText: 'Leave',
+        cancelText: 'Stay'
+    });
+    if (confirmed) {
         try {
             // Stop recording if active
             if (isRecording) {
@@ -3059,7 +3066,14 @@ async function muteAllParticipants() {
         return;
     }
 
-    if (!confirm('Are you sure you want to mute all participants?')) {
+    const muteConfirmed = await Confirm.show({
+        title: 'Mute All Participants',
+        message: 'Are you sure you want to mute all participants?',
+        type: 'warning',
+        confirmText: 'Mute All',
+        cancelText: 'Cancel'
+    });
+    if (!muteConfirmed) {
         return;
     }
 
@@ -3082,8 +3096,14 @@ async function kickParticipant(participantIdentity) {
         return;
     }
 
-    // Show confirmation immediately - don't wait for any async operations
-    const confirmed = confirm('Are you sure you want to remove this participant from the meeting?');
+    // Show confirmation
+    const confirmed = await Confirm.show({
+        title: 'Remove Participant',
+        message: 'Are you sure you want to remove this participant from the meeting?',
+        type: 'danger',
+        confirmText: 'Remove',
+        cancelText: 'Cancel'
+    });
 
     if (!confirmed) {
         return;

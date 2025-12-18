@@ -2146,6 +2146,15 @@
                         </svg>
                         Manage Arrears
                     </button>
+                    <button type="button" class="btn btn-outline" onclick="openBulkAssignModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Bulk Assign
+                    </button>
                     <button type="button" class="btn btn-outline" onclick="previewVersionedSalary()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -2586,7 +2595,7 @@
 
     <!-- Version Comparison Modal -->
     <div class="modal" id="versionCompareModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="versionCompareTitle">Version Comparison</h5>
@@ -2598,90 +2607,78 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="comparison-header" style="display: flex; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
-                        <div style="text-align: center; flex: 1;">
-                            <span class="text-muted">From Version</span>
-                            <h4 id="compareFromVersion" style="margin: 4px 0;">v1</h4>
-                            <small id="compareFromDate" class="text-muted">-</small>
+                    <!-- Version comparison header -->
+                    <div class="version-compare-header">
+                        <div class="version-box">
+                            <span class="version-label">From</span>
+                            <span class="version-number" id="compareFromVersion">v1</span>
+                            <span class="version-date" id="compareFromDate">-</span>
                         </div>
-                        <div style="display: flex; align-items: center; padding: 0 24px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
+                        <div class="version-arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
                         </div>
-                        <div style="text-align: center; flex: 1;">
-                            <span class="text-muted">To Version</span>
-                            <h4 id="compareToVersion" style="margin: 4px 0;">v2</h4>
-                            <small id="compareToDate" class="text-muted">-</small>
+                        <div class="version-box">
+                            <span class="version-label">To</span>
+                            <span class="version-number" id="compareToVersion">v2</span>
+                            <span class="version-date" id="compareToDate">-</span>
                         </div>
                     </div>
 
-                    <div class="comparison-summary" style="display: flex; gap: 12px; margin-bottom: 24px;">
-                        <span class="badge" id="addedCount" style="background: var(--color-success-light); color: var(--color-success-text); padding: 6px 12px; border-radius: 16px;">
-                            + 0 Added
-                        </span>
-                        <span class="badge" id="removedCount" style="background: var(--color-danger-light); color: var(--color-danger-text); padding: 6px 12px; border-radius: 16px;">
-                            - 0 Removed
-                        </span>
-                        <span class="badge" id="modifiedCount" style="background: var(--color-warning-light); color: var(--color-warning-text); padding: 6px 12px; border-radius: 16px;">
-                            ~ 0 Modified
-                        </span>
-                        <span class="badge" id="unchangedCount" style="background: var(--gray-200); color: var(--gray-700); padding: 6px 12px; border-radius: 16px;">
-                            = 0 Unchanged
-                        </span>
+                    <!-- Summary badges -->
+                    <div class="version-compare-summary">
+                        <span class="compare-badge added" id="addedCount">+ 0 Added</span>
+                        <span class="compare-badge removed" id="removedCount">- 0 Removed</span>
+                        <span class="compare-badge modified" id="modifiedCount">~ 0 Modified</span>
+                        <span class="compare-badge unchanged" id="unchangedCount">= 0 Unchanged</span>
                     </div>
 
-                    <div class="comparison-details">
-                        <!-- Added Components -->
-                        <div id="addedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 class="text-success-dark" style="margin-bottom: 8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                    <!-- Change details -->
+                    <div class="version-compare-details">
+                        <div id="addedSection" class="compare-section added">
+                            <h6 class="compare-section-title added">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Added Components
-                            </h4>
-                            <div id="addedList" style="background: var(--color-success-light); padding: 12px; border-radius: 8px;"></div>
+                            </h6>
+                            <div id="addedList" class="compare-list"></div>
                         </div>
 
-                        <!-- Removed Components -->
-                        <div id="removedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 class="text-danger-dark" style="margin-bottom: 8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                        <div id="removedSection" class="compare-section removed">
+                            <h6 class="compare-section-title removed">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Removed Components
-                            </h4>
-                            <div id="removedList" style="background: var(--color-danger-light); padding: 12px; border-radius: 8px;"></div>
+                            </h6>
+                            <div id="removedList" class="compare-list"></div>
                         </div>
 
-                        <!-- Modified Components -->
-                        <div id="modifiedSection" style="display: none; margin-bottom: 16px;">
-                            <h4 class="text-warning-dark" style="margin-bottom: 8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                        <div id="modifiedSection" class="compare-section modified">
+                            <h6 class="compare-section-title modified">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
                                 Modified Components
-                            </h4>
-                            <div id="modifiedList" style="background: var(--color-warning-light); padding: 12px; border-radius: 8px;"></div>
+                            </h6>
+                            <div id="modifiedList" class="compare-list"></div>
                         </div>
 
-                        <!-- Unchanged Components -->
-                        <div id="unchangedSection" style="display: none;">
-                            <h4 style="color: var(--gray-700); margin-bottom: 8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                        <div id="unchangedSection" class="compare-section unchanged">
+                            <h6 class="compare-section-title unchanged">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                                 Unchanged Components
-                            </h4>
-                            <div id="unchangedList" style="background: var(--gray-200); padding: 12px; border-radius: 8px;"></div>
+                            </h6>
+                            <div id="unchangedList" class="compare-list unchanged-list"></div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('versionCompareModal')">Close</button>
                 </div>
             </div>
         </div>

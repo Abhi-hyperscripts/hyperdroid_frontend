@@ -554,7 +554,14 @@ async function contextMenuAction(action) {
             }
             break;
         case 'delete':
-            if (confirm(`Are you sure you want to delete "${name}"?`)) {
+            const confirmed = await Confirm.show({
+                title: 'Delete Item',
+                message: `Are you sure you want to delete "${name}"?`,
+                type: 'danger',
+                confirmText: 'Delete',
+                cancelText: 'Cancel'
+            });
+            if (confirmed) {
                 if (type === 'folder') {
                     await deleteFolder(id);
                 } else {
@@ -585,12 +592,19 @@ function renameItem(itemId, itemType, itemName) {
     }
 }
 
-function deleteItem(itemId, itemType, itemName) {
-    if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+async function deleteItem(itemId, itemType, itemName) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Item',
+        message: `Are you sure you want to delete "${itemName}"?`,
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+    if (confirmed) {
         if (itemType === 'folder') {
-            deleteFolder(itemId);
+            await deleteFolder(itemId);
         } else {
-            deleteFile(itemId);
+            await deleteFile(itemId);
         }
     }
 }
@@ -1103,7 +1117,14 @@ function copyShareLink() {
 async function revokeCurrentShare() {
     if (!currentShareId) return;
 
-    if (!confirm('Are you sure you want to revoke this share link?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Revoke Share',
+        message: 'Are you sure you want to revoke this share link?',
+        type: 'warning',
+        confirmText: 'Revoke',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
 
     try {
         const result = await api.revokeShareLink(currentShareId);
