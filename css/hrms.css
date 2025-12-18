@@ -186,6 +186,49 @@
     opacity: 1;
 }
 
+/* Sub-tabs (for nested tabs like Location Taxes) */
+.sub-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    padding: 4px;
+    background: var(--bg-body);
+    border-radius: var(--border-radius-md);
+    width: fit-content;
+}
+
+.sub-tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all var(--transition-base);
+}
+
+.sub-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+}
+
+.sub-tab-btn.active {
+    color: var(--text-primary);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Sub-tab Content */
+.sub-tab-content {
+    display: none;
+}
+
+.sub-tab-content.active {
+    display: block;
+}
+
 /* Filters Bar */
 .filters-bar {
     display: flex;

@@ -697,19 +697,21 @@ const InfoModal = (() => {
                 flex: 1;
             }
             .info-modal-close {
-                background: none;
+                background: var(--brand-primary);
                 border: none;
-                padding: 4px;
+                width: 28px;
+                height: 28px;
+                padding: 0;
                 cursor: pointer;
-                color: var(--text-secondary);
-                border-radius: 4px;
+                color: white;
+                border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                transition: opacity 0.15s ease;
             }
             .info-modal-close:hover {
-                background: var(--gray-100);
-                color: var(--text-primary);
+                opacity: 0.9;
             }
             .info-modal-body {
                 padding: 16px 20px;
@@ -722,6 +724,144 @@ const InfoModal = (() => {
                 color: var(--text-secondary);
                 white-space: pre-wrap;
                 font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Code', monospace);
+            }
+            .info-modal-html-content {
+                font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+                white-space: normal;
+            }
+            /* Rich content styles for InfoModal */
+            .info-modal-html-content .detail-grid {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 8px 16px;
+                margin-bottom: 16px;
+            }
+            .info-modal-html-content .detail-label {
+                color: var(--text-tertiary);
+                font-size: 12px;
+            }
+            .info-modal-html-content .detail-value {
+                color: var(--text-primary);
+                font-weight: 500;
+            }
+            .info-modal-html-content .component-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 12px;
+                font-size: 12px;
+            }
+            .info-modal-html-content .component-table th {
+                text-align: left;
+                padding: 8px;
+                background: var(--gray-100);
+                border-bottom: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                font-weight: 600;
+            }
+            .info-modal-html-content .component-table td {
+                padding: 8px;
+                border-bottom: 1px solid var(--gray-200);
+            }
+            .info-modal-html-content .component-table tr:last-child td {
+                border-bottom: none;
+            }
+            .info-modal-html-content .badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .info-modal-html-content .badge-earning {
+                background: var(--success-alpha-20, rgba(34, 197, 94, 0.2));
+                color: var(--color-success-text, #15803d);
+            }
+            .info-modal-html-content .badge-deduction {
+                background: var(--danger-alpha-20, rgba(239, 68, 68, 0.2));
+                color: var(--color-danger-text, #dc2626);
+            }
+            .info-modal-html-content .badge-added {
+                background: var(--success-alpha-20, rgba(34, 197, 94, 0.2));
+                color: var(--color-success-text, #15803d);
+            }
+            .info-modal-html-content .badge-removed {
+                background: var(--danger-alpha-20, rgba(239, 68, 68, 0.2));
+                color: var(--color-danger-text, #dc2626);
+            }
+            .info-modal-html-content .badge-modified {
+                background: var(--warning-alpha-20, rgba(234, 179, 8, 0.2));
+                color: var(--color-warning-text, #a16207);
+            }
+            .info-modal-html-content .section-title {
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                margin: 16px 0 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .info-modal-html-content .section-title:first-child {
+                margin-top: 0;
+            }
+            .info-modal-html-content .diff-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 0;
+                border-bottom: 1px solid var(--gray-100);
+            }
+            .info-modal-html-content .diff-item:last-child {
+                border-bottom: none;
+            }
+            .info-modal-html-content .diff-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            .info-modal-html-content .diff-icon.added {
+                background: var(--success-alpha-20);
+                color: var(--color-success);
+            }
+            .info-modal-html-content .diff-icon.removed {
+                background: var(--danger-alpha-20);
+                color: var(--color-danger);
+            }
+            .info-modal-html-content .diff-icon.modified {
+                background: var(--warning-alpha-20);
+                color: var(--color-warning);
+            }
+            .info-modal-html-content .summary-box {
+                background: var(--gray-50);
+                border-radius: 8px;
+                padding: 12px;
+                margin-top: 16px;
+            }
+            .info-modal-html-content .summary-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 4px 0;
+                font-size: 13px;
+            }
+            .info-modal-html-content .summary-row.total {
+                border-top: 2px solid var(--gray-300);
+                margin-top: 8px;
+                padding-top: 8px;
+                font-weight: 600;
+            }
+            .info-modal-html-content .amount {
+                font-family: var(--font-mono, monospace);
+            }
+            .info-modal-html-content .amount.positive {
+                color: var(--color-success);
+            }
+            .info-modal-html-content .amount.negative {
+                color: var(--color-danger);
             }
             .info-modal-footer {
                 padding: 12px 20px;
@@ -757,9 +897,20 @@ const InfoModal = (() => {
         danger: '<svg class="info-modal-icon danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
     };
 
-    function show({ title = 'Information', message = '', type = 'info', buttonText = 'OK' } = {}) {
+    function show({ title = 'Information', message = '', type = 'info', buttonText = 'OK', html = false } = {}) {
         return new Promise((resolve) => {
             injectStyles();
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // If html=true, use message directly; otherwise escape it
+            const bodyContent = html ? message : escapeHtml(message);
+            // When using HTML content, don't use the monospace font class
+            const contentClass = html ? 'info-modal-content info-modal-html-content' : 'info-modal-content';
 
             const overlay = document.createElement('div');
             overlay.className = 'info-modal-overlay';
@@ -776,19 +927,13 @@ const InfoModal = (() => {
                         </button>
                     </div>
                     <div class="info-modal-body">
-                        <div class="info-modal-content">${escapeHtml(message)}</div>
+                        <div class="${contentClass}">${bodyContent}</div>
                     </div>
                     <div class="info-modal-footer">
                         <button class="info-modal-btn">${buttonText}</button>
                     </div>
                 </div>
             `;
-
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
 
             function close() {
                 overlay.classList.remove('show');
@@ -835,7 +980,291 @@ function showInfo(message, title = 'Information', type = 'info') {
     return InfoModal.show({ message, title, type });
 }
 
+/**
+ * Prompt Modal - Theme-aware input prompt
+ * Drop-in replacement for window.prompt() with better styling
+ *
+ * Usage:
+ *   const value = await Prompt.show('Enter your name:', 'Default Name');
+ *   const ctc = await Prompt.show({
+ *       title: 'Salary Preview',
+ *       message: 'Enter CTC for calculation:',
+ *       defaultValue: '1200000',
+ *       type: 'number',
+ *       placeholder: 'e.g., 1200000'
+ *   });
+ */
+const Prompt = (() => {
+    let stylesInjected = false;
+
+    function injectStyles() {
+        if (stylesInjected) return;
+
+        const style = document.createElement('style');
+        style.textContent = `
+            .prompt-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: var(--overlay-dark, rgba(0, 0, 0, 0.5));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10001;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            .prompt-modal-overlay.show {
+                opacity: 1;
+            }
+            .prompt-modal {
+                background: var(--bg-card);
+                border-radius: var(--border-radius-lg, 12px);
+                box-shadow: var(--shadow-xl);
+                max-width: 420px;
+                width: 90%;
+                display: flex;
+                flex-direction: column;
+                transform: scale(0.9);
+                transition: transform 0.2s ease;
+            }
+            .prompt-modal-overlay.show .prompt-modal {
+                transform: scale(1);
+            }
+            .prompt-modal-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 16px 20px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .prompt-modal-icon {
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
+                color: var(--color-info);
+            }
+            .prompt-modal-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: var(--text-primary);
+                margin: 0;
+                flex: 1;
+            }
+            .prompt-modal-close {
+                background: var(--brand-primary);
+                border: none;
+                width: 28px;
+                height: 28px;
+                padding: 0;
+                cursor: pointer;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: opacity 0.15s ease;
+            }
+            .prompt-modal-close:hover {
+                opacity: 0.9;
+            }
+            .prompt-modal-body {
+                padding: 16px 20px;
+            }
+            .prompt-modal-message {
+                font-size: 14px;
+                color: var(--text-secondary);
+                margin: 0 0 12px 0;
+                line-height: 1.5;
+            }
+            .prompt-modal-input {
+                width: 100%;
+                padding: 10px 12px;
+                font-size: 14px;
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius-sm, 6px);
+                background: var(--bg-input, var(--bg-card));
+                color: var(--text-primary);
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                box-sizing: border-box;
+            }
+            .prompt-modal-input:focus {
+                outline: none;
+                border-color: var(--brand-primary);
+                box-shadow: 0 0 0 3px var(--brand-primary-alpha-20, rgba(59, 130, 246, 0.2));
+            }
+            .prompt-modal-input::placeholder {
+                color: var(--text-tertiary);
+            }
+            .prompt-modal-footer {
+                padding: 12px 20px;
+                border-top: 1px solid var(--border-color);
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                background: var(--gray-50);
+                border-radius: 0 0 var(--border-radius-lg, 12px) var(--border-radius-lg, 12px);
+            }
+            .prompt-modal-btn {
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .prompt-modal-btn-cancel {
+                border: 1px solid var(--border-color);
+                background: var(--bg-card);
+                color: var(--text-primary);
+            }
+            .prompt-modal-btn-cancel:hover {
+                background: var(--bg-card-hover, var(--gray-100));
+            }
+            .prompt-modal-btn-ok {
+                border: none;
+                background: var(--brand-primary);
+                color: white;
+            }
+            .prompt-modal-btn-ok:hover {
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(style);
+        stylesInjected = true;
+    }
+
+    /**
+     * Show a prompt dialog
+     * @param {string|object} options - Message string or options object
+     * @returns {Promise<string|null>} - Resolves to input value or null if cancelled
+     */
+    function show(options = {}) {
+        // Handle string argument (simple prompt)
+        if (typeof options === 'string') {
+            options = { message: options };
+        }
+
+        const {
+            title = 'Input Required',
+            message = 'Please enter a value:',
+            defaultValue = '',
+            placeholder = '',
+            type = 'text',
+            confirmText = 'OK',
+            cancelText = 'Cancel'
+        } = options;
+
+        return new Promise((resolve) => {
+            injectStyles();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'prompt-modal-overlay';
+            overlay.innerHTML = `
+                <div class="prompt-modal">
+                    <div class="prompt-modal-header">
+                        <svg class="prompt-modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <h3 class="prompt-modal-title">${escapeHtml(title)}</h3>
+                        <button class="prompt-modal-close" aria-label="Close">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="prompt-modal-body">
+                        <p class="prompt-modal-message">${escapeHtml(message)}</p>
+                        <input
+                            type="${type}"
+                            class="prompt-modal-input"
+                            value="${escapeHtml(defaultValue)}"
+                            placeholder="${escapeHtml(placeholder)}"
+                        />
+                    </div>
+                    <div class="prompt-modal-footer">
+                        <button class="prompt-modal-btn prompt-modal-btn-cancel">${escapeHtml(cancelText)}</button>
+                        <button class="prompt-modal-btn prompt-modal-btn-ok">${escapeHtml(confirmText)}</button>
+                    </div>
+                </div>
+            `;
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            const input = overlay.querySelector('.prompt-modal-input');
+            const closeBtn = overlay.querySelector('.prompt-modal-close');
+            const cancelBtn = overlay.querySelector('.prompt-modal-btn-cancel');
+            const okBtn = overlay.querySelector('.prompt-modal-btn-ok');
+
+            function close(value) {
+                overlay.classList.remove('show');
+                setTimeout(() => {
+                    overlay.remove();
+                    resolve(value);
+                }, 200);
+            }
+
+            closeBtn.addEventListener('click', () => close(null));
+            cancelBtn.addEventListener('click', () => close(null));
+            okBtn.addEventListener('click', () => close(input.value));
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close(null);
+            });
+
+            // Handle Enter key in input
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    close(input.value);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    close(null);
+                }
+            });
+
+            // Handle Escape key globally
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', handleEscape);
+                    close(null);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => {
+                overlay.classList.add('show');
+                input.focus();
+                input.select();
+            });
+        });
+    }
+
+    return { show };
+})();
+
+/**
+ * Legacy-style function for prompts
+ * Drop-in replacement for window.prompt()
+ * @param {string} message - The prompt message
+ * @param {string} defaultValue - Optional default value
+ * @returns {Promise<string|null>}
+ */
+function showPrompt(message, defaultValue = '', title = 'Input Required') {
+    return Prompt.show({ message, defaultValue, title });
+}
+
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Toast, showToast, Confirm, showConfirm, InfoModal, showInfo };
+    module.exports = { Toast, showToast, Confirm, showConfirm, InfoModal, showInfo, Prompt, showPrompt };
 }

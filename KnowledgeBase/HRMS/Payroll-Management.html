@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Payroll Management Guide | HyperDroid Knowledge Base</title>
+    <!-- Import master theme for brand colors -->
+    <link rel="stylesheet" href="../../css/theme.css">
+    <style>
+        :root {
+            /*
+             * Map documentation variables to theme.css semantic variables.
+             * These automatically adapt to light/dark mode via theme.css.
+             */
+            --primary-color: var(--brand-primary);
+            --primary-dark: var(--brand-primary-dark);
+            --primary-light: var(--brand-primary-light);
+            --secondary-color: var(--color-success);
+            --warning-color: var(--color-warning);
+            --danger-color: var(--color-danger);
+            --text-color: var(--text-primary);
+            --text-muted-color: var(--text-secondary);
+            --bg-color: var(--bg-body);
+            --card-bg: var(--bg-card);
+            --code-bg: var(--bg-card-hover);
+            --header-bg: var(--gradient-header);
+            --table-hover: var(--bg-card-hover);
+            --shadow-color: var(--shadow-xs);
+            --shadow-strong: var(--shadow-sm);
+            --border-color: var(--border-color);
+
+            /* Documentation-specific colors */
+            --tip-bg: var(--color-success-light);
+            --tip-border: var(--color-success);
+            --warning-bg: var(--color-warning-light);
+            --warning-border: var(--color-warning);
+            --important-bg: var(--color-info-light);
+            --important-border: var(--brand-primary);
+            --badge-required-bg: var(--color-danger-light);
+            --badge-required-color: var(--color-danger-text);
+            --badge-optional-bg: var(--color-info-light);
+            --badge-optional-color: var(--color-info-text);
+            --footer-bg: var(--brand-primary-dark, var(--bg-tooltip));
+            --footer-text: var(--text-inverse);
+            --footer-link: var(--brand-primary-light, #93c5fd);
+            --header-text: var(--text-inverse);
+            --nav-hover-text: var(--text-inverse);
+        }
+
+        /* Dark mode overrides */
+        [data-theme="dark"] {
+            --tip-bg: var(--success-alpha-10);
+            --warning-bg: var(--warning-alpha-10);
+            --important-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            --badge-required-bg: var(--danger-alpha-10);
+            --badge-required-color: var(--color-danger-text);
+            --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+            --badge-optional-color: var(--brand-primary-light);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --tip-bg: var(--success-alpha-10);
+                --warning-bg: var(--warning-alpha-10);
+                --important-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                --badge-required-bg: var(--danger-alpha-10);
+                --badge-required-color: var(--color-danger-text);
+                --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
+                --badge-optional-color: var(--brand-primary-light);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 28px 20px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            position: sticky;
+            top: 0;
+            padding: 16px 16px 16px 16px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            background: var(--card-bg);
+            z-index: 10;
+        }
+
+        .sidebar-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            font-size: 0.7rem;
+            color: var(--text-muted-color);
+            margin-top: 4px;
+        }
+
+        .sidebar-header .theme-toggle {
+            background: transparent;
+            border: none;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-header .theme-toggle:hover {
+            background: var(--table-hover);
+        }
+
+        .sidebar-header .theme-toggle .icon {
+            font-size: 1.1rem;
+        }
+
+        .nav-group {
+            margin-bottom: 8px;
+        }
+
+        .nav-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .nav-group-header:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-group-header .chevron {
+            transition: transform 0.2s;
+            font-size: 0.6rem;
+        }
+
+        .nav-group.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .nav-group.collapsed .nav-group-items {
+            display: none;
+        }
+
+        .nav-group-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-group-items li {
+            margin: 0;
+        }
+
+        .nav-group-items a {
+            display: block;
+            padding: 6px 16px 6px 24px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.78rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-group-items a:hover {
+            background: var(--table-hover);
+            color: var(--primary-color);
+            border-left-color: var(--primary-light);
+        }
+
+        .nav-group-items a.active {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-left-color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .nav-group-items .section-num {
+            display: inline-block;
+            width: 22px;
+            font-size: 0.7rem;
+            color: var(--text-muted-color);
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px var(--shadow-strong);
+        }
+
+        .menu-toggle:hover {
+            background: var(--primary-dark);
+        }
+
+        .hamburger-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-line + .hamburger-line {
+            margin-top: 5px;
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Sidebar overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Main Content - adjusted for sidebar */
+        main {
+            margin-left: 260px;
+            padding: 24px 48px 40px 32px;
+            max-width: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 70px 16px 70px;
+            }
+
+            header {
+                padding-left: 60px;
+            }
+
+            .sidebar-header h2 {
+                font-size: 1rem;
+            }
+
+            .sidebar-header {
+                padding-left: 56px;
+            }
+
+            footer {
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 8px;
+                padding: 16px 20px;
+                font-size: 0.85rem;
+                font-weight: 500;
+                background: var(--footer-bg) !important;
+            }
+
+            footer p {
+                width: 100%;
+                text-align: center;
+                line-height: 1.4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Mobile table scrolling */
+            section {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 500px;
+            }
+        }
+
+        /* Sections */
+        section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px var(--shadow-color);
+            overflow-x: auto;
+        }
+
+        section h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        section h2 .section-number {
+            background: var(--primary-color);
+            color: var(--card-bg);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        section h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 18px 0 10px;
+            color: var(--brand-primary);
+        }
+
+        section h4 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 14px 0 8px;
+            color: var(--text-color);
+        }
+
+        /* Screenshots */
+        .screenshot-container {
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px var(--shadow-strong);
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            display: block;
+        }
+
+        .screenshot-caption {
+            background: var(--code-bg);
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+
+        .info-box.tip {
+            background: var(--tip-bg);
+            border-left: 3px solid var(--tip-border);
+        }
+
+        .info-box.warning {
+            background: var(--warning-bg);
+            border-left: 3px solid var(--warning-border);
+        }
+
+        .info-box.important {
+            background: var(--important-bg);
+            border-left: 3px solid var(--important-border);
+        }
+
+        .info-box .icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--code-bg);
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        tr:hover {
+            background: var(--table-hover);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Code */
+        code {
+            background: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Menlo', 'Monaco', monospace;
+            font-size: 0.85em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: var(--text-color);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 400;
+        }
+
+        .badge-required {
+            background: var(--badge-required-bg);
+            color: var(--badge-required-color);
+        }
+
+        .badge-optional {
+            background: var(--badge-optional-bg);
+            color: var(--badge-optional-color);
+        }
+
+        .badge-admin {
+            background: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        .badge-earning {
+            background: var(--tip-bg);
+            color: var(--color-success-text);
+        }
+
+        .badge-deduction {
+            background: var(--badge-required-bg);
+            color: var(--badge-required-color);
+        }
+
+        /* Step indicators */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            padding-left: 40px;
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            color: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin: 14px 0;
+        }
+
+        .feature-card {
+            background: var(--code-bg);
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .feature-card p {
+            font-size: 0.75rem;
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Lighter strong text */
+        .info-box strong,
+        .feature-card strong,
+        td strong {
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            section {
+                padding: 14px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll margin for direct URL access */
+        section[id] {
+            scroll-margin-top: 120px;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 40px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            background: var(--primary-color);
+            color: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 2px 10px var(--shadow-strong);
+            transition: transform 0.2s;
+            font-size: 0.9rem;
+            z-index: 60;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 260px;
+            right: 0;
+            background: var(--footer-bg);
+            color: var(--footer-text);
+            text-align: center;
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            z-index: 50;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        footer a {
+            color: var(--footer-link);
+            text-decoration: underline;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        /* Workflow diagram */
+        .workflow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            background: var(--code-bg);
+            border-radius: 8px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .workflow-step {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .workflow-step.draft {
+            background: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        .workflow-step.process {
+            background: var(--important-bg);
+            color: var(--primary-color);
+        }
+
+        .workflow-step.approve {
+            background: var(--tip-bg);
+            color: var(--tip-border);
+        }
+
+        .workflow-step.paid {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .workflow-arrow {
+            color: var(--text-muted-color);
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HRMS Payroll Management Guide</h1>
+        <p>Configure salary components, structures, process payroll, and manage employee compensation</p>
+    </header>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-top">
+                <h2>Payroll Management</h2>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <span class="icon" id="themeIcon">&#127769;</span>
+                </button>
+            </div>
+            <p>HyperDroid HRMS Guide</p>
+        </div>
+
+        <!-- Getting Started -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Getting Started
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#overview"><span class="section-num">1</span> Overview</a></li>
+                <li><a href="#workflow"><span class="section-num">2</span> Payroll Workflow</a></li>
+            </ul>
+        </nav>
+
+        <!-- Configuration -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Configuration
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#salary-components"><span class="section-num">3</span> Salary Components</a></li>
+                <li><a href="#location-taxes"><span class="section-num">4</span> Location Taxes</a></li>
+                <li><a href="#salary-structures"><span class="section-num">5</span> Salary Structures</a></li>
+            </ul>
+        </nav>
+
+        <!-- Employee Compensation -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Employee Compensation
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#loans"><span class="section-num">6</span> Loans & Advances</a></li>
+                <li><a href="#arrears"><span class="section-num">7</span> Arrears</a></li>
+            </ul>
+        </nav>
+
+        <!-- Processing -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Processing Payroll
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#payroll-drafts"><span class="section-num">8</span> Payroll Drafts</a></li>
+                <li><a href="#finalized-runs"><span class="section-num">9</span> Finalized Runs</a></li>
+            </ul>
+        </nav>
+
+        <!-- Reference -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                Reference
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#best-practices"><span class="section-num">10</span> Best Practices</a></li>
+                <li><a href="#checklist"><span class="section-num">&#10003;</span> Setup Checklist</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <!-- Overview Section -->
+        <section id="overview">
+            <h2><span class="section-number">1</span> Overview</h2>
+            <p>The Payroll Management page is where you configure and process employee compensation. This comprehensive module handles everything from defining salary components to generating payslips.</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Salary Components</h4>
+                    <p>Define earnings (Basic, HRA, DA) and deductions (PF, ESI, Professional Tax) that make up an employee's salary.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Location Taxes</h4>
+                    <p>Configure location-specific taxes like Professional Tax with different rules for different offices.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Salary Structures</h4>
+                    <p>Create salary templates by combining components. Supports versioning for historical tracking.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Loans & Advances</h4>
+                    <p>Manage employee loans with interest calculations and automatic EMI deductions from salary.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Arrears</h4>
+                    <p>Handle salary arrears from promotions, appraisals, or corrections with automatic payroll inclusion.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Payroll Drafts</h4>
+                    <p>Create and review payroll drafts before finalizing. Edit individual employee entries as needed.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Finalized Runs</h4>
+                    <p>View completed payroll runs, download payslips, export bank files, and track payment status.</p>
+                </div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Setup Order:</strong> Configure in this order for best results: Salary Components &#8594; Location Taxes &#8594; Salary Structures &#8594; Assign to Employees &#8594; Process Payroll.
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow Section -->
+        <section id="workflow">
+            <h2><span class="section-number">2</span> Payroll Workflow</h2>
+            <p>Understanding the payroll processing workflow is essential for accurate and timely salary payments.</p>
+
+            <h3>The Payroll Processing Cycle</h3>
+            <div class="workflow-diagram">
+                <span class="workflow-step draft">Draft</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step process">Process</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step approve">Approve</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step paid">Paid</span>
+            </div>
+
+            <h4>Workflow Stages</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>Description</th>
+                        <th>Actions Available</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Draft</strong></td>
+                        <td>Initial payroll creation. System calculates salaries based on structures and attendance.</td>
+                        <td>Edit entries, add adjustments, delete draft</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Process</strong></td>
+                        <td>Review calculated amounts, make final adjustments, and verify totals.</td>
+                        <td>Edit entries, apply arrears, recalculate</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approve</strong></td>
+                        <td>Payroll is finalized and locked. No more edits allowed.</td>
+                        <td>View payslips, download CSV, generate bank file</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paid</strong></td>
+                        <td>Salaries have been disbursed to employee bank accounts.</td>
+                        <td>View payslips, download reports</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Important:</strong> Once a payroll is approved, it cannot be edited. Always verify all calculations before approving. If corrections are needed after approval, they must be handled in the next payroll cycle as arrears.
+                </div>
+            </div>
+        </section>
+
+        <!-- Salary Components Section -->
+        <section id="salary-components">
+            <h2><span class="section-number">3</span> Salary Components</h2>
+            <p>Salary components are the building blocks of employee compensation. They are divided into two categories: <strong>Earnings</strong> (additions to salary) and <strong>Deductions</strong> (subtractions from salary).</p>
+
+            <h3>Components Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/01-salary-components-overview.png" alt="Salary Components Overview">
+                <div class="screenshot-caption">Salary Components tab showing earnings and deductions tables with filter dropdown</div>
+            </div>
+
+            <h4>Understanding Component Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-earning">Earning</span></td>
+                        <td>Amounts added to the employee's gross salary</td>
+                        <td>Basic Salary, HRA, DA, Conveyance, Medical Allowance</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-deduction">Deduction</span></td>
+                        <td>Amounts subtracted from gross salary</td>
+                        <td>PF, ESI, Professional Tax, Income Tax, Loan EMI</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Adding a New Component</h3>
+            <p>Click the <strong>"Add Component"</strong> button to create a new salary component.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/02-salary-components-add-modal.png" alt="Add Component Modal">
+                <div class="screenshot-caption">Add Component modal with all configuration options</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Component Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Display name (e.g., "House Rent Allowance")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Component Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique identifier code (e.g., "HRA"). Used in reports.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Component Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>
+                            - <code>Earning</code>: Added to salary<br>
+                            - <code>Deduction</code>: Subtracted from salary
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calculation Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>
+                            - <code>Fixed</code>: Same amount for all<br>
+                            - <code>Percentage</code>: Calculated as % of another component
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Value</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Fixed amount (e.g., 5000) or percentage value (e.g., 40)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage Of</strong></td>
+                        <td>For Percentage type</td>
+                        <td>Which component to calculate percentage of (usually Basic)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Taxable</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, this component is included in taxable income calculation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Statutory</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>If ON, marks as government-mandated (PF, ESI, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Additional details about the component</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Percentage-Based Components</h3>
+            <p>When you select "Percentage" as the calculation type, additional fields appear:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/03-salary-components-percentage-fields.png" alt="Percentage Fields">
+                <div class="screenshot-caption">Percentage calculation fields showing "Percentage Of" dropdown</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Common Percentage Components:</strong>
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li><strong>HRA:</strong> Usually 40-50% of Basic</li>
+                        <li><strong>DA (Dearness Allowance):</strong> 10-20% of Basic</li>
+                        <li><strong>PF (Provident Fund):</strong> 12% of Basic</li>
+                        <li><strong>ESI:</strong> 0.75% of Gross (for employees earning under limit)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Editing Components</h3>
+            <p>Click the edit icon on any component row to modify its settings.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/04-salary-components-edit-modal.png" alt="Edit Component Modal">
+                <div class="screenshot-caption">Edit Component modal with pre-filled values</div>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Impact of Changes:</strong> Editing a component affects all salary structures using it. Changes only apply to future payroll runs, not historical data.
+                </div>
+            </div>
+        </section>
+
+        <!-- Location Taxes Section -->
+        <section id="location-taxes">
+            <h2><span class="section-number">4</span> Location Taxes</h2>
+            <p>Location taxes allow you to configure payroll taxes that vary by office location, such as Professional Tax which differs by state in India.</p>
+
+            <h3>4.1 Tax Types</h3>
+            <p>Tax Types define categories of location-based taxes. Create tax types first, then configure rules for each office.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/05-location-taxes-types-overview.png" alt="Tax Types Overview">
+                <div class="screenshot-caption">Tax Types sub-tab showing configured tax categories</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Tax Name</strong></td>
+                        <td>Display name of the tax type</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier (e.g., "PT")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deduction From</strong></td>
+                        <td>Whether deducted from Employee or Employer</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Statutory</strong></td>
+                        <td>Whether this is a government-mandated tax</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active or Inactive</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Creating a Tax Type</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/06-location-taxes-add-type-modal.png" alt="Add Tax Type Modal">
+                <div class="screenshot-caption">Create Tax Type modal</div>
+            </div>
+
+            <h3>4.2 Office Tax Rules</h3>
+            <p>Office Tax Rules define how each tax is calculated for specific offices. Switch to the <strong>"Office Tax Rules"</strong> sub-tab.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/07-location-taxes-rules-overview.png" alt="Office Tax Rules Overview">
+                <div class="screenshot-caption">Office Tax Rules sub-tab showing rules by office</div>
+            </div>
+
+            <h4>Calculation Types</h4>
+            <p>When creating a tax rule, you can choose from three calculation methods:</p>
+
+            <h4>Fixed Amount</h4>
+            <p>A flat amount deducted regardless of salary.</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/08-location-taxes-add-rule-fixed.png" alt="Fixed Calculation">
+                <div class="screenshot-caption">Fixed amount calculation - same deduction for everyone</div>
+            </div>
+
+            <h4>Percentage</h4>
+            <p>Calculate as a percentage of Basic, Gross, or Taxable Income.</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/09-location-taxes-add-rule-percentage.png" alt="Percentage Calculation">
+                <div class="screenshot-caption">Percentage calculation with base selection</div>
+            </div>
+
+            <h4>Slab-Based</h4>
+            <p>Different amounts for different salary brackets (common for Professional Tax).</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/10-location-taxes-add-rule-slab.png" alt="Slab Calculation">
+                <div class="screenshot-caption">Slab-based calculation with configurable brackets</div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Slab Configuration:</strong> Use the + button to add more slabs. Each slab defines a salary range and the tax amount/percentage for that range. The system automatically applies the correct slab based on the employee's salary.
+                </div>
+            </div>
+        </section>
+
+        <!-- Salary Structures Section -->
+        <section id="salary-structures">
+            <h2><span class="section-number">5</span> Salary Structures</h2>
+            <p>Salary structures combine multiple components into a template that can be assigned to employees. They support versioning for historical tracking when components change.</p>
+
+            <h3>Structures Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/11-salary-structures-overview.png" alt="Salary Structures Overview">
+                <div class="screenshot-caption">Salary Structures tab showing all configured structures with version info</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Structure Name</strong></td>
+                        <td>Display name of the structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code</strong></td>
+                        <td>Unique identifier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Components</strong></td>
+                        <td>Number of earnings/deduction components in structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Version</strong></td>
+                        <td>Current active version number</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td>Date the current version became active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Assigned</strong></td>
+                        <td>Number of employees using this structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>View Details, Version History, Bulk Assign, Manage Arrears, Edit</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a Salary Structure</h3>
+            <p>Click <strong>"Add Structure"</strong> to create a new salary structure template.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/22-salary-structures-create-modal.png" alt="Create Structure Modal">
+                <div class="screenshot-caption">Create Salary Structure modal with component selection</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Structure Name</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Display name (e.g., "Standard India Structure")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Structure Code</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Unique code (e.g., "STD-IND")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Details about when/where to use this structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Date this structure becomes active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Components</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select which components to include in this structure</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Viewing Structure Details</h3>
+            <p>Click <strong>"View Details"</strong> to see all components in a structure.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/21-salary-structures-view-details.png" alt="View Structure Details">
+                <div class="screenshot-caption">Structure details showing all earnings and deductions</div>
+            </div>
+
+            <h3>Editing a Structure</h3>
+            <p>Click the edit icon to modify an existing structure.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/23-salary-structures-edit-modal.png" alt="Edit Structure Modal">
+                <div class="screenshot-caption">Edit Structure modal with component checkboxes</div>
+            </div>
+
+            <h3>5.1 Version History</h3>
+            <p>Salary structures support versioning. When you need to change components or rates, create a new version instead of editing the current one.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/12-salary-structures-version-history.png" alt="Version History">
+                <div class="screenshot-caption">Version History modal showing all versions with effective dates</div>
+            </div>
+
+            <h4>Version Actions</h4>
+            <ul>
+                <li><strong>View:</strong> See the components in that version</li>
+                <li><strong>Compare:</strong> Compare two versions side by side</li>
+                <li><strong>Preview:</strong> Calculate sample salary using that version</li>
+                <li><strong>New Version:</strong> Create a new version based on selected one</li>
+            </ul>
+
+            <h4>Comparing Versions</h4>
+            <p>Use the compare feature to see differences between versions.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/13-salary-structures-version-compare.png" alt="Version Compare">
+                <div class="screenshot-caption">Side-by-side comparison of two structure versions</div>
+            </div>
+
+            <h4>Creating a New Version</h4>
+            <p>Click <strong>"New Version"</strong> to create a new version with updated components.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/16-salary-structures-new-version.png" alt="New Version Modal">
+                <div class="screenshot-caption">Create New Version modal with component configuration</div>
+            </div>
+
+            <h3>5.2 Preview Salary Calculation</h3>
+            <p>Test your structure by previewing salary calculations with sample CTC values.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/14-salary-structures-preview-prompt.png" alt="Preview Prompt">
+                <div class="screenshot-caption">Enter CTC and date range for preview calculation</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/15-salary-structures-preview-result.png" alt="Preview Result">
+                <div class="screenshot-caption">Salary preview showing component breakdown</div>
+            </div>
+
+            <h3>5.3 Bulk Assign to Employees</h3>
+            <p>Assign a structure to multiple employees at once using the <strong>"Bulk Assign"</strong> feature.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/20-salary-structures-bulk-assign.png" alt="Bulk Assign Modal">
+                <div class="screenshot-caption">Bulk Assign modal for selecting multiple employees</div>
+            </div>
+
+            <h3>5.4 Manage Arrears</h3>
+            <p>When you create a new version with effective date in the past, use <strong>"Manage Arrears"</strong> to calculate and apply salary differences.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/19-salary-structures-manage-arrears.png" alt="Manage Arrears Modal">
+                <div class="screenshot-caption">Manage Arrears modal for handling retroactive changes</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Version Best Practice:</strong> Create a new version when salary components change (e.g., annual appraisals, policy changes). This maintains a complete audit trail and allows accurate historical reporting.
+                </div>
+            </div>
+        </section>
+
+        <!-- Loans & Advances Section -->
+        <section id="loans">
+            <h2><span class="section-number">6</span> Loans & Advances</h2>
+            <p>The Loans & Advances module manages employee loans, salary advances, and their repayment through payroll deductions.</p>
+
+            <h3>Loans Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/17-loans-overview.png" alt="Loans Overview">
+                <div class="screenshot-caption">Loans tab showing all loan applications with status and repayment info</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name and code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Type</strong></td>
+                        <td>Category (Personal, Emergency, Salary Advance, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount</strong></td>
+                        <td>Total loan amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMI</strong></td>
+                        <td>Monthly installment amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Balance</strong></td>
+                        <td>Remaining amount to be repaid</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Pending, Approved, Active, Completed, Rejected</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>View Details, Approve, Reject</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Applying for a Loan</h3>
+            <p>Click <strong>"Apply Loan"</strong> to create a new loan application for an employee.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/18-loans-apply-modal.png" alt="Apply Loan Modal">
+                <div class="screenshot-caption">Apply Loan modal with amount, tenure, and interest configuration</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select the employee applying for the loan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Type</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Personal Loan, Emergency Loan, Salary Advance, etc.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Amount</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Total amount being borrowed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tenure (Months)</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Number of months for repayment</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Interest Rate (%)</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Annual interest rate. Set to 0 for interest-free advances.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMI Start Date</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Month from which deductions begin</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reason</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Purpose of the loan</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Viewing Loan Details</h3>
+            <p>Click <strong>"View Details"</strong> to see complete loan information including repayment schedule.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/24-loans-view-details.png" alt="Loan Details">
+                <div class="screenshot-caption">Loan details showing repayment history and remaining balance</div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Approval Required:</strong> Loans must be approved by HR Admin before EMI deductions begin. Only <code>HRMS_HR_ADMIN</code> role can approve loans - regular managers cannot approve loans even for their team members.
+                </div>
+            </div>
+        </section>
+
+        <!-- Arrears Section -->
+        <section id="arrears">
+            <h2><span class="section-number">7</span> Arrears</h2>
+            <p>Arrears handle salary differences that need to be paid retroactively, such as from promotions, appraisals, or corrections with past effective dates.</p>
+
+            <h3>Arrears Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/25-arrears-overview.png" alt="Arrears Overview">
+                <div class="screenshot-caption">Arrears tab showing pending and processed arrears</div>
+            </div>
+
+            <h4>When Arrears Are Created</h4>
+            <ul>
+                <li><strong>Salary Revision:</strong> When a salary increase is effective from a past date</li>
+                <li><strong>Structure Change:</strong> When a new structure version is applied retroactively</li>
+                <li><strong>Correction:</strong> When a payroll error needs to be corrected</li>
+                <li><strong>Promotion:</strong> When a promotion with higher salary is backdated</li>
+            </ul>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name and code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type</strong></td>
+                        <td>Arrear type (Salary Revision, Correction, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Period</strong></td>
+                        <td>Months for which arrears are calculated</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount</strong></td>
+                        <td>Total arrear amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Pending, Approved, Paid</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Automatic Inclusion:</strong> Approved arrears are automatically included in the next payroll run. You can also manually add arrears during payroll processing.
+                </div>
+            </div>
+        </section>
+
+        <!-- Payroll Drafts Section -->
+        <section id="payroll-drafts">
+            <h2><span class="section-number">8</span> Payroll Drafts</h2>
+            <p>Payroll Drafts are the first step in processing monthly salaries. Create a draft to calculate salaries based on attendance, structures, and adjustments.</p>
+
+            <h3>Drafts Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/26-payroll-drafts-overview.png" alt="Payroll Drafts Overview">
+                <div class="screenshot-caption">Payroll Drafts tab showing all draft payroll runs</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Run ID</strong></td>
+                        <td>Unique identifier for the payroll run</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Period</strong></td>
+                        <td>Month and year being processed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td>Office(s) included in this run</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employees</strong></td>
+                        <td>Number of employees in the run</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gross</strong></td>
+                        <td>Total gross salary for all employees</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net</strong></td>
+                        <td>Total net salary after deductions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Draft, Processing, Ready for Approval</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Creating a Payroll Draft</h3>
+            <p>Click <strong>"Create Draft"</strong> to start a new payroll run.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/27-payroll-drafts-create-modal.png" alt="Create Draft Modal">
+                <div class="screenshot-caption">Create Draft modal with month, office, and employee selection</div>
+            </div>
+
+            <h4>Field Descriptions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pay Period</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Month and year to process</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td><span class="badge badge-required">Required</span></td>
+                        <td>Select specific office or "All Offices"</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Include All Employees</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Toggle to include all active employees automatically</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Draft Name</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Custom name for the draft (auto-generated if blank)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Before Creating Draft:</strong>
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li>Ensure all attendance is finalized for the month</li>
+                        <li>Process any pending leave approvals</li>
+                        <li>Verify salary structures are assigned to all employees</li>
+                        <li>Check for any pending arrears to include</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Finalized Runs Section -->
+        <section id="finalized-runs">
+            <h2><span class="section-number">9</span> Finalized Runs</h2>
+            <p>Finalized Runs shows all approved payroll runs. From here you can view payslips, download reports, and track payment status.</p>
+
+            <h3>Finalized Runs Overview</h3>
+            <div class="screenshot-container">
+                <img src="images/payroll/28-finalized-runs-overview.png" alt="Finalized Runs Overview">
+                <div class="screenshot-caption">Finalized Runs tab showing approved payroll runs</div>
+            </div>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Run ID</strong></td>
+                        <td>Unique identifier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Period</strong></td>
+                        <td>Month and year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Office</strong></td>
+                        <td>Office(s) included</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employees</strong></td>
+                        <td>Number of employees</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gross</strong></td>
+                        <td>Total gross amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net</strong></td>
+                        <td>Total net amount</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Approved, Paid</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Viewing Run Details</h3>
+            <p>Click <strong>"View Details"</strong> to see all employee payslips in a run.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/29-finalized-run-details.png" alt="Run Details">
+                <div class="screenshot-caption">Payroll run details with employee breakdown and export options</div>
+            </div>
+
+            <h4>Available Actions</h4>
+            <ul>
+                <li><strong>Download CSV:</strong> Export payroll data as CSV for accounting</li>
+                <li><strong>Bank File:</strong> Generate bank transfer file (format varies by bank)</li>
+                <li><strong>Mark as Paid:</strong> Update status after salaries are disbursed</li>
+                <li><strong>View Payslip:</strong> View individual employee payslip</li>
+            </ul>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Bank File Format:</strong> The bank file is generated in NACH (National Automated Clearing House) format for Indian banks. For international transfers, export as CSV and use your bank's bulk payment portal.
+                </div>
+            </div>
+        </section>
+
+        <!-- Best Practices Section -->
+        <section id="best-practices">
+            <h2><span class="section-number">10</span> Best Practices</h2>
+            <p>Follow these recommendations for efficient payroll management.</p>
+
+            <h3>Monthly Payroll Checklist</h3>
+            <ol class="steps">
+                <li>
+                    <strong>Review Attendance</strong><br>
+                    Verify all attendance records are complete and approved. Check for any pending regularization requests.
+                </li>
+                <li>
+                    <strong>Process Leave Approvals</strong><br>
+                    Ensure all leave requests for the month are approved or rejected.
+                </li>
+                <li>
+                    <strong>Check Loan EMIs</strong><br>
+                    Verify active loans and confirm EMI amounts are correct.
+                </li>
+                <li>
+                    <strong>Review Pending Arrears</strong><br>
+                    Check for any approved arrears that need to be included.
+                </li>
+                <li>
+                    <strong>Create Payroll Draft</strong><br>
+                    Generate the payroll draft and review calculated amounts.
+                </li>
+                <li>
+                    <strong>Verify Individual Payslips</strong><br>
+                    Spot-check a few employees for calculation accuracy.
+                </li>
+                <li>
+                    <strong>Get Approval</strong><br>
+                    Have the payroll reviewed and approved by authorized personnel.
+                </li>
+                <li>
+                    <strong>Process Payment</strong><br>
+                    Export bank file and initiate salary transfers.
+                </li>
+            </ol>
+
+            <h3>Common Mistakes to Avoid</h3>
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <ul style="margin: 0;">
+                        <li>Processing payroll before all attendance is finalized</li>
+                        <li>Forgetting to include pending arrears</li>
+                        <li>Not verifying new employee salary structures</li>
+                        <li>Approving payroll without proper review</li>
+                        <li>Missing loan EMI deductions for approved loans</li>
+                        <li>Not updating salary structures after appraisals</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Version Control Tips</h3>
+            <ul>
+                <li><strong>Create versions for policy changes:</strong> When PF rates or other statutory rates change</li>
+                <li><strong>Use meaningful names:</strong> Include date or reason in version description</li>
+                <li><strong>Test before applying:</strong> Use Preview feature to verify calculations</li>
+                <li><strong>Document changes:</strong> Add clear notes explaining what changed and why</li>
+            </ul>
+        </section>
+
+        <!-- Setup Checklist Section -->
+        <section id="checklist">
+            <h2><span class="section-number">&#10003;</span> Setup Checklist</h2>
+            <p>Use this checklist to ensure your payroll system is fully configured:</p>
+
+            <ol class="steps">
+                <li>
+                    <strong>Create Salary Components</strong><br>
+                    Set up all earnings (Basic, HRA, DA, etc.) and deductions (PF, ESI, PT, etc.).
+                </li>
+                <li>
+                    <strong>Configure Location Taxes</strong><br>
+                    Create tax types and set up office-specific rules for each location.
+                </li>
+                <li>
+                    <strong>Create Salary Structures</strong><br>
+                    Build structure templates by combining components.
+                </li>
+                <li>
+                    <strong>Assign Structures to Employees</strong><br>
+                    Use bulk assign or individual assignment to link employees to structures.
+                </li>
+                <li>
+                    <strong>Set Up Loan Policies</strong><br>
+                    Configure loan types, interest rates, and approval workflows.
+                </li>
+                <li>
+                    <strong>Test with Preview</strong><br>
+                    Use Preview Calculation to verify your structure calculates correctly.
+                </li>
+                <li>
+                    <strong>Run First Payroll</strong><br>
+                    Create a draft, review, and process your first payroll run.
+                </li>
+            </ol>
+
+            <div class="info-box tip">
+                <span class="icon">&#127881;</span>
+                <div>
+                    <strong>You're Ready!</strong> Once all these steps are complete, you can confidently process monthly payroll with accurate calculations and proper deductions.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <a href="#" class="back-to-top" title="Back to Top">&#8593;</a>
+
+    <footer>
+        <p>HyperDroid HRMS Knowledge Base | Last Updated: December 2025</p>
+        <p>Need help? Contact <a href="mailto:support@hyperdroid.io">support@hyperdroid.io</a></p>
+    </footer>
+
+    <script>
+        // ===== DOM Elements =====
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // ===== Theme Handling =====
+        function getPreferredTheme() {
+            const saved = localStorage.getItem('kb-theme');
+            if (saved) return saved;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                themeIcon.textContent = '\u2600\uFE0F';
+            } else {
+                html.setAttribute('data-theme', 'light');
+                themeIcon.textContent = '\uD83C\uDF19';
+            }
+        }
+
+        applyTheme(getPreferredTheme());
+
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme') || 'light';
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('kb-theme', newTheme);
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('kb-theme')) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // ===== Collapsible Navigation Groups =====
+        function toggleNavGroup(header) {
+            const group = header.parentElement;
+            group.classList.toggle('collapsed');
+
+            // Save collapsed state to localStorage
+            const groupIndex = Array.from(document.querySelectorAll('.nav-group')).indexOf(group);
+            const collapsedGroups = JSON.parse(localStorage.getItem('kb-collapsed-groups-payroll') || '[]');
+
+            if (group.classList.contains('collapsed')) {
+                if (!collapsedGroups.includes(groupIndex)) {
+                    collapsedGroups.push(groupIndex);
+                }
+            } else {
+                const idx = collapsedGroups.indexOf(groupIndex);
+                if (idx > -1) collapsedGroups.splice(idx, 1);
+            }
+
+            localStorage.setItem('kb-collapsed-groups-payroll', JSON.stringify(collapsedGroups));
+        }
+
+        // Restore collapsed states on load
+        function restoreCollapsedStates() {
+            const collapsedGroups = JSON.parse(localStorage.getItem('kb-collapsed-groups-payroll') || '[]');
+            const groups = document.querySelectorAll('.nav-group');
+            collapsedGroups.forEach(idx => {
+                if (groups[idx]) {
+                    groups[idx].classList.add('collapsed');
+                }
+            });
+        }
+        restoreCollapsedStates();
+
+        // ===== Mobile Menu Toggle =====
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+            menuToggle.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+            menuToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuToggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
+
+        // ===== Smooth Scroll for Sidebar Links =====
+        document.querySelectorAll('.sidebar a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    // Close mobile sidebar if open
+                    if (window.innerWidth <= 900) {
+                        closeSidebar();
+                    }
+
+                    // Smooth scroll with offset
+                    const offset = 120;
+                    const targetPosition = target.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+                }
+            });
+        });
+
+        // ===== Active Section Highlighting (Intersection Observer) =====
+        const sections = document.querySelectorAll('main > section[id]');
+        const navLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-10% 0px -70% 0px',
+            threshold: 0
+        };
+
+        function setActiveLink(sectionId) {
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + sectionId) {
+                    link.classList.add('active');
+
+                    // Expand the parent group if collapsed
+                    const group = link.closest('.nav-group');
+                    if (group && group.classList.contains('collapsed')) {
+                        group.classList.remove('collapsed');
+                    }
+
+                    // Scroll link into view in sidebar if needed
+                    if (window.innerWidth > 900) {
+                        link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            });
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setActiveLink(entry.target.id);
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        // ===== Back to Top Button =====
+        const backToTop = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+        backToTop.style.display = 'none';
+
+        // ===== Handle Resize Events =====
+        window.addEventListener('resize', () => {
+            // Close mobile sidebar when resizing to desktop
+            if (window.innerWidth > 900 && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
+    </script>
+</body>
+</html>

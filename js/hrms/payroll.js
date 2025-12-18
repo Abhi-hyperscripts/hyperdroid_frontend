@@ -1,3 +1,11 @@
+// Security: HTML escape function to prevent XSS attacks
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let currentUser = null;
 let employees = [];
 let offices = [];
@@ -5,6 +13,8 @@ let components = [];
 let structures = [];
 let currentPayslipId = null;
 let drafts = [];
+let taxTypes = [];
+let taxRules = [];
 
 // Modal utility functions
 function openModal(id) {
@@ -52,7 +62,11 @@ async function initializePage() {
             await Promise.all([
                 loadPayrollDrafts(),
                 loadPayrollRuns(),
-                loadEmployees()
+                loadEmployees(),
+                loadComponents(),
+                loadSalaryStructures(),
+                loadTaxTypes(),
+                loadOfficeTaxRules()
             ]);
         }
 
@@ -91,16 +105,22 @@ function applyPayrollRBAC() {
         payrollRunsTab.style.display = isHRAdminRole ? 'block' : 'none';
     }
 
-    // Salary Structures tab - HR Admin only
-    const salaryTab = document.getElementById('salaryTab');
-    if (salaryTab) {
-        salaryTab.style.display = isHRAdminRole ? 'block' : 'none';
+    // Salary Components tab - HR Admin only
+    const salaryComponentsTab = document.getElementById('salaryComponentsTab');
+    if (salaryComponentsTab) {
+        salaryComponentsTab.style.display = isHRAdminRole ? 'block' : 'none';
     }
 
-    // Payroll Components tab - HR Admin only
-    const componentsTab = document.getElementById('componentsTab');
-    if (componentsTab) {
-        componentsTab.style.display = isHRAdminRole ? 'block' : 'none';
+    // Location Taxes tab - HR Admin only
+    const locationTaxesTab = document.getElementById('locationTaxesTab');
+    if (locationTaxesTab) {
+        locationTaxesTab.style.display = isHRAdminRole ? 'block' : 'none';
+    }
+
+    // Salary Structures tab - HR Admin only
+    const salaryStructuresTab = document.getElementById('salaryStructuresTab');
+    if (salaryStructuresTab) {
+        salaryStructuresTab.style.display = isHRAdminRole ? 'block' : 'none';
     }
 
     // Create Structure button - HR Admin only
@@ -140,6 +160,26 @@ function setupTabs() {
 
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Setup sub-tabs for Location Taxes
+    setupSubTabs();
+}
+
+function setupSubTabs() {
+    const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+    subTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const subtabId = this.dataset.subtab;
+
+            // Update button states
+            subTabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update content visibility
+            document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(subtabId).classList.add('active');
         });
     });
 }
@@ -775,7 +815,12 @@ async function deleteDraft(draftId) {
 }
 
 async function renameDraft(draftId, currentName) {
-    const newName = prompt('Enter new draft name:', currentName);
+    const newName = await Prompt.show({
+        title: 'Rename Draft',
+        message: 'Enter new draft name:',
+        defaultValue: currentName,
+        placeholder: 'Draft name'
+    });
     if (!newName || newName === currentName) return;
 
     try {
@@ -1024,11 +1069,34 @@ function updateComponentsTables() {
     updateDeductionsTable(deductions);
 }
 
+/**
+ * Format component value based on calculation type
+ */
+function formatComponentValue(component) {
+    const calcType = (component.calculation_type || component.calculationType || 'fixed').toLowerCase();
+
+    if (calcType === 'percentage') {
+        const value = component.percentage || component.percentage_of_basic || component.default_value || 0;
+        if (!value) return '-';
+
+        // Get the calculation base and format it nicely
+        const base = component.calculation_base || 'basic';
+        const baseLabel = base.toUpperCase();
+        return `${value}% of ${baseLabel}`;
+    } else if (calcType === 'fixed') {
+        const value = component.fixed_amount || component.default_value || 0;
+        return value ? `₹${Number(value).toLocaleString('en-IN')}` : '-';
+    } else {
+        const value = component.default_value || component.fixed_amount || component.percentage || 0;
+        return value ? value.toString() : '-';
+    }
+}
+
 function updateEarningsTable(earnings) {
     const tbody = document.getElementById('earningsTable');
 
     if (!earnings || earnings.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No earnings components</p></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><p>No earnings components</p></td></tr>';
         return;
     }
 
@@ -1037,6 +1105,7 @@ function updateEarningsTable(earnings) {
             <td><strong>${c.component_name || c.name}</strong></td>
             <td><code>${c.component_code || c.code}</code></td>
             <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${formatComponentValue(c)}</td>
             <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -1057,7 +1126,7 @@ function updateDeductionsTable(deductions) {
     const tbody = document.getElementById('deductionsTable');
 
     if (!deductions || deductions.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state"><td colspan="6"><p>No deduction components</p></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><p>No deduction components</p></td></tr>';
         return;
     }
 
@@ -1066,6 +1135,7 @@ function updateDeductionsTable(deductions) {
             <td><strong>${c.component_name || c.name}</strong></td>
             <td><code>${c.component_code || c.code}</code></td>
             <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td>${formatComponentValue(c)}</td>
             <td>${(c.is_pre_tax !== undefined ? c.is_pre_tax : c.isPreTax) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -3190,22 +3260,62 @@ async function viewVersionDetails(versionId) {
             return;
         }
 
-        // Show version details in an alert or another modal
+        // Build styled HTML content
         const components = version.components || [];
-        let componentsList = components.map(c => {
-            const valueStr = c.calculation_type === 'percentage'
-                ? `${c.percentage}% of ${c.calculation_base || 'basic'}`
-                : `₹${c.fixed_amount?.toFixed(2) || '0.00'}`;
-            return `${c.component_name} (${c.component_code}): ${valueStr}`;
-        }).join('\n');
+        const earnings = components.filter(c => c.component_type === 'earning');
+        const deductions = components.filter(c => c.component_type === 'deduction');
+
+        let htmlContent = `
+            <div class="detail-grid">
+                <span class="detail-label">Effective From:</span>
+                <span class="detail-value">${formatDate(version.effective_from)}</span>
+                <span class="detail-label">Effective To:</span>
+                <span class="detail-value">${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}</span>
+                <span class="detail-label">Change Reason:</span>
+                <span class="detail-value">${version.change_reason || 'Initial version'}</span>
+            </div>
+        `;
+
+        if (components.length > 0) {
+            htmlContent += `
+                <div class="section-title">Components</div>
+                <table class="component-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            components.forEach(c => {
+                const valueStr = c.calculation_type === 'percentage'
+                    ? `${c.percentage || c.percentage_of_basic || 0}% of ${c.calculation_base || 'basic'}`
+                    : `₹${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                const badgeClass = c.component_type === 'earning' ? 'badge-earning' : 'badge-deduction';
+
+                htmlContent += `
+                    <tr>
+                        <td><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></td>
+                        <td><span class="badge ${badgeClass}">${c.component_type}</span></td>
+                        <td class="amount">${valueStr}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+            `;
+        }
 
         await InfoModal.show({
             title: `Version ${version.version_number} Details`,
-            message: `Effective From: ${formatDate(version.effective_from)}\n` +
-                     `Effective To: ${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}\n` +
-                     `Change Reason: ${version.change_reason || 'N/A'}\n\n` +
-                     `Components:\n${componentsList}`,
-            type: 'info'
+            message: htmlContent,
+            type: 'info',
+            html: true
         });
 
         hideLoading();
@@ -3230,38 +3340,82 @@ async function compareVersions(structureId, fromVersion, toVersion) {
             return;
         }
 
-        // Build comparison summary
-        let summary = `Version ${fromVersion} → Version ${toVersion}\n\n`;
+        // Build styled HTML comparison
+        let htmlContent = `
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                <strong>Version ${fromVersion}</strong> → <strong>Version ${toVersion}</strong>
+            </div>
+        `;
 
         if (diff.added_components?.length > 0) {
-            summary += `ADDED (${diff.added_components.length}):\n`;
+            htmlContent += `<div class="section-title" style="color: var(--color-success)">Added (${diff.added_components.length})</div>`;
             diff.added_components.forEach(c => {
-                summary += `  + ${c.component_name} (${c.component_code})\n`;
+                htmlContent += `
+                    <div class="diff-item">
+                        <div class="diff-icon added">+</div>
+                        <span><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></span>
+                    </div>
+                `;
             });
         }
 
         if (diff.removed_components?.length > 0) {
-            summary += `\nREMOVED (${diff.removed_components.length}):\n`;
+            htmlContent += `<div class="section-title" style="color: var(--color-danger)">Removed (${diff.removed_components.length})</div>`;
             diff.removed_components.forEach(c => {
-                summary += `  - ${c.component_name} (${c.component_code})\n`;
+                htmlContent += `
+                    <div class="diff-item">
+                        <div class="diff-icon removed">−</div>
+                        <span><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></span>
+                    </div>
+                `;
             });
         }
 
         if (diff.modified_components?.length > 0) {
-            summary += `\nMODIFIED (${diff.modified_components.length}):\n`;
+            htmlContent += `<div class="section-title" style="color: var(--color-warning)">Modified (${diff.modified_components.length})</div>`;
             diff.modified_components.forEach(c => {
-                summary += `  ~ ${c.component_name}: ${c.old_value} → ${c.new_value}\n`;
+                htmlContent += `
+                    <div class="diff-item">
+                        <div class="diff-icon modified">~</div>
+                        <span>
+                            <strong>${c.component_name}</strong>
+                            <br>
+                            <span style="color: var(--text-tertiary); font-size: 12px;">
+                                ${c.old_value} → ${c.new_value}
+                            </span>
+                        </span>
+                    </div>
+                `;
             });
         }
 
         if (diff.unchanged_components?.length > 0) {
-            summary += `\nUNCHANGED: ${diff.unchanged_components.length} components\n`;
+            htmlContent += `
+                <div class="section-title" style="color: var(--text-tertiary)">Unchanged</div>
+                <div style="color: var(--text-tertiary); font-size: 12px;">
+                    ${diff.unchanged_components.length} components remain the same
+                </div>
+            `;
+        }
+
+        // If no changes at all
+        if (!diff.added_components?.length && !diff.removed_components?.length && !diff.modified_components?.length) {
+            htmlContent += `
+                <div style="text-align: center; padding: 20px; color: var(--text-tertiary);">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <div>No differences found between versions</div>
+                </div>
+            `;
         }
 
         await InfoModal.show({
             title: 'Version Comparison',
-            message: summary,
-            type: 'info'
+            message: htmlContent,
+            type: 'info',
+            html: true
         });
         hideLoading();
     } catch (error) {
@@ -3421,15 +3575,40 @@ async function previewVersionedSalary() {
         return;
     }
 
-    const ctc = parseFloat(prompt('Enter CTC for preview calculation:', '1200000'));
-    if (!ctc || ctc <= 0) {
+    const ctcInput = await Prompt.show({
+        title: 'Preview Salary Calculation',
+        message: 'Enter CTC (Cost to Company) for preview:',
+        defaultValue: '1200000',
+        placeholder: 'e.g., 1200000',
+        type: 'number'
+    });
+
+    const ctc = parseFloat(ctcInput);
+    if (!ctcInput || !ctc || ctc <= 0) {
         return;
     }
 
-    const periodStart = prompt('Enter period start date (YYYY-MM-DD):', new Date().toISOString().slice(0, 8) + '01');
-    const periodEnd = prompt('Enter period end date (YYYY-MM-DD):', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10));
+    const periodStart = await Prompt.show({
+        title: 'Period Start Date',
+        message: 'Enter period start date (YYYY-MM-DD):',
+        defaultValue: new Date().toISOString().slice(0, 8) + '01',
+        placeholder: 'YYYY-MM-DD',
+        type: 'date'
+    });
 
-    if (!periodStart || !periodEnd) {
+    if (!periodStart) {
+        return;
+    }
+
+    const periodEnd = await Prompt.show({
+        title: 'Period End Date',
+        message: 'Enter period end date (YYYY-MM-DD):',
+        defaultValue: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+        placeholder: 'YYYY-MM-DD',
+        type: 'date'
+    });
+
+    if (!periodEnd) {
         return;
     }
 
@@ -3444,42 +3623,106 @@ async function previewVersionedSalary() {
             })
         });
 
-        // Display breakdown
-        let summary = `Versioned Salary Calculation\n`;
-        summary += `=====================================\n`;
-        summary += `CTC: ₹${ctc.toLocaleString()}\n`;
-        summary += `Period: ${periodStart} to ${periodEnd}\n`;
-        summary += `Total Working Days: ${breakdown.total_working_days}\n`;
-        summary += `=====================================\n\n`;
+        // Build styled HTML breakdown
+        let htmlContent = `
+            <div class="detail-grid">
+                <span class="detail-label">CTC:</span>
+                <span class="detail-value amount">₹${ctc.toLocaleString('en-IN')}</span>
+                <span class="detail-label">Period:</span>
+                <span class="detail-value">${formatDate(periodStart)} to ${formatDate(periodEnd)}</span>
+                <span class="detail-label">Working Days:</span>
+                <span class="detail-value">${breakdown.total_working_days || 'N/A'}</span>
+            </div>
+        `;
 
+        // Version periods if any
         if (breakdown.version_periods?.length > 0) {
+            htmlContent += `<div class="section-title">Version Periods</div>`;
             breakdown.version_periods.forEach(vp => {
-                summary += `Version ${vp.version_number} (${vp.period_start} to ${vp.period_end})\n`;
-                summary += `  Days: ${vp.days_in_period}, Proration: ${(vp.proration_factor * 100).toFixed(1)}%\n`;
+                htmlContent += `
+                    <div style="background: var(--gray-50); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px;">
+                        <strong>Version ${vp.version_number}</strong> (${formatDate(vp.period_start)} to ${formatDate(vp.period_end)})
+                        <br>
+                        <span style="color: var(--text-tertiary);">${vp.days_in_period} days • ${(vp.proration_factor * 100).toFixed(1)}% proration</span>
+                    </div>
+                `;
             });
-            summary += `\n`;
         }
 
-        summary += `COMPONENT BREAKDOWN:\n`;
-        breakdown.component_breakdowns?.forEach(cb => {
-            const partialMarker = cb.is_partial ? ' (PARTIAL)' : '';
-            summary += `  ${cb.component_name}: ₹${cb.prorated_amount.toFixed(2)}${partialMarker}\n`;
-            if (cb.version_amounts?.length > 1) {
-                cb.version_amounts.forEach(va => {
-                    summary += `    v${va.version_number}: ₹${va.amount.toFixed(2)} x ${(va.proration_factor * 100).toFixed(1)}% = ₹${va.prorated_amount.toFixed(2)}\n`;
-                });
-            }
-        });
+        // Component breakdown table
+        const earnings = breakdown.component_breakdowns?.filter(c => c.component_type === 'earning') || [];
+        const deductions = breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
 
-        summary += `\n=====================================\n`;
-        summary += `TOTAL GROSS: ₹${breakdown.total_gross?.toFixed(2) || '0.00'}\n`;
-        summary += `TOTAL DEDUCTIONS: ₹${breakdown.total_deductions?.toFixed(2) || '0.00'}\n`;
-        summary += `NET PAY: ₹${breakdown.net_pay?.toFixed(2) || '0.00'}\n`;
+        if (breakdown.component_breakdowns?.length > 0) {
+            htmlContent += `
+                <div class="section-title">Component Breakdown</div>
+                <table class="component-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Earnings
+            earnings.forEach(cb => {
+                const partialBadge = cb.is_partial ? '<span class="badge badge-modified" style="margin-left: 8px;">Partial</span>' : '';
+                htmlContent += `
+                    <tr>
+                        <td>
+                            <span class="badge badge-earning" style="margin-right: 8px;">E</span>
+                            ${cb.component_name}${partialBadge}
+                        </td>
+                        <td class="amount" style="text-align: right; color: var(--color-success);">+₹${(cb.prorated_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            });
+
+            // Deductions
+            deductions.forEach(cb => {
+                const partialBadge = cb.is_partial ? '<span class="badge badge-modified" style="margin-left: 8px;">Partial</span>' : '';
+                htmlContent += `
+                    <tr>
+                        <td>
+                            <span class="badge badge-deduction" style="margin-right: 8px;">D</span>
+                            ${cb.component_name}${partialBadge}
+                        </td>
+                        <td class="amount" style="text-align: right; color: var(--color-danger);">−₹${(cb.prorated_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Summary box
+        htmlContent += `
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>Total Gross</span>
+                    <span class="amount positive">₹${(breakdown.total_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Total Deductions</span>
+                    <span class="amount negative">−₹${(breakdown.total_deductions || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Net Pay</span>
+                    <span class="amount" style="font-size: 16px;">₹${(breakdown.net_pay || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+            </div>
+        `;
 
         await InfoModal.show({
             title: 'Salary Preview',
-            message: summary,
-            type: 'success'
+            message: htmlContent,
+            type: 'success',
+            html: true
         });
         hideLoading();
     } catch (error) {
@@ -4964,3 +5207,693 @@ async function cancelArrearsQuick(arrearsId) {
         hideLoading();
     }
 }
+
+// ============================================
+// Location Tax Management
+// ============================================
+
+async function loadTaxTypes() {
+    try {
+        const showInactive = document.getElementById('showInactiveTaxTypes')?.checked || false;
+        const response = await api.getLocationTaxTypes(showInactive);
+        taxTypes = Array.isArray(response) ? response : (response?.data || []);
+        updateTaxTypesTable();
+        populateTaxTypeSelects();
+    } catch (error) {
+        console.error('Error loading tax types:', error);
+        showToast('Failed to load tax types', 'error');
+    }
+}
+
+function updateTaxTypesTable() {
+    const tbody = document.getElementById('taxTypesTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('taxTypeSearch')?.value?.toLowerCase() || '';
+
+    const filtered = taxTypes.filter(t =>
+        t.tax_name?.toLowerCase().includes(searchTerm) ||
+        t.tax_code?.toLowerCase().includes(searchTerm) ||
+        t.description?.toLowerCase().includes(searchTerm)
+    );
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="6">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M4 7h16M4 12h16M4 17h10"></path>
+                        </svg>
+                        <p>No tax types configured</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(taxType => `
+        <tr>
+            <td><strong>${escapeHtml(taxType.tax_name)}</strong></td>
+            <td><code>${escapeHtml(taxType.tax_code)}</code></td>
+            <td><span class="badge badge-${escapeHtml(taxType.deduction_from || 'employee')}">${escapeHtml(formatDeductionFrom(taxType.deduction_from))}</span></td>
+            <td>${escapeHtml(taxType.description || '-')}</td>
+            <td><span class="status-badge status-${taxType.is_active ? 'active' : 'inactive'}">${taxType.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Edit Tax Type">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Delete Tax Type">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function populateTaxTypeSelects() {
+    const selects = ['taxRuleTaxType', 'taxRuleTaxTypeId'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const firstOption = id === 'taxRuleTaxType' ? '<option value="">All Tax Types</option>' : '<option value="">Select Tax Type</option>';
+            select.innerHTML = firstOption;
+            taxTypes.filter(t => t.is_active).forEach(taxType => {
+                select.innerHTML += `<option value="${escapeHtml(taxType.id)}">${escapeHtml(taxType.tax_name)} (${escapeHtml(taxType.tax_code)})</option>`;
+            });
+        }
+    });
+}
+
+function formatDeductionFrom(deductionFrom) {
+    const map = {
+        'employee': 'Employee',
+        'employer': 'Employer',
+        'both': 'Both'
+    };
+    return map[deductionFrom] || 'Employee';
+}
+
+// Tax Type Modal Functions
+function showCreateTaxTypeModal() {
+    document.getElementById('taxTypeForm').reset();
+    document.getElementById('taxTypeId').value = '';
+    document.getElementById('taxTypeIsActive').checked = true;
+    document.getElementById('taxTypeModalTitle').textContent = 'Create Tax Type';
+    document.getElementById('taxTypeModal').classList.add('active');
+}
+
+function editTaxType(id) {
+    const taxType = taxTypes.find(t => t.id === id);
+    if (!taxType) return;
+
+    document.getElementById('taxTypeId').value = taxType.id;
+    document.getElementById('taxTypeName').value = taxType.tax_name || '';
+    document.getElementById('taxTypeCode').value = taxType.tax_code || '';
+    document.getElementById('taxTypeDeductionFrom').value = taxType.deduction_from || 'employee';
+    document.getElementById('taxTypeDisplayOrder').value = taxType.display_order || 0;
+    document.getElementById('taxTypeDescription').value = taxType.description || '';
+    document.getElementById('taxTypeIsActive').checked = taxType.is_active !== false;
+
+    document.getElementById('taxTypeModalTitle').textContent = 'Edit Tax Type';
+    document.getElementById('taxTypeModal').classList.add('active');
+}
+
+async function saveTaxType() {
+    const form = document.getElementById('taxTypeForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('taxTypeId').value;
+        const data = {
+            tax_name: document.getElementById('taxTypeName').value,
+            tax_code: document.getElementById('taxTypeCode').value,
+            deduction_from: document.getElementById('taxTypeDeductionFrom').value,
+            display_order: parseInt(document.getElementById('taxTypeDisplayOrder').value) || 0,
+            description: document.getElementById('taxTypeDescription').value,
+            is_active: document.getElementById('taxTypeIsActive').checked
+        };
+
+        if (id) {
+            await api.updateLocationTaxType(id, data);
+        } else {
+            await api.createLocationTaxType(data);
+        }
+
+        closeModal('taxTypeModal');
+        showToast(`Tax type ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadTaxTypes();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving tax type:', error);
+        showToast(error.message || 'Failed to save tax type', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteTaxType(id) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Tax Type',
+        message: 'Are you sure you want to delete this tax type? This may affect associated tax rules.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+        await api.deleteLocationTaxType(id);
+        showToast('Tax type deleted successfully', 'success');
+        await loadTaxTypes();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting tax type:', error);
+        showToast(error.message || 'Failed to delete tax type', 'error');
+        hideLoading();
+    }
+}
+
+// ============================================
+// Office Tax Rules Management
+// ============================================
+
+async function loadOfficeTaxRules() {
+    try {
+        const officeFilter = document.getElementById('taxRuleOffice')?.value || '';
+        const showInactive = document.getElementById('showInactiveTaxRules')?.checked || false;
+
+        let response;
+        if (officeFilter) {
+            response = await api.getOfficeTaxRules(officeFilter, showInactive);
+        } else {
+            // Load all rules by making a request without office filter
+            response = await api.request(`/hrms/location-taxes/rules?includeInactive=${showInactive}`);
+        }
+        taxRules = Array.isArray(response) ? response : (response?.data || []);
+        updateTaxRulesTable();
+        populateTaxRuleOfficeSelects();
+    } catch (error) {
+        console.error('Error loading tax rules:', error);
+        showToast('Failed to load tax rules', 'error');
+    }
+}
+
+function updateTaxRulesTable() {
+    const tbody = document.getElementById('taxRulesTable');
+    if (!tbody) return;
+
+    const searchTerm = document.getElementById('taxRuleSearch')?.value?.toLowerCase() || '';
+    const taxTypeFilter = document.getElementById('taxRuleTaxType')?.value || '';
+
+    let filtered = taxRules.filter(r =>
+        r.rule_name?.toLowerCase().includes(searchTerm) ||
+        r.tax_code?.toLowerCase().includes(searchTerm) ||
+        r.jurisdiction_name?.toLowerCase().includes(searchTerm)
+    );
+
+    if (taxTypeFilter) {
+        filtered = filtered.filter(r => r.tax_type_id === taxTypeFilter);
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="9">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p>No tax rules configured</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(rule => {
+        const officeName = getOfficeName(rule.office_id);
+        const taxTypeName = getTaxTypeName(rule.tax_type_id);
+        const calcBadge = getCalculationBadge(rule.calculation_type);
+        const amountDisplay = formatAmountDisplay(rule);
+
+        return `
+        <tr>
+            <td>${escapeHtml(officeName)}</td>
+            <td>${escapeHtml(taxTypeName)}</td>
+            <td><strong>${escapeHtml(rule.rule_name || '-')}</strong></td>
+            <td>${escapeHtml(rule.jurisdiction_name || '-')} <small>(${escapeHtml(rule.jurisdiction_level || '-')})</small></td>
+            <td><span class="badge ${escapeHtml(calcBadge.class)}">${escapeHtml(calcBadge.label)}</span></td>
+            <td>${amountDisplay}</td>
+            <td>${escapeHtml(formatDate(rule.effective_from))}</td>
+            <td><span class="status-badge status-${rule.is_active ? 'active' : 'inactive'}">${rule.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="editTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Edit Rule">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Delete Rule">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getOfficeName(officeId) {
+    if (!officeId) return 'Unknown';
+    const office = offices.find(o => o.id === officeId);
+    return office?.office_name || 'Unknown';
+}
+
+function getTaxTypeName(taxTypeId) {
+    if (!taxTypeId) return 'Unknown';
+    const taxType = taxTypes.find(t => t.id === taxTypeId);
+    return taxType?.tax_name || 'Unknown';
+}
+
+function getCalculationBadge(calcType) {
+    const badges = {
+        'fixed': { class: 'badge-fixed', label: 'Fixed' },
+        'percentage': { class: 'badge-percentage', label: 'Percentage' },
+        'slab': { class: 'badge-slab', label: 'Slab' },
+        'formula': { class: 'badge-formula', label: 'Formula' }
+    };
+    return badges[calcType] || { class: 'badge-fixed', label: 'Fixed' };
+}
+
+function formatAmountDisplay(rule) {
+    switch (rule.calculation_type) {
+        case 'fixed':
+            return `<strong>${formatCurrency(rule.fixed_amount || 0)}</strong>`;
+        case 'percentage':
+            return `<strong>${rule.percentage || 0}%</strong> of ${rule.percentage_of || 'gross'}`;
+        case 'slab':
+            return '<em>Slab based</em>';
+        case 'formula':
+            return '<em>Formula</em>';
+        default:
+            return '-';
+    }
+}
+
+function populateTaxRuleOfficeSelects() {
+    const selects = ['taxRuleOffice', 'taxRuleOfficeId', 'copySourceOffice', 'copyTargetOffice', 'previewOffice'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const firstOption = (id === 'taxRuleOffice') ? '<option value="">All Offices</option>' : '<option value="">Select Office</option>';
+            select.innerHTML = firstOption;
+            offices.filter(o => o.is_active).forEach(office => {
+                select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
+            });
+        }
+    });
+}
+
+// Tax Rule Modal Functions
+function showCreateTaxRuleModal() {
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('Please create an office first', 'error');
+        return;
+    }
+
+    if (taxTypes.filter(t => t.is_active).length === 0) {
+        showToast('Please create a tax type first', 'error');
+        return;
+    }
+
+    document.getElementById('taxRuleForm').reset();
+    document.getElementById('taxRuleId').value = '';
+    document.getElementById('taxRuleIsActive').checked = true;
+    document.getElementById('taxRuleEffectiveFrom').value = new Date().toISOString().split('T')[0];
+
+    // Populate dropdowns
+    populateTaxRuleOfficeSelects();
+    populateTaxTypeSelects();
+
+    // Reset calculation fields visibility
+    toggleCalculationFields();
+
+    // Reset slab rows
+    resetSlabRows();
+
+    document.getElementById('taxRuleModalTitle').textContent = 'Create Tax Rule';
+    document.getElementById('taxRuleModal').classList.add('active');
+}
+
+function editTaxRule(id) {
+    const rule = taxRules.find(r => r.id === id);
+    if (!rule) return;
+
+    // Populate dropdowns first
+    populateTaxRuleOfficeSelects();
+    populateTaxTypeSelects();
+
+    document.getElementById('taxRuleId').value = rule.id;
+    document.getElementById('taxRuleOfficeId').value = rule.office_id || '';
+    document.getElementById('taxRuleTaxTypeId').value = rule.tax_type_id || '';
+    document.getElementById('taxRuleName').value = rule.rule_name || '';
+    document.getElementById('taxRuleCode').value = rule.tax_code || '';
+    document.getElementById('taxRuleJurisdictionLevel').value = rule.jurisdiction_level || 'state';
+    document.getElementById('taxRuleJurisdictionName').value = rule.jurisdiction_name || '';
+    document.getElementById('taxRuleJurisdictionCode').value = rule.jurisdiction_code || '';
+    document.getElementById('taxRuleCalculationType').value = rule.calculation_type || 'fixed';
+    document.getElementById('taxRuleFixedAmount').value = rule.fixed_amount || '';
+    document.getElementById('taxRulePercentage').value = rule.percentage || '';
+    document.getElementById('taxRulePercentageOf').value = rule.percentage_of || 'gross';
+    document.getElementById('taxRuleFormula').value = rule.formula_expression || '';
+    document.getElementById('taxRuleEffectiveFrom').value = rule.effective_from?.split('T')[0] || '';
+    document.getElementById('taxRuleEffectiveTo').value = rule.effective_to?.split('T')[0] || '';
+    document.getElementById('taxRuleNotes').value = rule.notes || '';
+    document.getElementById('taxRuleIsActive').checked = rule.is_active !== false;
+
+    // Toggle calculation fields visibility
+    toggleCalculationFields();
+
+    // Populate slab rows if calculation type is slab
+    if (rule.calculation_type === 'slab' && rule.slab_config) {
+        populateSlabRows(rule.slab_config);
+    }
+
+    document.getElementById('taxRuleModalTitle').textContent = 'Edit Tax Rule';
+    document.getElementById('taxRuleModal').classList.add('active');
+}
+
+async function saveTaxRule() {
+    const form = document.getElementById('taxRuleForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    try {
+        showLoading();
+        const id = document.getElementById('taxRuleId').value;
+        const calculationType = document.getElementById('taxRuleCalculationType').value;
+
+        const data = {
+            office_id: document.getElementById('taxRuleOfficeId').value,
+            tax_type_id: document.getElementById('taxRuleTaxTypeId').value,
+            rule_name: document.getElementById('taxRuleName').value,
+            tax_code: document.getElementById('taxRuleCode').value,
+            jurisdiction_level: document.getElementById('taxRuleJurisdictionLevel').value,
+            jurisdiction_name: document.getElementById('taxRuleJurisdictionName').value,
+            jurisdiction_code: document.getElementById('taxRuleJurisdictionCode').value,
+            calculation_type: calculationType,
+            effective_from: document.getElementById('taxRuleEffectiveFrom').value,
+            effective_to: document.getElementById('taxRuleEffectiveTo').value || null,
+            notes: document.getElementById('taxRuleNotes').value,
+            is_active: document.getElementById('taxRuleIsActive').checked
+        };
+
+        // Add calculation-specific fields
+        switch (calculationType) {
+            case 'fixed':
+                data.fixed_amount = parseFloat(document.getElementById('taxRuleFixedAmount').value) || 0;
+                break;
+            case 'percentage':
+                data.percentage = parseFloat(document.getElementById('taxRulePercentage').value) || 0;
+                data.percentage_of = document.getElementById('taxRulePercentageOf').value;
+                break;
+            case 'slab':
+                data.slab_config = getSlabConfig();
+                break;
+            case 'formula':
+                data.formula_expression = document.getElementById('taxRuleFormula').value;
+                break;
+        }
+
+        if (id) {
+            data.id = id; // Include ID in request body for backend validation
+            await api.updateOfficeTaxRule(id, data);
+        } else {
+            await api.createOfficeTaxRule(data);
+        }
+
+        closeModal('taxRuleModal');
+        showToast(`Tax rule ${id ? 'updated' : 'created'} successfully`, 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error saving tax rule:', error);
+        showToast(error.message || 'Failed to save tax rule', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteTaxRule(id) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Tax Rule',
+        message: 'Are you sure you want to delete this tax rule?',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+        await api.deleteOfficeTaxRule(id);
+        showToast('Tax rule deleted successfully', 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting tax rule:', error);
+        showToast(error.message || 'Failed to delete tax rule', 'error');
+        hideLoading();
+    }
+}
+
+// Toggle calculation fields based on type
+function toggleCalculationFields() {
+    const calcType = document.getElementById('taxRuleCalculationType').value;
+
+    document.getElementById('fixedAmountFields').style.display = calcType === 'fixed' ? 'flex' : 'none';
+    document.getElementById('percentageFields').style.display = calcType === 'percentage' ? 'flex' : 'none';
+    document.getElementById('slabFields').style.display = calcType === 'slab' ? 'block' : 'none';
+}
+
+// Slab row management
+function addSlabRow() {
+    const container = document.getElementById('slabContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'slab-row';
+    newRow.innerHTML = `
+        <input type="number" class="form-control slab-from" placeholder="From" min="0">
+        <span class="slab-separator">to</span>
+        <input type="number" class="form-control slab-to" placeholder="To" min="0">
+        <span class="slab-separator">=</span>
+        <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeSlabRow(button) {
+    const container = document.getElementById('slabContainer');
+    if (container.children.length > 1) {
+        button.closest('.slab-row').remove();
+    } else {
+        showToast('At least one slab row is required', 'error');
+    }
+}
+
+function resetSlabRows() {
+    const container = document.getElementById('slabContainer');
+    container.innerHTML = `
+        <div class="slab-row">
+            <input type="number" class="form-control slab-from" placeholder="From" min="0">
+            <span class="slab-separator">to</span>
+            <input type="number" class="form-control slab-to" placeholder="To" min="0">
+            <span class="slab-separator">=</span>
+            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `;
+}
+
+function populateSlabRows(slabConfig) {
+    const container = document.getElementById('slabContainer');
+    container.innerHTML = '';
+
+    const slabs = typeof slabConfig === 'string' ? JSON.parse(slabConfig) : slabConfig;
+    if (!Array.isArray(slabs) || slabs.length === 0) {
+        resetSlabRows();
+        return;
+    }
+
+    slabs.forEach(slab => {
+        const row = document.createElement('div');
+        row.className = 'slab-row';
+        row.innerHTML = `
+            <input type="number" class="form-control slab-from" placeholder="From" min="0" value="${slab.from || ''}">
+            <span class="slab-separator">to</span>
+            <input type="number" class="form-control slab-to" placeholder="To" min="0" value="${slab.to || ''}">
+            <span class="slab-separator">=</span>
+            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01" value="${slab.amount || ''}">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function getSlabConfig() {
+    const slabs = [];
+    document.querySelectorAll('#slabContainer .slab-row').forEach(row => {
+        const from = parseFloat(row.querySelector('.slab-from').value) || 0;
+        const to = parseFloat(row.querySelector('.slab-to').value) || 0;
+        const amount = parseFloat(row.querySelector('.slab-amount').value) || 0;
+        slabs.push({ from, to, amount });
+    });
+    return slabs;
+}
+
+// Copy Tax Rules
+function showCopyTaxRulesModal() {
+    if (offices.filter(o => o.is_active).length < 2) {
+        showToast('You need at least 2 offices to copy tax rules', 'error');
+        return;
+    }
+
+    document.getElementById('copyTaxRulesForm').reset();
+    populateTaxRuleOfficeSelects();
+    document.getElementById('copyTaxRulesModal').classList.add('active');
+}
+
+async function copyTaxRules() {
+    const sourceOffice = document.getElementById('copySourceOffice').value;
+    const targetOffice = document.getElementById('copyTargetOffice').value;
+
+    if (!sourceOffice || !targetOffice) {
+        showToast('Please select both source and target offices', 'error');
+        return;
+    }
+
+    if (sourceOffice === targetOffice) {
+        showToast('Source and target offices must be different', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        await api.copyOfficeTaxRules(sourceOffice, targetOffice);
+        closeModal('copyTaxRulesModal');
+        showToast('Tax rules copied successfully', 'success');
+        await loadOfficeTaxRules();
+        hideLoading();
+    } catch (error) {
+        console.error('Error copying tax rules:', error);
+        showToast(error.message || 'Failed to copy tax rules', 'error');
+        hideLoading();
+    }
+}
+
+// Tax Preview
+function showTaxPreviewModal() {
+    if (offices.filter(o => o.is_active).length === 0) {
+        showToast('No offices configured', 'error');
+        return;
+    }
+
+    document.getElementById('taxPreviewForm').reset();
+    document.getElementById('taxPreviewResults').style.display = 'none';
+    document.getElementById('previewEffectiveDate').value = new Date().toISOString().split('T')[0];
+    populateTaxRuleOfficeSelects();
+    document.getElementById('taxPreviewModal').classList.add('active');
+}
+
+async function calculateTaxPreview() {
+    const officeId = document.getElementById('previewOffice').value;
+    const effectiveDate = document.getElementById('previewEffectiveDate').value;
+    const grossSalary = parseFloat(document.getElementById('previewGrossSalary').value) || 0;
+
+    if (!officeId || !effectiveDate || !grossSalary) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const request = {
+            office_id: officeId,
+            effective_date: effectiveDate,
+            basic_salary: parseFloat(document.getElementById('previewBasicSalary').value) || 0,
+            gross_salary: grossSalary,
+            taxable_income: parseFloat(document.getElementById('previewTaxableIncome').value) || grossSalary
+        };
+
+        const result = await api.calculateTaxPreview(request);
+        displayTaxPreviewResults(result);
+        hideLoading();
+    } catch (error) {
+        console.error('Error calculating tax preview:', error);
+        showToast(error.message || 'Failed to calculate tax preview', 'error');
+        hideLoading();
+    }
+}
+
+function displayTaxPreviewResults(result) {
+    const tbody = document.getElementById('taxPreviewResultsTable');
+    const totalEl = document.getElementById('taxPreviewTotal');
+    const resultsDiv = document.getElementById('taxPreviewResults');
+
+    // Backend returns tax_items, not tax_calculations
+    if (!result || !result.tax_items || result.tax_items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center">No applicable taxes found for this configuration</td>
+            </tr>
+        `;
+        totalEl.textContent = formatCurrency(0);
+    } else {
+        tbody.innerHTML = result.tax_items.map(item => `
+            <tr>
+                <td>${escapeHtml(item.tax_code || '-')}</td>
+                <td>${escapeHtml(item.rule_name || '-')}</td>
+                <td>${escapeHtml(item.calculation_type || '-')}</td>
+                <td><strong>${formatCurrency(item.tax_amount || 0)}</strong></td>
+            </tr>
+        `).join('');
+        totalEl.textContent = formatCurrency(result.total_tax || 0);
+    }
+
+    resultsDiv.style.display = 'block';
+}
+
+// Add search event listeners for tax management
+document.addEventListener('DOMContentLoaded', function() {
+    // Tax search listeners
+    document.getElementById('taxTypeSearch')?.addEventListener('input', updateTaxTypesTable);
+    document.getElementById('taxRuleSearch')?.addEventListener('input', updateTaxRulesTable);
+    document.getElementById('taxRuleOffice')?.addEventListener('change', loadOfficeTaxRules);
+    document.getElementById('taxRuleTaxType')?.addEventListener('change', updateTaxRulesTable);
+});
