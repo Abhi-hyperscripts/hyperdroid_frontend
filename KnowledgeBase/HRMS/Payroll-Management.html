@@ -566,16 +566,6 @@
             color: var(--warning-color);
         }
 
-        .badge-earning {
-            background: var(--tip-bg);
-            color: var(--color-success-text);
-        }
-
-        .badge-deduction {
-            background: var(--badge-required-bg);
-            color: var(--badge-required-color);
-        }
-
         /* Step indicators */
         .steps {
             counter-reset: step-counter;
@@ -720,39 +710,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 8px;
+            margin: 16px 0;
             padding: 16px;
             background: var(--code-bg);
             border-radius: 8px;
-            margin: 16px 0;
-            flex-wrap: wrap;
         }
 
         .workflow-step {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .workflow-step.draft {
-            background: var(--warning-bg);
-            color: var(--warning-color);
-        }
-
-        .workflow-step.process {
-            background: var(--important-bg);
-            color: var(--primary-color);
-        }
-
-        .workflow-step.approve {
-            background: var(--tip-bg);
-            color: var(--tip-border);
-        }
-
-        .workflow-step.paid {
             background: var(--primary-color);
             color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
         .workflow-arrow {
@@ -764,7 +736,7 @@
 <body>
     <header>
         <h1>HRMS Payroll Management Guide</h1>
-        <p>Configure salary components, structures, process payroll, and manage employee compensation</p>
+        <p>Complete guide to salary components, structures, payroll processing, loans, and arrears</p>
     </header>
 
     <!-- Mobile Menu Toggle -->
@@ -809,32 +781,32 @@
             </div>
             <ul class="nav-group-items">
                 <li><a href="#salary-components"><span class="section-num">3</span> Salary Components</a></li>
-                <li><a href="#location-taxes"><span class="section-num">4</span> Location Taxes</a></li>
-                <li><a href="#salary-structures"><span class="section-num">5</span> Salary Structures</a></li>
+                <li><a href="#salary-structures"><span class="section-num">4</span> Salary Structures</a></li>
+                <li><a href="#location-taxes"><span class="section-num">5</span> Location Taxes</a></li>
             </ul>
         </nav>
 
-        <!-- Employee Compensation -->
+        <!-- Payroll Processing -->
         <nav class="nav-group">
             <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                Employee Compensation
+                Payroll Processing
                 <span class="chevron">&#9660;</span>
             </div>
             <ul class="nav-group-items">
-                <li><a href="#loans"><span class="section-num">6</span> Loans & Advances</a></li>
-                <li><a href="#arrears"><span class="section-num">7</span> Arrears</a></li>
+                <li><a href="#payroll-drafts"><span class="section-num">6</span> Payroll Drafts</a></li>
+                <li><a href="#finalized-runs"><span class="section-num">7</span> Finalized Runs</a></li>
             </ul>
         </nav>
 
-        <!-- Processing -->
+        <!-- Loans & Adjustments -->
         <nav class="nav-group">
             <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                Processing Payroll
+                Loans & Adjustments
                 <span class="chevron">&#9660;</span>
             </div>
             <ul class="nav-group-items">
-                <li><a href="#payroll-drafts"><span class="section-num">8</span> Payroll Drafts</a></li>
-                <li><a href="#finalized-runs"><span class="section-num">9</span> Finalized Runs</a></li>
+                <li><a href="#loans"><span class="section-num">8</span> Loans & Advances</a></li>
+                <li><a href="#arrears"><span class="section-num">9</span> Arrears Management</a></li>
             </ul>
         </nav>
 
@@ -845,127 +817,138 @@
                 <span class="chevron">&#9660;</span>
             </div>
             <ul class="nav-group-items">
-                <li><a href="#best-practices"><span class="section-num">10</span> Best Practices</a></li>
-                <li><a href="Payroll-Calculations.html"><span class="section-num">11</span> Payroll Engine</a></li>
-                <li><a href="#checklist"><span class="section-num">12</span> Setup Checklist</a></li>
+                <li><a href="#checklist"><span class="section-num">&#10003;</span> Setup Checklist</a></li>
             </ul>
         </nav>
     </aside>
 
     <main>
-        <!-- Overview Section -->
+        <!-- Section 1: Overview -->
         <section id="overview">
             <h2><span class="section-number">1</span> Overview</h2>
-            <p>The Payroll Management page is where you configure and process employee compensation. This comprehensive module handles everything from defining salary components to generating payslips.</p>
+            <p>The Payroll Management module handles everything related to employee compensation - from defining salary components to processing monthly payroll and managing loans.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/01-salary-components-overview.png" alt="Payroll Management Overview">
+                <div class="screenshot-caption">Payroll Management page showing Salary Components tab with earnings and deductions</div>
+            </div>
 
             <div class="feature-grid">
                 <div class="feature-card">
                     <h4>Salary Components</h4>
-                    <p>Define earnings (Basic, HRA, DA) and deductions (PF, ESI, Professional Tax) that make up an employee's salary.</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Location Taxes</h4>
-                    <p>Configure location-specific taxes like Professional Tax with different rules for different offices.</p>
+                    <p>Define earnings (Basic, HRA, Allowances) and deductions (PF, Tax, ESI) that make up employee salaries.</p>
                 </div>
                 <div class="feature-card">
                     <h4>Salary Structures</h4>
-                    <p>Create salary templates by combining components. Supports versioning for historical tracking.</p>
+                    <p>Create salary structures by combining components. Assign structures to employees with CTC-based calculation.</p>
                 </div>
                 <div class="feature-card">
-                    <h4>Loans & Advances</h4>
-                    <p>Manage employee loans with interest calculations and automatic EMI deductions from salary.</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Arrears</h4>
-                    <p>Handle salary arrears from promotions, appraisals, or corrections with automatic payroll inclusion.</p>
+                    <h4>Location Taxes</h4>
+                    <p>Configure office-specific taxes like Professional Tax with fixed, percentage, or slab-based rules.</p>
                 </div>
                 <div class="feature-card">
                     <h4>Payroll Drafts</h4>
-                    <p>Create and review payroll drafts before finalizing. Edit individual employee entries as needed.</p>
+                    <p>Create monthly payroll drafts, process payslips, review, and finalize before payment.</p>
                 </div>
                 <div class="feature-card">
                     <h4>Finalized Runs</h4>
-                    <p>View completed payroll runs, download payslips, export bank files, and track payment status.</p>
+                    <p>Approve finalized payroll runs, mark as paid, and export bank files for salary disbursement.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Loans & Advances</h4>
+                    <p>Manage employee loans with EMI deductions, interest calculations, and repayment tracking.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Arrears Management</h4>
+                    <p>Handle salary arrears from backdated structure changes with automatic calculation.</p>
                 </div>
             </div>
 
             <div class="info-box important">
                 <span class="icon">&#8505;&#65039;</span>
                 <div>
-                    <strong>Setup Order:</strong> Configure in this order for best results: Salary Components &#8594; Location Taxes &#8594; Salary Structures &#8594; Assign to Employees &#8594; Process Payroll.
+                    <strong>Prerequisites:</strong> Before setting up payroll, ensure you have completed Organization Setup (Offices, Departments, Designations) and created Employees. Payroll requires employees with assigned salary structures.
                 </div>
             </div>
         </section>
 
-        <!-- Workflow Section -->
+        <!-- Section 2: Payroll Workflow -->
         <section id="workflow">
             <h2><span class="section-number">2</span> Payroll Workflow</h2>
-            <p>Understanding the payroll processing workflow is essential for accurate and timely salary payments.</p>
+            <p>Understanding the complete payroll workflow is essential for successful monthly processing.</p>
 
-            <h3>The Payroll Processing Cycle</h3>
+            <h3>Monthly Payroll Process</h3>
             <div class="workflow-diagram">
-                <span class="workflow-step draft">Draft</span>
+                <span class="workflow-step">Create Draft</span>
                 <span class="workflow-arrow">&#8594;</span>
-                <span class="workflow-step process">Process</span>
+                <span class="workflow-step">Process</span>
                 <span class="workflow-arrow">&#8594;</span>
-                <span class="workflow-step approve">Approve</span>
+                <span class="workflow-step">Review</span>
                 <span class="workflow-arrow">&#8594;</span>
-                <span class="workflow-step paid">Paid</span>
+                <span class="workflow-step">Finalize</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step">Approve</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step">Pay</span>
             </div>
 
-            <h4>Workflow Stages</h4>
+            <h4>Workflow Steps Explained</h4>
             <table>
                 <thead>
                     <tr>
-                        <th>Stage</th>
+                        <th>Step</th>
                         <th>Description</th>
-                        <th>Actions Available</th>
+                        <th>Who</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Draft</strong></td>
-                        <td>Initial payroll creation. System calculates salaries based on structures and attendance.</td>
-                        <td>Edit entries, add adjustments, delete draft</td>
+                        <td><strong>1. Create Draft</strong></td>
+                        <td>Create a new payroll draft for a specific month/year and office</td>
+                        <td>HR Admin</td>
                     </tr>
                     <tr>
-                        <td><strong>Process</strong></td>
-                        <td>Review calculated amounts, make final adjustments, and verify totals.</td>
-                        <td>Edit entries, apply arrears, recalculate</td>
+                        <td><strong>2. Process</strong></td>
+                        <td>Calculate payslips for all employees based on attendance, leaves, and deductions</td>
+                        <td>System</td>
                     </tr>
                     <tr>
-                        <td><strong>Approve</strong></td>
-                        <td>Payroll is finalized and locked. No more edits allowed.</td>
-                        <td>View payslips, download CSV, generate bank file</td>
+                        <td><strong>3. Review</strong></td>
+                        <td>Review individual payslips, make adjustments if needed, verify totals</td>
+                        <td>HR Admin</td>
                     </tr>
                     <tr>
-                        <td><strong>Paid</strong></td>
-                        <td>Salaries have been disbursed to employee bank accounts.</td>
-                        <td>View payslips, download reports</td>
+                        <td><strong>4. Finalize</strong></td>
+                        <td>Lock the draft and create a finalized payroll run (cannot be undone)</td>
+                        <td>HR Admin</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Approve</strong></td>
+                        <td>Management approval of the payroll run before payment</td>
+                        <td>Manager/Admin</td>
+                    </tr>
+                    <tr>
+                        <td><strong>6. Pay</strong></td>
+                        <td>Mark as paid with payment reference, generate bank files</td>
+                        <td>HR Admin</td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="info-box warning">
-                <span class="icon">&#9888;&#65039;</span>
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
                 <div>
-                    <strong>Important:</strong> Once a payroll is approved, it cannot be edited. Always verify all calculations before approving. If corrections are needed after approval, they must be handled in the next payroll cycle as arrears.
+                    <strong>Best Practice:</strong> Complete attendance regularization and leave approvals before processing payroll. This ensures accurate working days calculations.
                 </div>
             </div>
         </section>
 
-        <!-- Salary Components Section -->
+        <!-- Section 3: Salary Components -->
         <section id="salary-components">
             <h2><span class="section-number">3</span> Salary Components</h2>
-            <p>Salary components are the building blocks of employee compensation. They are divided into two categories: <strong>Earnings</strong> (additions to salary) and <strong>Deductions</strong> (subtractions from salary).</p>
+            <p>Salary components are the building blocks of employee salaries. They are divided into <strong>Earnings</strong> (money added) and <strong>Deductions</strong> (money subtracted).</p>
 
-            <h3>Components Overview</h3>
-            <div class="screenshot-container">
-                <img src="images/payroll/01-salary-components-overview.png" alt="Salary Components Overview">
-                <div class="screenshot-caption">Salary Components tab showing earnings and deductions tables with filter dropdown</div>
-            </div>
-
-            <h4>Understanding Component Types</h4>
+            <h3>Understanding Component Types</h3>
             <table>
                 <thead>
                     <tr>
@@ -976,27 +959,96 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><span class="badge badge-earning">Earning</span></td>
-                        <td>Amounts added to the employee's gross salary</td>
-                        <td>Basic Salary, HRA, DA, Conveyance, Medical Allowance</td>
+                        <td><strong>Earning</strong></td>
+                        <td>Adds to gross salary</td>
+                        <td>Basic Pay, HRA, Special Allowance, Bonus</td>
                     </tr>
                     <tr>
-                        <td><span class="badge badge-deduction">Deduction</span></td>
-                        <td>Amounts subtracted from gross salary</td>
-                        <td>PF, ESI, Professional Tax, Income Tax, Loan EMI</td>
+                        <td><strong>Deduction</strong></td>
+                        <td>Subtracts from gross salary</td>
+                        <td>PF, Professional Tax, TDS, ESI</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>Adding a New Component</h3>
-            <p>Click the <strong>"Add Component"</strong> button to create a new salary component.</p>
+            <h3>Calculation Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Calculation</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Fixed</strong></td>
+                        <td>Same amount every month</td>
+                        <td>Professional Tax = &#8377;200/month</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage of CTC</strong></td>
+                        <td>Calculated as % of annual CTC</td>
+                        <td>Basic = 50% of CTC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage of Basic</strong></td>
+                        <td>Calculated as % of Basic salary</td>
+                        <td>HRA = 40% of Basic, PF = 12% of Basic</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Step-by-Step: Creating Salary Components</h3>
+
+            <h4>Step 1: View the Salary Components Tab</h4>
+            <p>Navigate to HRMS &#8594; Payroll &#8594; Salary Components tab to see existing components:</p>
 
             <div class="screenshot-container">
-                <img src="images/payroll/02-salary-components-add-modal.png" alt="Add Component Modal">
-                <div class="screenshot-caption">Add Component modal with all configuration options</div>
+                <img src="images/payroll/01-salary-components-overview.png" alt="Salary Components Overview">
+                <div class="screenshot-caption">Salary Components tab showing Earnings and Deductions tables with existing components</div>
             </div>
 
-            <h4>Field Descriptions</h4>
+            <h4>Step 2: Click Add Salary Component</h4>
+            <p>Click the <strong>"Add Salary Component"</strong> button to open the creation modal:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/02-component-modal-empty.png" alt="Empty Component Modal">
+                <div class="screenshot-caption">Empty Add Salary Component modal ready for data entry</div>
+            </div>
+
+            <h4>Step 3: Configure an Earning Component (Basic Pay)</h4>
+            <p>For Basic Pay, use <strong>Percentage of CTC</strong> calculation:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/04-basic-pay-edit-with-basic-toggle.png" alt="Basic Pay Configuration">
+                <div class="screenshot-caption">Configuring Basic Pay as 50% of CTC with "Is Basic Salary" toggle enabled</div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Is Basic Salary:</strong> Enable this toggle for your Basic Pay component. This marks it as the base for percentage-of-basic calculations (like HRA and PF).
+                </div>
+            </div>
+
+            <h4>Step 4: Create HRA as Percentage of Basic</h4>
+            <p>For HRA, use <strong>Percentage of Basic</strong> calculation:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/06-component-modal-hra-percentage.png" alt="HRA Configuration">
+                <div class="screenshot-caption">Configuring HRA as 40% of Basic salary</div>
+            </div>
+
+            <h4>Step 5: View All Components</h4>
+            <p>After creating all required components, your list should look like this:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/08-all-components-complete.png" alt="All Components Complete">
+                <div class="screenshot-caption">Complete list of salary components with 5 Earnings and 4 Deductions</div>
+            </div>
+
+            <h3>Field Descriptions</h3>
             <table>
                 <thead>
                     <tr>
@@ -1009,537 +1061,720 @@
                     <tr>
                         <td><strong>Component Name</strong></td>
                         <td><span class="badge badge-required">Required</span></td>
-                        <td>Display name (e.g., "House Rent Allowance")</td>
+                        <td>Display name (e.g., "Basic Pay", "House Rent Allowance")</td>
                     </tr>
                     <tr>
                         <td><strong>Component Code</strong></td>
                         <td><span class="badge badge-required">Required</span></td>
-                        <td>Unique identifier code (e.g., "HRA"). Used in reports.</td>
+                        <td>Unique code (e.g., "BASIC", "HRA", "PF")</td>
                     </tr>
                     <tr>
                         <td><strong>Component Type</strong></td>
                         <td><span class="badge badge-required">Required</span></td>
-                        <td>
-                            - <code>Earning</code>: Added to salary<br>
-                            - <code>Deduction</code>: Subtracted from salary
-                        </td>
+                        <td>Earning or Deduction</td>
                     </tr>
                     <tr>
                         <td><strong>Calculation Type</strong></td>
                         <td><span class="badge badge-required">Required</span></td>
-                        <td>
-                            - <code>Fixed</code>: Same amount for all<br>
-                            - <code>Percentage</code>: Calculated as % of another component
-                        </td>
+                        <td>Fixed, Percentage of CTC, or Percentage of Basic</td>
                     </tr>
                     <tr>
-                        <td><strong>Value</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Fixed amount (e.g., 5000) or percentage value (e.g., 40)</td>
+                        <td><strong>Default Value/Percentage</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Default fixed amount or percentage for this component</td>
                     </tr>
                     <tr>
-                        <td><strong>Percentage Of</strong></td>
-                        <td>For Percentage type</td>
-                        <td>Which component to calculate percentage of (usually Basic)</td>
+                        <td><strong>Is Basic Salary</strong></td>
+                        <td><span class="badge badge-optional">Optional</span></td>
+                        <td>Enable only for Basic Pay - marks it as base for % of basic calculations</td>
                     </tr>
                     <tr>
                         <td><strong>Is Taxable</strong></td>
                         <td><span class="badge badge-optional">Optional</span></td>
-                        <td>If ON, this component is included in taxable income calculation</td>
+                        <td>Whether this component is subject to income tax</td>
                     </tr>
                     <tr>
                         <td><strong>Is Statutory</strong></td>
                         <td><span class="badge badge-optional">Optional</span></td>
-                        <td>If ON, marks as government-mandated (PF, ESI, etc.)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Description</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Additional details about the component</td>
+                        <td>Whether this is a government-mandated component (PF, ESI)</td>
                     </tr>
                 </tbody>
             </table>
-
-            <h3>Percentage-Based Components</h3>
-            <p>When you select "Percentage" as the calculation type, additional fields appear:</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/03-salary-components-percentage-fields.png" alt="Percentage Fields">
-                <div class="screenshot-caption">Percentage calculation fields showing "Percentage Of" dropdown</div>
-            </div>
 
             <div class="info-box tip">
                 <span class="icon">&#128161;</span>
                 <div>
-                    <strong>Common Percentage Components:</strong>
-                    <ul style="margin-top: 8px; margin-bottom: 0;">
-                        <li><strong>HRA:</strong> Usually 40-50% of Basic</li>
-                        <li><strong>DA (Dearness Allowance):</strong> 10-20% of Basic</li>
-                        <li><strong>PF (Provident Fund):</strong> 12% of Basic</li>
-                        <li><strong>ESI:</strong> 0.75% of Gross (for employees earning under limit)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <h3>Editing Components</h3>
-            <p>Click the edit icon on any component row to modify its settings.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/04-salary-components-edit-modal.png" alt="Edit Component Modal">
-                <div class="screenshot-caption">Edit Component modal with pre-filled values</div>
-            </div>
-
-            <div class="info-box warning">
-                <span class="icon">&#9888;&#65039;</span>
-                <div>
-                    <strong>Impact of Changes:</strong> Editing a component affects all salary structures using it. Changes only apply to future payroll runs, not historical data.
+                    <strong>Recommended Components:</strong><br>
+                    <strong>Earnings:</strong> Basic Pay (50% CTC), HRA (40% Basic), Special Allowance (remainder), Conveyance<br>
+                    <strong>Deductions:</strong> PF Employee (12% Basic), Professional Tax (Fixed), ESI (if applicable)
                 </div>
             </div>
         </section>
 
-        <!-- Location Taxes Section -->
-        <section id="location-taxes">
-            <h2><span class="section-number">4</span> Location Taxes</h2>
-            <p>Location taxes allow you to configure payroll taxes that vary by office location, such as Professional Tax which differs by state in India.</p>
-
-            <h3>4.1 Tax Types</h3>
-            <p>Tax Types define categories of location-based taxes. Create tax types first, then configure rules for each office.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/05-location-taxes-types-overview.png" alt="Tax Types Overview">
-                <div class="screenshot-caption">Tax Types sub-tab showing configured tax categories</div>
-            </div>
-
-            <h4>Table Columns</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Column</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Tax Name</strong></td>
-                        <td>Display name of the tax type</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Code</strong></td>
-                        <td>Unique identifier (e.g., "PT")</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Deduction From</strong></td>
-                        <td>Whether deducted from Employee or Employer</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Statutory</strong></td>
-                        <td>Whether this is a government-mandated tax</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Status</strong></td>
-                        <td>Active or Inactive</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h4>Creating a Tax Type</h4>
-            <div class="screenshot-container">
-                <img src="images/payroll/06-location-taxes-add-type-modal.png" alt="Add Tax Type Modal">
-                <div class="screenshot-caption">Create Tax Type modal</div>
-            </div>
-
-            <h3>4.2 Office Tax Rules</h3>
-            <p>Office Tax Rules define how each tax is calculated for specific offices. Switch to the <strong>"Office Tax Rules"</strong> sub-tab.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/07-location-taxes-rules-overview.png" alt="Office Tax Rules Overview">
-                <div class="screenshot-caption">Office Tax Rules sub-tab showing rules by office</div>
-            </div>
-
-            <h4>Calculation Types</h4>
-            <p>When creating a tax rule, you can choose from three calculation methods:</p>
-
-            <h4>Fixed Amount</h4>
-            <p>A flat amount deducted regardless of salary.</p>
-            <div class="screenshot-container">
-                <img src="images/payroll/08-location-taxes-add-rule-fixed.png" alt="Fixed Calculation">
-                <div class="screenshot-caption">Fixed amount calculation - same deduction for everyone</div>
-            </div>
-
-            <h4>Percentage</h4>
-            <p>Calculate as a percentage of Basic, Gross, or Taxable Income.</p>
-            <div class="screenshot-container">
-                <img src="images/payroll/09-location-taxes-add-rule-percentage.png" alt="Percentage Calculation">
-                <div class="screenshot-caption">Percentage calculation with base selection</div>
-            </div>
-
-            <h4>Slab-Based</h4>
-            <p>Different amounts for different salary brackets (common for Professional Tax).</p>
-            <div class="screenshot-container">
-                <img src="images/payroll/10-location-taxes-add-rule-slab.png" alt="Slab Calculation">
-                <div class="screenshot-caption">Slab-based calculation with configurable brackets</div>
-            </div>
-
-            <div class="info-box important">
-                <span class="icon">&#8505;&#65039;</span>
-                <div>
-                    <strong>Slab Configuration:</strong> Use the + button to add more slabs. Each slab defines a salary range and the tax amount/percentage for that range. The system automatically applies the correct slab based on the employee's salary.
-                </div>
-            </div>
-        </section>
-
-        <!-- Salary Structures Section -->
+        <!-- Section 4: Salary Structures -->
         <section id="salary-structures">
-            <h2><span class="section-number">5</span> Salary Structures</h2>
-            <p>Salary structures combine multiple components into a template that can be assigned to employees. They support versioning for historical tracking when components change.</p>
+            <h2><span class="section-number">4</span> Salary Structures</h2>
+            <p>Salary structures combine multiple components into a template that can be assigned to employees. Each structure calculates salaries based on the employee's CTC (Cost to Company).</p>
 
-            <h3>Structures Overview</h3>
+            <h3>Step-by-Step: Creating a Salary Structure</h3>
+
+            <h4>Step 1: View the Salary Structures Tab</h4>
+            <p>Navigate to Salary Structures tab. Initially it will be empty:</p>
+
             <div class="screenshot-container">
-                <img src="images/payroll/11-salary-structures-overview.png" alt="Salary Structures Overview">
-                <div class="screenshot-caption">Salary Structures tab showing all configured structures with version info</div>
+                <img src="images/payroll/09-salary-structures-empty.png" alt="Empty Salary Structures">
+                <div class="screenshot-caption">Empty Salary Structures tab before any structures are created</div>
             </div>
 
-            <h4>Table Columns</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Column</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Structure Name</strong></td>
-                        <td>Display name of the structure</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Code</strong></td>
-                        <td>Unique identifier</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Components</strong></td>
-                        <td>Number of earnings/deduction components in structure</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Version</strong></td>
-                        <td>Current active version number</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Effective From</strong></td>
-                        <td>Date the current version became active</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Assigned</strong></td>
-                        <td>Number of employees using this structure</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Actions</strong></td>
-                        <td>View Details, Version History, Bulk Assign, Manage Arrears, Edit</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>Creating a Salary Structure</h3>
-            <p>Click <strong>"Add Structure"</strong> to create a new salary structure template.</p>
-
+            <h4>Step 2: Click Create Salary Structure</h4>
             <div class="screenshot-container">
-                <img src="images/payroll/22-salary-structures-create-modal.png" alt="Create Structure Modal">
-                <div class="screenshot-caption">Create Salary Structure modal with component selection</div>
+                <img src="images/payroll/10-structure-modal-empty.png" alt="Empty Structure Modal">
+                <div class="screenshot-caption">Empty Create Salary Structure modal</div>
             </div>
 
-            <h4>Field Descriptions</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Required</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Structure Name</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Display name (e.g., "Standard India Structure")</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Structure Code</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Unique code (e.g., "STD-IND")</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Description</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Details about when/where to use this structure</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Effective From</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Date this structure becomes active</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Components</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Select which components to include in this structure</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>Viewing Structure Details</h3>
-            <p>Click <strong>"View Details"</strong> to see all components in a structure.</p>
+            <h4>Step 3: Add Components to Structure</h4>
+            <p>Click "Add Component" to add salary components:</p>
 
             <div class="screenshot-container">
-                <img src="images/payroll/21-salary-structures-view-details.png" alt="View Structure Details">
-                <div class="screenshot-caption">Structure details showing all earnings and deductions</div>
+                <img src="images/payroll/11-structure-add-component.png" alt="Adding Components">
+                <div class="screenshot-caption">Adding components to the salary structure with calculation settings</div>
             </div>
 
-            <h3>Editing a Structure</h3>
-            <p>Click the edit icon to modify an existing structure.</p>
-
+            <h4>Step 4: Complete the Structure Configuration</h4>
             <div class="screenshot-container">
-                <img src="images/payroll/23-salary-structures-edit-modal.png" alt="Edit Structure Modal">
-                <div class="screenshot-caption">Edit Structure modal with component checkboxes</div>
+                <img src="images/payroll/12-structure-modal-filled.png" alt="Filled Structure Modal">
+                <div class="screenshot-caption">Completed salary structure with all components configured</div>
             </div>
 
-            <h3>5.1 Version History</h3>
-            <p>Salary structures support versioning. When you need to change components or rates, create a new version instead of editing the current one.</p>
-
+            <h4>Step 5: View the Created Structure</h4>
             <div class="screenshot-container">
-                <img src="images/payroll/12-salary-structures-version-history.png" alt="Version History">
-                <div class="screenshot-caption">Version History modal showing all versions with effective dates</div>
+                <img src="images/payroll/13-structure-created-success.png" alt="Structure Created">
+                <div class="screenshot-caption">Salary structure created successfully and displayed in the list</div>
             </div>
 
-            <h4>Version Actions</h4>
-            <ul>
-                <li><strong>View:</strong> See the components in that version</li>
-                <li><strong>Compare:</strong> Compare two versions side by side</li>
-                <li><strong>Preview:</strong> Calculate sample salary using that version</li>
-                <li><strong>New Version:</strong> Create a new version based on selected one</li>
-            </ul>
+            <h3>Structure Versioning</h3>
+            <p>Salary structures support versioning for handling mid-year changes. When you modify a structure, you can create a new version with an effective date.</p>
 
-            <h4>Comparing Versions</h4>
-            <p>Use the compare feature to see differences between versions.</p>
-
+            <h4>Viewing Version History</h4>
             <div class="screenshot-container">
-                <img src="images/payroll/13-salary-structures-version-compare.png" alt="Version Compare">
-                <div class="screenshot-caption">Side-by-side comparison of two structure versions</div>
+                <img src="images/payroll/14-version-history-modal.png" alt="Version History">
+                <div class="screenshot-caption">Version History modal showing all versions of a salary structure</div>
+            </div>
+
+            <h4>Version Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/15-version-details-components.png" alt="Version Details">
+                <div class="screenshot-caption">Detailed view of a specific version showing all component configurations</div>
             </div>
 
             <h4>Creating a New Version</h4>
-            <p>Click <strong>"New Version"</strong> to create a new version with updated components.</p>
+            <p>When salary components change (e.g., government revises PF percentage), create a new version:</p>
 
             <div class="screenshot-container">
-                <img src="images/payroll/16-salary-structures-new-version.png" alt="New Version Modal">
-                <div class="screenshot-caption">Create New Version modal with component configuration</div>
+                <img src="images/payroll/16-create-new-version-modal.png" alt="Create New Version">
+                <div class="screenshot-caption">Create New Version modal with effective date and change reason</div>
             </div>
 
-            <h3>5.2 Preview Salary Calculation</h3>
-            <p>Test your structure by previewing salary calculations with sample CTC values.</p>
+            <h3>Bulk Employee Assignment</h3>
+            <p>Assign a salary structure to multiple employees at once:</p>
 
             <div class="screenshot-container">
-                <img src="images/payroll/14-salary-structures-preview-prompt.png" alt="Preview Prompt">
-                <div class="screenshot-caption">Enter CTC and date range for preview calculation</div>
+                <img src="images/payroll/17-bulk-assign-modal.png" alt="Bulk Assign Modal">
+                <div class="screenshot-caption">Bulk Assign modal for assigning structure to multiple employees simultaneously</div>
+            </div>
+
+            <h3>Preview Salary Calculation</h3>
+            <p>Preview how salaries will be calculated before assigning to employees:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/18-preview-calculation-input.png" alt="Preview Input">
+                <div class="screenshot-caption">Enter CTC amount to preview salary breakdown</div>
             </div>
 
             <div class="screenshot-container">
-                <img src="images/payroll/15-salary-structures-preview-result.png" alt="Preview Result">
-                <div class="screenshot-caption">Salary preview showing component breakdown</div>
+                <img src="images/payroll/19-preview-calculation-result.png" alt="Preview Result">
+                <div class="screenshot-caption">Calculated salary breakdown showing all components, gross, deductions, and net pay</div>
             </div>
 
-            <h3>5.3 Bulk Assign to Employees</h3>
-            <p>Assign a structure to multiple employees at once using the <strong>"Bulk Assign"</strong> feature.</p>
-
+            <h3>Editing a Structure</h3>
             <div class="screenshot-container">
-                <img src="images/payroll/20-salary-structures-bulk-assign.png" alt="Bulk Assign Modal">
-                <div class="screenshot-caption">Bulk Assign modal for selecting multiple employees</div>
+                <img src="images/payroll/20-edit-structure-modal.png" alt="Edit Structure">
+                <div class="screenshot-caption">Edit Salary Structure modal with existing configuration</div>
             </div>
 
-            <h3>5.4 Manage Arrears</h3>
-            <p>When you create a new version with effective date in the past, use <strong>"Manage Arrears"</strong> to calculate and apply salary differences.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/19-salary-structures-manage-arrears.png" alt="Manage Arrears Modal">
-                <div class="screenshot-caption">Manage Arrears modal for handling retroactive changes</div>
-            </div>
-
-            <div class="info-box tip">
-                <span class="icon">&#128161;</span>
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
                 <div>
-                    <strong>Version Best Practice:</strong> Create a new version when salary components change (e.g., annual appraisals, policy changes). This maintains a complete audit trail and allows accurate historical reporting.
+                    <strong>Caution:</strong> When editing a structure that has employees assigned, consider creating a new version instead of direct editing. This preserves history and allows for retroactive arrears calculation.
                 </div>
             </div>
         </section>
 
-        <!-- Loans & Advances Section -->
+        <!-- Section 5: Location Taxes -->
+        <section id="location-taxes">
+            <h2><span class="section-number">5</span> Location Taxes</h2>
+            <p>Location Taxes allow you to configure office-specific tax rules like Professional Tax (PT) that vary by state/location.</p>
+
+            <h3>Understanding Location Taxes</h3>
+            <p>Location taxes are managed through two sub-tabs:</p>
+            <ul>
+                <li><strong>Tax Types:</strong> Define the types of taxes (e.g., Professional Tax, State Tax)</li>
+                <li><strong>Office Tax Rules:</strong> Configure specific rules for each office</li>
+            </ul>
+
+            <h3>Step 1: Create Tax Types</h3>
+            <p>First, create the tax types your organization needs:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/21-location-taxes-empty.png" alt="Location Taxes Empty">
+                <div class="screenshot-caption">Empty Location Taxes page showing Tax Types sub-tab</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/22-tax-type-modal-empty.png" alt="Tax Type Modal Empty">
+                <div class="screenshot-caption">Empty Create Tax Type modal</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/23-tax-type-modal-filled.png" alt="Tax Type Modal Filled">
+                <div class="screenshot-caption">Creating Professional Tax as a tax type</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/24-tax-type-created.png" alt="Tax Type Created">
+                <div class="screenshot-caption">Professional Tax type created successfully</div>
+            </div>
+
+            <h3>Step 2: Create Office Tax Rules</h3>
+            <p>Switch to "Office Tax Rules" sub-tab and create rules for each office:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/25-office-tax-rules-empty.png" alt="Office Tax Rules Empty">
+                <div class="screenshot-caption">Empty Office Tax Rules sub-tab</div>
+            </div>
+
+            <h4>Rule Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Calculation Type</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Fixed</strong></td>
+                        <td>Same amount for all employees</td>
+                        <td>PT = &#8377;200/month</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percentage</strong></td>
+                        <td>Calculated as % of salary</td>
+                        <td>State Tax = 2% of Gross</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Slab-Based</strong></td>
+                        <td>Different rates for different salary ranges</td>
+                        <td>PT varies by income slab</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Creating a Slab-Based Rule</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/26-tax-rule-slab-based.png" alt="Slab Based Rule">
+                <div class="screenshot-caption">Configuring a slab-based tax rule with multiple income slabs</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/27-tax-rule-slabs-configured.png" alt="Slabs Configured">
+                <div class="screenshot-caption">Multiple tax slabs configured for Professional Tax</div>
+            </div>
+
+            <h4>Creating a Fixed Rule</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/28-tax-rule-fixed-filled.png" alt="Fixed Rule">
+                <div class="screenshot-caption">Creating a fixed amount Professional Tax rule</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/30-office-tax-rules-with-rule.png" alt="Rules List">
+                <div class="screenshot-caption">Office Tax Rules list showing configured rules</div>
+            </div>
+
+            <h3>Tax Preview</h3>
+            <p>Preview how taxes will be calculated for a specific salary:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/31-tax-preview-modal-empty.png" alt="Tax Preview Empty">
+                <div class="screenshot-caption">Tax Preview modal to test calculations</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/32-tax-preview-result.png" alt="Tax Preview Result">
+                <div class="screenshot-caption">Tax calculation result showing applicable tax amount</div>
+            </div>
+
+            <h3>Copy Rules Between Offices</h3>
+            <p>Copy tax rules from one office to another:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/33-copy-rules-modal.png" alt="Copy Rules Modal">
+                <div class="screenshot-caption">Copy Tax Rules modal for duplicating rules across offices</div>
+            </div>
+        </section>
+
+        <!-- Section 6: Payroll Drafts -->
+        <section id="payroll-drafts">
+            <h2><span class="section-number">6</span> Payroll Drafts</h2>
+            <p>Payroll Drafts are where you create and process monthly payroll before finalizing. Drafts can be reviewed, modified, and recalculated until you're ready to finalize.</p>
+
+            <h3>Step-by-Step: Creating and Processing a Payroll Draft</h3>
+
+            <h4>Step 1: View the Drafts Tab</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/34-drafts-empty.png" alt="Drafts Empty">
+                <div class="screenshot-caption">Empty Payroll Drafts tab before any drafts are created</div>
+            </div>
+
+            <h4>Step 2: Click Create Draft</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/35-create-draft-modal.png" alt="Create Draft Modal">
+                <div class="screenshot-caption">Create Payroll Draft modal with period and office selection</div>
+            </div>
+
+            <h4>Step 3: Fill Draft Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/36-create-draft-filled.png" alt="Draft Filled">
+                <div class="screenshot-caption">Completed Create Draft form with December 2024, All Offices selected</div>
+            </div>
+
+            <h4>Step 4: View Created Draft</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/37-draft-created.png" alt="Draft Created">
+                <div class="screenshot-caption">Draft created successfully with "Pending" status</div>
+            </div>
+
+            <h4>Step 5: Process the Draft</h4>
+            <p>Click the Process button to calculate all employee payslips:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/38-process-draft-confirm.png" alt="Process Confirmation">
+                <div class="screenshot-caption">Confirmation dialog before processing payroll</div>
+            </div>
+
+            <h4>Step 6: Review Processed Payslips</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/39-draft-processed-payslips.png" alt="Processed Payslips">
+                <div class="screenshot-caption">Draft details showing all calculated employee payslips</div>
+            </div>
+
+            <h4>Step 7: View Individual Payslip Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/40-payslip-details-modal.png" alt="Payslip Details">
+                <div class="screenshot-caption">Individual payslip showing earnings breakdown, deductions, and net pay</div>
+            </div>
+
+            <h4>Step 8: Finalize the Draft</h4>
+            <p>When satisfied with all payslips, finalize the draft:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/41-finalize-draft-confirm.png" alt="Finalize Confirmation">
+                <div class="screenshot-caption">Confirmation dialog before finalizing - this action cannot be undone</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/42-draft-finalized-success.png" alt="Finalized Success">
+                <div class="screenshot-caption">Draft finalized successfully - moved to Finalized Runs</div>
+            </div>
+
+            <h3>Draft Actions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Description</th>
+                        <th>When to Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Process</strong></td>
+                        <td>Calculate payslips for all employees</td>
+                        <td>After creating draft or making changes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recalculate</strong></td>
+                        <td>Recalculate after attendance/leave changes</td>
+                        <td>When attendance was corrected</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finalize</strong></td>
+                        <td>Lock draft and create finalized run</td>
+                        <td>When ready for approval and payment</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rename</strong></td>
+                        <td>Change draft name</td>
+                        <td>For organization purposes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delete</strong></td>
+                        <td>Remove draft completely</td>
+                        <td>If draft was created in error</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Important:</strong> Once a draft is finalized, it cannot be undone. Always review all payslips carefully before finalizing.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Finalized Runs -->
+        <section id="finalized-runs">
+            <h2><span class="section-number">7</span> Finalized Runs</h2>
+            <p>Finalized Runs are completed payroll periods ready for approval and payment. Once finalized, payslips are locked and cannot be modified.</p>
+
+            <h3>Step-by-Step: Approving and Paying a Payroll Run</h3>
+
+            <h4>Step 1: View the Finalized Runs Tab</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/43-finalized-runs-tab.png" alt="Finalized Runs Tab">
+                <div class="screenshot-caption">Finalized Runs tab showing completed payroll runs</div>
+            </div>
+
+            <h4>Step 2: View Run Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/44-finalized-run-details.png" alt="Run Details">
+                <div class="screenshot-caption">Detailed view of finalized run with all employee payslips</div>
+            </div>
+
+            <h4>Step 3: Approve the Run</h4>
+            <p>Click Approve to mark the run as approved for payment:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/45-approve-run-confirm.png" alt="Approve Confirmation">
+                <div class="screenshot-caption">Confirmation dialog for approving payroll run</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/46-run-approved-status.png" alt="Approved Status">
+                <div class="screenshot-caption">Payroll run showing "Approved" status</div>
+            </div>
+
+            <h4>Step 4: Mark as Paid</h4>
+            <p>After disbursing salaries, mark the run as paid:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/47-mark-paid-modal.png" alt="Mark Paid Modal">
+                <div class="screenshot-caption">Mark as Paid modal to enter payment details</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/48-mark-paid-filled.png" alt="Mark Paid Filled">
+                <div class="screenshot-caption">Payment details filled with date and reference number</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/49-run-paid-status.png" alt="Paid Status">
+                <div class="screenshot-caption">Payroll run showing "Paid" status with payment reference</div>
+            </div>
+
+            <h3>Run Status Progression</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Description</th>
+                        <th>Next Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Processed</strong></td>
+                        <td>Just finalized, awaiting approval</td>
+                        <td>Approve</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approved</strong></td>
+                        <td>Approved for payment</td>
+                        <td>Mark as Paid</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paid</strong></td>
+                        <td>Salaries disbursed</td>
+                        <td>Complete</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Export Options:</strong> Use the Export button to download CSV files for bank transfers or payroll records.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Loans & Advances -->
         <section id="loans">
-            <h2><span class="section-number">6</span> Loans & Advances</h2>
-            <p>The Loans & Advances module manages employee loans, salary advances, and their repayment through payroll deductions.</p>
+            <h2><span class="section-number">8</span> Loans & Advances</h2>
+            <p>The Loans & Advances feature allows employees to apply for salary advances or loans that are automatically deducted from their monthly payroll as EMI.</p>
 
-            <h3>Loans Overview</h3>
-            <div class="screenshot-container">
-                <img src="images/payroll/17-loans-overview.png" alt="Loans Overview">
-                <div class="screenshot-caption">Loans tab showing all loan applications with status and repayment info</div>
-            </div>
-
-            <h4>Table Columns</h4>
+            <h3>Understanding Loan Types</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Column</th>
+                        <th>Loan Type</th>
                         <th>Description</th>
+                        <th>Interest</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Employee</strong></td>
-                        <td>Employee name and code</td>
+                        <td><strong>Salary Advance</strong></td>
+                        <td>Short-term advance against upcoming salary</td>
+                        <td>Usually interest-free</td>
                     </tr>
                     <tr>
-                        <td><strong>Loan Type</strong></td>
-                        <td>Category (Personal, Emergency, Salary Advance, etc.)</td>
+                        <td><strong>Personal Loan</strong></td>
+                        <td>Longer-term loan with EMI repayment</td>
+                        <td>May include interest</td>
                     </tr>
                     <tr>
-                        <td><strong>Amount</strong></td>
-                        <td>Total loan amount</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EMI</strong></td>
-                        <td>Monthly installment amount</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Balance</strong></td>
-                        <td>Remaining amount to be repaid</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Status</strong></td>
-                        <td>Pending, Approved, Active, Completed, Rejected</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Actions</strong></td>
-                        <td>View Details, Approve, Reject</td>
+                        <td><strong>Emergency Loan</strong></td>
+                        <td>Quick disbursement for emergencies</td>
+                        <td>May be interest-free</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>Applying for a Loan</h3>
-            <p>Click <strong>"Apply Loan"</strong> to create a new loan application for an employee.</p>
+            <h3>Step-by-Step: Complete Loan Lifecycle</h3>
 
+            <h4>Step 1: View the Loans Tab</h4>
             <div class="screenshot-container">
-                <img src="images/payroll/18-loans-apply-modal.png" alt="Apply Loan Modal">
-                <div class="screenshot-caption">Apply Loan modal with amount, tenure, and interest configuration</div>
+                <img src="images/payroll/50-loans-tab-empty.png" alt="Loans Tab Empty">
+                <div class="screenshot-caption">Empty Loans & Advances tab before any loans are created</div>
             </div>
 
-            <h4>Field Descriptions</h4>
+            <h4>Step 2: Apply for a Loan</h4>
+            <p>Click "Apply for Loan" to open the application modal:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/51-apply-loan-modal-empty.png" alt="Apply Loan Empty">
+                <div class="screenshot-caption">Empty Apply for Loan modal</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/52-apply-loan-modal-filled.png" alt="Apply Loan Filled">
+                <div class="screenshot-caption">Completed loan application with amount, tenure, and details</div>
+            </div>
+
+            <h4>Step 3: View Pending Loan</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/53-loan-pending-in-list.png" alt="Loan Pending">
+                <div class="screenshot-caption">Loan application showing "Pending" status in the list</div>
+            </div>
+
+            <h4>Step 4: View Loan Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/54-loan-details-modal.png" alt="Loan Details">
+                <div class="screenshot-caption">Loan details modal showing repayment schedule and terms</div>
+            </div>
+
+            <h4>Step 5: Approve the Loan (HR Admin)</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/55-approve-loan-confirm.png" alt="Approve Loan">
+                <div class="screenshot-caption">Confirmation dialog for approving loan application</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/57-loan-approved-status.png" alt="Loan Approved">
+                <div class="screenshot-caption">Loan showing "Approved" status after approval</div>
+            </div>
+
+            <h4>Step 6: Disburse the Loan</h4>
+            <p>After approval, disburse the loan to the employee:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/64-disburse-loan-modal.png" alt="Disburse Loan Modal">
+                <div class="screenshot-caption">Disburse Loan modal for entering payment details</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/65-disburse-loan-filled.png" alt="Disburse Loan Filled">
+                <div class="screenshot-caption">Disbursement details with payment mode and reference number</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/66-loan-disbursed-active.png" alt="Loan Active">
+                <div class="screenshot-caption">Loan showing "Active" status after disbursement</div>
+            </div>
+
+            <h4>Step 7: EMI Deduction in Payroll</h4>
+            <p>Once active, the loan EMI is automatically deducted from monthly payroll:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/67-january-payroll-processed.png" alt="Payroll with Loan">
+                <div class="screenshot-caption">January payroll showing employee with loan EMI deduction (lower net pay)</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/68-payslip-with-loan-emi.png" alt="Payslip with EMI">
+                <div class="screenshot-caption">Payslip details showing Loan EMI of &#8377;5,208 as a deduction</div>
+            </div>
+
+            <h3>Loan Status Progression</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Field</th>
-                        <th>Required</th>
+                        <th>Status</th>
                         <th>Description</th>
+                        <th>Next Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Employee</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Select the employee applying for the loan</td>
+                        <td><strong>Pending</strong></td>
+                        <td>Application submitted, awaiting HR review</td>
+                        <td>Approve or Reject</td>
                     </tr>
                     <tr>
-                        <td><strong>Loan Type</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Personal Loan, Emergency Loan, Salary Advance, etc.</td>
+                        <td><strong>Approved</strong></td>
+                        <td>Approved by HR, awaiting disbursement</td>
+                        <td>Disburse</td>
                     </tr>
                     <tr>
-                        <td><strong>Loan Amount</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Total amount being borrowed</td>
+                        <td><strong>Active</strong></td>
+                        <td>Loan disbursed, EMI being deducted monthly</td>
+                        <td>Automatic EMI</td>
                     </tr>
                     <tr>
-                        <td><strong>Tenure (Months)</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Number of months for repayment</td>
+                        <td><strong>Completed</strong></td>
+                        <td>All EMIs paid, loan closed</td>
+                        <td>None</td>
                     </tr>
                     <tr>
-                        <td><strong>Interest Rate (%)</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Annual interest rate. Set to 0 for interest-free advances.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EMI Start Date</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Month from which deductions begin</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Reason</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Purpose of the loan</td>
+                        <td><strong>Rejected</strong></td>
+                        <td>Application rejected by HR</td>
+                        <td>None</td>
                     </tr>
                 </tbody>
             </table>
-
-            <h3>Viewing Loan Details</h3>
-            <p>Click <strong>"View Details"</strong> to see complete loan information including repayment schedule.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/24-loans-view-details.png" alt="Loan Details">
-                <div class="screenshot-caption">Loan details showing repayment history and remaining balance</div>
-            </div>
 
             <div class="info-box important">
                 <span class="icon">&#8505;&#65039;</span>
                 <div>
-                    <strong>Approval Required:</strong> Loans must be approved by HR Admin before EMI deductions begin. Only <code>HRMS_HR_ADMIN</code> role can approve loans - regular managers cannot approve loans even for their team members.
+                    <strong>Automatic EMI:</strong> Once a loan is active, the EMI is automatically added as a deduction to the employee's monthly payslip. No manual intervention required.
                 </div>
             </div>
         </section>
 
-        <!-- Arrears Section -->
+        <!-- Section 9: Arrears Management -->
         <section id="arrears">
-            <h2><span class="section-number">7</span> Arrears</h2>
-            <p>Arrears handle salary differences that need to be paid retroactively, such as from promotions, appraisals, or corrections with past effective dates.</p>
+            <h2><span class="section-number">9</span> Arrears Management</h2>
+            <p>Arrears are salary differences that arise when salary changes are applied retroactively. The system automatically calculates arrears when you create a salary structure version with a past effective date.</p>
 
-            <h3>Arrears Overview</h3>
-            <div class="screenshot-container">
-                <img src="images/payroll/25-arrears-overview.png" alt="Arrears Overview">
-                <div class="screenshot-caption">Arrears tab showing pending and processed arrears</div>
-            </div>
-
-            <h4>When Arrears Are Created</h4>
+            <h3>Understanding Arrears</h3>
+            <p>Arrears occur when:</p>
             <ul>
-                <li><strong>Salary Revision:</strong> When a salary increase is effective from a past date</li>
-                <li><strong>Structure Change:</strong> When a new structure version is applied retroactively</li>
-                <li><strong>Correction:</strong> When a payroll error needs to be corrected</li>
-                <li><strong>Promotion:</strong> When a promotion with higher salary is backdated</li>
+                <li>A salary structure is changed with a past effective date</li>
+                <li>A salary increment is announced retroactively</li>
+                <li>A new component is added with backdated effect</li>
             </ul>
 
-            <h4>Table Columns</h4>
+            <h3>Step-by-Step: Creating Retroactive Arrears</h3>
+
+            <h4>Step 1: View the Arrears Tab</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/58-arrears-tab-empty-state.png" alt="Arrears Empty">
+                <div class="screenshot-caption">Empty Arrears tab when no arrears exist</div>
+            </div>
+
+            <h4>Step 2: Create a Version with Retroactive Date</h4>
+            <p>In Salary Structures, create a new version with a past effective date:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/59-version-history-modal.png" alt="Version History">
+                <div class="screenshot-caption">Version History showing existing version (v1)</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/60-create-version-modal.png" alt="Create Version">
+                <div class="screenshot-caption">Creating a new version with retroactive effective date</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/61-create-version-filled-retroactive.png" alt="Version Filled">
+                <div class="screenshot-caption">New version with increased Basic Pay (55%) effective November 1, 2025</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/62-version-created-two-versions.png" alt="Two Versions">
+                <div class="screenshot-caption">Version History showing both v1 and v2</div>
+            </div>
+
+            <h4>Step 3: Manage Arrears</h4>
+            <p>Click "Manage Arrears" to see calculated arrears for affected employees:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/63-manage-arrears-empty.png" alt="Manage Arrears">
+                <div class="screenshot-caption">Manage Arrears modal showing pending arrears (if any payslips exist for the retroactive period)</div>
+            </div>
+
+            <h3>Arrears Calculation</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Column</th>
+                        <th>Element</th>
                         <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Employee</strong></td>
-                        <td>Employee name and code</td>
+                        <td><strong>Old Salary</strong></td>
+                        <td>What was paid based on previous structure version</td>
                     </tr>
                     <tr>
-                        <td><strong>Type</strong></td>
-                        <td>Arrear type (Salary Revision, Correction, etc.)</td>
+                        <td><strong>New Salary</strong></td>
+                        <td>What should have been paid with new structure version</td>
                     </tr>
                     <tr>
-                        <td><strong>Period</strong></td>
-                        <td>Months for which arrears are calculated</td>
+                        <td><strong>Difference</strong></td>
+                        <td>Arrear amount = New Salary - Old Salary</td>
                     </tr>
                     <tr>
-                        <td><strong>Amount</strong></td>
-                        <td>Total arrear amount</td>
+                        <td><strong>Affected Months</strong></td>
+                        <td>All months between effective date and current date</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Arrears Actions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Apply</strong></td>
+                        <td>Add arrear amount to next payroll</td>
                     </tr>
                     <tr>
-                        <td><strong>Status</strong></td>
-                        <td>Pending, Approved, Paid</td>
+                        <td><strong>Cancel</strong></td>
+                        <td>Mark arrear as not applicable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bulk Apply</strong></td>
+                        <td>Apply multiple arrears at once</td>
                     </tr>
                 </tbody>
             </table>
@@ -1547,297 +1782,57 @@
             <div class="info-box tip">
                 <span class="icon">&#128161;</span>
                 <div>
-                    <strong>Automatic Inclusion:</strong> Approved arrears are automatically included in the next payroll run. You can also manually add arrears during payroll processing.
+                    <strong>Automatic Calculation:</strong> Arrears are automatically calculated when you create a structure version with a past effective date. The system compares what was paid vs what should have been paid for each affected month.
                 </div>
             </div>
         </section>
 
-        <!-- Payroll Drafts Section -->
-        <section id="payroll-drafts">
-            <h2><span class="section-number">8</span> Payroll Drafts</h2>
-            <p>Payroll Drafts are the first step in processing monthly salaries. Create a draft to calculate salaries based on attendance, structures, and adjustments.</p>
-
-            <h3>Drafts Overview</h3>
-            <div class="screenshot-container">
-                <img src="images/payroll/26-payroll-drafts-overview.png" alt="Payroll Drafts Overview">
-                <div class="screenshot-caption">Payroll Drafts tab showing all draft payroll runs</div>
-            </div>
-
-            <h4>Table Columns</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Column</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Run ID</strong></td>
-                        <td>Unique identifier for the payroll run</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Period</strong></td>
-                        <td>Month and year being processed</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Office</strong></td>
-                        <td>Office(s) included in this run</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Employees</strong></td>
-                        <td>Number of employees in the run</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Gross</strong></td>
-                        <td>Total gross salary for all employees</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Net</strong></td>
-                        <td>Total net salary after deductions</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Status</strong></td>
-                        <td>Draft, Processing, Ready for Approval</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>Creating a Payroll Draft</h3>
-            <p>Click <strong>"Create Draft"</strong> to start a new payroll run.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/27-payroll-drafts-create-modal.png" alt="Create Draft Modal">
-                <div class="screenshot-caption">Create Draft modal with month, office, and employee selection</div>
-            </div>
-
-            <h4>Field Descriptions</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Required</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Pay Period</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Month and year to process</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Office</strong></td>
-                        <td><span class="badge badge-required">Required</span></td>
-                        <td>Select specific office or "All Offices"</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Include All Employees</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Toggle to include all active employees automatically</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Draft Name</strong></td>
-                        <td><span class="badge badge-optional">Optional</span></td>
-                        <td>Custom name for the draft (auto-generated if blank)</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="info-box warning">
-                <span class="icon">&#9888;&#65039;</span>
-                <div>
-                    <strong>Before Creating Draft:</strong>
-                    <ul style="margin-top: 8px; margin-bottom: 0;">
-                        <li>Ensure all attendance is finalized for the month</li>
-                        <li>Process any pending leave approvals</li>
-                        <li>Verify salary structures are assigned to all employees</li>
-                        <li>Check for any pending arrears to include</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- Finalized Runs Section -->
-        <section id="finalized-runs">
-            <h2><span class="section-number">9</span> Finalized Runs</h2>
-            <p>Finalized Runs shows all approved payroll runs. From here you can view payslips, download reports, and track payment status.</p>
-
-            <h3>Finalized Runs Overview</h3>
-            <div class="screenshot-container">
-                <img src="images/payroll/28-finalized-runs-overview.png" alt="Finalized Runs Overview">
-                <div class="screenshot-caption">Finalized Runs tab showing approved payroll runs</div>
-            </div>
-
-            <h4>Table Columns</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Column</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Run ID</strong></td>
-                        <td>Unique identifier</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Period</strong></td>
-                        <td>Month and year</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Office</strong></td>
-                        <td>Office(s) included</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Employees</strong></td>
-                        <td>Number of employees</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Gross</strong></td>
-                        <td>Total gross amount</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Net</strong></td>
-                        <td>Total net amount</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Status</strong></td>
-                        <td>Approved, Paid</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>Viewing Run Details</h3>
-            <p>Click <strong>"View Details"</strong> to see all employee payslips in a run.</p>
-
-            <div class="screenshot-container">
-                <img src="images/payroll/29-finalized-run-details.png" alt="Run Details">
-                <div class="screenshot-caption">Payroll run details with employee breakdown and export options</div>
-            </div>
-
-            <h4>Available Actions</h4>
-            <ul>
-                <li><strong>Download CSV:</strong> Export payroll data as CSV for accounting</li>
-                <li><strong>Bank File:</strong> Generate bank transfer file (format varies by bank)</li>
-                <li><strong>Mark as Paid:</strong> Update status after salaries are disbursed</li>
-                <li><strong>View Payslip:</strong> View individual employee payslip</li>
-            </ul>
-
-            <div class="info-box tip">
-                <span class="icon">&#128161;</span>
-                <div>
-                    <strong>Bank File Format:</strong> The bank file is generated in NACH (National Automated Clearing House) format for Indian banks. For international transfers, export as CSV and use your bank's bulk payment portal.
-                </div>
-            </div>
-        </section>
-
-        <!-- Best Practices Section -->
-        <section id="best-practices">
-            <h2><span class="section-number">10</span> Best Practices</h2>
-            <p>Follow these recommendations for efficient payroll management.</p>
-
-            <h3>Monthly Payroll Checklist</h3>
-            <ol class="steps">
-                <li>
-                    <strong>Review Attendance</strong><br>
-                    Verify all attendance records are complete and approved. Check for any pending regularization requests.
-                </li>
-                <li>
-                    <strong>Process Leave Approvals</strong><br>
-                    Ensure all leave requests for the month are approved or rejected.
-                </li>
-                <li>
-                    <strong>Check Loan EMIs</strong><br>
-                    Verify active loans and confirm EMI amounts are correct.
-                </li>
-                <li>
-                    <strong>Review Pending Arrears</strong><br>
-                    Check for any approved arrears that need to be included.
-                </li>
-                <li>
-                    <strong>Create Payroll Draft</strong><br>
-                    Generate the payroll draft and review calculated amounts.
-                </li>
-                <li>
-                    <strong>Verify Individual Payslips</strong><br>
-                    Spot-check a few employees for calculation accuracy.
-                </li>
-                <li>
-                    <strong>Get Approval</strong><br>
-                    Have the payroll reviewed and approved by authorized personnel.
-                </li>
-                <li>
-                    <strong>Process Payment</strong><br>
-                    Export bank file and initiate salary transfers.
-                </li>
-            </ol>
-
-            <h3>Common Mistakes to Avoid</h3>
-            <div class="info-box warning">
-                <span class="icon">&#9888;&#65039;</span>
-                <div>
-                    <ul style="margin: 0;">
-                        <li>Processing payroll before all attendance is finalized</li>
-                        <li>Forgetting to include pending arrears</li>
-                        <li>Not verifying new employee salary structures</li>
-                        <li>Approving payroll without proper review</li>
-                        <li>Missing loan EMI deductions for approved loans</li>
-                        <li>Not updating salary structures after appraisals</li>
-                    </ul>
-                </div>
-            </div>
-
-            <h3>Version Control Tips</h3>
-            <ul>
-                <li><strong>Create versions for policy changes:</strong> When PF rates or other statutory rates change</li>
-                <li><strong>Use meaningful names:</strong> Include date or reason in version description</li>
-                <li><strong>Test before applying:</strong> Use Preview feature to verify calculations</li>
-                <li><strong>Document changes:</strong> Add clear notes explaining what changed and why</li>
-            </ul>
-        </section>
-
-        <!-- Setup Checklist Section -->
+        <!-- Section: Setup Checklist -->
         <section id="checklist">
             <h2><span class="section-number">&#10003;</span> Setup Checklist</h2>
-            <p>Use this checklist to ensure your payroll system is fully configured:</p>
+            <p>Follow this checklist to ensure your payroll system is fully configured:</p>
 
             <ol class="steps">
                 <li>
                     <strong>Create Salary Components</strong><br>
-                    Set up all earnings (Basic, HRA, DA, etc.) and deductions (PF, ESI, PT, etc.).
-                </li>
-                <li>
-                    <strong>Configure Location Taxes</strong><br>
-                    Create tax types and set up office-specific rules for each location.
+                    Define all earnings (Basic, HRA, Allowances) and deductions (PF, PT) your organization needs.
                 </li>
                 <li>
                     <strong>Create Salary Structures</strong><br>
-                    Build structure templates by combining components.
+                    Combine components into structures. Create at least one default structure.
                 </li>
                 <li>
-                    <strong>Assign Structures to Employees</strong><br>
-                    Use bulk assign or individual assignment to link employees to structures.
+                    <strong>Configure Location Taxes</strong><br>
+                    Set up Professional Tax and other location-specific taxes for each office.
                 </li>
                 <li>
-                    <strong>Set Up Loan Policies</strong><br>
-                    Configure loan types, interest rates, and approval workflows.
+                    <strong>Assign Salaries to Employees</strong><br>
+                    Assign salary structures with CTC to all employees via the Employees page.
                 </li>
                 <li>
-                    <strong>Test with Preview</strong><br>
-                    Use Preview Calculation to verify your structure calculates correctly.
+                    <strong>Process Monthly Payroll</strong><br>
+                    Create drafts, process, review, finalize, approve, and mark as paid each month.
                 </li>
-                <li>
-                    <strong>Run First Payroll</strong><br>
-                    Create a draft, review, and process your first payroll run.
-                </li>
+            </ol>
+
+            <h3>Monthly Payroll Checklist</h3>
+            <ol class="steps">
+                <li><strong>Complete Attendance:</strong> Ensure all attendance is regularized and approved</li>
+                <li><strong>Approve Leaves:</strong> Process all pending leave requests</li>
+                <li><strong>Review Adjustments:</strong> Check for any pending salary adjustments</li>
+                <li><strong>Create Payroll Draft:</strong> Create draft for the month</li>
+                <li><strong>Process Draft:</strong> Calculate all payslips</li>
+                <li><strong>Review Payslips:</strong> Check individual payslips for accuracy</li>
+                <li><strong>Finalize Draft:</strong> Lock and create finalized run</li>
+                <li><strong>Get Approval:</strong> Obtain management approval</li>
+                <li><strong>Disburse Salaries:</strong> Process bank transfers</li>
+                <li><strong>Mark as Paid:</strong> Record payment in system</li>
             </ol>
 
             <div class="info-box tip">
                 <span class="icon">&#127881;</span>
                 <div>
-                    <strong>You're Ready!</strong> Once all these steps are complete, you can confidently process monthly payroll with accurate calculations and proper deductions.
+                    <strong>You're Ready!</strong> Once all these steps are complete, your payroll system is fully operational.
                 </div>
             </div>
         </section>

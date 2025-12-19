@@ -1461,6 +1461,9 @@ function showCreateComponentModal() {
     // Reset status to active for new components
     const isActiveCheckbox = document.getElementById('componentIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
+    // Reset is_basic_component to false for new components
+    const isBasicCheckbox = document.getElementById('isBasicComponent');
+    if (isBasicCheckbox) isBasicCheckbox.checked = false;
     document.getElementById('componentModal').classList.add('active');
     // Reset percentage fields visibility
     togglePercentageFields();
@@ -1521,7 +1524,8 @@ async function saveComponent() {
             is_taxable: document.getElementById('isTaxable').value === 'true',
             is_statutory: document.getElementById('isStatutory').value === 'true',
             description: document.getElementById('componentDescription').value,
-            is_active: document.getElementById('componentIsActive')?.checked !== false
+            is_active: document.getElementById('componentIsActive')?.checked !== false,
+            is_basic_component: document.getElementById('isBasicComponent')?.checked === true
         };
 
         // Add percentage fields if calculation type is percentage
@@ -2225,6 +2229,12 @@ function editComponent(componentId) {
     const isActiveCheckbox = document.getElementById('componentIsActive');
     if (isActiveCheckbox) {
         isActiveCheckbox.checked = component.is_active !== false; // Default to true if not set
+    }
+
+    // Set is_basic_component checkbox
+    const isBasicCheckbox = document.getElementById('isBasicComponent');
+    if (isBasicCheckbox) {
+        isBasicCheckbox.checked = component.is_basic_component === true;
     }
 
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';

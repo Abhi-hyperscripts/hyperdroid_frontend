@@ -1052,7 +1052,7 @@
                                 <textarea id="componentDescription" name="description" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row two-col">
                             <div class="form-group">
                                 <div class="status-toggle-row">
                                     <label>Status</label>
@@ -1064,6 +1064,20 @@
                                         </label>
                                         <span class="status-label active">Active</span>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="status-toggle-row">
+                                    <label>Mark as Basic Component</label>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">No</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="isBasicComponent" name="is_basic_component">
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Yes</span>
+                                    </div>
+                                    <small class="form-text text-muted">Enable to use this component as base for percentage calculations (e.g., HRA = 50% of Basic)</small>
                                 </div>
                             </div>
                         </div>

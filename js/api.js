@@ -1618,35 +1618,36 @@ class API {
     // --- Loans ---
     async getLoans(employeeId = null) {
         const query = employeeId ? `?employeeId=${employeeId}` : '';
-        return this.request(`/hrms/loans${query}`);
+        return this.request(`/hrms/payroll-processing/loans${query}`);
     }
 
     async getLoan(id) {
-        return this.request(`/hrms/loans/${id}`);
+        return this.request(`/hrms/payroll-processing/loans/${id}`);
     }
 
     async applyLoan(request) {
-        return this.request('/hrms/loans', {
+        return this.request('/hrms/payroll-processing/loans', {
             method: 'POST',
             body: JSON.stringify(request)
         });
     }
 
     async approveLoan(id) {
-        return this.request(`/hrms/loans/${id}/approve`, {
-            method: 'POST'
+        return this.request(`/hrms/payroll-processing/loans/${id}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ approved: true })
         });
     }
 
     async rejectLoan(id, reason) {
-        return this.request(`/hrms/loans/${id}/reject`, {
+        return this.request(`/hrms/payroll-processing/loans/${id}/approve`, {
             method: 'POST',
-            body: JSON.stringify({ reason })
+            body: JSON.stringify({ approved: false, rejection_reason: reason })
         });
     }
 
     async disburseLoan(id, disbursementMode, referenceNumber) {
-        return this.request(`/hrms/loans/${id}/disburse`, {
+        return this.request(`/hrms/payroll-processing/loans/${id}/disburse`, {
             method: 'POST',
             body: JSON.stringify({
                 disbursement_mode: disbursementMode,
@@ -1656,19 +1657,19 @@ class API {
     }
 
     async getPendingLoans() {
-        return this.request('/hrms/loans?status=pending');
+        return this.request('/hrms/payroll-processing/loans?status=pending');
     }
 
     async getActiveLoans() {
-        return this.request('/hrms/loans?status=active');
+        return this.request('/hrms/payroll-processing/loans?status=active');
     }
 
     async getLoanRepayments(loanId) {
-        return this.request(`/hrms/loans/${loanId}/repayments`);
+        return this.request(`/hrms/payroll-processing/loans/${loanId}/repayments`);
     }
 
     async getMyLoans() {
-        return this.request('/hrms/loans/my-loans');
+        return this.request('/hrms/payroll-processing/loans/my-loans');
     }
 
     // --- Payroll Adjustments ---
