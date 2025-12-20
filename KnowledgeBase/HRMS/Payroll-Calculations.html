@@ -40,6 +40,21 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--color-info-light);
             --badge-optional-color: var(--color-info-text);
+
+            /* Status Badge Colors (theme-aware) */
+            --badge-earning-bg: #dcfce7;
+            --badge-earning-text: #166534;
+            --badge-deduction-bg: #fee2e2;
+            --badge-deduction-text: #991b1b;
+            --badge-employer-bg: #dbeafe;
+            --badge-employer-text: #1e40af;
+            --change-new-bg: #dcfce7;
+            --change-new-text: #166534;
+            --change-modified-bg: #fef3c7;
+            --change-modified-text: #92400e;
+            --code-block-bg: var(--bg-card-hover, #f8fafc);
+            --code-header-bg: var(--bg-card, #f1f5f9);
+
             --footer-bg: var(--brand-primary-dark, var(--bg-tooltip));
             --footer-text: var(--text-inverse);
             --footer-link: var(--brand-primary-light, #93c5fd);
@@ -56,6 +71,20 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
             --badge-optional-color: var(--brand-primary-light);
+
+            /* Status Badge Colors - Dark Mode */
+            --badge-earning-bg: rgba(34, 197, 94, 0.2);
+            --badge-earning-text: #4ade80;
+            --badge-deduction-bg: rgba(239, 68, 68, 0.2);
+            --badge-deduction-text: #f87171;
+            --badge-employer-bg: rgba(59, 130, 246, 0.2);
+            --badge-employer-text: #60a5fa;
+            --change-new-bg: rgba(34, 197, 94, 0.2);
+            --change-new-text: #4ade80;
+            --change-modified-bg: rgba(251, 191, 36, 0.2);
+            --change-modified-text: #fbbf24;
+            --code-block-bg: #0f172a;
+            --code-header-bg: #1e293b;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -67,6 +96,20 @@
                 --badge-required-color: var(--color-danger-text);
                 --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
                 --badge-optional-color: var(--brand-primary-light);
+
+                /* Status Badge Colors - Dark Mode */
+                --badge-earning-bg: rgba(34, 197, 94, 0.2);
+                --badge-earning-text: #4ade80;
+                --badge-deduction-bg: rgba(239, 68, 68, 0.2);
+                --badge-deduction-text: #f87171;
+                --badge-employer-bg: rgba(59, 130, 246, 0.2);
+                --badge-employer-text: #60a5fa;
+                --change-new-bg: rgba(34, 197, 94, 0.2);
+                --change-new-text: #4ade80;
+                --change-modified-bg: rgba(251, 191, 36, 0.2);
+                --change-modified-text: #fbbf24;
+                --code-block-bg: #0f172a;
+                --code-header-bg: #1e293b;
             }
         }
 
@@ -654,33 +697,18 @@
         }
 
         .badge-earning {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--badge-earning-bg);
+            color: var(--badge-earning-text);
         }
 
         .badge-deduction {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--badge-deduction-bg);
+            color: var(--badge-deduction-text);
         }
 
         .badge-employer {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        [data-theme="dark"] .badge-earning {
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-        }
-
-        [data-theme="dark"] .badge-deduction {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-        }
-
-        [data-theme="dark"] .badge-employer {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
+            background: var(--badge-employer-bg);
+            color: var(--badge-employer-text);
         }
 
         /* Step indicators */
@@ -799,23 +827,13 @@
         }
 
         .change-tag.new {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--change-new-bg);
+            color: var(--change-new-text);
         }
 
         .change-tag.modified {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        [data-theme="dark"] .change-tag.new {
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-        }
-
-        [data-theme="dark"] .change-tag.modified {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
+            background: var(--change-modified-bg);
+            color: var(--change-modified-text);
         }
 
         /* Calculation Flow */
@@ -1137,7 +1155,7 @@
 
         /* Code Block for API Proof */
         .code-block {
-            background: var(--code-bg, #1e293b);
+            background: var(--code-block-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             overflow: hidden;
@@ -1145,7 +1163,7 @@
         }
 
         .code-block .code-header {
-            background: var(--card-bg);
+            background: var(--code-header-bg);
             border-bottom: 1px solid var(--border-color);
             padding: 8px 16px;
             display: flex;
@@ -1200,22 +1218,7 @@
             margin-left: 8px;
         }
 
-        [data-theme="dark"] .code-block {
-            background: #0f172a;
-        }
-
-        [data-theme="dark"] .code-block .code-header {
-            background: #1e293b;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root:not([data-theme="light"]) .code-block {
-                background: #0f172a;
-            }
-            :root:not([data-theme="light"]) .code-block .code-header {
-                background: #1e293b;
-            }
-        }
+        /* Dark mode code-block colors are handled by CSS variables */
 
         /* Feature Showcase Styling - Theme Aware */
         .feature-showcase {

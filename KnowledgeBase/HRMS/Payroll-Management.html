@@ -40,6 +40,32 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--color-info-light);
             --badge-optional-color: var(--color-info-text);
+
+            /* Status Badge Colors (theme-aware) */
+            --status-pending-bg: #fef3c7;
+            --status-pending-text: #92400e;
+            --status-approved-bg: #d1fae5;
+            --status-approved-text: #065f46;
+            --status-rejected-bg: #fee2e2;
+            --status-rejected-text: #991b1b;
+            --status-applied-bg: #dbeafe;
+            --status-applied-text: #1e40af;
+            --status-active-bg: #e0f2fe;
+            --status-active-border: #0284c7;
+            --status-active-text: #0369a1;
+            --status-closed-bg: #dcfce7;
+            --status-closed-border: #16a34a;
+            --status-closed-text: #166534;
+
+            /* Solid badge colors (with white text) */
+            --badge-yellow: #f59e0b;
+            --badge-green: #10b981;
+            --badge-blue: #3b82f6;
+            --badge-purple: #8b5cf6;
+            --badge-red: #ef4444;
+            --badge-gray: #6b7280;
+            --badge-orange: #f59e0b;
+
             --footer-bg: var(--brand-primary-dark, var(--bg-tooltip));
             --footer-text: var(--text-inverse);
             --footer-link: var(--brand-primary-light, #93c5fd);
@@ -56,6 +82,22 @@
             --badge-required-color: var(--color-danger-text);
             --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
             --badge-optional-color: var(--brand-primary-light);
+
+            /* Status Badge Colors - Dark Mode */
+            --status-pending-bg: rgba(251, 191, 36, 0.2);
+            --status-pending-text: #fbbf24;
+            --status-approved-bg: rgba(34, 197, 94, 0.2);
+            --status-approved-text: #4ade80;
+            --status-rejected-bg: rgba(239, 68, 68, 0.2);
+            --status-rejected-text: #f87171;
+            --status-applied-bg: rgba(59, 130, 246, 0.2);
+            --status-applied-text: #60a5fa;
+            --status-active-bg: rgba(14, 165, 233, 0.2);
+            --status-active-border: #38bdf8;
+            --status-active-text: #38bdf8;
+            --status-closed-bg: rgba(34, 197, 94, 0.2);
+            --status-closed-border: #4ade80;
+            --status-closed-text: #4ade80;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -67,6 +109,22 @@
                 --badge-required-color: var(--color-danger-text);
                 --badge-optional-bg: var(--info-alpha-10, rgba(59, 130, 246, 0.15));
                 --badge-optional-color: var(--brand-primary-light);
+
+                /* Status Badge Colors - Dark Mode */
+                --status-pending-bg: rgba(251, 191, 36, 0.2);
+                --status-pending-text: #fbbf24;
+                --status-approved-bg: rgba(34, 197, 94, 0.2);
+                --status-approved-text: #4ade80;
+                --status-rejected-bg: rgba(239, 68, 68, 0.2);
+                --status-rejected-text: #f87171;
+                --status-applied-bg: rgba(59, 130, 246, 0.2);
+                --status-applied-text: #60a5fa;
+                --status-active-bg: rgba(14, 165, 233, 0.2);
+                --status-active-border: #38bdf8;
+                --status-active-text: #38bdf8;
+                --status-closed-bg: rgba(34, 197, 94, 0.2);
+                --status-closed-border: #4ade80;
+                --status-closed-text: #4ade80;
             }
         }
 
@@ -2131,9 +2189,9 @@
                         <span class="workflow-arrow">→</span>
                         <span class="workflow-step" style="background: var(--tip-bg); border-color: var(--tip-border);">Disbursed</span>
                         <span class="workflow-arrow">→</span>
-                        <span class="workflow-step" style="background: #e0f2fe; border-color: #0284c7;">Active (EMI)</span>
+                        <span class="workflow-step" style="background: var(--status-active-bg); border-color: var(--status-active-border); color: var(--status-active-text);">Active (EMI)</span>
                         <span class="workflow-arrow">→</span>
-                        <span class="workflow-step" style="background: #dcfce7; border-color: #16a34a;">Closed</span>
+                        <span class="workflow-step" style="background: var(--status-closed-bg); border-color: var(--status-closed-border); color: var(--status-closed-text);">Closed</span>
                     </div>
                     <table style="font-size: 0.85rem; margin-top: 8px;">
                         <tr>
@@ -3150,22 +3208,22 @@
                     <tr>
                         <td>Reimbursement</td>
                         <td>Reimbursement</td>
-                        <td><span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Green</span></td>
+                        <td><span style="background: var(--badge-green); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Green</span></td>
                     </tr>
                     <tr>
                         <td>Bonus / Incentive</td>
                         <td>Bonus/Incentive</td>
-                        <td><span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Purple</span></td>
+                        <td><span style="background: var(--badge-purple); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Purple</span></td>
                     </tr>
                     <tr>
                         <td>Arrears</td>
                         <td>Arrears</td>
-                        <td><span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Orange</span></td>
+                        <td><span style="background: var(--badge-orange); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Orange</span></td>
                     </tr>
                     <tr>
                         <td>Deduction / Recovery</td>
                         <td>Recovery</td>
-                        <td><span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Red</span></td>
+                        <td><span style="background: var(--badge-red); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Red</span></td>
                     </tr>
                 </tbody>
             </table>
@@ -3193,22 +3251,22 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px;">Pending</span></td>
+                        <td><span style="background: var(--status-pending-bg); color: var(--status-pending-text); padding: 2px 8px; border-radius: 4px;">Pending</span></td>
                         <td>Adjustment created, awaiting HR Admin approval</td>
                         <td>View, Approve, Reject</td>
                     </tr>
                     <tr>
-                        <td><span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px;">Approved</span></td>
+                        <td><span style="background: var(--status-approved-bg); color: var(--status-approved-text); padding: 2px 8px; border-radius: 4px;">Approved</span></td>
                         <td>Approved by HR Admin, will be included in payroll</td>
                         <td>View only</td>
                     </tr>
                     <tr>
-                        <td><span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px;">Rejected</span></td>
+                        <td><span style="background: var(--status-rejected-bg); color: var(--status-rejected-text); padding: 2px 8px; border-radius: 4px;">Rejected</span></td>
                         <td>Rejected by HR Admin, will not be applied</td>
                         <td>View only (with rejection reason)</td>
                     </tr>
                     <tr>
-                        <td><span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px;">Applied</span></td>
+                        <td><span style="background: var(--status-applied-bg); color: var(--status-applied-text); padding: 2px 8px; border-radius: 4px;">Applied</span></td>
                         <td>Successfully applied in a finalized payroll run</td>
                         <td>View only</td>
                     </tr>
@@ -4310,32 +4368,32 @@
                 <tbody>
                     <tr>
                         <td><strong>Pending</strong></td>
-                        <td><span class="status-badge" style="background: #f59e0b;">Yellow</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-yellow);">Yellow</span></td>
                         <td>Loan request submitted, awaiting HR approval</td>
                     </tr>
                     <tr>
                         <td><strong>Approved</strong></td>
-                        <td><span class="status-badge" style="background: #3b82f6;">Blue</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-blue);">Blue</span></td>
                         <td>Approved by HR, awaiting disbursement</td>
                     </tr>
                     <tr>
                         <td><strong>Rejected</strong></td>
-                        <td><span class="status-badge" style="background: #ef4444;">Red</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-red);">Red</span></td>
                         <td>Loan request was declined</td>
                     </tr>
                     <tr>
                         <td><strong>Disbursed</strong></td>
-                        <td><span class="status-badge" style="background: #8b5cf6;">Purple</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-purple);">Purple</span></td>
                         <td>Amount transferred, EMI starts next month</td>
                     </tr>
                     <tr>
                         <td><strong>Active</strong></td>
-                        <td><span class="status-badge" style="background: #10b981;">Green</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-green);">Green</span></td>
                         <td>EMI deductions in progress</td>
                     </tr>
                     <tr>
                         <td><strong>Closed</strong></td>
-                        <td><span class="status-badge" style="background: #6b7280;">Gray</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-gray);">Gray</span></td>
                         <td>All EMIs paid, loan fully repaid</td>
                     </tr>
                 </tbody>
@@ -4477,27 +4535,27 @@
                 <tbody>
                     <tr>
                         <td><strong>Pending</strong></td>
-                        <td><span class="status-badge" style="background: #f59e0b;">Yellow</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-yellow);">Yellow</span></td>
                         <td>EMI scheduled but not yet deducted</td>
                     </tr>
                     <tr>
                         <td><strong>Deducted</strong></td>
-                        <td><span class="status-badge" style="background: #10b981;">Green</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-green);">Green</span></td>
                         <td>EMI successfully deducted from payslip</td>
                     </tr>
                     <tr>
                         <td><strong>Paid</strong></td>
-                        <td><span class="status-badge" style="background: #3b82f6;">Blue</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-blue);">Blue</span></td>
                         <td>EMI paid outside payroll (cash/direct payment)</td>
                     </tr>
                     <tr>
                         <td><strong>Waived</strong></td>
-                        <td><span class="status-badge" style="background: #8b5cf6;">Purple</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-purple);">Purple</span></td>
                         <td>EMI waived by HR (exception cases)</td>
                     </tr>
                     <tr>
                         <td><strong>Defaulted</strong></td>
-                        <td><span class="status-badge" style="background: #ef4444;">Red</span></td>
+                        <td><span class="status-badge" style="background: var(--badge-red);">Red</span></td>
                         <td>EMI not paid and marked as default</td>
                     </tr>
                 </tbody>
