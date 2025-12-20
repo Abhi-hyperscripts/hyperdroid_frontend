@@ -2099,7 +2099,21 @@ function formatComponentValue(component) {
         return `${value}% of ${baseLabel}`;
     } else if (calcType === 'fixed') {
         const value = component.fixed_amount || component.default_value || 0;
-        return value ? `₹${Number(value).toLocaleString('en-IN')}` : '-';
+        if (value) {
+            return `₹${Number(value).toLocaleString('en-IN')}`;
+        }
+        // For fixed type without a value, show descriptive text
+        if (component.is_basic_component) {
+            return '<span class="text-muted">Base component</span>';
+        }
+        // Check if it's a balance/remainder component (typically Special Allowance)
+        const code = (component.component_code || '').toUpperCase();
+        if (code === 'SA' || code === 'SPL' || code.includes('SPECIAL')) {
+            return '<span class="text-muted">Balance amount</span>';
+        }
+        return '<span class="text-muted">Per structure</span>';
+    } else if (calcType === 'balance' || calcType === 'remainder') {
+        return '<span class="text-muted">Balance amount</span>';
     } else {
         const value = component.default_value || component.fixed_amount || component.percentage || 0;
         return value ? value.toString() : '-';
@@ -7868,7 +7882,7 @@ function updateTaxRulesTable() {
 
         return `
         <tr>
-            <td>${escapeHtml(officeName)}</td>
+            <td><strong>${escapeHtml(officeName)}</strong></td>
             <td>${escapeHtml(taxTypeName)}</td>
             <td><strong>${escapeHtml(rule.rule_name || '-')}</strong></td>
             <td>${escapeHtml(rule.jurisdiction_name || '-')} <small>(${escapeHtml(rule.jurisdiction_level || '-')})</small></td>

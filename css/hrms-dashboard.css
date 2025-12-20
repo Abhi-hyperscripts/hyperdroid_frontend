@@ -351,6 +351,7 @@
     border-bottom: 1px solid var(--border-color-lighter);
     font-size: 0.85rem;
     vertical-align: middle;
+    color: var(--text-primary);
 }
 
 .data-table tr:last-child td {

@@ -522,6 +522,8 @@
   --bg-elevated: #1e293b;
   --bg-sunken: #020617;
   --bg-hover: #334155;
+  --bg-input: #1e293b;
+  --bg-input-disabled: #0f172a;
 
   /* Text colors */
   --text-primary: #f1f5f9;
