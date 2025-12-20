@@ -1572,11 +1572,13 @@ class API {
         return this.request(`/hrms/payroll/runs/${id}`);
     }
 
+    /**
+     * @deprecated Direct payroll run creation is blocked.
+     * Use the draft workflow instead: createPayrollDraft() → processDraft() → finalizeDraft()
+     */
     async createPayrollRun(request) {
-        return this.request('/hrms/payroll/runs', {
-            method: 'POST',
-            body: JSON.stringify(request)
-        });
+        console.warn('[DEPRECATED] createPayrollRun is not allowed. Use draft workflow: createPayrollDraft → processDraft → finalizeDraft');
+        throw new Error('Direct payroll run creation is not allowed. Please use the draft workflow.');
     }
 
     async processPayrollRun(id) {

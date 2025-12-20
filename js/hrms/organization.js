@@ -856,7 +856,8 @@ function applyOrganizationRBAC() {
 }
 
 function setupTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
+    // Support both sidebar-btn (new) and tab-btn (legacy) selectors
+    const tabBtns = document.querySelectorAll('.sidebar-btn[data-tab], .tab-btn[data-tab]');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const tabId = this.dataset.tab;
@@ -3142,4 +3143,75 @@ function setTimePickerValue(inputId, timeValue) {
         input.value = timeValue;
     }
 }
+
+// ============================================================================
+// COLLAPSIBLE SIDEBAR NAVIGATION
+// ============================================================================
+
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('organizationSidebar');
+    const activeTabName = document.getElementById('activeTabName');
+    const container = document.querySelector('.hrms-container');
+
+    if (!toggle || !sidebar) return;
+
+    // Tab name mapping for display
+    const tabNames = {
+        'offices': 'Offices',
+        'departments': 'Departments',
+        'designations': 'Designations',
+        'shifts': 'Shifts',
+        'shift-rosters': 'Shift Rosters',
+        'holidays': 'Holidays'
+    };
+
+    // Update active tab title
+    function updateActiveTabTitle(tabId) {
+        if (activeTabName && tabNames[tabId]) {
+            activeTabName.textContent = tabNames[tabId];
+        }
+    }
+
+    // Open sidebar by default on page load
+    toggle.classList.add('active');
+    sidebar.classList.add('open');
+    container?.classList.add('sidebar-open');
+
+    // Toggle sidebar open/close
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+    });
+
+    // Collapsible nav groups
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.closest('.nav-group');
+            group.classList.toggle('collapsed');
+        });
+    });
+
+    // Update title when a tab is selected (sidebar stays open)
+    document.querySelectorAll('.sidebar-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update active tab title (sidebar remains open)
+            const tabId = btn.dataset.tab;
+            updateActiveTabTitle(tabId);
+        });
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+        }
+    });
+}
+
+// Initialize sidebar on page load
+document.addEventListener('DOMContentLoaded', setupSidebar);
 

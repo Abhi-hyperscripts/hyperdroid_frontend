@@ -562,7 +562,10 @@ body {
     align-items: center;
     box-shadow: var(--shadow-sm);
     border-bottom: 1px solid var(--border-color-light);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 999999;
 }
 

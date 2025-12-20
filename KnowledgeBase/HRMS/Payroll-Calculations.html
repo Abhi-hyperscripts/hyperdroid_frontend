@@ -1321,48 +1321,49 @@
                 <li><a href="#working-days"><span class="section-num">6.</span> Working Days</a></li>
                 <li><a href="#lop"><span class="section-num">7.</span> Loss of Pay (LOP)</a></li>
                 <li><a href="#adjustments"><span class="section-num">8.</span> Salary Adjustments</a></li>
-                <li><a href="#multi-location"><span class="section-num">9.</span> Multi-Location Payroll</a></li>
-                <li><a href="#net-pay"><span class="section-num">10.</span> Net Pay Calculation</a></li>
+                <li><a href="#voluntary-deductions"><span class="section-num">9.</span> Voluntary Deductions</a></li>
+                <li><a href="#multi-location"><span class="section-num">10.</span> Multi-Location Payroll</a></li>
+                <li><a href="#net-pay"><span class="section-num">11.</span> Net Pay Calculation</a></li>
             </ul>
         </div>
 
-        <!-- Technical Details: Sections 11-24 -->
+        <!-- Technical Details: Sections 12-25 -->
         <div class="nav-group">
             <div class="nav-group-header" onclick="toggleNavGroup(this)">
                 Technical Details
                 <span class="chevron">&#9662;</span>
             </div>
             <ul class="nav-group-items">
-                <li><a href="#location-tax-rules"><span class="section-num">11.</span> Location Tax Rules</a></li>
-                <li><a href="#payroll-drafts"><span class="section-num">12.</span> Payroll Drafts</a></li>
-                <li><a href="#salary-revisions"><span class="section-num">13.</span> Salary Revisions</a></li>
-                <li><a href="#loan-lifecycle"><span class="section-num">14.</span> Employee Loans</a></li>
-                <li><a href="#payroll-reports"><span class="section-num">15.</span> Payroll Reports</a></li>
-                <li><a href="#self-service"><span class="section-num">16.</span> Employee Self-Service</a></li>
-                <li><a href="#payroll-workflow"><span class="section-num">17.</span> Payroll Workflow</a></li>
-                <li><a href="#ytd-tracking"><span class="section-num">18.</span> Year-to-Date (YTD)</a></li>
-                <li><a href="#bank-export"><span class="section-num">19.</span> Bank Export</a></li>
-                <li><a href="#adjustment-workflow"><span class="section-num">20.</span> Adjustment Workflow</a></li>
-                <li><a href="#structure-management"><span class="section-num">21.</span> Salary Structures</a></li>
-                <li><a href="#processing-queries"><span class="section-num">22.</span> Payroll Processing</a></li>
-                <li><a href="#location-tax-management"><span class="section-num">23.</span> Tax Management</a></li>
-                <li><a href="#arrears-management"><span class="section-num">24.</span> Arrears Management</a></li>
+                <li><a href="#location-tax-rules"><span class="section-num">12.</span> Location Tax Rules</a></li>
+                <li><a href="#payroll-drafts"><span class="section-num">13.</span> Payroll Drafts</a></li>
+                <li><a href="#salary-revisions"><span class="section-num">14.</span> Salary Revisions</a></li>
+                <li><a href="#loan-lifecycle"><span class="section-num">15.</span> Employee Loans</a></li>
+                <li><a href="#payroll-reports"><span class="section-num">16.</span> Payroll Reports</a></li>
+                <li><a href="#self-service"><span class="section-num">17.</span> Employee Self-Service</a></li>
+                <li><a href="#payroll-workflow"><span class="section-num">18.</span> Payroll Workflow</a></li>
+                <li><a href="#ytd-tracking"><span class="section-num">19.</span> Year-to-Date (YTD)</a></li>
+                <li><a href="#bank-export"><span class="section-num">20.</span> Bank Export</a></li>
+                <li><a href="#adjustment-workflow"><span class="section-num">21.</span> Adjustment Workflow</a></li>
+                <li><a href="#structure-management"><span class="section-num">22.</span> Salary Structures</a></li>
+                <li><a href="#processing-queries"><span class="section-num">23.</span> Payroll Processing</a></li>
+                <li><a href="#location-tax-management"><span class="section-num">24.</span> Tax Management</a></li>
+                <li><a href="#arrears-management"><span class="section-num">25.</span> Arrears Management</a></li>
             </ul>
         </div>
 
-        <!-- Reference: Sections 25-30 -->
+        <!-- Reference: Sections 26-31 -->
         <div class="nav-group">
             <div class="nav-group-header" onclick="toggleNavGroup(this)">
                 Reference
                 <span class="chevron">&#9662;</span>
             </div>
             <ul class="nav-group-items">
-                <li><a href="#scenarios"><span class="section-num">25.</span> Test Scenarios</a></li>
-                <li><a href="#edge-cases"><span class="section-num">26.</span> Edge Cases</a></li>
-                <li><a href="#examples"><span class="section-num">27.</span> Example Payslips</a></li>
-                <li><a href="#capabilities"><span class="section-num">28.</span> System Capabilities</a></li>
-                <li><a href="#limitations"><span class="section-num">29.</span> Known Limitations</a></li>
-                <li><a href="#api-quick-reference"><span class="section-num">30.</span> API Reference</a></li>
+                <li><a href="#scenarios"><span class="section-num">26.</span> Test Scenarios</a></li>
+                <li><a href="#edge-cases"><span class="section-num">27.</span> Edge Cases</a></li>
+                <li><a href="#examples"><span class="section-num">28.</span> Example Payslips</a></li>
+                <li><a href="#capabilities"><span class="section-num">29.</span> System Capabilities</a></li>
+                <li><a href="#limitations"><span class="section-num">30.</span> Known Limitations</a></li>
+                <li><a href="#api-quick-reference"><span class="section-num">31.</span> API Reference</a></li>
             </ul>
         </div>
 
@@ -1982,6 +1983,42 @@ Response:
                     <strong>Preview Mode:</strong> Bulk assignment runs in preview mode by default, showing which employees would be affected before making changes.
                 </div>
             </div>
+
+            <h4>3.7.3 Ensure Structure Has Version</h4>
+            <p>Ensure a specific structure has at least version 1. If the structure doesn't have any versions, this creates an initial version from its current configuration.</p>
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/structures/{structureId}/ensure-version</div>
+                <pre>// No request body required
+
+// Response - Returns the current version
+{
+  "id": "95717dc9-dfbb-439d-b34d-68cae10b69f1",
+  "structure_id": "e42e14d1-a46a-4f64-82bf-11a57cf3b11c",
+  "version_number": 1,
+  "effective_from": "2025-04-01",
+  "effective_to": null,
+  "status": "active",
+  "change_reason": "Initial version created from existing structure",
+  "components": [
+    {
+      "component_id": "comp-uuid-1",
+      "component_name": "Basic Pay",
+      "calculation_order": 1,
+      "percentage_of_basic": 40.0,
+      "is_active": true
+    }
+  ],
+  "created_at": "2025-12-17T10:00:00Z",
+  "created_by": "admin@hyperdroid.io"
+}</pre>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Idempotent Operation:</strong> If the structure already has versions, this endpoint returns the current version without creating duplicates. Safe to call multiple times.
+                </div>
+            </div>
         </section>
 
         <!-- Section 4: Component Calculation Formulas -->
@@ -2492,9 +2529,360 @@ Response:
             </div>
         </section>
 
-        <!-- Section 9: Multi-Location Payroll -->
+        <!-- Section 9: Voluntary Deductions -->
+        <section id="voluntary-deductions">
+            <h2><span class="section-number">9</span> Voluntary Deductions</h2>
+            <p>Voluntary Deductions (VDs) are employee-specific recurring deductions that employees can opt into, such as additional medical insurance, gym memberships, or professional association dues.</p>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Employee-initiated:</strong> Employees request enrollment, HR approves</li>
+                <li><strong>Recurring:</strong> Deducted every payroll period until opt-out</li>
+                <li><strong>Calendar day proration:</strong> Uses calendar days (not working days) for mid-month changes</li>
+                <li><strong>Sequential support:</strong> Allows amount increases via sequential enrollments</li>
+                <li><strong>Multiple concurrent VDs:</strong> Employees can have multiple different VD types active simultaneously</li>
+            </ul>
+
+            <h3>Concurrent VD Support</h3>
+            <p>The system supports multiple concurrent voluntary deductions for an employee, with specific rules:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Example</th>
+                        <th>Allowed?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Different VD Types</strong><br>(Same Period)</td>
+                        <td>Medical Insurance + Gym Membership + Meal Plan<br>All active from Jan 1</td>
+                        <td style="color: var(--success-color); font-weight: bold;">✅ Yes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Same VD Type</strong><br>(Overlapping Dates)</td>
+                        <td>Medical ₹2,500 from Jan 1<br>Medical ₹3,000 from Jan 15<br>(Both active, dates overlap)</td>
+                        <td style="color: var(--error-color); font-weight: bold;">❌ No</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Same VD Type</strong><br>(Sequential Dates)</td>
+                        <td>Medical ₹2,500 until Jan 14<br>Medical ₹3,000 from Jan 15<br>(Non-overlapping)</td>
+                        <td style="color: var(--success-color); font-weight: bold;">✅ Yes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Multiple VD Types Example:</strong> An employee can have all of these active at the same time:
+                    <ul style="margin-top:0.5rem; margin-bottom:0;">
+                        <li>Medical Insurance (MED-EXT): ₹2,500/month</li>
+                        <li>Gym Membership (GYM): ₹1,500/month</li>
+                        <li>Meal Plan (MEAL): ₹3,000/month</li>
+                    </ul>
+                    <p style="margin-top:0.5rem; margin-bottom:0;"><strong>Total VD per month:</strong> ₹7,000</p>
+                </div>
+            </div>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Same VD Type Blocking:</strong> The system prevents overlapping enrollments for the same deduction type. If you try to enroll in the same VD type while an active enrollment exists, you'll get:
+                    <ul style="margin-top:0.5rem; margin-bottom:0;">
+                        <li>If existing VD has end_date: <em>"Employee already has an active enrollment that ends on {date}. New enrollment must start after this date."</em></li>
+                        <li>If existing VD has no end_date: <em>"Employee already has an active enrollment. Please opt-out first before re-enrolling."</em></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>VD Proration Formula</h3>
+            <div class="formula-box">
+                <pre class="formula-code">
+Deducted Amount = Full Amount × (Days Enrolled / Days in Month)
+
+Where:
+  - Days Enrolled = actual calendar days enrolled (including weekends/holidays)
+  - Days in Month = total calendar days in the pay period (e.g., 31 for January)
+                </pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Why Calendar Days?</strong> VD benefits (like insurance) are active every day, not just working days. This is consistent with how insurance premiums are typically calculated.
+                </div>
+            </div>
+
+            <h3>Proration Scenarios</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Example</th>
+                        <th>Calculation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Full Month</strong></td>
+                        <td>₹2,500 VD, Jan 1-31</td>
+                        <td>₹2,500 × (31/31) = <strong>₹2,500</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mid-Month Opt-Out</strong></td>
+                        <td>₹2,000 VD, Jan 1-25</td>
+                        <td>₹2,000 × (25/31) = <strong>₹1,613</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount Increase</strong></td>
+                        <td>₹3,500→₹4,500 on Jan 15</td>
+                        <td>₹3,500 × (14/31) + ₹4,500 × (17/31) = <strong>₹4,048</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Scenario 1: Amount Increase Mid-Month (EMP002)</h3>
+            <p><strong>Context:</strong> Employee increased VD coverage from ₹3,500 to ₹4,500 on January 15, 2026. This requires two sequential enrollments with proper end/start dates.</p>
+
+            <div class="response-example">
+                <h5 class="response-label">Payslip VD Items</h5>
+<pre>{
+  "employee_code": "EMP002",
+  "employee_name": "Dev Kumar",
+  "voluntary_deductions": 4048.40,
+  "voluntary_deduction_items": [
+    {
+      "deduction_type_name": "Additional Medical Insurance",
+      "full_amount": 3500.00,
+      "deducted_amount": 1580.60,
+      "is_prorated": true,
+      "proration_factor": 0.4516,
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-01-14",
+      "days_applicable": 14,
+      "total_days_in_period": 31,
+      "proration_reason": "mid_month_opt_out",
+      "period_display": "Jan 01 - Jan 14"
+    },
+    {
+      "deduction_type_name": "Additional Medical Insurance",
+      "full_amount": 4500.00,
+      "deducted_amount": 2467.80,
+      "is_prorated": true,
+      "proration_factor": 0.5484,
+      "effective_from": "2026-01-15",
+      "effective_to": "2026-01-31",
+      "days_applicable": 17,
+      "total_days_in_period": 31,
+      "proration_reason": "mid_month_enrollment",
+      "period_display": "Jan 15 - Jan 31"
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="verification-box">
+                <h5>✅ Calculation Verification</h5>
+                <ul>
+                    <li><strong>First VD:</strong> ₹3,500 × (14/31) = ₹3,500 × 0.4516 = ₹1,580.60 ✓</li>
+                    <li><strong>Second VD:</strong> ₹4,500 × (17/31) = ₹4,500 × 0.5484 = ₹2,467.80 ✓</li>
+                    <li><strong>Total:</strong> ₹1,580.60 + ₹2,467.80 = ₹4,048.40 ✓</li>
+                </ul>
+            </div>
+
+            <h3>Scenario 2: Full Month Enrollment (No Opt-Out)</h3>
+            <p><strong>Context:</strong> Employee enrolled in VD from start of month with no planned opt-out date. The full amount is deducted.</p>
+
+            <div class="response-example">
+                <h5 class="response-label">Payslip VD Items - EMP001</h5>
+<pre>{
+  "employee_code": "EMP001",
+  "employee_name": "Praveen Babu",
+  "voluntary_deductions": 2500.00,
+  "voluntary_deduction_items": [
+    {
+      "deduction_type_name": "Additional Medical Insurance",
+      "full_amount": 2500.00,
+      "deducted_amount": 2500.00,
+      "is_prorated": false,
+      "proration_factor": 1.0000,
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-01-31",
+      "days_applicable": 31,
+      "total_days_in_period": 31,
+      "proration_reason": "full_month",
+      "period_display": "Jan 01 - Jan 31"
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="verification-box">
+                <h5>✅ Calculation Verification</h5>
+                <ul>
+                    <li><strong>Full Month:</strong> ₹2,500 × (31/31) = ₹2,500 × 1.0000 = ₹2,500.00 ✓</li>
+                    <li><strong>Total:</strong> ₹2,500.00 ✓</li>
+                </ul>
+            </div>
+
+            <h3>Scenario 3: Mid-Month Opt-Out</h3>
+            <p><strong>Context:</strong> Employee opted out of VD coverage mid-month. Deduction is prorated for days enrolled.</p>
+
+            <div class="response-example">
+                <h5 class="response-label">Payslip VD Items - EMP003</h5>
+<pre>{
+  "employee_code": "EMP003",
+  "employee_name": "Aradhna Pal",
+  "voluntary_deductions": 1612.90,
+  "voluntary_deduction_items": [
+    {
+      "deduction_type_name": "Additional Medical Insurance",
+      "full_amount": 2000.00,
+      "deducted_amount": 1612.90,
+      "is_prorated": true,
+      "proration_factor": 0.8065,
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-01-25",
+      "days_applicable": 25,
+      "total_days_in_period": 31,
+      "proration_reason": "mid_month_opt_out",
+      "period_display": "Jan 01 - Jan 25"
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="verification-box">
+                <h5>✅ Calculation Verification</h5>
+                <ul>
+                    <li><strong>Prorated VD:</strong> ₹2,000 × (25/31) = ₹2,000 × 0.8065 = ₹1,612.90 ✓</li>
+                    <li><strong>Total:</strong> ₹1,612.90 ✓</li>
+                </ul>
+            </div>
+
+            <h3>All 3 Scenarios Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Scenario</th>
+                        <th>VD Amount</th>
+                        <th>Period</th>
+                        <th>Days</th>
+                        <th>Deducted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>EMP001</strong><br>Praveen Babu</td>
+                        <td>Full Month (No Opt-Out)</td>
+                        <td>₹2,500</td>
+                        <td>Jan 1-31</td>
+                        <td>31/31</td>
+                        <td><strong>₹2,500.00</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMP002</strong><br>Dev Kumar</td>
+                        <td>Amount Increase Mid-Month</td>
+                        <td>₹3,500 → ₹4,500</td>
+                        <td>Jan 1-14 + Jan 15-31</td>
+                        <td>14/31 + 17/31</td>
+                        <td><strong>₹4,048.40</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMP003</strong><br>Aradhna Pal</td>
+                        <td>Mid-Month Opt-Out</td>
+                        <td>₹2,000</td>
+                        <td>Jan 1-25</td>
+                        <td>25/31</td>
+                        <td><strong>₹1,612.90</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>VD Enrollments in Database:</strong> Each scenario above corresponds to actual VD enrollment records:
+                    <ul style="margin-top:0.5rem; margin-bottom:0;">
+                        <li><strong>EMP001:</strong> Single enrollment from 2026-01-01 (ongoing)</li>
+                        <li><strong>EMP002:</strong> Two sequential enrollments - ₹3,500 ending Jan 14, ₹4,500 starting Jan 15</li>
+                        <li><strong>EMP003:</strong> Single enrollment from 2026-01-01 with end_date 2026-01-25</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>VD Workflow</h3>
+            <ol class="steps">
+                <li><strong>Employee Enrollment:</strong> Employee requests to enroll in a VD type with amount and start date</li>
+                <li><strong>HR Approval:</strong> HR reviews and approves/rejects the enrollment</li>
+                <li><strong>Active Deduction:</strong> VD is deducted from each payroll period</li>
+                <li><strong>Opt-Out:</strong> Employee can opt-out with an end date (prorated for final month)</li>
+            </ol>
+
+            <h3>API Endpoints</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types</code></td>
+                        <td>GET</td>
+                        <td>List available VD types</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/enroll</code></td>
+                        <td>POST</td>
+                        <td>Employee enrollment request</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{id}/approve</code></td>
+                        <td>POST</td>
+                        <td>HR approval</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{id}/opt-out</code></td>
+                        <td>POST</td>
+                        <td>Opt-out with end date</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{id}/can-delete</code></td>
+                        <td>GET</td>
+                        <td>Check if enrollment can be deleted</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete enrollment (if not processed in payroll)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box important">
+                <span class="icon">&#8505;&#65039;</span>
+                <div>
+                    <strong>Sequential Enrollments:</strong> To change the VD amount, employees must first opt-out of the current enrollment (with an end date), then create a new enrollment starting the next day. This ensures proper tracking and proration.
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Deleting Enrollments:</strong> Enrollments can only be deleted if they have NOT been processed in any payroll run. Once a VD appears on a payslip, deletion is blocked—use Opt-Out instead to stop future deductions. Ongoing enrollments (active with no end date) should use Opt-Out rather than Delete.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 10: Multi-Location Payroll -->
         <section id="multi-location">
-            <h2><span class="section-number">9</span> Multi-Location Payroll</h2>
+            <h2><span class="section-number">10</span> Multi-Location Payroll</h2>
             <p>When an employee transfers between offices during a pay period, the system calculates salary for each location separately, applying location-specific rules.</p>
 
             <h3>When Multi-Location Applies</h3>
@@ -2640,9 +3028,9 @@ Response:
             </table>
         </section>
 
-        <!-- Section 10: Net Pay Formula -->
+        <!-- Section 11: Net Pay Formula -->
         <section id="net-pay">
-            <h2><span class="section-number">10</span> Net Pay Formula</h2>
+            <h2><span class="section-number">11</span> Net Pay Formula</h2>
             <p>Net pay is the final take-home amount after all calculations, deductions, and adjustments are applied.</p>
 
             <div class="formula-block">
@@ -2719,10 +3107,10 @@ Response:
         </section>
 
         <section id="location-tax-rules">
-            <h2><span class="section-number">11</span> Location Tax Rules</h2>
+            <h2><span class="section-number">12</span> Location Tax Rules</h2>
             <p>The system supports location-specific tax rules for compliance with state-level regulations like Professional Tax (PT), Labour Welfare Fund (LWF), etc.</p>
 
-            <h3>11.1 Tax Types Management</h3>
+            <h3>12.1 Tax Types Management</h3>
             <p>Define different tax types that can be applied across offices.</p>
 
             <div class="code-block">
@@ -2750,7 +3138,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>11.2 Tax Rules with Slabs</h3>
+            <h3>12.2 Tax Rules with Slabs</h3>
             <p>Create office-specific tax rules with slab-based calculations.</p>
 
             <div class="code-block">
@@ -2768,7 +3156,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>11.3 Tax Calculation Preview</h3>
+            <h3>12.3 Tax Calculation Preview</h3>
             <p>Preview tax calculations before applying them.</p>
 
             <div class="code-block">
@@ -2805,12 +3193,12 @@ Response:
             </div>
         </section>
 
-        <!-- Section 17: Payroll Drafts -->
+        <!-- Section 13: Payroll Drafts -->
         <section id="payroll-drafts">
-            <h2><span class="section-number">12</span> Payroll Drafts</h2>
+            <h2><span class="section-number">13</span> Payroll Drafts</h2>
             <p>Create draft payroll runs for what-if analysis before committing to actual payroll processing.</p>
 
-            <h3>12.1 Create Draft</h3>
+            <h3>13.1 Create Draft</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-drafts - Create Draft</div>
                 <pre>Request:
@@ -2834,7 +3222,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>12.2 Process Draft</h3>
+            <h3>13.2 Process Draft</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-drafts/{id}/process</div>
                 <pre>Response:
@@ -2852,7 +3240,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>12.3 Draft Workflow</h3>
+            <h3>13.3 Draft Workflow</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -2891,12 +3279,12 @@ Response:
             </table>
         </section>
 
-        <!-- Section 18: Salary Revisions -->
+        <!-- Section 14: Salary Revisions -->
         <section id="salary-revisions">
-            <h2><span class="section-number">13</span> Salary Revisions</h2>
+            <h2><span class="section-number">14</span> Salary Revisions</h2>
             <p>Track salary changes over time with full revision history.</p>
 
-            <h3>13.1 Get Salary History</h3>
+            <h3>14.1 Get Salary History</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/employee/{id}/salary/history</div>
                 <pre>[
@@ -2919,7 +3307,7 @@ Response:
 ]</pre>
             </div>
 
-            <h3>13.2 Get Revision Details</h3>
+            <h3>14.2 Get Revision Details</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/employee/{id}/salary/revisions</div>
                 <pre>[
@@ -2956,12 +3344,12 @@ Response:
             </div>
         </section>
 
-        <!-- Section 19: Loan Lifecycle -->
+        <!-- Section 15: Loan Lifecycle -->
         <section id="loan-lifecycle">
-            <h2><span class="section-number">14</span> Loan Lifecycle</h2>
+            <h2><span class="section-number">15</span> Loan Lifecycle</h2>
             <p>Complete loan management from application to disbursement and recovery.</p>
 
-            <h3>14.1 Loan Status Flow</h3>
+            <h3>15.1 Loan Status Flow</h3>
             <div class="formula-box">
                 <strong>Loan Status Lifecycle:</strong>
                 <p style="margin-top: 10px; font-family: monospace;">
@@ -2970,7 +3358,7 @@ Response:
                 </p>
             </div>
 
-            <h3>14.2 Pending Loans</h3>
+            <h3>15.2 Pending Loans</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/loans/pending</div>
                 <pre>[
@@ -2990,7 +3378,7 @@ Response:
 ]</pre>
             </div>
 
-            <h3>14.3 Approve Loan</h3>
+            <h3>15.3 Approve Loan</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/loans/e9d4765c-4878-4ec0-b1cd-43c0b1ad2c2a/approve</div>
                 <pre>// Request
@@ -3008,7 +3396,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>14.4 Reject Loan</h3>
+            <h3>15.4 Reject Loan</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/loans/8eacde5e-f856-4572-9f94-f6e3f15f505e/approve</div>
                 <pre>// Request
@@ -3024,7 +3412,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>14.5 Disburse Approved Loan</h3>
+            <h3>15.5 Disburse Approved Loan</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -3071,14 +3459,329 @@ Response:
                     <li><strong>Disbursement:</strong> Only approved loans can be disbursed → status: "active"</li>
                 </ul>
             </div>
+
+            <h3>15.6 Active Loans (HR Admin)</h3>
+            <p>View all currently active loans that are being repaid through payroll deductions.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/loans/active</div>
+                <pre>Authorization: Bearer &lt;HR_ADMIN_TOKEN&gt;
+
+Response:
+[
+  {
+    "id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+    "loan_number": "LN-EMP001-202512161215115565",
+    "employee_id": "7e32a1b4-5c89-4f12-b3a7-9d8e6f5c4b2a",
+    "employee_code": "EMP001",
+    "employee_name": "John Doe",
+    "loan_type": "personal_loan",
+    "principal_amount": 100000.00,
+    "interest_rate": 12.00,
+    "interest_calculation_type": "simple",
+    "total_amount": 112000.00,
+    "emi_amount": 9333.33,
+    "tenure_months": 12,
+    "outstanding_amount": 84000.00,
+    "status": "active",
+    "disbursed_date": "2025-12-17",
+    "emis_paid": 3,
+    "emis_remaining": 9
+  }
+]</pre>
+            </div>
+
+            <h3>15.7 Pending Loan Approvals (HR Admin)</h3>
+            <p>View all loans awaiting approval. Only HR Admins can approve loans (not regular managers).</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/loans/pending</div>
+                <pre>Authorization: Bearer &lt;HR_ADMIN_TOKEN&gt;
+
+Response:
+[
+  {
+    "id": "3a985d80-adb4-4254-acca-2c186de830b6",
+    "loan_number": "LN-EMP003-20251220120354",
+    "employee_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "employee_code": "EMP003",
+    "employee_name": "Alice Smith",
+    "loan_type": "salary_advance",
+    "principal_amount": 50000.00,
+    "interest_rate": 0.00,
+    "interest_calculation_type": "none",
+    "total_amount": 50000.00,
+    "emi_amount": 10000.00,
+    "tenure_months": 5,
+    "status": "pending",
+    "applied_at": "2025-12-20T10:00:00Z",
+    "reason": "Emergency medical expenses"
+  }
+]</pre>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Role Restriction:</strong> Only <code>HRMS_HR_ADMIN</code> can approve/reject loans. Regular <code>HRMS_MANAGER</code> roles cannot approve loans as they involve financial commitments.
+                </div>
+            </div>
+
+            <h3>15.8 Loan Repayment Tracking</h3>
+            <p>When a loan is disbursed, a repayment schedule is automatically generated. Each EMI payment is tracked in the <code>loan_repayments</code> table.</p>
+
+            <h4>15.8.1 Repayment Schedule Generation</h4>
+            <div class="formula-box">
+                <strong>EMI Schedule Generation on Disbursement:</strong>
+                <p style="margin-top: 10px;">
+                    When a loan is disbursed, the system automatically creates repayment records for each EMI:<br><br>
+                    <code>For i = 1 to tenure_months:</code><br>
+                    <code>&nbsp;&nbsp;repayment_date = disbursed_date + (i months)</code><br>
+                    <code>&nbsp;&nbsp;emi_number = i</code><br>
+                    <code>&nbsp;&nbsp;total_amount = emi_amount</code><br>
+                    <code>&nbsp;&nbsp;balance_after = total_amount - (emi_amount × i)</code><br>
+                    <code>&nbsp;&nbsp;status = 'pending'</code>
+                </p>
+            </div>
+
+            <h4>15.8.2 Loan Response with Repayments</h4>
+            <p>When fetching a loan by ID, the response includes the complete repayment schedule:</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/loans/{id}</div>
+                <pre>Response:
+{
+  "id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+  "loan_number": "LN-EMP001-202512161215115565",
+  "loan_type": "personal_loan",
+  "principal_amount": 100000.00,
+  "interest_rate": 12.00,
+  "interest_calculation_type": "simple",
+  "total_amount": 112000.00,
+  "emi_amount": 9333.33,
+  "tenure_months": 12,
+  "outstanding_amount": 84000.00,
+  "status": "active",
+  "disbursed_date": "2025-12-17",
+  "disbursement_mode": "bank_transfer",
+  "disbursement_reference": "TXN-2025-12-001",
+  "repayments": [
+    {
+      "id": "rep-001-uuid",
+      "loan_id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+      "payslip_id": "ps-jan-uuid",
+      "repayment_date": "2026-01-17",
+      "emi_number": 1,
+      "principal_component": 8333.33,
+      "interest_component": 1000.00,
+      "total_amount": 9333.33,
+      "balance_after": 102666.67,
+      "status": "deducted"
+    },
+    {
+      "id": "rep-002-uuid",
+      "loan_id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+      "payslip_id": "ps-feb-uuid",
+      "repayment_date": "2026-02-17",
+      "emi_number": 2,
+      "principal_component": 8333.33,
+      "interest_component": 1000.00,
+      "total_amount": 9333.33,
+      "balance_after": 93333.34,
+      "status": "deducted"
+    },
+    {
+      "id": "rep-003-uuid",
+      "loan_id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+      "payslip_id": null,
+      "repayment_date": "2026-03-17",
+      "emi_number": 3,
+      "principal_component": 8333.33,
+      "interest_component": 1000.00,
+      "total_amount": 9333.33,
+      "balance_after": 84000.01,
+      "status": "pending"
+    }
+  ]
+}</pre>
+            </div>
+
+            <h4>15.8.3 Repayment Status Values</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Description</th>
+                        <th>Payslip Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>pending</code></td>
+                        <td>EMI scheduled but not yet deducted</td>
+                        <td><code>payslip_id</code> is null</td>
+                    </tr>
+                    <tr>
+                        <td><code>deducted</code></td>
+                        <td>EMI deducted via payroll processing</td>
+                        <td><code>payslip_id</code> links to payslip</td>
+                    </tr>
+                    <tr>
+                        <td><code>paid</code></td>
+                        <td>EMI paid outside payroll (manual payment)</td>
+                        <td><code>payment_reference</code> has details</td>
+                    </tr>
+                    <tr>
+                        <td><code>waived</code></td>
+                        <td>EMI waived by HR (exceptional cases)</td>
+                        <td><code>remarks</code> has reason</td>
+                    </tr>
+                    <tr>
+                        <td><code>defaulted</code></td>
+                        <td>EMI not paid by due date</td>
+                        <td>Flagged for follow-up</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>15.8.4 Repayment Object Structure</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>id</code></td>
+                        <td>UUID</td>
+                        <td>Unique repayment identifier</td>
+                    </tr>
+                    <tr>
+                        <td><code>loan_id</code></td>
+                        <td>UUID</td>
+                        <td>Parent loan reference</td>
+                    </tr>
+                    <tr>
+                        <td><code>payslip_id</code></td>
+                        <td>UUID?</td>
+                        <td>Payslip where EMI was deducted (null if pending)</td>
+                    </tr>
+                    <tr>
+                        <td><code>repayment_date</code></td>
+                        <td>date</td>
+                        <td>Scheduled date for this EMI</td>
+                    </tr>
+                    <tr>
+                        <td><code>emi_number</code></td>
+                        <td>int</td>
+                        <td>EMI sequence number (1, 2, 3...)</td>
+                    </tr>
+                    <tr>
+                        <td><code>principal_component</code></td>
+                        <td>decimal</td>
+                        <td>Principal portion of EMI</td>
+                    </tr>
+                    <tr>
+                        <td><code>interest_component</code></td>
+                        <td>decimal</td>
+                        <td>Interest portion of EMI</td>
+                    </tr>
+                    <tr>
+                        <td><code>total_amount</code></td>
+                        <td>decimal</td>
+                        <td>Total EMI amount (principal + interest)</td>
+                    </tr>
+                    <tr>
+                        <td><code>balance_after</code></td>
+                        <td>decimal</td>
+                        <td>Outstanding balance after this EMI</td>
+                    </tr>
+                    <tr>
+                        <td><code>status</code></td>
+                        <td>string</td>
+                        <td>pending | deducted | paid | waived | defaulted</td>
+                    </tr>
+                    <tr>
+                        <td><code>payment_mode</code></td>
+                        <td>string?</td>
+                        <td>For manual payments: bank_transfer, cash, upi</td>
+                    </tr>
+                    <tr>
+                        <td><code>payment_reference</code></td>
+                        <td>string?</td>
+                        <td>Transaction reference for manual payments</td>
+                    </tr>
+                    <tr>
+                        <td><code>remarks</code></td>
+                        <td>string?</td>
+                        <td>Notes for waived/defaulted EMIs</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>15.9 EMI Integration with Payroll</h3>
+            <p>When payroll is processed, pending loan EMIs are automatically included as deductions.</p>
+
+            <div class="formula-box">
+                <strong>Payroll Processing - Loan Deduction Flow:</strong>
+                <p style="margin-top: 10px; font-family: monospace;">
+                    1. System queries <code>loan_repayments</code> for pending EMIs in current month<br>
+                    2. Each pending EMI is added as a deduction line item in payslip<br>
+                    3. On payslip finalization, repayment status → 'deducted'<br>
+                    4. <code>payslip_id</code> is linked to the processed payslip<br>
+                    5. Loan <code>outstanding_amount</code> is reduced by EMI amount
+                </p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Payslip with Loan Deduction</div>
+                <pre>{
+  "payslip_number": "PS-EMP001-202601",
+  "gross_earnings": 100000.00,
+  "total_deductions": 21333.33,
+  "net_pay": 78666.67,
+  "items": [
+    {
+      "component_code": "PF-EE",
+      "component_name": "PF Employee",
+      "component_type": "deduction",
+      "amount": 4800.00
+    },
+    {
+      "component_code": "PT",
+      "component_name": "Professional Tax",
+      "component_type": "deduction",
+      "amount": 200.00
+    },
+    {
+      "component_code": "LOAN-EMI",
+      "component_name": "Loan EMI (Personal Loan - LN-EMP001)",
+      "component_type": "deduction",
+      "amount": 9333.33,
+      "loan_id": "43372422-f755-410a-bb6a-843aa1a1ca38",
+      "emi_number": 1
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Loan Closure:</strong> When all EMIs are paid (<code>status = 'deducted' or 'paid'</code>) and <code>outstanding_amount = 0</code>, the loan status automatically changes to <code>'closed'</code>.
+                </div>
+            </div>
         </section>
 
-        <!-- Section 20: Payroll Reports -->
+        <!-- Section 16: Payroll Reports -->
         <section id="payroll-reports">
-            <h2><span class="section-number">15</span> Payroll Reports</h2>
+            <h2><span class="section-number">16</span> Payroll Reports</h2>
             <p>Comprehensive reporting for payroll analysis and management visibility.</p>
 
-            <h3>15.1 Payroll Summary</h3>
+            <h3>16.1 Payroll Summary</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/reports/payroll?year=2026</div>
                 <pre>{
@@ -3103,7 +3806,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>15.2 Available Reports</h3>
+            <h3>16.2 Available Reports</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -3162,12 +3865,12 @@ Response:
             </table>
         </section>
 
-        <!-- Section 21: Self-Service Portal -->
+        <!-- Section 17: Self-Service Portal -->
         <section id="self-service">
-            <h2><span class="section-number">16</span> Self-Service Portal</h2>
+            <h2><span class="section-number">17</span> Self-Service Portal</h2>
             <p>Employee-facing endpoints for viewing their own payroll information.</p>
 
-            <h3>16.1 Self-Service Endpoints</h3>
+            <h3>17.1 Self-Service Endpoints</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -3223,12 +3926,12 @@ Response:
             </div>
         </section>
 
-        <!-- Section 22: Payroll Workflow -->
+        <!-- Section 18: Payroll Workflow -->
         <section id="payroll-workflow">
-            <h2><span class="section-number">17</span> Payroll Workflow</h2>
+            <h2><span class="section-number">18</span> Payroll Workflow</h2>
             <p>Complete payroll processing workflow from creation to payment.</p>
 
-            <h3>17.1 Workflow States</h3>
+            <h3>18.1 Workflow States</h3>
             <div class="formula-box">
                 <strong>Payroll Run Status Flow:</strong>
                 <p style="margin-top: 10px; font-family: monospace;">
@@ -3237,7 +3940,7 @@ Response:
                 </p>
             </div>
 
-            <h3>17.2 Payslip Finalization</h3>
+            <h3>18.2 Payslip Finalization</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/payslips/{id}/finalize</div>
                 <pre>Response:
@@ -3251,7 +3954,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>17.3 Approve Payroll Run</h3>
+            <h3>18.3 Approve Payroll Run</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/runs/{id}/approve</div>
                 <pre>Response:
@@ -3264,7 +3967,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>17.4 Mark as Paid</h3>
+            <h3>18.4 Mark as Paid</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/runs/{id}/mark-paid</div>
                 <pre>Request:
@@ -3289,12 +3992,12 @@ Response:
             </div>
         </section>
 
-        <!-- Section 23: YTD Tracking -->
+        <!-- Section 19: YTD Tracking -->
         <section id="ytd-tracking">
-            <h2><span class="section-number">18</span> YTD (Year-to-Date) Tracking</h2>
+            <h2><span class="section-number">19</span> YTD (Year-to-Date) Tracking</h2>
             <p>Automatic tracking of cumulative amounts for each payroll component throughout the financial year.</p>
 
-            <h3>18.1 YTD in Payslip Items</h3>
+            <h3>19.1 YTD in Payslip Items</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/payslips/{id} - Items with YTD</div>
                 <pre>{
@@ -3323,7 +4026,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>18.2 YTD Calculation</h3>
+            <h3>19.2 YTD Calculation</h3>
             <div class="formula-box">
                 <strong>YTD Formula:</strong>
                 <p style="margin-top: 10px;">
@@ -3339,14 +4042,204 @@ Response:
                     <strong>Use Case:</strong> YTD tracking is essential for tax calculations, Form 16 generation, and compliance reporting.
                 </div>
             </div>
+
+            <h3>19.3 Payslip Details API Reference</h3>
+            <p>Complete response structure for payslip retrieval with <code>?includeItems=true</code> query parameter.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll-processing/payslips/{id}?includeItems=true</div>
+                <pre>{
+  "id": "ac705818-2f09-466a-9535-bebc27405e5c",
+  "payroll_run_id": "d5f6e7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a",
+  "employee_id": "7e32a1b4-5c89-4f12-b3a7-9d8e6f5c4b2a",
+  "payslip_number": "PS-EMP001-202512",
+  "payroll_month": 12,
+  "payroll_year": 2025,
+  "working_days": 22,
+  "days_worked": 22,
+  "lop_days": 0,
+  "basic": 40000.00,
+  "gross_earnings": 100000.00,
+  "total_deductions": 12000.00,
+  "net_pay": 88000.00,
+  "employer_contributions": 8500.00,
+  "status": "processed",
+  "generated_at": "2025-12-19T10:00:00Z",
+  "is_multi_location": false,
+  "items": [
+    {
+      "component_id": "comp-basic-guid",
+      "component_code": "BASIC",
+      "component_name": "Basic Salary",
+      "component_type": "earning",
+      "amount": 40000.00,
+      "ytd_amount": 480000.00,
+      "is_prorated": false
+    },
+    {
+      "component_code": "HRA",
+      "component_name": "House Rent Allowance",
+      "component_type": "earning",
+      "amount": 20000.00,
+      "ytd_amount": 240000.00
+    },
+    {
+      "component_code": "PF-EE",
+      "component_name": "PF Employee",
+      "component_type": "deduction",
+      "amount": 4800.00,
+      "ytd_amount": 57600.00
+    }
+  ],
+  "location_breakdowns": []
+}</pre>
+            </div>
+
+            <h4>Response Field Reference</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>id</code></td>
+                        <td>UUID</td>
+                        <td>Unique payslip identifier</td>
+                    </tr>
+                    <tr>
+                        <td><code>payroll_run_id</code></td>
+                        <td>UUID</td>
+                        <td>Parent payroll run this payslip belongs to</td>
+                    </tr>
+                    <tr>
+                        <td><code>payslip_number</code></td>
+                        <td>string</td>
+                        <td>Human-readable payslip number (PS-{EMP_CODE}-{YYYYMM})</td>
+                    </tr>
+                    <tr>
+                        <td><code>working_days</code></td>
+                        <td>int</td>
+                        <td>Total working days in month (excluding weekends/holidays)</td>
+                    </tr>
+                    <tr>
+                        <td><code>days_worked</code></td>
+                        <td>int</td>
+                        <td>Actual days worked by employee</td>
+                    </tr>
+                    <tr>
+                        <td><code>lop_days</code></td>
+                        <td>decimal</td>
+                        <td>Loss of Pay days (supports half-day: 0.5)</td>
+                    </tr>
+                    <tr>
+                        <td><code>basic</code></td>
+                        <td>decimal</td>
+                        <td>Basic salary amount (after proration if applicable)</td>
+                    </tr>
+                    <tr>
+                        <td><code>gross_earnings</code></td>
+                        <td>decimal</td>
+                        <td>Sum of all earnings (BASIC + HRA + SPL + adjustments)</td>
+                    </tr>
+                    <tr>
+                        <td><code>total_deductions</code></td>
+                        <td>decimal</td>
+                        <td>Sum of all deductions (PF + PT + ESI + loans + recoveries)</td>
+                    </tr>
+                    <tr>
+                        <td><code>net_pay</code></td>
+                        <td>decimal</td>
+                        <td>Final take-home pay (gross_earnings - total_deductions)</td>
+                    </tr>
+                    <tr>
+                        <td><code>employer_contributions</code></td>
+                        <td>decimal</td>
+                        <td>Employer-side contributions (PF-ER, ESI-ER, Gratuity)</td>
+                    </tr>
+                    <tr>
+                        <td><code>status</code></td>
+                        <td>string</td>
+                        <td>draft | processing | processed | approved | paid</td>
+                    </tr>
+                    <tr>
+                        <td><code>is_multi_location</code></td>
+                        <td>bool</td>
+                        <td>True if employee worked at multiple offices in the month</td>
+                    </tr>
+                    <tr>
+                        <td><code>items[]</code></td>
+                        <td>array</td>
+                        <td>Line items with component breakdown (only with ?includeItems=true)</td>
+                    </tr>
+                    <tr>
+                        <td><code>location_breakdowns[]</code></td>
+                        <td>array</td>
+                        <td>Per-office salary breakdown (populated when is_multi_location=true)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Items Array Fields</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>component_code</code></td>
+                        <td>string</td>
+                        <td>Unique code (BASIC, HRA, PF-EE, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><code>component_name</code></td>
+                        <td>string</td>
+                        <td>Display name for component</td>
+                    </tr>
+                    <tr>
+                        <td><code>component_type</code></td>
+                        <td>string</td>
+                        <td>earning | deduction | reimbursement | benefit</td>
+                    </tr>
+                    <tr>
+                        <td><code>amount</code></td>
+                        <td>decimal</td>
+                        <td>Amount for current month</td>
+                    </tr>
+                    <tr>
+                        <td><code>ytd_amount</code></td>
+                        <td>decimal</td>
+                        <td>Year-to-date cumulative (FY April-March)</td>
+                    </tr>
+                    <tr>
+                        <td><code>is_prorated</code></td>
+                        <td>bool</td>
+                        <td>True if amount was prorated due to partial attendance</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip" style="margin-top: 15px;">
+                <span class="icon">&#128269;</span>
+                <div>
+                    <strong>Query Parameter:</strong> Use <code>?includeItems=true</code> to fetch component breakdown. Without this parameter, <code>items</code> and <code>location_breakdowns</code> arrays are empty for performance optimization.
+                </div>
+            </div>
         </section>
 
-        <!-- Section 24: Bank File Export -->
+        <!-- Section 20: Bank File Export -->
         <section id="bank-export">
-            <h2><span class="section-number">19</span> Bank File &amp; CSV Export</h2>
+            <h2><span class="section-number">20</span> Bank File &amp; CSV Export</h2>
             <p>Export payroll data for bank transfers and external analysis.</p>
 
-            <h3>19.1 Bank Transfer File</h3>
+            <h3>20.1 Bank Transfer File</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/runs/{id}/bank-file</div>
                 <pre>{
@@ -3367,7 +4260,7 @@ Response:
 }</pre>
             </div>
 
-            <h3>19.2 CSV Export</h3>
+            <h3>20.2 CSV Export</h3>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/runs/{id}/export-csv</div>
                 <pre>Employee Code,Employee Name,Department,Designation,Bank Name,Account Number,
@@ -3377,7 +4270,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 53532.61,21413.04,10706.53,88328.81,0,513.04,0,0,513.04,87815.77,23,23.00,0.00</pre>
             </div>
 
-            <h3>19.3 Export Endpoints</h3>
+            <h3>20.3 Export Endpoints</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -3406,12 +4299,12 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             </table>
         </section>
 
-        <!-- Section 25: Reimbursement/Adjustment Workflow -->
+        <!-- Section 21: Reimbursement/Adjustment Workflow -->
         <section id="adjustment-workflow">
-            <h2><span class="section-number">20</span> Reimbursement &amp; Adjustment Workflow</h2>
+            <h2><span class="section-number">21</span> Reimbursement &amp; Adjustment Workflow</h2>
             <p>Manage one-time payroll adjustments including reimbursements, bonuses, deductions, and recoveries.</p>
 
-            <h3>20.1 Adjustment Types</h3>
+            <h3>21.1 Adjustment Types</h3>
             <table class="simple-table">
                 <thead>
                     <tr>
@@ -3454,7 +4347,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </tbody>
             </table>
 
-            <h3>20.2 Create Reimbursement</h3>
+            <h3>21.2 Create Reimbursement</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/adjustments</div>
                 <pre>// Request
@@ -3477,7 +4370,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>20.3 Approve Reimbursement</h3>
+            <h3>21.3 Approve Reimbursement</h3>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll-processing/adjustments/{id}/approve</div>
                 <pre>// Request
@@ -3489,9 +4382,19 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
   "adjustment_type": "reimbursement",
   "amount": 5000.0,
   "status": "approved",
+  "approved_by": "3120badf-0412-41e8-8190-f03f377dcb0e",
   "approved_at": "2025-12-17T05:04:25.027472Z",
   "approver_type": "superadmin"
 }</pre>
+            </div>
+
+            <div class="info-box tip" style="margin-top: 15px;">
+                <span class="icon">&#128736;</span>
+                <div>
+                    <strong>Bug Fix (Dec 19, 2025):</strong> The <code>approved_by</code> field was previously blank in database.
+                    <strong>Root Cause:</strong> <code>GetUserId()</code> looked for JWT claims "sub" and "nameid" but ASP.NET Core maps JWT to <code>ClaimTypes.NameIdentifier</code>.
+                    <strong>Fix:</strong> Updated claim lookup order: <code>User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("nameid")?.Value</code>
+                </div>
             </div>
 
             <h3>21.4 Reject Adjustment</h3>
@@ -3534,12 +4437,12 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             </div>
         </section>
 
-        <!-- Section 26: Salary Structure Management -->
+        <!-- Section 22: Salary Structure Management -->
         <section id="structure-management">
-            <h2><span class="section-number">21</span> Salary Structure Management</h2>
+            <h2><span class="section-number">22</span> Salary Structure Management</h2>
             <p>Complete control over salary structures including defaults, office-specific structures, and component filtering. These APIs allow HR to manage salary structures across the organization efficiently.</p>
 
-            <h3>21.1 Get Default Salary Structure</h3>
+            <h3>22.1 Get Default Salary Structure</h3>
             <p>Every organization has a default salary structure that applies to employees who haven't been assigned a specific structure. This ensures no employee is left without a salary configuration.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/structures/default</div>
@@ -3578,7 +4481,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </div>
             </div>
 
-            <h3>21.2 Get Office-Specific Structures</h3>
+            <h3>22.2 Get Office-Specific Structures</h3>
             <p>Different offices may have different salary structures based on location, cost of living, or local tax requirements. Retrieve all structures assigned to a specific office.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/structures/office/{officeId}</div>
@@ -3596,7 +4499,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>21.3 Get Default Structure for Office</h3>
+            <h3>22.3 Get Default Structure for Office</h3>
             <p>Each office can have its own default structure. If not set, falls back to the organization-wide default.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/structures/office/{officeId}/default</div>
@@ -3611,7 +4514,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>21.4 Filter Components by Type</h3>
+            <h3>22.4 Filter Components by Type</h3>
             <p>Quickly retrieve all salary components of a specific type (earnings or deductions). Essential for building salary breakdown reports and UI components.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/components/type/{type}</div>
@@ -3675,7 +4578,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </div>
             </div>
 
-            <h3>21.5 Get All Employee Salaries</h3>
+            <h3>22.5 Get All Employee Salaries</h3>
             <p>Retrieve salary information for all employees. Useful for payroll planning, budget forecasting, and HR analytics dashboards.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/all-salaries?currentOnly=true</div>
@@ -3732,7 +4635,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </tbody>
             </table>
 
-            <h3>21.6 Payroll Summary Report</h3>
+            <h3>22.6 Payroll Summary Report</h3>
             <p>Get a high-level summary of payroll costs across the organization. Essential for finance teams and management dashboards.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/reports/summary</div>
@@ -3774,12 +4677,12 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             </div>
         </section>
 
-        <!-- Section 27: Payroll Processing Queries -->
+        <!-- Section 23: Payroll Processing Queries -->
         <section id="processing-queries">
-            <h2><span class="section-number">22</span> Payroll Processing Queries</h2>
+            <h2><span class="section-number">23</span> Payroll Processing Queries</h2>
             <p>Query endpoints for payroll runs, payslips, and processing status. These read-only APIs help HR teams monitor payroll status and retrieve detailed information.</p>
 
-            <h3>22.1 Get Payroll Run by Period</h3>
+            <h3>23.1 Get Payroll Run by Period</h3>
             <p>Find a payroll run for a specific month and year. Returns the run status and summary.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/runs/period?month={month}&amp;year={year}</div>
@@ -3800,7 +4703,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>22.2 Get Payroll Processing Summary</h3>
+            <h3>23.2 Get Payroll Processing Summary</h3>
             <p>Get a summary of payroll processing for a specific period including totals and status breakdown.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/summary?month={month}&amp;year={year}</div>
@@ -3823,7 +4726,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>22.3 Get Payroll Run with All Payslips</h3>
+            <h3>23.3 Get Payroll Run with All Payslips</h3>
             <p>Retrieve a payroll run along with all associated payslips in a single request. Efficient for generating reports.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/runs/{runId}/details</div>
@@ -3853,7 +4756,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>22.4 Get Payslips List for a Run</h3>
+            <h3>23.4 Get Payslips List for a Run</h3>
             <p>Get paginated list of payslips for a specific payroll run. Useful for large organizations.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/runs/{runId}/payslips?page=1&amp;pageSize=50</div>
@@ -3881,7 +4784,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>22.5 Get Payslip by Number</h3>
+            <h3>23.5 Get Payslip by Number</h3>
             <p>Retrieve a payslip using its human-readable number (e.g., PS-EMP001-2026-12) instead of UUID. Convenient for support and employee queries.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/payslips/number/{payslipNumber}</div>
@@ -3916,7 +4819,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </div>
             </div>
 
-            <h3>22.6 Get All Loans</h3>
+            <h3>23.6 Get All Loans</h3>
             <p>Retrieve all employee loans across the organization with their current status.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/loans</div>
@@ -3950,7 +4853,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>22.7 Get Active Loans Only</h3>
+            <h3>23.7 Get Active Loans Only</h3>
             <p>Filter to show only loans that are currently active (disbursed and being repaid).</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/loans/active</div>
@@ -3971,7 +4874,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>22.8 Get Pending Adjustments</h3>
+            <h3>23.8 Get Pending Adjustments</h3>
             <p>Retrieve all adjustments (reimbursements, bonuses, recoveries) awaiting approval.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/adjustments/pending</div>
@@ -3999,7 +4902,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>22.9 Get Employee Adjustments by Status</h3>
+            <h3>23.9 Get Employee Adjustments by Status</h3>
             <p>Get all adjustments for a specific employee, optionally filtered by status.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-processing/employee/{employeeId}/adjustments?status=approved</div>
@@ -4046,7 +4949,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </tbody>
             </table>
 
-            <h3>22.10 Get Payroll Draft Details</h3>
+            <h3>23.10 Get Payroll Draft Details</h3>
             <p>Preview a payroll draft before processing. Shows what the final payroll would look like.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll-drafts/{draftId}/details</div>
@@ -4088,12 +4991,12 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             </div>
         </section>
 
-        <!-- Section 30: Location Tax Management -->
+        <!-- Section 24: Location Tax Management -->
         <section id="location-tax-management">
-            <h2><span class="section-number">23</span> Location Tax Management</h2>
+            <h2><span class="section-number">24</span> Location Tax Management</h2>
             <p>Manage location-specific taxes like Professional Tax (PT) that vary by state. The system supports complex tax slabs and automatic application based on employee office location.</p>
 
-            <h3>23.1 Get All Tax Types</h3>
+            <h3>24.1 Get All Tax Types</h3>
             <p>List all configured tax types in the system (Professional Tax, Labor Welfare Fund, etc.).</p>
             <div class="code-block">
                 <div class="code-header">GET /api/location-taxes/types</div>
@@ -4121,7 +5024,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>23.2 Get Tax Type by Code</h3>
+            <h3>24.2 Get Tax Type by Code</h3>
             <p>Retrieve details of a specific tax type using its code.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/location-taxes/types/code/{code}</div>
@@ -4140,7 +5043,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>23.3 Get All Office Tax Rules</h3>
+            <h3>24.3 Get All Office Tax Rules</h3>
             <p>List all tax rules configured for different offices.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/location-taxes/rules</div>
@@ -4182,7 +5085,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                 </div>
             </div>
 
-            <h3>23.4 Get Effective Rules for a Date</h3>
+            <h3>24.4 Get Effective Rules for a Date</h3>
             <p>Find which tax rules are applicable for a specific office on a given date. Important for historical calculations.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/location-taxes/rules/office/{officeId}/effective?effectiveDate={date}</div>
@@ -4206,7 +5109,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>23.5 Copy Tax Rules Between Offices</h3>
+            <h3>24.5 Copy Tax Rules Between Offices</h3>
             <p>When opening a new office in the same state, copy existing tax rules instead of creating from scratch.</p>
             <div class="code-block">
                 <div class="code-header">POST /api/location-taxes/rules/copy</div>
@@ -4236,12 +5139,12 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
             </div>
         </section>
 
-        <!-- Section 31: Arrears Management -->
+        <!-- Section 25: Arrears Management -->
         <section id="arrears-management">
-            <h2><span class="section-number">24</span> Arrears Management</h2>
+            <h2><span class="section-number">25</span> Arrears Management</h2>
             <p>When salary structures change retroactively (backdated revisions), the system calculates arrears automatically. These APIs help manage the arrears lifecycle from calculation to payment.</p>
 
-            <h3>24.1 Get Pending Arrears</h3>
+            <h3>25.1 Get Pending Arrears</h3>
             <p>List all calculated arrears that haven't been applied to payroll yet.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/structures/arrears/pending</div>
@@ -4266,7 +5169,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 ]</pre>
             </div>
 
-            <h3>24.2 Get Arrears for Specific Employee</h3>
+            <h3>25.2 Get Arrears for Specific Employee</h3>
             <p>View all arrears (pending and applied) for a particular employee.</p>
             <div class="code-block">
                 <div class="code-header">GET /api/payroll/structures/arrears/employee/{employeeId}</div>
@@ -4297,7 +5200,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>24.3 Apply Arrears</h3>
+            <h3>25.3 Apply Arrears</h3>
             <p>Apply calculated arrears to the next payroll. This creates an adjustment that will be included in the upcoming payroll run.</p>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll/structures/arrears/{arrearsId}/apply</div>
@@ -4319,7 +5222,7 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
 }</pre>
             </div>
 
-            <h3>24.4 Cancel Pending Arrears</h3>
+            <h3>25.4 Cancel Pending Arrears</h3>
             <p>Cancel arrears that were calculated in error or are no longer applicable.</p>
             <div class="code-block">
                 <div class="code-header">POST /api/payroll/structures/arrears/{arrearsId}/cancel</div>
@@ -4357,11 +5260,323 @@ Professional Tax,Other Deductions,Total Deductions,Net Pay,Working Days,Days Wor
                     Total_Arrears = Sum of all Month_Arrears
                 </p>
             </div>
+
+            <h3>25.5 CTC Revision Arrears (Backdated Salary Changes)</h3>
+            <p>When an individual employee's CTC is revised with a backdated effective date, the system automatically calculates arrears for all affected months where payslips have already been processed. This differs from structure version arrears which affect multiple employees.</p>
+
+            <div class="info-box tip">
+                <span class="icon">&#128204;</span>
+                <div>
+                    <strong>Key Difference:</strong> CTC Revision Arrears use <code>source_type = 'ctc_revision'</code> while Structure Version Arrears use <code>source_type = 'structure_version'</code>. This helps distinguish the trigger source for audit purposes.
+                </div>
+            </div>
+
+            <h4>24.5.1 Automatic Arrears Calculation on Salary Revision</h4>
+            <p>When you revise an employee's salary with a past effective date, the system automatically:</p>
+            <ol>
+                <li>Identifies all payslips from the effective date to today</li>
+                <li>Uses <strong>payslip-confirmed attendance</strong> (days_worked field) for accurate proration</li>
+                <li>Calculates arrears on a per-day basis</li>
+                <li>Creates pending arrears records for HR review</li>
+            </ol>
+
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/employee/{employeeId}/salary/revise</div>
+                <pre>// Revise salary with backdated effective date
+{
+  "new_ctc": 1600000,
+  "effective_from": "2025-11-10",
+  "revision_reason": "Annual increment",
+  "revision_type": "annual_increment"
+}
+
+// Response
+{
+  "id": "salary-uuid",
+  "employee_id": "emp-uuid",
+  "ctc": 1600000.00,
+  "effective_from": "2025-11-10T00:00:00",
+  "is_current": true,
+  "revision_reason": "Annual increment"
+}
+
+// Server log shows automatic arrears calculation:
+// "Retrospective CTC revision detected for employee..."
+// "CTC Arrears (Day-by-Day) - Period: 12/2025, Days worked: 23.0, Arrears: ₹13,939.38"
+// "CTC Arrears (Day-by-Day) - Period: 11/2025, Days worked: 15.0, Arrears: ₹9,090.90"
+// "CTC revision arrears calculated: 23030.28 for 2 months"</pre>
+            </div>
+
+            <h4>24.5.2 Day-by-Day Arrears Calculation</h4>
+            <p>The system calculates arrears using the actual days worked from processed payslips, ensuring accuracy even when employees had LOP (Loss of Pay) days.</p>
+
+            <div class="formula-box">
+                <div class="formula-title">CTC Revision Arrears Formula (Per Month)</div>
+                <pre>
+<span class="formula-highlight">Per-Day Difference = (New_Monthly_Gross - Old_Monthly_Gross) / Total_Working_Days</span>
+
+<span class="formula-highlight">Month_Arrears = Per-Day Difference × Days_Worked</span></pre>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Days Worked</th>
+                        <th>Old Gross</th>
+                        <th>New Gross</th>
+                        <th>Arrears Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>November 2025</td>
+                        <td>15 (from payslip)</td>
+                        <td>₹23,636.36</td>
+                        <td>₹90,909.09</td>
+                        <td><span class="text-success">+₹9,090.90</span></td>
+                    </tr>
+                    <tr>
+                        <td>December 2025</td>
+                        <td>23 (from payslip)</td>
+                        <td>₹30,909.09</td>
+                        <td>₹1,39,393.94</td>
+                        <td><span class="text-success">+₹13,939.38</span></td>
+                    </tr>
+                    <tr class="row-net-pay">
+                        <td colspan="4">Total Arrears</td>
+                        <td><span class="text-success">+₹23,030.28</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>25.5.3 HR Admin: Get All Pending CTC Arrears</h4>
+            <p>Retrieve all pending CTC revision arrears across the organization for HR review.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/ctc-arrears/pending</div>
+                <pre>// Response - All pending CTC arrears for HR Admin
+[
+  {
+    "id": "arrear-uuid-1",
+    "employee_id": "8a089ef2-2783-4ff9-8b35-7b89a33dd168",
+    "employee_code": "EMP006",
+    "employee_name": "Dev Kumar",
+    "pay_period_month": 12,
+    "pay_period_year": 2025,
+    "old_gross": 30909.09,
+    "new_gross": 139393.94,
+    "arrears_amount": 13939.38,
+    "days_affected": 23,
+    "status": "pending",
+    "source_type": "ctc_revision",
+    "source_reference_id": "salary-revision-uuid"
+  }
+]</pre>
+            </div>
+
+            <h4>25.5.4 HR Admin: Get Employee CTC Arrears</h4>
+            <p>View CTC arrears for a specific employee with optional status filter.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/employee/{employeeId}/ctc-arrears?status=pending</div>
+                <pre>// Query parameters:
+// status (optional): pending | applied | cancelled
+
+// Response
+[
+  {
+    "id": "arrear-uuid-1",
+    "employee_id": "8a089ef2-2783-4ff9-8b35-7b89a33dd168",
+    "pay_period_month": 12,
+    "pay_period_year": 2025,
+    "old_gross": 30909.09,
+    "new_gross": 139393.94,
+    "arrears_amount": 13939.38,
+    "days_affected": 23,
+    "status": "pending",
+    "source_type": "ctc_revision"
+  }
+]</pre>
+            </div>
+
+            <h4>25.5.5 HR Admin: Get CTC Arrears Details</h4>
+            <p>Get detailed arrears information including daily breakdown.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/ctc-arrears/{arrearsId}</div>
+                <pre>// Response with daily breakdown
+{
+  "id": "arrear-uuid-1",
+  "employee_id": "8a089ef2-2783-4ff9-8b35-7b89a33dd168",
+  "employee_code": "EMP006",
+  "employee_name": "Dev Kumar",
+  "pay_period_month": 12,
+  "pay_period_year": 2025,
+  "old_gross": 30909.09,
+  "new_gross": 139393.94,
+  "arrears_amount": 13939.38,
+  "days_affected": 23,
+  "status": "pending",
+  "source_type": "ctc_revision",
+  "daily_breakdown": [
+    {"date": "2025-12-01", "amount": 606.06},
+    {"date": "2025-12-02", "amount": 606.06},
+    // ... per day amounts
+  ],
+  "calculation_method": "day_by_day",
+  "created_at": "2025-12-17T10:30:00Z"
+}</pre>
+            </div>
+
+            <h4>25.5.6 HR Admin: Apply CTC Arrears</h4>
+            <p>Apply a single CTC arrears record to the next payroll.</p>
+
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/ctc-arrears/{arrearsId}/apply</div>
+                <pre>// No request body required
+
+// Response
+{
+  "message": "CTC revision arrears applied successfully",
+  "arrears_id": "arrear-uuid-1",
+  "amount": 13939.38,
+  "adjustment_created": {
+    "id": "adj-uuid-1",
+    "adjustment_type": "ctc_arrears",
+    "amount": 13939.38,
+    "status": "approved"
+  },
+  "will_be_included_in": "January 2026 payroll"
+}</pre>
+            </div>
+
+            <h4>25.5.7 HR Admin: Cancel CTC Arrears</h4>
+            <p>Cancel pending CTC arrears with a reason.</p>
+
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/ctc-arrears/{arrearsId}/cancel</div>
+                <pre>// Request
+{
+  "reason": "CTC revision was reverted"
+}
+
+// Response
+{
+  "message": "CTC revision arrears cancelled successfully",
+  "arrears_id": "arrear-uuid-1",
+  "amount": 13939.38,
+  "status": "cancelled",
+  "cancelled_by": "HR Admin",
+  "cancelled_at": "2025-12-17T10:30:00Z"
+}</pre>
+            </div>
+
+            <h4>25.5.8 HR Admin: Bulk Apply CTC Arrears</h4>
+            <p>Apply multiple CTC arrears records in one operation.</p>
+
+            <div class="code-block">
+                <div class="code-header">POST /api/payroll/ctc-arrears/bulk-apply</div>
+                <pre>// Request
+{
+  "arrears_ids": [
+    "arrear-uuid-1",
+    "arrear-uuid-2",
+    "arrear-uuid-3"
+  ]
+}
+
+// Response
+{
+  "message": "Bulk apply completed",
+  "total_requested": 3,
+  "successful": 3,
+  "failed": 0,
+  "total_amount_applied": 23030.28,
+  "results": [
+    {"arrears_id": "arrear-uuid-1", "status": "applied", "amount": 13939.38},
+    {"arrears_id": "arrear-uuid-2", "status": "applied", "amount": 9090.90}
+  ]
+}</pre>
+            </div>
+
+            <h4>25.5.9 Get Arrears Summary for Salary Revision</h4>
+            <p>View all arrears generated by a specific salary revision.</p>
+
+            <div class="code-block">
+                <div class="code-header">GET /api/payroll/salary-revisions/{revisionId}/arrears-summary</div>
+                <pre>// Response
+{
+  "revision_id": "revision-uuid-1",
+  "total_arrears_records": 2,
+  "pending_count": 1,
+  "pending_amount": 13939.38,
+  "applied_count": 1,
+  "applied_amount": 9090.90,
+  "cancelled_count": 0,
+  "cancelled_amount": 0,
+  "arrears": [
+    {
+      "id": "arrear-uuid-1",
+      "pay_period_month": 12,
+      "pay_period_year": 2025,
+      "amount": 13939.38,
+      "status": "pending"
+    },
+    {
+      "id": "arrear-uuid-2",
+      "pay_period_month": 11,
+      "pay_period_year": 2025,
+      "amount": 9090.90,
+      "status": "applied"
+    }
+  ]
+}</pre>
+            </div>
+
+            <h4>25.5.10 Arrears Source Types</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Source Type</th>
+                        <th>Trigger</th>
+                        <th>Scope</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>structure_version</code></td>
+                        <td>Salary structure version change</td>
+                        <td>Multiple employees on structure</td>
+                        <td>BASIC % changed from 40% to 45%</td>
+                    </tr>
+                    <tr>
+                        <td><code>ctc_revision</code></td>
+                        <td>Individual CTC revision</td>
+                        <td>Single employee</td>
+                        <td>Annual increment ₹14.4L → ₹16L</td>
+                    </tr>
+                    <tr>
+                        <td><code>transfer</code></td>
+                        <td>Office transfer affecting salary</td>
+                        <td>Single employee</td>
+                        <td>Mumbai → Bangalore (different structure)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#9989;</span>
+                <div>
+                    <strong>Payslip-Confirmed Attendance:</strong> CTC Revision Arrears use the <code>days_worked</code> field from already-processed payslips, not the calendar working days. This ensures arrears are accurate even when employees had partial attendance (LOP, leaves, etc.).
+                </div>
+            </div>
         </section>
 
-        <!-- Section 25: Real-World Scenarios -->
+        <!-- Section 26: Real-World Scenarios -->
         <section id="scenarios">
-            <h2><span class="section-number">25</span> Real-World Scenarios</h2>
+            <h2><span class="section-number">26</span> Real-World Scenarios</h2>
 
             <p>This section provides comprehensive examples showing how the payroll engine handles various real-world situations. Each scenario includes the calculation breakdown so HR can verify payslip accuracy.</p>
 
@@ -5094,9 +6309,9 @@ Deductions (PF, PT):   -₹2,000.00
                 </div>
             </div>
         </section>
-        <!-- Section 26: Edge Cases -->
+        <!-- Section 27: Edge Cases -->
         <section id="edge-cases">
-            <h2><span class="section-number">26</span> Edge Cases</h2>
+            <h2><span class="section-number">27</span> Edge Cases</h2>
             <p>The payroll engine handles numerous edge cases automatically. Understanding these helps HR verify calculations in unusual situations.</p>
 
             <div class="feature-grid">
@@ -5768,9 +6983,9 @@ Deductions (PF, PT):   -₹2,000.00
             </div>
 
         </section>
-        <!-- Section 27: Example Payslips -->
+        <!-- Section 28: Example Payslips -->
         <section id="examples">
-            <h2><span class="section-number">27</span> Example Payslips</h2>
+            <h2><span class="section-number">28</span> Example Payslips</h2>
             <p>These examples demonstrate how the payroll engine calculates salaries in different scenarios.</p>
 
             <h3>Scenario 1: Normal Month (No Changes)</h3>
@@ -6123,9 +7338,9 @@ Deductions (PF, PT):   -₹2,000.00
             </table>
         </section>
 
-        <!-- Section 28: System Capabilities -->
+        <!-- Section 29: System Capabilities -->
         <section id="capabilities">
-            <h2><span class="section-number">28</span> System Capabilities</h2>
+            <h2><span class="section-number">29</span> System Capabilities</h2>
 
             <p>This section documents what the HyperDroid HRMS payroll engine <strong>CAN</strong> do reliably. These capabilities have been tested and verified through the codebase audit.</p>
 
@@ -6776,34 +7991,122 @@ Expected LOP: 2 × 0.5 = 1.0 day</pre>
             <p><strong>Example:</strong> Create a ₹5,000 relocation allowance with <code>recurring_months = 6</code>. The adjustment automatically applies for 6 consecutive months without manual intervention.</p>
 
             <details class="api-proof">
-                <summary>&#128269; Verified Example: Recurring Adjustment (6-Month Bonus)</summary>
+                <summary>&#128269; Verified Example: 3-Month Recurring Incentive (Complete Lifecycle)</summary>
                 <div class="api-proof-content">
-                    <h5 class="request-label">Request: Create Recurring Adjustment</h5>
-                    <pre>POST /api/payroll/adjustments
+                    <h5 class="request-label">Step 1: Create 3-Month Recurring Incentive</h5>
+                    <pre>POST /api/payroll-processing/adjustments
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 
 {
-  "employee_id": "6e45111b-d883-4e85-87c5-22d9da3625a0",
-  "adjustment_type": "bonus",
+  "employee_id": "7e32a1b4-5c89-4f12-b3a7-9d8e6f5c4b2a",
+  "adjustment_type": "incentive",
+  "effect_type": "earning",
   "amount": 5000,
-  "description": "Relocation allowance",
-  "recurring_months": 6,
-  "effective_from": "2026-01-01"
+  "for_month": 2,
+  "for_year": 2026,
+  "description": "Performance incentive (3 months)",
+  "recurring_months": 3
 }</pre>
 
                     <h5 class="response-label">Response: Recurring Adjustment Created</h5>
                     <pre>{
-  "id": "adj-uuid-001",
-  "adjustment_type": "bonus",
+  "id": "c8f4e2a1-3b5d-4c7e-9f1a-2d6b8e4c0a3f",
+  "employee_id": "7e32a1b4-5c89-4f12-b3a7-9d8e6f5c4b2a",
+  "adjustment_type": "incentive",
+  "effect_type": "earning",
   "amount": 5000.00,
-  "recurring_months": 6,
-  "months_processed": 0,
-  "effective_from": "2026-01-01",
-  "status": "active"
+  "for_month": 2,
+  "for_year": 2026,
+  "description": "Performance incentive (3 months)",
+  "status": "pending",
+  "recurring_months": 3,
+  "remaining_months": 3,
+  "created_at": "2025-12-19T10:30:00Z"
+}</pre>
+
+                    <h5 class="request-label">Step 2: Approve Adjustment</h5>
+                    <pre>POST /api/payroll-processing/adjustments/c8f4e2a1-3b5d-4c7e-9f1a-2d6b8e4c0a3f/approve
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "approved": true
+}</pre>
+
+                    <h5 class="response-label">Response: Approved with approved_by Saved</h5>
+                    <pre>{
+  "id": "c8f4e2a1-3b5d-4c7e-9f1a-2d6b8e4c0a3f",
+  "status": "approved",
+  "approved_by": "3120badf-0412-41e8-8190-f03f377dcb0e",
+  "approved_at": "2025-12-19T10:35:00Z",
+  "recurring_months": 3,
+  "remaining_months": 3
+}</pre>
+
+                    <h5 class="response-label">Month-by-Month Testing Results</h5>
+                    <table class="calc-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>remaining_months Before</th>
+                                <th>Applied Amount</th>
+                                <th>remaining_months After</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>February 2026</td>
+                                <td>3</td>
+                                <td>₹5,000</td>
+                                <td>2</td>
+                                <td class="text-success">✅ Applied</td>
+                            </tr>
+                            <tr>
+                                <td>March 2026</td>
+                                <td>2</td>
+                                <td>₹5,000</td>
+                                <td>1</td>
+                                <td class="text-success">✅ Applied</td>
+                            </tr>
+                            <tr>
+                                <td>April 2026</td>
+                                <td>1</td>
+                                <td>₹5,000</td>
+                                <td>0</td>
+                                <td class="text-success">✅ Final Month</td>
+                            </tr>
+                            <tr>
+                                <td>May 2026</td>
+                                <td>0</td>
+                                <td>₹0</td>
+                                <td>0</td>
+                                <td class="text-danger">⛔ Stopped</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h5 class="response-label">Payslip Verification (March 2026)</h5>
+                    <pre>GET /api/payroll-processing/payslips/ps-mar-2026?includeItems=true
+
+// Response shows incentive in payslip items:
+{
+  "items": [
+    {
+      "component_code": "ADJ-INCENTIVE",
+      "component_name": "Incentive - Performance incentive (3 months)",
+      "component_type": "earning",
+      "amount": 5000.00
+    }
+  ],
+  "gross_earnings": 105000.00  // Base 100,000 + 5,000 incentive
 }</pre>
 
                     <div class="verification">
-                        <strong>✅ Verified:</strong> Adjustment auto-applies for 6 months. months_processed increments each payroll run until exhausted.
+                        <strong>✅ Verified (Dec 19, 2025):</strong> Recurring adjustment applied for exactly 3 months (Feb-Apr 2026).
+                        <code>remaining_months</code> decremented each payroll run. May 2026 payroll correctly excluded the adjustment.
+                        <br><strong>Bug Fix:</strong> <code>approved_by</code> now correctly saved using <code>ClaimTypes.NameIdentifier</code> JWT claim mapping.
                     </div>
                 </div>
             </details>
@@ -7511,9 +8814,9 @@ POST /api/payroll-processing/runs/{id}/process</pre>
                 </div>
             </details>
         </section>
-        <!-- Section 29: System Limitations -->
+        <!-- Section 30: System Limitations -->
         <section id="limitations">
-            <h2><span class="section-number">29</span> System Limitations</h2>
+            <h2><span class="section-number">30</span> System Limitations</h2>
 
             <p>This section documents what the HyperDroid HRMS payroll engine <strong>CANNOT</strong> do or handles incorrectly. Understanding these limitations is critical for HR teams to avoid unexpected behavior.</p>
 
@@ -7691,10 +8994,10 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                  See Payroll-API-Validation.md "Overlapping Transfers Prevention" section for proof. -->
         </section>
         <section id="api-quick-reference">
-            <h2><span class="section-number">30</span> Complete API Quick Reference</h2>
+            <h2><span class="section-number">31</span> Complete API Quick Reference</h2>
             <p>All payroll calculation APIs in one place. Each endpoint has been tested and verified working.</p>
 
-            <h3>30.1 Salary Structure APIs</h3>
+            <h3>31.1 Salary Structure APIs</h3>
             <table>
                 <thead>
                     <tr>
@@ -7737,7 +9040,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </tbody>
             </table>
 
-            <h3>30.2 Version Management APIs</h3>
+            <h3>31.2 Version Management APIs</h3>
             <table>
                 <thead>
                     <tr>
@@ -7767,10 +9070,30 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>GET</td>
                         <td>Versions for payroll period</td>
                     </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/ensure-version</code></td>
+                        <td>POST</td>
+                        <td>Ensure structure has version 1</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/migrate-all</code></td>
+                        <td>POST</td>
+                        <td>Migrate all structures to versioning</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/versions/{id}/snapshot</code></td>
+                        <td>GET</td>
+                        <td>Get version snapshot</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/versions/compare-snapshots</code></td>
+                        <td>GET</td>
+                        <td>Compare two version snapshots</td>
+                    </tr>
                 </tbody>
             </table>
 
-            <h3>30.3 Payroll Processing APIs</h3>
+            <h3>31.3 Payroll Processing APIs</h3>
             <table>
                 <thead>
                     <tr>
@@ -7816,6 +9139,26 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>Active loans only</td>
                     </tr>
                     <tr>
+                        <td><code>/api/payroll-processing/loans/pending</code></td>
+                        <td>GET</td>
+                        <td>Pending loan approvals</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{id}</code></td>
+                        <td>GET</td>
+                        <td>Loan details with repayments</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{id}/approve</code></td>
+                        <td>POST</td>
+                        <td>Approve/reject loan</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{id}/disburse</code></td>
+                        <td>POST</td>
+                        <td>Disburse approved loan</td>
+                    </tr>
+                    <tr>
                         <td><code>/api/payroll-processing/adjustments/pending</code></td>
                         <td>GET</td>
                         <td>Pending adjustments</td>
@@ -7833,7 +9176,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </tbody>
             </table>
 
-            <h3>30.4 Location Tax APIs</h3>
+            <h3>31.4 Location Tax APIs</h3>
             <table>
                 <thead>
                     <tr>
@@ -7871,7 +9214,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </tbody>
             </table>
 
-            <h3>30.5 Arrears Management APIs</h3>
+            <h3>31.5 Version Arrears Management APIs</h3>
             <table>
                 <thead>
                     <tr>
@@ -7884,22 +9227,71 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                     <tr>
                         <td><code>/api/payroll/structures/arrears/pending</code></td>
                         <td>GET</td>
-                        <td>Pending arrears list</td>
+                        <td>Pending version arrears list</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/arrears/employee/{id}</code></td>
                         <td>GET</td>
-                        <td>Employee arrears history</td>
+                        <td>Employee version arrears history</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/arrears/{id}/apply</code></td>
                         <td>POST</td>
-                        <td>Apply arrears to payroll</td>
+                        <td>Apply version arrears to payroll</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/arrears/{id}/cancel</code></td>
                         <td>POST</td>
-                        <td>Cancel pending arrears</td>
+                        <td>Cancel pending version arrears</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>31.6 CTC Revision Arrears APIs</h3>
+            <p>When employee CTC is revised retroactively (backdated salary changes), the system calculates CTC revision arrears automatically.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/ctc-arrears/pending</code></td>
+                        <td>GET</td>
+                        <td>All pending CTC revision arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{id}/ctc-arrears</code></td>
+                        <td>GET</td>
+                        <td>CTC arrears for specific employee</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/ctc-arrears/{id}</code></td>
+                        <td>GET</td>
+                        <td>CTC arrears details with daily breakdown</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/ctc-arrears/{id}/apply</code></td>
+                        <td>POST</td>
+                        <td>Apply CTC arrears to next payroll</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/ctc-arrears/{id}/cancel</code></td>
+                        <td>POST</td>
+                        <td>Cancel pending CTC arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/ctc-arrears/bulk-apply</code></td>
+                        <td>POST</td>
+                        <td>Bulk apply multiple CTC arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/salary-revisions/{id}/arrears-summary</code></td>
+                        <td>GET</td>
+                        <td>Arrears summary for a revision</td>
                     </tr>
                 </tbody>
             </table>

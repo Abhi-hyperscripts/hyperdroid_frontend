@@ -11,6 +11,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-organization.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -33,21 +34,113 @@
                     <span class="separator">/</span>
                     <span class="current">Organization</span>
                 </nav>
-                <h1>Organization Setup</h1>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <!-- Hamburger icon (shown when sidebar closed) -->
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <!-- Left arrow icon (shown when sidebar open) -->
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Organization Setup</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Offices</span>
+                </div>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="hrms-tabs">
-            <button class="tab-btn active" data-tab="offices">Offices</button>
-            <button class="tab-btn" data-tab="departments">Departments</button>
-            <button class="tab-btn" data-tab="designations">Designations</button>
-            <button class="tab-btn" data-tab="shifts">Shifts</button>
-            <button class="tab-btn" data-tab="shift-rosters">Shift Rosters</button>
-            <button class="tab-btn" data-tab="holidays">Holidays</button>
-        </div>
+        <!-- Sidebar Overlay (hidden by CSS) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- Offices Tab -->
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="organization-sidebar" id="organizationSidebar">
+                <div class="sidebar-header">
+                    <h3>Organization</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Locations Section -->
+                    <div class="nav-group" data-group="locations">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                Locations
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="offices" id="officesTab">
+                                <span class="nav-number">1</span><span class="nav-label">Offices</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Structure Section -->
+                    <div class="nav-group" data-group="structure">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                Structure
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="departments" id="departmentsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Departments</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="designations" id="designationsTab">
+                                <span class="nav-number">3</span><span class="nav-label">Designations</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scheduling Section -->
+                    <div class="nav-group" data-group="scheduling">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                Scheduling
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="shifts" id="shiftsTab">
+                                <span class="nav-number">4</span><span class="nav-label">Shifts</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="shift-rosters" id="shiftRostersTab">
+                                <span class="nav-number">5</span><span class="nav-label">Shift Rosters</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="holidays" id="holidaysTab">
+                                <span class="nav-number">6</span><span class="nav-label">Holidays</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+                <!-- Offices Tab -->
         <div class="tab-content active" id="offices">
             <div class="filters-bar">
                 <div class="search-box-modern">
@@ -462,6 +555,8 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+            </main>
         </div>
 
     <!-- Create/Edit Office Modal -->

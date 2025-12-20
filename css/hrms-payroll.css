@@ -507,3 +507,1141 @@
 .status-toggle input:checked + .status-toggle-track .status-toggle-thumb {
     transform: translateX(16px);
 }
+
+/* =============================================================
+   COLLAPSIBLE HAMBURGER MENU SIDEBAR
+   ============================================================= */
+
+/* HRMS Header with Hamburger */
+.hrms-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+/* Hamburger Toggle Button - Inline in header */
+.sidebar-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+    background: var(--gray-100);
+    box-shadow: var(--shadow-md);
+}
+
+/* Hamburger icon container */
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hamburger-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-line + .hamburger-line {
+    margin-top: 5px;
+}
+
+/* Arrow icon (SVG) - theme aware */
+.arrow-icon {
+    display: none;
+    color: var(--text-primary);
+    stroke: currentColor;
+}
+
+/* When sidebar is open: hide hamburger, show arrow */
+.sidebar-toggle.active .hamburger-icon {
+    display: none;
+}
+
+.sidebar-toggle.active .arrow-icon {
+    display: block;
+}
+
+/* Active Tab Title - Under breadcrumb */
+.active-tab-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.active-tab-title .tab-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--brand-primary);
+    border-radius: 50%;
+}
+
+/* Sidebar Overlay - Hidden (no backdrop) */
+.sidebar-overlay {
+    display: none !important;
+}
+
+/* Main layout container */
+.payroll-layout,
+.organization-layout {
+    display: block;
+    min-height: calc(100vh - 200px);
+    position: relative;
+}
+
+/* Sidebar - Fixed position, slides in from left */
+.payroll-sidebar,
+.organization-sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 280px;
+    height: calc(100vh - 60px);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: 16px 0;
+    box-shadow: var(--shadow-lg);
+}
+
+.payroll-sidebar.open,
+.organization-sidebar.open {
+    transform: translateX(0);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 12px 16px 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.sidebar-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.sidebar-header p {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin: 4px 0 0;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Nav Group - Collapsible Sections */
+.nav-group {
+    margin-bottom: 4px;
+}
+
+.nav-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.nav-group-header:hover {
+    color: var(--brand-primary);
+    background: var(--bg-card-hover);
+}
+
+.nav-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-group-title svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.nav-group-header .chevron {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+    opacity: 0.6;
+}
+
+.nav-group.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.nav-group.collapsed .nav-group-items {
+    display: none;
+}
+
+/* Nav Group Items */
+.nav-group-items {
+    padding: 4px 8px 8px;
+}
+
+/* Sidebar Button */
+.sidebar-btn {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    line-height: 1;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sidebar-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.sidebar-btn:hover {
+    background: var(--gray-100);
+    color: var(--text-primary);
+}
+
+.sidebar-btn:hover svg {
+    opacity: 1;
+}
+
+.sidebar-btn.active {
+    background: rgba(var(--brand-primary-rgb, 59, 130, 246), 0.1);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.sidebar-btn.active svg {
+    opacity: 1;
+    color: var(--brand-primary);
+}
+
+/* Nav Number Badge */
+.nav-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    background: var(--gray-100);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Nav Label Text */
+.nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-btn.active .nav-number {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+/* Main layout container */
+.payroll-layout,
+.organization-layout {
+    display: block;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Main content area */
+.payroll-content,
+.organization-content {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--bg-page);
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* Header */
+.hrms-header {
+    padding: 16px 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    margin-bottom: 0; /* Override hrms.css margin to prevent unnecessary scroll */
+}
+
+/* When sidebar is open - shift everything and constrain width */
+.hrms-container.sidebar-open .hrms-header {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+.hrms-container.sidebar-open .payroll-layout,
+.hrms-container.sidebar-open .organization-layout {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+/* Container - Add padding-top for fixed navbar */
+.hrms-container {
+    padding: 0 16px;
+    padding-top: 70px; /* Account for fixed navbar height */
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Make tables responsive */
+.payroll-content table,
+.organization-content table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.component-tables,
+.data-tables {
+    overflow-x: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hrms-header-row {
+        gap: 12px;
+    }
+
+    .sidebar-toggle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .hamburger-line {
+        width: 18px;
+    }
+
+    .payroll-sidebar,
+    .organization-sidebar {
+        width: 260px;
+    }
+
+    .payroll-content,
+    .organization-content {
+        padding: 16px;
+    }
+
+    .active-tab-title {
+        font-size: 13px;
+    }
+}
+
+/* Legacy support - hide old section titles */
+.sidebar-section-title {
+    display: none;
+}
+
+.sidebar-section {
+    padding: 0;
+    margin: 0;
+    border: none !important;
+}
+
+/* =============================================================
+   ARREARS SUB-TABS
+   ============================================================= */
+.arrears-subtabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 4px;
+    background: var(--bg-input);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.arrears-subtab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.arrears-subtab:hover {
+    background: var(--gray-100);
+    color: var(--text-primary);
+}
+
+.arrears-subtab.active {
+    background: var(--brand-primary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.arrears-subtab.active svg {
+    stroke: white;
+}
+
+.arrears-subtab svg {
+    flex-shrink: 0;
+    stroke: currentColor;
+}
+
+.arrears-subtab-content {
+    display: none;
+}
+
+.arrears-subtab-content.active {
+    display: block;
+}
+
+/* CTC Arrears specific styles */
+#ctcArrearsTable tr.pending td:first-child input[type="checkbox"] {
+    cursor: pointer;
+}
+
+#ctcArrearsTable tr:not(.pending) td:first-child input[type="checkbox"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Revision Type Badge */
+.revision-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-transform: capitalize;
+}
+
+.revision-type-badge.promotion {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.revision-type-badge.annual_increment {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.revision-type-badge.adjustment {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.revision-type-badge.correction {
+    background: var(--color-secondary-light);
+    color: var(--text-secondary);
+}
+
+/* CTC Arrears Details Modal */
+.ctc-arrears-details {
+    padding: 16px 0;
+}
+
+.ctc-arrears-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.ctc-summary-card {
+    padding: 16px;
+    background: var(--bg-input);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.ctc-summary-card .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.ctc-summary-card .label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ctc-summary-card.highlight {
+    background: var(--color-success-light);
+}
+
+.ctc-summary-card.highlight .value {
+    color: var(--color-success);
+}
+
+.ctc-breakdown-table {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.ctc-breakdown-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--bg-input);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ctc-breakdown-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.ctc-breakdown-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ctc-breakdown-table .total-row {
+    font-weight: 600;
+    background: var(--bg-input);
+}
+
+.ctc-breakdown-table .total-row td {
+    color: var(--text-primary);
+}
+
+.arrears-positive {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.arrears-negative {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* Bulk Apply Modal */
+.bulk-apply-summary {
+    display: flex;
+    gap: 24px;
+    padding: 16px;
+    background: var(--bg-input);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.bulk-apply-stat {
+    text-align: center;
+}
+
+.bulk-apply-stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.bulk-apply-stat .label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .arrears-subtabs {
+        flex-direction: column;
+    }
+
+    .ctc-arrears-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* =============================================================
+   SALARY REPORTS SECTION
+   ============================================================= */
+
+/* Summary Cards Grid */
+.salary-reports-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.summary-employees .summary-icon {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.summary-ctc .summary-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.summary-monthly .summary-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.summary-average .summary-icon {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+}
+
+.summary-content {
+    flex: 1;
+}
+
+.summary-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.summary-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.summary-sublabel {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Report Section */
+.report-section {
+    margin-bottom: 24px;
+}
+
+.report-section .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.report-section .section-title svg {
+    color: var(--brand-primary);
+}
+
+/* Department Breakdown */
+.department-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.dept-breakdown-card {
+    padding: 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.dept-breakdown-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.dept-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.dept-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dept-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--gray-100);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.dept-bar-container {
+    height: 6px;
+    background: var(--gray-100);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.dept-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary, var(--brand-primary)));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.dept-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.dept-stat {
+    flex: 1;
+}
+
+.dept-stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.dept-stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Empty Breakdown */
+.empty-breakdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+    background: var(--bg-input);
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+}
+
+.empty-breakdown svg {
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.empty-breakdown p {
+    margin: 0;
+    font-size: 13px;
+}
+
+/* Amount Cell Styling */
+.amount-cell {
+    text-align: right;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+/* Employee Code in Table */
+.emp-code {
+    font-size: 12px;
+    padding: 2px 6px;
+    background: var(--gray-100);
+    border-radius: 4px;
+    color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .salary-reports-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .salary-reports-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .department-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .summary-icon {
+        margin: 0 auto;
+    }
+}
+
+/* =============================================================
+   PROCESS SELECTED EMPLOYEES MODAL
+   ============================================================= */
+
+/* Draft info header */
+.process-selected-header {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.draft-info-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.draft-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.draft-info-item .label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.draft-info-item .value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Compact filters bar */
+.filters-bar.compact {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.select-all-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.selection-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.selection-count span:first-child {
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+/* Employee selection list */
+.employee-selection-list {
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+}
+
+.employee-selection-list .loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+}
+
+.employee-selection-list .loading-placeholder .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.employee-selection-list .empty-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.employee-selection-list .empty-message svg {
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.employee-selection-list .empty-message p {
+    margin: 0 0 4px;
+    font-weight: 500;
+}
+
+.employee-selection-list .empty-message small {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Employee selection item */
+.employee-selection-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.employee-selection-item:last-child {
+    border-bottom: none;
+}
+
+.employee-selection-item:hover {
+    background: var(--bg-hover);
+}
+
+.employee-selection-item.selected {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.employee-selection-item.selected:hover {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.employee-checkbox {
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.employee-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.employee-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-info .employee-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.employee-info .employee-details {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.employee-info .separator {
+    opacity: 0.4;
+}
+
+.employee-salary {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.employee-salary .salary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.employee-salary .salary-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* Selection summary */
+.selection-summary {
+    display: flex;
+    gap: 24px;
+    padding: 12px 16px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.selection-summary .summary-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selection-summary .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.selection-summary .stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #10b981;
+}
+
+/* Modal footer button with icon */
+#pseProcessBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#pseProcessBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .draft-info-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filters-bar.compact {
+        flex-wrap: wrap;
+    }
+
+    .selection-count {
+        width: 100%;
+        text-align: right;
+        margin-left: 0;
+    }
+
+    .employee-selection-item {
+        flex-wrap: wrap;
+    }
+
+    .employee-salary {
+        width: 100%;
+        text-align: left;
+        margin-top: 8px;
+        padding-left: 30px;
+    }
+
+    .selection-summary {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

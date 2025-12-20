@@ -807,6 +807,21 @@
             <ul class="nav-group-items">
                 <li><a href="#loans"><span class="section-num">8</span> Loans & Advances</a></li>
                 <li><a href="#arrears"><span class="section-num">9</span> Arrears Management</a></li>
+                <li><a href="#adjustments"><span class="section-num">10</span> Payroll Adjustments</a></li>
+                <li><a href="#voluntary-deductions"><span class="section-num">11</span> Voluntary Deductions</a></li>
+            </ul>
+        </nav>
+
+        <!-- HR Admin Features -->
+        <nav class="nav-group">
+            <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                HR Admin Features
+                <span class="chevron">&#9660;</span>
+            </div>
+            <ul class="nav-group-items">
+                <li><a href="#salary-reports"><span class="section-num">12</span> Salary Reports</a></li>
+                <li><a href="#advanced-drafts"><span class="section-num">13</span> Advanced Drafts</a></li>
+                <li><a href="#loan-monitoring"><span class="section-num">14</span> Loan Monitoring</a></li>
             </ul>
         </nav>
 
@@ -861,6 +876,10 @@
                 <div class="feature-card">
                     <h4>Arrears Management</h4>
                     <p>Handle salary arrears from backdated structure changes with automatic calculation.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Payroll Adjustments</h4>
+                    <p>Create and manage one-time or recurring adjustments like reimbursements, bonuses, incentives, and deductions.</p>
                 </div>
             </div>
 
@@ -1156,16 +1175,77 @@
             <p>Salary structures support versioning for handling mid-year changes. When you modify a structure, you can create a new version with an effective date.</p>
 
             <h4>Viewing Version History</h4>
+            <p>Click the "Version History" button on any salary structure to view all versions with action buttons:</p>
             <div class="screenshot-container">
                 <img src="images/payroll/14-version-history-modal.png" alt="Version History">
                 <div class="screenshot-caption">Version History modal showing all versions of a salary structure</div>
             </div>
 
-            <h4>Version Details</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/version-history-with-actions.png" alt="Version History with Actions">
+                <div class="screenshot-caption">Version History showing action buttons: View Details, Compare with Previous, Manage Arrears, and Bulk Assign for each version</div>
+            </div>
+
+            <h4>Version Details (Snapshot View)</h4>
+            <p>Click "View Details" on any version to see a complete snapshot of the version configuration:</p>
             <div class="screenshot-container">
                 <img src="images/payroll/15-version-details-components.png" alt="Version Details">
                 <div class="screenshot-caption">Detailed view of a specific version showing all component configurations</div>
             </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/version-details-snapshot.png" alt="Version Snapshot">
+                <div class="screenshot-caption">Version snapshot showing effective dates, status, and complete component configuration table with calculation order, percentage of basic, and fixed amounts</div>
+            </div>
+
+            <p>The Version Details modal displays:</p>
+            <ul>
+                <li><strong>Version Number:</strong> Sequential version identifier (v1, v2, v3, etc.)</li>
+                <li><strong>Effective From/To:</strong> Date range when this version is/was active</li>
+                <li><strong>Status:</strong> Current status (Active, Superseded, or Draft)</li>
+                <li><strong>Change Reason:</strong> Description of why this version was created</li>
+                <li><strong>Components Table:</strong> All salary components with their calculation settings</li>
+            </ul>
+
+            <h4>Comparing Versions</h4>
+            <p>Click "Compare with Previous" to see exactly what changed between two versions:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/version-comparison-view.png" alt="Version Comparison">
+                <div class="screenshot-caption">Version comparison showing added, removed, and modified components between two versions. In this example, 2 components were removed (HRA, PF_EE)</div>
+            </div>
+
+            <p>The comparison view highlights:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Description</th>
+                        <th>Color</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Added Components</strong></td>
+                        <td>New components in the newer version</td>
+                        <td>Green</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Removed Components</strong></td>
+                        <td>Components that were removed</td>
+                        <td>Red</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modified Components</strong></td>
+                        <td>Components with changed percentages or amounts</td>
+                        <td>Yellow/Orange</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Unchanged Components</strong></td>
+                        <td>Components that remain the same</td>
+                        <td>Gray</td>
+                    </tr>
+                </tbody>
+            </table>
 
             <h4>Creating a New Version</h4>
             <p>When salary components change (e.g., government revises PF percentage), create a new version:</p>
@@ -1175,12 +1255,65 @@
                 <div class="screenshot-caption">Create New Version modal with effective date and change reason</div>
             </div>
 
-            <h3>Bulk Employee Assignment</h3>
-            <p>Assign a salary structure to multiple employees at once:</p>
+            <h3>Bulk Version Assignment</h3>
+            <p>Assign a salary structure version to multiple employees at once, with powerful filtering options:</p>
 
             <div class="screenshot-container">
                 <img src="images/payroll/17-bulk-assign-modal.png" alt="Bulk Assign Modal">
                 <div class="screenshot-caption">Bulk Assign modal for assigning structure to multiple employees simultaneously</div>
+            </div>
+
+            <h4>Bulk Assignment with Filters</h4>
+            <p>Click "Bulk Assign" on any version in the Version History modal to open the advanced assignment interface:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/bulk-assign-version-modal.png" alt="Bulk Assign Version Modal">
+                <div class="screenshot-caption">Bulk Assign modal with filter options: Office, Department, Designation dropdowns, Effective From date picker, and Calculate Arrears checkbox</div>
+            </div>
+
+            <h4>Bulk Assignment Options</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Office Filter</strong></td>
+                        <td>Select a specific office to assign only to employees at that location</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department Filter</strong></td>
+                        <td>Filter by department (e.g., Engineering, HR, Finance)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Designation Filter</strong></td>
+                        <td>Filter by job designation/grade</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td>Date from which the assignment takes effect</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calculate Arrears</strong></td>
+                        <td>When checked, automatically calculates and creates arrears for retroactive assignments</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Bulk Assignment Use Cases:</strong>
+                    <ul>
+                        <li>Apply annual salary revision to all employees in a department</li>
+                        <li>Assign location-specific structure to all employees at an office</li>
+                        <li>Update structure for specific grade/designation levels</li>
+                        <li>Handle mid-year policy changes with automatic arrears calculation</li>
+                    </ul>
+                </div>
             </div>
 
             <h3>Preview Salary Calculation</h3>
@@ -1344,6 +1477,21 @@
                 <div class="screenshot-caption">Create Payroll Draft modal with period and office selection</div>
             </div>
 
+            <h4>Using the Month Picker</h4>
+            <p>The Create Draft modal features an HTML5 month picker for easy period selection:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/create-draft-modal-month-picker.png" alt="Create Draft with Month Picker">
+                <div class="screenshot-caption">Create Draft modal showing the month picker control allowing quick selection of payroll period (e.g., December 2025)</div>
+            </div>
+
+            <p>The month picker provides:</p>
+            <ul>
+                <li><strong>Quick Month Selection:</strong> Click to open a calendar-style month/year picker</li>
+                <li><strong>Keyboard Navigation:</strong> Use arrow keys to navigate months</li>
+                <li><strong>Validation:</strong> Prevents selecting future months or already-finalized periods</li>
+                <li><strong>Format:</strong> Displays as "YYYY-MM" but shows friendly format in UI</li>
+            </ul>
+
             <h4>Step 3: Fill Draft Details</h4>
             <div class="screenshot-container">
                 <img src="images/payroll/36-create-draft-filled.png" alt="Draft Filled">
@@ -1371,9 +1519,58 @@
             </div>
 
             <h4>Step 7: View Individual Payslip Details</h4>
+            <p>Click the "View Details" button on any employee row to see their complete payslip breakdown:</p>
             <div class="screenshot-container">
                 <img src="images/payroll/40-payslip-details-modal.png" alt="Payslip Details">
-                <div class="screenshot-caption">Individual payslip showing earnings breakdown, deductions, and net pay</div>
+                <div class="screenshot-caption">Individual payslip showing earnings breakdown, deductions, YTD tracking, and net pay</div>
+            </div>
+
+            <p>The payslip details modal displays:</p>
+            <ul>
+                <li><strong>Employee Info:</strong> Name, payslip period, and net pay summary</li>
+                <li><strong>Attendance Summary:</strong> Working days, days worked, and LOP (Loss of Pay) days</li>
+                <li><strong>Earnings Table:</strong> All earning components with current month amount and Year-to-Date (YTD) totals</li>
+                <li><strong>Deductions Table:</strong> All deduction components with current month amount and YTD totals</li>
+                <li><strong>Download PDF:</strong> Generate and download a formal payslip document</li>
+            </ul>
+
+            <h5>Year-to-Date (YTD) Tracking</h5>
+            <p>Each payslip component displays a <strong>YTD column</strong> showing the cumulative amount paid for that component from the start of the financial year (April) to the current payslip period:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Component</strong></td>
+                        <td>Name of the salary component</td>
+                        <td>Basic Pay, HRA, Professional Tax</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount</strong></td>
+                        <td>Amount for the current payslip period</td>
+                        <td>₹20,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>YTD</strong></td>
+                        <td>Cumulative amount from financial year start</td>
+                        <td>₹2,00,000 (10 months × ₹20,000)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box">
+                <strong>YTD Benefits:</strong>
+                <ul>
+                    <li>Employees can verify their year-to-date earnings for tax planning</li>
+                    <li>HR can quickly verify cumulative deductions like PF and Professional Tax</li>
+                    <li>Useful for generating Form 16 and other statutory reports</li>
+                    <li>YTD resets at the start of each financial year (April)</li>
+                </ul>
             </div>
 
             <h4>Step 8: Finalize the Draft</h4>
@@ -1389,7 +1586,112 @@
                 <div class="screenshot-caption">Draft finalized successfully - moved to Finalized Runs</div>
             </div>
 
-            <h3>Draft Actions</h3>
+            <h3>Draft Status Transitions</h3>
+            <p>Payroll drafts have different statuses, and the available actions change based on the current status:</p>
+
+            <h4>Status: "Not Processed" (Pending)</h4>
+            <p>When a draft is first created, it has no payslips yet. The following actions are available:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/draft-pending-status-with-process-buttons.png" alt="Draft Pending Status">
+                <div class="screenshot-caption">Draft in "Not Processed" status showing "Process All" and "Process Selected" buttons</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Process All</strong></td>
+                        <td>Calculate payslips for ALL employees in the selected office(s)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Process Selected</strong></td>
+                        <td>Open a modal to select specific employees to process</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rename</strong></td>
+                        <td>Change the draft name for better organization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delete</strong></td>
+                        <td>Remove the empty draft</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Process Selected Employees Modal</h4>
+            <p>Click "Process Selected" to open a modal where you can choose specific employees:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/process-selected-employees-modal.png" alt="Process Selected Employees Modal">
+                <div class="screenshot-caption">Process Selected Employees modal showing employee list with checkboxes. Select specific employees to process their payslips only.</div>
+            </div>
+
+            <p>Use cases for Process Selected:</p>
+            <ul>
+                <li><strong>Testing:</strong> Process a few employees first to verify calculations</li>
+                <li><strong>New Joiners:</strong> Process mid-month joiners separately</li>
+                <li><strong>Corrections:</strong> Re-process specific employees after fixing data</li>
+                <li><strong>Department-wise:</strong> Process one department at a time in large organizations</li>
+            </ul>
+
+            <h4>Status: "Processed" (Ready to Finalize)</h4>
+            <p>After processing, the draft shows payslips and different action buttons:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/drafts-with-recalculate-and-status-actions.png" alt="Processed Draft Actions">
+                <div class="screenshot-caption">Drafts showing different statuses: "Not Processed" with Process buttons, and "Ready to Finalize" with Recalculate and Finalize buttons</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Recalculate</strong></td>
+                        <td>Re-process all payslips after making changes to attendance, adjustments, or salaries</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finalize</strong></td>
+                        <td>Lock the draft and move it to Finalized Runs for approval</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rename</strong></td>
+                        <td>Change the draft name</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delete</strong></td>
+                        <td>Remove the draft and all its payslips</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Rename Draft Feature</h4>
+            <p>Click the Rename button to change a draft's name:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/rename-draft-modal.png" alt="Rename Draft Modal">
+                <div class="screenshot-caption">Rename Draft modal allowing you to change the draft name for better organization (e.g., "December 2025 - Mumbai Office (Revised)")</div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Naming Conventions:</strong>
+                    <ul>
+                        <li><code>December 2025 - All Offices</code> for company-wide drafts</li>
+                        <li><code>December 2025 - Mumbai Office</code> for office-specific</li>
+                        <li>Add "(Revised)", "(Corrected)", "(Final)" suffixes as needed</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Draft Actions Summary</h3>
             <table>
                 <thead>
                     <tr>
@@ -1400,14 +1702,19 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Process</strong></td>
+                        <td><strong>Process All</strong></td>
                         <td>Calculate payslips for all employees</td>
-                        <td>After creating draft or making changes</td>
+                        <td>After creating draft (first-time processing)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Process Selected</strong></td>
+                        <td>Calculate payslips for chosen employees only</td>
+                        <td>Testing, new joiners, corrections</td>
                     </tr>
                     <tr>
                         <td><strong>Recalculate</strong></td>
-                        <td>Recalculate after attendance/leave changes</td>
-                        <td>When attendance was corrected</td>
+                        <td>Re-generate all payslips with current data</td>
+                        <td>After attendance corrections, adjustments, or salary changes</td>
                     </tr>
                     <tr>
                         <td><strong>Finalize</strong></td>
@@ -1562,6 +1869,52 @@
                 <div class="screenshot-caption">Empty Loans & Advances tab before any loans are created</div>
             </div>
 
+            <h4>Filtering Loans by Status</h4>
+            <p>The Loans tab includes a status filter dropdown to quickly view loans in different stages:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/loans-with-status-filter.png" alt="Loans with Status Filter">
+                <div class="screenshot-caption">Loans tab showing the status filter dropdown with options: All Status, Active, Pending, and Completed</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Filter Option</th>
+                        <th>Shows</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>All Status</strong></td>
+                        <td>All loans regardless of status</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active</strong></td>
+                        <td>Disbursed loans with ongoing EMI deductions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pending</strong></td>
+                        <td>Loan applications awaiting HR approval</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Completed</strong></td>
+                        <td>Fully repaid loans (all EMIs paid)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Quick Access:</strong>
+                    <ul>
+                        <li>Filter by <strong>Pending</strong> to review loan applications needing approval</li>
+                        <li>Filter by <strong>Active</strong> to monitor ongoing loan repayments</li>
+                        <li>The count badge on each filter shows how many loans match that status</li>
+                    </ul>
+                </div>
+            </div>
+
             <h4>Step 2: Apply for a Loan</h4>
             <p>Click "Apply for Loan" to open the application modal:</p>
 
@@ -1686,9 +2039,98 @@
                 <li>A salary structure is changed with a past effective date</li>
                 <li>A salary increment is announced retroactively</li>
                 <li>A new component is added with backdated effect</li>
+                <li>An employee's CTC is revised with a past effective date</li>
             </ul>
 
-            <h3>Step-by-Step: Creating Retroactive Arrears</h3>
+            <h3>Arrears Tab Structure</h3>
+            <p>The Arrears section is organized into two tabs for different types of arrears:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/arrears-version-arrears-tab.png" alt="Version Arrears Tab">
+                <div class="screenshot-caption">Arrears section showing the two-tab structure: "Version Arrears" (for structure changes) and "CTC Revision" (for individual salary revisions)</div>
+            </div>
+
+            <h4>Tab 1: Version Arrears</h4>
+            <p>Version Arrears are generated when a <strong>salary structure version</strong> is created with a retroactive effective date. These affect multiple employees who use the same structure.</p>
+            <ul>
+                <li><strong>Trigger:</strong> Creating a new version of a salary structure with a past date</li>
+                <li><strong>Scope:</strong> All employees assigned to that structure</li>
+                <li><strong>Example:</strong> Government revises PF percentage effective April 1st (announced in July)</li>
+            </ul>
+
+            <h4>Tab 2: CTC Revision Arrears</h4>
+            <p>CTC Revision Arrears are generated when an <strong>individual employee's CTC</strong> is revised with a retroactive effective date.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/arrears-ctc-revision-tab.png" alt="CTC Revision Arrears Tab">
+                <div class="screenshot-caption">CTC Revision tab showing individual employee arrears from salary revisions. Each row shows the employee, revision date, old CTC, new CTC, affected months, and calculated arrears amount.</div>
+            </div>
+
+            <ul>
+                <li><strong>Trigger:</strong> Creating a salary revision with a past effective date</li>
+                <li><strong>Scope:</strong> Individual employee only</li>
+                <li><strong>Example:</strong> Promotion announced in December, effective from October</li>
+            </ul>
+
+            <h4>CTC Revision Arrears Details</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name and code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Revision Date</strong></td>
+                        <td>When the salary revision was created</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td>The retroactive date from which the revision applies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Old CTC</strong></td>
+                        <td>Previous annual CTC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>New CTC</strong></td>
+                        <td>Revised annual CTC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Months Affected</strong></td>
+                        <td>Number of past months requiring arrears calculation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Arrears</strong></td>
+                        <td>Sum of arrears for all affected months</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Pending, Applied, or Cancelled</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>CTC Revision Workflow:</strong>
+                    <ol style="margin: 8px 0 0 20px;">
+                        <li>Go to Employee Salaries → Select employee → Click "Revise Salary"</li>
+                        <li>Enter new CTC and set "Effective From" to a past date</li>
+                        <li>System automatically calculates arrears for each affected month</li>
+                        <li>Navigate to Arrears → CTC Revision tab to review</li>
+                        <li>Apply arrears to include in the next payroll</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h3>Step-by-Step: Creating Version-Based Retroactive Arrears</h3>
 
             <h4>Step 1: View the Arrears Tab</h4>
             <div class="screenshot-container">
@@ -1723,8 +2165,42 @@
             <p>Click "Manage Arrears" to see calculated arrears for affected employees:</p>
 
             <div class="screenshot-container">
-                <img src="images/payroll/63-manage-arrears-empty.png" alt="Manage Arrears">
-                <div class="screenshot-caption">Manage Arrears modal showing pending arrears (if any payslips exist for the retroactive period)</div>
+                <img src="images/payroll/63-manage-arrears-empty.png" alt="Manage Arrears Empty">
+                <div class="screenshot-caption">Version Arrears Management modal showing "No arrears found"</div>
+            </div>
+
+            <div class="info-box">
+                <span class="icon">ℹ️</span>
+                <div>
+                    <strong>Why does the modal show "No arrears found"?</strong><br>
+                    Arrears are only calculated when <strong>payslips already exist</strong> for the retroactive period. The system compares:
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li><strong>Old Gross:</strong> What was paid in the existing payslip</li>
+                        <li><strong>New Gross:</strong> What should have been paid with the new structure version</li>
+                    </ul>
+                    If payroll was not yet processed for the affected months (e.g., November 2025), there are no payslips to compare against, so no arrears are generated. Process payroll for those months first, then create the retroactive version to generate arrears.
+                </div>
+            </div>
+
+            <h4>Arrears with Pending Status</h4>
+            <p>When payslips exist for the retroactive period, the modal displays pending arrears that can be applied to the next payroll:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/63-manage-arrears-with-data.png" alt="Manage Arrears with Data">
+                <div class="screenshot-caption">Arrears tab showing 6 applied arrears for 3 employees (Praveen Babu, Dev Kumar, Aradhna Pal) totaling ₹2,32,145. Each row shows the employee name, structure version, period (Nov 2025), old gross (₹23,636 or ₹30,909), new gross (₹65,000), and arrears amount.</div>
+            </div>
+
+            <div class="tip-box">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Workflow for Retroactive Arrears:</strong>
+                    <ol style="margin: 8px 0 0 20px;">
+                        <li>Process payroll for the months you want to affect (e.g., November)</li>
+                        <li>Create a new structure version with a retroactive effective date (e.g., November 1st)</li>
+                        <li>Click "Manage Arrears" - the system will show pending arrears comparing old vs new gross</li>
+                        <li>Select arrears and click "Apply Selected to Payroll" to include in the next payroll run</li>
+                    </ol>
+                </div>
             </div>
 
             <h3>Arrears Calculation</h3>
@@ -1779,10 +2255,1838 @@
                 </tbody>
             </table>
 
+            <h3>Viewing and Filtering Arrears</h3>
+            <p>The Arrears tab provides a comprehensive view of all arrears with filtering options:</p>
+
+            <h4>Status Filter</h4>
+            <p>Use the status dropdown to filter arrears by their current state:</p>
+            <ul>
+                <li><strong>Pending:</strong> Arrears waiting to be applied to payroll</li>
+                <li><strong>Applied:</strong> Arrears that have been included in a payslip</li>
+                <li><strong>Cancelled:</strong> Arrears that were marked as not applicable</li>
+                <li><strong>All Statuses:</strong> View all arrears regardless of status</li>
+            </ul>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/arrears-tab-applied-filter.png" alt="Arrears Tab with Applied Filter">
+                <div class="screenshot-caption">Arrears tab filtered to show only applied arrears with summary statistics</div>
+            </div>
+
+            <h4>Summary Statistics</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Statistic</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Total Records</strong></td>
+                        <td>Number of arrears matching the current filter</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Amount</strong></td>
+                        <td>Sum of all arrears amounts in the filtered list</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employees Affected</strong></td>
+                        <td>Number of unique employees with arrears</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Arrears in Payslips</h3>
+            <p>When viewing a payslip that includes arrears, the system displays both the total arrears amount and a detailed breakdown by period for audit and compliance purposes.</p>
+
+            <h4>Combined Totals Section</h4>
+            <p>In the payslip modal, the "Combined Totals" section shows:</p>
+            <ul>
+                <li><strong>Arrears Total:</strong> The total arrears amount added to this payslip</li>
+                <li><strong>Arrears by Period (Audit):</strong> A detailed table showing the breakdown</li>
+            </ul>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/arrears-breakdown-payslip.png" alt="Arrears Breakdown in Payslip">
+                <div class="screenshot-caption">Payslip showing arrears breakdown by period for audit compliance</div>
+            </div>
+
+            <h4>Period Breakdown Table</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Period</strong></td>
+                        <td>The month and year the arrear applies to (e.g., "November 2025")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Old Gross</strong></td>
+                        <td>What was originally calculated/paid for that period</td>
+                    </tr>
+                    <tr>
+                        <td><strong>New Gross</strong></td>
+                        <td>What should have been paid with the new structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Arrears</strong></td>
+                        <td>The difference amount (New - Old) for that specific period</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Audit Trail:</strong> The period-wise breakdown provides a complete audit trail showing exactly which months were affected and how the arrears were calculated. This is essential for tax compliance and financial audits.
+                </div>
+            </div>
+
             <div class="info-box tip">
                 <span class="icon">&#128161;</span>
                 <div>
                     <strong>Automatic Calculation:</strong> Arrears are automatically calculated when you create a structure version with a past effective date. The system compares what was paid vs what should have been paid for each affected month.
+                </div>
+            </div>
+
+            <h3>CTC Revision Arrears (Individual Salary Changes)</h3>
+            <p>In addition to structure version arrears (which affect multiple employees), the system also calculates arrears when an individual employee's CTC is revised with a backdated effective date.</p>
+
+            <div class="info-box tip">
+                <span class="icon">&#128204;</span>
+                <div>
+                    <strong>Key Difference:</strong> CTC Revision Arrears are triggered by individual salary changes (e.g., annual increments, promotions) while Structure Version Arrears are triggered by changes to the salary structure components (e.g., increasing BASIC from 40% to 45%).
+                </div>
+            </div>
+
+            <h4>How CTC Revision Arrears Work</h4>
+            <ol>
+                <li><strong>Navigate to Employee Salary:</strong> Go to Employees → Select Employee → Salary Tab</li>
+                <li><strong>Revise Salary:</strong> Click "Revise Salary" and enter new CTC with a backdated effective date</li>
+                <li><strong>Automatic Calculation:</strong> System automatically identifies affected payslips and calculates arrears</li>
+                <li><strong>Review Arrears:</strong> View pending arrears in Payroll → Arrears tab</li>
+            </ol>
+
+            <h4>Viewing CTC Revision Arrears</h4>
+            <p>After revising salary with a backdated effective date, the arrears appear in the Arrears tab:</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/ctc-arrears-02-arrears-tab.png" alt="CTC Revision Arrears Tab">
+                <div class="screenshot-caption">Arrears tab showing 2 pending CTC revision arrears for Dev Kumar (EMP002). November 2025: ₹9,091 arrears. December 2025: ₹13,939 arrears. Total: ₹23,030.</div>
+            </div>
+
+            <h4>Arrears Details View</h4>
+            <p>Click "View Details" on any arrears row to see the complete calculation breakdown:</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/ctc-arrears-03-details-modal.png" alt="CTC Revision Arrears Details">
+                <div class="screenshot-caption">Arrears details modal showing calculation breakdown: Old Gross ₹23,636 → New Gross ₹90,909 = ₹9,091 arrears for November 2025. Component-wise breakdown shows individual differences for PF, HRA, etc.</div>
+            </div>
+
+            <h4>CTC Revision Arrears Calculation</h4>
+            <p>The system uses <strong>payslip-confirmed attendance</strong> (actual days worked from processed payslips) for accurate arrears calculation:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Days Worked</th>
+                        <th>Old Gross</th>
+                        <th>New Gross</th>
+                        <th>Arrears</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>November 2025</td>
+                        <td>15 days</td>
+                        <td>₹23,636</td>
+                        <td>₹90,909</td>
+                        <td style="color: var(--color-success); font-weight: bold;">+₹9,091</td>
+                    </tr>
+                    <tr>
+                        <td>December 2025</td>
+                        <td>23 days</td>
+                        <td>₹30,909</td>
+                        <td>₹1,39,394</td>
+                        <td style="color: var(--color-success); font-weight: bold;">+₹13,939</td>
+                    </tr>
+                    <tr style="background-color: var(--primary-light); font-weight: bold;">
+                        <td colspan="4">Total CTC Revision Arrears</td>
+                        <td style="color: var(--color-success);">+₹23,030</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;&#65039;</span>
+                <div>
+                    <strong>Attendance Accuracy:</strong> CTC Revision Arrears use the <code>days_worked</code> field from already-processed payslips, NOT calendar working days. This ensures arrears are accurate even when employees had partial attendance (LOP, leaves, etc.).
+                </div>
+            </div>
+
+            <h4>Arrears Source Types</h4>
+            <p>The system tracks different types of arrears for audit purposes:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Source Type</th>
+                        <th>Trigger</th>
+                        <th>Scope</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>structure_version</code></td>
+                        <td>Salary structure version change</td>
+                        <td>Multiple employees on structure</td>
+                    </tr>
+                    <tr>
+                        <td><code>ctc_revision</code></td>
+                        <td>Individual CTC revision</td>
+                        <td>Single employee</td>
+                    </tr>
+                    <tr>
+                        <td><code>transfer</code></td>
+                        <td>Office transfer affecting salary</td>
+                        <td>Single employee</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 10: Payroll Adjustments -->
+        <section id="adjustments">
+            <h2><span class="section-number">10</span> Payroll Adjustments</h2>
+            <p>Payroll Adjustments allow HR administrators to add one-time or recurring additions and deductions to employee salaries. This covers reimbursements, bonuses, incentives, recovery deductions, and other ad-hoc adjustments that need to be reflected in payslips.</p>
+
+            <div class="info-box important">
+                <span class="icon">&#9432;</span>
+                <div>
+                    <strong>Key Concepts</strong>
+                    <ul>
+                        <li><strong>Adjustment Types</strong> - Different categories: Reimbursement, Bonus, Incentive, Arrears, Deduction, Recovery</li>
+                        <li><strong>Effect Types</strong> - Whether the adjustment adds to salary (earning) or subtracts (deduction)</li>
+                        <li><strong>Recurring Adjustments</strong> - Adjustments that repeat for multiple months automatically</li>
+                        <li><strong>Approval Workflow</strong> - All adjustments require HR Admin approval before being applied</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>10.1 Understanding Adjustment Types</h3>
+            <p>The system supports six different types of adjustments, each serving a specific purpose:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Effect</th>
+                        <th>Description</th>
+                        <th>Common Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>reimbursement</code></td>
+                        <td><span style="color: var(--color-success); font-weight: 500;">+ Earning</span></td>
+                        <td>Expense reimbursements for approved claims</td>
+                        <td>Travel expenses, medical bills, equipment purchases</td>
+                    </tr>
+                    <tr>
+                        <td><code>bonus</code></td>
+                        <td><span style="color: var(--color-success); font-weight: 500;">+ Earning</span></td>
+                        <td>One-time bonus payments</td>
+                        <td>Performance bonus, festive bonus, referral bonus</td>
+                    </tr>
+                    <tr>
+                        <td><code>incentive</code></td>
+                        <td><span style="color: var(--color-success); font-weight: 500;">+ Earning</span></td>
+                        <td>Performance-based incentives (often recurring)</td>
+                        <td>Sales incentive, quarterly targets, project completion bonus</td>
+                    </tr>
+                    <tr>
+                        <td><code>arrears</code></td>
+                        <td><span style="color: var(--color-success); font-weight: 500;">+ Earning</span></td>
+                        <td>Backdated salary differences</td>
+                        <td>Salary revision arrears, promotion arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>deduction</code></td>
+                        <td><span style="color: var(--color-danger); font-weight: 500;">− Deduction</span></td>
+                        <td>General deductions from salary</td>
+                        <td>Damage charges, policy violations, advance recovery</td>
+                    </tr>
+                    <tr>
+                        <td><code>recovery</code></td>
+                        <td><span style="color: var(--color-danger); font-weight: 500;">− Deduction</span></td>
+                        <td>Recovery of overpayments or advances</td>
+                        <td>Salary overpayment recovery, unauthorized expense recovery</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>10.2 Navigating to Adjustments Tab</h3>
+            <p>The Adjustments tab is accessible from the Payroll Management page. Navigate to <strong>HRMS → Payroll → Adjustments</strong> tab.</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-01-empty-state.png" alt="Adjustments Tab Empty State">
+                <div class="screenshot-caption">Adjustments tab showing empty state with no adjustments created yet. Use the "New Adjustment" button to create your first adjustment.</div>
+            </div>
+
+            <h3>10.3 Creating a Reimbursement Adjustment</h3>
+            <p>Reimbursements are used to reimburse employees for approved expense claims. Follow these steps to create a reimbursement:</p>
+
+            <ol class="steps">
+                <li>Click the <strong>"New Adjustment"</strong> button in the Adjustments tab</li>
+                <li>Select the employee from the dropdown</li>
+                <li>Choose <strong>"Reimbursement"</strong> as the adjustment type</li>
+                <li>Enter the reimbursement amount</li>
+                <li>Select the month and year for when this should be applied</li>
+                <li>Add a description explaining the reimbursement</li>
+                <li>Click <strong>"Create Adjustment"</strong></li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-02-new-adjustment-modal.png" alt="New Adjustment Modal Empty">
+                <div class="screenshot-caption">New Adjustment modal showing all available fields. The Employee dropdown, Adjustment Type, Amount, Month/Year, and Description are required fields.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-03-employee-dropdown.png" alt="Employee Dropdown Selection">
+                <div class="screenshot-caption">Employee dropdown showing all active employees. Select the employee who should receive this adjustment.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-04-reimbursement-filled.png" alt="Reimbursement Form Filled">
+                <div class="screenshot-caption">Reimbursement adjustment filled out for Praveen Babu - ₹5,000 for travel expense reimbursement in January 2026.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-05-reimbursement-created.png" alt="Reimbursement Created Successfully">
+                <div class="screenshot-caption">After creation, the reimbursement appears in the table with "Pending" status, awaiting HR Admin approval.</div>
+            </div>
+
+            <h3>10.4 Creating a Bonus Adjustment</h3>
+            <p>Bonus adjustments are one-time payments for exceptional performance, referrals, or other achievements.</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-06-bonus-filled.png" alt="Bonus Adjustment Form">
+                <div class="screenshot-caption">Bonus adjustment for Dev Kumar - ₹15,000 performance bonus. Note how the type is set to "Bonus" which automatically sets the effect to "Earning".</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-07-bonus-created.png" alt="Bonus Created in List">
+                <div class="screenshot-caption">Both adjustments now visible in the table - the Reimbursement for EMP001 and Bonus for EMP002, both pending approval.</div>
+            </div>
+
+            <h3>10.5 Creating a Recurring Incentive</h3>
+            <p>Incentives can be set as recurring to automatically repeat for multiple months. This is useful for quarterly incentive programs or ongoing performance bonuses.</p>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Recurring Adjustments</strong><br>
+                    When you set the "Recurring Months" field to a value greater than 0, the system will automatically apply this adjustment for the specified number of consecutive months starting from the selected month/year.
+                </div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-08-incentive-recurring-filled.png" alt="Recurring Incentive Form">
+                <div class="screenshot-caption">Incentive for Aradhna Pal - ₹3,000 monthly sales incentive set to recur for 3 months. The "Recurring Months" field is set to 3.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-09-incentive-created.png" alt="Incentive Created">
+                <div class="screenshot-caption">The incentive now shows in the table. Note the recurring indicator showing it will apply for 3 months.</div>
+            </div>
+
+            <h3>10.6 Creating a Recovery Deduction</h3>
+            <p>Recovery adjustments are used to deduct amounts from employee salaries, typically for recovering overpayments, advances, or damages.</p>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Deduction Types</strong><br>
+                    Both "Deduction" and "Recovery" types subtract from the employee's salary. Use "Recovery" specifically when recovering previously paid amounts, and "Deduction" for penalties or other charges.
+                </div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-10-recovery-filled.png" alt="Recovery Form">
+                <div class="screenshot-caption">Recovery adjustment for Dev Kumar - ₹2,000 to recover an overpayment. The effect type is automatically set to "Deduction" for recovery types.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-11-all-adjustments-pending.png" alt="All Adjustments Pending">
+                <div class="screenshot-caption">All four adjustments created and visible in the table. The Recovery shows the amount in red indicating it's a deduction. All are in "Pending" status.</div>
+            </div>
+
+            <h3>10.7 Viewing Adjustment Details</h3>
+            <p>Click the <strong>View Details</strong> button (eye icon) on any adjustment to see complete information including who created it and when.</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-12-view-details-modal.png" alt="View Details Modal">
+                <div class="screenshot-caption">View Details modal showing complete information about the adjustment including employee name, type, amount, description, status, and audit information.</div>
+            </div>
+
+            <h3>10.8 Approving Adjustments</h3>
+            <p>All adjustments require HR Admin approval before they are applied to payslips. Only users with <strong>HRMS_HR_ADMIN</strong> or <strong>SUPERADMIN</strong> role can approve adjustments.</p>
+
+            <ol class="steps">
+                <li>Click the <strong>View Details</strong> button on a pending adjustment</li>
+                <li>Review the adjustment details carefully</li>
+                <li>Click the <strong>"Approve"</strong> button to approve</li>
+                <li>Confirm the approval in the dialog</li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-15-view-details-with-actions.png" alt="View Details with Actions">
+                <div class="screenshot-caption">View Details modal for a pending adjustment showing Approve and Reject buttons. HR Admin must verify the details before approving.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-13-approve-confirmation.png" alt="Approve Confirmation Dialog">
+                <div class="screenshot-caption">Confirmation dialog asking to confirm the approval. Click "Approve" to proceed or "Cancel" to go back.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-14-after-first-approval.png" alt="After First Approval">
+                <div class="screenshot-caption">After approval, the adjustment status changes to "Approved" (shown in green). The approved adjustment will be included in the next payroll processing.</div>
+            </div>
+
+            <h3>10.9 Rejecting Adjustments</h3>
+            <p>If an adjustment request is incorrect or not approved, you can reject it with a reason.</p>
+
+            <ol class="steps">
+                <li>Click the <strong>View Details</strong> button on a pending adjustment</li>
+                <li>Click the <strong>"Reject"</strong> button</li>
+                <li>Enter a rejection reason (required)</li>
+                <li>Click <strong>"Reject"</strong> to confirm</li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-16-reject-modal-empty.png" alt="Reject Modal Empty">
+                <div class="screenshot-caption">Reject modal showing the required reason field. You must provide a reason for rejecting the adjustment.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-17-reject-modal-filled.png" alt="Reject Modal Filled">
+                <div class="screenshot-caption">Reject modal with reason filled in - "Overpayment was already recovered in previous month. Duplicate entry."</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-18-rejection-success.png" alt="Rejection Success">
+                <div class="screenshot-caption">After rejection, the adjustment status changes to "Rejected" (shown in red). The rejection reason is stored for audit purposes.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-19-all-processed.png" alt="All Adjustments Processed">
+                <div class="screenshot-caption">Final state showing all adjustments processed - 3 approved (Reimbursement, Bonus, Incentive) and 1 rejected (Recovery). Filter options allow viewing by status.</div>
+            </div>
+
+            <h3>10.10 Adjustments in Payroll Processing</h3>
+            <p>Approved adjustments are automatically included when processing payroll drafts. Here's how adjustments appear in the payroll workflow:</p>
+
+            <h4>Step 1: Create and Process Payroll Draft</h4>
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-20-drafts-empty.png" alt="Payroll Drafts Tab">
+                <div class="screenshot-caption">Navigate to the Payroll Drafts tab. If no drafts exist for the current period, you'll see an empty state.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-21-create-draft-modal.png" alt="Create Draft Modal">
+                <div class="screenshot-caption">Create Draft modal - select the month, year, and optionally filter by office. Click "Create Draft" to create a new payroll draft.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-22-draft-created.png" alt="Draft Created">
+                <div class="screenshot-caption">Draft created successfully. Click "View Details" to see the draft, then "Process" to generate payslips with adjustments included.</div>
+            </div>
+
+            <h4>Step 2: View Adjustments in Payslips</h4>
+            <p>After processing the draft, open any payslip to see how adjustments are reflected. Adjustments appear in a dedicated "Adjustments & Additions" section.</p>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-27-payslip-emp001-reimbursement.png" alt="Payslip with Reimbursement">
+                <div class="screenshot-caption">Praveen Babu's (EMP001) payslip showing the ₹5,000 Reimbursement in the "Adjustments & Additions" section. This adds to the net pay.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-26-payslip-emp002-adjustments.png" alt="Payslip with Bonus">
+                <div class="screenshot-caption">Dev Kumar's (EMP002) payslip showing the ₹15,000 Bonus as "Bonus/Incentive" in the Adjustments section. Net Impact shows +₹15,000.</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="../images/payroll/adj-28-payslip-emp003-incentive.png" alt="Payslip with Incentive">
+                <div class="screenshot-caption">Aradhna Pal's (EMP003) payslip showing the ₹3,000 Incentive. Since this is a recurring adjustment, it will appear for the next 2 months as well.</div>
+            </div>
+
+            <h4>Understanding the Payslip Adjustments Section</h4>
+            <p>The "Adjustments & Additions" section in payslips shows:</p>
+            <ul>
+                <li><strong>Additional Earnings</strong> - Reimbursements, Bonuses, Incentives, and Arrears that add to salary</li>
+                <li><strong>Additional Deductions</strong> - Recovery and Deduction amounts that subtract from salary</li>
+                <li><strong>Net Impact</strong> - The total effect of all adjustments on the employee's net pay</li>
+            </ul>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Adjustment Type</th>
+                        <th>Display Name in Payslip</th>
+                        <th>Color Badge</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reimbursement</td>
+                        <td>Reimbursement</td>
+                        <td><span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Green</span></td>
+                    </tr>
+                    <tr>
+                        <td>Bonus / Incentive</td>
+                        <td>Bonus/Incentive</td>
+                        <td><span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Purple</span></td>
+                    </tr>
+                    <tr>
+                        <td>Arrears</td>
+                        <td>Arrears</td>
+                        <td><span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Orange</span></td>
+                    </tr>
+                    <tr>
+                        <td>Deduction / Recovery</td>
+                        <td>Recovery</td>
+                        <td><span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">Red</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>10.11 Adjustment Status Workflow</h3>
+            <p>Every adjustment goes through a defined workflow:</p>
+
+            <div class="workflow-diagram">
+                <span class="workflow-step">Created</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step">Pending</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step">Approved / Rejected</span>
+                <span class="workflow-arrow">&#8594;</span>
+                <span class="workflow-step">Applied in Payroll</span>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Description</th>
+                        <th>Actions Available</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px;">Pending</span></td>
+                        <td>Adjustment created, awaiting HR Admin approval</td>
+                        <td>View, Approve, Reject</td>
+                    </tr>
+                    <tr>
+                        <td><span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px;">Approved</span></td>
+                        <td>Approved by HR Admin, will be included in payroll</td>
+                        <td>View only</td>
+                    </tr>
+                    <tr>
+                        <td><span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px;">Rejected</span></td>
+                        <td>Rejected by HR Admin, will not be applied</td>
+                        <td>View only (with rejection reason)</td>
+                    </tr>
+                    <tr>
+                        <td><span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px;">Applied</span></td>
+                        <td>Successfully applied in a finalized payroll run</td>
+                        <td>View only</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>10.12 Best Practices</h3>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Tips for Managing Adjustments</strong>
+                    <ul>
+                        <li><strong>Always add descriptions</strong> - Include detailed reasons for adjustments for audit purposes</li>
+                        <li><strong>Review before approval</strong> - Verify the amount, employee, and month before approving</li>
+                        <li><strong>Use recurring for regular incentives</strong> - Set recurring months for quarterly bonuses or ongoing incentives</li>
+                        <li><strong>Process adjustments before payroll</strong> - Ensure all pending adjustments are approved/rejected before processing payroll drafts</li>
+                        <li><strong>Check payslips after processing</strong> - Verify adjustments appear correctly in the payslip preview</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Common Mistakes to Avoid</strong>
+                    <ul>
+                        <li><strong>Wrong month selection</strong> - Ensure the month/year matches when the adjustment should apply</li>
+                        <li><strong>Duplicate adjustments</strong> - Check if a similar adjustment already exists before creating</li>
+                        <li><strong>Missing approvals</strong> - Unapproved adjustments won't appear in payroll</li>
+                        <li><strong>Wrong adjustment type</strong> - Using "Deduction" instead of "Recovery" affects reporting</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 11: Voluntary Deductions -->
+        <section id="voluntary-deductions">
+            <h2><span class="section-number">11</span> Voluntary Deductions</h2>
+            <p>Voluntary Deductions (VD) allow employees to opt into recurring deductions from their salary for benefits like additional insurance, charity donations, or other voluntary contributions. This section covers how to set up VD types, manage enrollments, and track deductions in payslips.</p>
+
+            <div class="info-box important">
+                <span class="icon">&#9432;</span>
+                <div>
+                    <strong>Key Concepts</strong>
+                    <ul>
+                        <li><strong>VD Types</strong> - Define the categories of voluntary deductions available (e.g., Medical Insurance, Charity)</li>
+                        <li><strong>Enrollments</strong> - Track which employees are enrolled in which VD types</li>
+                        <li><strong>Status Workflow</strong> - Pending Approval → Approved → Active → Opted Out</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>11.1 VD Types Tab</h3>
+            <p>The VD Types tab allows HR administrators to create and manage the types of voluntary deductions available to employees.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-02-types-overview.png" alt="VD Types Tab Overview">
+                <div class="screenshot-caption">VD Types tab showing existing deduction types with their default amounts</div>
+            </div>
+
+            <h4>Creating a VD Type</h4>
+            <ol class="steps">
+                <li>Navigate to <strong>Payroll → Voluntary Deductions → VD Types</strong> tab</li>
+                <li>Click the <strong>"Create VD Type"</strong> button</li>
+                <li>Fill in the VD type details</li>
+                <li>Click <strong>"Create"</strong> to save</li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-03-create-type-modal-empty.png" alt="Create VD Type Modal Empty">
+                <div class="screenshot-caption">Empty Create VD Type modal showing required fields</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-04-create-type-modal-filled.png" alt="Create VD Type Modal Filled">
+                <div class="screenshot-caption">Create VD Type modal filled with "Charity Donation" example - ₹1,000 default amount</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Deduction Name</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>A descriptive name for the VD type (e.g., "Additional Medical Insurance")</td>
+                    </tr>
+                    <tr>
+                        <td><code>Default Amount</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>The default monthly deduction amount. Can be overridden per enrollment.</td>
+                    </tr>
+                    <tr>
+                        <td><code>Description</code></td>
+                        <td><span class="badge optional">Optional</span></td>
+                        <td>Additional details about the deduction for employee reference</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Editing a VD Type</h4>
+            <p>Click the <strong>Edit</strong> button next to any VD type to modify its details.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-05-edit-type-modal.png" alt="Edit VD Type Modal">
+                <div class="screenshot-caption">Edit VD Type modal showing existing values for modification</div>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Changing Default Amount</strong><br>
+                    Changing the default amount on a VD type does NOT affect existing enrollments. Only new enrollments will use the updated default.
+                </div>
+            </div>
+
+            <h3>11.2 All Enrollments Tab</h3>
+            <p>The All Enrollments tab shows all VD enrollments across employees with their current status and allows HR to manage them.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-01-enrollments-overview.png" alt="VD Enrollments Overview">
+                <div class="screenshot-caption">All Enrollments tab showing summary statistics (5 Active, 0 Pending, ₹15,000 Monthly VD) and enrollment list</div>
+            </div>
+
+            <h4>Understanding Status Badges</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Color</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pending Approval</strong></td>
+                        <td>Yellow</td>
+                        <td>Employee has applied; awaiting HR approval</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approved</strong></td>
+                        <td>Blue</td>
+                        <td>HR has approved; will become active on start date</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active</strong></td>
+                        <td>Green</td>
+                        <td>Currently being deducted from payroll</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Opted Out</strong></td>
+                        <td>Gray</td>
+                        <td>Employee has opted out; no longer active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rejected</strong></td>
+                        <td>Red</td>
+                        <td>HR rejected the enrollment request</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Filtering Enrollments</h4>
+            <p>Use the dropdown filters to narrow down the enrollment list:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-09-status-filter-dropdown.png" alt="Status Filter Dropdown">
+                <div class="screenshot-caption">Status filter dropdown showing all available filter options</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-10-filtered-opted-out.png" alt="Filtered by Opted Out">
+                <div class="screenshot-caption">Enrollments filtered to show only "Opted Out" entries - useful for tracking historical enrollments</div>
+            </div>
+
+            <h3>11.3 Creating a New Enrollment (HR Admin)</h3>
+            <p>HR administrators can create enrollments on behalf of employees. When created by HR, enrollments go directly to <strong>Active</strong> status.</p>
+
+            <ol class="steps">
+                <li>Navigate to <strong>Payroll → Voluntary Deductions → All Enrollments</strong> tab</li>
+                <li>Click the <strong>"New Enrollment"</strong> button</li>
+                <li>Select the employee from the dropdown</li>
+                <li>Select the VD type (amount auto-fills with default)</li>
+                <li>Adjust the monthly amount if needed</li>
+                <li>Set the start date (and optionally an end date)</li>
+                <li>Click <strong>"Submit for Approval"</strong></li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-07-new-enrollment-modal-empty.png" alt="New Enrollment Modal Empty">
+                <div class="screenshot-caption">Empty New Enrollment modal showing employee and VD type dropdowns</div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-08-new-enrollment-modal-filled.png" alt="New Enrollment Modal Filled">
+                <div class="screenshot-caption">Filled enrollment modal - selecting employee, VD type auto-populates the default amount</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Employee</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>Select the employee to enroll in the VD</td>
+                    </tr>
+                    <tr>
+                        <td><code>Deduction Type</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>Select the VD type - default amount auto-fills</td>
+                    </tr>
+                    <tr>
+                        <td><code>Monthly Amount</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>The amount to deduct monthly (can differ from default)</td>
+                    </tr>
+                    <tr>
+                        <td><code>Start Date</code></td>
+                        <td><span class="badge required">Required</span></td>
+                        <td>When deductions should begin</td>
+                    </tr>
+                    <tr>
+                        <td><code>End Date</code></td>
+                        <td><span class="badge optional">Optional</span></td>
+                        <td>Leave blank for ongoing deductions; set for fixed-term</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>HR vs Employee Enrollments</strong>
+                    <ul>
+                        <li><strong>HR-created enrollments</strong> go directly to Active status</li>
+                        <li><strong>Employee self-enrollments</strong> go to Pending Approval status first</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>11.4 Viewing Enrollment Details</h3>
+            <p>Click the <strong>View Details</strong> button on any enrollment to see complete information.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-06-view-details-modal.png" alt="View Enrollment Details Modal">
+                <div class="screenshot-caption">Enrollment details showing employee info, VD type, amount, dates, status, and who approved it</div>
+            </div>
+
+            <p>The details modal shows:</p>
+            <ul>
+                <li><strong>Employee Name & Code</strong> - Who is enrolled</li>
+                <li><strong>VD Type</strong> - The deduction category</li>
+                <li><strong>Monthly Amount</strong> - Amount being deducted</li>
+                <li><strong>Start/End Dates</strong> - When deductions apply</li>
+                <li><strong>Status</strong> - Current enrollment status</li>
+                <li><strong>Approved By</strong> - Which HR admin approved (if applicable)</li>
+            </ul>
+
+            <h3>11.5 Opting Out of a VD</h3>
+            <p>Active enrollments can be opted out by clicking the <strong>Opt-Out</strong> button. This ends the deduction from the specified date.</p>
+
+            <ol class="steps">
+                <li>Find the active enrollment in the list</li>
+                <li>Click the <strong>"Opt-Out"</strong> button</li>
+                <li>Set the <strong>Last Deduction Date</strong> (defaults to today)</li>
+                <li>Click <strong>"Confirm Opt-Out"</strong></li>
+            </ol>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-11-opt-out-confirmation-modal.png" alt="Opt-Out Confirmation Modal">
+                <div class="screenshot-caption">Opt-Out confirmation modal showing the employee, VD type, and last deduction date field</div>
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Prorated Deductions</strong><br>
+                    If the last deduction date is mid-month, the final month's deduction will be prorated based on the number of days enrolled.
+                </div>
+            </div>
+
+            <h3>11.6 Deleting an Enrollment</h3>
+            <p>In some cases, you may need to completely delete an enrollment rather than opting out. The delete option is available for enrollments that have <strong>not yet been processed in any payroll</strong>.</p>
+
+            <h4>When Can You Delete an Enrollment?</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Enrollment Status</th>
+                        <th>End Date</th>
+                        <th>Can Delete?</th>
+                        <th>Alternative Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pending Approval</strong></td>
+                        <td>Any</td>
+                        <td><span class="badge success">Yes</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approved</strong></td>
+                        <td>Any</td>
+                        <td><span class="badge success">Yes</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rejected</strong></td>
+                        <td>Any</td>
+                        <td><span class="badge success">Yes</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active</strong></td>
+                        <td>Has end date</td>
+                        <td><span class="badge success">Yes</span> (if not processed)</td>
+                        <td>Use Opt-Out if already processed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active</strong></td>
+                        <td>Ongoing (no end date)</td>
+                        <td><span class="badge danger">No</span></td>
+                        <td>Use Opt-Out button instead</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Opted Out</strong></td>
+                        <td>Any</td>
+                        <td><span class="badge danger">No</span></td>
+                        <td>Already terminated</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>How to Delete an Enrollment</h4>
+            <ol class="steps">
+                <li>Find the enrollment in the list (must have a defined end date for active enrollments)</li>
+                <li>Click the <strong>Delete</strong> button (trash icon)</li>
+                <li>A confirmation dialog will appear asking you to confirm the deletion</li>
+                <li>Click <strong>"Confirm"</strong> to permanently delete the enrollment</li>
+            </ol>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Cannot Delete Processed Enrollments</strong><br>
+                    If the enrollment has already been processed in a payroll run (i.e., the deduction appeared on a payslip), you will see an error: <em>"Cannot delete this enrollment because it has already been processed in payroll. Use 'Opt-Out' to stop future deductions instead."</em>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Delete vs Opt-Out</strong>
+                    <ul>
+                        <li><strong>Delete</strong> - Completely removes the enrollment as if it never existed. Only for unprocessed enrollments.</li>
+                        <li><strong>Opt-Out</strong> - Ends the enrollment from a specific date. The history is preserved and shows "Opted Out" status.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>11.7 VD in Payslips</h3>
+            <p>Voluntary deductions appear as line items in the <strong>Deductions</strong> section of employee payslips.</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/vd-12-payslip-with-vd-deduction.png" alt="Payslip with VD Deduction">
+                <div class="screenshot-caption">Payslip showing "Additional Medical Insurance ₹2,500" as a deduction line item alongside other deductions like PT and Loan EMI</div>
+            </div>
+
+            <p>In the payslip above, you can see:</p>
+            <ul>
+                <li><strong>Earnings:</strong> Basic Pay ₹55,000, Special Allowance ₹10,000</li>
+                <li><strong>Deductions:</strong>
+                    <ul>
+                        <li>Professional Tax: ₹200</li>
+                        <li>Loan EMI: ₹5,208</li>
+                        <li><strong>Additional Medical Insurance: ₹2,500</strong> (VD)</li>
+                    </ul>
+                </li>
+                <li><strong>Net Pay:</strong> ₹57,092</li>
+            </ul>
+
+            <h3>11.8 Complete VD Workflow</h3>
+            <p>The complete lifecycle of a voluntary deduction:</p>
+
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div class="step-icon">1</div>
+                    <div class="step-content">
+                        <strong>Create VD Type</strong><br>
+                        HR creates deduction categories
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-icon">2</div>
+                    <div class="step-content">
+                        <strong>Enroll Employee</strong><br>
+                        HR creates or employee applies
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-icon">3</div>
+                    <div class="step-content">
+                        <strong>Approval</strong><br>
+                        HR approves (if employee-initiated)
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-icon">4</div>
+                    <div class="step-content">
+                        <strong>Active</strong><br>
+                        Deducted in monthly payroll
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-icon">5</div>
+                    <div class="step-content">
+                        <strong>Opt-Out</strong><br>
+                        Employee/HR ends enrollment
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Best Practices</strong>
+                    <ul>
+                        <li>Create VD types before the payroll period you want them to apply</li>
+                        <li>Set clear start dates to ensure deductions begin in the correct payroll run</li>
+                        <li>Use the end date field for temporary deductions (e.g., 6-month insurance plans)</li>
+                        <li>Regularly review "Pending Approval" enrollments to ensure timely processing</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Salary Reports Dashboard -->
+        <section id="salary-reports">
+            <h2><span class="section-number">12</span> Salary Reports Dashboard (HR Admin)</h2>
+            <p>The Salary Reports Dashboard provides HR administrators with comprehensive analytics and summary views of the organization's salary data. These reports help with budgeting, compliance reporting, and salary audits.</p>
+
+            <div class="info-box warning">
+                <span class="icon">&#128274;</span>
+                <div>
+                    <strong>Authorization Required</strong>
+                    <p>Salary reports contain sensitive compensation data. Access is restricted to users with <code>HRMS_HR_ADMIN</code>, <code>HRMS_ADMIN</code>, or <code>SUPERADMIN</code> roles.</p>
+                </div>
+            </div>
+
+            <h3>Salary Reports Dashboard Overview</h3>
+            <p>Access the Salary Reports Dashboard by clicking "Salary Reports" button in the Payroll section:</p>
+
+            <div class="screenshot-container">
+                <img src="images/payroll/salary-reports-dashboard.png" alt="Salary Reports Dashboard">
+                <div class="screenshot-caption">Salary Reports Dashboard showing summary cards (Total Employees, Total CTC, Monthly Gross, Average CTC), department breakdown, and detailed employee salary table with export options</div>
+            </div>
+
+            <h4>Dashboard Components</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Summary Cards</strong></td>
+                        <td>Quick metrics at a glance: Total Employees with Salary, Total Annual CTC, Total Monthly Gross, Average CTC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department Breakdown</strong></td>
+                        <td>Visual breakdown of salary distribution by department with percentages</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employee Salary Table</strong></td>
+                        <td>Detailed list of all employees with their CTC, monthly gross, structure name, and effective date</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Filter Options</strong></td>
+                        <td>Filter by department and/or office to narrow down the data</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Export Buttons</strong></td>
+                        <td>Export data as CSV or PDF for external reporting</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Dashboard Use Cases:</strong>
+                    <ul>
+                        <li><strong>Budget Planning:</strong> View total salary expenses for fiscal year planning</li>
+                        <li><strong>Department Comparison:</strong> Compare salary distribution across departments</li>
+                        <li><strong>Audit Compliance:</strong> Export detailed salary data for compliance audits</li>
+                        <li><strong>Identify Gaps:</strong> "Employees Without Salary" metric highlights incomplete records</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>12.1 Using Filter Options</h3>
+            <p>The dashboard provides filter dropdowns to narrow down salary data by department or office.</p>
+
+            <h4>How to Filter Data</h4>
+            <ol>
+                <li>Click the <strong>Office</strong> dropdown to filter by a specific office location</li>
+                <li>Click the <strong>Department</strong> dropdown to filter by a specific department</li>
+                <li>The dashboard automatically updates to show filtered results</li>
+                <li>Summary cards, department breakdown, and employee table all reflect the current filter</li>
+            </ol>
+
+            <h4>Understanding the Summary Cards</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Card</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Total Employees</strong></td>
+                        <td>Count of active employees with salary assigned (matching current filters)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Annual CTC</strong></td>
+                        <td>Sum of annual CTC for all employees in the filtered view</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Monthly Gross</strong></td>
+                        <td>Sum of monthly gross salary for all employees</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Average CTC</strong></td>
+                        <td>Average annual CTC per employee (Total CTC ÷ Employee count)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>12.2 Department Breakdown</h3>
+            <p>The department breakdown section shows how salary costs are distributed across departments.</p>
+
+            <h4>What You Can See</h4>
+            <ul>
+                <li><strong>Department Name:</strong> Each department in your organization</li>
+                <li><strong>Employee Count:</strong> Number of employees in that department</li>
+                <li><strong>Percentage:</strong> What portion of total salary goes to this department</li>
+            </ul>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Use Case: Budget Planning</strong>
+                    <p>Use the department breakdown at the start of each fiscal year to understand salary distribution. Identify departments with high costs for budget optimization discussions.</p>
+                </div>
+            </div>
+
+            <h3>12.3 Employee Salary Table</h3>
+            <p>The detailed employee table shows individual salary information for each employee.</p>
+
+            <h4>Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name and code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department</strong></td>
+                        <td>Employee's current department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Annual CTC</strong></td>
+                        <td>Total Cost to Company per year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Monthly Gross</strong></td>
+                        <td>Monthly gross salary before deductions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Structure</strong></td>
+                        <td>Name of the salary structure assigned</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effective From</strong></td>
+                        <td>Date when current salary became effective</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>12.4 Exporting Reports</h3>
+            <p>Export salary data for external analysis, compliance audits, or sharing with stakeholders.</p>
+
+            <h4>How to Export</h4>
+            <ol>
+                <li>Apply any filters you need (office, department)</li>
+                <li>Click the <strong>Export CSV</strong> button to download data as a spreadsheet</li>
+                <li>Click the <strong>Export PDF</strong> button to download a formatted report</li>
+            </ol>
+
+            <h4>Export Formats</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Format</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CSV</strong></td>
+                        <td>Data analysis in Excel, importing to other systems, detailed manipulation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PDF</strong></td>
+                        <td>Formal reports, sharing with management, compliance documentation</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Best Practices for Reports</strong>
+                    <ul>
+                        <li>Run reports monthly to track salary expense trends</li>
+                        <li>Use department filters for department-head salary reviews</li>
+                        <li>Export PDF reports for board presentations</li>
+                        <li>Export CSV for detailed analysis or audit purposes</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Advanced Draft Features -->
+        <section id="advanced-drafts">
+            <h2><span class="section-number">13</span> Advanced Draft Features (HR Admin)</h2>
+            <p>Beyond basic draft processing, the payroll system provides advanced features for partial processing, draft organization, and detailed payslip inspection.</p>
+
+            <h3>13.1 Process Selected Employees Only</h3>
+            <p>Instead of processing the entire draft at once, you can selectively process payslips for specific employees. This is useful for:</p>
+            <ul>
+                <li>Testing payroll calculations for a few employees before full processing</li>
+                <li>Re-processing specific employees after corrections</li>
+                <li>Handling employees who joined mid-month separately</li>
+                <li>Processing department-by-department in large organizations</li>
+            </ul>
+
+            <h4>How to Process Selected Employees</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Payroll Drafts</strong> tab</li>
+                <li>Find your draft (must be in "Not Processed" or "Processed" status)</li>
+                <li>Click the <strong>Process Selected</strong> button</li>
+                <li>In the modal, select the employees you want to process using checkboxes</li>
+                <li>Use the search box to find specific employees by name or code</li>
+                <li>Click <strong>Process Selected</strong> to generate payslips only for chosen employees</li>
+            </ol>
+
+            <h4>Process Selected Employees Modal</h4>
+            <div class="screenshot-container">
+                <img src="images/payroll/process-selected-employees-modal.png" alt="Process Selected Employees Modal" class="screenshot">
+                <p class="screenshot-caption">Process Selected Employees modal - Select specific employees to process, with search and selection counter</p>
+            </div>
+
+            <h4>Modal Features</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Search Box</strong></td>
+                        <td>Filter employees by name or employee code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Select All</strong></td>
+                        <td>Checkbox to select/deselect all visible employees</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Selection Counter</strong></td>
+                        <td>Shows how many employees are currently selected (e.g., "3 selected")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employee List</strong></td>
+                        <td>Checkboxes for each employee showing name, code, and department</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Incremental Processing</strong>
+                    <p>You can use Process Selected multiple times on the same draft. Each time, only employees who don't already have a payslip will be processed. Already-processed employees are automatically skipped.</p>
+                </div>
+            </div>
+
+            <h3>13.2 Rename Draft</h3>
+            <p>Change the name of a draft for better organization, especially when managing multiple drafts across different offices or purposes.</p>
+
+            <h4>How to Rename a Draft</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Payroll Drafts</strong> tab</li>
+                <li>Find the draft you want to rename in the drafts table</li>
+                <li>Click the <strong>Rename</strong> button (pencil icon) in the Actions column</li>
+                <li>Enter the new name in the rename dialog</li>
+                <li>Click <strong>Rename</strong> to save the new name</li>
+            </ol>
+
+            <h4>Rename Draft Dialog</h4>
+            <p>The rename dialog provides a simple input field to update the draft name:</p>
+            <div class="screenshot-container">
+                <img src="images/payroll/rename-draft-modal.png" alt="Rename Draft Modal" class="screenshot">
+                <p class="screenshot-caption">Rename Draft dialog - Enter a new descriptive name for the draft</p>
+            </div>
+
+            <div class="info-box">
+                <span class="icon">&#9432;</span>
+                <div>
+                    <strong>Draft Naming Conventions</strong>
+                    <p>Consider using consistent naming patterns:</p>
+                    <ul>
+                        <li><code>December 2024 - All Offices</code> for company-wide drafts</li>
+                        <li><code>December 2024 - Mumbai Office</code> for office-specific drafts</li>
+                        <li><code>December 2024 - Engineering Team</code> for department-specific processing</li>
+                        <li>Add "(Revised)", "(Corrected)", "(Final)" suffixes as needed</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>13.3 Viewing Draft Payslip Details</h3>
+            <p>Before finalizing a draft, you can inspect individual payslips to verify calculations and review all earnings and deductions.</p>
+
+            <h4>How to View Payslip Details</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Payroll Drafts</strong> tab</li>
+                <li>Click on a processed draft to expand and see its payslips</li>
+                <li>Click the <strong>View</strong> button (eye icon) on any payslip row</li>
+                <li>The payslip details modal will show complete breakdown</li>
+            </ol>
+
+            <h4>Payslip Details Modal</h4>
+            <p>The payslip modal displays comprehensive information:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Information Displayed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Header</strong></td>
+                        <td>Employee name, code, pay period (month/year)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Attendance Summary</strong></td>
+                        <td>Working days, days worked, LOP days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Earnings</strong></td>
+                        <td>List of all earning components (Basic, HRA, Allowances) with amounts</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deductions</strong></td>
+                        <td>List of all deduction components (PF, PT, ESI, Loans) with amounts</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Summary</strong></td>
+                        <td>Gross Earnings, Total Deductions, Net Pay</td>
+                    </tr>
+                    <tr>
+                        <td><strong>YTD (Year-to-Date)</strong></td>
+                        <td>Cumulative amounts for each component for the financial year</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Draft vs Finalized Payslips</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Can Modify?</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Draft</strong></td>
+                        <td>Yes - can recalculate or delete the entire draft</td>
+                        <td>Payroll Drafts tab</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finalized</strong></td>
+                        <td>No - locked for audit purposes</td>
+                        <td>Finalized Runs tab</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>13.4 Draft Recalculation</h3>
+            <p>Recalculate all payslips in a draft after making changes to salary structures, adjustments, or attendance data.</p>
+
+            <h4>How to Recalculate a Draft</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Payroll Drafts</strong> tab</li>
+                <li>Find your processed draft in the table</li>
+                <li>Click the <strong>Recalculate</strong> button (refresh icon)</li>
+                <li>Confirm the recalculation when prompted</li>
+                <li>Wait for the system to regenerate all payslips</li>
+                <li>Review the changes summary that appears</li>
+            </ol>
+
+            <h4>When to Recalculate</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Why Recalculate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Salary Adjustments Approved</strong></td>
+                        <td>Newly approved adjustments need to be included in payslips</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Attendance/LOP Corrected</strong></td>
+                        <td>Updated attendance affects salary proration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Structure Version Changed</strong></td>
+                        <td>Component percentages or amounts have changed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CTC Arrears Applied</strong></td>
+                        <td>Arrears need to be added to affected payslips</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Disbursed</strong></td>
+                        <td>New EMI deduction needs to be included</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Changes Summary</h4>
+            <p>After recalculation, the system displays a summary showing:</p>
+            <ul>
+                <li><strong>Total Recalculated:</strong> Number of payslips regenerated</li>
+                <li><strong>Changes Detected:</strong> Number of payslips with amount differences</li>
+                <li><strong>Updated Totals:</strong> New gross, deductions, and net pay totals</li>
+            </ul>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Recalculation Overwrites</strong>
+                    <p>Recalculation regenerates all payslip amounts from scratch based on current data. Any manual overrides or corrections made to individual payslips will be lost. Make manual corrections after the final recalculation.</p>
+                </div>
+            </div>
+
+            <h3>13.5 Delete Draft</h3>
+            <p>Remove a draft and all its associated payslips. Only drafts in "Not Processed" or "Processed" status can be deleted.</p>
+
+            <h4>How to Delete a Draft</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Payroll Drafts</strong> tab</li>
+                <li>Find the draft you want to delete in the table</li>
+                <li>Click the <strong>Delete</strong> button (trash icon) in the Actions column</li>
+                <li>A confirmation dialog will appear asking you to confirm the deletion</li>
+                <li>Click <strong>Delete</strong> to permanently remove the draft</li>
+            </ol>
+
+            <h4>Delete Restrictions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Draft Status</th>
+                        <th>Can Delete?</th>
+                        <th>Alternative Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="status-badge status-draft">Not Processed</span></td>
+                        <td>Yes</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-processing">Processed</span></td>
+                        <td>Yes</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-approved">Finalized</span></td>
+                        <td>No</td>
+                        <td>View in Finalized Runs</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Deletion is Permanent</strong>
+                    <p>Deleted drafts cannot be recovered. All payslips generated within the draft will also be permanently deleted. Always ensure you want to discard the draft before confirming deletion.</p>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>When to Delete a Draft</strong>
+                    <ul>
+                        <li>Draft was created with incorrect month/year settings</li>
+                        <li>Major data errors require starting fresh</li>
+                        <li>Test draft that's no longer needed</li>
+                        <li>Duplicate draft created by mistake</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Loan Monitoring -->
+        <section id="loan-monitoring">
+            <h2><span class="section-number">14</span> Loan Monitoring (HR Admin)</h2>
+            <p>Track and manage employee loans throughout their lifecycle, from application to full repayment.</p>
+
+            <h3>14.1 Active Loans Dashboard</h3>
+            <p>View and monitor all currently active loans across the organization.</p>
+
+            <h4>Accessing Active Loans</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Loans</strong> tab</li>
+                <li>Click on <strong>Active Loans</strong> filter button or select "Active" from the status dropdown</li>
+                <li>The table displays all loans currently in repayment</li>
+            </ol>
+
+            <h4>Active Loans Table Columns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Employee</strong></td>
+                        <td>Employee name, code, and department</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Type</strong></td>
+                        <td>Type of loan (Salary Advance, Personal Loan, Emergency Loan)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Principal</strong></td>
+                        <td>Original loan amount borrowed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMI Amount</strong></td>
+                        <td>Monthly deduction amount from salary</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Outstanding</strong></td>
+                        <td>Remaining balance to be repaid</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Progress</strong></td>
+                        <td>Visual progress bar showing EMIs paid vs remaining</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Next EMI</strong></td>
+                        <td>Date of next EMI deduction</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Loan Status Indicators</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Badge Color</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pending</strong></td>
+                        <td><span class="status-badge" style="background: #f59e0b;">Yellow</span></td>
+                        <td>Loan request submitted, awaiting HR approval</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approved</strong></td>
+                        <td><span class="status-badge" style="background: #3b82f6;">Blue</span></td>
+                        <td>Approved by HR, awaiting disbursement</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rejected</strong></td>
+                        <td><span class="status-badge" style="background: #ef4444;">Red</span></td>
+                        <td>Loan request was declined</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Disbursed</strong></td>
+                        <td><span class="status-badge" style="background: #8b5cf6;">Purple</span></td>
+                        <td>Amount transferred, EMI starts next month</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active</strong></td>
+                        <td><span class="status-badge" style="background: #10b981;">Green</span></td>
+                        <td>EMI deductions in progress</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Closed</strong></td>
+                        <td><span class="status-badge" style="background: #6b7280;">Gray</span></td>
+                        <td>All EMIs paid, loan fully repaid</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>14.2 Pending Loan Approvals</h3>
+            <p>Review and process loan requests submitted by employees.</p>
+
+            <h4>Viewing Pending Approvals</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Loans</strong> tab</li>
+                <li>Click on <strong>Pending</strong> filter button or select "Pending" from the status dropdown</li>
+                <li>A badge on the filter shows the number of pending requests</li>
+            </ol>
+
+            <h4>Pending Request Details</h4>
+            <p>Each pending loan request displays:</p>
+            <ul>
+                <li><strong>Employee Information:</strong> Name, employee code, and department</li>
+                <li><strong>Loan Type:</strong> Type of loan requested</li>
+                <li><strong>Amount:</strong> Principal amount requested</li>
+                <li><strong>Tenure:</strong> Requested repayment period in months</li>
+                <li><strong>Reason:</strong> Employee's stated reason for the loan</li>
+                <li><strong>Requested On:</strong> Date the request was submitted</li>
+            </ul>
+
+            <h4>Approving or Rejecting a Loan</h4>
+            <ol>
+                <li>Click the <strong>View</strong> button on a pending loan request</li>
+                <li>Review the loan details and employee information</li>
+                <li>To approve: Click <strong>Approve</strong> button</li>
+                <li>To reject: Click <strong>Reject</strong> button and provide a rejection reason</li>
+            </ol>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Approval Considerations</strong>
+                    <ul>
+                        <li>Check if employee has any existing active loans</li>
+                        <li>Verify the requested amount is within policy limits</li>
+                        <li>Ensure EMI amount won't exceed 50% of employee's net salary</li>
+                        <li>Review employee's tenure and standing</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>14.3 Loan Repayment History</h3>
+            <p>View the complete repayment schedule and track EMI deductions for any loan.</p>
+
+            <h4>Viewing Repayment History</h4>
+            <ol>
+                <li>Navigate to <strong>Payroll → Loans</strong> tab</li>
+                <li>Find the loan in the table (use filters if needed)</li>
+                <li>Click the <strong>View Details</strong> button</li>
+                <li>The loan details modal shows the complete repayment schedule</li>
+            </ol>
+
+            <h4>Loan Details Modal</h4>
+            <p>The loan details view displays:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Information Displayed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Loan Summary</strong></td>
+                        <td>Principal, Interest Rate, Tenure, EMI Amount, Total Payable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Current Status</strong></td>
+                        <td>Outstanding Balance, EMIs Paid, EMIs Remaining</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Disbursement</strong></td>
+                        <td>Date, Mode (Bank Transfer/Cheque), Reference Number</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Repayment Schedule</strong></td>
+                        <td>Month-by-month breakdown of all EMIs</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Repayment Schedule Table</h4>
+            <p>Each row in the repayment schedule shows:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>EMI #</strong></td>
+                        <td>Installment number (1, 2, 3, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Due Date</strong></td>
+                        <td>Date when EMI is due</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Principal</strong></td>
+                        <td>Principal component of the EMI</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Interest</strong></td>
+                        <td>Interest component of the EMI</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td>Total EMI amount (Principal + Interest)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Balance After</strong></td>
+                        <td>Outstanding balance after this EMI</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Deducted, Pending, Paid, Waived, or Defaulted</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Repayment Status Indicators</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Badge</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pending</strong></td>
+                        <td><span class="status-badge" style="background: #f59e0b;">Yellow</span></td>
+                        <td>EMI scheduled but not yet deducted</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deducted</strong></td>
+                        <td><span class="status-badge" style="background: #10b981;">Green</span></td>
+                        <td>EMI successfully deducted from payslip</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paid</strong></td>
+                        <td><span class="status-badge" style="background: #3b82f6;">Blue</span></td>
+                        <td>EMI paid outside payroll (cash/direct payment)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Waived</strong></td>
+                        <td><span class="status-badge" style="background: #8b5cf6;">Purple</span></td>
+                        <td>EMI waived by HR (exception cases)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Defaulted</strong></td>
+                        <td><span class="status-badge" style="background: #ef4444;">Red</span></td>
+                        <td>EMI not paid and marked as default</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>14.4 Loan Types</h3>
+            <p>The system supports three types of employee loans, each designed for different needs:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Typical Tenure</th>
+                        <th>Interest</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Salary Advance</strong></td>
+                        <td>Advance against upcoming salary for immediate cash needs</td>
+                        <td>1-3 months</td>
+                        <td>Usually 0% (interest-free)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Personal Loan</strong></td>
+                        <td>Standard personal loan for planned expenses</td>
+                        <td>6-24 months</td>
+                        <td>Standard rate (e.g., 8-12%)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Emergency Loan</strong></td>
+                        <td>Quick disbursement for medical or family emergencies</td>
+                        <td>3-12 months</td>
+                        <td>Reduced rate (e.g., 4-8%)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Disbursing Approved Loans</h4>
+            <p>After a loan is approved, HR Admin must disburse the amount:</p>
+            <ol>
+                <li>Navigate to <strong>Payroll → Loans</strong> tab</li>
+                <li>Filter by "Approved" status to see loans ready for disbursement</li>
+                <li>Click <strong>Disburse</strong> on the approved loan</li>
+                <li>Select the disbursement mode:
+                    <ul>
+                        <li><strong>Bank Transfer:</strong> Direct deposit to employee's bank account</li>
+                        <li><strong>Cheque:</strong> Physical cheque issued</li>
+                        <li><strong>Cash:</strong> Cash payment (not recommended)</li>
+                    </ul>
+                </li>
+                <li>Enter the reference number (NEFT/RTGS/Cheque number)</li>
+                <li>Click <strong>Confirm Disbursement</strong></li>
+            </ol>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>After Disbursement</strong>
+                    <p>Once a loan is disbursed, EMI deductions begin from the next payroll cycle. The loan status changes from "Approved" to "Disbursed" and then to "Active" when the first EMI is deducted.</p>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <strong>Best Practices for Loan Management</strong>
+                    <ul>
+                        <li>Set maximum loan limits based on employee's salary (e.g., 3x monthly gross)</li>
+                        <li>Review pending loans weekly to ensure timely processing</li>
+                        <li>Track employees with multiple active loans for risk assessment</li>
+                        <li>Document all disbursement references for audit trail</li>
+                        <li>Monitor default rates and adjust policies accordingly</li>
+                    </ul>
                 </div>
             </div>
         </section>

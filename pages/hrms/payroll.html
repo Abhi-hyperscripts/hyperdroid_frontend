@@ -32,25 +32,134 @@
                     <span class="separator">/</span>
                     <span class="current">Payroll</span>
                 </nav>
-                <h1>Payroll Management</h1>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <!-- Hamburger icon (shown when sidebar closed) -->
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <!-- Left arrow icon (shown when sidebar open) -->
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Payroll Management</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Salary Components</span>
+                </div>
             </div>
             <div class="header-actions" id="adminActions" style="display: none;">
                 <!-- Admin actions for payroll processing -->
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="hrms-tabs">
-            <button class="tab-btn active" data-tab="salary-components" id="salaryComponentsTab">Salary Components</button>
-            <button class="tab-btn" data-tab="location-taxes" id="locationTaxesTab">Location Taxes</button>
-            <button class="tab-btn" data-tab="salary-structures" id="salaryStructuresTab">Salary Structures</button>
-            <button class="tab-btn" data-tab="loans" id="loansTab">Loans & Advances</button>
-            <button class="tab-btn" data-tab="arrears" id="arrearsTab" style="display: none;">Arrears</button>
-            <button class="tab-btn" data-tab="payroll-drafts" id="payrollDraftsTab" style="display: none;">Payroll Drafts</button>
-            <button class="tab-btn" data-tab="payroll-runs" id="payrollRunsTab" style="display: none;">Finalized Runs</button>
-            <button class="tab-btn" data-tab="all-payslips" id="allPayslipsTab" style="display: none;">All Payslips</button>
-        </div>
+        <!-- Sidebar Overlay (hidden by CSS) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+        <!-- Sidebar + Content Layout -->
+        <div class="payroll-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="payroll-sidebar" id="payrollSidebar">
+                <div class="sidebar-header">
+                    <h3>Payroll</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Setup Section -->
+                    <div class="nav-group" data-group="setup">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                    <path d="M2 17l10 5 10-5"></path>
+                                    <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                                Setup
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="salary-components" id="salaryComponentsTab">
+                                <span class="nav-number">1</span><span class="nav-label">Salary Components</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="location-taxes" id="locationTaxesTab">
+                                <span class="nav-number">2</span><span class="nav-label">Location Taxes</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="salary-structures" id="salaryStructuresTab">
+                                <span class="nav-number">3</span><span class="nav-label">Salary Structures</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Employee Section -->
+                    <div class="nav-group" data-group="employee">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Employee
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="loans" id="loansTab">
+                                <span class="nav-number">4</span><span class="nav-label">Loans & Advances</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="voluntary-deductions" id="voluntaryDeductionsTab">
+                                <span class="nav-number">5</span><span class="nav-label">Voluntary Deductions</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="adjustments" id="adjustmentsTab">
+                                <span class="nav-number">6</span><span class="nav-label">Adjustments</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="arrears" id="arrearsTab">
+                                <span class="nav-number">7</span><span class="nav-label">Arrears</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Processing Section -->
+                    <div class="nav-group" data-group="processing">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Processing
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="payroll-drafts" id="payrollDraftsTab">
+                                <span class="nav-number">8</span><span class="nav-label">Payroll Drafts</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="payroll-runs" id="payrollRunsTab">
+                                <span class="nav-number">9</span><span class="nav-label">Finalized Runs</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="all-payslips" id="allPayslipsTab">
+                                <span class="nav-number">10</span><span class="nav-label">All Payslips</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
+                                <span class="nav-number">11</span><span class="nav-label">Salary Reports</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="payroll-content">
         <!-- Salary Components Tab -->
         <div class="tab-content active" id="salary-components">
             <div class="filters-bar">
@@ -339,8 +448,7 @@
             <div class="filters-bar">
                 <div class="filter-group">
                     <select id="draftYear" class="form-select" onchange="loadPayrollDrafts()">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
+                        <!-- Years populated dynamically from API -->
                     </select>
                     <select id="draftMonth" class="form-select" onchange="loadPayrollDrafts()">
                         <option value="">All Months</option>
@@ -410,8 +518,7 @@
             <div class="filters-bar">
                 <div class="filter-group">
                     <select id="runYear" class="form-select" onchange="loadPayrollRuns()">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
+                        <!-- Years populated dynamically from API -->
                     </select>
                     <select id="runMonth" class="form-select" onchange="loadPayrollRuns()">
                         <option value="">All Months</option>
@@ -523,13 +630,158 @@
             </div>
         </div>
 
+        <!-- Voluntary Deductions Tab -->
+        <div class="tab-content" id="voluntary-deductions">
+            <!-- Sub-tabs for VD Types and Enrollments -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" data-subtab="vd-enrollments" onclick="switchVDSubTab('vd-enrollments')">All Enrollments</button>
+                <button class="sub-tab-btn" data-subtab="vd-types" onclick="switchVDSubTab('vd-types')">VD Types</button>
+            </div>
+
+            <!-- VD Enrollments Sub-tab -->
+            <div class="sub-tab-content active" id="vd-enrollments">
+                <div class="filters-bar">
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="vdEnrollmentSearch" placeholder="Search by employee name or code..." oninput="filterVDEnrollments()">
+                    </div>
+                    <div class="filter-group">
+                        <select id="vdEnrollmentStatus" class="form-select" onchange="loadVDEnrollments()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="pending">Pending Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="opted_out">Opted Out</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <select id="vdEnrollmentType" class="form-select" onchange="loadVDEnrollments()">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="showCreateVDEnrollmentModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Enrollment
+                    </button>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="stats-row" id="vdEnrollmentStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="vdTotalActive">0</div>
+                        <div class="stat-label">Active Enrollments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="vdTotalPending">0</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="vdTotalMonthly">₹0</div>
+                        <div class="stat-label">Total Monthly VD</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="vdTotalTypes">0</div>
+                        <div class="stat-label">VD Types</div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>VD Type</th>
+                                <th>Amount</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vdEnrollmentsTable">
+                            <tr class="empty-state">
+                                <td colspan="7">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                                        </svg>
+                                        <p>No voluntary deduction enrollments found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VD Types Sub-tab -->
+            <div class="sub-tab-content" id="vd-types">
+                <div class="filters-bar">
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="vdTypeSearch" placeholder="Search VD types..." oninput="filterVDTypes()">
+                    </div>
+                    <div class="toggle-wrapper" onclick="toggleShowInactiveVDTypes()">
+                        <input type="checkbox" id="showInactiveVDTypes">
+                        <span>Show Inactive</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="showCreateVDTypeModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add VD Type
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Default Amount</th>
+                                <th>Enrollments</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vdTypesTable">
+                            <tr class="empty-state">
+                                <td colspan="7">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <p>No voluntary deduction types configured</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- All Payslips Tab (HR Admin) -->
         <div class="tab-content" id="all-payslips">
             <div class="filters-bar">
                 <div class="filter-group">
                     <select id="allPayslipsYear" class="form-select">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
+                        <!-- Years populated dynamically from API -->
                     </select>
                     <select id="allPayslipsMonth" class="form-select">
                         <option value="">All Months</option>
@@ -621,86 +873,435 @@
             </div>
         </div>
 
-        <!-- Arrears Management Tab -->
-        <div class="tab-content" id="arrears">
+        <!-- Salary Reports Tab -->
+        <div class="tab-content" id="salary-reports">
+            <!-- Filters Bar -->
             <div class="filters-bar">
                 <div class="filter-group">
-                    <select id="arrearsStatus" class="form-select" onchange="loadPendingArrears()">
-                        <option value="pending">Pending</option>
-                        <option value="applied">Applied</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="">All</option>
+                    <select id="salaryReportOffice" class="form-select">
+                        <option value="">All Offices</option>
                     </select>
-                    <select id="arrearsStructure" class="form-select" onchange="loadPendingArrears()">
-                        <option value="">All Structures</option>
+                    <select id="salaryReportDepartment" class="form-select">
+                        <option value="">All Departments</option>
                     </select>
                 </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
                     </svg>
-                    <input type="text" id="arrearsSearch" placeholder="Search by employee..." onkeyup="filterArrearsTable()">
+                    <input type="text" id="salaryReportSearch" placeholder="Search by employee..." onkeyup="filterSalaryReport()">
                 </div>
-                <button class="btn btn-secondary" onclick="loadPendingArrears()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="1 4 1 10 7 10"></polyline>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                <button class="btn btn-secondary" onclick="loadSalaryReports()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
                     </svg>
                     Refresh
                 </button>
+                <button class="btn btn-secondary" onclick="exportSalaryReport('csv')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export CSV
+                </button>
             </div>
 
-            <!-- Arrears Summary Stats -->
-            <div class="stats-row" id="arrearsStats">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalArrearsCount">0</div>
-                    <div class="stat-label">Total Arrears</div>
+            <!-- Summary Dashboard Cards -->
+            <div class="salary-reports-summary" id="salaryReportsSummary">
+                <div class="summary-card summary-employees">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="totalEmployeesWithSalary">0</div>
+                        <div class="summary-label">Employees with Salary</div>
+                        <div class="summary-sublabel">
+                            <span id="employeesWithoutSalary">0</span> without salary assigned
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="pendingArrearsCount">0</div>
-                    <div class="stat-label">Pending</div>
+                <div class="summary-card summary-ctc">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="totalAnnualCtc">₹0</div>
+                        <div class="summary-label">Total Annual CTC</div>
+                        <div class="summary-sublabel">Across all employees</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalArrearsAmount">₹0</div>
-                    <div class="stat-label">Total Amount</div>
+                <div class="summary-card summary-monthly">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="totalMonthlyGross">₹0</div>
+                        <div class="summary-label">Monthly Gross Payroll</div>
+                        <div class="summary-sublabel">Total monthly outflow</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="affectedEmployeesCount">0</div>
-                    <div class="stat-label">Employees Affected</div>
+                <div class="summary-card summary-average">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20V10"></path>
+                            <path d="M18 20V4"></path>
+                            <path d="M6 20v-4"></path>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="averageCtc">₹0</div>
+                        <div class="summary-label">Average CTC</div>
+                        <div class="summary-sublabel">Per employee</div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Department-wise Breakdown -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Department-wise Breakdown
+                </h3>
+                <div class="department-breakdown" id="departmentBreakdown">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Detailed Employee Salary List -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Employee Salary Details
+                </h3>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Code</th>
+                                <th>Department</th>
+                                <th>Designation</th>
+                                <th class="text-right">Annual CTC</th>
+                                <th class="text-right">Monthly Gross</th>
+                                <th class="text-right">Monthly Net</th>
+                                <th>Effective From</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salaryReportTable">
+                            <tr class="empty-state">
+                                <td colspan="8">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <p>Loading salary data...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adjustments Tab (Reimbursements, Bonuses, Deductions, etc.) -->
+        <div class="tab-content" id="adjustments">
+            <div class="filters-bar">
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="adjustmentSearch" placeholder="Search by employee name or code..." onkeyup="filterAdjustments()">
+                </div>
+                <div class="filter-group">
+                    <select id="adjustmentStatusFilter" class="form-select" onchange="filterAdjustments()">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending Approval</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="applied">Applied to Payroll</option>
+                    </select>
+                    <select id="adjustmentTypeFilter" class="form-select" onchange="filterAdjustments()">
+                        <option value="">All Types</option>
+                        <option value="reimbursement">Reimbursement</option>
+                        <option value="bonus">Bonus</option>
+                        <option value="incentive">Incentive</option>
+                        <option value="recovery">Recovery</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="showCreateAdjustmentModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    New Adjustment
+                </button>
+            </div>
+
+            <!-- Adjustment Stats Cards -->
+            <div class="stats-row" id="adjustmentStats">
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingAdjustmentsCount">0</div>
+                    <div class="stat-label">Pending Approval</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="approvedAdjustmentsCount">0</div>
+                    <div class="stat-label">Approved This Month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalReimbursements">₹0</div>
+                    <div class="stat-label">Total Reimbursements</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalBonuses">₹0</div>
+                    <div class="stat-label">Total Bonuses</div>
+                </div>
+            </div>
+
+            <!-- Adjustments Table -->
             <div class="data-table-container">
-                <table class="data-table">
+                <table class="data-table" id="adjustmentsTable">
                     <thead>
                         <tr>
                             <th>Employee</th>
-                            <th>Structure</th>
-                            <th>Version</th>
-                            <th>Period</th>
-                            <th>Old Gross</th>
-                            <th>New Gross</th>
-                            <th>Arrears Amount</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Effective Period</th>
+                            <th>Reason</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="arrearsTable">
-                        <tr class="empty-state">
-                            <td colspan="9">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                                    </svg>
-                                    <p>No arrears found</p>
-                                    <p class="hint">Arrears are generated when salary structure versions are applied retrospectively</p>
-                                </div>
+                    <tbody id="adjustmentsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <p class="empty-state">Loading adjustments...</p>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Arrears Management Tab -->
+        <div class="tab-content" id="arrears">
+            <!-- Sub-tabs for Arrears Types -->
+            <div class="arrears-subtabs">
+                <button class="arrears-subtab active" data-subtab="version-arrears" onclick="switchArrearsSubtab('version-arrears')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Version Arrears
+                </button>
+                <button class="arrears-subtab" data-subtab="ctc-arrears" onclick="switchArrearsSubtab('ctc-arrears')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    CTC Revision Arrears
+                </button>
+            </div>
+
+            <!-- Version Arrears Section -->
+            <div class="arrears-subtab-content active" id="version-arrears-content">
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <select id="arrearsStatus" class="form-select" onchange="loadPendingArrears()">
+                            <option value="pending">Pending</option>
+                            <option value="applied">Applied</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="">All</option>
+                        </select>
+                        <select id="arrearsStructure" class="form-select" onchange="loadPendingArrears()">
+                            <option value="">All Structures</option>
+                        </select>
+                    </div>
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="arrearsSearch" placeholder="Search by employee..." onkeyup="filterArrearsTable()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadPendingArrears()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Arrears Summary Stats -->
+                <div class="stats-row" id="arrearsStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalArrearsCount">0</div>
+                        <div class="stat-label">Total Arrears</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pendingArrearsCount">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalArrearsAmount">₹0</div>
+                        <div class="stat-label">Total Amount</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="affectedEmployeesCount">0</div>
+                        <div class="stat-label">Employees Affected</div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Structure</th>
+                                <th>Version</th>
+                                <th>Period</th>
+                                <th>Old Gross</th>
+                                <th>New Gross</th>
+                                <th>Arrears Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arrearsTable">
+                            <tr class="empty-state">
+                                <td colspan="9">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                        </svg>
+                                        <p>No arrears found</p>
+                                        <p class="hint">Arrears are generated when salary structure versions are applied retrospectively</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CTC Revision Arrears Section -->
+            <div class="arrears-subtab-content" id="ctc-arrears-content">
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <select id="ctcArrearsStatus" class="form-select" onchange="loadCtcRevisionArrears()">
+                            <option value="pending">Pending</option>
+                            <option value="applied">Applied</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="search-box-modern">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="ctcArrearsSearch" placeholder="Search by employee..." onkeyup="filterCtcArrearsTable()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadCtcRevisionArrears()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="showBulkApplyCtcArrearsModal()" id="bulkApplyCtcArrearsBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Bulk Apply
+                    </button>
+                </div>
+
+                <!-- CTC Arrears Summary Stats -->
+                <div class="stats-row" id="ctcArrearsStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCtcArrearsCount">0</div>
+                        <div class="stat-label">Total Arrears</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pendingCtcArrearsCount">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCtcArrearsAmount">₹0</div>
+                        <div class="stat-label">Total Amount</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="affectedCtcEmployeesCount">0</div>
+                        <div class="stat-label">Employees Affected</div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="ctcArrearsSelectAll" onchange="toggleAllCtcArrears(this)"></th>
+                                <th>Employee</th>
+                                <th>Revision Type</th>
+                                <th>Period</th>
+                                <th>Old CTC</th>
+                                <th>New CTC</th>
+                                <th>Arrears Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ctcArrearsTable">
+                            <tr class="empty-state">
+                                <td colspan="9">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <p>No CTC revision arrears found</p>
+                                        <p class="hint">Arrears are generated when employee salaries are revised retroactively</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+            </main>
         </div>
     </div>
 
@@ -727,30 +1328,11 @@
                                     <small class="form-text text-muted">Give this draft a name to distinguish it from others</small>
                                 </div>
                             </div>
-                            <div class="form-row two-col">
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="draftPayrollMonth">Month *</label>
-                                    <select id="draftPayrollMonth" name="month" class="form-control" required>
-                                        <option value="1">January</option>
-                                        <option value="2">February</option>
-                                        <option value="3">March</option>
-                                        <option value="4">April</option>
-                                        <option value="5">May</option>
-                                        <option value="6">June</option>
-                                        <option value="7">July</option>
-                                        <option value="8">August</option>
-                                        <option value="9">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="draftPayrollYear">Year *</label>
-                                    <select id="draftPayrollYear" name="year" class="form-control" required>
-                                        <option value="2025">2025</option>
-                                        <option value="2024">2024</option>
-                                    </select>
+                                    <label for="draftPayrollPeriod">Payroll Period *</label>
+                                    <input type="month" id="draftPayrollPeriod" name="period" class="form-control" required onchange="updateDraftPeriodDates()">
+                                    <small class="form-text text-muted">Select the month and year for this payroll</small>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -881,6 +1463,91 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Selected Employees Modal -->
+    <div class="modal" id="processSelectedModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Process Selected Employees</h5>
+                    <button class="close-btn" onclick="closeModal('processSelectedModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Draft info header -->
+                    <div class="process-selected-header">
+                        <div class="draft-info-row">
+                            <div class="draft-info-item">
+                                <span class="label">Draft:</span>
+                                <span id="pseDraftName" class="value">-</span>
+                            </div>
+                            <div class="draft-info-item">
+                                <span class="label">Period:</span>
+                                <span id="psePeriod" class="value">-</span>
+                            </div>
+                            <div class="draft-info-item">
+                                <span class="label">Office:</span>
+                                <span id="pseOffice" class="value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and filters -->
+                    <div class="filters-bar compact">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="pseSearch" placeholder="Search employees..." oninput="filterProcessSelectedEmployees()">
+                        </div>
+                        <div class="select-all-wrapper">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="pseSelectAll" onchange="toggleAllProcessSelectedEmployees()">
+                                <span>Select All</span>
+                            </label>
+                        </div>
+                        <div class="selection-count">
+                            <span id="pseSelectedCount">0</span> of <span id="pseTotalCount">0</span> selected
+                        </div>
+                    </div>
+
+                    <!-- Employee list -->
+                    <div class="employee-selection-list" id="pseEmployeeList">
+                        <div class="loading-placeholder">
+                            <div class="spinner"></div>
+                            <p>Loading eligible employees...</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats summary -->
+                    <div class="selection-summary" id="pseSelectionSummary" style="display: none;">
+                        <div class="summary-stat">
+                            <span class="stat-label">Total Employees:</span>
+                            <span class="stat-value" id="pseSummaryTotal">0</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label">Estimated Gross:</span>
+                            <span class="stat-value" id="pseSummaryGross">₹0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('processSelectedModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="pseProcessBtn" onclick="processSelectedEmployees()" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Process Selected
+                    </button>
                 </div>
             </div>
         </div>
@@ -1327,7 +1994,7 @@
 
     <!-- Payroll Run Details Modal -->
     <div class="modal" id="payrollRunDetailsModal">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 900px;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 1400px; width: 95%;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="payrollRunDetailsTitle">Payroll Run Details</h5>
@@ -1571,7 +2238,7 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="arrearsTable">
+                            <tbody id="modalArrearsTable">
                                 <tr class="empty-state">
                                     <td colspan="8">
                                         <div class="empty-message">
@@ -2233,12 +2900,591 @@
         </div>
     </div>
 
+    <!-- VD Type Modal -->
+    <div id="vdTypeModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vdTypeModalTitle">Create VD Type</h5>
+                    <button class="close-btn" onclick="closeVDTypeModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="vdTypeForm">
+                        <input type="hidden" id="vdTypeId">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="vdTypeName">Name *</label>
+                                    <input type="text" class="form-control" id="vdTypeName" placeholder="e.g., Additional Medical Insurance" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vdTypeCode">Code *</label>
+                                    <input type="text" class="form-control" id="vdTypeCode" placeholder="e.g., MED-EXT" required>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="vdTypeDefaultAmount">Default Amount (₹)</label>
+                                    <input type="number" class="form-control" id="vdTypeDefaultAmount" placeholder="0.00" step="0.01" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vdTypeIsActive">Status</label>
+                                    <select class="form-control" id="vdTypeIsActive">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="vdTypeDescription">Description</label>
+                                    <textarea class="form-control" id="vdTypeDescription" rows="2" placeholder="Describe this voluntary deduction..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeVDTypeModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveVDType()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VD Enrollment Modal -->
+    <div id="vdEnrollmentModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vdEnrollmentModalTitle">New VD Enrollment</h5>
+                    <button class="close-btn" onclick="closeVDEnrollmentModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="vdEnrollmentForm">
+                        <input type="hidden" id="vdEnrollmentId">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="vdEnrollmentEmployee">Employee *</label>
+                                    <input type="hidden" id="vdEnrollmentEmployee" required>
+                                    <div id="vdEnrollmentEmployeeDropdown"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vdEnrollmentDeductionType">Deduction Type *</label>
+                                    <select class="form-control" id="vdEnrollmentDeductionType" required onchange="onVDTypeChange()">
+                                        <option value="">Select VD Type</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="vdEnrollmentAmount">Monthly Amount (₹) *</label>
+                                    <input type="number" class="form-control" id="vdEnrollmentAmount" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty for alignment -->
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="vdEnrollmentStartDate">Start Date *</label>
+                                    <input type="date" class="form-control" id="vdEnrollmentStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vdEnrollmentEndDate">End Date (Optional)</label>
+                                    <input type="date" class="form-control" id="vdEnrollmentEndDate">
+                                    <small class="form-hint">Leave blank for ongoing deduction</small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeVDEnrollmentModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveVDEnrollment()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Submit for Approval
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VD View/Approve Modal -->
+    <div id="vdViewModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vdViewModalTitle">Enrollment Details</h5>
+                    <button class="close-btn" onclick="closeVDViewModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="details-card">
+                        <div class="details-header">
+                            <div class="details-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                                </svg>
+                            </div>
+                            <div class="details-title">
+                                <h4 id="vdViewEmployee">-</h4>
+                                <span class="badge" id="vdViewStatus">-</span>
+                            </div>
+                        </div>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">VD Type</span>
+                                <span class="detail-value" id="vdViewType">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monthly Amount</span>
+                                <span class="detail-value amount" id="vdViewAmount">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Start Date</span>
+                                <span class="detail-value" id="vdViewStartDate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">End Date</span>
+                                <span class="detail-value" id="vdViewEndDate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Created At</span>
+                                <span class="detail-value" id="vdViewCreatedAt">-</span>
+                            </div>
+                            <div class="detail-item" id="vdViewApprovedByRow" style="display: none;">
+                                <span class="detail-label">Approved By</span>
+                                <span class="detail-value" id="vdViewApprovedBy">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="vdViewModalFooter">
+                    <button type="button" class="btn btn-secondary" onclick="closeVDViewModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VD Opt-Out Modal -->
+    <div id="vdOptOutModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Opt-Out of Voluntary Deduction</h5>
+                    <button class="close-btn" onclick="closeVDOptOutModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="vdOptOutId">
+                    <div class="alert alert-warning">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <div>
+                            <p>You are about to opt-out of <strong id="vdOptOutTypeName">-</strong> for <strong id="vdOptOutEmployeeName">-</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vdOptOutDate">Last Deduction Date *</label>
+                                <input type="date" class="form-control" id="vdOptOutDate" required>
+                                <small class="form-hint">The final month will be prorated based on this date</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeVDOptOutModal()">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="confirmVDOptOut()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                        Confirm Opt-Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VD Reject Modal -->
+    <div id="vdRejectModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Enrollment</h5>
+                    <button class="close-btn" onclick="closeVDRejectModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="vdRejectId">
+                    <div class="form-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vdRejectReason">Reason for Rejection *</label>
+                                <textarea class="form-control" id="vdRejectReason" rows="3" placeholder="Please provide a reason for rejection..." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeVDRejectModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmVDReject()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Adjustment Modal -->
+    <div class="modal" id="createAdjustmentModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: -3px;">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        New Adjustment
+                    </h5>
+                    <button class="close-btn" onclick="closeModal('createAdjustmentModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="createAdjustmentForm">
+                        <!-- Employee Selection -->
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">Employee <span class="required">*</span></label>
+                            <input type="hidden" id="adjustmentEmployeeId" name="employeeId" required>
+                            <div class="employee-search-dropdown" id="adjustmentEmployeeDropdown">
+                                <div class="employee-search-selected" id="adjustmentEmployeeSelected" onclick="toggleAdjustmentEmployeeDropdown()">
+                                    <span class="selected-employee-text" id="adjustmentSelectedText">Select an employee...</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="employee-search-panel" id="adjustmentEmployeePanel">
+                                    <div class="search-box-modern">
+                                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <path d="m21 21-4.35-4.35"/>
+                                        </svg>
+                                        <input type="text" id="adjustmentEmployeeSearch" placeholder="Search by name or code..." oninput="filterAdjustmentEmployeeList()">
+                                        <button type="button" class="clear-search-btn" id="clearAdjustmentSearchBtn" style="display: none;" onclick="clearAdjustmentEmployeeSearch()">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                                <line x1="6" y1="6" x2="18" y2="18"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="employee-list-header">
+                                        <span id="adjustmentEmployeeCountDisplay">0 employees</span>
+                                    </div>
+                                    <div id="adjustmentEmployeeList" class="employees-list-modern">
+                                        <p class="text-muted" style="text-align: center; font-size: 0.8rem; padding: 16px;">Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Adjustment Type Cards -->
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">Adjustment Type <span class="required">*</span></label>
+                            <div class="adjustment-type-cards">
+                                <label class="type-card" data-type="reimbursement">
+                                    <input type="radio" name="adjustmentType" value="reimbursement" required>
+                                    <div class="type-card-content">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                            <line x1="2" y1="10" x2="22" y2="10"/>
+                                        </svg>
+                                        <span class="type-name">Reimbursement</span>
+                                        <span class="type-desc">Expense claims</span>
+                                    </div>
+                                </label>
+                                <label class="type-card" data-type="bonus">
+                                    <input type="radio" name="adjustmentType" value="bonus" required>
+                                    <div class="type-card-content">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        </svg>
+                                        <span class="type-name">Bonus</span>
+                                        <span class="type-desc">Performance reward</span>
+                                    </div>
+                                </label>
+                                <label class="type-card" data-type="incentive">
+                                    <input type="radio" name="adjustmentType" value="incentive" required>
+                                    <div class="type-card-content">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                            <polyline points="17 6 23 6 23 12"/>
+                                        </svg>
+                                        <span class="type-name">Incentive</span>
+                                        <span class="type-desc">Target achievement</span>
+                                    </div>
+                                </label>
+                                <label class="type-card" data-type="recovery">
+                                    <input type="radio" name="adjustmentType" value="recovery" required>
+                                    <div class="type-card-content">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="1" x2="12" y2="23"/>
+                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                        </svg>
+                                        <span class="type-name">Recovery</span>
+                                        <span class="type-desc">Salary deduction</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Amount and Period Row -->
+                        <div class="form-row" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="adjustmentAmount">Amount (₹) <span class="required">*</span></label>
+                                <input type="number" id="adjustmentAmount" class="form-control" min="0" step="0.01" placeholder="Enter amount" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="adjustmentEffectivePeriod">Effective Period <span class="required">*</span></label>
+                                <input type="month" id="adjustmentEffectivePeriod" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <!-- Recurring Toggle Row -->
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <div class="recurring-toggle-row">
+                                <div class="recurring-toggle-left">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="adjustmentRecurring" onchange="toggleRecurringOptions()">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <div class="recurring-label">
+                                        <span class="recurring-title">Recurring Adjustment</span>
+                                        <span class="recurring-hint">Apply this amount for multiple months</span>
+                                    </div>
+                                </div>
+                                <div class="recurring-months-input" id="recurringOptionsRow" style="display: none;">
+                                    <input type="number" id="adjustmentRecurringMonths" class="form-control" min="2" max="36" placeholder="Months" style="width: 80px;">
+                                    <span class="months-label">months</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="form-group">
+                            <label class="form-label" for="adjustmentReason">Reason <span class="required">*</span></label>
+                            <textarea id="adjustmentReason" class="form-control" rows="2" placeholder="Brief description of this adjustment..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createAdjustmentModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createAdjustment()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Create Adjustment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Approve Adjustment Modal -->
+    <div class="modal" id="viewAdjustmentModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: -3px;">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Adjustment Details
+                    </h5>
+                    <button class="close-btn" onclick="closeModal('viewAdjustmentModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding: 16px 20px;">
+                    <input type="hidden" id="viewAdjustmentId">
+
+                    <!-- Employee & Type Header -->
+                    <div class="adjustment-detail-header">
+                        <div class="adj-employee-info">
+                            <span class="adj-employee-name" id="viewAdjustmentEmployee">-</span>
+                            <span class="adj-employee-code" id="viewAdjustmentEmployeeCode">-</span>
+                        </div>
+                        <span class="adj-type-badge" id="viewAdjustmentType">-</span>
+                    </div>
+
+                    <!-- Amount Card -->
+                    <div class="adjustment-amount-card">
+                        <div class="adj-amount-main">
+                            <span class="adj-amount-label">Amount</span>
+                            <span class="adj-amount-value" id="viewAdjustmentAmount">-</span>
+                        </div>
+                        <div class="adj-amount-meta">
+                            <div class="adj-meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span id="viewAdjustmentPeriod">-</span>
+                            </div>
+                            <div class="adj-meta-item">
+                                <span class="adj-status-badge" id="viewAdjustmentStatus">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="adjustment-reason-section">
+                        <span class="adj-section-label">Reason</span>
+                        <p class="adj-reason-text" id="viewAdjustmentReason">-</p>
+                    </div>
+
+                    <!-- Rejection Reason (if rejected) -->
+                    <div class="adjustment-reason-section rejection" id="viewAdjustmentRejectionRow" style="display: none;">
+                        <span class="adj-section-label">Rejection Reason</span>
+                        <p class="adj-reason-text" id="viewAdjustmentRejectionReason">-</p>
+                    </div>
+
+                    <!-- Footer Meta -->
+                    <div class="adjustment-footer-meta">
+                        <div class="adj-footer-item">
+                            <span class="adj-footer-label">Created</span>
+                            <span class="adj-footer-value"><span id="viewAdjustmentCreatedAt">-</span> <span class="adj-by-text" id="viewAdjustmentCreatedBy"></span></span>
+                        </div>
+                        <div class="adj-footer-item" id="viewAdjustmentApprovedByRow" style="display: none;">
+                            <span class="adj-footer-label">Approved</span>
+                            <span class="adj-footer-value"><span id="viewAdjustmentApprovedAt">-</span> <span class="adj-by-text" id="viewAdjustmentApprovedBy"></span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="viewAdjustmentFooter">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('viewAdjustmentModal')">Close</button>
+                    <button type="button" class="btn btn-danger" id="btnRejectAdjustment" onclick="showRejectAdjustmentModal()" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        Reject
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnApproveAdjustment" onclick="approveAdjustment()" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Adjustment Modal -->
+    <div class="modal" id="rejectAdjustmentModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Adjustment</h5>
+                    <button class="close-btn" onclick="closeModal('rejectAdjustmentModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectAdjustmentId">
+                    <div class="form-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adjustmentRejectReason">Reason for Rejection *</label>
+                                <textarea class="form-control" id="adjustmentRejectReason" rows="3" placeholder="Please provide a reason for rejection..." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('rejectAdjustmentModal')">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRejectAdjustment()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');

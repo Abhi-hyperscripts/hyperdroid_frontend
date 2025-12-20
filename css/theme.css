@@ -327,6 +327,11 @@
   --danger-alpha-30: rgba(239, 68, 68, 0.3);
   --warning-alpha-10: rgba(245, 158, 11, 0.1);
   --warning-alpha-20: rgba(245, 158, 11, 0.2);
+  --purple-alpha-10: rgba(139, 92, 246, 0.1);
+  --purple-alpha-20: rgba(139, 92, 246, 0.2);
+  --purple-alpha-30: rgba(139, 92, 246, 0.3);
+  --brand-alpha-10: rgba(59, 130, 246, 0.1);
+  --brand-alpha-20: rgba(59, 130, 246, 0.2);
   --secondary-alpha-15: rgba(139, 92, 246, 0.15);
   --accent-alpha-5: rgba(99, 102, 241, 0.05);
   --accent-alpha-8: rgba(99, 102, 241, 0.08);
@@ -596,6 +601,11 @@
   --danger-alpha-10: rgba(239, 68, 68, 0.15);
   --warning-alpha-10: rgba(245, 158, 11, 0.15);
   --info-alpha-10: rgba(59, 130, 246, 0.15);
+  --purple-alpha-10: rgba(139, 92, 246, 0.15);
+  --purple-alpha-20: rgba(139, 92, 246, 0.25);
+  --purple-alpha-30: rgba(139, 92, 246, 0.35);
+  --brand-alpha-10: rgba(59, 130, 246, 0.15);
+  --brand-alpha-20: rgba(59, 130, 246, 0.25);
 
   /* Button styles (inverted for dark mode) */
   --btn-primary-bg: #f1f5f9;

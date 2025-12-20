@@ -977,6 +977,8 @@ async function viewPayslip(payslipId) {
         const netSalary = payslip.netSalary || payslip.net_salary || payslip.net_pay || 0;
         const earnings = payslip.earnings || payslip.earning_items || [];
         const deductions = payslip.deductions || payslip.deduction_items || [];
+        const arrears = payslip.arrears || 0;
+        const arrearsBreakdown = payslip.arrears_breakdown || payslip.arrearsBreakdown || [];
 
         const payslipDetailsEl = document.getElementById('payslipDetails');
         if (payslipDetailsEl) {
@@ -1035,6 +1037,57 @@ async function viewPayslip(payslipId) {
                         </table>
                     </div>
                 </div>
+                ${arrears > 0 ? `
+                <div class="arrears-section" style="margin-top: 15px; padding: 15px; background: rgba(245, 158, 11, 0.08); border-radius: 8px; border-left: 3px solid var(--color-warning, #f59e0b);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: var(--color-warning, #f59e0b); display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1-.5-.5v-3.5A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            Arrears
+                        </h4>
+                        <span class="arrears-total" style="font-weight: 600; color: var(--color-warning, #f59e0b);">${formatCurrency(arrears)}</span>
+                    </div>
+                    ${arrearsBreakdown.length > 0 ? `
+                    <table style="width: 100%; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="text-align: left; padding: 5px 0;">Period</th>
+                                <th style="text-align: left; padding: 5px 0;">Type</th>
+                                <th style="text-align: right; padding: 5px 0;">Old</th>
+                                <th style="text-align: right; padding: 5px 0;">New</th>
+                                <th style="text-align: right; padding: 5px 0;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${arrearsBreakdown.map(arr => `
+                            <tr>
+                                <td style="padding: 5px 0;">${arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year}</td>
+                                <td style="padding: 5px 0;">
+                                    <span style="display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;
+                                        background: ${arr.source_type === 'ctc_revision' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)'};
+                                        color: ${arr.source_type === 'ctc_revision' ? '#3b82f6' : '#6b7280'};">
+                                        ${arr.source_type === 'ctc_revision' ? 'CTC Revision' : 'Structure'}
+                                    </span>
+                                    ${arr.source_type === 'ctc_revision' && arr.revision_type ? `
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">${formatRevisionType(arr.revision_type)}</div>
+                                    ` : ''}
+                                </td>
+                                <td style="text-align: right; padding: 5px 0; color: var(--text-secondary);">
+                                    ${arr.source_type === 'ctc_revision' && arr.old_ctc ? formatCurrency(arr.old_ctc) + '/yr' : formatCurrency(arr.old_gross)}
+                                </td>
+                                <td style="text-align: right; padding: 5px 0; color: var(--color-success, #22c55e);">
+                                    ${arr.source_type === 'ctc_revision' && arr.new_ctc ? formatCurrency(arr.new_ctc) + '/yr' : formatCurrency(arr.new_gross)}
+                                </td>
+                                <td style="text-align: right; padding: 5px 0; font-weight: 600; color: var(--color-warning, #f59e0b);">${formatCurrency(arr.arrears_amount)}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ` : ''}
+                </div>
+                ` : ''}
                 <div class="payslip-net">
                     <span>Net Pay:</span>
                     <span class="net-amount">${formatCurrency(netSalary)}</span>
@@ -1169,6 +1222,21 @@ function getMonthName(month) {
     const months = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
     return months[month] || 'Unknown';
+}
+
+/**
+ * Format revision type for CTC revision arrears display
+ */
+function formatRevisionType(type) {
+    const types = {
+        'promotion': 'Promotion',
+        'annual_increment': 'Annual Increment',
+        'adjustment': 'Adjustment',
+        'correction': 'Correction',
+        'market_correction': 'Market Correction',
+        'performance_bonus': 'Performance Bonus'
+    };
+    return types[type] || (type ? type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Revision');
 }
 
 /**

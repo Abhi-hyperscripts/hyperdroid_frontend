@@ -1095,8 +1095,9 @@
     box-shadow: var(--shadow-lg);
     align-items: center;
     gap: 12px;
-    max-width: 400px;
+    max-width: calc(100vw - 48px);
     z-index: 9999999;
+    word-wrap: break-word;
 }
 
 .toast.show {
@@ -1116,6 +1117,16 @@
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* Ensure unified toast container is not clipped */
+#unified-toast-container {
+    position: fixed !important;
+    top: 90px !important;
+    right: 24px !important;
+    max-width: 380px !important;
+    width: auto !important;
+    z-index: 99999999 !important;
 }
 
 /* Responsive */
@@ -2445,6 +2456,40 @@
     text-align: center;
 }
 
+/* Action column for payroll run table */
+.pr-col-actions {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+}
+
+.action-btn-sm {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 4px;
+    border-radius: 6px;
+    border: none;
+    background: var(--brand-primary);
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.action-btn-sm:hover {
+    background: var(--brand-primary-dark);
+    transform: scale(1.05);
+}
+
+.action-btn-sm svg {
+    width: 14px;
+    height: 14px;
+    stroke: white;
+}
+
 .pr-virtual-table tbody tr:hover td {
     background: var(--hover-overlay);
 }
@@ -2473,6 +2518,12 @@
     font-weight: 500;
     color: var(--text-primary);
     font-size: 0.75rem;
+}
+
+.pr-emp-code {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
 }
 
 .pr-cell-muted {
@@ -2802,6 +2853,10 @@
     width: auto !important;
 }
 
+.modal-footer .btn svg {
+    margin-right: 6px;
+}
+
 /* Compact stat cards in modals */
 .modal-body .stat-card,
 .modal-body .stat-mini {
@@ -3117,6 +3172,15 @@
 .modal-header-actions .btn-sm svg {
     width: 14px !important;
     height: 14px !important;
+}
+
+/* Ensure close button stays circular in header actions */
+.modal-header-actions .close-btn {
+    flex-shrink: 0;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
 }
 
 /* ======================================
@@ -4586,17 +4650,51 @@ input:checked + .slider:before {
 
 .employee-select-item.selected .employee-name-compact,
 .employee-select-item.selected .employee-email-compact,
-.employee-select-item.selected .employee-dept-compact {
+.employee-select-item.selected .employee-dept-compact,
+.employee-select-item.selected .employee-dept-badge {
     color: var(--text-inverse);
+}
+
+.employee-select-item.selected .employee-code-badge,
+.employee-select-item.selected .employee-dept-badge {
+    color: var(--text-inverse);
+    background: color-mix(in srgb, var(--text-inverse) 20%, transparent);
 }
 
 .employee-info-compact {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     flex: 1;
     min-width: 0;
+}
+
+.employee-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.employee-code-badge {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.employee-dept-badge {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
 .employee-name-compact {
@@ -6658,8 +6756,8 @@ input:checked + .slider:before {
 .dropdown-option {
     display: flex;
     align-items: center;
-    padding: 8px 10px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 12px;
     color: var(--text-primary);
     cursor: pointer;
     border-radius: 4px;
@@ -6697,6 +6795,44 @@ input:checked + .slider:before {
     text-align: center;
     color: var(--text-muted);
     font-size: 13px;
+}
+
+/* Searchable dropdown in modals - overflow fix */
+.modal-body .form-group:has(.searchable-dropdown) {
+    overflow: visible !important;
+}
+
+.modal-body .form-section:has(.searchable-dropdown) {
+    overflow: visible !important;
+}
+
+.modal-body .form-row:has(.searchable-dropdown) {
+    overflow: visible !important;
+}
+
+/* Virtual scroll container styles */
+.dropdown-virtual-container {
+    position: relative;
+}
+
+.dropdown-virtual-viewport {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+/* Compact dropdown for payroll */
+.searchable-dropdown-menu.compact .dropdown-option {
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.searchable-dropdown-menu.compact .dropdown-search-box {
+    padding: 6px 8px;
+}
+
+.searchable-dropdown-menu.compact .dropdown-search-input {
+    font-size: 12px;
 }
 
 /* Geofence Toggle Card */
@@ -6856,6 +6992,151 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
+/* Compact toggle inline for form rows */
+.toggle-inline.compact {
+    height: 32px;
+    gap: 6px;
+    padding: 0;
+}
+
+/* ============================================
+   Adjustment Type Cards
+   ============================================ */
+.adjustment-type-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    align-items: stretch;
+}
+
+.type-card {
+    cursor: pointer;
+    display: flex;
+    height: 100%;
+}
+
+.type-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.type-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 8px;
+    width: 100%;
+    border: 2px solid var(--border-color-light);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.type-card-content svg {
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.type-card-content .type-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.type-card-content .type-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.2;
+}
+
+.type-card:hover .type-card-content {
+    border-color: var(--primary-color);
+    background: var(--bg-elevated);
+}
+
+.type-card input[type="radio"]:checked + .type-card-content {
+    border-color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-card));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 15%, transparent);
+}
+
+.type-card input[type="radio"]:checked + .type-card-content svg {
+    color: var(--primary-color);
+}
+
+.type-card input[type="radio"]:checked + .type-card-content .type-name {
+    color: var(--primary-color);
+}
+
+/* Recovery type - red accent when selected */
+.type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content {
+    border-color: var(--danger-color);
+    background: color-mix(in srgb, var(--danger-color) 8%, var(--bg-card));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-color) 15%, transparent);
+}
+
+.type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content svg,
+.type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content .type-name {
+    color: var(--danger-color);
+}
+
+/* ============================================
+   Recurring Toggle Row
+   ============================================ */
+.recurring-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+}
+
+.recurring-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.recurring-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.recurring-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.recurring-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.recurring-months-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.recurring-months-input .form-control {
+    text-align: center;
+    font-weight: 500;
+}
+
+.recurring-months-input .months-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 /* Office toggles row - horizontal layout */
 .office-toggles-row {
     display: flex;
@@ -6950,6 +7231,16 @@ input:checked + .slider:before {
     color: #6b7280;
 }
 
+/* Payslip modal z-index - must be higher than payroll run details modal */
+#payslipModal {
+    z-index: 10001 !important;
+}
+
+#payslipModal .modal-dialog {
+    max-width: 1000px !important;
+    width: 95% !important;
+}
+
 /* Modal footer with status and actions */
 #payslipModalFooter {
     display: flex;
@@ -6989,3 +7280,515 @@ input:checked + .slider:before {
         justify-content: flex-end;
     }
 }
+
+/* ========================================
+   VD Modal Styles - Details Card
+   ======================================== */
+
+.details-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.details-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--brand-primary-light, rgba(0, 102, 204, 0.08)) 0%, var(--surface-color) 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.details-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--brand-primary, #0066cc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.details-icon svg {
+    color: white;
+    stroke: white;
+}
+
+.details-title {
+    flex: 1;
+}
+
+.details-title h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.details-title .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border-color);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 20px;
+    background: var(--surface-color);
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.detail-value.amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brand-primary, #0066cc);
+}
+
+/* Alert styles for VD modals */
+.modal-body .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.modal-body .alert svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.modal-body .alert p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.modal-body .alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: var(--text-color);
+}
+
+.modal-body .alert-warning svg {
+    color: #f59e0b;
+    stroke: #f59e0b;
+}
+
+.modal-body .alert-warning strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Form hints */
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Responsive details grid */
+@media (max-width: 576px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .details-header {
+        padding: 16px;
+    }
+
+    .detail-item {
+        padding: 12px 16px;
+    }
+}
+
+/* ========================================
+   Badge Styles for VD Modals
+   ======================================== */
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-secondary {
+    background: rgba(107, 114, 128, 0.15);
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* ========================================
+   Payroll Adjustments Styles
+   ======================================== */
+
+/* Type Badge - for adjustment types */
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 12px;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+}
+
+.type-badge.earning {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--success-color, #10b981);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.type-badge.deduction {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger-color, #ef4444);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Dark mode for type badges */
+[data-theme="dark"] .type-badge.earning {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .type-badge.deduction {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Amount Cell - for showing +/- amounts */
+.amount-cell {
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: right;
+}
+
+/* Text alignment helpers for table columns */
+.text-right {
+    text-align: right !important;
+}
+
+.amount-cell.positive {
+    color: var(--success-color, #10b981);
+}
+
+.amount-cell.negative {
+    color: var(--danger-color, #ef4444);
+}
+
+/* Reason Cell - with ellipsis for long text */
+.reason-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Employee Cell - name with code below */
+.employee-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.employee-cell .employee-name {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.employee-cell .employee-code {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Info status badge */
+.status-badge.info {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--info-color, #3b82f6);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .status-badge.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* ============================================
+   Adjustment Details Modal - Compact Design
+   ============================================ */
+.adjustment-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color-light);
+    margin-bottom: 14px;
+}
+
+.adj-employee-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.adj-employee-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.adj-employee-code {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.adj-type-badge {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+}
+
+.adj-type-badge.reimbursement {
+    background: color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent);
+    color: var(--color-info, #3b82f6);
+}
+
+.adj-type-badge.bonus {
+    background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
+    color: var(--color-success, #10b981);
+}
+
+.adj-type-badge.incentive {
+    background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
+    color: var(--color-warning, #f59e0b);
+}
+
+.adj-type-badge.recovery {
+    background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
+    color: var(--color-danger, #ef4444);
+}
+
+/* Amount Card */
+.adjustment-amount-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+
+.adj-amount-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.adj-amount-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.adj-amount-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.adj-amount-value.positive {
+    color: var(--color-success, #10b981);
+}
+
+.adj-amount-value.negative {
+    color: var(--color-danger, #ef4444);
+}
+
+.adj-amount-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.adj-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.adj-meta-item svg {
+    opacity: 0.7;
+}
+
+.adj-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: capitalize;
+}
+
+.adj-status-badge.pending {
+    background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
+    color: var(--color-warning, #f59e0b);
+}
+
+.adj-status-badge.approved {
+    background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
+    color: var(--color-success, #10b981);
+}
+
+.adj-status-badge.rejected {
+    background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
+    color: var(--color-danger, #ef4444);
+}
+
+.adj-status-badge.applied {
+    background: color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent);
+    color: var(--color-info, #3b82f6);
+}
+
+/* Reason Section */
+.adjustment-reason-section {
+    margin-bottom: 14px;
+}
+
+.adjustment-reason-section.rejection {
+    background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger, #ef4444) 20%, transparent);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.adjustment-reason-section.rejection .adj-section-label {
+    color: var(--color-danger, #ef4444);
+}
+
+.adj-section-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.adj-reason-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Footer Meta */
+.adjustment-footer-meta {
+    display: flex;
+    gap: 20px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.adj-footer-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.adj-footer-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.adj-footer-value {
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.adj-by-text {
+    color: var(--text-secondary);
+}
+
+.adj-by-text:before {
+    content: "by ";
+}
+
+.adj-by-text:empty {
+    display: none;
+}
+
+.adj-by-text:empty:before {
+    content: "";
+}
+

@@ -88,8 +88,8 @@ const Toast = (function() {
             flex-direction: column;
             gap: 10px;
             pointer-events: none;
-            max-width: 400px;
-            width: 100%;
+            max-width: calc(100vw - 48px);
+            width: 400px;
         `;
 
         document.body.appendChild(container);
