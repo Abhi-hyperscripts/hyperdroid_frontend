@@ -1116,20 +1116,9 @@
         <!-- Arrears Management Tab -->
         <div class="tab-content" id="arrears">
             <!-- Sub-tabs for Arrears Types -->
-            <div class="arrears-subtabs">
-                <button class="arrears-subtab active" data-subtab="version-arrears" onclick="switchArrearsSubtab('version-arrears')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    Version Arrears
-                </button>
-                <button class="arrears-subtab" data-subtab="ctc-arrears" onclick="switchArrearsSubtab('ctc-arrears')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    CTC Revision Arrears
-                </button>
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" data-subtab="version-arrears" onclick="switchArrearsSubtab('version-arrears')">Version Arrears</button>
+                <button class="sub-tab-btn" data-subtab="ctc-arrears" onclick="switchArrearsSubtab('ctc-arrears')">CTC Revision Arrears</button>
             </div>
 
             <!-- Version Arrears Section -->

@@ -7099,8 +7099,8 @@ let currentCtcArrearsId = null;
  * Switch between Version Arrears and CTC Revision Arrears sub-tabs
  */
 function switchArrearsSubtab(subtabId) {
-    // Update sub-tab buttons
-    document.querySelectorAll('.arrears-subtab').forEach(btn => {
+    // Update sub-tab buttons (scoped to arrears tab)
+    document.querySelectorAll('#arrears .sub-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.subtab === subtabId);
     });
 

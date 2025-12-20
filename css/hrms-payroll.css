@@ -903,9 +903,10 @@
     gap: 8px;
     margin-bottom: 20px;
     padding: 4px;
-    background: var(--bg-input);
+    background: var(--glass-bg-strong);
     border-radius: 10px;
     border: 1px solid var(--border-color);
+    width: fit-content;
 }
 
 .arrears-subtab {
