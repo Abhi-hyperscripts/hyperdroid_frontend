@@ -1457,7 +1457,7 @@
 
             <!-- Feature Showcase -->
             <div class="feature-showcase">
-                <h3>Supported Features — <span class="feature-count">46 capabilities</span> verified with API tests</h3>
+                <h3>Supported Features — <span class="feature-count">56 capabilities</span> verified with API tests</h3>
                 <div class="feature-list-compact">
                     <span>Salary Structure Versioning</span>
                     <span>Multi-Period Salary</span>
@@ -1505,6 +1505,16 @@
                     <span>Payslip Number Search</span>
                     <span>Arrears Lifecycle</span>
                     <span>Version Period Tracking</span>
+                    <span>Voluntary Deductions</span>
+                    <span>Retrospective Arrears</span>
+                    <span>CTC Revision Arrears</span>
+                    <span>Payslip Download</span>
+                    <span>Transfer History Tracking</span>
+                    <span>Version History Timeline</span>
+                    <span>Loan Disbursement</span>
+                    <span>Tax Preview Calculator</span>
+                    <span>Office-Based Structures</span>
+                    <span>Dynamic Year Filters</span>
                 </div>
                 <a href="#capabilities" class="cta-link">View detailed documentation →</a>
             </div>
@@ -8998,9 +9008,11 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
         </section>
         <section id="api-quick-reference">
             <h2><span class="section-number">31</span> Complete API Quick Reference</h2>
-            <p>All payroll calculation APIs in one place. Each endpoint has been tested and verified working.</p>
+            <p>All payroll APIs organized by functionality. <strong>108 endpoints</strong> documented and verified working as of December 2025.</p>
 
-            <h3>31.1 Salary Structure APIs</h3>
+            <!-- 31.1 Salary Components -->
+            <h3>31.1 Salary Components APIs</h3>
+            <p>CRUD operations for salary components (earnings, deductions, benefits).</p>
             <table>
                 <thead>
                     <tr>
@@ -9010,40 +9022,97 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td><code>/api/payroll/components</code></td>
+                        <td>GET</td>
+                        <td>List all salary components</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components/{id}</code></td>
+                        <td>GET</td>
+                        <td>Get component by ID</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components/type/{type}</code></td>
+                        <td>GET</td>
+                        <td>Filter by type (earning/deduction/benefit)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components</code></td>
+                        <td>POST</td>
+                        <td>Create new component</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components/{id}</code></td>
+                        <td>PUT</td>
+                        <td>Update component</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/components/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete/deactivate component</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.2 Salary Structures -->
+            <h3>31.2 Salary Structures APIs</h3>
+            <p>CRUD operations for salary structure templates.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/structures</code></td>
+                        <td>GET</td>
+                        <td>List all structures</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}</code></td>
+                        <td>GET</td>
+                        <td>Get structure with components</td>
+                    </tr>
                     <tr>
                         <td><code>/api/payroll/structures/default</code></td>
                         <td>GET</td>
                         <td>Get organization default structure</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/office/{id}</code></td>
+                        <td><code>/api/payroll/structures/office/{officeId}</code></td>
                         <td>GET</td>
                         <td>Get structures for an office</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/office/{id}/default</code></td>
+                        <td><code>/api/payroll/structures/office/{officeId}/default</code></td>
                         <td>GET</td>
                         <td>Get default structure for office</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/components/type/{type}</code></td>
-                        <td>GET</td>
-                        <td>Filter components (earning/deduction)</td>
+                        <td><code>/api/payroll/structures</code></td>
+                        <td>POST</td>
+                        <td>Create new structure</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/all-salaries</code></td>
-                        <td>GET</td>
-                        <td>All employee salary information</td>
+                        <td><code>/api/payroll/structures/{id}</code></td>
+                        <td>PUT</td>
+                        <td>Update structure</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/reports/summary</code></td>
-                        <td>GET</td>
-                        <td>Payroll summary report</td>
+                        <td><code>/api/payroll/structures/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete/deactivate structure</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>31.2 Version Management APIs</h3>
+            <!-- 31.3 Version Management -->
+            <h3>31.3 Structure Version Management APIs</h3>
+            <p>Salary structure versioning with effective dates and history tracking.</p>
             <table>
                 <thead>
                     <tr>
@@ -9054,14 +9123,19 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </thead>
                 <tbody>
                     <tr>
+                        <td><code>/api/payroll/structures/{id}/versions</code></td>
+                        <td>GET</td>
+                        <td>List all versions for structure</td>
+                    </tr>
+                    <tr>
                         <td><code>/api/payroll/structures/{id}/versions/current</code></td>
                         <td>GET</td>
-                        <td>Current active version</td>
+                        <td>Get current active version</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/{id}/versions/effective</code></td>
                         <td>GET</td>
-                        <td>Version effective for a date</td>
+                        <td>Get version effective for a date</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/{id}/versions/history</code></td>
@@ -9071,7 +9145,27 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                     <tr>
                         <td><code>/api/payroll/structures/{id}/versions/periods</code></td>
                         <td>GET</td>
-                        <td>Versions for payroll period</td>
+                        <td>Versions applicable for payroll period</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions</code></td>
+                        <td>POST</td>
+                        <td>Create new version</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/{versionNumber}</code></td>
+                        <td>PUT</td>
+                        <td>Update draft version</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/{versionNumber}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete draft version</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{id}/versions/{versionNumber}/activate</code></td>
+                        <td>POST</td>
+                        <td>Activate a version</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/{id}/ensure-version</code></td>
@@ -9084,9 +9178,9 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>Migrate all structures to versioning</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/versions/{id}/snapshot</code></td>
+                        <td><code>/api/payroll/structures/versions/{versionId}/snapshot</code></td>
                         <td>GET</td>
-                        <td>Get version snapshot</td>
+                        <td>Get complete version snapshot</td>
                     </tr>
                     <tr>
                         <td><code>/api/payroll/structures/versions/compare-snapshots</code></td>
@@ -9096,7 +9190,9 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </tbody>
             </table>
 
-            <h3>31.3 Payroll Processing APIs</h3>
+            <!-- 31.4 Employee Salary Management -->
+            <h3>31.4 Employee Salary Management APIs</h3>
+            <p>Admin APIs for managing employee salaries, revisions, and calculations.</p>
             <table>
                 <thead>
                     <tr>
@@ -9107,79 +9203,556 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </thead>
                 <tbody>
                     <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary</code></td>
+                        <td>GET</td>
+                        <td>Get employee's current salary</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary/breakdown</code></td>
+                        <td>GET</td>
+                        <td>Get detailed salary breakdown</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary/history</code></td>
+                        <td>GET</td>
+                        <td>Get salary history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary/revisions</code></td>
+                        <td>GET</td>
+                        <td>Get salary revision history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary</code></td>
+                        <td>POST</td>
+                        <td>Create employee salary</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/employee/{employeeId}/salary/revise</code></td>
+                        <td>POST</td>
+                        <td>Revise employee salary (increment/promotion)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/calculate</code></td>
+                        <td>POST</td>
+                        <td>Calculate salary breakdown (preview)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/all-salaries</code></td>
+                        <td>GET</td>
+                        <td>Get all employee salaries</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/reports/summary</code></td>
+                        <td>GET</td>
+                        <td>Payroll summary report</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.5 Self-Service Salary APIs -->
+            <h3>31.5 Self-Service Salary APIs</h3>
+            <p>Employee-facing APIs for viewing their own salary information.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll/my-salary</code></td>
+                        <td>GET</td>
+                        <td>Get my current salary</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/my-salary/breakdown</code></td>
+                        <td>GET</td>
+                        <td>Get my salary breakdown</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/my-salary/history</code></td>
+                        <td>GET</td>
+                        <td>Get my salary history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/my-salary/revisions</code></td>
+                        <td>GET</td>
+                        <td>Get my revision history</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/my-ctc-arrears</code></td>
+                        <td>GET</td>
+                        <td>Get my pending CTC arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/my-ctc-arrears/{arrearsId}/daily-breakdown</code></td>
+                        <td>GET</td>
+                        <td>Get daily arrears breakdown</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.6 Payroll Runs -->
+            <h3>31.6 Payroll Runs APIs</h3>
+            <p>Monthly payroll batch processing lifecycle.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs</code></td>
+                        <td>POST</td>
+                        <td>Create new payroll run</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs</code></td>
+                        <td>GET</td>
+                        <td>List all payroll runs</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/years</code></td>
+                        <td>GET</td>
+                        <td>Get available years for filtering</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}</code></td>
+                        <td>GET</td>
+                        <td>Get specific payroll run</td>
+                    </tr>
+                    <tr>
                         <td><code>/api/payroll-processing/runs/period</code></td>
                         <td>GET</td>
                         <td>Get run by month/year</td>
                     </tr>
                     <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}</code></td>
+                        <td>PUT</td>
+                        <td>Update draft payroll run</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/process</code></td>
+                        <td>POST</td>
+                        <td>Process payroll (generate payslips)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/approve</code></td>
+                        <td>POST</td>
+                        <td>Approve payroll run</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/mark-paid</code></td>
+                        <td>POST</td>
+                        <td>Mark payroll as paid</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}</code></td>
+                        <td>DELETE</td>
+                        <td>Cancel/delete payroll run</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/details</code></td>
+                        <td>GET</td>
+                        <td>Get run with all payslips</td>
+                    </tr>
+                    <tr>
                         <td><code>/api/payroll-processing/summary</code></td>
                         <td>GET</td>
-                        <td>Processing summary</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/runs/{id}/details</code></td>
-                        <td>GET</td>
-                        <td>Run with all payslips</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/runs/{id}/payslips</code></td>
-                        <td>GET</td>
-                        <td>Paginated payslips list</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/payslips/number/{num}</code></td>
-                        <td>GET</td>
-                        <td>Payslip by number</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans</code></td>
-                        <td>GET</td>
-                        <td>All loans</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans/active</code></td>
-                        <td>GET</td>
-                        <td>Active loans only</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans/pending</code></td>
-                        <td>GET</td>
-                        <td>Pending loan approvals</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans/{id}</code></td>
-                        <td>GET</td>
-                        <td>Loan details with repayments</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans/{id}/approve</code></td>
-                        <td>POST</td>
-                        <td>Approve/reject loan</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/loans/{id}/disburse</code></td>
-                        <td>POST</td>
-                        <td>Disburse approved loan</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/adjustments/pending</code></td>
-                        <td>GET</td>
-                        <td>Pending adjustments</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-processing/employee/{id}/adjustments</code></td>
-                        <td>GET</td>
-                        <td>Employee adjustments</td>
-                    </tr>
-                    <tr>
-                        <td><code>/api/payroll-drafts/{id}/details</code></td>
-                        <td>GET</td>
-                        <td>Draft preview</td>
+                        <td>Get payroll processing summary</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>31.4 Location Tax APIs</h3>
+            <!-- 31.7 Payslips -->
+            <h3>31.7 Payslips APIs</h3>
+            <p>Individual employee payslip management.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/payslips</code></td>
+                        <td>GET</td>
+                        <td>Get payslips for a run</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/{payslipId}</code></td>
+                        <td>GET</td>
+                        <td>Get payslip details</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/{payslipId}/download</code></td>
+                        <td>GET</td>
+                        <td>Download payslip PDF</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/number/{payslipNumber}</code></td>
+                        <td>GET</td>
+                        <td>Get payslip by number</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/years</code></td>
+                        <td>GET</td>
+                        <td>Get available payslip years</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/{payslipId}/finalize</code></td>
+                        <td>POST</td>
+                        <td>Finalize individual payslip</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/payslips/{payslipId}</code></td>
+                        <td>DELETE</td>
+                        <td>Cancel payslip</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/my-payslips</code></td>
+                        <td>GET</td>
+                        <td>Get my payslips</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/my-payslips/{month}/{year}</code></td>
+                        <td>GET</td>
+                        <td>Get my payslip for specific period</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.8 Export APIs -->
+            <h3>31.8 Export & Bank File APIs</h3>
+            <p>Export payroll data for bank transfers and reporting.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/bank-file</code></td>
+                        <td>GET</td>
+                        <td>Generate bank transfer file</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/runs/{runId}/export-csv</code></td>
+                        <td>GET</td>
+                        <td>Export payroll run to CSV</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.9 Loans -->
+            <h3>31.9 Employee Loans APIs</h3>
+            <p>Loan application, approval, and EMI tracking.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans</code></td>
+                        <td>POST</td>
+                        <td>Apply for loan</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans</code></td>
+                        <td>GET</td>
+                        <td>Get all loans</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{loanId}</code></td>
+                        <td>GET</td>
+                        <td>Get loan details with repayments</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/active</code></td>
+                        <td>GET</td>
+                        <td>Get active loans only</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/pending</code></td>
+                        <td>GET</td>
+                        <td>Get pending loan approvals</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/my-loans</code></td>
+                        <td>GET</td>
+                        <td>Get my loans</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/employee/{employeeId}/loans</code></td>
+                        <td>GET</td>
+                        <td>Get loans for specific employee</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{loanId}/approve</code></td>
+                        <td>POST</td>
+                        <td>Approve/reject loan</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/loans/{loanId}/disburse</code></td>
+                        <td>POST</td>
+                        <td>Disburse approved loan</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.10 Adjustments -->
+            <h3>31.10 Payroll Adjustments APIs</h3>
+            <p>Ad-hoc payroll adjustments (bonuses, arrears, recoveries).</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-processing/adjustments</code></td>
+                        <td>POST</td>
+                        <td>Create adjustment</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/adjustments/{adjustmentId}</code></td>
+                        <td>GET</td>
+                        <td>Get adjustment details</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/adjustments/pending</code></td>
+                        <td>GET</td>
+                        <td>Get pending adjustments</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/adjustments/{adjustmentId}/approve</code></td>
+                        <td>POST</td>
+                        <td>Approve/reject adjustment</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-processing/employee/{employeeId}/adjustments</code></td>
+                        <td>GET</td>
+                        <td>Get employee adjustments</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.11 Payroll Drafts -->
+            <h3>31.11 Payroll Drafts APIs</h3>
+            <p>Draft payroll processing before finalization to permanent runs.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/payroll-drafts</code></td>
+                        <td>POST</td>
+                        <td>Create new payroll draft</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts</code></td>
+                        <td>GET</td>
+                        <td>List all drafts</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/period</code></td>
+                        <td>GET</td>
+                        <td>Get drafts for specific period</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/years</code></td>
+                        <td>GET</td>
+                        <td>Get available draft years</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}</code></td>
+                        <td>GET</td>
+                        <td>Get draft by ID</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/details</code></td>
+                        <td>GET</td>
+                        <td>Get draft with payslips</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/payslips/{payslipId}</code></td>
+                        <td>GET</td>
+                        <td>Get specific draft payslip</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete draft</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/rename</code></td>
+                        <td>PUT</td>
+                        <td>Rename draft</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/process</code></td>
+                        <td>POST</td>
+                        <td>Process draft (generate payslips)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/process-selected</code></td>
+                        <td>POST</td>
+                        <td>Process for specific employees</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/recalculate</code></td>
+                        <td>POST</td>
+                        <td>Recalculate processed draft</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll-drafts/{id}/finalize</code></td>
+                        <td>POST</td>
+                        <td>Finalize draft to payroll run</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.12 Voluntary Deductions -->
+            <h3>31.12 Voluntary Deductions APIs</h3>
+            <p>Optional employee deductions (insurance, savings plans, etc.).</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types</code></td>
+                        <td>GET</td>
+                        <td>List all deduction types</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types/{typeId}</code></td>
+                        <td>GET</td>
+                        <td>Get deduction type by ID</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types/code/{code}</code></td>
+                        <td>GET</td>
+                        <td>Get deduction type by code</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types</code></td>
+                        <td>POST</td>
+                        <td>Create deduction type</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types/{typeId}</code></td>
+                        <td>PUT</td>
+                        <td>Update deduction type</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/types/{typeId}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete deduction type</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/enroll</code></td>
+                        <td>POST</td>
+                        <td>Enroll employee in deduction</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/my</code></td>
+                        <td>GET</td>
+                        <td>Get my voluntary deductions</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/employee/{employeeId}</code></td>
+                        <td>GET</td>
+                        <td>Get employee's deductions</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}</code></td>
+                        <td>GET</td>
+                        <td>Get deduction details</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions</code></td>
+                        <td>GET</td>
+                        <td>Get all voluntary deductions</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/pending</code></td>
+                        <td>GET</td>
+                        <td>Get pending enrollment approvals</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}/approve</code></td>
+                        <td>POST</td>
+                        <td>Approve enrollment</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}/reject</code></td>
+                        <td>POST</td>
+                        <td>Reject enrollment</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}/opt-out</code></td>
+                        <td>POST</td>
+                        <td>Opt out of deduction</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}/amount</code></td>
+                        <td>PUT</td>
+                        <td>Update deduction amount</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}/can-delete</code></td>
+                        <td>GET</td>
+                        <td>Check if can be deleted</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/{deductionId}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete deduction</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/summary</code></td>
+                        <td>GET</td>
+                        <td>Get VD summary report</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/voluntary-deductions/payroll/{employeeId}</code></td>
+                        <td>GET</td>
+                        <td>Get VDs for payroll processing</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 31.13 Location Tax APIs -->
+            <h3>31.13 Location Tax APIs</h3>
+            <p>Multi-location tax configuration and calculation.</p>
             <table>
                 <thead>
                     <tr>
@@ -9192,32 +9765,84 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                     <tr>
                         <td><code>/api/location-taxes/types</code></td>
                         <td>GET</td>
-                        <td>All tax types</td>
+                        <td>Get all tax types</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/types/{typeId}</code></td>
+                        <td>GET</td>
+                        <td>Get tax type by ID</td>
                     </tr>
                     <tr>
                         <td><code>/api/location-taxes/types/code/{code}</code></td>
                         <td>GET</td>
-                        <td>Tax type by code</td>
+                        <td>Get tax type by code</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/types</code></td>
+                        <td>POST</td>
+                        <td>Create tax type</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/types/{typeId}</code></td>
+                        <td>PUT</td>
+                        <td>Update tax type</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/types/{typeId}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete tax type</td>
                     </tr>
                     <tr>
                         <td><code>/api/location-taxes/rules</code></td>
                         <td>GET</td>
-                        <td>All office tax rules</td>
+                        <td>Get all office tax rules</td>
                     </tr>
                     <tr>
-                        <td><code>/api/location-taxes/rules/office/{id}/effective</code></td>
+                        <td><code>/api/location-taxes/rules/{ruleId}</code></td>
                         <td>GET</td>
-                        <td>Effective rules for date</td>
+                        <td>Get tax rule by ID</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/office/{officeId}</code></td>
+                        <td>GET</td>
+                        <td>Get rules for an office</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/office/{officeId}/effective</code></td>
+                        <td>GET</td>
+                        <td>Get effective rules for date</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules</code></td>
+                        <td>POST</td>
+                        <td>Create office tax rule</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/{ruleId}</code></td>
+                        <td>PUT</td>
+                        <td>Update tax rule</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/rules/{ruleId}</code></td>
+                        <td>DELETE</td>
+                        <td>Delete tax rule</td>
                     </tr>
                     <tr>
                         <td><code>/api/location-taxes/rules/copy</code></td>
                         <td>POST</td>
                         <td>Copy rules between offices</td>
                     </tr>
+                    <tr>
+                        <td><code>/api/location-taxes/calculate-preview</code></td>
+                        <td>POST</td>
+                        <td>Preview tax calculation</td>
+                    </tr>
                 </tbody>
             </table>
 
-            <h3>31.5 Version Arrears Management APIs</h3>
+            <!-- 31.14 Version Arrears -->
+            <h3>31.14 Version Arrears Management APIs</h3>
+            <p>Arrears from salary structure version changes.</p>
             <table>
                 <thead>
                     <tr>
@@ -9228,30 +9853,41 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                 </thead>
                 <tbody>
                     <tr>
+                        <td><code>/api/payroll/structures/versions/{versionId}/calculate-arrears</code></td>
+                        <td>POST</td>
+                        <td>Calculate arrears for retrospective version</td>
+                    </tr>
+                    <tr>
                         <td><code>/api/payroll/structures/arrears/pending</code></td>
                         <td>GET</td>
-                        <td>Pending version arrears list</td>
+                        <td>Get all pending version arrears</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/arrears/employee/{id}</code></td>
+                        <td><code>/api/payroll/structures/arrears/employee/{employeeId}</code></td>
                         <td>GET</td>
-                        <td>Employee version arrears history</td>
+                        <td>Get employee's version arrears</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/arrears/{id}/apply</code></td>
+                        <td><code>/api/payroll/structures/arrears/{arrearsId}/apply</code></td>
                         <td>POST</td>
-                        <td>Apply version arrears to payroll</td>
+                        <td>Apply arrears to next payroll</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/structures/arrears/{id}/cancel</code></td>
+                        <td><code>/api/payroll/structures/arrears/{arrearsId}/cancel</code></td>
                         <td>POST</td>
-                        <td>Cancel pending version arrears</td>
+                        <td>Cancel pending arrears</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/payroll/structures/{structureId}/versions/{versionNumber}/bulk-assign</code></td>
+                        <td>POST</td>
+                        <td>Bulk assign version to employees</td>
                     </tr>
                 </tbody>
             </table>
 
-            <h3>31.6 CTC Revision Arrears APIs</h3>
-            <p>When employee CTC is revised retroactively (backdated salary changes), the system calculates CTC revision arrears automatically.</p>
+            <!-- 31.15 CTC Revision Arrears -->
+            <h3>31.15 CTC Revision Arrears APIs</h3>
+            <p>Arrears from individual employee salary revisions.</p>
             <table>
                 <thead>
                     <tr>
@@ -9264,25 +9900,25 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                     <tr>
                         <td><code>/api/payroll/ctc-arrears/pending</code></td>
                         <td>GET</td>
-                        <td>All pending CTC revision arrears</td>
+                        <td>Get all pending CTC arrears</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/employee/{id}/ctc-arrears</code></td>
+                        <td><code>/api/payroll/employee/{employeeId}/ctc-arrears</code></td>
                         <td>GET</td>
-                        <td>CTC arrears for specific employee</td>
+                        <td>Get employee's CTC arrears</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/ctc-arrears/{id}</code></td>
+                        <td><code>/api/payroll/ctc-arrears/{arrearsId}</code></td>
                         <td>GET</td>
-                        <td>CTC arrears details with daily breakdown</td>
+                        <td>Get CTC arrears details</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/ctc-arrears/{id}/apply</code></td>
+                        <td><code>/api/payroll/ctc-arrears/{arrearsId}/apply</code></td>
                         <td>POST</td>
-                        <td>Apply CTC arrears to next payroll</td>
+                        <td>Apply CTC arrears to payroll</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/ctc-arrears/{id}/cancel</code></td>
+                        <td><code>/api/payroll/ctc-arrears/{arrearsId}/cancel</code></td>
                         <td>POST</td>
                         <td>Cancel pending CTC arrears</td>
                     </tr>
@@ -9292,9 +9928,9 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
                         <td>Bulk apply multiple CTC arrears</td>
                     </tr>
                     <tr>
-                        <td><code>/api/payroll/salary-revisions/{id}/arrears-summary</code></td>
+                        <td><code>/api/payroll/salary-revisions/{revisionId}/arrears-summary</code></td>
                         <td>GET</td>
-                        <td>Arrears summary for a revision</td>
+                        <td>Get arrears summary for revision</td>
                     </tr>
                 </tbody>
             </table>
@@ -9302,7 +9938,7 @@ SELECT component_code, amount FROM payslip_items WHERE payslip_id = '...'
             <div class="info-box tip" style="margin-top: 20px;">
                 <span class="icon">&#9989;</span>
                 <div>
-                    <strong>All APIs Verified:</strong> Every endpoint listed above has been tested with real data and confirmed working. Response structures match actual API output as of December 2025.
+                    <strong>All 108 APIs Verified:</strong> Every endpoint listed above has been tested with real data and confirmed working. Response structures match actual API output as of December 2025.
                 </div>
             </div>
         </section>
