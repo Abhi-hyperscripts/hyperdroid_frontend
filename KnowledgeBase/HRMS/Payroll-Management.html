@@ -731,6 +731,231 @@
             color: var(--text-muted-color);
             font-size: 1.2rem;
         }
+
+        /* ===== Lifecycle Summary Styles ===== */
+        .lifecycle-summary {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+
+        .lifecycle-summary h3 {
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .lifecycle-summary > p {
+            color: var(--text-muted-color);
+            margin-bottom: 20px;
+        }
+
+        .lifecycle-workflow {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 8px;
+        }
+
+        .lifecycle-step {
+            flex: 1;
+            min-width: 120px;
+            max-width: 160px;
+            text-align: center;
+            padding: 12px 8px;
+            background: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .lifecycle-step .step-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .lifecycle-step .step-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            margin-bottom: 4px;
+        }
+
+        .lifecycle-step .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted-color);
+            line-height: 1.3;
+        }
+
+        .lifecycle-arrow {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .lifecycle-status-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+
+        .lifecycle-status-table th,
+        .lifecycle-status-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .lifecycle-status-table th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .lifecycle-status-table th:first-child {
+            border-radius: 6px 0 0 0;
+        }
+
+        .lifecycle-status-table th:last-child {
+            border-radius: 0 6px 0 0;
+        }
+
+        .lifecycle-status-table td {
+            font-size: 0.85rem;
+        }
+
+        .lifecycle-status-table tr:hover {
+            background: var(--table-hover);
+        }
+
+        /* ===== Troubleshooting Section Styles ===== */
+        .troubleshooting-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .troubleshooting-item .problem {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: var(--badge-required-bg, #fee2e2);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .troubleshooting-item .problem-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .troubleshooting-item .problem h4 {
+            color: var(--danger-color);
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .troubleshooting-item .problem p {
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .troubleshooting-item .recovery {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: var(--tip-bg);
+        }
+
+        .troubleshooting-item .recovery-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .troubleshooting-item .recovery h5 {
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .troubleshooting-item .recovery ol {
+            margin: 0 0 12px 20px;
+            font-size: 0.9rem;
+        }
+
+        .troubleshooting-item .recovery ol li {
+            margin-bottom: 4px;
+        }
+
+        .troubleshooting-item .safe-checkpoint {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            background: var(--card-bg);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        .prevention-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .prevention-table th,
+        .prevention-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        .prevention-table th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .prevention-table td:first-child {
+            font-weight: 500;
+            width: 30%;
+        }
+
+        .prevention-table tr:hover {
+            background: var(--table-hover);
+        }
+
+        /* Responsive adjustments for lifecycle and troubleshooting */
+        @media (max-width: 768px) {
+            .lifecycle-workflow {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .lifecycle-step {
+                min-width: 200px;
+                max-width: 100%;
+            }
+
+            .lifecycle-arrow {
+                transform: rotate(90deg);
+                margin: 4px 0;
+            }
+
+            .troubleshooting-item .problem,
+            .troubleshooting-item .recovery {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -832,6 +1057,7 @@
                 <span class="chevron">&#9660;</span>
             </div>
             <ul class="nav-group-items">
+                <li><a href="#troubleshooting"><span class="section-num">⚠️</span> What Can Go Wrong</a></li>
                 <li><a href="#checklist"><span class="section-num">&#10003;</span> Setup Checklist</a></li>
             </ul>
         </nav>
@@ -887,6 +1113,66 @@
                 <span class="icon">&#8505;&#65039;</span>
                 <div>
                     <strong>Prerequisites:</strong> Before setting up payroll, ensure you have completed Organization Setup (Offices, Departments, Designations) and created Employees. Payroll requires employees with assigned salary structures.
+                </div>
+            </div>
+
+            <!-- Mental Model for First-Time Users -->
+            <h3 id="mental-model">If You Understand Only 3 Things About Payroll...</h3>
+            <div class="info-box tip" style="margin-top: 16px;">
+                <span class="icon">&#128161;</span>
+                <div>
+                    <p><strong>New to payroll?</strong> Here's the mental model that will make everything click:</p>
+                </div>
+            </div>
+
+            <div class="feature-grid" style="margin-top: 16px;">
+                <div class="feature-card" style="border-left: 4px solid var(--primary-color);">
+                    <h4>1. CTC = Total Cost to Company</h4>
+                    <p><strong>CTC</strong> is the total annual amount your company spends on an employee. It includes:</p>
+                    <ul style="margin: 8px 0 0 16px; font-size: 0.85rem;">
+                        <li><strong>Gross Salary</strong> = What employee sees (Basic + Allowances)</li>
+                        <li><strong>Deductions</strong> = PF, Tax, etc. (taken from gross)</li>
+                        <li><strong>Net Pay</strong> = Gross - Deductions (what's deposited)</li>
+                        <li><strong>Employer Costs</strong> = PF contribution, Gratuity (invisible to employee)</li>
+                    </ul>
+                    <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted-color);"><em>Example: ₹12L CTC → ₹1L/month gross → ~₹85K/month net pay</em></p>
+                </div>
+                <div class="feature-card" style="border-left: 4px solid var(--secondary-color);">
+                    <h4>2. Drafts = Safe Playground</h4>
+                    <p><strong>Payroll Drafts</strong> are your "undo zone" - nothing is permanent until you finalize:</p>
+                    <ul style="margin: 8px 0 0 16px; font-size: 0.85rem;">
+                        <li><strong>Create Draft</strong> → Empty payroll for a month</li>
+                        <li><strong>Process</strong> → Calculate all payslips (can redo!)</li>
+                        <li><strong>Review</strong> → Check each payslip for errors</li>
+                        <li><strong>Finalize</strong> → Lock it forever (no undo!)</li>
+                    </ul>
+                    <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted-color);"><em>Rule: Process as many times as needed, but finalize only once.</em></p>
+                </div>
+                <div class="feature-card" style="border-left: 4px solid var(--warning-color);">
+                    <h4>3. Proration = Fair Partial Pay</h4>
+                    <p><strong>Proration</strong> calculates partial salary when someone doesn't work full month:</p>
+                    <ul style="margin: 8px 0 0 16px; font-size: 0.85rem;">
+                        <li><strong>LOP Days</strong> = Leave without pay (absent/unapproved)</li>
+                        <li><strong>Formula</strong> = Monthly Pay × (Days Worked ÷ Working Days)</li>
+                        <li><strong>Mid-month joining</strong> = Salary from join date only</li>
+                        <li><strong>Transfers</strong> = Salary split by location + days</li>
+                    </ul>
+                    <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted-color);"><em>Example: 5 LOP days in 22-day month → Pay × (17÷22) = 77% salary</em></p>
+                </div>
+            </div>
+
+            <div class="info-box important" style="margin-top: 16px;">
+                <span class="icon">&#128218;</span>
+                <div>
+                    <strong>Quick Reference Terms:</strong>
+                    <table style="margin-top: 8px; font-size: 0.85rem;">
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>Basic</strong></td><td>Foundation salary (usually 40-50% of gross). Used to calculate HRA, PF.</td></tr>
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>Gross</strong></td><td>Basic + all allowances (HRA, Special, etc.). Total before deductions.</td></tr>
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>Net</strong></td><td>Gross minus deductions. The actual bank transfer amount.</td></tr>
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>EMI</strong></td><td>Equated Monthly Installment. Fixed amount deducted for loan repayment.</td></tr>
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>YTD</strong></td><td>Year-to-Date. Cumulative total from April (financial year start).</td></tr>
+                        <tr><td style="padding: 4px 12px 4px 0;"><strong>Arrears</strong></td><td>Backdated salary difference when structure changes retroactively.</td></tr>
+                    </table>
                 </div>
             </div>
         </section>
@@ -1833,6 +2119,48 @@
             <h2><span class="section-number">8</span> Loans & Advances</h2>
             <p>The Loans & Advances feature allows employees to apply for salary advances or loans that are automatically deducted from their monthly payroll as EMI.</p>
 
+            <!-- Loan Lifecycle Summary -->
+            <div class="info-box important" style="margin: 16px 0;">
+                <span class="icon">&#128260;</span>
+                <div>
+                    <strong>Loan Lifecycle at a Glance</strong>
+                    <div class="workflow-diagram" style="margin: 12px 0;">
+                        <span class="workflow-step" style="background: var(--warning-bg); border-color: var(--warning-border);">Applied</span>
+                        <span class="workflow-arrow">→</span>
+                        <span class="workflow-step" style="background: var(--important-bg); border-color: var(--important-border);">Approved</span>
+                        <span class="workflow-arrow">→</span>
+                        <span class="workflow-step" style="background: var(--tip-bg); border-color: var(--tip-border);">Disbursed</span>
+                        <span class="workflow-arrow">→</span>
+                        <span class="workflow-step" style="background: #e0f2fe; border-color: #0284c7;">Active (EMI)</span>
+                        <span class="workflow-arrow">→</span>
+                        <span class="workflow-step" style="background: #dcfce7; border-color: #16a34a;">Closed</span>
+                    </div>
+                    <table style="font-size: 0.85rem; margin-top: 8px;">
+                        <tr>
+                            <td style="padding: 4px 12px 4px 0; vertical-align: top;"><strong>Applied</strong></td>
+                            <td>Employee submits loan request → appears in "Pending" queue</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 12px 4px 0; vertical-align: top;"><strong>Approved</strong></td>
+                            <td>HR Admin reviews and approves → EMI schedule generated</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 12px 4px 0; vertical-align: top;"><strong>Disbursed</strong></td>
+                            <td>HR marks as disbursed with reference number → funds released</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 12px 4px 0; vertical-align: top;"><strong>Active</strong></td>
+                            <td>EMI auto-deducted each payroll → balance reduces monthly</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 12px 4px 0; vertical-align: top;"><strong>Closed</strong></td>
+                            <td>Final EMI paid → loan marked complete automatically</td>
+                        </tr>
+                    </table>
+                    <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted-color);"><em>Key Decision: Rejected loans can be re-applied. Closed loans cannot be reopened.</em></p>
+                </div>
+            </div>
+
             <h3>Understanding Loan Types</h3>
             <table>
                 <thead>
@@ -2032,6 +2360,82 @@
         <section id="arrears">
             <h2><span class="section-number">9</span> Arrears Management</h2>
             <p>Arrears are salary differences that arise when salary changes are applied retroactively. The system automatically calculates arrears when you create a salary structure version with a past effective date.</p>
+
+            <!-- Arrears Lifecycle Summary -->
+            <div class="lifecycle-summary">
+                <h3>Arrears Lifecycle Summary</h3>
+                <p>Before diving into details, here's the complete arrears workflow at a glance:</p>
+
+                <div class="lifecycle-workflow">
+                    <div class="lifecycle-step">
+                        <div class="step-icon">📅</div>
+                        <div class="step-title">1. Trigger Event</div>
+                        <div class="step-desc">Salary revision or structure version created with retroactive effective date</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">🧮</div>
+                        <div class="step-title">2. Auto-Calculate</div>
+                        <div class="step-desc">System calculates daily differences for each affected month</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">📋</div>
+                        <div class="step-title">3. Pending Review</div>
+                        <div class="step-desc">Arrears appear in Arrears tab with "Pending" status</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">✅</div>
+                        <div class="step-title">4. Apply/Cancel</div>
+                        <div class="step-desc">HR applies arrears to next payroll or cancels with reason</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">💰</div>
+                        <div class="step-title">5. Paid</div>
+                        <div class="step-desc">Arrears added to payslip as line item when payroll runs</div>
+                    </div>
+                </div>
+
+                <table class="lifecycle-status-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>What It Means</th>
+                            <th>What You Can Do</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td>Arrears calculated but not yet included in payroll</td>
+                            <td>Review details, Apply, or Cancel</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-success">Applied</span></td>
+                            <td>Arrears queued for next payroll run</td>
+                            <td>View only (will be in next payslip)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-danger">Cancelled</span></td>
+                            <td>Arrears voided (will not be paid)</td>
+                            <td>View only (audit trail preserved)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <strong>Two Types of Arrears:</strong>
+                        <ul style="margin: 8px 0 0 20px;">
+                            <li><strong>Version Arrears:</strong> When salary structure changes retroactively (affects multiple employees)</li>
+                            <li><strong>CTC Revision Arrears:</strong> When individual employee's CTC is revised with past date</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
             <h3>Understanding Arrears</h3>
             <p>Arrears occur when:</p>
@@ -2845,6 +3249,88 @@
         <section id="voluntary-deductions">
             <h2><span class="section-number">11</span> Voluntary Deductions</h2>
             <p>Voluntary Deductions (VD) allow employees to opt into recurring deductions from their salary for benefits like additional insurance, charity donations, or other voluntary contributions. This section covers how to set up VD types, manage enrollments, and track deductions in payslips.</p>
+
+            <!-- Voluntary Deductions Lifecycle Summary -->
+            <div class="lifecycle-summary">
+                <h3>Voluntary Deductions Lifecycle Summary</h3>
+                <p>Before diving into details, here's how voluntary deductions work from enrollment to deduction:</p>
+
+                <div class="lifecycle-workflow">
+                    <div class="lifecycle-step">
+                        <div class="step-icon">📝</div>
+                        <div class="step-title">1. HR Creates VD Type</div>
+                        <div class="step-desc">Define deduction name, default amount, and description</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">🙋</div>
+                        <div class="step-title">2. Employee Enrolls</div>
+                        <div class="step-desc">Employee opts in via self-service or HR enrolls them</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">⏳</div>
+                        <div class="step-title">3. Pending Approval</div>
+                        <div class="step-desc">Enrollment awaits HR approval</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">✅</div>
+                        <div class="step-title">4. Approved → Active</div>
+                        <div class="step-desc">HR approves, deduction becomes active</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">💰</div>
+                        <div class="step-title">5. Monthly Deduction</div>
+                        <div class="step-desc">Amount auto-deducted in each payroll run</div>
+                    </div>
+                </div>
+
+                <table class="lifecycle-status-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>What It Means</th>
+                            <th>What You Can Do</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-warning">Pending Approval</span></td>
+                            <td>Enrollment submitted, awaiting HR review</td>
+                            <td>HR: Approve or Reject</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-info">Approved</span></td>
+                            <td>HR approved but not yet active (future start date)</td>
+                            <td>Will activate on effective date</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-success">Active</span></td>
+                            <td>Deducted from payroll each month</td>
+                            <td>Employee: Opt Out; HR: Modify amount</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-secondary">Opted Out</span></td>
+                            <td>Employee stopped the deduction</td>
+                            <td>Employee: Re-enroll if needed</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-danger">Rejected</span></td>
+                            <td>HR rejected the enrollment</td>
+                            <td>Employee: Re-apply with corrections</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <strong>Employee-Controlled:</strong> Unlike mandatory deductions (PF, ESI), voluntary deductions are entirely employee-initiated. They can opt in, modify amounts (within limits), and opt out at any time.
+                    </div>
+                </div>
+            </div>
 
             <div class="info-box important">
                 <span class="icon">&#9432;</span>
@@ -4087,6 +4573,197 @@
                         <li>Document all disbursement references for audit trail</li>
                         <li>Monitor default rates and adjust policies accordingly</li>
                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: What Can Go Wrong - Troubleshooting -->
+        <section id="troubleshooting">
+            <h2><span class="section-number">⚠️</span> What Can Go Wrong</h2>
+            <p>Even experienced HR professionals encounter issues during payroll. Here are the most common problems, why they happen, and how to fix them.</p>
+
+            <h3>Common Mistakes & Recovery</h3>
+
+            <!-- Mistake 1: Finalized Wrong Data -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Finalized Payroll with Wrong Data</h4>
+                        <p><strong>What happened:</strong> You finalized a draft but realized an employee's salary was incorrect, leave wasn't counted, or an adjustment was missing.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>If the run is not yet "Approved" → Go back to Drafts, delete the finalized run, fix the data, and re-process</li>
+                            <li>If already "Approved" but not "Paid" → Contact system admin to roll back status</li>
+                            <li>If already "Paid" → Create a correction adjustment for next month (Adjustment Type: "Correction")</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Always use "Processed" status as your review stage before finalizing</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mistake 2: Duplicate Payroll Run -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Created Duplicate Payroll Run for Same Month</h4>
+                        <p><strong>What happened:</strong> Two drafts were created for the same month/year, causing confusion about which one is correct.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>Identify which draft has the correct data (check employee count, total amounts)</li>
+                            <li>Delete the incorrect draft(s) before finalizing</li>
+                            <li>The system prevents finalizing if another finalized run exists for the same period</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Check "Payroll Runs" list before creating a new draft</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mistake 3: Missing Employee Salary -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Employee Missing from Payroll</h4>
+                        <p><strong>What happened:</strong> After processing, you notice an employee doesn't have a payslip generated.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>Check if employee has an active salary assigned (Payroll → Employee Salaries)</li>
+                            <li>Verify employee's "Employment Status" is "Active"</li>
+                            <li>Check if employee joined after the pay period end date</li>
+                            <li>Assign salary, then use "Recalculate" on the draft to regenerate payslips</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Compare processed employee count vs. total active employees</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mistake 4: Wrong LOP Days -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Loss of Pay (LOP) Days Incorrect</h4>
+                        <p><strong>What happened:</strong> Employee's payslip shows wrong LOP days, affecting their net pay.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>Check employee's attendance records for the month (Attendance page)</li>
+                            <li>Verify leave requests are approved and correctly marked</li>
+                            <li>Regularize any missing attendance before recalculating</li>
+                            <li>Use "Recalculate" on the draft to regenerate with correct LOP</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Complete attendance regularization before processing payroll</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mistake 5: Arrears Not Applied -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Arrears Not Included in Payslip</h4>
+                        <p><strong>What happened:</strong> You expected arrears from a salary revision, but they don't appear in the payslip.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>Go to Payroll → Arrears tab</li>
+                            <li>Check if arrears are in "Pending" status (they need to be "Applied" first)</li>
+                            <li>Click "Apply" on the pending arrears</li>
+                            <li>Recalculate the payroll draft</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Check Arrears tab before processing each month's payroll</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mistake 6: Loan EMI Not Deducted -->
+            <div class="troubleshooting-item">
+                <div class="problem">
+                    <span class="problem-icon">❌</span>
+                    <div>
+                        <h4>Loan EMI Not Deducted</h4>
+                        <p><strong>What happened:</strong> An employee's loan EMI wasn't deducted from their payslip.</p>
+                    </div>
+                </div>
+                <div class="recovery">
+                    <span class="recovery-icon">🔧</span>
+                    <div>
+                        <h5>Recovery Path</h5>
+                        <ol>
+                            <li>Check loan status in Payroll → Loans (must be "Disbursed" or "Active")</li>
+                            <li>Verify loan start date is on or before the pay period</li>
+                            <li>Check if loan is fully repaid (Closed status)</li>
+                            <li>If loan was just disbursed, EMI starts from next month</li>
+                        </ol>
+                        <p class="safe-checkpoint">✓ <strong>Safe Checkpoint:</strong> Review "Active Loans" list before processing payroll</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Prevention Tips</h3>
+
+            <table class="prevention-table">
+                <thead>
+                    <tr>
+                        <th>Before You...</th>
+                        <th>Always Check...</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Create a payroll draft</td>
+                        <td>All attendance is regularized, all leaves are approved</td>
+                    </tr>
+                    <tr>
+                        <td>Process a draft</td>
+                        <td>All employees have active salaries assigned</td>
+                    </tr>
+                    <tr>
+                        <td>Finalize a draft</td>
+                        <td>Review payslip totals, spot-check 2-3 individual payslips</td>
+                    </tr>
+                    <tr>
+                        <td>Approve a run</td>
+                        <td>All adjustments, arrears, and loans are correctly applied</td>
+                    </tr>
+                    <tr>
+                        <td>Mark as paid</td>
+                        <td>Bank file is generated, transfer is complete</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Point of No Return</strong>
+                    <p>Once payroll is marked "Paid", changes are extremely difficult. Always use the intermediate statuses (Processed → Finalized → Approved) as review checkpoints before proceeding.</p>
                 </div>
             </div>
         </section>
