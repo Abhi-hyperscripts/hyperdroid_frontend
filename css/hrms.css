@@ -5614,92 +5614,130 @@ input:checked + .slider:before {
 }
 
 /* ============================================
-   TRANSFER HISTORY TIMELINE ENHANCEMENTS
+   TRANSFER HISTORY TIMELINE - ULTRA COMPACT
    ============================================ */
 
 .transfer-history-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding-bottom: 20px;
+    gap: 10px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color-light);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+}
+
+.transfer-history-header .employee-avatar-large {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.transfer-history-header .employee-info {
+    flex: 1;
+    min-width: 0;
 }
 
 .transfer-history-header h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
+    line-height: 1.2;
 }
 
 .transfer-history-header p {
-    margin: 4px 0 0 0;
-    font-size: 0.8rem;
+    margin: 0;
+    font-size: 0.7rem;
     color: var(--text-secondary);
 }
 
 .transfer-stats {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 6px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
 }
 
 .transfer-stats .stat-item,
 .transfer-stats .t-stat {
-    padding: 10px 18px;
+    padding: 4px 10px;
     background: var(--bg-elevated);
-    border-radius: 10px;
-    font-size: 0.85rem;
-    color: var(--text-primary);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    text-align: center;
+    flex: 1;
+    min-width: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .transfer-stats .stat-value,
 .transfer-stats .t-stat span:first-child {
+    display: inline;
     font-weight: 700;
     color: var(--brand-primary);
-    font-size: 1.1rem;
-    margin-right: 4px;
+    font-size: 0.85rem;
+}
+
+.transfer-stats .stat-label {
+    display: inline;
 }
 
 .history-section {
-    margin-bottom: 28px;
+    margin-bottom: 10px;
 }
 
 .history-section h4 {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
 }
 
 .history-timeline {
     position: relative;
-    padding-left: 24px;
+    padding-left: 14px;
 }
 
 .history-timeline::before {
     content: '';
     position: absolute;
-    left: 8px;
+    left: 4px;
     top: 0;
     bottom: 0;
     width: 2px;
     background: var(--border-color-light);
 }
 
+.timeline-item {
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
 .timeline-marker {
     position: absolute;
-    left: -24px;
-    width: 18px;
-    height: 18px;
+    left: -14px;
+    width: 10px;
+    height: 10px;
     background: var(--bg-card);
     border: 2px solid var(--border-color);
     border-radius: 50%;
+    top: 8px;
 }
 
 .timeline-item.current .timeline-marker {
@@ -5709,60 +5747,60 @@ input:checked + .slider:before {
 
 .timeline-content {
     background: var(--bg-elevated);
-    padding: 14px 18px;
-    border-radius: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
     border: 1px solid var(--border-color-light);
 }
 
 .timeline-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .timeline-title {
     font-weight: 600;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.75rem;
 }
 
 .timeline-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
 }
 
 .current-badge {
     background: var(--color-success-light);
     color: var(--color-success);
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
+    padding: 1px 6px;
+    border-radius: 8px;
     text-transform: uppercase;
 }
 
 .timeline-date {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
-    margin-top: 6px;
+    margin-top: 2px;
 }
 
 .timeline-reason {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     color: var(--text-secondary);
-    margin-top: 8px;
+    margin-top: 2px;
     font-style: italic;
 }
 
 .transfer-type-badge {
     display: inline-block;
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 6px;
+    padding: 1px 6px;
+    border-radius: 3px;
     text-transform: capitalize;
-    margin-top: 8px;
+    margin-top: 2px;
 }
 
 .transfer-type-badge.transfer {
@@ -5783,6 +5821,21 @@ input:checked + .slider:before {
 .transfer-type-badge.deputation {
     background: var(--brand-secondary-light);
     color: var(--brand-secondary);
+}
+
+/* Transfer History Modal - Compact Override */
+#transferHistoryModal .modal-header {
+    padding: 12px 16px;
+}
+
+#transferHistoryModal .modal-header h3 {
+    font-size: 0.95rem;
+}
+
+#transferHistoryModal .modal-body {
+    padding: 12px 16px;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 /* =============================================================
