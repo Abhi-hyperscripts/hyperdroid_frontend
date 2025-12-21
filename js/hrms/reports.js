@@ -124,6 +124,8 @@ const reportConfig = {
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
+    setupSidebar();
+    setupReportButtons();
     await initializePage();
 });
 
@@ -183,13 +185,64 @@ function applyReportsRBAC() {
         }
     });
 
-    // Manager users see only team-relevant reports - hide certain report categories
-    if (hrmsRoles.isManager() && !hrmsRoles.isHRUser() && !hrmsRoles.isHRAdmin()) {
-        // Hide payroll reports for managers (they shouldn't see salary data)
-        const payrollSection = document.getElementById('payroll-reports');
-        if (payrollSection) {
-            payrollSection.style.display = 'none';
+    // Payroll reports - only visible to HR Admin and Super Admin
+    const payrollNavGroup = document.getElementById('payrollNavGroup');
+    if (payrollNavGroup) {
+        if (hrmsRoles.isHRAdmin()) {
+            payrollNavGroup.style.display = 'block';
+        } else {
+            payrollNavGroup.style.display = 'none';
         }
+    }
+}
+
+// Setup report button click handlers
+function setupReportButtons() {
+    const reportBtns = document.querySelectorAll('.sidebar-btn[data-report]');
+    reportBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const reportType = this.dataset.report;
+            selectReport(reportType);
+
+            // Update active button state
+            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Select first report by default
+    if (reportBtns.length > 0) {
+        const firstBtn = reportBtns[0];
+        const reportType = firstBtn.dataset.report;
+        currentReportType = reportType;
+        updateActiveTabTitle(reportType);
+    }
+}
+
+// Select a report and update the UI
+function selectReport(reportType) {
+    currentReportType = reportType;
+    const config = reportConfig[reportType];
+
+    if (!config) {
+        showToast('Report type not configured', 'error');
+        return;
+    }
+
+    // Update active tab title
+    updateActiveTabTitle(reportType);
+
+    // Clear previous results and show placeholder
+    document.getElementById('reportTable').innerHTML = '<p class="placeholder-text">Configure filters and click "Generate Report" to view data</p>';
+    document.getElementById('recordCount').textContent = '0 records';
+}
+
+// Update the active tab title based on report type
+function updateActiveTabTitle(reportType) {
+    const config = reportConfig[reportType];
+    const titleEl = document.getElementById('activeTabName');
+    if (titleEl && config) {
+        titleEl.textContent = config.title;
     }
 }
 
@@ -223,49 +276,7 @@ async function loadDepartments() {
     }
 }
 
-function showReportSection(sectionId) {
-    // Hide all sections
-    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('reportGenerator').classList.remove('active');
-
-    // Show selected section
-    document.getElementById(sectionId).classList.add('active');
-
-    // Hide categories
-    document.querySelector('.report-categories').style.display = 'none';
-}
-
-function hideReportSection() {
-    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-    document.querySelector('.report-categories').style.display = 'grid';
-}
-
-function generateReport(reportType) {
-    currentReportType = reportType;
-    const config = reportConfig[reportType];
-
-    if (!config) {
-        showToast('Report type not configured', 'error');
-        return;
-    }
-
-    document.getElementById('reportTitle').textContent = config.title;
-
-    // Hide sections and show generator
-    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-    document.querySelector('.report-categories').style.display = 'none';
-    document.getElementById('reportGenerator').classList.add('active');
-
-    // Clear previous results
-    document.getElementById('reportTable').innerHTML = '<p class="placeholder-text">Configure filters and click "Generate Report" to view data</p>';
-    document.getElementById('reportRecordCount').textContent = '0 records';
-}
-
-function hideReportGenerator() {
-    document.getElementById('reportGenerator').classList.remove('active');
-    document.querySelector('.report-categories').style.display = 'grid';
-    currentReportType = null;
-}
+// Legacy functions removed - sidebar-based navigation replaces category cards
 
 function resetFilters() {
     const today = new Date();
@@ -345,7 +356,7 @@ async function runReport() {
         }
 
         renderReportTable(config.columns, reportData);
-        document.getElementById('reportRecordCount').textContent = `${reportData.length} records`;
+        document.getElementById('recordCount').textContent = `${reportData.length} records`;
 
         hideLoading();
     } catch (error) {
@@ -705,3 +716,95 @@ function hideLoading() {
 }
 
 // Local showToast removed - using unified toast.js instead
+
+// ==========================================
+// Sidebar Setup
+// ==========================================
+
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('organizationSidebar');
+    const activeTabName = document.getElementById('activeTabName');
+    const container = document.querySelector('.hrms-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!toggle || !sidebar) return;
+
+    // Tab name mapping for display
+    const tabNames = {
+        'employee-headcount': 'Employee Headcount',
+        'employee-demographics': 'Demographics',
+        'employee-turnover': 'Turnover Analysis',
+        'employee-directory': 'Employee Directory',
+        'daily-attendance': 'Daily Attendance',
+        'monthly-attendance': 'Monthly Attendance',
+        'late-arrivals': 'Late Arrivals',
+        'overtime-report': 'Overtime Report',
+        'absenteeism': 'Absenteeism Analysis',
+        'leave-balance': 'Leave Balance',
+        'leave-utilization': 'Leave Utilization',
+        'leave-trend': 'Leave Trends',
+        'pending-approvals': 'Pending Approvals',
+        'salary-summary': 'Salary Summary',
+        'payroll-register': 'Payroll Register',
+        'deductions-report': 'Deductions Report',
+        'tax-report': 'Tax Report',
+        'loan-report': 'Loans Report',
+        'bank-advice': 'Bank Advice'
+    };
+
+    // Update active tab title
+    function updateActiveTabTitle(tabId) {
+        if (activeTabName && tabNames[tabId]) {
+            activeTabName.textContent = tabNames[tabId];
+        }
+    }
+
+    // Open sidebar by default on page load (desktop)
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    }
+
+    // Toggle sidebar open/close
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+    });
+
+    // Close sidebar when clicking overlay (mobile)
+    overlay?.addEventListener('click', () => {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+    });
+
+    // Collapsible nav groups
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.closest('.nav-group');
+            if (group) {
+                group.classList.toggle('collapsed');
+            }
+        });
+    });
+
+    // Update title when a tab is selected
+    document.querySelectorAll('.sidebar-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            updateActiveTabTitle(tabId);
+        });
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+        }
+    });
+}

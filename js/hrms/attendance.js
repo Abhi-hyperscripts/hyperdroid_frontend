@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply RBAC visibility
     applyAttendanceRBAC();
 
+    // Setup sidebar navigation
+    setupSidebar();
+
     // Set default date
     document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
 
@@ -33,21 +36,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Apply RBAC visibility rules for attendance page
 function applyAttendanceRBAC() {
     // Daily View tab - visible to HR users, managers, admins (team/org-wide view)
-    const dailyTab = document.querySelector('[data-tab="daily"]');
-    if (dailyTab) {
+    const dailyTabBtn = document.getElementById('dailyTab');
+    if (dailyTabBtn) {
         // Users can only see My Attendance tab
         if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin()) {
-            dailyTab.style.display = 'none';
+            dailyTabBtn.style.display = 'none';
         }
     }
 
-    // Approvals tab - visible to managers and HR admins
-    const approvalsTab = document.getElementById('approvalsTab');
-    if (approvalsTab) {
+    // Approvals nav group - visible to managers and HR admins
+    const approvalsNavGroup = document.getElementById('approvalsNavGroup');
+    if (approvalsNavGroup) {
         if (hrmsRoles.canApproveAttendance()) {
-            approvalsTab.style.display = 'inline-block';
+            approvalsNavGroup.style.display = 'block';
         } else {
-            approvalsTab.style.display = 'none';
+            approvalsNavGroup.style.display = 'none';
         }
     }
 
@@ -58,15 +61,35 @@ function applyAttendanceRBAC() {
 }
 
 function switchTab(tabName) {
-    document.querySelectorAll('.hrms-tab').forEach(t => t.classList.remove('active'));
+    // Update sidebar buttons
+    document.querySelectorAll('.sidebar-btn').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const tabBtn = document.querySelector(`.sidebar-btn[data-tab="${tabName}"]`);
+    if (tabBtn) {
+        tabBtn.classList.add('active');
+    }
 
-    // Handle special case for approvals tab content element
-    const tabContentId = tabName === 'approvals' ? 'approvalsTabContent' : `${tabName}Tab`;
-    document.getElementById(tabContentId).classList.add('active');
+    // Update tab content - IDs match tab names directly
+    const tabContent = document.getElementById(tabName);
+    if (tabContent) {
+        tabContent.classList.add('active');
+    }
 
+    // Update active tab title
+    const tabNames = {
+        'daily': 'Daily View',
+        'myAttendance': 'My Attendance',
+        'regularization': 'Regularization',
+        'overtime': 'Overtime',
+        'approvals': 'Pending Approvals'
+    };
+    const activeTabName = document.getElementById('activeTabName');
+    if (activeTabName && tabNames[tabName]) {
+        activeTabName.textContent = tabNames[tabName];
+    }
+
+    // Load data for the tab
     switch(tabName) {
         case 'daily': loadAttendance(); break;
         case 'myAttendance': loadMyAttendance(); break;
@@ -575,3 +598,75 @@ function closeModal(id) {
 }
 
 // Local showToast removed - using unified toast.js instead
+
+// Setup sidebar navigation
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('organizationSidebar');
+    const activeTabName = document.getElementById('activeTabName');
+    const container = document.querySelector('.hrms-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!toggle || !sidebar) return;
+
+    const tabNames = {
+        'daily': 'Daily View',
+        'myAttendance': 'My Attendance',
+        'regularization': 'Regularization',
+        'overtime': 'Overtime',
+        'approvals': 'Pending Approvals'
+    };
+
+    function updateActiveTabTitle(tabId) {
+        if (activeTabName && tabNames[tabId]) {
+            activeTabName.textContent = tabNames[tabId];
+        }
+    }
+
+    // Open sidebar by default on page load (desktop)
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    }
+
+    // Toggle sidebar open/close
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+    });
+
+    // Close sidebar when clicking overlay (mobile)
+    overlay?.addEventListener('click', () => {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+    });
+
+    // Collapsible nav groups
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.closest('.nav-group');
+            group.classList.toggle('collapsed');
+        });
+    });
+
+    // Sidebar button clicks to switch tabs
+    document.querySelectorAll('.sidebar-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            switchTab(tabId);
+            updateActiveTabTitle(tabId);
+        });
+    });
+
+    // ESC key to close sidebar
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+        }
+    });
+}

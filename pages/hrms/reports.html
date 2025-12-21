@@ -9,6 +9,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-reports.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
@@ -19,9 +20,7 @@
                 <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
             </a>
         </div>
-        <div class="navbar-menu">
-            <!-- Navigation links rendered by Navigation.init() -->
-        </div>
+        <div class="navbar-menu"></div>
     </nav>
 
     <div class="hrms-container">
@@ -32,510 +31,250 @@
                     <span class="separator">/</span>
                     <span class="current">Reports</span>
                 </nav>
-                <h1>Reports & Analytics</h1>
-            </div>
-        </div>
-
-        <!-- Report Categories -->
-        <div class="report-categories">
-            <div class="category-card" onclick="showReportSection('employee-reports')">
-                <div class="category-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                </div>
-                <div class="category-info">
-                    <h3>Employee Reports</h3>
-                    <p>Headcount, demographics, turnover analysis</p>
-                </div>
-            </div>
-
-            <div class="category-card" onclick="showReportSection('attendance-reports')">
-                <div class="category-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                </div>
-                <div class="category-info">
-                    <h3>Attendance Reports</h3>
-                    <p>Daily attendance, late arrivals, overtime</p>
-                </div>
-            </div>
-
-            <div class="category-card" onclick="showReportSection('leave-reports')">
-                <div class="category-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                </div>
-                <div class="category-info">
-                    <h3>Leave Reports</h3>
-                    <p>Leave balance, utilization, trends</p>
-                </div>
-            </div>
-
-            <div class="category-card" onclick="showReportSection('payroll-reports')">
-                <div class="category-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                </div>
-                <div class="category-info">
-                    <h3>Payroll Reports</h3>
-                    <p>Salary summary, deductions, tax reports</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Employee Reports Section -->
-        <div class="report-section" id="employee-reports">
-            <div class="section-header">
-                <h2>Employee Reports</h2>
-                <button class="btn btn-outline btn-sm" onclick="hideReportSection()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Close
-                </button>
-            </div>
-
-            <div class="report-list">
-                <div class="report-item" onclick="generateReport('employee-headcount')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
                         </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Employee Headcount Report</h4>
-                        <p>Total employees by department, designation, and office</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('employee-demographics')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Demographics Report</h4>
-                        <p>Age distribution, gender ratio, experience levels</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('employee-turnover')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                            <polyline points="17 6 23 6 23 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Turnover Analysis</h4>
-                        <p>New hires, exits, attrition rate trends</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('employee-directory')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Employee Directory</h4>
-                        <p>Complete employee list with contact details</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Attendance Reports Section -->
-        <div class="report-section" id="attendance-reports">
-            <div class="section-header">
-                <h2>Attendance Reports</h2>
-                <button class="btn btn-outline btn-sm" onclick="hideReportSection()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Close
-                </button>
-            </div>
-
-            <div class="report-list">
-                <div class="report-item" onclick="generateReport('daily-attendance')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Daily Attendance Report</h4>
-                        <p>Day-wise attendance summary for all employees</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('monthly-attendance')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                            <polyline points="9 16 12 13 15 16"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Monthly Attendance Summary</h4>
-                        <p>Present days, absences, late arrivals by month</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('late-arrivals')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Late Arrivals Report</h4>
-                        <p>Employees with frequent late check-ins</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('overtime-report')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 16"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Overtime Report</h4>
-                        <p>Overtime hours worked by employees</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('absenteeism')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Absenteeism Analysis</h4>
-                        <p>Unauthorized absences and patterns</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Leave Reports Section -->
-        <div class="report-section" id="leave-reports">
-            <div class="section-header">
-                <h2>Leave Reports</h2>
-                <button class="btn btn-outline btn-sm" onclick="hideReportSection()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Close
-                </button>
-            </div>
-
-            <div class="report-list">
-                <div class="report-item" onclick="generateReport('leave-balance')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Leave Balance Report</h4>
-                        <p>Current leave balance for all employees</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('leave-utilization')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Leave Utilization Report</h4>
-                        <p>How employees are using their leave quota</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('leave-trend')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Leave Trend Analysis</h4>
-                        <p>Monthly leave patterns and seasonal trends</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('pending-approvals')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Pending Approvals Report</h4>
-                        <p>Leave requests awaiting approval</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payroll Reports Section -->
-        <div class="report-section" id="payroll-reports">
-            <div class="section-header">
-                <h2>Payroll Reports</h2>
-                <button class="btn btn-outline btn-sm" onclick="hideReportSection()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Close
-                </button>
-            </div>
-
-            <div class="report-list">
-                <div class="report-item" onclick="generateReport('salary-summary')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Salary Summary Report</h4>
-                        <p>Monthly salary breakdown by department</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('payroll-register')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Payroll Register</h4>
-                        <p>Detailed payroll records for a pay period</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('deductions-report')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Deductions Report</h4>
-                        <p>All deductions including PF, ESI, loans</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('tax-report')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Tax Computation Report</h4>
-                        <p>TDS calculations and tax liability</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('loan-report')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Loans & Advances Report</h4>
-                        <p>Outstanding loans and repayment status</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-
-                <div class="report-item" onclick="generateReport('bank-advice')">
-                    <div class="report-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                    </div>
-                    <div class="report-info">
-                        <h4>Bank Advice Report</h4>
-                        <p>Bank transfer details for salary disbursement</p>
-                    </div>
-                    <button class="btn btn-sm btn-primary">Generate</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Report Generator -->
-        <div class="report-generator" id="reportGenerator">
-            <div class="generator-header">
-                <h2 id="reportTitle">Generate Report</h2>
-                <button class="btn btn-outline btn-sm" onclick="hideReportGenerator()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Close
-                </button>
-            </div>
-
-            <div class="generator-filters">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="reportDateFrom">From Date</label>
-                        <input type="date" id="reportDateFrom" class="form-control">
-                    </div>
-                    <div class="filter-group">
-                        <label for="reportDateTo">To Date</label>
-                        <input type="date" id="reportDateTo" class="form-control">
-                    </div>
-                    <div class="filter-group">
-                        <label for="reportOffice">Office</label>
-                        <select id="reportOffice" class="form-select">
-                            <option value="">All Offices</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="reportDepartment">Department</label>
-                        <select id="reportDepartment" class="form-select">
-                            <option value="">All Departments</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="filter-actions">
-                    <button class="btn btn-outline" onclick="resetFilters()">Reset</button>
-                    <button class="btn btn-primary" onclick="runReport()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                        Generate Report
                     </button>
+                    <h1>Reports & Analytics</h1>
                 </div>
-            </div>
-
-            <div class="report-output" id="reportOutput">
-                <div class="output-header">
-                    <div class="output-info">
-                        <span id="reportRecordCount">0 records</span>
-                    </div>
-                    <div class="output-actions">
-                        <button class="btn btn-outline btn-sm" onclick="exportReport('csv')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Export CSV
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="exportReport('pdf')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                            Export PDF
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="printReport()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                                <rect x="6" y="14" width="12" height="8"></rect>
-                            </svg>
-                            Print
-                        </button>
-                    </div>
-                </div>
-                <div class="output-table" id="reportTable">
-                    <p class="placeholder-text">Configure filters and click "Generate Report" to view data</p>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Employee Headcount</span>
                 </div>
             </div>
         </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="organization-sidebar" id="organizationSidebar">
+                <div class="sidebar-header">
+                    <h3>Reports</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Employee Reports -->
+                    <div class="nav-group" data-group="employee">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Employee
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="employee-headcount" data-report="employee-headcount" id="headcountBtn">
+                                <span class="nav-number">1</span><span class="nav-label">Headcount</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="employee-demographics" data-report="employee-demographics" id="demographicsBtn">
+                                <span class="nav-number">2</span><span class="nav-label">Demographics</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="employee-turnover" data-report="employee-turnover" id="turnoverBtn">
+                                <span class="nav-number">3</span><span class="nav-label">Turnover</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="employee-directory" data-report="employee-directory" id="directoryBtn">
+                                <span class="nav-number">4</span><span class="nav-label">Directory</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Reports -->
+                    <div class="nav-group" data-group="attendance">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Attendance
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="daily-attendance" data-report="daily-attendance" id="dailyAttendanceBtn">
+                                <span class="nav-number">5</span><span class="nav-label">Daily</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="monthly-attendance" data-report="monthly-attendance" id="monthlyAttendanceBtn">
+                                <span class="nav-number">6</span><span class="nav-label">Monthly</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="late-arrivals" data-report="late-arrivals" id="lateArrivalsBtn">
+                                <span class="nav-number">7</span><span class="nav-label">Late Arrivals</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="overtime-report" data-report="overtime-report" id="overtimeBtn">
+                                <span class="nav-number">8</span><span class="nav-label">Overtime</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="absenteeism" data-report="absenteeism" id="absenteeismBtn">
+                                <span class="nav-number">9</span><span class="nav-label">Absenteeism</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Leave Reports -->
+                    <div class="nav-group" data-group="leave">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Leave
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="leave-balance" data-report="leave-balance" id="leaveBalanceBtn">
+                                <span class="nav-number">10</span><span class="nav-label">Balance</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="leave-utilization" data-report="leave-utilization" id="leaveUtilizationBtn">
+                                <span class="nav-number">11</span><span class="nav-label">Utilization</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="leave-trend" data-report="leave-trend" id="leaveTrendBtn">
+                                <span class="nav-number">12</span><span class="nav-label">Trends</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pending-approvals" data-report="pending-approvals" id="pendingApprovalsBtn">
+                                <span class="nav-number">13</span><span class="nav-label">Pending</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payroll Reports -->
+                    <div class="nav-group" data-group="payroll" id="payrollNavGroup" style="display: none;">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                                Payroll
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="salary-summary" data-report="salary-summary" id="salarySummaryBtn">
+                                <span class="nav-number">14</span><span class="nav-label">Summary</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="payroll-register" data-report="payroll-register" id="payrollRegisterBtn">
+                                <span class="nav-number">15</span><span class="nav-label">Register</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="deductions-report" data-report="deductions-report" id="deductionsBtn">
+                                <span class="nav-number">16</span><span class="nav-label">Deductions</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tax-report" data-report="tax-report" id="taxReportBtn">
+                                <span class="nav-number">17</span><span class="nav-label">Tax</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="loan-report" data-report="loan-report" id="loanReportBtn">
+                                <span class="nav-number">18</span><span class="nav-label">Loans</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="bank-advice" data-report="bank-advice" id="bankAdviceBtn">
+                                <span class="nav-number">19</span><span class="nav-label">Bank Advice</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <!-- Report Generator -->
+                <div class="tab-content active" id="report-generator">
+                    <div class="report-generator active">
+                        <div class="generator-filters">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="fromDate">From Date</label>
+                                    <input type="date" id="fromDate" class="form-control">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="toDate">To Date</label>
+                                    <input type="date" id="toDate" class="form-control">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="officeFilter">Office</label>
+                                    <select id="officeFilter" class="form-select">
+                                        <option value="">All Offices</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="departmentFilter">Department</label>
+                                    <select id="departmentFilter" class="form-select">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                                <button class="btn btn-primary" onclick="generateReport()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="report-output">
+                            <div class="output-header">
+                                <span class="output-info" id="recordCount">0 records</span>
+                                <div class="output-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="exportCSV()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Export CSV
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="exportPDF()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        Export PDF
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="printReport()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                            <rect x="6" y="14" width="12" height="8"></rect>
+                                        </svg>
+                                        Print
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="output-table" id="reportTable">
+                                <p class="placeholder-text">Select a report from the sidebar and click "Generate Report" to view data</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
-    <div id="toast" class="toast"></div>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-    </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-    <script>
-        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/hrms/reports.js?v=' + CACHE_VERSION + '"><\/script>');
-    </script>
+    <!-- Scripts -->
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/hrms-roles.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/reports.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

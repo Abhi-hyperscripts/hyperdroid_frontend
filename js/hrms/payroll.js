@@ -2128,12 +2128,25 @@ function updateEarningsTable(earnings) {
         return;
     }
 
-    tbody.innerHTML = earnings.map(c => `
+    tbody.innerHTML = earnings.map(c => {
+        // Build badges for special component types
+        let badges = '';
+        if (c.is_basic_component) {
+            badges += '<span class="component-badge basic-badge">Basic</span>';
+        }
+        if (c.is_balance_component) {
+            badges += '<span class="component-badge balance-badge">Auto-Balance</span>';
+        }
+
+        return `
         <tr>
-            <td><strong>${c.component_name || c.name}</strong></td>
+            <td>
+                <strong>${c.component_name || c.name}</strong>
+                ${badges}
+            </td>
             <td><code>${c.component_code || c.code}</code></td>
             <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
-            <td>${formatComponentValue(c)}</td>
+            <td>${c.is_balance_component ? '<em>Auto-calculated</em>' : formatComponentValue(c)}</td>
             <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -2147,7 +2160,7 @@ function updateEarningsTable(earnings) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;}).join('');
 }
 
 function updateDeductionsTable(deductions) {
@@ -2462,6 +2475,34 @@ async function saveSalaryStructure() {
         return;
     }
 
+    // Check for duplicate components
+    const componentIds = structureComponents.map(c => c.component_id);
+    const uniqueIds = new Set(componentIds);
+    if (componentIds.length !== uniqueIds.size) {
+        showToast('Cannot save: Same component is selected multiple times. Please remove duplicates.', 'error');
+        return;
+    }
+
+    // Check for multiple "is_basic" components
+    const basicComponentsInStructure = [];
+    const container = document.getElementById('structureComponents');
+    const rows = container.querySelectorAll('.structure-component-row');
+    rows.forEach(row => {
+        const componentSelect = row.querySelector('.component-select');
+        if (componentSelect && componentSelect.value) {
+            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+            const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
+            if (isBasic) {
+                basicComponentsInStructure.push(selectedOption?.textContent || 'Unknown');
+            }
+        }
+    });
+
+    if (basicComponentsInStructure.length > 1) {
+        showToast(`Cannot save: Multiple components marked as "Basic" (${basicComponentsInStructure.join(', ')}). Only ONE Basic component should be in a structure.`, 'error');
+        return;
+    }
+
     try {
         showLoading();
         const id = document.getElementById('structureId').value;
@@ -2533,6 +2574,8 @@ function togglePercentageFields() {
     }
 }
 
+// Note: Balance component toggle removed - balance is now automatic and implicit in every salary structure
+
 // Add event listener for calculation type change
 document.addEventListener('DOMContentLoaded', function() {
     const calcTypeSelect = document.getElementById('calculationType');
@@ -2564,16 +2607,18 @@ async function saveComponent() {
         showLoading();
         const id = document.getElementById('componentId').value;
         const calculationType = document.getElementById('calculationType').value;
+        const componentType = document.getElementById('componentCategory').value;
         const data = {
             component_name: document.getElementById('componentName').value,
             component_code: document.getElementById('componentCode').value,
-            component_type: document.getElementById('componentCategory').value,
+            component_type: componentType,
             calculation_type: calculationType,
             is_taxable: document.getElementById('isTaxable').value === 'true',
             is_statutory: document.getElementById('isStatutory').value === 'true',
             description: document.getElementById('componentDescription').value,
             is_active: document.getElementById('componentIsActive')?.checked !== false,
             is_basic_component: document.getElementById('isBasicComponent')?.checked === true
+            // Note: is_balance_component removed - balance is now automatic and implicit in every salary structure
         };
 
         // Add percentage fields if calculation type is percentage
@@ -4080,6 +4125,11 @@ function editComponent(componentId) {
         isBasicCheckbox.checked = component.is_basic_component === true;
     }
 
+    // Note: Balance component toggle removed - balance is now automatic and implicit
+
+    // Show/hide percentage fields based on calculation type
+    togglePercentageFields();
+
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
     document.getElementById('componentModal').classList.add('active');
 }
@@ -4095,9 +4145,17 @@ function addStructureComponent() {
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
                 <div class="form-group" style="flex: 2;">
-                    <select class="form-control component-select" required>
+                    <select class="form-control component-select" required onchange="updateStructureCalcType(this, '${componentId}')">
                         <option value="">Select Component</option>
-                        ${components.map(c => `<option value="${c.id}" data-type="${c.component_type || c.category}">${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
+                        ${components.map(c => `<option value="${c.id}"
+                            data-type="${c.component_type || c.category}"
+                            data-calc-type="${c.calculation_type || 'fixed'}"
+                            data-calc-base="${c.calculation_base || 'basic'}"
+                            data-is-basic="${c.is_basic_component || false}"
+                            data-is-balance="${c.is_balance_component || false}"
+                            data-percentage="${c.percentage || ''}"
+                            data-fixed="${c.fixed_amount || ''}"
+                            >${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group" style="flex: 1;">
@@ -4107,8 +4165,8 @@ function addStructureComponent() {
                     </select>
                 </div>
                 <div class="form-group value-field" style="flex: 1;">
-                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100">
-                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled>
+                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100" oninput="updateStructureSummary()">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled oninput="updateStructureSummary()">
                 </div>
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeStructureComponent('${componentId}')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4123,10 +4181,301 @@ function addStructureComponent() {
     container.insertAdjacentHTML('beforeend', componentHtml);
 }
 
+/**
+ * Update the calculation type dropdown based on the selected component's configuration
+ * Also checks for duplicate component selection
+ */
+function updateStructureCalcType(select, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const selectedOption = select.options[select.selectedIndex];
+    const calcTypeSelect = row.querySelector('.calc-type-select');
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    // Check for duplicate component selection
+    if (selectedOption.value) {
+        const isDuplicate = checkDuplicateComponent(selectedOption.value, componentId);
+        if (isDuplicate) {
+            select.classList.add('duplicate-warning');
+            showToast('Warning: This component is already added to the structure', 'warning');
+        } else {
+            select.classList.remove('duplicate-warning');
+        }
+    } else {
+        select.classList.remove('duplicate-warning');
+    }
+
+    if (!selectedOption.value) {
+        // Reset to default if no component selected
+        calcTypeSelect.innerHTML = `
+            <option value="percentage">% of Basic</option>
+            <option value="fixed">Fixed Amount</option>
+        `;
+        updateStructureSummary();
+        return;
+    }
+
+    const calcType = selectedOption.dataset.calcType || 'fixed';
+    const calcBase = selectedOption.dataset.calcBase || 'basic';
+    const isBasic = selectedOption.dataset.isBasic === 'true';
+    const defaultPercentage = selectedOption.dataset.percentage;
+    const defaultFixed = selectedOption.dataset.fixed;
+
+    // Build label based on calculation base
+    let percentageLabel = '% of Basic';
+    if (calcBase === 'ctc') {
+        percentageLabel = '% of CTC';
+    } else if (calcBase === 'gross') {
+        percentageLabel = '% of Gross';
+    } else if (isBasic) {
+        percentageLabel = '% of CTC'; // Basic salary is typically % of CTC
+    }
+
+    // Update dropdown options
+    calcTypeSelect.innerHTML = `
+        <option value="percentage">${percentageLabel}</option>
+        <option value="fixed">Fixed Amount</option>
+    `;
+
+    // Set the default calculation type based on component definition
+    if (calcType === 'fixed') {
+        calcTypeSelect.value = 'fixed';
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+        if (defaultFixed) fixedInput.value = defaultFixed;
+    } else {
+        calcTypeSelect.value = 'percentage';
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+        if (defaultPercentage) percentageInput.value = defaultPercentage;
+    }
+
+    // Update the summary after component selection
+    updateStructureSummary();
+}
+
+/**
+ * Check if a component is already selected in another row
+ */
+function checkDuplicateComponent(componentId, currentRowId) {
+    const container = document.getElementById('structureComponents');
+    const rows = container.querySelectorAll('.structure-component-row');
+
+    for (const row of rows) {
+        if (row.id === currentRowId) continue; // Skip current row
+        const select = row.querySelector('.component-select');
+        if (select && select.value === componentId) {
+            return true; // Found duplicate
+        }
+    }
+    return false;
+}
+
+/**
+ * Update the structure summary showing earnings and deductions totals
+ * This calculates the EFFECTIVE total gross as % of CTC
+ *
+ * Example: If Basic = 40% of CTC, and HRA = 50% of Basic
+ *   - HRA effective = 50% * 40% / 100 = 20% of CTC
+ *   - Total Gross = 40% + 20% = 60% of CTC
+ *   - Remaining = 100% - 60% = 40% unallocated
+ */
+function updateStructureSummary() {
+    const container = document.getElementById('structureComponents');
+    const summaryDiv = document.getElementById('structureSummary');
+    const rows = container.querySelectorAll('.structure-component-row');
+
+    if (rows.length === 0) {
+        summaryDiv.style.display = 'none';
+        return;
+    }
+
+    let earningsCtcTotal = 0;      // Direct % of CTC earnings (includes Basic)
+    let earningsBasicTotal = 0;    // % of Basic earnings (HRA, etc.)
+    let earningsGrossTotal = 0;    // % of Gross earnings
+    let deductionsBasicTotal = 0;  // Deductions as % of Basic
+    let fixedAmountsCount = 0;     // Count of fixed amount components
+    let hasComponents = false;
+    const warnings = [];
+    const selectedComponents = [];
+    const basicComponents = [];    // Track components marked as "is_basic"
+    const balanceComponents = [];  // Track components marked as "is_balance"
+    let balanceComponentName = null;
+
+    rows.forEach(row => {
+        const componentSelect = row.querySelector('.component-select');
+        const calcTypeSelect = row.querySelector('.calc-type-select');
+        const percentageInput = row.querySelector('.percentage-value');
+        const fixedInput = row.querySelector('.fixed-value');
+
+        if (!componentSelect.value) return;
+
+        hasComponents = true;
+        const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+        const componentType = selectedOption?.getAttribute('data-type') || '';
+        const calcBase = selectedOption?.getAttribute('data-calc-base') || 'basic';
+        const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
+        const isBalance = selectedOption?.getAttribute('data-is-balance') === 'true';
+        const componentName = selectedOption?.textContent || '';
+
+        // Track for duplicate detection
+        if (selectedComponents.includes(componentSelect.value)) {
+            warnings.push(`Duplicate: ${componentName}`);
+        }
+        selectedComponents.push(componentSelect.value);
+
+        // Track components marked as "is_basic"
+        if (isBasic) {
+            basicComponents.push(componentName);
+        }
+
+        // Track balance components (these don't count towards CTC allocation - they AUTO-FILL)
+        if (isBalance && componentType === 'earning') {
+            balanceComponents.push(componentName);
+            balanceComponentName = componentName;
+            // Skip counting balance component - it auto-calculates remaining CTC
+            return;
+        }
+
+        if (calcTypeSelect.value === 'percentage') {
+            const percentage = parseFloat(percentageInput.value) || 0;
+
+            if (componentType === 'earning') {
+                if (calcBase === 'ctc' || isBasic) {
+                    // Direct CTC % (Basic component or explicitly % of CTC)
+                    earningsCtcTotal += percentage;
+                } else if (calcBase === 'gross') {
+                    // % of Gross
+                    earningsGrossTotal += percentage;
+                } else {
+                    // % of Basic (HRA, etc.)
+                    earningsBasicTotal += percentage;
+                }
+            } else if (componentType === 'deduction') {
+                deductionsBasicTotal += percentage;
+            }
+        } else if (calcTypeSelect.value === 'fixed') {
+            // Fixed amount component
+            if (componentType === 'earning') {
+                fixedAmountsCount++;
+            }
+        }
+    });
+
+    if (!hasComponents) {
+        summaryDiv.style.display = 'none';
+        return;
+    }
+
+    // Calculate effective CTC percentages
+    // HRA 50% of Basic → if Basic is 40% of CTC → HRA is effectively 20% of CTC
+    const earningsBasicEffective = (earningsBasicTotal * earningsCtcTotal) / 100;
+
+    // For gross-based components, we need to estimate gross first
+    // Gross ≈ Basic + Basic-based earnings = earningsCtcTotal + earningsBasicEffective
+    const estimatedGrossCtc = earningsCtcTotal + earningsBasicEffective;
+    const earningsGrossEffective = (earningsGrossTotal * estimatedGrossCtc) / 100;
+
+    // Total Gross = Direct CTC% + Effective Basic% + Effective Gross% + Fixed amounts (can't calculate %)
+    const totalGrossCtc = earningsCtcTotal + earningsBasicEffective + earningsGrossEffective;
+    const remainingCtc = 100 - totalGrossCtc;
+
+    // Update summary values
+    summaryDiv.style.display = 'block';
+
+    // Main totals
+    document.getElementById('totalGrossCtc').textContent = `${totalGrossCtc.toFixed(1)}%`;
+    document.getElementById('remainingCtc').textContent = `${remainingCtc.toFixed(1)}%`;
+    document.getElementById('deductionsBasicTotal').textContent = `${deductionsBasicTotal.toFixed(1)}%`;
+
+    // Breakdown
+    document.getElementById('earningsCtcTotal').textContent = `${earningsCtcTotal.toFixed(1)}%`;
+    document.getElementById('earningsBasicTotal').textContent = `${earningsBasicTotal.toFixed(1)}%`;
+    document.getElementById('earningsBasicEffective').textContent = `${earningsBasicEffective.toFixed(1)}%`;
+    document.getElementById('fixedAmountsCount').textContent = fixedAmountsCount > 0 ? `${fixedAmountsCount} component(s)` : '0';
+
+    // Style the remaining item based on value
+    const remainingItem = document.getElementById('remainingItem');
+    if (remainingCtc > 0.5) {
+        remainingItem.classList.add('warning');
+        remainingItem.classList.remove('ok');
+    } else if (remainingCtc < -0.5) {
+        remainingItem.classList.add('error');
+        remainingItem.classList.remove('warning', 'ok');
+    } else {
+        remainingItem.classList.add('ok');
+        remainingItem.classList.remove('warning', 'error');
+    }
+
+    // Check for multiple basic components
+    if (basicComponents.length > 1) {
+        warnings.push(`Multiple Basic components: ${basicComponents.join(', ')} - Only one should be marked as Basic`);
+    }
+
+    // Note: Balance is now automatic - no need to warn about multiple balance components
+    // The backend will always auto-calculate: Balance = CTC - other earnings
+
+    // Show warnings
+    const warningDiv = document.getElementById('summaryWarning');
+    const infoDiv = document.getElementById('summaryInfo');
+    const balancePreview = document.getElementById('balancePreview');
+
+    if (warnings.length > 0) {
+        warningDiv.style.display = 'flex';
+        warningDiv.innerHTML = '⚠️ ' + warnings.join(' | ');
+    } else {
+        // Auto-balance handles exceeding 100% - no warning needed
+        warningDiv.style.display = 'none';
+    }
+
+    // Auto-balance handles remaining CTC automatically - no info message needed
+    infoDiv.style.display = 'none';
+
+    // AUTO-BALANCE: Update compact summary display
+    // The backend will automatically calculate: Balance = CTC - Sum(other earnings)
+    const balanceWillFill = remainingCtc;
+    const balanceMetric = document.getElementById('balanceMetric');
+    const balanceNote = document.getElementById('balanceNote');
+
+    // Use explicit balance component name if present, otherwise show as "Auto-Balance"
+    const displayName = balanceComponentName || 'Auto-Balance';
+    document.getElementById('balanceComponentName').textContent = displayName;
+    document.getElementById('balanceWillFill').textContent = `${balanceWillFill.toFixed(1)}%`;
+
+    // Update balance metric styling based on value
+    if (balanceMetric) {
+        if (balanceWillFill < 0) {
+            balanceMetric.classList.add('negative');
+        } else {
+            balanceMetric.classList.remove('negative');
+        }
+    }
+
+    // Update note based on scenario
+    if (balanceNote) {
+        if (balanceWillFill < 0) {
+            balanceNote.innerHTML = `⚠️ Negative balance! Other earnings exceed CTC by ${Math.abs(balanceWillFill).toFixed(1)}%. Balance will reduce Gross.`;
+        } else if (balanceWillFill < 5) {
+            balanceNote.innerHTML = `✓ Almost fully allocated. Balance: ${balanceWillFill.toFixed(1)}%`;
+        } else if (fixedAmountsCount > 0) {
+            balanceNote.innerHTML = `Fixed amounts (${fixedAmountsCount}) calculated first, then balance fills remaining ${balanceWillFill.toFixed(1)}%`;
+        } else {
+            balanceNote.innerHTML = `Balance auto-fills ${balanceWillFill.toFixed(1)}% of CTC. Gross always equals CTC.`;
+        }
+    }
+}
+
 function removeStructureComponent(componentId) {
     const element = document.getElementById(componentId);
     if (element) {
         element.remove();
+        updateStructureSummary();
     }
 }
 
@@ -4192,11 +4541,37 @@ function populateStructureComponents(structureComponents) {
             addStructureComponent();
             const lastRow = container.lastElementChild;
             if (lastRow) {
-                lastRow.querySelector('.component-select').value = sc.component_id;
-                lastRow.querySelector('.calc-type-select').value = sc.calculation_type || 'percentage';
-
+                const componentSelect = lastRow.querySelector('.component-select');
+                const calcTypeSelect = lastRow.querySelector('.calc-type-select');
                 const percentageInput = lastRow.querySelector('.percentage-value');
                 const fixedInput = lastRow.querySelector('.fixed-value');
+
+                // Set the component value
+                componentSelect.value = sc.component_id;
+
+                // Get component info for dynamic label update
+                const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    const calcBase = selectedOption.getAttribute('data-calc-base') || 'basic';
+                    const isBasic = selectedOption.getAttribute('data-is-basic') === 'true';
+
+                    // Build label based on calculation base
+                    let percentageLabel = '% of Basic';
+                    if (calcBase === 'ctc' || isBasic) {
+                        percentageLabel = '% of CTC';
+                    } else if (calcBase === 'gross') {
+                        percentageLabel = '% of Gross';
+                    }
+
+                    // Update dropdown options with correct label
+                    calcTypeSelect.innerHTML = `
+                        <option value="percentage">${percentageLabel}</option>
+                        <option value="fixed">Fixed Amount</option>
+                    `;
+                }
+
+                // Set the calculation type and value
+                calcTypeSelect.value = sc.calculation_type || 'percentage';
 
                 if (sc.calculation_type === 'fixed') {
                     percentageInput.style.display = 'none';
@@ -4213,6 +4588,9 @@ function populateStructureComponents(structureComponents) {
                 }
             }
         });
+
+        // Update summary after populating all components
+        updateStructureSummary();
     }
 }
 
@@ -5345,6 +5723,16 @@ function populateNewVersionComponents() {
         const value = existingComp?.percentage || existingComp?.fixed_amount || '';
         const calcType = existingComp?.calculation_type || 'percentage';
 
+        // Determine the percentage label based on component's calculation base
+        const calcBase = c.calculation_base || 'basic';
+        const isBasic = c.is_basic_component || false;
+        let percentageLabel = '% of Basic';
+        if (calcBase === 'ctc' || isBasic) {
+            percentageLabel = '% of CTC';
+        } else if (calcBase === 'gross') {
+            percentageLabel = '% of Gross';
+        }
+
         return `
         <div class="version-component-row">
             <label class="checkbox-label">
@@ -5356,7 +5744,7 @@ function populateNewVersionComponents() {
             </label>
             <div class="component-value-inputs">
                 <select class="form-control form-control-sm version-calc-type" data-component-id="${c.id}">
-                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>% of Basic</option>
+                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>${percentageLabel}</option>
                     <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
                 </select>
                 <input type="number" class="form-control form-control-sm version-value" data-component-id="${c.id}"

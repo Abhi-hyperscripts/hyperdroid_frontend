@@ -9,6 +9,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -18,9 +19,7 @@
                 <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
             </a>
         </div>
-        <div class="navbar-menu">
-            <!-- Navigation links rendered by Navigation.init() -->
-        </div>
+        <div class="navbar-menu"></div>
     </nav>
 
     <div class="hrms-container">
@@ -31,316 +30,395 @@
                     <span class="separator">/</span>
                     <span class="current">Leave Management</span>
                 </nav>
-                <h1>Leave Management</h1>
-            </div>
-            <div class="header-actions" id="adminActions" style="display: none;">
-                <button class="btn btn-primary" onclick="showCreateLeaveTypeModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add Leave Type
-                </button>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="hrms-tabs">
-            <button class="tab-btn active" data-tab="my-leave">My Leave</button>
-            <button class="tab-btn" data-tab="leave-requests" id="leaveRequestsTab">Leave Requests</button>
-            <button class="tab-btn" data-tab="leave-balance">Leave Balance</button>
-            <button class="tab-btn" data-tab="team-calendar" id="teamCalendarTab">Team Calendar</button>
-            <button class="tab-btn" data-tab="leave-types" id="leaveTypesTab">Leave Types</button>
-        </div>
-
-        <!-- My Leave Tab -->
-        <div class="tab-content active" id="my-leave">
-            <div class="filters-bar">
-                <div class="filter-group">
-                    <select id="myLeaveYear" class="form-select">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                    </select>
-                    <select id="myLeaveStatus" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Leave Management</h1>
                 </div>
-                <button class="btn btn-primary" onclick="showApplyLeaveModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Apply Leave
-                </button>
-            </div>
-
-            <!-- My Leave Balance Summary -->
-            <div class="stats-row" id="myBalanceStats">
-                <div class="stat-card">
-                    <div class="stat-value" id="annualBalance">0</div>
-                    <div class="stat-label">Annual Leave</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="sickBalance">0</div>
-                    <div class="stat-label">Sick Leave</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="casualBalance">0</div>
-                    <div class="stat-label">Casual Leave</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="pendingCount">0</div>
-                    <div class="stat-label">Pending Requests</div>
-                </div>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Leave Type</th>
-                            <th>From Date</th>
-                            <th>To Date</th>
-                            <th>Days</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Applied On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="myLeaveTable">
-                        <tr class="empty-state">
-                            <td colspan="8">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    <p>No leave requests found</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Leave Requests Tab (For Managers/Admins) -->
-        <div class="tab-content" id="leave-requests">
-            <div class="filters-bar">
-                <div class="search-box-modern">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="requestSearch" placeholder="Search employee...">
-                </div>
-                <div class="filter-group">
-                    <select id="requestStatus" class="form-select">
-                        <option value="pending">Pending</option>
-                        <option value="">All Status</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                    <select id="requestDepartment" class="form-select">
-                        <option value="">All Departments</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Employee</th>
-                            <th>Leave Type</th>
-                            <th>From Date</th>
-                            <th>To Date</th>
-                            <th>Days</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveRequestsTable">
-                        <tr class="empty-state">
-                            <td colspan="8">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    </svg>
-                                    <p>No pending leave requests</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Leave Balance Tab -->
-        <div class="tab-content" id="leave-balance">
-            <div class="filters-bar">
-                <div class="search-box-modern">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="balanceSearch" placeholder="Search employee...">
-                </div>
-                <div class="filter-group">
-                    <select id="balanceYear" class="form-select">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                    </select>
-                    <select id="balanceDepartment" class="form-select">
-                        <option value="">All Departments</option>
-                    </select>
-                </div>
-                <button class="btn btn-outline" id="allocateBtn" onclick="showAllocateLeaveModal()" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Allocate Leave
-                </button>
-                <button class="btn btn-primary" onclick="showEncashLeaveModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    Encash Leave
-                </button>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Employee</th>
-                            <th>Department</th>
-                            <th>Annual Leave</th>
-                            <th>Sick Leave</th>
-                            <th>Casual Leave</th>
-                            <th>Comp Off</th>
-                            <th>LOP</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveBalanceTable">
-                        <tr class="empty-state">
-                            <td colspan="8">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="9" cy="7" r="4"></circle>
-                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                    </svg>
-                                    <p>No leave balance data found</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Team Calendar Tab -->
-        <div class="tab-content" id="team-calendar">
-            <div class="filters-bar">
-                <div class="filter-group">
-                    <input type="month" id="calendarMonth" class="form-control">
-                    <select id="calendarDepartment" class="form-select">
-                        <option value="">All Departments</option>
-                    </select>
-                </div>
-                <button class="btn btn-outline" onclick="loadTeamCalendar()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                    Refresh
-                </button>
-            </div>
-
-            <div class="calendar-container">
-                <div class="calendar-header" id="calendarHeader">
-                    <!-- Calendar header with days will be populated -->
-                </div>
-                <div class="calendar-grid" id="calendarGrid">
-                    <!-- Calendar grid will be populated -->
-                </div>
-            </div>
-
-            <div class="calendar-legend">
-                <div class="legend-item">
-                    <span class="legend-color" style="background: var(--color-success-light);"></span>
-                    <span>Approved Leave</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: var(--color-warning-light);"></span>
-                    <span>Pending Leave</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-color" style="background: var(--color-danger-light);"></span>
-                    <span>Rejected</span>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">My Leave</span>
                 </div>
             </div>
         </div>
 
-        <!-- Leave Types Tab (Admin Only) -->
-        <div class="tab-content" id="leave-types">
-            <div class="filters-bar">
-                <div class="search-box-modern">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="leaveTypeSearch" placeholder="Search leave types...">
-                </div>
-            </div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Leave Type</th>
-                            <th>Code</th>
-                            <th>Default Days</th>
-                            <th>Carry Forward</th>
-                            <th>Max Carry</th>
-                            <th>Paid</th>
-                            <th>Prorated</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveTypesTable">
-                        <tr class="empty-state">
-                            <td colspan="9">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    <p>No leave types configured</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="organization-layout">
+            <aside class="organization-sidebar" id="organizationSidebar">
+                <div class="sidebar-header">
+                    <h3>Leave</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Self Service Section -->
+                    <div class="nav-group" data-group="self-service">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Self Service
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="my-leave" id="myLeaveTabBtn">
+                                <span class="nav-number">1</span><span class="nav-label">My Leave</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="leave-balance" id="leaveBalanceTabBtn">
+                                <span class="nav-number">2</span><span class="nav-label">Leave Balance</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Management Section -->
+                    <div class="nav-group admin-only" data-group="management" id="managementNavGroup" style="display: none;">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Management
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="leave-requests" id="leaveRequestsTabBtn">
+                                <span class="nav-number">3</span><span class="nav-label">Leave Requests</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="team-calendar" id="teamCalendarTabBtn">
+                                <span class="nav-number">4</span><span class="nav-label">Team Calendar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Section (Admin Only) -->
+                    <div class="nav-group admin-only" data-group="configuration" id="configNavGroup" style="display: none;">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                Configuration
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="leave-types" id="leaveTypesTabBtn">
+                                <span class="nav-number">5</span><span class="nav-label">Leave Types</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <!-- My Leave Tab -->
+                <div class="tab-content active" id="my-leave">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <select id="myLeaveYear" class="form-select">
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                            <select id="myLeaveStatus" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="showApplyLeaveModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Apply Leave
+                        </button>
+                    </div>
+
+                    <div class="stats-row" id="myBalanceStats">
+                        <div class="stat-mini">
+                            <span class="stat-mini-value" id="annualBalance">0</span>
+                            <span class="stat-mini-label">Annual Leave</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-mini-value" id="sickBalance">0</span>
+                            <span class="stat-mini-label">Sick Leave</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-mini-value" id="casualBalance">0</span>
+                            <span class="stat-mini-label">Casual Leave</span>
+                        </div>
+                        <div class="stat-mini warning">
+                            <span class="stat-mini-value" id="pendingCount">0</span>
+                            <span class="stat-mini-label">Pending</span>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Days</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Applied On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myLeaveTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                            </svg>
+                                            <p>No leave requests found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Leave Balance Tab -->
+                <div class="tab-content" id="leave-balance">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="balanceSearch" placeholder="Search employee...">
+                        </div>
+                        <div class="filter-group">
+                            <select id="balanceYear" class="form-select">
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                            <select id="balanceDepartment" class="form-select">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline" id="allocateBtn" onclick="showAllocateLeaveModal()" style="display: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Allocate Leave
+                        </button>
+                        <button class="btn btn-primary" onclick="showEncashLeaveModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Encash Leave
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Department</th>
+                                    <th>Annual Leave</th>
+                                    <th>Sick Leave</th>
+                                    <th>Casual Leave</th>
+                                    <th>Comp Off</th>
+                                    <th>LOP</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaveBalanceTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                            </svg>
+                                            <p>No leave balance data found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Leave Requests Tab (For Managers/Admins) -->
+                <div class="tab-content" id="leave-requests">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="requestSearch" placeholder="Search employee...">
+                        </div>
+                        <div class="filter-group">
+                            <select id="requestStatus" class="form-select">
+                                <option value="pending">Pending</option>
+                                <option value="">All Status</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <select id="requestDepartment" class="form-select">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Days</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaveRequestsTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            </svg>
+                                            <p>No pending leave requests</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Team Calendar Tab -->
+                <div class="tab-content" id="team-calendar">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <input type="month" id="calendarMonth" class="form-control">
+                            <select id="calendarDepartment" class="form-select">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline" onclick="loadTeamCalendar()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="calendar-container">
+                        <div class="calendar-header" id="calendarHeader"></div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+
+                    <div class="calendar-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: var(--color-success-light);"></span>
+                            <span>Approved Leave</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: var(--color-warning-light);"></span>
+                            <span>Pending Leave</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: var(--color-danger-light);"></span>
+                            <span>Rejected</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Types Tab (Admin Only) -->
+                <div class="tab-content" id="leave-types">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="leaveTypeSearch" placeholder="Search leave types...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateLeaveTypeModal()" id="addLeaveTypeBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Leave Type
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>Code</th>
+                                    <th>Default Days</th>
+                                    <th>Carry Forward</th>
+                                    <th>Max Carry</th>
+                                    <th>Paid</th>
+                                    <th>Prorated</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaveTypesTable">
+                                <tr class="empty-state">
+                                    <td colspan="9">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                            </svg>
+                                            <p>No leave types configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -358,55 +436,55 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                <form id="applyLeaveForm">
-                    <div class="form-section">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="leaveType">Leave Type *</label>
-                                <select id="leaveType" name="leaveType" class="form-control" required>
-                                    <option value="">Select Leave Type</option>
-                                </select>
+                    <form id="applyLeaveForm">
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="leaveType">Leave Type *</label>
+                                    <select id="leaveType" name="leaveType" class="form-control" required>
+                                        <option value="">Select Leave Type</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="fromDate">From Date *</label>
+                                    <input type="date" id="fromDate" name="fromDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="toDate">To Date *</label>
+                                    <input type="date" id="toDate" name="toDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="halfDay">Half Day</label>
+                                    <select id="halfDay" name="halfDay" class="form-control">
+                                        <option value="">No</option>
+                                        <option value="first">First Half</option>
+                                        <option value="second">Second Half</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leaveDays">Total Days</label>
+                                    <input type="text" id="leaveDays" class="form-control" readonly value="0">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="leaveReason">Reason *</label>
+                                    <textarea id="leaveReason" name="reason" class="form-control" rows="3" required placeholder="Enter reason for leave..."></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="emergencyContact">Emergency Contact (Optional)</label>
+                                    <input type="text" id="emergencyContact" name="emergencyContact" class="form-control" placeholder="Phone number during leave">
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="fromDate">From Date *</label>
-                                <input type="date" id="fromDate" name="fromDate" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="toDate">To Date *</label>
-                                <input type="date" id="toDate" name="toDate" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="halfDay">Half Day</label>
-                                <select id="halfDay" name="halfDay" class="form-control">
-                                    <option value="">No</option>
-                                    <option value="first">First Half</option>
-                                    <option value="second">Second Half</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="leaveDays">Total Days</label>
-                                <input type="text" id="leaveDays" class="form-control" readonly value="0">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="leaveReason">Reason *</label>
-                                <textarea id="leaveReason" name="reason" class="form-control" rows="3" required placeholder="Enter reason for leave..."></textarea>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="emergencyContact">Emergency Contact (Optional)</label>
-                                <input type="text" id="emergencyContact" name="emergencyContact" class="form-control" placeholder="Phone number during leave">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="submitLeaveApplication()">Submit Application</button>
                 </div>
@@ -428,93 +506,93 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                <form id="leaveTypeForm">
-                    <input type="hidden" id="leaveTypeId" name="id">
-                    <div class="form-section">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="typeName">Leave Type Name *</label>
-                                <input type="text" id="typeName" name="name" class="form-control" required placeholder="e.g., Annual Leave">
+                    <form id="leaveTypeForm">
+                        <input type="hidden" id="leaveTypeId" name="id">
+                        <div class="form-section">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="typeName">Leave Type Name *</label>
+                                    <input type="text" id="typeName" name="name" class="form-control" required placeholder="e.g., Annual Leave">
+                                </div>
+                                <div class="form-group">
+                                    <label for="typeCode">Code *</label>
+                                    <input type="text" id="typeCode" name="code" class="form-control" required placeholder="e.g., AL">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="typeCode">Code *</label>
-                                <input type="text" id="typeCode" name="code" class="form-control" required placeholder="e.g., AL">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="typeDescription">Description</label>
+                                    <textarea id="typeDescription" name="description" class="form-control" rows="2" placeholder="Brief description of leave type"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="defaultDays">Default Days per Year *</label>
+                                    <input type="number" id="defaultDays" name="defaultDays" class="form-control" required min="0" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="maxDaysPerRequest">Max Days per Request</label>
+                                    <input type="number" id="maxDaysPerRequest" name="maxDaysPerRequest" class="form-control" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="carryForward">Allow Carry Forward</label>
+                                    <select id="carryForward" name="carryForward" class="form-control">
+                                        <option value="false">No</option>
+                                        <option value="true">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="maxCarryForward">Max Carry Forward Days</label>
+                                    <input type="number" id="maxCarryForward" name="maxCarryForward" class="form-control" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="isPaid">Paid Leave</label>
+                                    <select id="isPaid" name="isPaid" class="form-control">
+                                        <option value="true">Yes</option>
+                                        <option value="false">No (LOP)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="requiresApproval">Requires Approval</label>
+                                    <select id="requiresApproval" name="requiresApproval" class="form-control">
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="allowHalfDay">Allow Half Day</label>
+                                    <select id="allowHalfDay" name="allowHalfDay" class="form-control">
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prorateOnJoining">Prorate on Joining</label>
+                                    <select id="prorateOnJoining" name="prorateOnJoining" class="form-control">
+                                        <option value="false">No</option>
+                                        <option value="true">Yes</option>
+                                    </select>
+                                    <small class="form-text text-muted">If Yes, mid-year joiners get prorated leaves based on weeks remaining</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="typeIsActive">Status</label>
+                                    <select id="typeIsActive" name="isActive" class="form-control">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="typeDescription">Description</label>
-                                <textarea id="typeDescription" name="description" class="form-control" rows="2" placeholder="Brief description of leave type"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="defaultDays">Default Days per Year *</label>
-                                <input type="number" id="defaultDays" name="defaultDays" class="form-control" required min="0" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="maxDaysPerRequest">Max Days per Request</label>
-                                <input type="number" id="maxDaysPerRequest" name="maxDaysPerRequest" class="form-control" min="0" value="0">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="carryForward">Allow Carry Forward</label>
-                                <select id="carryForward" name="carryForward" class="form-control">
-                                    <option value="false">No</option>
-                                    <option value="true">Yes</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="maxCarryForward">Max Carry Forward Days</label>
-                                <input type="number" id="maxCarryForward" name="maxCarryForward" class="form-control" min="0" value="0">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="isPaid">Paid Leave</label>
-                                <select id="isPaid" name="isPaid" class="form-control">
-                                    <option value="true">Yes</option>
-                                    <option value="false">No (LOP)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="requiresApproval">Requires Approval</label>
-                                <select id="requiresApproval" name="requiresApproval" class="form-control">
-                                    <option value="true">Yes</option>
-                                    <option value="false">No</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="allowHalfDay">Allow Half Day</label>
-                                <select id="allowHalfDay" name="allowHalfDay" class="form-control">
-                                    <option value="true">Yes</option>
-                                    <option value="false">No</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="prorateOnJoining">Prorate on Joining</label>
-                                <select id="prorateOnJoining" name="prorateOnJoining" class="form-control">
-                                    <option value="false">No</option>
-                                    <option value="true">Yes</option>
-                                </select>
-                                <small class="form-text text-muted">If Yes, mid-year joiners get prorated leaves based on weeks remaining</small>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="typeIsActive">Status</label>
-                                <select id="typeIsActive" name="isActive" class="form-control">
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="saveLeaveType()">Save Leave Type</button>
                 </div>
@@ -536,77 +614,77 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                <form id="allocateLeaveForm">
-                    <div class="form-section">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Employee <span class="required">*</span></label>
-                                <input type="hidden" id="allocEmployee" name="employeeId" required>
-                                <div class="employee-search-dropdown" id="employeeSearchDropdown">
-                                    <div class="employee-search-selected" id="employeeSearchSelected" onclick="toggleEmployeeDropdown()">
-                                        <span class="selected-employee-text">Select an employee...</span>
-                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div class="employee-search-panel" id="employeeSearchPanel">
-                                        <div class="search-box-modern">
-                                            <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <circle cx="11" cy="11" r="8"/>
-                                                <path d="m21 21-4.35-4.35"/>
+                    <form id="allocateLeaveForm">
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Employee <span class="required">*</span></label>
+                                    <input type="hidden" id="allocEmployee" name="employeeId" required>
+                                    <div class="employee-search-dropdown" id="employeeSearchDropdown">
+                                        <div class="employee-search-selected" id="employeeSearchSelected" onclick="toggleEmployeeDropdown()">
+                                            <span class="selected-employee-text">Select an employee...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
-                                            <input type="text" id="employeeSearchInput" placeholder="Search by name or email..." oninput="filterEmployeeList()">
-                                            <button type="button" class="clear-search-btn" id="clearEmployeeSearchBtn" style="display: none;" onclick="clearEmployeeSearch()">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </div>
+                                        <div class="employee-search-panel" id="employeeSearchPanel">
+                                            <div class="search-box-modern">
+                                                <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
                                                 </svg>
-                                            </button>
-                                        </div>
-                                        <div class="employee-list-header">
-                                            <span id="employeeCountDisplay">0 employees</span>
-                                        </div>
-                                        <div id="employeeSearchList" class="employees-list-modern">
-                                            <p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">Loading employees...</p>
+                                                <input type="text" id="employeeSearchInput" placeholder="Search by name or email..." oninput="filterEmployeeList()">
+                                                <button type="button" class="clear-search-btn" id="clearEmployeeSearchBtn" style="display: none;" onclick="clearEmployeeSearch()">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="employee-list-header">
+                                                <span id="employeeCountDisplay">0 employees</span>
+                                            </div>
+                                            <div id="employeeSearchList" class="employees-list-modern">
+                                                <p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">Loading employees...</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="allocLeaveType">Leave Type *</label>
+                                    <select id="allocLeaveType" name="leaveTypeId" class="form-control" required>
+                                        <option value="">Select Leave Type</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="allocYear">Year *</label>
+                                    <select id="allocYear" name="year" class="form-control" required>
+                                        <option value="2025">2025</option>
+                                        <option value="2024">2024</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="allocDays">Days to Allocate *</label>
+                                    <input type="number" id="allocDays" name="days" class="form-control" required min="0" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="allocCarryForward">Carry Forward Days</label>
+                                    <input type="number" id="allocCarryForward" name="carryForward" class="form-control" min="0" step="0.5" value="0">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="allocNotes">Notes</label>
+                                    <textarea id="allocNotes" name="notes" class="form-control" rows="2" placeholder="Optional notes about this allocation"></textarea>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="allocLeaveType">Leave Type *</label>
-                                <select id="allocLeaveType" name="leaveTypeId" class="form-control" required>
-                                    <option value="">Select Leave Type</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="allocYear">Year *</label>
-                                <select id="allocYear" name="year" class="form-control" required>
-                                    <option value="2025">2025</option>
-                                    <option value="2024">2024</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="allocDays">Days to Allocate *</label>
-                                <input type="number" id="allocDays" name="days" class="form-control" required min="0" step="0.5">
-                            </div>
-                            <div class="form-group">
-                                <label for="allocCarryForward">Carry Forward Days</label>
-                                <input type="number" id="allocCarryForward" name="carryForward" class="form-control" min="0" step="0.5" value="0">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="allocNotes">Notes</label>
-                                <textarea id="allocNotes" name="notes" class="form-control" rows="2" placeholder="Optional notes about this allocation"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="saveLeaveAllocation()">Allocate Leave</button>
                 </div>
@@ -630,9 +708,7 @@
                 <div class="modal-body">
                     <input type="hidden" id="leaveRequestId">
                     <input type="hidden" id="leaveAction">
-                    <div class="leave-request-summary" id="leaveRequestSummary">
-                        <!-- Filled dynamically -->
-                    </div>
+                    <div class="leave-request-summary" id="leaveRequestSummary"></div>
                     <div class="form-group">
                         <label for="actionComments">Comments</label>
                         <textarea id="actionComments" class="form-control" rows="3" placeholder="Optional comments..."></textarea>
@@ -659,13 +735,9 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="leave-details" id="leaveDetails">
-                        <!-- Filled dynamically -->
-                    </div>
+                    <div class="leave-details" id="leaveDetails"></div>
                 </div>
-                <div class="modal-footer" id="leaveDetailsFooter" style="display: none;">
-                    <!-- View Calculation button added dynamically -->
-                </div>
+                <div class="modal-footer" id="leaveDetailsFooter" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -684,7 +756,6 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <!-- Summary Stats -->
                     <div class="calculation-summary">
                         <div class="calc-stat">
                             <span class="calc-value" id="calcTotalDays">0</span>
@@ -703,8 +774,6 @@
                             <span class="calc-label">Holiday Days</span>
                         </div>
                     </div>
-
-                    <!-- Multi-Location Indicator -->
                     <div id="multiLocationIndicator" class="multi-location-alert" style="display:none;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -712,13 +781,7 @@
                         </svg>
                         <span>This leave spans multiple offices with different weekend policies</span>
                     </div>
-
-                    <!-- Day-by-Day Calendar Grid -->
-                    <div class="calculation-calendar" id="calculationCalendar">
-                        <!-- Days rendered by JS -->
-                    </div>
-
-                    <!-- Legend -->
+                    <div class="calculation-calendar" id="calculationCalendar"></div>
                     <div class="calculation-legend">
                         <span class="legend-item"><span class="dot working"></span> Working Day (Counted)</span>
                         <span class="legend-item"><span class="dot weekend"></span> Weekend (Not Counted)</span>
@@ -743,9 +806,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div id="employeeBalanceDetails">
-                        <!-- Filled dynamically -->
-                    </div>
+                    <div id="employeeBalanceDetails"></div>
                 </div>
             </div>
         </div>
@@ -766,9 +827,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="encashLeaveForm">
-                        <div class="encash-balance-info" id="encashBalanceInfo">
-                            <!-- Encashable balance will be shown here -->
-                        </div>
+                        <div class="encash-balance-info" id="encashBalanceInfo"></div>
                         <div class="form-section">
                             <div class="form-row">
                                 <div class="form-group">

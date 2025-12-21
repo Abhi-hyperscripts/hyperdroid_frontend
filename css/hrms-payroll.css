@@ -508,6 +508,40 @@
     transform: translateX(16px);
 }
 
+/* Balance Component Toggle - Green variant */
+.status-toggle input:checked + .status-toggle-track.balance-toggle {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.status-toggle-track.balance-toggle {
+    background: var(--gray-300);
+}
+
+/* Component Type Badges */
+.component-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.component-badge.basic-badge {
+    background: var(--color-info-light);
+    color: var(--color-info);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.component-badge.balance-badge {
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 /* =============================================================
    COLLAPSIBLE HAMBURGER MENU SIDEBAR
    ============================================================= */
@@ -820,6 +854,31 @@
     box-sizing: border-box;
     transition: all 0.3s ease;
     margin-bottom: 0; /* Override hrms.css margin to prevent unnecessary scroll */
+    display: block; /* Override hrms.css flex to prevent space-between issues */
+}
+
+/* Header Content - ensure proper stacking of children */
+.hrms-header .header-content {
+    display: block;
+    width: 100%;
+}
+
+/* Breadcrumb - always left aligned */
+.hrms-header .breadcrumb-nav {
+    margin-bottom: 8px;
+}
+
+/* Header Row with hamburger and title - always left aligned */
+.hrms-header .hrms-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+/* Active tab title - below header row, left aligned */
+.hrms-header .active-tab-title {
+    margin-top: 4px;
 }
 
 /* When sidebar is open - shift everything and constrain width */
@@ -1154,23 +1213,23 @@
 }
 
 .summary-employees .summary-icon {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
+    background: var(--color-info-light);
+    color: var(--brand-secondary);
 }
 
 .summary-ctc .summary-icon {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    background: var(--color-success-light);
+    color: var(--color-success);
 }
 
 .summary-monthly .summary-icon {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    background: var(--color-warning-light);
+    color: var(--color-warning);
 }
 
 .summary-average .summary-icon {
     background: rgba(236, 72, 153, 0.1);
-    color: #ec4899;
+    color: var(--brand-accent);
 }
 
 .summary-content {
@@ -1598,7 +1657,7 @@
 .selection-summary .stat-value {
     font-size: 14px;
     font-weight: 600;
-    color: #10b981;
+    color: var(--color-success);
 }
 
 /* Modal footer button with icon */

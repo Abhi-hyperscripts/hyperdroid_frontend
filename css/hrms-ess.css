@@ -1004,7 +1004,14 @@
     border-radius: 12px;
     font-size: 15px;
     background: var(--bg-card);
+    color: var(--text-primary);
     cursor: pointer;
+}
+
+/* Dark mode option styling for directory-filter select */
+[data-theme="dark"] .directory-filter select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
 }
 
 .directory-grid {
@@ -1861,7 +1868,15 @@
     border: 1px solid var(--border-color-light);
     border-radius: 8px;
     font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-card);
     transition: all 0.2s ease;
+}
+
+/* Dark mode option styling for form-group selects */
+[data-theme="dark"] .form-group select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
 }
 
 .form-group input:focus,

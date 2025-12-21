@@ -280,6 +280,13 @@ body {
     margin-top: 1px;
 }
 
+/* Dark mode option styling for form-group selects */
+[data-theme="dark"] .form-group select option,
+[data-theme="dark"] .modal-content .form-group select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
 .form-label {
     font-size: 14px;
     font-weight: 600;
@@ -971,7 +978,7 @@ body {
     border: none;
     font-size: 1.25rem;
     cursor: pointer;
-    color: #ffffff;
+    color: var(--text-inverse);
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -996,13 +1003,13 @@ body {
 .modal-header .close-btn {
     background: var(--brand-primary);
     border: none;
-    color: #ffffff;
+    color: var(--text-inverse);
     box-shadow: var(--shadow-primary-sm);
 }
 
 .modal-header .close-btn:hover {
     background: var(--brand-primary-dark);
-    color: #ffffff;
+    color: var(--text-inverse);
     box-shadow: var(--shadow-primary-md);
     transform: scale(1.05);
 }
@@ -2740,7 +2747,7 @@ body:has(.pre-meeting-container) {
     max-width: 450px;
     aspect-ratio: 16 / 9;
     margin: 0 auto;
-    background: #0f172a;
+    background: var(--bg-body);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 16px var(--overlay-light);
@@ -2853,7 +2860,7 @@ body:has(.pre-meeting-container) {
 
 .device-control-btn.active {
     background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-    color: #ffffff;
+    color: var(--text-inverse);
     border-color: var(--brand-primary);
 }
 
@@ -2936,6 +2943,12 @@ body:has(.pre-meeting-container) {
     outline: none;
     border-color: var(--text-primary);
     box-shadow: 0 0 0 3px var(--border-color);
+}
+
+/* Dark mode option styling for device-select-group */
+[data-theme="dark"] .device-select-group select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
 }
 
 .join-actions {
@@ -3079,7 +3092,7 @@ body:has(.pre-meeting-container) {
     width: 40px;
     height: 40px;
     background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-    color: #ffffff;
+    color: var(--text-inverse);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -3124,7 +3137,7 @@ body:has(.pre-meeting-container) {
 
 .btn-elegant-primary {
     background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%) !important;
-    color: #ffffff !important;
+    color: var(--text-inverse) !important;
     border: none !important;
     padding: 12px 32px !important;
     font-size: 15px !important;
@@ -3924,11 +3937,11 @@ body:has(.pre-meeting-container) {
 .participants-count-display:hover {
     background: var(--brand-primary);
     border-color: var(--brand-primary);
-    color: #ffffff;
+    color: var(--text-inverse);
 }
 
 .participants-count-display:hover svg {
-    stroke: #ffffff;
+    stroke: var(--text-inverse);
 }
 
 .participants-count-display svg {
@@ -4066,7 +4079,7 @@ body:has(.pre-meeting-container) {
 
 .filter-btn.active {
     background: var(--brand-primary);
-    color: #ffffff;
+    color: var(--text-inverse);
     border-color: var(--brand-primary);
 }
 
@@ -4197,7 +4210,7 @@ body:has(.pre-meeting-container) {
 .recording-video-player {
     width: 100%;
     max-height: 450px;
-    background: #0f172a;
+    background: var(--bg-body);
     border-radius: 6px;
     margin-top: 12px;
 }
@@ -5629,12 +5642,19 @@ label.toggle-switch,
     border-radius: 6px;
     font-size: 0.9rem;
     background: var(--bg-card);
+    color: var(--text-primary);
     margin-top: 4px;
 }
 
 .settings-row select:disabled {
     background: var(--gray-100);
     cursor: not-allowed;
+}
+
+/* Dark mode option styling for settings-row select */
+[data-theme="dark"] .settings-row select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
 }
 
 .settings-row .toggle-switch {
@@ -5800,7 +5820,7 @@ label.toggle-switch,
 }
 
 .meeting-type-segmented .segment-btn.active {
-    color: #ffffff;
+    color: var(--text-inverse);
     background: var(--brand-primary);
     box-shadow: 0 1px 3px var(--border-color);
 }
@@ -6004,7 +6024,7 @@ label.toggle-switch,
 
 .date-day.selected {
     background: var(--brand-primary);
-    color: #ffffff;
+    color: var(--text-inverse);
     font-weight: 500;
 }
 
@@ -6109,7 +6129,7 @@ label.toggle-switch,
 
 .time-option.selected {
     background: var(--brand-primary);
-    color: #ffffff;
+    color: var(--text-inverse);
     font-weight: 500;
 }
 

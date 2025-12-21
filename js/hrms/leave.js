@@ -11,6 +11,7 @@ const EMPLOYEE_BATCH_SIZE = 20;
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
+    setupSidebar();
     await initializePage();
 });
 
@@ -64,16 +65,22 @@ async function initializePage() {
 
 // Apply RBAC visibility rules for leave page
 function applyLeaveRBAC() {
-    // Admin actions (Create Leave Type button)
+    // Management nav group (Leave Requests, Team Calendar) - visible to managers and HR admins
+    const managementNavGroup = document.getElementById('managementNavGroup');
+    if (managementNavGroup) {
+        managementNavGroup.style.display = hrmsRoles.canApproveLeave() ? 'block' : 'none';
+    }
+
+    // Configuration nav group (Leave Types) - HR Admin only
+    const configNavGroup = document.getElementById('configNavGroup');
+    if (configNavGroup) {
+        configNavGroup.style.display = hrmsRoles.isHRAdmin() ? 'block' : 'none';
+    }
+
+    // Admin actions (Create Leave Type button) - HR Admin only
     const adminActions = document.getElementById('adminActions');
     if (adminActions) {
         adminActions.style.display = hrmsRoles.isHRAdmin() ? 'flex' : 'none';
-    }
-
-    // Leave Types tab - HR Admin only
-    const leaveTypesTab = document.getElementById('leaveTypesTab');
-    if (leaveTypesTab) {
-        leaveTypesTab.style.display = hrmsRoles.isHRAdmin() ? 'block' : 'none';
     }
 
     // Allocate button - HR Admin only
@@ -81,35 +88,50 @@ function applyLeaveRBAC() {
     if (allocateBtn) {
         allocateBtn.style.display = hrmsRoles.isHRAdmin() ? 'inline-flex' : 'none';
     }
-
-    // Leave Requests tab (approvals) - visible to managers and HR admins
-    const leaveRequestsTab = document.getElementById('leaveRequestsTab');
-    if (leaveRequestsTab) {
-        leaveRequestsTab.style.display = hrmsRoles.canApproveLeave() ? 'block' : 'none';
-    }
 }
 
 function setupTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabBtns = document.querySelectorAll('.sidebar-btn');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const tabId = this.dataset.tab;
-
-            // Update active states
-            tabBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-
-            // Load data for tab
-            if (tabId === 'leave-balance' && hrmsRoles.canApproveLeave()) {
-                loadLeaveBalances();
-            } else if (tabId === 'team-calendar') {
-                initializeTeamCalendar();
-            }
+            switchTab(tabId);
         });
     });
+}
+
+function switchTab(tabName) {
+    // Update sidebar button active states
+    document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.sidebar-btn[data-tab="${tabName}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Update tab content visibility
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const tabContent = document.getElementById(tabName);
+    if (tabContent) tabContent.classList.add('active');
+
+    // Update active tab title
+    const titleMap = {
+        'my-leave': 'My Leave',
+        'leave-balance': 'Leave Balance',
+        'leave-requests': 'Leave Requests',
+        'team-calendar': 'Team Calendar',
+        'leave-types': 'Leave Types'
+    };
+    const titleEl = document.getElementById('activeTabName');
+    if (titleEl) titleEl.textContent = titleMap[tabName] || 'Leave';
+
+    // Load data for specific tabs
+    if (tabName === 'leave-balance' && hrmsRoles.canApproveLeave()) {
+        loadLeaveBalances();
+    } else if (tabName === 'team-calendar') {
+        initializeTeamCalendar();
+    } else if (tabName === 'leave-types') {
+        updateLeaveTypesTable();
+    } else if (tabName === 'leave-requests') {
+        loadPendingRequests();
+    }
 }
 
 async function loadLeaveTypes() {
@@ -1695,5 +1717,48 @@ function getLeaveEntriesForDate(dateStr) {
         const fromDate = new Date(leave.from_date);
         const toDate = new Date(leave.to_date);
         return date >= fromDate && date <= toDate;
+    });
+}
+
+// ==========================================
+// Sidebar Setup
+// ==========================================
+
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('organizationSidebar');
+    const container = document.querySelector('.hrms-container');
+
+    if (!toggle || !sidebar) return;
+
+    // Open sidebar by default on page load
+    toggle.classList.add('active');
+    sidebar.classList.add('open');
+    container?.classList.add('sidebar-open');
+
+    // Toggle sidebar open/close
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+    });
+
+    // Collapsible nav groups
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.closest('.nav-group');
+            if (group) {
+                group.classList.toggle('collapsed');
+            }
+        });
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+        }
     });
 }

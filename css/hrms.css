@@ -272,6 +272,13 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 
+/* Dark mode option styling for filter dropdowns */
+[data-theme="dark"] .filter-group select option,
+[data-theme="dark"] .filter-group .form-select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
 .search-input-wrapper {
     position: relative;
     flex: 1;
@@ -326,33 +333,37 @@
 /* Stats Row */
 .stats-row {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
 }
 
 .stat-mini {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--hover-overlay-strong);
-    border-radius: 12px;
-    padding: 16px 24px;
+    background: var(--bg-card, var(--glass-bg));
+    border: 1px solid var(--border-color, var(--hover-overlay-strong));
+    border-radius: 8px;
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 100px;
+    justify-content: center;
+    min-width: 90px;
+    flex: 1;
+    max-width: 140px;
 }
 
 .stat-mini-value {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
+    line-height: 1.2;
 }
 
 .stat-mini-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
-    margin-top: 4px;
+    margin-top: 2px;
+    text-align: center;
 }
 
 .stat-mini.active .stat-mini-value { color: var(--color-success); }
@@ -901,11 +912,12 @@
 }
 
 .form-group select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 12px !important;
     padding-right: 28px;
+    cursor: pointer;
 }
 
 .form-group input:focus,
@@ -926,6 +938,79 @@
 .form-group textarea::placeholder {
     font-size: 0.75rem;
     color: var(--text-muted);
+}
+
+/* Dark mode option styling for form-group selects */
+[data-theme="dark"] .form-group select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Dark mode arrow icon for form-group selects */
+[data-theme="dark"] .form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+}
+
+/* =============================================================
+   DARK MODE - Form inputs explicit override
+   Ensures form inputs in modals and elsewhere have proper dark backgrounds
+   ============================================================= */
+[data-theme="dark"] .form-group input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea,
+[data-theme="dark"] .modal-body input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] .modal-body select,
+[data-theme="dark"] .modal-body textarea {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus,
+[data-theme="dark"] .modal-body input:focus,
+[data-theme="dark"] .modal-body select:focus,
+[data-theme="dark"] .modal-body textarea:focus {
+    background-color: var(--bg-input) !important;
+    border-color: var(--brand-primary) !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder,
+[data-theme="dark"] .modal-body input::placeholder,
+[data-theme="dark"] .modal-body textarea::placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* Date inputs color scheme for dark mode */
+[data-theme="dark"] .form-group input[type="date"],
+[data-theme="dark"] .form-group input[type="datetime-local"],
+[data-theme="dark"] .form-group input[type="time"],
+[data-theme="dark"] .modal-body input[type="date"],
+[data-theme="dark"] .modal-body input[type="datetime-local"],
+[data-theme="dark"] .modal-body input[type="time"] {
+    color-scheme: dark;
+}
+
+/* =============================================================
+   DARK MODE - Timeline cards explicit override
+   Ensures timeline cards in history modals have proper dark backgrounds
+   ============================================================= */
+[data-theme="dark"] .timeline-content {
+    background-color: var(--bg-card-hover) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .history-section h4 {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .current-badge {
+    background-color: var(--color-success);
+    color: var(--text-inverse);
 }
 
 .form-text {
@@ -1089,11 +1174,12 @@
     position: fixed;
     top: 90px;
     right: 24px;
-    background: var(--gray-900);
-    color: var(--text-inverse);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
     padding: 14px 20px;
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
     align-items: center;
     gap: 12px;
     max-width: calc(100vw - 48px);
@@ -2005,6 +2091,417 @@
     margin-top: 0;
 }
 
+/* Structure Summary Styles */
+.structure-summary {
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.structure-summary .summary-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.structure-summary .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    min-width: 140px;
+}
+
+.structure-summary .summary-item.earnings {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.structure-summary .summary-item.deductions {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.structure-summary .summary-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.structure-summary .summary-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.structure-summary .summary-item.earnings .summary-value {
+    color: var(--color-success);
+}
+
+.structure-summary .summary-item.deductions .summary-value {
+    color: var(--color-danger);
+}
+
+.structure-summary .summary-warning {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
+    border-radius: 6px;
+    color: var(--color-warning);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.structure-summary .summary-warning::before {
+    content: "";
+}
+
+/* Summary main row - larger totals */
+.structure-summary .summary-row.summary-main {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.structure-summary .summary-row.summary-main .summary-item {
+    min-width: 160px;
+    flex: 1;
+}
+
+/* Summary breakdown row - smaller details */
+.structure-summary .summary-row.summary-breakdown {
+    gap: 12px;
+}
+
+.structure-summary .summary-row.summary-breakdown .summary-item {
+    min-width: 100px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.structure-summary .summary-row.summary-breakdown .summary-item.breakdown {
+    background: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.structure-summary .summary-value.small {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Total Gross - highlighted */
+.structure-summary .summary-item.total-gross {
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    border: 2px solid color-mix(in srgb, var(--color-success) 50%, transparent);
+}
+
+.structure-summary .summary-item.total-gross .summary-value {
+    color: var(--color-success);
+    font-size: 22px;
+}
+
+/* Remaining - warning state (unallocated) */
+.structure-summary .summary-item.remaining {
+    background: color-mix(in srgb, var(--gray-500) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gray-500) 30%, transparent);
+}
+
+.structure-summary .summary-item.remaining.warning {
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border: 2px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
+}
+
+.structure-summary .summary-item.remaining.warning .summary-value {
+    color: var(--color-warning);
+}
+
+/* Remaining - OK state (fully allocated) */
+.structure-summary .summary-item.remaining.ok {
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.structure-summary .summary-item.remaining.ok .summary-value {
+    color: var(--color-success);
+}
+
+/* Remaining - error state (exceeds 100%) */
+.structure-summary .summary-item.remaining.error {
+    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+    border: 2px solid color-mix(in srgb, var(--color-danger) 50%, transparent);
+}
+
+.structure-summary .summary-item.remaining.error .summary-value {
+    color: var(--color-danger);
+}
+
+/* Info message */
+.structure-summary .summary-info {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--color-info) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
+    border-radius: 6px;
+    color: var(--brand-primary-light);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Balance Component Preview */
+.balance-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, transparent), color-mix(in srgb, var(--color-info) 8%, transparent));
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+    border-radius: 8px;
+}
+
+.balance-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-success);
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.balance-preview-header svg {
+    stroke: var(--color-success);
+}
+
+.balance-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.balance-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.balance-preview-item .label {
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.balance-preview-item .value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.balance-preview-item.highlight {
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 4px 0;
+}
+
+.balance-preview-item.highlight .value {
+    color: var(--color-success);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.balance-preview-item .sublabel {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.balance-preview-note {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.balance-preview.warning {
+    border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 8%, transparent), color-mix(in srgb, var(--color-danger) 8%, transparent));
+}
+
+.balance-preview.warning .balance-preview-header {
+    color: var(--color-warning);
+}
+
+.balance-preview.warning .balance-preview-header svg {
+    stroke: var(--color-warning);
+}
+
+.balance-preview.warning .balance-preview-item.highlight {
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+.balance-preview.warning .balance-preview-item.highlight .value {
+    color: var(--color-warning);
+}
+
+/* ============================================
+   COMPACT STRUCTURE SUMMARY - Above Components
+   ============================================ */
+.structure-summary-compact {
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.structure-summary-compact .summary-metrics {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.structure-summary-compact .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 4px;
+    min-width: 50px;
+}
+
+.structure-summary-compact .metric-value {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.structure-summary-compact .metric-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+}
+
+.structure-summary-compact .metric.gross {
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success) 40%, transparent);
+}
+
+.structure-summary-compact .metric.gross .metric-value {
+    color: var(--color-success);
+}
+
+.structure-summary-compact .metric.balance {
+    background: color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+}
+
+.structure-summary-compact .metric.balance .metric-value {
+    color: var(--brand-primary);
+}
+
+.structure-summary-compact .metric.balance.negative {
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
+}
+
+.structure-summary-compact .metric.balance.negative .metric-value {
+    color: var(--color-warning);
+}
+
+.structure-summary-compact .metric.total {
+    background: color-mix(in srgb, var(--color-purple) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-purple) 50%, transparent);
+}
+
+.structure-summary-compact .metric.total .metric-value {
+    color: var(--color-purple);
+    font-size: 14px;
+}
+
+.structure-summary-compact .metric.deductions {
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+}
+
+.structure-summary-compact .metric.deductions .metric-value {
+    color: var(--color-danger);
+}
+
+.structure-summary-compact .metric-divider {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    padding: 0 1px;
+}
+
+.structure-summary-compact .metric-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 4px;
+}
+
+.structure-summary-compact .summary-note {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.structure-summary-compact .summary-note:empty {
+    display: none;
+}
+
+.structure-summary-compact .summary-warning {
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
+    border-radius: 4px;
+    color: var(--color-warning);
+    font-size: 10px;
+}
+
+/* Responsive: stack metrics on small screens */
+@media (max-width: 600px) {
+    .structure-summary-compact .summary-metrics {
+        justify-content: center;
+    }
+
+    .structure-summary-compact .metric-separator {
+        display: none;
+    }
+
+    .structure-summary-compact .metric {
+        min-width: 45px;
+        padding: 2px 6px;
+    }
+
+    .structure-summary-compact .metric-value {
+        font-size: 11px;
+    }
+}
+
+/* Duplicate component warning */
+.component-select.duplicate-warning {
+    border-color: var(--color-warning) !important;
+    background-color: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
 /* Salary Modal Styles */
 .salary-employee-header {
     display: flex;
@@ -2172,7 +2669,7 @@
 
 .salary-totals {
     padding: 16px;
-    background: var(--gray-800);
+    background: var(--gray-100);
     border-radius: 8px;
 }
 
@@ -2182,23 +2679,23 @@
     align-items: center;
     padding: 8px 0;
     font-size: 14px;
-    color: var(--gray-400);
+    color: var(--text-secondary);
 }
 
 .salary-total-row span:last-child {
     font-weight: 500;
-    color: var(--text-inverse);
+    color: var(--text-primary);
 }
 
 .salary-total-row.net {
     padding-top: 12px;
     margin-top: 8px;
-    border-top: 1px solid var(--gray-600);
+    border-top: 1px solid var(--border-color);
     font-size: 16px;
 }
 
 .salary-total-row.net span:first-child {
-    color: var(--text-inverse);
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -3043,7 +3540,7 @@
 .modal-body .net-pay-display {
     margin-top: 10px !important;
     padding: 10px 14px !important;
-    background: var(--gray-900) !important;
+    background: var(--gray-100) !important;
     border-radius: 6px !important;
     display: flex !important;
     justify-content: space-between !important;
@@ -3052,7 +3549,7 @@
 
 .modal-body .net-pay-display .label {
     font-size: 0.75rem !important;
-    color: var(--text-muted) !important;
+    color: var(--text-secondary) !important;
 }
 
 .modal-body .net-pay-display .value {
@@ -5288,6 +5785,31 @@ input:checked + .slider:before {
     color: var(--brand-secondary);
 }
 
+/* =============================================================
+   DARK MODE - Timeline cards override (after all timeline styles)
+   Ensures timeline cards in history modals have proper dark backgrounds
+   ============================================================= */
+[data-theme="dark"] .timeline-content {
+    background-color: #334155 !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .history-section h4 {
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .timeline-title,
+[data-theme="dark"] .timeline-subtitle,
+[data-theme="dark"] .timeline-date,
+[data-theme="dark"] .timeline-reason {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .timeline-title {
+    color: var(--text-primary) !important;
+}
+
 /* Responsive adjustments for calculation calendar */
 @media (max-width: 768px) {
     .calculation-calendar {
@@ -7208,28 +7730,28 @@ input:checked + .slider:before {
 }
 
 .payslip-status-info .badge-warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #d97706;
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    color: var(--color-warning-dark);
 }
 
 .payslip-status-info .badge-success {
-    background: rgba(34, 197, 94, 0.15);
-    color: #16a34a;
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success-dark);
 }
 
 .payslip-status-info .badge-info {
-    background: rgba(59, 130, 246, 0.15);
-    color: #2563eb;
+    background: color-mix(in srgb, var(--color-info) 15%, transparent);
+    color: var(--color-info-dark);
 }
 
 .payslip-status-info .badge-danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
+    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+    color: var(--color-danger-dark);
 }
 
 .payslip-status-info .badge-secondary {
-    background: rgba(107, 114, 128, 0.15);
-    color: #6b7280;
+    background: color-mix(in srgb, var(--gray-500) 15%, transparent);
+    color: var(--gray-500);
 }
 
 /* Payslip modal z-index - must be higher than payroll run details modal */
@@ -7306,7 +7828,7 @@ input:checked + .slider:before {
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: var(--brand-primary, #0066cc);
+    background: var(--brand-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7371,7 +7893,7 @@ input:checked + .slider:before {
 .detail-value.amount {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--brand-primary, #0066cc);
+    color: var(--brand-primary);
 }
 
 /* Alert styles for VD modals */
@@ -7395,14 +7917,14 @@ input:checked + .slider:before {
 }
 
 .modal-body .alert-warning {
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
     color: var(--text-color);
 }
 
 .modal-body .alert-warning svg {
-    color: #f59e0b;
-    stroke: #f59e0b;
+    color: var(--color-warning);
+    stroke: var(--color-warning);
 }
 
 .modal-body .alert-warning strong {
@@ -7438,33 +7960,33 @@ input:checked + .slider:before {
    ======================================== */
 
 .badge-success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success-dark);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
 .badge-warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    color: var(--color-warning-dark);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
 }
 
 .badge-danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+    color: var(--color-danger-dark);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 .badge-info {
-    background: rgba(59, 130, 246, 0.15);
-    color: #2563eb;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: color-mix(in srgb, var(--color-info) 15%, transparent);
+    color: var(--color-info-dark);
+    border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
 }
 
 .badge-secondary {
-    background: rgba(107, 114, 128, 0.15);
-    color: #4b5563;
-    border: 1px solid rgba(107, 114, 128, 0.3);
+    background: color-mix(in srgb, var(--gray-500) 15%, transparent);
+    color: var(--gray-600);
+    border: 1px solid color-mix(in srgb, var(--gray-500) 30%, transparent);
 }
 
 /* ========================================
@@ -7483,28 +8005,28 @@ input:checked + .slider:before {
 }
 
 .type-badge.earning {
-    background: rgba(16, 185, 129, 0.12);
-    color: var(--success-color, #10b981);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
+    border: 1px solid color-mix(in srgb, var(--color-success) 25%, transparent);
 }
 
 .type-badge.deduction {
-    background: rgba(239, 68, 68, 0.12);
-    color: var(--danger-color, #ef4444);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
 }
 
 /* Dark mode for type badges */
 [data-theme="dark"] .type-badge.earning {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-    border-color: rgba(16, 185, 129, 0.35);
+    background: color-mix(in srgb, var(--color-success) 20%, transparent);
+    color: var(--color-success-light-accent);
+    border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
 }
 
 [data-theme="dark"] .type-badge.deduction {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.35);
+    background: color-mix(in srgb, var(--color-danger) 20%, transparent);
+    color: var(--color-danger-light-accent);
+    border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
 }
 
 /* Amount Cell - for showing +/- amounts */
@@ -7521,11 +8043,11 @@ input:checked + .slider:before {
 }
 
 .amount-cell.positive {
-    color: var(--success-color, #10b981);
+    color: var(--color-success);
 }
 
 .amount-cell.negative {
-    color: var(--danger-color, #ef4444);
+    color: var(--color-danger);
 }
 
 /* Reason Cell - with ellipsis for long text */
@@ -7555,15 +8077,15 @@ input:checked + .slider:before {
 
 /* Info status badge */
 .status-badge.info {
-    background: rgba(59, 130, 246, 0.12);
-    color: var(--info-color, #3b82f6);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    color: var(--color-info);
+    border: 1px solid color-mix(in srgb, var(--color-info) 25%, transparent);
 }
 
 [data-theme="dark"] .status-badge.info {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.35);
+    background: color-mix(in srgb, var(--color-info) 20%, transparent);
+    color: var(--brand-primary-light);
+    border-color: color-mix(in srgb, var(--color-info) 35%, transparent);
 }
 
 /* ============================================
@@ -7611,23 +8133,23 @@ input:checked + .slider:before {
 }
 
 .adj-type-badge.reimbursement {
-    background: color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent);
-    color: var(--color-info, #3b82f6);
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    color: var(--color-info);
 }
 
 .adj-type-badge.bonus {
-    background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
-    color: var(--color-success, #10b981);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
 }
 
 .adj-type-badge.incentive {
-    background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
-    color: var(--color-warning, #f59e0b);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: var(--color-warning);
 }
 
 .adj-type-badge.recovery {
-    background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
-    color: var(--color-danger, #ef4444);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
 }
 
 /* Amount Card */
@@ -7663,11 +8185,11 @@ input:checked + .slider:before {
 }
 
 .adj-amount-value.positive {
-    color: var(--color-success, #10b981);
+    color: var(--color-success);
 }
 
 .adj-amount-value.negative {
-    color: var(--color-danger, #ef4444);
+    color: var(--color-danger);
 }
 
 .adj-amount-meta {
@@ -7698,23 +8220,23 @@ input:checked + .slider:before {
 }
 
 .adj-status-badge.pending {
-    background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
-    color: var(--color-warning, #f59e0b);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: var(--color-warning);
 }
 
 .adj-status-badge.approved {
-    background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
-    color: var(--color-success, #10b981);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
 }
 
 .adj-status-badge.rejected {
-    background: color-mix(in srgb, var(--color-danger, #ef4444) 12%, transparent);
-    color: var(--color-danger, #ef4444);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
 }
 
 .adj-status-badge.applied {
-    background: color-mix(in srgb, var(--color-info, #3b82f6) 12%, transparent);
-    color: var(--color-info, #3b82f6);
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    color: var(--color-info);
 }
 
 /* Reason Section */
@@ -7723,14 +8245,14 @@ input:checked + .slider:before {
 }
 
 .adjustment-reason-section.rejection {
-    background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-danger, #ef4444) 20%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
     border-radius: 8px;
     padding: 10px 12px;
 }
 
 .adjustment-reason-section.rejection .adj-section-label {
-    color: var(--color-danger, #ef4444);
+    color: var(--color-danger);
 }
 
 .adj-section-label {
@@ -7791,5 +8313,980 @@ input:checked + .slider:before {
 
 .adj-by-text:empty:before {
     content: "";
+}
+
+/* =============================================================
+   DARK MODE - Colored Section Backgrounds Override
+   Ensures colored sections (success-light, warning-light, etc.)
+   have proper dark mode styling with readable text
+   ============================================================= */
+
+/* Current Salary Section - bright green background fix */
+[data-theme="dark"] .current-salary-section {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .current-salary-section h4 {
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .salary-card .salary-label {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .salary-card .salary-value {
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .current-salary-section .effective-date {
+    color: var(--text-secondary) !important;
+}
+
+/* Salary History Table - current row */
+[data-theme="dark"] .salary-history-table tbody tr.current-salary {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="dark"] .salary-history-table tbody tr.current-salary td {
+    color: #4ade80 !important;
+}
+
+/* Office Status Cards */
+[data-theme="dark"] .office-status-card.complete {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .office-status-card.incomplete {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Document Status Badges */
+[data-theme="dark"] .doc-status.pending {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .doc-status.verified {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* Status Badges - Success variants */
+[data-theme="dark"] .status-badge.active,
+[data-theme="dark"] .status-badge.present,
+[data-theme="dark"] .status-badge.approved {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* Status Badges - Danger variants */
+[data-theme="dark"] .status-badge.inactive,
+[data-theme="dark"] .status-badge.absent,
+[data-theme="dark"] .status-badge.rejected,
+[data-theme="dark"] .status-badge.terminated {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* Status Badges - Warning variants */
+[data-theme="dark"] .status-badge.pending,
+[data-theme="dark"] .status-badge.on_notice,
+[data-theme="dark"] .status-badge.leave,
+[data-theme="dark"] .status-badge.late {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+/* Status Badges - Info variants */
+[data-theme="dark"] .status-badge.processing {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+/* Office Type Badges */
+[data-theme="dark"] .badge-regional {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .badge-branch {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .badge-satellite {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+/* Holiday Type Badges */
+[data-theme="dark"] .badge-public {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+[data-theme="dark"] .badge-restricted {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+/* Info Boxes & Alerts */
+[data-theme="dark"] .bulk-info-bar {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .termination-warning {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .modal-header-danger {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Roster Calc Summary */
+[data-theme="dark"] .roster-calc-summary {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Roster Type Badges */
+[data-theme="dark"] .badge-scheduled {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .badge-temporary {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .badge-swap {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .badge-override {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* Transfer Type Badges */
+[data-theme="dark"] .transfer-type-badge.transfer {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .transfer-type-badge.promotion {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .transfer-type-badge.demotion {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+[data-theme="dark"] .transfer-type-badge.deputation {
+    background: rgba(168, 85, 247, 0.2) !important;
+    color: #c084fc !important;
+}
+
+/* Calendar Days */
+[data-theme="dark"] .calc-day.working {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .calc-day.weekend {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .calc-day.holiday {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .calendar-day.weekend {
+    background: rgba(245, 158, 11, 0.15) !important;
+}
+
+[data-theme="dark"] .calendar-day.has-leaves {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Weekend Badge */
+[data-theme="dark"] .weekend-badge {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+/* Current Badge */
+[data-theme="dark"] .current-badge {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* Designation Count Badges */
+[data-theme="dark"] .designation-count {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .designation-count-zero {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* No Designations Warning */
+[data-theme="dark"] .no-designations-warning {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+[data-theme="dark"] .no-designations-warning:hover {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Employee Checkbox Selected */
+[data-theme="dark"] .employee-checkbox-item.selected {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Tree Node Badges */
+[data-theme="dark"] .tree-node-badge {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .tree-node-badge.inactive {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+/* Upload Button with File */
+[data-theme="dark"] .upload-btn-sm.has-file {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .file-name-badge {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* Encash Balance Alerts */
+[data-theme="dark"] .encash-balance-info .alert-info {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #60a5fa !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .encash-balance-info .alert-success {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .encash-payout-value {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #4ade80 !important;
+}
+
+/* Info Salary Box */
+[data-theme="dark"] .info-salary-box {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Bulk Delete Warning */
+[data-theme="dark"] .bulk-delete-warning {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Search Highlight */
+[data-theme="dark"] .search-highlight {
+    background: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Dropdown Selected Items */
+[data-theme="dark"] .dropdown-option.selected,
+[data-theme="dark"] .dropdown-dept-item.selected {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+[data-theme="dark"] .dropdown-dept-item.selected .dept-code {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+}
+
+/* Payroll Draft Row Highlight */
+[data-theme="dark"] .draft-payslip-row mark {
+    background: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Button Icon Variants */
+[data-theme="dark"] .btn-icon-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .btn-icon-success {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Remove Button */
+[data-theme="dark"] .remove-btn-sm {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #f87171 !important;
+}
+
+[data-theme="dark"] .remove-btn-sm:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Payslip Status Badge */
+[data-theme="dark"] .status-badge.status-paid {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* Action Button Hover States */
+[data-theme="dark"] .action-btn.success:hover {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="dark"] .action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+}
+
+[data-theme="dark"] .action-btn.primary:hover {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Payroll Action Buttons Hover */
+[data-theme="dark"] #deletePayrollRunBtn:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+}
+
+[data-theme="dark"] #processPayrollRunBtn:hover {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="dark"] #downloadCsvBtn:hover {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Salary Summary Success Banner */
+[data-theme="dark"] .salary-success-banner {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Dept Icon Box */
+[data-theme="dark"] .dept-icon-box {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* =============================================================
+   COMPACT REASSIGN MANAGER MODAL
+   ============================================================= */
+
+/* Small modal size */
+.modal-dialog.modal-sm {
+    max-width: 380px;
+}
+
+.modal-compact {
+    border-radius: 12px;
+    overflow: visible !important;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-xl);
+}
+
+.modal-compact .modal-body,
+.modal-compact .compact-body {
+    overflow: visible !important;
+}
+
+/* Ensure modal dialog doesn't clip dropdown */
+.modal-dialog.modal-sm {
+    overflow: visible !important;
+}
+
+/* Ensure modal-compact has proper background and allows overflow */
+.modal-content.modal-compact {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    overflow: visible !important;
+}
+
+/* Compact header with employee info */
+.compact-header {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.header-with-employee {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-with-employee h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.employee-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.employee-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Compact body */
+.compact-body {
+    padding: 12px 16px !important;
+}
+
+/* Manager history section */
+.manager-history-section {
+    margin-bottom: 16px;
+}
+
+.manager-history-section .section-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.manager-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--gray-50);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 200px;
+    overflow-y: auto;
+    /* Custom scrollbar for better UX with many entries */
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-400) transparent;
+}
+
+.manager-history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.manager-history-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.manager-history-list::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 3px;
+}
+
+.manager-history-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+.manager-history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color-light);
+    font-size: 0.8rem;
+}
+
+.manager-history-item:last-child {
+    border-bottom: none;
+}
+
+.manager-history-item.current {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+}
+
+.manager-history-item .manager-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    color: var(--brand-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.manager-history-item.current .manager-avatar {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.manager-history-item .manager-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.manager-history-item .manager-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.manager-history-item .manager-period {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.manager-history-item .current-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.no-history-message {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Dark mode manager history */
+[data-theme="dark"] .manager-history-list {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .manager-history-item {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .manager-history-item .manager-name {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .manager-history-item .manager-period {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .manager-history-item .manager-avatar {
+    background: rgba(var(--brand-primary-rgb), 0.2);
+    color: var(--brand-primary-light);
+}
+
+[data-theme="dark"] .manager-history-item.current {
+    background: rgba(var(--brand-primary-rgb), 0.15);
+}
+
+[data-theme="dark"] .manager-history-item.current .manager-avatar {
+    background: var(--brand-primary);
+    color: white;
+}
+
+/* Dark mode scrollbar for manager history */
+[data-theme="dark"] .manager-history-list {
+    scrollbar-color: var(--gray-600) transparent;
+}
+
+[data-theme="dark"] .manager-history-list::-webkit-scrollbar-thumb {
+    background: var(--gray-600);
+}
+
+[data-theme="dark"] .manager-history-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+/* Manager history count badge */
+.manager-history-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--gray-200);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+[data-theme="dark"] .manager-history-count {
+    background: var(--gray-700);
+    color: var(--text-secondary);
+}
+
+/* Compact form groups */
+.compact-group {
+    margin-bottom: 10px !important;
+}
+
+.compact-group label {
+    font-size: 0.75rem !important;
+    margin-bottom: 4px !important;
+    color: var(--text-secondary);
+}
+
+.compact-group .optional {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* Compact form row */
+.compact-row {
+    display: flex;
+    gap: 10px;
+}
+
+.compact-row .flex-1 {
+    flex: 1;
+}
+
+.compact-row .flex-2 {
+    flex: 2;
+}
+
+/* Small form controls */
+.form-control-sm {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    height: auto;
+}
+
+/* Compact footer */
+.compact-footer {
+    padding: 10px 16px !important;
+    border-top: 1px solid var(--border-color-light);
+    gap: 8px;
+}
+
+.compact-footer .btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+}
+
+/* =============================================================
+   SEARCHABLE DROPDOWN WITH VIRTUAL SCROLLING
+   ============================================================= */
+
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-search {
+    width: 100%;
+    padding: 8px 32px 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dropdown-search:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.1);
+}
+
+.dropdown-search::placeholder {
+    color: var(--text-muted);
+}
+
+.dropdown-chevron {
+    position: absolute;
+    right: 10px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: transform 0.2s;
+}
+
+.searchable-dropdown.open .dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown list */
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: var(--shadow-lg);
+    z-index: 10000;
+    margin-top: 4px;
+    display: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 0 12px 0;
+}
+
+/* Custom scrollbar for dropdown */
+.dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+[data-theme="dark"] .dropdown-list::-webkit-scrollbar-thumb {
+    background: var(--gray-600);
+}
+
+[data-theme="dark"] .dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+.searchable-dropdown.open .dropdown-list {
+    display: block;
+}
+
+/* Dropdown items */
+.dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    transition: background 0.15s;
+    min-height: 36px;
+    box-sizing: border-box;
+}
+
+.dropdown-item:hover,
+.dropdown-item.highlighted {
+    background: var(--hover-overlay);
+}
+
+.dropdown-item.selected {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+}
+
+.dropdown-item.no-manager {
+    border-bottom: 1px solid var(--border-color-light);
+    color: var(--text-secondary);
+}
+
+.item-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    color: var(--brand-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.dropdown-item .item-name {
+    flex: 1;
+    min-width: 0;
+}
+
+.dropdown-item .item-name strong {
+    display: block;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-item .item-name small {
+    display: block;
+    font-size: 0.65rem;
+    line-height: 1.3;
+    color: var(--text-muted);
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Virtual scroll container */
+.virtual-scroll-container {
+    position: relative;
+}
+
+/* Loading state */
+.dropdown-loading {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* No results */
+.dropdown-no-results {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Dark mode adjustments for compact modal */
+[data-theme="dark"] .modal-compact {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .compact-header {
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .header-with-employee h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .employee-badge {
+    background: var(--brand-primary);
+}
+
+[data-theme="dark"] .employee-meta {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .compact-body {
+    background: var(--bg-card);
+}
+
+[data-theme="dark"] .compact-group label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .compact-footer {
+    background: var(--bg-elevated);
+    border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-search {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-search:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .dropdown-list {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item.highlighted {
+    background: var(--hover-overlay);
+}
+
+[data-theme="dark"] .dropdown-item.selected {
+    background: rgba(var(--brand-primary-rgb), 0.15);
+}
+
+[data-theme="dark"] .item-avatar {
+    background: rgba(var(--brand-primary-rgb), 0.2);
+    color: var(--brand-primary-light);
+}
+
+[data-theme="dark"] .dropdown-item .item-name strong {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item .item-name small {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .dropdown-item.no-manager {
+    border-bottom-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .dropdown-no-results {
+    color: var(--text-muted);
+}
+
+/* Form controls in dark mode */
+[data-theme="dark"] .compact-body .form-control,
+[data-theme="dark"] .compact-body .form-control-sm {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .compact-body input[type="date"] {
+    color-scheme: dark;
 }
 

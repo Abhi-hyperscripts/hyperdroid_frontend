@@ -22,6 +22,7 @@
      BRAND COLORS - Primary colors for your brand identity
      ═══════════════════════════════════════════════════════════════════════════ */
   --brand-primary: #3b82f6;           /* Main brand color (Blue) */
+  --brand-primary-rgb: 59, 130, 246;  /* RGB values for rgba() usage */
   --brand-primary-light: #60a5fa;     /* Lighter variant - hover states */
   --brand-primary-dark: #2563eb;      /* Darker variant - active states */
   --brand-secondary: #8b5cf6;         /* Secondary accent (Purple) */
@@ -707,6 +708,145 @@
 
 [data-theme="dark"] .roles-search-input:focus {
   background: var(--bg-elevated) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL SELECT/DROPDOWN DARK MODE STYLING
+   Ensures all native select and option elements are theme-aware
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Dark mode - All select elements */
+[data-theme="dark"] select,
+[data-theme="dark"] .form-select {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode - All option elements */
+[data-theme="dark"] select option,
+[data-theme="dark"] .form-select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode - Option hover states (where supported) */
+[data-theme="dark"] select option:hover,
+[data-theme="dark"] select option:focus,
+[data-theme="dark"] select option:checked {
+  background-color: var(--selected-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode - Disabled options */
+[data-theme="dark"] select option:disabled,
+[data-theme="dark"] .form-select option:disabled {
+  background-color: var(--bg-body) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Dark mode - Select focus state */
+[data-theme="dark"] select:focus,
+[data-theme="dark"] .form-select:focus {
+  outline: none;
+  border-color: var(--brand-primary) !important;
+  box-shadow: var(--focus-ring);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL INPUT DARK MODE STYLING
+   Ensures all form inputs including date, text, number are theme-aware
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Dark mode - All form-control inputs (Bootstrap class) */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="tel"],
+[data-theme="dark"] input[type="url"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="month"],
+[data-theme="dark"] input[type="week"],
+[data-theme="dark"] textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode - Input focus state */
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--brand-primary) !important;
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+/* Dark mode - Input placeholder */
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
+
+/* Dark mode - Disabled inputs */
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] input:disabled,
+[data-theme="dark"] textarea:disabled {
+  background-color: var(--bg-body) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+/* Dark mode - Date input calendar icon */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="week"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+/* Dark mode - Force color scheme for date/time inputs */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="month"],
+[data-theme="dark"] input[type="week"] {
+  color-scheme: dark;
+}
+
+/* Dark mode - Date input inner elements (WebKit) */
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit,
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit-text,
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit-month-field,
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit-day-field,
+[data-theme="dark"] input[type="date"]::-webkit-datetime-edit-year-field {
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-text,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply RBAC visibility
     applyEmployeesRBAC();
 
+    // Setup sidebar navigation
+    setupSidebar();
+
     await loadFormData();
     await loadEmployees();
 });
@@ -232,6 +235,14 @@ function renderEmployees() {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="15 10 20 15 15 20"/>
                                     <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn" onclick="openReassignManagerModal('${emp.id}')" data-tooltip="Reassign Manager">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
                             </button>
                             <button class="action-btn" onclick="openSalaryModal('${emp.id}')" data-tooltip="Salary">
@@ -2135,6 +2146,519 @@ async function viewTransferHistory(employeeId) {
 }
 
 // ============================================
+// Reassign Manager Functions (Compact Modal with Searchable Dropdown)
+// ============================================
+
+let currentReassignEmployee = null;
+let validManagersList = [];
+let filteredManagersList = [];
+let selectedManagerIndex = -1;
+let managerDropdownOpen = false;
+
+// Virtual scrolling config
+const ITEM_HEIGHT = 44; // Height of each dropdown item in pixels
+const VISIBLE_ITEMS = 6; // Number of items visible at once
+
+/**
+ * Opens the compact Reassign Manager modal
+ */
+async function openReassignManagerModal(employeeId) {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    currentReassignEmployee = employee;
+
+    // Set employee info in modal
+    document.getElementById('reassignEmployeeId').value = employeeId;
+    document.getElementById('reassignEmployeeName').textContent = `${employee.first_name} ${employee.last_name}`;
+    document.getElementById('reassignEmployeeCode').textContent = employee.employee_code || 'N/A';
+
+    const initials = `${(employee.first_name || '')[0] || ''}${(employee.last_name || '')[0] || ''}`.toUpperCase();
+    document.getElementById('reassignEmployeeAvatar').textContent = initials || '--';
+
+    // Show loading in manager history
+    document.getElementById('managerHistoryList').innerHTML = '<div class="no-history-message">Loading...</div>';
+
+    // Set default effective date to today
+    document.getElementById('reassignEffectiveDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('reassignReason').value = '';
+
+    // Prepare manager list for searchable dropdown
+    await prepareManagerList(employee);
+
+    // Reset search input and selection
+    document.getElementById('managerSearchInput').value = '';
+    document.getElementById('newReportingManagerId').value = '';
+    filteredManagersList = [...validManagersList];
+    selectedManagerIndex = -1;
+
+    // Initialize dropdown
+    initSearchableDropdown();
+    renderVirtualList();
+
+    // Hide validation message
+    document.getElementById('reassignManagerValidationMsg').style.display = 'none';
+
+    openModal('reassignManagerModal');
+
+    // Load manager history asynchronously
+    await loadManagerHistory(employeeId, employee);
+}
+
+/**
+ * Load and display manager history for an employee
+ */
+async function loadManagerHistory(employeeId, employee) {
+    const historyContainer = document.getElementById('managerHistoryList');
+
+    try {
+        // Get manager history from API
+        const history = await api.request(`/hrms/employees/${employeeId}/manager-history`);
+
+        // Build the history display
+        let html = '';
+
+        // Current manager (shown first with "Current" badge)
+        const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+        const currentEffectiveDate = history && history.length > 0
+            ? history[0].effective_date
+            : employee.date_of_joining || employee.hire_date;
+
+        html += `
+            <div class="manager-history-item current">
+                <div class="manager-avatar">${currentManager
+                    ? `${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase()
+                    : '—'}</div>
+                <div class="manager-info">
+                    <div class="manager-name">${currentManager
+                        ? `${currentManager.first_name} ${currentManager.last_name}`
+                        : 'No Manager (Top level)'}</div>
+                    <div class="manager-period">${formatDate(currentEffectiveDate)} → Present</div>
+                </div>
+                <span class="current-badge">Current</span>
+            </div>
+        `;
+
+        // Previous managers from history (most recent first)
+        if (history && history.length > 0) {
+            // Skip first entry as it represents change TO current manager
+            for (let i = 0; i < history.length; i++) {
+                const record = history[i];
+                const prevManager = record.old_manager_name || 'No Manager';
+                const prevManagerInitials = prevManager !== 'No Manager'
+                    ? prevManager.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                    : '—';
+
+                // Calculate period - from previous change date to this change date
+                const periodEnd = record.effective_date;
+                const periodStart = history[i + 1]
+                    ? history[i + 1].effective_date
+                    : employee.date_of_joining || employee.hire_date;
+
+                html += `
+                    <div class="manager-history-item">
+                        <div class="manager-avatar">${prevManagerInitials}</div>
+                        <div class="manager-info">
+                            <div class="manager-name">${prevManager === 'No Manager' ? 'No Manager (Top level)' : prevManager}</div>
+                            <div class="manager-period">${formatDate(periodStart)} → ${formatDate(periodEnd)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        historyContainer.innerHTML = html || '<div class="no-history-message">No reporting history</div>';
+
+        // Update count badge (1 for current + history entries)
+        const totalCount = 1 + (history ? history.length : 0);
+        const countBadge = document.getElementById('managerHistoryCount');
+        if (countBadge) {
+            countBadge.textContent = totalCount;
+            countBadge.style.display = totalCount > 1 ? 'inline-flex' : 'none';
+        }
+
+    } catch (error) {
+        console.error('Error loading manager history:', error);
+
+        // Fallback: show current manager only
+        const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+        const joiningDate = employee.date_of_joining || employee.hire_date;
+
+        historyContainer.innerHTML = `
+            <div class="manager-history-item current">
+                <div class="manager-avatar">${currentManager
+                    ? `${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase()
+                    : '—'}</div>
+                <div class="manager-info">
+                    <div class="manager-name">${currentManager
+                        ? `${currentManager.first_name} ${currentManager.last_name}`
+                        : 'No Manager (Top level)'}</div>
+                    <div class="manager-period">${formatDate(joiningDate)} → Present</div>
+                </div>
+                <span class="current-badge">Current</span>
+            </div>
+        `;
+
+        // Hide count badge on error (only current manager shown)
+        const countBadge = document.getElementById('managerHistoryCount');
+        if (countBadge) {
+            countBadge.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Prepare the list of valid managers for the dropdown
+ */
+async function prepareManagerList(employee) {
+    validManagersList = employees.filter(e => {
+        // Exclude self
+        if (e.id === employee.id) return false;
+        // Exclude inactive employees
+        if (e.employment_status !== 'active' && !e.is_active) return false;
+        // Exclude current manager (no change)
+        if (e.user_id === employee.reporting_manager_id) return false;
+        // Check circular dependency
+        if (wouldCreateCircularDependency(employee.id, e.user_id)) return false;
+        return true;
+    }).map(mgr => ({
+        user_id: mgr.user_id,
+        name: `${mgr.first_name} ${mgr.last_name}`,
+        code: mgr.employee_code || 'N/A',
+        email: mgr.work_email || mgr.email || '',
+        initials: `${(mgr.first_name || '')[0] || ''}${(mgr.last_name || '')[0] || ''}`.toUpperCase(),
+        department: mgr.department_name || '',
+        designation: mgr.designation_name || '',
+        office: mgr.office_name || '',
+        searchText: `${mgr.first_name} ${mgr.last_name} ${mgr.employee_code || ''} ${mgr.work_email || mgr.email || ''} ${mgr.designation_name || ''} ${mgr.office_name || ''}`.toLowerCase()
+    }));
+
+    filteredManagersList = [...validManagersList];
+}
+
+/**
+ * Initialize the searchable dropdown with event listeners
+ */
+function initSearchableDropdown() {
+    const container = document.getElementById('managerDropdownContainer');
+    const searchInput = document.getElementById('managerSearchInput');
+    const dropdownList = document.getElementById('managerDropdownList');
+
+    // Remove old listeners by replacing element
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+
+    // Focus/click opens dropdown
+    newSearchInput.addEventListener('focus', () => openManagerDropdown());
+    newSearchInput.addEventListener('click', () => openManagerDropdown());
+
+    // Search input handler with debounce
+    let searchTimeout;
+    newSearchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterManagers(e.target.value);
+        }, 150);
+    });
+
+    // Keyboard navigation
+    newSearchInput.addEventListener('keydown', handleDropdownKeyboard);
+
+    // Close dropdown on click outside
+    document.addEventListener('click', handleDropdownClickOutside);
+
+    // Handle "No manager" option click
+    const noManagerOption = dropdownList.querySelector('.no-manager');
+    if (noManagerOption) {
+        noManagerOption.onclick = () => selectManager('', 'No manager (Top level)');
+    }
+}
+
+/**
+ * Open the manager dropdown
+ */
+function openManagerDropdown() {
+    const container = document.getElementById('managerDropdownContainer');
+    container.classList.add('open');
+    managerDropdownOpen = true;
+    selectedManagerIndex = -1;
+}
+
+/**
+ * Close the manager dropdown
+ */
+function closeManagerDropdown() {
+    const container = document.getElementById('managerDropdownContainer');
+    container.classList.remove('open');
+    managerDropdownOpen = false;
+    selectedManagerIndex = -1;
+}
+
+/**
+ * Handle click outside dropdown to close it
+ */
+function handleDropdownClickOutside(e) {
+    const container = document.getElementById('managerDropdownContainer');
+    if (container && !container.contains(e.target)) {
+        closeManagerDropdown();
+    }
+}
+
+/**
+ * Handle keyboard navigation in dropdown
+ */
+function handleDropdownKeyboard(e) {
+    if (!managerDropdownOpen) {
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            openManagerDropdown();
+            e.preventDefault();
+        }
+        return;
+    }
+
+    const totalItems = filteredManagersList.length + 1; // +1 for "No manager" option
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            selectedManagerIndex = Math.min(selectedManagerIndex + 1, totalItems - 1);
+            highlightItem(selectedManagerIndex);
+            scrollToItem(selectedManagerIndex);
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            selectedManagerIndex = Math.max(selectedManagerIndex - 1, -1);
+            highlightItem(selectedManagerIndex);
+            scrollToItem(selectedManagerIndex);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (selectedManagerIndex === 0) {
+                // "No manager" option
+                selectManager('', 'No manager (Top level)');
+            } else if (selectedManagerIndex > 0 && selectedManagerIndex <= filteredManagersList.length) {
+                const mgr = filteredManagersList[selectedManagerIndex - 1];
+                selectManager(mgr.user_id, mgr.name);
+            }
+            break;
+        case 'Escape':
+            closeManagerDropdown();
+            break;
+    }
+}
+
+/**
+ * Filter managers based on search query
+ */
+function filterManagers(query) {
+    const searchTerm = query.toLowerCase().trim();
+
+    if (!searchTerm) {
+        filteredManagersList = [...validManagersList];
+    } else {
+        filteredManagersList = validManagersList.filter(mgr =>
+            mgr.searchText.includes(searchTerm)
+        );
+    }
+
+    selectedManagerIndex = -1;
+    renderVirtualList();
+}
+
+/**
+ * Render the virtual scrolling list
+ */
+function renderVirtualList() {
+    const container = document.getElementById('managerVirtualList');
+
+    if (filteredManagersList.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No managers found</div>';
+        return;
+    }
+
+    // For smaller lists (<100), render all items
+    // For larger lists, implement true virtual scrolling
+    if (filteredManagersList.length < 100) {
+        container.innerHTML = filteredManagersList.map((mgr, index) => {
+            const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' • ');
+            const line2 = [mgr.department, mgr.office].filter(Boolean).join(' • ');
+            const line3 = mgr.email;
+            return `
+            <div class="dropdown-item" data-index="${index + 1}" data-value="${mgr.user_id}" onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
+                <span class="item-avatar">${mgr.initials}</span>
+                <div class="item-name">
+                    <strong>${mgr.name}</strong>
+                    <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
+                </div>
+            </div>
+        `;
+        }).join('');
+    } else {
+        // True virtual scrolling for large lists
+        renderVirtualScrollItems(container);
+    }
+}
+
+/**
+ * Render virtual scroll items (for large lists)
+ */
+function renderVirtualScrollItems(container) {
+    const dropdownList = document.getElementById('managerDropdownList');
+    const scrollTop = dropdownList.scrollTop;
+    const startIndex = Math.floor(scrollTop / ITEM_HEIGHT);
+    const endIndex = Math.min(startIndex + VISIBLE_ITEMS + 2, filteredManagersList.length);
+
+    // Set container height for proper scrollbar
+    container.style.height = `${filteredManagersList.length * ITEM_HEIGHT}px`;
+
+    let html = '';
+    for (let i = startIndex; i < endIndex; i++) {
+        const mgr = filteredManagersList[i];
+        const top = i * ITEM_HEIGHT;
+        const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' • ');
+        const line2 = [mgr.department, mgr.office].filter(Boolean).join(' • ');
+        const line3 = mgr.email;
+        html += `
+            <div class="dropdown-item" style="position: absolute; top: ${top}px; left: 0; right: 0;"
+                 data-index="${i + 1}" data-value="${mgr.user_id}"
+                 onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
+                <span class="item-avatar">${mgr.initials}</span>
+                <div class="item-name">
+                    <strong>${mgr.name}</strong>
+                    <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
+                </div>
+            </div>
+        `;
+    }
+    container.innerHTML = html;
+
+    // Attach scroll listener for virtual scrolling
+    dropdownList.onscroll = () => renderVirtualScrollItems(container);
+}
+
+/**
+ * Highlight an item by index
+ */
+function highlightItem(index) {
+    const container = document.getElementById('managerDropdownList');
+    container.querySelectorAll('.dropdown-item').forEach(item => {
+        item.classList.remove('highlighted');
+        if (parseInt(item.dataset.index) === index) {
+            item.classList.add('highlighted');
+        }
+    });
+}
+
+/**
+ * Scroll to an item by index
+ */
+function scrollToItem(index) {
+    const container = document.getElementById('managerDropdownList');
+    const item = container.querySelector(`[data-index="${index}"]`);
+    if (item) {
+        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+/**
+ * Select a manager from the dropdown
+ */
+function selectManager(userId, displayName) {
+    document.getElementById('newReportingManagerId').value = userId;
+    document.getElementById('managerSearchInput').value = displayName;
+    closeManagerDropdown();
+
+    // Mark selected item
+    const container = document.getElementById('managerDropdownList');
+    container.querySelectorAll('.dropdown-item').forEach(item => {
+        item.classList.remove('selected');
+        if (item.dataset.value === userId) {
+            item.classList.add('selected');
+        }
+    });
+}
+
+/**
+ * Check for circular dependency when reassigning manager
+ */
+function wouldCreateCircularDependency(employeeId, newManagerUserId) {
+    if (!newManagerUserId) return false;
+
+    let currentUserId = newManagerUserId;
+    const visited = new Set();
+
+    while (currentUserId && !visited.has(currentUserId)) {
+        visited.add(currentUserId);
+        const currentEmployee = employees.find(e => e.user_id === currentUserId);
+
+        if (!currentEmployee) break;
+
+        // If we reach the original employee, it's circular
+        if (currentEmployee.id === employeeId) return true;
+
+        currentUserId = currentEmployee.reporting_manager_id;
+    }
+
+    return false;
+}
+
+/**
+ * Submit the manager reassignment
+ */
+async function submitReassignManager() {
+    const employeeId = document.getElementById('reassignEmployeeId').value;
+    const newManagerUserId = document.getElementById('newReportingManagerId').value;
+    const effectiveDate = document.getElementById('reassignEffectiveDate').value;
+    const reason = document.getElementById('reassignReason').value.trim();
+
+    if (!effectiveDate) {
+        showToast('Please select an effective date', 'error');
+        return;
+    }
+
+    // Validate manager selection
+    if (newManagerUserId && currentReassignEmployee) {
+        if (wouldCreateCircularDependency(currentReassignEmployee.id, newManagerUserId)) {
+            document.getElementById('reassignManagerValidationMsg').textContent =
+                'This would create a circular reporting structure';
+            document.getElementById('reassignManagerValidationMsg').style.display = 'block';
+            return;
+        }
+    }
+
+    const submitBtn = document.getElementById('submitReassignBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Reassigning...';
+
+    try {
+        // Call the dedicated manager change API
+        const response = await api.request('/hrms/employee-transfers/manager', {
+            method: 'POST',
+            body: JSON.stringify({
+                employee_id: employeeId,
+                new_manager_user_id: newManagerUserId || null,
+                effective_from: effectiveDate,
+                change_reason: reason || 'Manager reassignment'
+            })
+        });
+
+        showToast('Manager reassigned successfully', 'success');
+        closeModal('reassignManagerModal');
+        await loadEmployees();
+
+    } catch (error) {
+        console.error('Error reassigning manager:', error);
+        showToast(error.message || 'Failed to reassign manager', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Reassign';
+    }
+}
+
+// ============================================
 // Employee Wizard Navigation Functions
 // ============================================
 
@@ -2516,4 +3040,76 @@ async function confirmTerminateEmployee() {
 function closeTerminationModal() {
     terminatingEmployeeId = null;
     closeModal('terminateModal');
+}
+
+// ============================================================================
+// COLLAPSIBLE SIDEBAR NAVIGATION
+// ============================================================================
+
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('organizationSidebar');
+    const activeTabName = document.getElementById('activeTabName');
+    const container = document.querySelector('.hrms-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!toggle || !sidebar) return;
+
+    // Tab name mapping for display
+    const tabNames = {
+        'directory': 'Employee Directory'
+    };
+
+    // Update active tab title
+    function updateActiveTabTitle(tabId) {
+        if (activeTabName && tabNames[tabId]) {
+            activeTabName.textContent = tabNames[tabId];
+        }
+    }
+
+    // Open sidebar by default on page load (desktop)
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    }
+
+    // Toggle sidebar open/close
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+    });
+
+    // Close sidebar when clicking overlay (mobile)
+    overlay?.addEventListener('click', () => {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+    });
+
+    // Collapsible nav groups
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.closest('.nav-group');
+            group.classList.toggle('collapsed');
+        });
+    });
+
+    // Update title when a tab is selected
+    document.querySelectorAll('.sidebar-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            updateActiveTabTitle(tabId);
+        });
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+        }
+    });
 }

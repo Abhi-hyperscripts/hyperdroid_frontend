@@ -192,6 +192,51 @@
     color: var(--text-secondary);
 }
 
+/* Filter inputs - explicit dark mode support */
+.filter-group .form-control,
+.filter-group .form-select,
+.filter-group input,
+.filter-group select {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .filter-group .form-control,
+[data-theme="dark"] .filter-group .form-select,
+[data-theme="dark"] .filter-group input,
+[data-theme="dark"] .filter-group select {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .filter-group input[type="date"],
+[data-theme="dark"] .filter-group input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+/* Generator filters inputs */
+.generator-filters .form-control,
+.generator-filters .form-select,
+.generator-filters input,
+.generator-filters select {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .generator-filters .form-control,
+[data-theme="dark"] .generator-filters .form-select,
+[data-theme="dark"] .generator-filters input,
+[data-theme="dark"] .generator-filters select {
+    background-color: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    color-scheme: dark;
+}
+
 .filter-actions {
     display: flex;
     justify-content: flex-end;

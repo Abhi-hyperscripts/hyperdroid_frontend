@@ -1605,6 +1605,41 @@
                         </div>
                     </div>
                     <div class="form-section">
+                        <!-- Compact Structure Summary - Above Components -->
+                        <div class="structure-summary-compact" id="structureSummary" style="display: none;">
+                            <div class="summary-metrics">
+                                <div class="metric gross">
+                                    <span class="metric-value" id="totalGrossCtc">0%</span>
+                                    <span class="metric-label">Gross</span>
+                                </div>
+                                <div class="metric-divider">+</div>
+                                <div class="metric balance" id="balanceMetric">
+                                    <span class="metric-value" id="balanceWillFill">0%</span>
+                                    <span class="metric-label" id="balanceComponentName">Auto-Balance</span>
+                                </div>
+                                <div class="metric-divider">=</div>
+                                <div class="metric total">
+                                    <span class="metric-value">100%</span>
+                                    <span class="metric-label">CTC</span>
+                                </div>
+                                <div class="metric-separator"></div>
+                                <div class="metric deductions">
+                                    <span class="metric-value" id="deductionsBasicTotal">0%</span>
+                                    <span class="metric-label">Deductions</span>
+                                </div>
+                            </div>
+                            <div class="summary-note" id="balanceNote"></div>
+                            <div class="summary-warning" id="summaryWarning" style="display: none;"></div>
+                            <!-- Hidden fields for JS compatibility -->
+                            <span id="remainingCtc" style="display:none;">0%</span>
+                            <span id="earningsCtcTotal" style="display:none;">0%</span>
+                            <span id="earningsBasicTotal" style="display:none;">0%</span>
+                            <span id="earningsBasicEffective" style="display:none;">0%</span>
+                            <span id="fixedAmountsCount" style="display:none;">0</span>
+                            <span id="summaryInfo" style="display:none;"></span>
+                            <span id="balancePreview" style="display:none;"></span>
+                            <span id="remainingItem" style="display:none;"></span>
+                        </div>
                         <div class="components-header">
                             <span class="components-title">Components</span>
                             <button type="button" class="btn-add-component" onclick="addStructureComponent()">
@@ -1667,7 +1702,7 @@
                                 <label for="calculationType">Calculation Type *</label>
                                 <select id="calculationType" name="calculationType" class="form-control" required>
                                     <option value="fixed">Fixed Amount</option>
-                                    <option value="percentage">Percentage of Basic</option>
+                                    <option value="percentage">Percentage</option>
                                 </select>
                             </div>
                         </div>
@@ -1737,6 +1772,8 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Balance Component Option REMOVED - Balance is now automatic and implicit in every salary structure -->
+                        <!-- Backend automatically adds and calculates the balance component -->
                     </div>
                 </form>
             </div>

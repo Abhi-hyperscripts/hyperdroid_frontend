@@ -1479,6 +1479,61 @@
             <h2><span class="section-number">4</span> Salary Structures</h2>
             <p>Salary structures combine multiple components into a template that can be assigned to employees. Each structure calculates salaries based on the employee's CTC (Cost to Company).</p>
 
+            <!-- IMPORTANT: Component Default vs Structure Value Relationship -->
+            <div class="info-box warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Understanding Component Defaults vs Structure Values</strong><br><br>
+                    This is a crucial concept for payroll configuration:
+                    <ul style="margin: 10px 0;">
+                        <li><strong>Component Default Values:</strong> When you create a salary component (e.g., Basic Pay = 40% of CTC), the percentage/amount is a <em>default template value</em>. It's used to pre-fill forms when adding components to structures.</li>
+                        <li><strong>Structure Values (Override):</strong> When you add a component to a salary structure, you can <em>override</em> the default. For example, a component with 40% default can be set to 65% in a specific structure.</li>
+                        <li><strong>What Backend Uses:</strong> During payslip generation, the <strong>structure value is used, NOT the component default</strong>. The component default is just a convenience for form pre-filling.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Why This Design Pattern?</h3>
+            <p>This layered approach enables powerful flexibility:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>How It Works</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Same Component, Different Structures</strong></td>
+                        <td>One component can have different values across multiple structures</td>
+                        <td>Basic Pay: 35% for Junior Structure, 50% for Senior Structure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Location-Based Differences</strong></td>
+                        <td>Structures for different offices may have different percentages</td>
+                        <td>HRA: 50% for Mumbai, 40% for Tier-2 cities</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quick Setup</strong></td>
+                        <td>Component defaults auto-fill the form, saving time for common cases</td>
+                        <td>Most structures use Basic at 40%, so 40% is the default</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consistency with Flexibility</strong></td>
+                        <td>Same component definition used everywhere, but values can vary</td>
+                        <td>All use "BASIC" component, but percentages differ per structure</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <span class="icon">💡</span>
+                <div>
+                    <strong>Best Practice:</strong> Set component defaults to your most common values. When creating structures, only change the values that need to differ from the default.
+                </div>
+            </div>
+
             <h3>Step-by-Step: Creating a Salary Structure</h3>
 
             <h4>Step 1: View the Salary Structures Tab</h4>
