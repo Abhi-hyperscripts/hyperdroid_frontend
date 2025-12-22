@@ -2437,6 +2437,13 @@ async function saveDesignation() {
         return;
     }
 
+    // Validate level - 0 is reserved for superadmin
+    const level = parseInt(document.getElementById('desigLevel').value) || 1;
+    if (level < 1) {
+        showToast('Level must be 1 or higher. Level 0 is reserved for system use.', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const id = document.getElementById('designationId').value;
@@ -2449,7 +2456,7 @@ async function saveDesignation() {
             designation_code: document.getElementById('designationCode').value,
             office_id: officeId,
             department_id: departmentId,
-            level: parseInt(document.getElementById('desigLevel').value) || 1,
+            level: level,
             role_category: document.getElementById('desigCategory').value || null,
             default_hrms_roles: selectedRoles,
             description: document.getElementById('designationDescription').value,
