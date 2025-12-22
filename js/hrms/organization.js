@@ -886,6 +886,12 @@ async function loadAllData() {
         loadHolidays()
     ]);
 
+    // Re-populate dropdowns after all data is loaded (fixes race condition)
+    // This ensures office dropdown has data when designations/shifts/etc tabs load
+    populateOfficeSelects();
+    populateDepartmentSelects();
+    populateRosterFilters();
+
     // Load employees only if user can edit (for department head selection, etc.)
     if (canEditOrganization()) {
         await loadEmployees();
