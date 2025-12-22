@@ -2764,6 +2764,20 @@
     margin-left: 6px;
 }
 
+.salary-history-table .period-cell .scheduled-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--color-info);
+    color: var(--text-inverse);
+    font-size: 10px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.salary-history-table tr.future-salary {
+    opacity: 0.85;
+}
+
 .salary-history-table .revision-type {
     text-transform: capitalize;
 }
@@ -3864,87 +3878,90 @@
 }
 
 /* ============================================
-   Employee Transfer Modal Styles
+   Employee Transfer Modal Styles (Compact Card)
    ============================================ */
 
-.transfer-employee-header {
+.transfer-employee-card {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: var(--bg-elevated);
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+    border: 1px solid var(--border-color-light);
     border-radius: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
-.transfer-employee-header .employee-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.transfer-employee-header .employee-avatar {
-    width: 48px;
-    height: 48px;
+.transfer-employee-card .employee-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
     border-radius: 50%;
-    background: var(--avatar-bg);
-    color: var(--avatar-text);
+    background: var(--brand-primary);
+    color: var(--text-inverse);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1rem;
-}
-
-.transfer-employee-header .employee-details h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.transfer-employee-header .employee-details p {
-    margin: 4px 0 0 0;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-.current-assignment-section {
-    background: var(--bg-elevated);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
-}
-
-.current-assignment-section h4 {
     font-size: 0.9rem;
-    font-weight: 600;
-    margin: 0 0 12px 0;
-    color: var(--text-primary);
 }
 
-.assignment-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+.employee-card-content {
+    flex: 1;
+    min-width: 0;
 }
 
-.assignment-item {
+.employee-card-header {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
-.assignment-label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.assignment-value {
-    font-size: 0.9rem;
-    font-weight: 500;
+.employee-card-header .employee-name {
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-primary);
+}
+
+.employee-card-header .employee-code {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--gray-100);
+    border: 1px solid var(--border-color-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.assignment-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+}
+
+.assign-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    background: var(--gray-50);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color-light);
+}
+
+.assign-icon {
+    font-size: 0.7rem;
+}
+
+.assign-item span:last-child {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .change-options {
@@ -4254,17 +4271,17 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
-/* Transfer Toggle Options */
+/* Transfer Toggle Options (Compact) */
 .transfer-toggle-options {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 6px;
 }
 
 .transfer-toggle-options .switch-container {
-    padding: 10px 12px;
+    padding: 5px 8px;
     background: var(--bg-elevated);
-    border-radius: 6px;
+    border-radius: 4px;
     border: 1px solid var(--border-color-light);
     transition: all 0.2s ease;
 }
@@ -4275,8 +4292,76 @@ input:checked + .slider:before {
 }
 
 .transfer-toggle-options .switch-label {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-primary);
+}
+
+/* Transfer Modal Compact Form Styles */
+#transferModal .modal-content {
+    max-width: 480px;
+}
+
+#transferModal .modal-header {
+    padding: 10px 14px;
+}
+
+#transferModal .modal-header h3 {
+    font-size: 1rem;
+}
+
+#transferModal .modal-body {
+    padding: 10px 14px;
+}
+
+#transferModal .form-section {
+    margin-bottom: 8px;
+}
+
+#transferModal .form-section h4 {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+}
+
+#transferModal .form-row {
+    gap: 8px;
+}
+
+#transferModal .form-group {
+    margin-bottom: 6px;
+}
+
+#transferModal .form-group label {
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+}
+
+#transferModal .form-group input,
+#transferModal .form-group select,
+#transferModal .form-group textarea {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+#transferModal textarea {
+    min-height: 50px;
+}
+
+#transferModal .conditional-section {
+    padding-left: 12px;
+    margin-left: 4px;
+    margin-top: 8px;
+    border-left-width: 2px;
+}
+
+#transferModal .conditional-section h5 {
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+#transferModal .modal-footer {
+    padding: 10px 16px;
 }
 
 /* ================================================
@@ -9343,3 +9428,313 @@ input:checked + .slider:before {
     color-scheme: dark;
 }
 
+
+/* =============================================
+   Salary Breakdown Error Styles
+   ============================================= */
+
+.salary-breakdown-error {
+    margin-bottom: 16px;
+}
+
+.salary-breakdown-error .error-alert {
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--color-danger-text);
+    font-size: 13px;
+}
+
+.salary-breakdown-error .error-alert strong {
+    font-weight: 600;
+}
+
+.salary-breakdown-error .info-alert {
+    background: var(--color-info-light);
+    border: 1px solid var(--color-info);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.salary-breakdown-error .info-alert strong {
+    color: var(--color-info-dark);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .salary-breakdown-error .info-alert strong {
+    color: var(--color-info);
+}
+
+/* Negative value in breakdown - now just a visual indicator */
+.breakdown-item.error {
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px -8px;
+}
+
+.breakdown-item .item-value.negative {
+    color: var(--color-danger-text);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .breakdown-item .item-value.negative {
+    color: var(--color-danger);
+}
+
+/* =============================================
+   Salary History Change Percent Styles
+   ============================================= */
+
+.salary-history-table .change-percent {
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.salary-history-table .change-percent.positive {
+    color: var(--color-success-text);
+}
+
+.salary-history-table .change-percent.negative {
+    color: var(--color-danger-text);
+}
+
+[data-theme="dark"] .salary-history-table .change-percent.positive {
+    color: var(--color-success);
+}
+
+[data-theme="dark"] .salary-history-table .change-percent.negative {
+    color: var(--color-danger);
+}
+
+/* ============================================
+   Compact Salary Modal Styles
+   ============================================ */
+
+/* Salary Modal - Compact Layout */
+#salaryModal .modal-body {
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#salaryModal .salary-employee-header {
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+#salaryModal .salary-employee-header .employee-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+}
+
+#salaryModal .salary-employee-header .employee-details h4 {
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+#salaryModal .salary-employee-header .employee-details p {
+    font-size: 12px;
+}
+
+#salaryModal .current-salary-section {
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+#salaryModal .current-salary-section h4 {
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+#salaryModal .salary-summary-grid {
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+#salaryModal .salary-card .salary-label {
+    font-size: 11px;
+}
+
+#salaryModal .salary-card .salary-value {
+    font-size: 15px;
+}
+
+#salaryModal .salary-effective-from {
+    font-size: 11px;
+    padding-top: 6px;
+}
+
+/* Form Section Compact */
+#salaryModal .form-section {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+}
+
+#salaryModal .form-section h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+#salaryModal .form-row {
+    gap: 12px;
+}
+
+#salaryModal .form-group label {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+#salaryModal .form-group input,
+#salaryModal .form-group select {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+/* Salary Breakdown Compact */
+#salaryModal .salary-breakdown-grid {
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+#salaryModal .salary-breakdown-column {
+    padding: 10px;
+}
+
+#salaryModal .salary-breakdown-column h5 {
+    font-size: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+}
+
+#salaryModal .breakdown-item {
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+#salaryModal .salary-totals {
+    padding: 10px;
+    gap: 6px;
+}
+
+#salaryModal .salary-total-row {
+    font-size: 12px;
+}
+
+#salaryModal .salary-total-row.net {
+    font-size: 13px;
+}
+
+/* Salary History Table Compact */
+#salaryModal .form-section.compact {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+}
+
+#salaryModal .salary-history-table.compact {
+    font-size: 12px;
+}
+
+#salaryModal .salary-history-table.compact th {
+    padding: 8px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-elevated);
+}
+
+#salaryModal .salary-history-table.compact td {
+    padding: 8px 10px;
+}
+
+#salaryModal .salary-history-table.compact .period-cell {
+    white-space: nowrap;
+}
+
+#salaryModal .salary-history-table.compact .current-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    margin-left: 6px;
+}
+
+#salaryModal .salary-history-table.compact .scheduled-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    margin-left: 6px;
+    background: var(--color-info);
+    color: var(--text-inverse);
+    border-radius: 4px;
+}
+
+#salaryModal .salary-history-table.compact tr.future-salary {
+    opacity: 0.85;
+}
+
+#salaryModal .salary-history-table.compact .revision-type {
+    text-transform: capitalize;
+    font-size: 11px;
+}
+
+/* Salary Actions Column */
+.salary-history-table .actions-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.salary-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.salary-actions .btn-icon {
+    padding: 4px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.salary-actions .btn-icon:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.salary-actions .btn-icon.btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.salary-actions .btn-icon.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+.salary-actions .btn-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Error Alert Compact */
+#salaryModal .salary-breakdown-error .error-alert {
+    padding: 10px 12px;
+    font-size: 12px;
+}
+
+/* Modal Footer Compact */
+#salaryModal .modal-footer {
+    padding: 12px 16px;
+}

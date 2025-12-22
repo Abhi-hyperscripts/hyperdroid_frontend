@@ -1560,6 +1560,24 @@ class API {
         return this.request(`/hrms/payroll/employee/${employeeId}/salary/revisions`);
     }
 
+    // --- Salary Entry Management (Edit/Delete scheduled entries) ---
+    async canDeleteSalaryEntry(salaryId) {
+        return this.request(`/hrms/payroll/salary/${salaryId}/can-delete`);
+    }
+
+    async deleteSalaryEntry(salaryId) {
+        return this.request(`/hrms/payroll/salary/${salaryId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async updateScheduledSalaryEntry(salaryId, data) {
+        return this.request(`/hrms/payroll/salary/${salaryId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
     // --- Payroll Runs ---
     async getPayrollRuns(year = null, month = null) {
         let query = '';

@@ -1441,40 +1441,194 @@ async function openSalaryModal(employeeId) {
 
 async function loadSalaryHistory(employeeId) {
     try {
-        const history = await api.getEmployeeSalaryHistory(employeeId);
+        // Use revisions endpoint which tracks all salary changes including same-day updates
+        const revisions = await api.getEmployeeSalaryRevisions(employeeId);
         const tbody = document.getElementById('salaryHistoryTableBody');
 
-        if (!history || history.length === 0) {
+        if (!revisions || revisions.length === 0) {
             document.getElementById('salaryHistorySection').style.display = 'none';
             return;
         }
 
         document.getElementById('salaryHistorySection').style.display = 'block';
 
-        tbody.innerHTML = history.map(item => {
-            const effectiveFrom = item.effective_from ? new Date(item.effective_from).toLocaleDateString() : '-';
-            const effectiveTo = item.effective_to ? new Date(item.effective_to).toLocaleDateString() : 'Present';
-            const isCurrent = item.is_current || !item.effective_to;
-            const revisionType = item.revision_reason || item.revision_type || '-';
+        // Sort by created_at descending (most recent first)
+        const sortedRevisions = revisions.sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Build rows - we need to check can_delete status for scheduled entries
+        const rows = await Promise.all(sortedRevisions.map(async (item, index) => {
+            const effectiveDate = item.effective_date ? new Date(item.effective_date).toLocaleDateString() : '-';
+            const effectiveDateObj = item.effective_date ? new Date(item.effective_date) : null;
+
+            // A salary is "current" if its effective_from <= today AND no newer salary has started yet
+            // Find the most recent salary that has actually started (effective_from <= today)
+            const startedRevisions = sortedRevisions.filter(r => {
+                const effDate = r.effective_date ? new Date(r.effective_date) : null;
+                return effDate && effDate <= today;
+            });
+            const currentRevision = startedRevisions.length > 0 ? startedRevisions[0] : null;
+            const isCurrent = currentRevision && item.id === currentRevision.id;
+
+            // Check if this is a future revision (not yet effective)
+            const isFuture = effectiveDateObj && effectiveDateObj > today;
+
+            const revisionType = item.revision_type || '-';
+            const changeInfo = item.old_ctc && item.new_ctc
+                ? `${formatCurrency(item.old_ctc)} → ${formatCurrency(item.new_ctc)}`
+                : formatCurrency(item.new_ctc);
+            const percentChange = item.increment_percentage
+                ? `(${item.increment_percentage > 0 ? '+' : ''}${item.increment_percentage.toFixed(1)}%)`
+                : '';
+
+            // Determine which badge to show
+            let badgeHtml = '';
+            if (isCurrent) {
+                badgeHtml = '<span class="current-badge">Current</span>';
+            } else if (isFuture) {
+                badgeHtml = '<span class="scheduled-badge">Scheduled</span>';
+            }
+
+            // Check if this entry can be edited/deleted (only for scheduled entries)
+            // Note: new_salary_id is the ID of the employee_salary record from this revision
+            let actionsHtml = '<span class="text-muted">-</span>';
+            const salaryId = item.new_salary_id;
+            if (isFuture && salaryId) {
+                try {
+                    const canDeleteCheck = await api.canDeleteSalaryEntry(salaryId);
+                    if (canDeleteCheck.can_edit || canDeleteCheck.can_delete) {
+                        actionsHtml = '<div class="salary-actions">';
+                        if (canDeleteCheck.can_edit) {
+                            actionsHtml += `<button class="btn btn-sm btn-icon" onclick="editScheduledSalary('${salaryId}', ${item.new_ctc}, '${item.effective_date}', '${item.revision_type || ''}')" title="Edit">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>`;
+                        }
+                        if (canDeleteCheck.can_delete) {
+                            actionsHtml += `<button class="btn btn-sm btn-icon btn-danger" onclick="deleteScheduledSalary('${salaryId}', '${employeeId}')" title="Delete">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    <line x1="10" y1="11" x2="10" y2="17"/>
+                                    <line x1="14" y1="11" x2="14" y2="17"/>
+                                </svg>
+                            </button>`;
+                        }
+                        actionsHtml += '</div>';
+                    } else {
+                        actionsHtml = `<span class="text-muted" title="${canDeleteCheck.reason || 'Cannot modify'}">Locked</span>`;
+                    }
+                } catch (err) {
+                    console.warn('Could not check delete status for salary:', salaryId, err);
+                    actionsHtml = '<span class="text-muted">-</span>';
+                }
+            }
 
             return `
-                <tr class="${isCurrent ? 'current-salary' : ''}">
+                <tr class="${isCurrent ? 'current-salary' : ''} ${isFuture ? 'future-salary' : ''}">
                     <td class="period-cell">
-                        <div class="period-dates">
-                            ${effectiveFrom} - ${effectiveTo}
-                        </div>
-                        ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
+                        <div class="period-dates">${effectiveDate}</div>
+                        ${badgeHtml}
                     </td>
-                    <td>${formatCurrency(item.ctc)}</td>
-                    <td>${formatCurrency(item.gross / 12)}</td>
-                    <td>${formatCurrency(item.net / 12)}</td>
+                    <td>${changeInfo}</td>
+                    <td class="change-percent ${item.increment_percentage > 0 ? 'positive' : item.increment_percentage < 0 ? 'negative' : ''}">${percentChange}</td>
                     <td class="revision-type">${revisionType.replace(/_/g, ' ')}</td>
+                    <td class="actions-cell">${actionsHtml}</td>
                 </tr>
             `;
-        }).join('');
+        }));
+
+        tbody.innerHTML = rows.join('');
     } catch (error) {
         console.error('Error loading salary history:', error);
         document.getElementById('salaryHistorySection').style.display = 'none';
+    }
+}
+
+// Edit scheduled salary entry
+async function editScheduledSalary(salaryId, currentCTC, effectiveDate, revisionReason) {
+    // Store the salary ID for later use
+    window.editingSalaryId = salaryId;
+
+    // Populate the edit modal
+    document.getElementById('editSalaryCTC').value = currentCTC;
+    document.getElementById('editSalaryEffectiveFrom').value = effectiveDate.split('T')[0];
+    document.getElementById('editSalaryRevisionReason').value = revisionReason || '';
+
+    openModal('editScheduledSalaryModal');
+}
+
+// Save edited scheduled salary
+async function saveScheduledSalaryEdit() {
+    const salaryId = window.editingSalaryId;
+    if (!salaryId) {
+        showToast('No salary entry selected for editing', 'error');
+        return;
+    }
+
+    const ctc = parseFloat(document.getElementById('editSalaryCTC').value);
+    const effectiveFrom = document.getElementById('editSalaryEffectiveFrom').value;
+    const revisionReason = document.getElementById('editSalaryRevisionReason').value;
+
+    if (!ctc || ctc <= 0) {
+        showToast('Please enter a valid CTC amount', 'error');
+        return;
+    }
+
+    if (!effectiveFrom) {
+        showToast('Please enter an effective date', 'error');
+        return;
+    }
+
+    try {
+        await api.updateScheduledSalaryEntry(salaryId, {
+            ctc: ctc,
+            effective_from: effectiveFrom,
+            revision_reason: revisionReason
+        });
+
+        showToast('Scheduled salary updated successfully', 'success');
+        closeModal('editScheduledSalaryModal');
+
+        // Reload salary history
+        const employeeId = document.getElementById('salaryEmployeeId').value;
+        if (employeeId) {
+            await loadSalaryHistory(employeeId);
+        }
+    } catch (error) {
+        console.error('Error updating scheduled salary:', error);
+        showToast(error.message || 'Failed to update scheduled salary', 'error');
+    }
+}
+
+// Delete scheduled salary entry
+async function deleteScheduledSalary(salaryId, employeeId) {
+    const confirmed = await showConfirm(
+        'Are you sure you want to delete this scheduled salary entry? This action cannot be undone.',
+        'Delete Scheduled Salary',
+        'warning'
+    );
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        await api.deleteSalaryEntry(salaryId);
+        showToast('Scheduled salary entry deleted successfully', 'success');
+
+        // Reload salary history
+        if (employeeId) {
+            await loadSalaryHistory(employeeId);
+        }
+    } catch (error) {
+        console.error('Error deleting scheduled salary:', error);
+        showToast(error.message || 'Failed to delete scheduled salary entry', 'error');
     }
 }
 
@@ -1503,19 +1657,25 @@ async function previewSalaryBreakdown() {
     }
 }
 
+// Track if salary breakdown has validation errors
+let salaryBreakdownHasErrors = false;
+
 function renderSalaryBreakdown(breakdown) {
     const grid = document.getElementById('salaryBreakdownGrid');
     let html = '';
+    salaryBreakdownHasErrors = false;
 
     // Earnings
     if (breakdown.earnings && breakdown.earnings.length > 0) {
         html += '<div class="salary-breakdown-column earnings">';
         html += '<h5>Earnings</h5>';
         breakdown.earnings.forEach(e => {
+            const isNegative = e.monthly_amount < 0;
+            if (isNegative) salaryBreakdownHasErrors = true;
             html += `
-                <div class="breakdown-item">
-                    <span class="item-name">${e.component_name}</span>
-                    <span class="item-value">${formatCurrency(e.monthly_amount)}</span>
+                <div class="breakdown-item ${isNegative ? 'error' : ''}">
+                    <span class="item-name">${e.component_name}${e.is_balance_component ? ' (Balance)' : ''}</span>
+                    <span class="item-value ${isNegative ? 'negative' : ''}">${formatCurrency(e.monthly_amount)}</span>
                 </div>
             `;
         });
@@ -1538,6 +1698,28 @@ function renderSalaryBreakdown(breakdown) {
     }
 
     grid.innerHTML = html;
+
+    // Show/hide error message
+    let errorDiv = document.getElementById('salaryBreakdownError');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'salaryBreakdownError';
+        errorDiv.className = 'salary-breakdown-error';
+        grid.parentElement.insertBefore(errorDiv, grid);
+    }
+
+    if (salaryBreakdownHasErrors) {
+        errorDiv.innerHTML = `
+            <div class="info-alert">
+                <strong>Note:</strong> The balance component (Special Allowance) is negative because the CTC
+                (₹${(parseFloat(document.getElementById('salaryCTC').value) || 0).toLocaleString('en-IN')})
+                is less than the sum of fixed components. This is allowed but may need review.
+            </div>
+        `;
+        errorDiv.style.display = 'block';
+    } else {
+        errorDiv.style.display = 'none';
+    }
 
     // Update totals (backend returns annual amounts, convert to monthly)
     document.getElementById('previewMonthlyGross').textContent = formatCurrency(breakdown.gross / 12);

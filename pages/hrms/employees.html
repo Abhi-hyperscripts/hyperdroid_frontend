@@ -760,17 +760,17 @@
                     </form>
 
                     <!-- Salary History Section -->
-                    <div class="form-section" id="salaryHistorySection" style="display: none;">
+                    <div class="form-section compact" id="salaryHistorySection" style="display: none;">
                         <h4>Salary History</h4>
                         <div class="salary-history-table-wrapper">
-                            <table class="salary-history-table">
+                            <table class="salary-history-table compact">
                                 <thead>
                                     <tr>
-                                        <th>Period</th>
-                                        <th>Annual CTC</th>
-                                        <th>Monthly Gross</th>
-                                        <th>Monthly Net</th>
-                                        <th>Revision Type</th>
+                                        <th style="width: 22%;">Date</th>
+                                        <th style="width: 28%;">CTC</th>
+                                        <th style="width: 12%;">Change</th>
+                                        <th style="width: 18%;">Type</th>
+                                        <th style="width: 20%;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="salaryHistoryTableBody">
@@ -784,6 +784,46 @@
                     <button class="btn btn-primary" onclick="saveEmployeeSalary()" id="saveSalaryBtn">
                         <span id="saveSalaryBtnText">Save Salary</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Scheduled Salary Modal -->
+    <div class="modal" id="editScheduledSalaryModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Scheduled Salary</h3>
+                    <button class="close-btn" onclick="closeModal('editScheduledSalaryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 6px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <small>This salary entry has not been used in any payroll processing yet, so it can be edited.</small>
+                    </div>
+                    <form id="editScheduledSalaryForm">
+                        <div class="form-group">
+                            <label for="editSalaryCTC">Annual CTC *</label>
+                            <input type="number" id="editSalaryCTC" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editSalaryEffectiveFrom">Effective From *</label>
+                            <input type="date" id="editSalaryEffectiveFrom" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editSalaryRevisionReason">Revision Reason</label>
+                            <input type="text" id="editSalaryRevisionReason" class="form-control" placeholder="e.g., Annual Increment, Correction">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('editScheduledSalaryModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveScheduledSalaryEdit()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -803,36 +843,19 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <!-- Employee Info Header -->
-                    <div class="transfer-employee-header">
-                        <div class="employee-info">
-                            <div class="employee-avatar" id="transferEmployeeAvatar">-</div>
-                            <div class="employee-details">
-                                <h4 id="transferEmployeeName">-</h4>
-                                <p id="transferEmployeeCode">-</p>
+                    <!-- Compact Employee Card with Current Assignment -->
+                    <div class="transfer-employee-card">
+                        <div class="employee-avatar" id="transferEmployeeAvatar">-</div>
+                        <div class="employee-card-content">
+                            <div class="employee-card-header">
+                                <span class="employee-name" id="transferEmployeeName">-</span>
+                                <span class="employee-code" id="transferEmployeeCode">-</span>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Current Assignment -->
-                    <div class="current-assignment-section">
-                        <h4>Current Assignment</h4>
-                        <div class="assignment-grid">
-                            <div class="assignment-item">
-                                <span class="assignment-label">Office</span>
-                                <span class="assignment-value" id="currentOfficeName">-</span>
-                            </div>
-                            <div class="assignment-item">
-                                <span class="assignment-label">Department</span>
-                                <span class="assignment-value" id="currentDepartmentName">-</span>
-                            </div>
-                            <div class="assignment-item">
-                                <span class="assignment-label">Designation</span>
-                                <span class="assignment-value" id="currentDesignationName">-</span>
-                            </div>
-                            <div class="assignment-item">
-                                <span class="assignment-label">Manager</span>
-                                <span class="assignment-value" id="currentManagerName">-</span>
+                            <div class="assignment-row">
+                                <span class="assign-item"><span class="assign-icon">📍</span><span id="currentOfficeName">-</span></span>
+                                <span class="assign-item"><span class="assign-icon">🏢</span><span id="currentDepartmentName">-</span></span>
+                                <span class="assign-item"><span class="assign-icon">💼</span><span id="currentDesignationName">-</span></span>
+                                <span class="assign-item"><span class="assign-icon">👤</span><span id="currentManagerName">-</span></span>
                             </div>
                         </div>
                     </div>
