@@ -25,6 +25,28 @@
     border-color: var(--gray-500);
 }
 
+/* Button Spinner */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--spinner-track, rgba(255, 255, 255, 0.3));
+    border-radius: 50%;
+    border-top-color: var(--text-inverse, #fff);
+    animation: btn-spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.btn-secondary .btn-spinner {
+    border-color: var(--border-color);
+    border-top-color: var(--brand-primary);
+}
+
+@keyframes btn-spin {
+    to { transform: rotate(360deg); }
+}
+
 .btn-secondary {
     background-color: var(--gray-100);
     border-color: var(--border-color-light);
@@ -1029,26 +1051,87 @@
     font-weight: 500;
 }
 
+/* Selected User Info Display - Premium Card Style */
 .user-info-display {
-    background-color: var(--bg-elevated);
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border-color-light);
+    background: linear-gradient(135deg, var(--brand-primary-light, rgba(99, 102, 241, 0.08)) 0%, var(--bg-secondary) 100%);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--brand-primary-border, rgba(99, 102, 241, 0.2));
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06);
+}
+
+.user-info-display::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--brand-primary);
+    border-radius: 12px 0 0 12px;
+}
+
+.user-info-display .form-group {
+    margin-bottom: 0;
+    flex: 1;
 }
 
 .user-info-display .form-group label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    color: var(--brand-primary);
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: block;
 }
 
 .user-info-display .readonly-field {
     background-color: transparent;
     border: none;
-    padding: 4px 0;
-    font-size: 0.9rem;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-info-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover, #4f46e5) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.user-info-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--color-success, #10b981) 0%, #059669 100%);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    margin-left: auto;
+}
+
+.user-info-badge svg {
+    width: 14px;
+    height: 14px;
 }
 
 /* View Employee Styles */
@@ -4486,62 +4569,433 @@ input:checked + .slider:before {
     flex: 1;
 }
 
-/* Compact Photo Upload for Wizard */
+/* Photo-Info Row Layout - Large Version */
+.photo-info-row-large {
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.photo-info-row-large .photo-col-large {
+    flex: 0 0 185px;
+    max-width: 185px;
+}
+
+.photo-info-row-large .info-col-large {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.photo-info-row-large .info-col-large .form-group {
+    margin-bottom: 0;
+}
+
+/* Equal Width Columns */
+.equal-width {
+    display: flex;
+    gap: 16px;
+}
+
+.equal-width .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* Large Passport Size Photo Upload */
+.photo-upload-passport-large {
+    margin-bottom: 0;
+}
+
+.photo-upload-passport-large > label {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.photo-dropzone-passport-large {
+    width: 175px;
+    height: 200px; /* Passport-style ratio */
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.08)),
+        inset 0 1px 0 var(--highlight-color, rgba(255, 255, 255, 0.05));
+}
+
+.photo-dropzone-passport-large:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 25px var(--brand-shadow, rgba(99, 102, 241, 0.15)),
+        0 4px 10px var(--shadow-color, rgba(0, 0, 0, 0.08)),
+        inset 0 1px 0 var(--highlight-color, rgba(255, 255, 255, 0.1));
+}
+
+/* Large Passport Empty State */
+.photo-dropzone-passport-large .photo-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    padding: 20px 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.photo-icon-medium {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark, var(--brand-primary)) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-inverse);
+    box-shadow:
+        0 6px 20px var(--brand-shadow, rgba(99, 102, 241, 0.35)),
+        0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.1));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photo-dropzone-passport-large:hover .photo-icon-medium {
+    transform: scale(1.1);
+    box-shadow:
+        0 8px 28px var(--brand-shadow, rgba(99, 102, 241, 0.45)),
+        0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.12));
+}
+
+/* Subtle pulse animation on icon */
+.photo-icon-medium::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--brand-primary);
+    opacity: 0;
+    animation: photo-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes photo-pulse {
+    0%, 100% { opacity: 0; transform: scale(0.95); }
+    50% { opacity: 0.3; transform: scale(1.05); }
+}
+
+.photo-dropzone-passport-large:hover .photo-icon-medium::after {
+    animation-play-state: paused;
+    opacity: 0;
+}
+
+/* Icon position for pseudo-elements */
+.photo-icon-medium {
+    position: relative;
+}
+
+.photo-text-medium {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    letter-spacing: -0.01em;
+}
+
+.photo-hint-small {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.4;
+    opacity: 0.8;
+}
+
+/* Large Passport Image Preview */
+.photo-dropzone-passport-large .photo-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.photo-dropzone-passport-large .photo-preview-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.photo-dropzone-passport-large .photo-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-danger, #ef4444);
+    border: 2px solid var(--bg-primary, #fff);
+    color: var(--text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.2));
+    padding: 0;
+}
+
+.photo-dropzone-passport-large .photo-remove-btn:hover {
+    background: var(--color-danger-dark, #dc2626);
+    transform: scale(1.12);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.25));
+}
+
+/* Legacy Photo-Info Row Layout */
+.photo-info-row {
+    align-items: flex-start;
+}
+
+.photo-info-row .photo-col {
+    flex: 0 0 130px;
+    max-width: 130px;
+}
+
+.photo-info-row .info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.photo-info-row .info-col .form-group {
+    margin-bottom: 0;
+}
+
+.compact-row {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    gap: 12px;
+}
+
+.compact-row .form-group {
+    margin-bottom: 0;
+}
+
+/* Legacy Passport Size Photo Upload */
+.photo-upload-passport {
+    margin-bottom: 0;
+}
+
+.photo-upload-passport > label {
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.photo-dropzone-passport {
+    width: 120px;
+    height: 150px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.photo-dropzone-passport:hover {
+    border-color: var(--brand-primary);
+    background: linear-gradient(180deg, var(--brand-primary-alpha, rgba(99, 102, 241, 0.08)) 0%, var(--bg-secondary) 100%);
+    box-shadow: 0 4px 12px var(--brand-shadow, rgba(99, 102, 241, 0.15));
+}
+
+/* Passport Empty State */
+.photo-dropzone-passport .photo-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    padding: 12px;
+}
+
+.photo-icon-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark, var(--brand-primary)) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-inverse);
+    box-shadow: 0 3px 12px var(--brand-shadow, rgba(99, 102, 241, 0.25));
+    transition: transform 0.2s ease;
+}
+
+.photo-dropzone-passport:hover .photo-icon-small {
+    transform: scale(1.08);
+}
+
+.photo-text-small {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Passport Image Preview */
+.photo-dropzone-passport .photo-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.photo-dropzone-passport .photo-preview-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.photo-dropzone-passport .photo-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-danger, #ef4444);
+    border: 2px solid var(--bg-primary, #fff);
+    color: var(--text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px var(--shadow-color, rgba(0, 0, 0, 0.25));
+    padding: 0;
+}
+
+.photo-dropzone-passport .photo-remove-btn:hover {
+    background: var(--color-danger-dark, #dc2626);
+    transform: scale(1.1);
+}
+
+/* Legacy Modern Photo Upload (keep for backward compatibility) */
+.photo-upload-modern {
+    margin-bottom: 0;
+}
+
+.photo-dropzone {
+    width: 100%;
+    height: 160px;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.photo-dropzone:hover {
+    border-color: var(--brand-primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, var(--bg-secondary) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+/* Empty State */
+.photo-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+}
+
+.photo-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover, #4f46e5) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.photo-dropzone:hover .photo-icon {
+    transform: scale(1.1);
+}
+
+.photo-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.photo-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Image Preview */
+.photo-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.photo-preview-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.photo-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    border: 2px solid white;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.photo-remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* Legacy support */
 .photo-upload-group-compact {
     margin-bottom: 0;
 }
 
-.photo-upload-compact {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.photo-preview-sm {
-    width: 64px;
-    height: 64px;
-    border-radius: 8px;
-    background: var(--bg-elevated);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border: 1px solid var(--border-color-light);
-}
-
-.photo-preview-sm .photo-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-}
-
-.photo-preview-sm .photo-placeholder svg {
-    width: 28px;
-    height: 28px;
-}
-
-.photo-preview-sm .photo-placeholder span {
-    display: none;
-}
-
-.photo-preview-sm img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.photo-btns {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
 .btn-xs {
-    padding: 4px 8px !important;
-    font-size: 0.7rem !important;
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
     height: auto !important;
+    border-radius: 6px !important;
 }
 
 /* Wizard Footer */
@@ -4567,31 +5021,83 @@ input:checked + .slider:before {
     height: 14px;
 }
 
-/* Compact Document Grid for Wizard */
+/* ============================================
+   Document Upload Grid - Step 4 Wizard
+   Theme-aware with no hardcoded colors
+   ============================================ */
+
 .document-grid-compact {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .document-item-compact {
-    padding: 12px;
-    background: var(--bg-elevated);
+    padding: 12px 14px;
+    background: var(--bg-card);
     border-radius: 8px;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
 }
 
-.doc-header-compact {
+.document-item-compact:hover {
+    border-color: var(--brand-primary);
+}
+
+.document-item-compact[data-doc-type="passport"] {
+    opacity: 0.9;
+}
+
+/* Inline Header with Label and Input */
+.doc-header-inline {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-.doc-header-compact .doc-label {
-    font-size: 0.78rem;
+.doc-label-section {
+    flex-shrink: 0;
+    min-width: 140px;
+}
+
+.doc-header-inline .doc-label {
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.doc-header-inline .doc-label .required {
+    color: var(--color-danger);
+}
+
+.doc-input-inline {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.doc-input-inline:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px var(--brand-primary-light);
+}
+
+.doc-input-inline::placeholder {
+    color: var(--text-muted);
+}
+
+.doc-input-date {
+    flex: 0 0 140px;
 }
 
 .optional-badge {
@@ -4599,91 +5105,249 @@ input:checked + .slider:before {
     font-weight: 500;
     color: var(--text-muted);
     background: var(--bg-elevated);
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 2px 8px;
+    border-radius: 8px;
     margin-left: 6px;
+    border: 1px solid var(--border-color-light);
 }
 
-.doc-row {
+/* Upload Cards Row - Full Width Layout */
+.doc-uploads-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.doc-uploads-single {
+    grid-template-columns: 1fr;
+    max-width: 50%;
+}
+
+/* Individual Upload Card - Larger Size */
+.doc-upload-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 150px;
+}
+
+.doc-upload-card-wide {
+    min-height: 170px;
+}
+
+/* Upload Placeholder (before file selected) */
+.doc-upload-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
-    align-items: center;
+    background: var(--bg-elevated);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.doc-row input[type="text"],
-.doc-row input[type="date"] {
-    flex: 1;
-    min-width: 0;
+.doc-upload-placeholder:hover {
+    border-color: var(--brand-primary);
+    border-style: solid;
+    background: var(--bg-elevated);
 }
 
-.doc-upload-compact {
+.doc-upload-placeholder:hover .upload-icon {
+    color: var(--brand-primary);
+    transform: scale(1.1);
+}
+
+.doc-upload-placeholder:hover .upload-text {
+    color: var(--text-primary);
+}
+
+.doc-upload-placeholder:hover .upload-hint {
+    color: var(--text-secondary);
+}
+
+.upload-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.upload-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.upload-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Upload Preview (after file selected) */
+.doc-upload-preview {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--color-success);
+    background: var(--bg-elevated);
+}
+
+.doc-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.doc-thumbnail:hover {
+    transform: scale(1.02);
+}
+
+.doc-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: linear-gradient(to bottom, var(--bg-overlay), transparent);
 }
 
-.upload-btn-sm {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: 1px solid var(--gray-300);
-    background: var(--bg-card);
+.preview-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-inverse);
+    background: var(--color-success);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.preview-remove-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-danger);
+    color: var(--text-inverse);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: var(--text-secondary);
+    opacity: 0.9;
 }
 
-.upload-btn-sm:hover {
-    background: var(--bg-elevated);
-    border-color: var(--text-muted);
-    color: var(--text-primary);
+.preview-remove-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
-.upload-btn-sm.has-file {
-    background: var(--color-success-light);
-    border-color: var(--color-success);
-    color: var(--color-success);
-}
-
-.doc-preview-inline {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--color-success-light);
-    padding: 4px 8px;
+.doc-zoom-hint {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: var(--text-inverse);
+    background: var(--bg-overlay);
+    padding: 2px 8px;
     border-radius: 4px;
-    max-width: 120px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
-.doc-preview-inline .file-name {
-    font-size: 0.68rem;
-    color: var(--color-success-text);
-    white-space: nowrap;
+.doc-upload-preview:hover .doc-zoom-hint {
+    opacity: 1;
+}
+
+/* Document Zoom Modal */
+.doc-zoom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-overlay);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.doc-zoom-modal.active {
+    display: flex;
+}
+
+.doc-zoom-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: var(--bg-card);
+    border-radius: 12px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 80px;
+    box-shadow: 0 20px 60px var(--shadow-color);
 }
 
-.remove-btn-sm {
-    width: 18px;
-    height: 18px;
+.doc-zoom-content img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    display: block;
+}
+
+.doc-zoom-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: none;
-    background: var(--color-danger-light);
-    color: var(--color-danger);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
 }
 
-.remove-btn-sm:hover {
-    background: var(--color-danger-light);
+.doc-zoom-close:hover {
+    background: var(--color-danger);
+    color: var(--text-inverse);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .doc-header-inline {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .doc-input-inline {
+        width: 100%;
+        max-width: none;
+    }
+
+    .doc-uploads-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Responsive adjustments for wizard */
@@ -7503,8 +8167,8 @@ input:checked + .slider:before {
     justify-content: space-between;
     gap: 16px;
     padding: 14px 16px;
-    background: var(--color-success-light);
-    border: 1px solid var(--color-success);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
 }
 
@@ -7518,17 +8182,17 @@ input:checked + .slider:before {
     gap: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-success-text);
+    color: var(--text-primary);
     margin-bottom: 4px;
 }
 
 .toggle-title svg {
-    color: var(--color-success);
+    color: var(--brand-primary);
 }
 
 .toggle-description {
     font-size: 12px;
-    color: var(--color-success);
+    color: var(--text-secondary);
     margin: 0;
     line-height: 1.4;
 }

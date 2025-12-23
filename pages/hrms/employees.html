@@ -253,10 +253,16 @@
                             </div>
 
                             <!-- User Info Display (read-only from Auth service) -->
-                            <div class="form-row user-info-display" id="userInfoDisplay" style="display: none;">
+                            <div class="user-info-display" id="userInfoDisplay" style="display: none;">
                                 <input type="hidden" id="firstName">
                                 <input type="hidden" id="lastName">
                                 <input type="hidden" id="workEmail">
+                                <div class="user-info-avatar">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
                                 <div class="form-group">
                                     <label>Name</label>
                                     <div class="readonly-field" id="userNameDisplay">-</div>
@@ -265,57 +271,74 @@
                                     <label>Email</label>
                                     <div class="readonly-field" id="userEmailDisplay">-</div>
                                 </div>
+                                <div class="user-info-badge">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                    </svg>
+                                    Selected
+                                </div>
                             </div>
 
                             <!-- Photo and Basic Info in two columns -->
-                            <div class="wizard-two-col">
-                                <div class="wizard-col">
-                                    <div class="form-group photo-upload-group-compact">
+                            <div class="wizard-two-col photo-info-row-large">
+                                <div class="wizard-col photo-col-large">
+                                    <div class="form-group photo-upload-passport-large">
                                         <label>Photo <span class="required">*</span></label>
-                                        <div class="photo-upload-compact">
-                                            <div class="photo-preview-sm" id="photoPreview">
-                                                <div class="photo-placeholder" id="photoPlaceholder">
+                                        <div class="photo-dropzone-passport-large" id="photoDropzone" onclick="triggerFileUpload('photo')">
+                                            <input type="file" id="photo-file" accept=".jpg,.jpeg,.png" hidden onchange="handlePhotoSelect(this)">
+
+                                            <!-- Empty State -->
+                                            <div class="photo-empty-state" id="photoPlaceholder">
+                                                <div class="photo-icon-medium">
                                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                                         <circle cx="12" cy="7" r="4"/>
                                                     </svg>
                                                 </div>
-                                                <img id="photoImage" src="" alt="Employee Photo" style="display: none;">
+                                                <span class="photo-text-medium">Upload Photo</span>
+                                                <span class="photo-hint-small">JPG, PNG up to 5MB</span>
                                             </div>
-                                            <div class="photo-btns">
-                                                <input type="file" id="photo-file" accept=".jpg,.jpeg,.png" hidden onchange="handlePhotoSelect(this)">
-                                                <button type="button" class="btn btn-outline btn-xs" onclick="triggerFileUpload('photo')">Upload</button>
-                                                <button type="button" class="btn btn-danger btn-xs" id="removePhotoBtn" onclick="removePhoto()" style="display: none;">Remove</button>
+
+                                            <!-- Image Preview -->
+                                            <div class="photo-preview-wrapper" id="photoPreview" style="display: none;">
+                                                <img id="photoImage" src="" alt="Employee Photo">
+                                                <button type="button" class="photo-remove-btn" onclick="event.stopPropagation(); removePhoto();" title="Remove photo">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
                                             </div>
                                         </div>
                                         <input type="hidden" id="photo-doc-id">
                                     </div>
                                 </div>
-                                <div class="wizard-col">
-                                    <div class="form-group">
-                                        <label>Employee Code <span class="required">*</span></label>
-                                        <input type="text" id="employeeCode" required placeholder="EMP001">
+                                <div class="wizard-col info-col-large">
+                                    <div class="form-row two-col equal-width">
+                                        <div class="form-group">
+                                            <label>Employee Code <span class="required">*</span></label>
+                                            <input type="text" id="employeeCode" required placeholder="EMP001">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Work Phone <span class="required">*</span></label>
+                                            <input type="tel" id="workPhone" placeholder="+91-9876543210" required>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Work Phone <span class="required">*</span></label>
-                                        <input type="tel" id="workPhone" placeholder="+91-9876543210" required>
+                                    <div class="form-row two-col equal-width">
+                                        <div class="form-group">
+                                            <label>Date of Birth <span class="required">*</span></label>
+                                            <input type="date" id="dateOfBirth" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Gender</label>
+                                            <select id="gender">
+                                                <option value="">Select...</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label>Date of Birth <span class="required">*</span></label>
-                                    <input type="date" id="dateOfBirth" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Gender</label>
-                                    <select id="gender">
-                                        <option value="">Select...</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -424,8 +447,8 @@
                             </div>
                             <div class="form-row two-col">
                                 <div class="form-group">
-                                    <label>IFSC Code <span class="required">*</span></label>
-                                    <input type="text" id="ifscCode" placeholder="e.g. HDFC0001234" pattern="^[A-Z]{4}0[A-Z0-9]{6}$" style="text-transform: uppercase;">
+                                    <label>IFSC / SWIFT / BIC / IBAN <span class="required">*</span></label>
+                                    <input type="text" id="ifscCode" placeholder="Bank routing code" style="text-transform: uppercase;">
                                 </div>
                                 <div class="form-group">
                                     <label>Branch Name</label>
@@ -437,124 +460,130 @@
 
                         <!-- Step 4: Identity Documents -->
                         <div class="wizard-panel" id="employeeStep4">
-                            <p class="wizard-step-hint">Photo, PAN Card (front & back), and Aadhar Card (front & back) are mandatory</p>
+                            <p class="wizard-step-hint">Photo, Tax ID (front & back), and National ID (front & back) are mandatory</p>
                             <div class="document-grid-compact" id="documentUploadGrid">
-                                <!-- PAN Card -->
+                                <!-- Tax ID / PAN Card -->
                                 <div class="document-item-compact" data-doc-type="pan">
-                                    <div class="doc-header-compact">
-                                        <span class="doc-label">PAN Card <span class="required">*</span></span>
-                                        <span class="doc-status" id="pan-status"></span>
+                                    <div class="doc-header-inline">
+                                        <div class="doc-label-section">
+                                            <span class="doc-label">Tax ID / PAN <span class="required">*</span></span>
+                                        </div>
+                                        <input type="text" id="pan-number" class="doc-input-inline" placeholder="Enter ID number" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
                                     </div>
-                                    <div class="doc-row">
-                                        <input type="text" id="pan-number" placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" style="text-transform: uppercase;">
-                                    </div>
-                                    <div class="doc-row doc-row-uploads">
-                                        <!-- PAN Front -->
-                                        <div class="doc-upload-item">
-                                            <span class="upload-label">Front</span>
-                                            <div class="doc-upload-compact">
-                                                <input type="file" id="pan_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_front', this)">
-                                                <button type="button" class="upload-btn-sm" id="pan_front-upload" onclick="triggerFileUpload('pan_front')">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                        <polyline points="17 8 12 3 7 8"/>
-                                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                                    </svg>
-                                                </button>
-                                                <div class="doc-preview-inline" id="pan_front-preview" style="display:none">
-                                                    <span class="file-name"></span>
-                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('pan_front')">
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <line x1="18" y1="6" x2="6" y2="18"/>
-                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                    <div class="doc-uploads-row">
+                                        <!-- Front Side -->
+                                        <div class="doc-upload-card" id="pan_front-card">
+                                            <input type="file" id="pan_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_front', this)">
+                                            <div class="doc-upload-placeholder" id="pan_front-placeholder" onclick="triggerFileUpload('pan_front')">
+                                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <path d="M21 15l-5-5L5 21"/>
+                                                </svg>
+                                                <span class="upload-text">Front Side</span>
+                                                <span class="upload-hint">Click to upload</span>
+                                            </div>
+                                            <div class="doc-upload-preview" id="pan_front-preview-card" style="display:none">
+                                                <img class="doc-thumbnail" id="pan_front-thumb" onclick="openDocumentZoom('pan_front')" alt="Front">
+                                                <div class="doc-preview-overlay">
+                                                    <span class="preview-label">Front</span>
+                                                    <button type="button" class="preview-remove-btn" onclick="removeDocument('pan_front')" title="Remove">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                                                         </svg>
                                                     </button>
                                                 </div>
+                                                <div class="doc-zoom-hint">Click to enlarge</div>
                                             </div>
                                             <input type="hidden" id="pan_front-doc-id">
                                         </div>
-                                        <!-- PAN Back -->
-                                        <div class="doc-upload-item">
-                                            <span class="upload-label">Back</span>
-                                            <div class="doc-upload-compact">
-                                                <input type="file" id="pan_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_back', this)">
-                                                <button type="button" class="upload-btn-sm" id="pan_back-upload" onclick="triggerFileUpload('pan_back')">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                        <polyline points="17 8 12 3 7 8"/>
-                                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                                    </svg>
-                                                </button>
-                                                <div class="doc-preview-inline" id="pan_back-preview" style="display:none">
-                                                    <span class="file-name"></span>
-                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('pan_back')">
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <line x1="18" y1="6" x2="6" y2="18"/>
-                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        <!-- Back Side -->
+                                        <div class="doc-upload-card" id="pan_back-card">
+                                            <input type="file" id="pan_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('pan_back', this)">
+                                            <div class="doc-upload-placeholder" id="pan_back-placeholder" onclick="triggerFileUpload('pan_back')">
+                                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <path d="M21 15l-5-5L5 21"/>
+                                                </svg>
+                                                <span class="upload-text">Back Side</span>
+                                                <span class="upload-hint">Click to upload</span>
+                                            </div>
+                                            <div class="doc-upload-preview" id="pan_back-preview-card" style="display:none">
+                                                <img class="doc-thumbnail" id="pan_back-thumb" onclick="openDocumentZoom('pan_back')" alt="Back">
+                                                <div class="doc-preview-overlay">
+                                                    <span class="preview-label">Back</span>
+                                                    <button type="button" class="preview-remove-btn" onclick="removeDocument('pan_back')" title="Remove">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                                                         </svg>
                                                     </button>
                                                 </div>
+                                                <div class="doc-zoom-hint">Click to enlarge</div>
                                             </div>
                                             <input type="hidden" id="pan_back-doc-id">
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Aadhar Card -->
+                                <!-- National ID / Aadhar / SSN -->
                                 <div class="document-item-compact" data-doc-type="aadhar">
-                                    <div class="doc-header-compact">
-                                        <span class="doc-label">Aadhar Card <span class="required">*</span></span>
-                                        <span class="doc-status" id="aadhar-status"></span>
+                                    <div class="doc-header-inline">
+                                        <div class="doc-label-section">
+                                            <span class="doc-label">National ID / Aadhar <span class="required">*</span></span>
+                                        </div>
+                                        <input type="text" id="aadhar-number" class="doc-input-inline" placeholder="Enter ID number" pattern="[0-9]{12}" maxlength="12">
                                     </div>
-                                    <div class="doc-row">
-                                        <input type="text" id="aadhar-number" placeholder="12 digit number" pattern="[0-9]{12}" maxlength="12">
-                                    </div>
-                                    <div class="doc-row doc-row-uploads">
-                                        <!-- Aadhar Front -->
-                                        <div class="doc-upload-item">
-                                            <span class="upload-label">Front</span>
-                                            <div class="doc-upload-compact">
-                                                <input type="file" id="aadhar_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_front', this)">
-                                                <button type="button" class="upload-btn-sm" id="aadhar_front-upload" onclick="triggerFileUpload('aadhar_front')">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                        <polyline points="17 8 12 3 7 8"/>
-                                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                                    </svg>
-                                                </button>
-                                                <div class="doc-preview-inline" id="aadhar_front-preview" style="display:none">
-                                                    <span class="file-name"></span>
-                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar_front')">
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <line x1="18" y1="6" x2="6" y2="18"/>
-                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                    <div class="doc-uploads-row">
+                                        <!-- Front Side -->
+                                        <div class="doc-upload-card" id="aadhar_front-card">
+                                            <input type="file" id="aadhar_front-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_front', this)">
+                                            <div class="doc-upload-placeholder" id="aadhar_front-placeholder" onclick="triggerFileUpload('aadhar_front')">
+                                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <path d="M21 15l-5-5L5 21"/>
+                                                </svg>
+                                                <span class="upload-text">Front Side</span>
+                                                <span class="upload-hint">Click to upload</span>
+                                            </div>
+                                            <div class="doc-upload-preview" id="aadhar_front-preview-card" style="display:none">
+                                                <img class="doc-thumbnail" id="aadhar_front-thumb" onclick="openDocumentZoom('aadhar_front')" alt="Front">
+                                                <div class="doc-preview-overlay">
+                                                    <span class="preview-label">Front</span>
+                                                    <button type="button" class="preview-remove-btn" onclick="removeDocument('aadhar_front')" title="Remove">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                                                         </svg>
                                                     </button>
                                                 </div>
+                                                <div class="doc-zoom-hint">Click to enlarge</div>
                                             </div>
                                             <input type="hidden" id="aadhar_front-doc-id">
                                         </div>
-                                        <!-- Aadhar Back -->
-                                        <div class="doc-upload-item">
-                                            <span class="upload-label">Back</span>
-                                            <div class="doc-upload-compact">
-                                                <input type="file" id="aadhar_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_back', this)">
-                                                <button type="button" class="upload-btn-sm" id="aadhar_back-upload" onclick="triggerFileUpload('aadhar_back')">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                        <polyline points="17 8 12 3 7 8"/>
-                                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                                    </svg>
-                                                </button>
-                                                <div class="doc-preview-inline" id="aadhar_back-preview" style="display:none">
-                                                    <span class="file-name"></span>
-                                                    <button type="button" class="remove-btn-sm" onclick="removeDocument('aadhar_back')">
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <line x1="18" y1="6" x2="6" y2="18"/>
-                                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        <!-- Back Side -->
+                                        <div class="doc-upload-card" id="aadhar_back-card">
+                                            <input type="file" id="aadhar_back-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('aadhar_back', this)">
+                                            <div class="doc-upload-placeholder" id="aadhar_back-placeholder" onclick="triggerFileUpload('aadhar_back')">
+                                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <path d="M21 15l-5-5L5 21"/>
+                                                </svg>
+                                                <span class="upload-text">Back Side</span>
+                                                <span class="upload-hint">Click to upload</span>
+                                            </div>
+                                            <div class="doc-upload-preview" id="aadhar_back-preview-card" style="display:none">
+                                                <img class="doc-thumbnail" id="aadhar_back-thumb" onclick="openDocumentZoom('aadhar_back')" alt="Back">
+                                                <div class="doc-preview-overlay">
+                                                    <span class="preview-label">Back</span>
+                                                    <button type="button" class="preview-remove-btn" onclick="removeDocument('aadhar_back')" title="Remove">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                                                         </svg>
                                                     </button>
                                                 </div>
+                                                <div class="doc-zoom-hint">Click to enlarge</div>
                                             </div>
                                             <input type="hidden" id="aadhar_back-doc-id">
                                         </div>
@@ -563,35 +592,49 @@
 
                                 <!-- Passport (Optional) -->
                                 <div class="document-item-compact" data-doc-type="passport">
-                                    <div class="doc-header-compact">
-                                        <span class="doc-label">Passport <span class="optional-badge">Optional</span></span>
-                                        <span class="doc-status" id="passport-status"></span>
+                                    <div class="doc-header-inline">
+                                        <div class="doc-label-section">
+                                            <span class="doc-label">Passport <span class="optional-badge">Optional</span></span>
+                                        </div>
+                                        <input type="text" id="passport-number" class="doc-input-inline" placeholder="Passport number" style="text-transform: uppercase;">
+                                        <input type="date" id="passport-expiry" class="doc-input-inline doc-input-date" title="Expiry Date">
                                     </div>
-                                    <div class="doc-row">
-                                        <input type="text" id="passport-number" placeholder="Passport Number" style="text-transform: uppercase; flex: 1;">
-                                        <input type="date" id="passport-expiry" title="Expiry Date" style="flex: 1;">
-                                        <div class="doc-upload-compact">
+                                    <div class="doc-uploads-row doc-uploads-single">
+                                        <div class="doc-upload-card doc-upload-card-wide" id="passport-card">
                                             <input type="file" id="passport-file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="handleDocumentSelect('passport', this)">
-                                            <button type="button" class="upload-btn-sm" id="passport-upload" onclick="triggerFileUpload('passport')">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17 8 12 3 7 8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                            <div class="doc-upload-placeholder" id="passport-placeholder" onclick="triggerFileUpload('passport')">
+                                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <path d="M21 15l-5-5L5 21"/>
                                                 </svg>
-                                            </button>
-                                            <div class="doc-preview-inline" id="passport-preview" style="display:none">
-                                                <span class="file-name"></span>
-                                                <button type="button" class="remove-btn-sm" onclick="removeDocument('passport')">
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                                    </svg>
-                                                </button>
+                                                <span class="upload-text">Passport Photo Page</span>
+                                                <span class="upload-hint">Click to upload</span>
                                             </div>
+                                            <div class="doc-upload-preview" id="passport-preview-card" style="display:none">
+                                                <img class="doc-thumbnail" id="passport-thumb" onclick="openDocumentZoom('passport')" alt="Passport">
+                                                <div class="doc-preview-overlay">
+                                                    <span class="preview-label">Passport</span>
+                                                    <button type="button" class="preview-remove-btn" onclick="removeDocument('passport')" title="Remove">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                <div class="doc-zoom-hint">Click to enlarge</div>
+                                            </div>
+                                            <input type="hidden" id="passport-doc-id">
                                         </div>
                                     </div>
-                                    <input type="hidden" id="passport-doc-id">
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Zoom Modal -->
+                        <div class="doc-zoom-modal" id="docZoomModal" onclick="closeDocumentZoom(event)">
+                            <div class="doc-zoom-content">
+                                <img id="docZoomImage" src="" alt="Document Preview">
+                                <button class="doc-zoom-close" onclick="closeDocumentZoom(event)">&times;</button>
                             </div>
                         </div>
                     </form>

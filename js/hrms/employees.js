@@ -600,6 +600,12 @@ async function saveEmployee() {
         }
     }
 
+    // Disable save button to prevent double-click
+    const saveBtn = document.getElementById('empWizardSaveBtn');
+    const originalBtnHtml = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="btn-spinner"></span> Saving...';
+
     try {
         let employeeId = id;
 
@@ -608,6 +614,10 @@ async function saveEmployee() {
         } else {
             const result = await api.createHrmsEmployee(data);
             employeeId = result.id || result.employee_id || result;
+
+            // Remove the user from availableUsers to prevent re-selection
+            availableUsers = availableUsers.filter(u => u.id !== data.user_id);
+            filteredUsers = filteredUsers.filter(u => u.id !== data.user_id);
         }
 
         // Save bank account
@@ -652,6 +662,10 @@ async function saveEmployee() {
 
     } catch (error) {
         showToast(error.message || 'Error saving employee', 'error');
+    } finally {
+        // Re-enable save button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnHtml;
     }
 }
 
@@ -948,14 +962,38 @@ function handleDocumentSelect(docType, input) {
     // Store for later upload
     pendingDocuments[docType] = file;
 
-    // Show preview
-    const previewEl = document.getElementById(`${docType}-preview`);
-    const uploadArea = document.getElementById(`${docType}-upload`);
+    // New structure: Show thumbnail preview card
+    const placeholderEl = document.getElementById(`${docType}-placeholder`);
+    const previewCardEl = document.getElementById(`${docType}-preview-card`);
+    const thumbEl = document.getElementById(`${docType}-thumb`);
 
-    if (previewEl && uploadArea) {
-        previewEl.querySelector('.file-name').textContent = file.name;
-        previewEl.style.display = 'flex';
-        uploadArea.style.display = 'none';
+    if (placeholderEl && previewCardEl && thumbEl) {
+        // Show thumbnail for images
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                thumbEl.src = e.target.result;
+                placeholderEl.style.display = 'none';
+                previewCardEl.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // PDF - show placeholder icon
+            thumbEl.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="12" y="16" font-size="6" text-anchor="middle" fill="%236b7280">PDF</text></svg>');
+            placeholderEl.style.display = 'none';
+            previewCardEl.style.display = 'block';
+        }
+    } else {
+        // Fallback for old structure (if any)
+        const previewEl = document.getElementById(`${docType}-preview`);
+        const uploadArea = document.getElementById(`${docType}-upload`);
+
+        if (previewEl && uploadArea) {
+            const fileNameEl = previewEl.querySelector('.file-name');
+            if (fileNameEl) fileNameEl.textContent = file.name;
+            previewEl.style.display = 'flex';
+            uploadArea.style.display = 'none';
+        }
     }
 
     // Update status
@@ -963,6 +1001,31 @@ function handleDocumentSelect(docType, input) {
     if (statusEl) {
         statusEl.textContent = 'Pending upload';
         statusEl.className = 'doc-status pending';
+    }
+}
+
+// Open document zoom modal
+function openDocumentZoom(docType) {
+    const thumbEl = document.getElementById(`${docType}-thumb`);
+    const modal = document.getElementById('docZoomModal');
+    const zoomImg = document.getElementById('docZoomImage');
+
+    if (thumbEl && modal && zoomImg) {
+        zoomImg.src = thumbEl.src;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close document zoom modal
+function closeDocumentZoom(event) {
+    // Only close if clicking on the backdrop or close button
+    if (event.target.id === 'docZoomModal' || event.target.classList.contains('doc-zoom-close')) {
+        const modal = document.getElementById('docZoomModal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     }
 }
 
@@ -992,12 +1055,11 @@ function handlePhotoSelect(input) {
     reader.onload = (e) => {
         const photoImage = document.getElementById('photoImage');
         const photoPlaceholder = document.getElementById('photoPlaceholder');
-        const removeBtn = document.getElementById('removePhotoBtn');
+        const photoPreview = document.getElementById('photoPreview');
 
         photoImage.src = e.target.result;
-        photoImage.style.display = 'block';
         photoPlaceholder.style.display = 'none';
-        removeBtn.style.display = 'inline-flex';
+        photoPreview.style.display = 'block';
     };
     reader.readAsDataURL(file);
 }
@@ -1008,12 +1070,24 @@ function removeDocument(docType) {
     const input = document.getElementById(`${docType}-file`);
     if (input) input.value = '';
 
-    const previewEl = document.getElementById(`${docType}-preview`);
-    const uploadArea = document.getElementById(`${docType}-upload`);
+    // New structure: Show placeholder, hide preview card
+    const placeholderEl = document.getElementById(`${docType}-placeholder`);
+    const previewCardEl = document.getElementById(`${docType}-preview-card`);
+    const thumbEl = document.getElementById(`${docType}-thumb`);
 
-    if (previewEl && uploadArea) {
-        previewEl.style.display = 'none';
-        uploadArea.style.display = 'flex';
+    if (placeholderEl && previewCardEl) {
+        placeholderEl.style.display = 'flex';
+        previewCardEl.style.display = 'none';
+        if (thumbEl) thumbEl.src = '';
+    } else {
+        // Fallback for old structure
+        const previewEl = document.getElementById(`${docType}-preview`);
+        const uploadArea = document.getElementById(`${docType}-upload`);
+
+        if (previewEl && uploadArea) {
+            previewEl.style.display = 'none';
+            uploadArea.style.display = 'flex';
+        }
     }
 
     const statusEl = document.getElementById(`${docType}-status`);
@@ -1040,12 +1114,11 @@ function removePhoto() {
 
     const photoImage = document.getElementById('photoImage');
     const photoPlaceholder = document.getElementById('photoPlaceholder');
-    const removeBtn = document.getElementById('removePhotoBtn');
+    const photoPreview = document.getElementById('photoPreview');
 
     photoImage.src = '';
-    photoImage.style.display = 'none';
     photoPlaceholder.style.display = 'flex';
-    removeBtn.style.display = 'none';
+    photoPreview.style.display = 'none';
 
     // Clear doc ID
     document.getElementById('photo-doc-id').value = '';
@@ -1127,13 +1200,12 @@ async function loadEmployeeDocuments(employeeId) {
                         const downloadUrl = await api.getEmployeeDocumentDownloadUrl(employeeId, doc.id);
                         const photoImage = document.getElementById('photoImage');
                         const photoPlaceholder = document.getElementById('photoPlaceholder');
-                        const removeBtn = document.getElementById('removePhotoBtn');
+                        const photoPreview = document.getElementById('photoPreview');
 
                         const photoUrl = downloadUrl.url || downloadUrl;
                         photoImage.src = photoUrl;
-                        photoImage.style.display = 'block';
                         photoPlaceholder.style.display = 'none';
-                        removeBtn.style.display = 'inline-flex';
+                        photoPreview.style.display = 'block';
 
                         // Cache photo URL for table display
                         employeePhotoCache[employeeId] = photoUrl;
@@ -1242,10 +1314,8 @@ function validateBankDetails() {
         return false;
     }
 
-    if (ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
-        showToast('Invalid IFSC code format', 'error');
-        return false;
-    }
+    // Bank routing code is required but format varies by country (IFSC, SWIFT, BIC, IBAN)
+    // Just check if filled, no format validation
 
     return true;
 }
@@ -1322,13 +1392,12 @@ function resetDocumentsAndBanking() {
     // Reset photo
     const photoImage = document.getElementById('photoImage');
     const photoPlaceholder = document.getElementById('photoPlaceholder');
-    const removeBtn = document.getElementById('removePhotoBtn');
+    const photoPreview = document.getElementById('photoPreview');
     if (photoImage) {
         photoImage.src = '';
-        photoImage.style.display = 'none';
     }
     if (photoPlaceholder) photoPlaceholder.style.display = 'flex';
-    if (removeBtn) removeBtn.style.display = 'none';
+    if (photoPreview) photoPreview.style.display = 'none';
 
     // Reset bank fields
     document.getElementById('bankAccountId').value = '';
@@ -3046,10 +3115,8 @@ function validateBankingStep() {
         return false;
     }
 
-    if (ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
-        showToast('Invalid IFSC code format', 'error');
-        return false;
-    }
+    // Bank routing code is required but format varies by country (IFSC, SWIFT, BIC, IBAN)
+    // Just check if filled, no format validation
 
     return true;
 }
