@@ -1838,17 +1838,19 @@
 
 .dropdown-item-level {
     font-size: 0.7rem;
-    color: var(--brand-primary);
-    background: var(--brand-primary-light);
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
     padding: 2px 6px;
     border-radius: 4px;
     white-space: nowrap;
     margin-left: auto;
+    border: 1px solid var(--border-color-light);
 }
 
 .searchable-dropdown-item.selected .dropdown-item-level {
     background: rgba(255, 255, 255, 0.2);
     color: var(--text-inverse);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Manager Dropdown - Detail row */
@@ -8472,7 +8474,7 @@ input:checked + .slider:before {
     font-size: 13px;
 }
 
-/* Searchable dropdown in modals - overflow fix */
+/* Searchable dropdown in modals - comprehensive overflow fix */
 .modal-body .form-group:has(.searchable-dropdown) {
     overflow: visible !important;
 }
@@ -8483,6 +8485,45 @@ input:checked + .slider:before {
 
 .modal-body .form-row:has(.searchable-dropdown) {
     overflow: visible !important;
+}
+
+/* When any searchable dropdown is open, allow modal body to overflow */
+.modal-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Employee wizard modal - allow overflow for dropdowns */
+.employee-wizard-modal .modal-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.employee-wizard-modal .wizard-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Ensure dropdown panel has higher z-index than modal */
+.searchable-dropdown-panel {
+    z-index: 10500 !important;
+}
+
+/* Make the modal content allow overflow when dropdown is open */
+.modal-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Employee wizard specific step content overflow */
+.employee-wizard-modal .step-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Form rows within wizard should allow overflow */
+.employee-wizard-modal .form-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* All parent containers should allow overflow when dropdown is open */
+.searchable-dropdown.open {
+    z-index: 10000;
 }
 
 /* Virtual scroll container styles */
