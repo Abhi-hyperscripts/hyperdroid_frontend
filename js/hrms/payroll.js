@@ -2558,19 +2558,24 @@ function showCreateComponentModal() {
     togglePercentageFields();
 }
 
-// Toggle percentage fields visibility based on calculation type
+// Toggle percentage/fixed amount fields visibility based on calculation type
 function togglePercentageFields() {
     const calcType = document.getElementById('calculationType').value;
     const percentageRow = document.getElementById('percentageFieldsRow');
     const percentageInput = document.getElementById('componentPercentage');
+    const fixedAmountRow = document.getElementById('fixedAmountFieldsRow');
+    const fixedAmountInput = document.getElementById('componentFixedAmount');
 
     if (calcType === 'percentage') {
         percentageRow.style.display = 'flex';
         percentageInput.required = true;
+        if (fixedAmountRow) fixedAmountRow.style.display = 'none';
+        if (fixedAmountInput) fixedAmountInput.value = '';
     } else {
         percentageRow.style.display = 'none';
         percentageInput.required = false;
         percentageInput.value = '';
+        if (fixedAmountRow) fixedAmountRow.style.display = 'flex';
     }
 }
 
@@ -2625,6 +2630,11 @@ async function saveComponent() {
         if (calculationType === 'percentage') {
             data.percentage = parseFloat(document.getElementById('componentPercentage').value) || 0;
             data.calculation_base = document.getElementById('calculationBase').value;
+        } else if (calculationType === 'fixed') {
+            const fixedAmount = document.getElementById('componentFixedAmount').value;
+            if (fixedAmount) {
+                data.fixed_amount = parseFloat(fixedAmount);
+            }
         }
 
         if (id) {
@@ -4126,6 +4136,19 @@ function editComponent(componentId) {
     }
 
     // Note: Balance component toggle removed - balance is now automatic and implicit
+
+    // Populate percentage fields if applicable
+    const calcType = component.calculation_type || component.calculationType || 'fixed';
+    if (calcType === 'percentage') {
+        document.getElementById('componentPercentage').value = component.percentage || component.percentage_of_basic || '';
+        document.getElementById('calculationBase').value = component.calculation_base || 'basic';
+    } else {
+        // Populate fixed amount field
+        const fixedAmountInput = document.getElementById('componentFixedAmount');
+        if (fixedAmountInput) {
+            fixedAmountInput.value = component.fixed_amount || component.default_value || '';
+        }
+    }
 
     // Show/hide percentage fields based on calculation type
     togglePercentageFields();
@@ -8164,6 +8187,7 @@ async function saveTaxType() {
         };
 
         if (id) {
+            data.id = id;  // Include ID in request body for update validation
             await api.updateLocationTaxType(id, data);
         } else {
             await api.createLocationTaxType(data);
