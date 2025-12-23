@@ -346,39 +346,154 @@
                         <!-- Step 2: Employment Details -->
                         <div class="wizard-panel" id="employeeStep2">
                             <div class="form-row two-col">
+                                <!-- Office Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Office <span class="required">*</span></label>
-                                    <select id="officeId" required onchange="updateForOfficeChange()">
-                                        <option value="">Select office...</option>
-                                    </select>
+                                    <input type="hidden" id="officeId" required>
+                                    <div class="searchable-dropdown" id="officeDropdown" data-field="office">
+                                        <div class="searchable-dropdown-trigger" onclick="toggleSearchableDropdown('office')">
+                                            <span class="selected-text placeholder">Select office...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="searchable-dropdown-panel">
+                                            <div class="searchable-dropdown-search">
+                                                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
+                                                </svg>
+                                                <input type="text" placeholder="Search offices..." oninput="filterSearchableDropdown('office', this.value)">
+                                                <button type="button" class="clear-btn" onclick="clearSearchableDropdown('office')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="searchable-dropdown-header"><span class="item-count">0 offices</span></div>
+                                            <div class="searchable-dropdown-list"></div>
+                                        </div>
+                                    </div>
                                 </div>
+                                <!-- Department Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Department <span class="required">*</span></label>
-                                    <select id="departmentId" required onchange="onDepartmentChange()">
-                                        <option value="">Select office first...</option>
-                                    </select>
+                                    <input type="hidden" id="departmentId" required>
+                                    <div class="searchable-dropdown" id="departmentDropdown" data-field="department">
+                                        <div class="searchable-dropdown-trigger disabled" onclick="toggleSearchableDropdown('department')">
+                                            <span class="selected-text placeholder">Select office first...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="searchable-dropdown-panel">
+                                            <div class="searchable-dropdown-search">
+                                                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
+                                                </svg>
+                                                <input type="text" placeholder="Search departments..." oninput="filterSearchableDropdown('department', this.value)">
+                                                <button type="button" class="clear-btn" onclick="clearSearchableDropdown('department')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="searchable-dropdown-header"><span class="item-count">0 departments</span></div>
+                                            <div class="searchable-dropdown-list"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-row two-col">
+                                <!-- Designation Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Designation <span class="required">*</span></label>
-                                    <select id="designationId" required>
-                                        <option value="">Select department first...</option>
-                                    </select>
+                                    <input type="hidden" id="designationId" required>
+                                    <div class="searchable-dropdown" id="designationDropdown" data-field="designation">
+                                        <div class="searchable-dropdown-trigger disabled" onclick="toggleSearchableDropdown('designation')">
+                                            <span class="selected-text placeholder">Select department first...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="searchable-dropdown-panel">
+                                            <div class="searchable-dropdown-search">
+                                                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
+                                                </svg>
+                                                <input type="text" placeholder="Search designations..." oninput="filterSearchableDropdown('designation', this.value)">
+                                                <button type="button" class="clear-btn" onclick="clearSearchableDropdown('designation')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="searchable-dropdown-header"><span class="item-count">0 designations</span></div>
+                                            <div class="searchable-dropdown-list"></div>
+                                        </div>
+                                    </div>
                                 </div>
+                                <!-- Shift Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Shift</label>
-                                    <select id="shiftId">
-                                        <option value="">Select office first...</option>
-                                    </select>
+                                    <input type="hidden" id="shiftId">
+                                    <div class="searchable-dropdown" id="shiftDropdown" data-field="shift">
+                                        <div class="searchable-dropdown-trigger disabled" onclick="toggleSearchableDropdown('shift')">
+                                            <span class="selected-text placeholder">Select office first...</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="searchable-dropdown-panel">
+                                            <div class="searchable-dropdown-search">
+                                                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
+                                                </svg>
+                                                <input type="text" placeholder="Search shifts..." oninput="filterSearchableDropdown('shift', this.value)">
+                                                <button type="button" class="clear-btn" onclick="clearSearchableDropdown('shift')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="searchable-dropdown-header"><span class="item-count">0 shifts</span></div>
+                                            <div class="searchable-dropdown-list"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-row two-col">
+                                <!-- Reporting Manager Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Reporting Manager</label>
-                                    <select id="reportingManagerId" onchange="onManagerChange()">
-                                        <option value="">None</option>
-                                    </select>
+                                    <input type="hidden" id="reportingManagerId">
+                                    <div class="searchable-dropdown" id="managerDropdown" data-field="manager">
+                                        <div class="searchable-dropdown-trigger" onclick="toggleSearchableDropdown('manager')">
+                                            <span class="selected-text placeholder">None (Select manager...)</span>
+                                            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="searchable-dropdown-panel">
+                                            <div class="searchable-dropdown-search">
+                                                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="11" cy="11" r="8"/>
+                                                    <path d="m21 21-4.35-4.35"/>
+                                                </svg>
+                                                <input type="text" placeholder="Search managers..." oninput="filterSearchableDropdown('manager', this.value)">
+                                                <button type="button" class="clear-btn" onclick="clearSearchableDropdown('manager')">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div class="searchable-dropdown-header"><span class="item-count">0 managers</span></div>
+                                            <div class="searchable-dropdown-list"></div>
+                                        </div>
+                                    </div>
                                     <small class="validation-message text-danger" id="managerValidationMsg" style="display: none;"></small>
                                 </div>
                                 <div class="form-group">

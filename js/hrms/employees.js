@@ -280,10 +280,8 @@ async function openCreateEmployeeModal() {
     // Hide user info display until user is selected
     document.getElementById('userInfoDisplay').style.display = 'none';
 
-    // Reset all cascading dropdowns
-    document.getElementById('departmentId').innerHTML = '<option value="">Select office first...</option>';
-    document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
-    document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
+    // Initialize searchable dropdowns for Step 2 Employment
+    initializeEmploymentDropdowns();
 
     // Reset user selection
     selectedUserId = null;
@@ -316,11 +314,6 @@ async function openCreateEmployeeModal() {
         document.getElementById('userSearchList').innerHTML =
             '<p class="text-danger" style="text-align: center; padding: 20px;">Failed to load users</p>';
     }
-
-    // Load managers
-    const managerSelect = document.getElementById('reportingManagerId');
-    managerSelect.innerHTML = '<option value="">None</option>' +
-        employees.map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name}</option>`).join('');
 
     openModal('employeeModal');
 }
@@ -517,30 +510,8 @@ async function editEmployee(id) {
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
     document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
 
-    // Set Office and trigger cascading dropdown updates
-    document.getElementById('officeId').value = emp.office_id || '';
-
-    // Update departments and shifts for the selected office
-    if (emp.office_id) {
-        updateDepartmentsForOffice(emp.office_id);
-        updateShiftsForOffice(emp.office_id);
-    }
-
-    // Set Department and trigger designation cascade
-    document.getElementById('departmentId').value = emp.department_id || '';
-    if (emp.department_id) {
-        updateDesignationsForDepartment(emp.department_id);
-    }
-
-    // Now set the dependent dropdown values
-    document.getElementById('designationId').value = emp.designation_id || '';
-    document.getElementById('shiftId').value = emp.shift_id || '';
-
-    // Load managers
-    const managerSelect = document.getElementById('reportingManagerId');
-    managerSelect.innerHTML = '<option value="">None</option>' +
-        employees.filter(e => e.id !== id).map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name}</option>`).join('');
-    managerSelect.value = emp.reporting_manager_id || '';
+    // Set searchable dropdown values for Step 2 Employment
+    setEmploymentDropdownValues(emp);
 
     // Reset and load documents and bank account
     resetDocumentsAndBanking();
@@ -3361,4 +3332,615 @@ function setupSidebar() {
             container?.classList.remove('sidebar-open');
         }
     });
+}
+
+// ============================================
+// Searchable Dropdown Functions (Step 2 Employment)
+// ============================================
+
+// Data storage for searchable dropdowns
+const searchableDropdownData = {
+    office: { items: [], filteredItems: [], selectedId: null, displayedCount: 0 },
+    department: { items: [], filteredItems: [], selectedId: null, displayedCount: 0 },
+    designation: { items: [], filteredItems: [], selectedId: null, displayedCount: 0 },
+    shift: { items: [], filteredItems: [], selectedId: null, displayedCount: 0 },
+    manager: { items: [], filteredItems: [], selectedId: null, displayedCount: 0 }
+};
+
+const DROPDOWN_BATCH_SIZE = 50;
+
+/**
+ * Toggle searchable dropdown open/close
+ */
+function toggleSearchableDropdown(field) {
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const trigger = dropdown.querySelector('.searchable-dropdown-trigger');
+
+    // Don't open if disabled
+    if (trigger.classList.contains('disabled')) return;
+
+    // Close all other dropdowns first
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== `${field}Dropdown`) {
+            d.classList.remove('open');
+        }
+    });
+
+    dropdown.classList.toggle('open');
+
+    if (dropdown.classList.contains('open')) {
+        const searchInput = dropdown.querySelector('.searchable-dropdown-search input');
+        searchInput?.focus();
+
+        // Setup scroll listener for infinite scroll
+        setupDropdownScroll(field);
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeSearchableDropdownOnOutsideClick);
+        }, 0);
+    } else {
+        document.removeEventListener('click', closeSearchableDropdownOnOutsideClick);
+    }
+}
+
+function closeSearchableDropdownOnOutsideClick(e) {
+    const openDropdowns = document.querySelectorAll('.searchable-dropdown.open');
+    openDropdowns.forEach(dropdown => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+    if (document.querySelectorAll('.searchable-dropdown.open').length === 0) {
+        document.removeEventListener('click', closeSearchableDropdownOnOutsideClick);
+    }
+}
+
+/**
+ * Filter searchable dropdown items
+ */
+function filterSearchableDropdown(field, searchTerm) {
+    const data = searchableDropdownData[field];
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const clearBtn = dropdown.querySelector('.clear-btn');
+
+    clearBtn.style.display = searchTerm ? 'flex' : 'none';
+
+    const term = searchTerm.toLowerCase();
+
+    data.filteredItems = data.items.filter(item => {
+        // Search in all relevant fields
+        const name = (item.displayName || item.name || '').toLowerCase();
+        const code = (item.code || '').toLowerCase();
+        const email = (item.email || '').toLowerCase();
+        const office = (item.officeName || '').toLowerCase();
+        const designation = (item.designationName || '').toLowerCase();
+
+        return name.includes(term) ||
+               code.includes(term) ||
+               email.includes(term) ||
+               office.includes(term) ||
+               designation.includes(term);
+    });
+
+    data.displayedCount = 0;
+    renderDropdownItems(field, false);
+}
+
+/**
+ * Clear search in dropdown
+ */
+function clearSearchableDropdown(field) {
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const searchInput = dropdown.querySelector('.searchable-dropdown-search input');
+    const clearBtn = dropdown.querySelector('.clear-btn');
+
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+
+    const data = searchableDropdownData[field];
+    data.filteredItems = [...data.items];
+    data.displayedCount = 0;
+    renderDropdownItems(field, false);
+}
+
+/**
+ * Select an item from searchable dropdown
+ */
+function selectSearchableDropdownItem(field, id, name, extraInfo = '') {
+    const data = searchableDropdownData[field];
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const hiddenInput = document.getElementById(`${field}Id`);
+    const trigger = dropdown.querySelector('.searchable-dropdown-trigger');
+    const selectedText = trigger.querySelector('.selected-text');
+
+    // Update selected state
+    data.selectedId = id;
+
+    // Update hidden input
+    if (hiddenInput) {
+        hiddenInput.value = id || '';
+    }
+
+    // Update display text
+    if (id) {
+        selectedText.textContent = extraInfo ? `${name} (${extraInfo})` : name;
+        selectedText.classList.remove('placeholder');
+    } else {
+        // Clearing selection
+        const placeholderMap = {
+            office: 'Select office...',
+            department: 'Select department...',
+            designation: 'Select designation...',
+            shift: 'Default shift',
+            manager: 'None (Select manager...)'
+        };
+        selectedText.textContent = placeholderMap[field] || 'Select...';
+        selectedText.classList.add('placeholder');
+    }
+
+    // Update selected state in list
+    dropdown.querySelectorAll('.searchable-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.id === id);
+    });
+
+    // Close dropdown
+    dropdown.classList.remove('open');
+    document.removeEventListener('click', closeSearchableDropdownOnOutsideClick);
+
+    // Trigger cascade updates
+    handleDropdownCascade(field, id);
+}
+
+/**
+ * Handle cascading dropdown updates
+ */
+function handleDropdownCascade(field, id) {
+    if (field === 'office') {
+        // Office changed - update departments and shifts
+        updateSearchableDepartmentsForOffice(id);
+        updateSearchableShiftsForOffice(id);
+        // Reset designation since department will change
+        resetSearchableDropdown('designation', 'Select department first...', true);
+    } else if (field === 'department') {
+        // Department changed - update designations
+        updateSearchableDesignationsForDepartment(id);
+    }
+}
+
+/**
+ * Reset a searchable dropdown to disabled/empty state
+ */
+function resetSearchableDropdown(field, placeholder, disabled = false) {
+    const data = searchableDropdownData[field];
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const trigger = dropdown.querySelector('.searchable-dropdown-trigger');
+    const selectedText = trigger.querySelector('.selected-text');
+    const list = dropdown.querySelector('.searchable-dropdown-list');
+    const countDisplay = dropdown.querySelector('.item-count');
+    const hiddenInput = document.getElementById(`${field}Id`);
+    const searchInput = dropdown.querySelector('.searchable-dropdown-search input');
+
+    // Reset data
+    data.items = [];
+    data.filteredItems = [];
+    data.selectedId = null;
+    data.displayedCount = 0;
+
+    // Reset hidden input
+    if (hiddenInput) hiddenInput.value = '';
+
+    // Reset search
+    if (searchInput) searchInput.value = '';
+
+    // Update display
+    selectedText.textContent = placeholder;
+    selectedText.classList.add('placeholder');
+
+    // Update disabled state
+    if (disabled) {
+        trigger.classList.add('disabled');
+    } else {
+        trigger.classList.remove('disabled');
+    }
+
+    // Clear list
+    list.innerHTML = '';
+    countDisplay.textContent = `0 ${field}s`;
+
+    // Close if open
+    dropdown.classList.remove('open');
+}
+
+/**
+ * Populate a searchable dropdown with items
+ */
+function populateSearchableDropdown(field, items, selectedId = null) {
+    const data = searchableDropdownData[field];
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const trigger = dropdown.querySelector('.searchable-dropdown-trigger');
+    const searchInput = dropdown.querySelector('.searchable-dropdown-search input');
+
+    // Store items
+    data.items = items;
+    data.filteredItems = [...items];
+    data.selectedId = selectedId;
+    data.displayedCount = 0;
+
+    // Enable dropdown if there are items
+    trigger.classList.remove('disabled');
+
+    // Clear search
+    if (searchInput) searchInput.value = '';
+
+    // Render items
+    renderDropdownItems(field, false);
+
+    // If there's a selected ID, update the trigger display
+    if (selectedId) {
+        const selectedItem = items.find(item => item.id === selectedId);
+        if (selectedItem) {
+            const selectedText = trigger.querySelector('.selected-text');
+            selectedText.textContent = selectedItem.displayName || selectedItem.name;
+            selectedText.classList.remove('placeholder');
+        }
+    }
+}
+
+/**
+ * Render dropdown items (with virtual scrolling support)
+ */
+function renderDropdownItems(field, append = false) {
+    const data = searchableDropdownData[field];
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const list = dropdown.querySelector('.searchable-dropdown-list');
+    const countDisplay = dropdown.querySelector('.item-count');
+
+    const items = data.filteredItems;
+    const totalItems = data.items.length;
+    const filteredCount = items.length;
+
+    // Update count display
+    const labelMap = {
+        office: 'office',
+        department: 'department',
+        designation: 'designation',
+        shift: 'shift',
+        manager: 'manager'
+    };
+    const label = labelMap[field] || field;
+    countDisplay.textContent = filteredCount === totalItems
+        ? `${totalItems} ${label}${totalItems !== 1 ? 's' : ''}`
+        : `${filteredCount} of ${totalItems} ${label}s`;
+
+    if (items.length === 0) {
+        list.innerHTML = '<div class="searchable-dropdown-empty">No items found</div>';
+        return;
+    }
+
+    const startIndex = append ? data.displayedCount : 0;
+    const endIndex = Math.min(startIndex + DROPDOWN_BATCH_SIZE, items.length);
+    const batch = items.slice(startIndex, endIndex);
+
+    const batchHTML = batch.map(item => {
+        const isSelected = data.selectedId === item.id;
+
+        // Build item HTML based on field type
+        let itemContent = '';
+        if (field === 'manager') {
+            // Manager shows: Name, Email, Office, Designation, Level
+            itemContent = `
+                <div class="dropdown-item-main">
+                    <span class="dropdown-item-name">${item.displayName}</span>
+                    <span class="dropdown-item-code">${item.code || ''}</span>
+                </div>
+                <div class="dropdown-item-details">
+                    <span class="dropdown-item-email">${item.email || ''}</span>
+                    <span class="dropdown-item-meta">${item.officeName || ''} • ${item.designationName || ''} • L${item.level || 0}</span>
+                </div>
+            `;
+        } else if (field === 'designation') {
+            // Designation shows level
+            itemContent = `
+                <div class="dropdown-item-main">
+                    <span class="dropdown-item-name">${item.name}</span>
+                    ${item.level ? `<span class="dropdown-item-level">Level ${item.level}</span>` : ''}
+                </div>
+            `;
+        } else {
+            // Default: just show name and code
+            itemContent = `
+                <div class="dropdown-item-main">
+                    <span class="dropdown-item-name">${item.name}</span>
+                    ${item.code ? `<span class="dropdown-item-code">${item.code}</span>` : ''}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="searchable-dropdown-item ${isSelected ? 'selected' : ''}"
+                 data-id="${item.id}"
+                 onclick="selectSearchableDropdownItem('${field}', '${item.id}', '${(item.displayName || item.name).replace(/'/g, "\\'")}', '${(item.code || '').replace(/'/g, "\\'")}')">
+                ${itemContent}
+            </div>
+        `;
+    }).join('');
+
+    if (append) {
+        const loadingIndicator = list.querySelector('.dropdown-loading-indicator');
+        if (loadingIndicator) loadingIndicator.remove();
+        list.insertAdjacentHTML('beforeend', batchHTML);
+    } else {
+        list.innerHTML = batchHTML;
+    }
+
+    data.displayedCount = endIndex;
+
+    // Add loading indicator if more items
+    if (data.displayedCount < items.length) {
+        list.insertAdjacentHTML('beforeend',
+            '<div class="dropdown-loading-indicator">Scroll for more...</div>');
+    }
+}
+
+/**
+ * Setup scroll listener for infinite scroll
+ */
+function setupDropdownScroll(field) {
+    const dropdown = document.getElementById(`${field}Dropdown`);
+    const list = dropdown.querySelector('.searchable-dropdown-list');
+    const data = searchableDropdownData[field];
+
+    list.onscroll = () => {
+        const scrollTop = list.scrollTop;
+        const scrollHeight = list.scrollHeight;
+        const clientHeight = list.clientHeight;
+
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            if (data.displayedCount < data.filteredItems.length) {
+                renderDropdownItems(field, true);
+            }
+        }
+    };
+}
+
+/**
+ * Update departments dropdown when office changes
+ */
+function updateSearchableDepartmentsForOffice(officeId) {
+    if (!officeId) {
+        resetSearchableDropdown('department', 'Select office first...', true);
+        return;
+    }
+
+    // Filter departments by office and ensure they have designations
+    const filteredDepts = departments.filter(d => {
+        const matchesOffice = !d.office_id || d.office_id === officeId;
+        const hasDesignations = designations.some(desig => desig.department_id === d.id);
+        return matchesOffice && hasDesignations;
+    });
+
+    if (filteredDepts.length === 0) {
+        resetSearchableDropdown('department', 'No departments for this office', true);
+        return;
+    }
+
+    // Format items for dropdown
+    const items = filteredDepts.map(d => ({
+        id: d.id,
+        name: d.department_name,
+        code: d.department_code || ''
+    }));
+
+    populateSearchableDropdown('department', items);
+
+    // Update trigger placeholder
+    const dropdown = document.getElementById('departmentDropdown');
+    const selectedText = dropdown.querySelector('.selected-text');
+    selectedText.textContent = 'Select department...';
+    selectedText.classList.add('placeholder');
+}
+
+/**
+ * Update shifts dropdown when office changes
+ */
+function updateSearchableShiftsForOffice(officeId) {
+    if (!officeId) {
+        resetSearchableDropdown('shift', 'Select office first...', true);
+        return;
+    }
+
+    // Filter shifts by office (or global shifts without office_id)
+    const filteredShifts = shifts.filter(s => !s.office_id || s.office_id === officeId);
+
+    // Format items for dropdown
+    const items = filteredShifts.map(s => ({
+        id: s.id,
+        name: s.shift_name,
+        code: `${s.start_time?.substring(0, 5) || ''} - ${s.end_time?.substring(0, 5) || ''}`
+    }));
+
+    populateSearchableDropdown('shift', items);
+
+    // Update trigger placeholder for shift (optional field)
+    const dropdown = document.getElementById('shiftDropdown');
+    const selectedText = dropdown.querySelector('.selected-text');
+    selectedText.textContent = 'Default shift';
+    selectedText.classList.add('placeholder');
+}
+
+/**
+ * Update designations dropdown when department changes
+ */
+function updateSearchableDesignationsForDepartment(departmentId) {
+    if (!departmentId) {
+        resetSearchableDropdown('designation', 'Select department first...', true);
+        return;
+    }
+
+    // Filter designations by department
+    const filteredDesigs = designations.filter(d => !d.department_id || d.department_id === departmentId);
+
+    if (filteredDesigs.length === 0) {
+        resetSearchableDropdown('designation', 'No designations for this department', true);
+        return;
+    }
+
+    // Format items for dropdown
+    const items = filteredDesigs.map(d => ({
+        id: d.id,
+        name: d.designation_name,
+        code: d.designation_code || '',
+        level: d.level || 0
+    }));
+
+    populateSearchableDropdown('designation', items);
+
+    // Update trigger placeholder
+    const dropdown = document.getElementById('designationDropdown');
+    const selectedText = dropdown.querySelector('.selected-text');
+    selectedText.textContent = 'Select designation...';
+    selectedText.classList.add('placeholder');
+}
+
+/**
+ * Populate managers dropdown
+ * Shows: Name, Office, Designation, Level, Email
+ */
+function populateSearchableManagerDropdown(excludeEmployeeId = null) {
+    // Filter out the current employee and build manager list
+    const managerItems = employees
+        .filter(e => e.id !== excludeEmployeeId)
+        .map(e => {
+            const office = offices.find(o => o.id === e.office_id);
+            const desig = designations.find(d => d.id === e.designation_id);
+
+            return {
+                id: e.user_id,  // Manager is identified by user_id
+                displayName: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+                code: e.employee_code || '',
+                email: e.work_email || '',
+                officeName: office?.office_name || 'N/A',
+                designationName: desig?.designation_name || 'N/A',
+                level: desig?.level || 0
+            };
+        });
+
+    populateSearchableDropdown('manager', managerItems);
+
+    // Reset trigger placeholder
+    const dropdown = document.getElementById('managerDropdown');
+    const selectedText = dropdown.querySelector('.selected-text');
+    selectedText.textContent = 'None (Select manager...)';
+    selectedText.classList.add('placeholder');
+}
+
+/**
+ * Initialize searchable dropdowns for employment step
+ */
+function initializeEmploymentDropdowns() {
+    // Populate offices dropdown
+    const officeItems = offices.map(o => ({
+        id: o.id,
+        name: o.office_name,
+        code: o.office_code || ''
+    }));
+    populateSearchableDropdown('office', officeItems);
+
+    // Reset dependent dropdowns
+    resetSearchableDropdown('department', 'Select office first...', true);
+    resetSearchableDropdown('designation', 'Select department first...', true);
+    resetSearchableDropdown('shift', 'Select office first...', true);
+
+    // Populate managers
+    populateSearchableManagerDropdown();
+}
+
+/**
+ * Set values for edit mode
+ */
+function setEmploymentDropdownValues(emp) {
+    // Set office and trigger cascading
+    if (emp.office_id) {
+        const office = offices.find(o => o.id === emp.office_id);
+        if (office) {
+            // Populate and select office
+            const officeItems = offices.map(o => ({
+                id: o.id,
+                name: o.office_name,
+                code: o.office_code || ''
+            }));
+            populateSearchableDropdown('office', officeItems, emp.office_id);
+
+            // Update trigger display
+            const officeDropdown = document.getElementById('officeDropdown');
+            const officeText = officeDropdown.querySelector('.selected-text');
+            officeText.textContent = office.office_name;
+            officeText.classList.remove('placeholder');
+            document.getElementById('officeId').value = emp.office_id;
+            searchableDropdownData.office.selectedId = emp.office_id;
+        }
+
+        // Update departments for office
+        updateSearchableDepartmentsForOffice(emp.office_id);
+
+        // Set department if exists
+        if (emp.department_id) {
+            const dept = departments.find(d => d.id === emp.department_id);
+            if (dept) {
+                const deptDropdown = document.getElementById('departmentDropdown');
+                const deptText = deptDropdown.querySelector('.selected-text');
+                deptText.textContent = dept.department_name;
+                deptText.classList.remove('placeholder');
+                document.getElementById('departmentId').value = emp.department_id;
+                searchableDropdownData.department.selectedId = emp.department_id;
+            }
+
+            // Update designations for department
+            updateSearchableDesignationsForDepartment(emp.department_id);
+
+            // Set designation if exists
+            if (emp.designation_id) {
+                const desig = designations.find(d => d.id === emp.designation_id);
+                if (desig) {
+                    const desigDropdown = document.getElementById('designationDropdown');
+                    const desigText = desigDropdown.querySelector('.selected-text');
+                    desigText.textContent = desig.designation_name;
+                    desigText.classList.remove('placeholder');
+                    document.getElementById('designationId').value = emp.designation_id;
+                    searchableDropdownData.designation.selectedId = emp.designation_id;
+                }
+            }
+        }
+
+        // Update shifts for office
+        updateSearchableShiftsForOffice(emp.office_id);
+
+        // Set shift if exists
+        if (emp.shift_id) {
+            const shift = shifts.find(s => s.id === emp.shift_id);
+            if (shift) {
+                const shiftDropdown = document.getElementById('shiftDropdown');
+                const shiftText = shiftDropdown.querySelector('.selected-text');
+                shiftText.textContent = shift.shift_name;
+                shiftText.classList.remove('placeholder');
+                document.getElementById('shiftId').value = emp.shift_id;
+                searchableDropdownData.shift.selectedId = emp.shift_id;
+            }
+        }
+    }
+
+    // Populate and set manager
+    populateSearchableManagerDropdown(emp.id);
+    if (emp.reporting_manager_id) {
+        const manager = employees.find(e => e.user_id === emp.reporting_manager_id);
+        if (manager) {
+            const managerDropdown = document.getElementById('managerDropdown');
+            const managerText = managerDropdown.querySelector('.selected-text');
+            managerText.textContent = `${manager.first_name} ${manager.last_name} (${manager.employee_code})`;
+            managerText.classList.remove('placeholder');
+            document.getElementById('reportingManagerId').value = emp.reporting_manager_id;
+            searchableDropdownData.manager.selectedId = emp.reporting_manager_id;
+        }
+    }
 }
