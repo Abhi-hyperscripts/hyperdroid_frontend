@@ -234,10 +234,10 @@ class HRMSRoleUtils {
     init() {
         if (this._initialized) return this;
 
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
+        const user = getStoredUser();
+        if (user) {
             try {
-                this.user = JSON.parse(userStr);
+                this.user = user;
                 this.userRoles = this.user?.roles || [];
                 this._computePermissions();
             } catch (e) {

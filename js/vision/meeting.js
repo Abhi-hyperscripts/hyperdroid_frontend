@@ -447,7 +447,7 @@ async function connectToSignalR(guestName = null) {
     // Check if explicitly joining as guest (prioritize this over token check)
     // This handles the case where an authenticated user chooses to join as a guest
     const isGuestSession = sessionStorage.getItem('isGuest') === 'true';
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
 
     // For guests, pass name in query string (check this FIRST)
     if (isGuestSession && guestName) {

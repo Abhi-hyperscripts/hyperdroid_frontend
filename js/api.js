@@ -1,6 +1,87 @@
 class API {
     constructor() {
-        this.token = localStorage.getItem('authToken');
+        this.token = getAuthToken();
+        this._isRefreshing = false;
+        this._refreshPromise = null;
+        this._refreshTimer = null;
+        this._visibilityHandler = null;
+
+        // Start background refresh timer if we have a token
+        if (this.token) {
+            this._startBackgroundRefresh();
+        }
+    }
+
+    // ==================== Background Token Refresh ====================
+
+    /**
+     * Start the background token refresh timer.
+     * Checks every 5 minutes and refreshes when token has <10 minutes remaining.
+     */
+    _startBackgroundRefresh() {
+        // Clear any existing timer
+        this._stopBackgroundRefresh();
+
+        // Check every 5 minutes (300000 ms)
+        const CHECK_INTERVAL = 5 * 60 * 1000;
+        // Refresh when less than 10 minutes remaining
+        const REFRESH_THRESHOLD = 10 * 60 * 1000;
+
+        console.log('[API] Starting background token refresh timer');
+
+        this._refreshTimer = setInterval(async () => {
+            await this._checkAndRefreshToken(REFRESH_THRESHOLD);
+        }, CHECK_INTERVAL);
+
+        // Also handle page visibility changes
+        this._visibilityHandler = async () => {
+            if (document.visibilityState === 'visible') {
+                console.log('[API] Page became visible, checking token...');
+                await this._checkAndRefreshToken(REFRESH_THRESHOLD);
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+
+        // Do an initial check
+        this._checkAndRefreshToken(REFRESH_THRESHOLD);
+    }
+
+    /**
+     * Stop the background token refresh timer.
+     */
+    _stopBackgroundRefresh() {
+        if (this._refreshTimer) {
+            clearInterval(this._refreshTimer);
+            this._refreshTimer = null;
+            console.log('[API] Stopped background token refresh timer');
+        }
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+    }
+
+    /**
+     * Check if token needs refresh and refresh it proactively.
+     * @param {number} threshold - Refresh if less than this many ms remaining
+     */
+    async _checkAndRefreshToken(threshold) {
+        const accessExpiry = getAccessTokenExpiry();
+        if (!accessExpiry) return;
+
+        const timeRemaining = accessExpiry - Date.now();
+
+        if (timeRemaining < threshold && timeRemaining > 0) {
+            console.log(`[API] Token expires in ${Math.round(timeRemaining / 60000)} minutes, refreshing proactively...`);
+            await this._refreshTokenIfNeeded();
+        } else if (timeRemaining <= 0) {
+            console.log('[API] Token already expired, refreshing...');
+            const success = await this._refreshTokenIfNeeded();
+            if (!success) {
+                console.log('[API] Background refresh failed, user session expired');
+                this._stopBackgroundRefresh();
+            }
+        }
     }
 
     // Helper to determine which service to use based on endpoint
@@ -31,6 +112,18 @@ class API {
     }
 
     async request(endpoint, options = {}) {
+        // Check if token needs refresh before making request (except for auth endpoints)
+        if (!endpoint.startsWith('/auth/') && this.token && isAccessTokenExpired()) {
+            console.log('[API] Access token expired, attempting refresh...');
+            const refreshed = await this._refreshTokenIfNeeded();
+            if (!refreshed) {
+                // Refresh failed, redirect to login
+                console.log('[API] Token refresh failed, redirecting to login');
+                this.logout();
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
         const baseUrl = this._getBaseUrl(endpoint);
         // For HRMS endpoints, strip /hrms prefix since baseUrl already has /api
         // e.g., /hrms/offices -> /offices (baseUrl has /api, so final is /api/offices)
@@ -68,6 +161,26 @@ class API {
             }
 
             if (!response.ok) {
+                // If we get 401 and it's not a refresh request, try to refresh token
+                if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
+                    console.log('[API] Got 401, attempting token refresh...');
+                    const refreshed = await this._refreshTokenIfNeeded();
+                    if (refreshed) {
+                        // Retry the original request with new token
+                        config.headers['Authorization'] = `Bearer ${this.token}`;
+                        const retryResponse = await fetch(url, config);
+                        if (retryResponse.ok) {
+                            const retryContentType = retryResponse.headers.get('content-type');
+                            if (retryContentType && retryContentType.includes('application/json')) {
+                                return await retryResponse.json();
+                            }
+                            return { message: await retryResponse.text() };
+                        }
+                    }
+                    // If refresh failed, logout
+                    this.logout();
+                    throw new Error('Session expired. Please log in again.');
+                }
                 throw new Error(data.message || data.error || data.title || data.errors?.join(', ') || 'Request failed');
             }
 
@@ -75,6 +188,78 @@ class API {
         } catch (error) {
             console.error('API Error:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Attempt to refresh the access token using the stored refresh token.
+     * Uses a lock to prevent multiple simultaneous refresh requests.
+     * @returns {Promise<boolean>} True if refresh succeeded, false otherwise
+     */
+    async _refreshTokenIfNeeded() {
+        // If refresh token is also expired, can't refresh
+        if (isRefreshTokenExpired()) {
+            console.log('[API] Refresh token expired');
+            return false;
+        }
+
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+            console.log('[API] No refresh token available');
+            return false;
+        }
+
+        // If already refreshing, wait for the existing promise
+        if (this._isRefreshing) {
+            console.log('[API] Already refreshing, waiting...');
+            return this._refreshPromise;
+        }
+
+        // Start refresh process
+        this._isRefreshing = true;
+        this._refreshPromise = this._doRefresh(refreshToken);
+
+        try {
+            const result = await this._refreshPromise;
+            return result;
+        } finally {
+            this._isRefreshing = false;
+            this._refreshPromise = null;
+        }
+    }
+
+    /**
+     * Actually perform the token refresh
+     */
+    async _doRefresh(refreshToken) {
+        try {
+            const response = await fetch(`${CONFIG.authApiBaseUrl}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: refreshToken })
+            });
+
+            if (!response.ok) {
+                console.log('[API] Refresh request failed with status:', response.status);
+                return false;
+            }
+
+            const data = await response.json();
+            if (data.success && data.accessToken && data.refreshToken) {
+                // Store new tokens
+                this.token = data.accessToken;
+                storeAuthToken(data.accessToken);
+                storeRefreshToken(data.refreshToken);
+                storeTokenExpiry(data.accessTokenExpiresIn, data.refreshTokenExpiresIn);
+                console.log('[API] Token refreshed successfully');
+                return true;
+            }
+
+            console.log('[API] Refresh response missing tokens');
+            return false;
+        } catch (error) {
+            console.error('[API] Error during token refresh:', error);
+            return false;
         }
     }
 
@@ -92,25 +277,84 @@ class API {
             body: JSON.stringify({ email, password })
         });
 
-        if (data.success && data.token) {
-            this.token = data.token;
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.success) {
+            // Handle new dual-token response format
+            const accessToken = data.accessToken || data.token;
+            if (accessToken) {
+                this.token = accessToken;
+                storeAuthToken(accessToken);
+
+                // Store refresh token if available
+                if (data.refreshToken) {
+                    storeRefreshToken(data.refreshToken);
+                }
+
+                // Store token expiry times if available
+                if (data.accessTokenExpiresIn && data.refreshTokenExpiresIn) {
+                    storeTokenExpiry(data.accessTokenExpiresIn, data.refreshTokenExpiresIn);
+                }
+
+                if (data.user) {
+                    storeUser(data.user);
+                }
+
+                // Start background refresh timer
+                this._startBackgroundRefresh();
+            }
         }
 
         return data;
     }
 
-    logout() {
+    /**
+     * Logout the user - revokes refresh token on server and clears local storage.
+     * @param {boolean} redirectToHome - Whether to redirect to login page (default: true)
+     */
+    async logout(redirectToHome = true) {
+        // Stop background refresh timer
+        this._stopBackgroundRefresh();
+
+        // Try to revoke the refresh token on the server
+        const refreshToken = getRefreshToken();
+        if (refreshToken) {
+            try {
+                await fetch(`${CONFIG.authApiBaseUrl}/auth/revoke`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: refreshToken })
+                });
+            } catch (error) {
+                console.warn('[API] Failed to revoke token on server:', error);
+                // Continue with local logout even if server revocation fails
+            }
+        }
+
         this.token = null;
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        clearAuthData();
+        if (redirectToHome) {
+            window.location.href = '/index.html';
+        }
+    }
+
+    /**
+     * Logout from all devices - revokes all refresh tokens for the user.
+     */
+    async logoutAllDevices() {
+        // Stop background refresh timer
+        this._stopBackgroundRefresh();
+
+        try {
+            await this.request('/auth/revoke-all', { method: 'POST' });
+        } catch (error) {
+            console.warn('[API] Failed to revoke all tokens:', error);
+        }
+        this.token = null;
+        clearAuthData();
         window.location.href = '/index.html';
     }
 
     getUser() {
-        const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
+        return getStoredUser();
     }
 
     isAuthenticated() {
@@ -1269,7 +1513,7 @@ class API {
 
     async uploadEmployeeDocument(employeeId, formData) {
         // Special handling for multipart form data - don't set Content-Type header
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         const response = await fetch(`${this._getBaseUrl('/hrms/')}/employees/${employeeId}/documents`, {
             method: 'POST',
             headers: {

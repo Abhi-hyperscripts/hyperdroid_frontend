@@ -2213,7 +2213,7 @@ async function initDashboardSignalR() {
     try {
         dashboardConnection = new signalR.HubConnectionBuilder()
             .withUrl(CONFIG.signalRHubUrl, {
-                accessTokenFactory: () => localStorage.getItem('authToken')
+                accessTokenFactory: () => getAuthToken()
             })
             .withAutomaticReconnect()
             .build();

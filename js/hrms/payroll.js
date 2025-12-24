@@ -3634,7 +3634,7 @@ async function downloadPayslipById(payslipId) {
         showToast('Generating PDF...', 'info');
 
         // Fetch payslip data with items
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/payroll-processing/payslips/${payslipId}?includeItems=true`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -5207,7 +5207,7 @@ async function downloadPayrollCsv() {
         showToast('Generating CSV file...', 'info');
 
         // Fetch the CSV file
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/payroll-processing/runs/${currentPayrollRunId}/export-csv`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -10288,7 +10288,7 @@ async function loadSalaryReports() {
         // Fetch salary summary report
         const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/payroll/reports/summary${queryString}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Authorization': `Bearer ${getAuthToken()}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -10327,7 +10327,7 @@ async function populateSalaryReportFilters() {
         try {
             const officesResp = await fetch(`${CONFIG.hrmsApiBaseUrl}/offices`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${getAuthToken()}`
                 }
             });
             if (officesResp.ok) {
@@ -10348,7 +10348,7 @@ async function populateSalaryReportFilters() {
         try {
             const deptsResp = await fetch(`${CONFIG.hrmsApiBaseUrl}/departments`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${getAuthToken()}`
                 }
             });
             if (deptsResp.ok) {

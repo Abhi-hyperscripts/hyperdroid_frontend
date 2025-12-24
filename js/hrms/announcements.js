@@ -29,10 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function checkAdminAccess() {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
+    const user = getStoredUser();
+    if (user) {
         try {
-            const user = JSON.parse(userData);
             const roles = user.roles || [];
             const adminRoles = ['SUPERADMIN', 'HRMS_ADMIN', 'HRMS_HR_ADMIN'];
             if (roles.some(r => adminRoles.includes(r))) {

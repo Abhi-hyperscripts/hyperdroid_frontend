@@ -35,9 +35,15 @@ function detectEnvironment() {
 const currentEnv = detectEnvironment();
 console.log(`[CONFIG] Environment: ${currentEnv}`);
 
+// Storage key prefix to avoid conflicts with other apps
+const STORAGE_PREFIX = 'hyperdroid_';
+
 const CONFIG = {
     // Current environment
     environment: currentEnv,
+
+    // Storage prefix for localStorage keys
+    storagePrefix: STORAGE_PREFIX,
 
     // Service Endpoints - Auto-selected based on environment
     endpoints: ENVIRONMENTS[currentEnv],
@@ -129,3 +135,144 @@ const CONFIG = {
 // Freeze the configuration to prevent accidental modifications
 // Object.freeze(CONFIG); // Commented out - prevents caching ICE servers
 Object.freeze(CONFIG.endpoints);
+
+// ==================== JWT Storage Utilities ====================
+// Centralized functions for JWT token management to avoid key conflicts
+
+/**
+ * Store JWT token in localStorage
+ * @param {string} token - The JWT token to store
+ */
+function storeAuthToken(token) {
+    localStorage.setItem(`${STORAGE_PREFIX}authToken`, token);
+}
+
+/**
+ * Retrieve JWT token from localStorage
+ * @returns {string|null} The stored JWT token or null if not found
+ */
+function getAuthToken() {
+    return localStorage.getItem(`${STORAGE_PREFIX}authToken`);
+}
+
+/**
+ * Remove JWT token from localStorage (used during logout)
+ */
+function removeAuthToken() {
+    localStorage.removeItem(`${STORAGE_PREFIX}authToken`);
+}
+
+/**
+ * Store refresh token in localStorage
+ * @param {string} token - The refresh token to store
+ */
+function storeRefreshToken(token) {
+    localStorage.setItem(`${STORAGE_PREFIX}refreshToken`, token);
+}
+
+/**
+ * Retrieve refresh token from localStorage
+ * @returns {string|null} The stored refresh token or null if not found
+ */
+function getRefreshToken() {
+    return localStorage.getItem(`${STORAGE_PREFIX}refreshToken`);
+}
+
+/**
+ * Remove refresh token from localStorage
+ */
+function removeRefreshToken() {
+    localStorage.removeItem(`${STORAGE_PREFIX}refreshToken`);
+}
+
+/**
+ * Store token expiry times in localStorage
+ * @param {number} accessExpiresIn - Access token expiry time in seconds
+ * @param {number} refreshExpiresIn - Refresh token expiry time in seconds
+ */
+function storeTokenExpiry(accessExpiresIn, refreshExpiresIn) {
+    const now = Date.now();
+    localStorage.setItem(`${STORAGE_PREFIX}accessTokenExpiry`, (now + accessExpiresIn * 1000).toString());
+    localStorage.setItem(`${STORAGE_PREFIX}refreshTokenExpiry`, (now + refreshExpiresIn * 1000).toString());
+}
+
+/**
+ * Get access token expiry time
+ * @returns {number|null} The expiry timestamp in milliseconds or null
+ */
+function getAccessTokenExpiry() {
+    const expiry = localStorage.getItem(`${STORAGE_PREFIX}accessTokenExpiry`);
+    return expiry ? parseInt(expiry, 10) : null;
+}
+
+/**
+ * Get refresh token expiry time
+ * @returns {number|null} The expiry timestamp in milliseconds or null
+ */
+function getRefreshTokenExpiry() {
+    const expiry = localStorage.getItem(`${STORAGE_PREFIX}refreshTokenExpiry`);
+    return expiry ? parseInt(expiry, 10) : null;
+}
+
+/**
+ * Check if access token is expired or about to expire (within 5 minutes)
+ * @returns {boolean} True if token needs refresh
+ */
+function isAccessTokenExpired() {
+    const expiry = getAccessTokenExpiry();
+    if (!expiry) return true;
+    // Consider expired if less than 5 minutes remaining
+    return Date.now() > (expiry - 5 * 60 * 1000);
+}
+
+/**
+ * Check if refresh token is expired
+ * @returns {boolean} True if refresh token is expired
+ */
+function isRefreshTokenExpired() {
+    const expiry = getRefreshTokenExpiry();
+    if (!expiry) return true;
+    return Date.now() > expiry;
+}
+
+/**
+ * Remove token expiry times from localStorage
+ */
+function removeTokenExpiry() {
+    localStorage.removeItem(`${STORAGE_PREFIX}accessTokenExpiry`);
+    localStorage.removeItem(`${STORAGE_PREFIX}refreshTokenExpiry`);
+}
+
+/**
+ * Store user data in localStorage
+ * @param {object} user - The user object to store
+ */
+function storeUser(user) {
+    localStorage.setItem(`${STORAGE_PREFIX}user`, JSON.stringify(user));
+}
+
+/**
+ * Retrieve user data from localStorage
+ * @returns {object|null} The stored user object or null if not found
+ */
+function getStoredUser() {
+    const userStr = localStorage.getItem(`${STORAGE_PREFIX}user`);
+    return userStr ? JSON.parse(userStr) : null;
+}
+
+/**
+ * Remove user data from localStorage (used during logout)
+ */
+function removeStoredUser() {
+    localStorage.removeItem(`${STORAGE_PREFIX}user`);
+}
+
+/**
+ * Clear all auth data (tokens + user + expiry) - used for logout
+ */
+function clearAuthData() {
+    removeAuthToken();
+    removeRefreshToken();
+    removeTokenExpiry();
+    removeStoredUser();
+}

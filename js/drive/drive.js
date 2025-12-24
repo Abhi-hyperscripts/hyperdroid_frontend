@@ -69,7 +69,7 @@ function debouncedReload() {
 
 // SignalR connection for real-time updates
 function initializeSignalR() {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
         console.warn('No auth token found, SignalR connection skipped');
         return;
@@ -77,7 +77,7 @@ function initializeSignalR() {
 
     driveHubConnection = new signalR.HubConnectionBuilder()
         .withUrl(CONFIG.driveSignalRHubUrl, {
-            accessTokenFactory: () => token
+            accessTokenFactory: () => getAuthToken()
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Information)
@@ -958,7 +958,7 @@ async function uploadFileSimple(file, queueItem) {
         xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
 
         xhr.open('POST', `${CONFIG.endpoints.drive}/api/drive/upload`);
-        xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('authToken')}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${getAuthToken()}`);
         xhr.send(formData);
     });
 }
@@ -976,7 +976,7 @@ async function uploadFileChunked(file, queueItem) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
             fileName: file.name,
@@ -1013,7 +1013,7 @@ async function uploadFileChunked(file, queueItem) {
             {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${getAuthToken()}`
                 },
                 body: chunkFormData
             }
@@ -1024,7 +1024,7 @@ async function uploadFileChunked(file, queueItem) {
             // Abort the upload session on failure
             await fetch(`${CONFIG.endpoints.drive}/api/drive/chunked/abort/${sessionId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
             });
             throw new Error(chunkResult.message || `Failed to upload chunk ${chunkNumber}`);
         }
@@ -1043,7 +1043,7 @@ async function uploadFileChunked(file, queueItem) {
         {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${getAuthToken()}`
             }
         }
     );

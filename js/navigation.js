@@ -94,8 +94,7 @@ const Navigation = {
      * Get user from localStorage
      */
     getUser() {
-        const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
+        return getStoredUser();
     },
 
     /**
@@ -211,12 +210,17 @@ const Navigation = {
     },
 
     /**
-     * Logout handler
+     * Logout handler - uses API to revoke token on server
      */
-    logout() {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        window.location.href = '/index.html';
+    async logout() {
+        // Use api.logout() if available to properly revoke token on server
+        if (typeof api !== 'undefined' && api.logout) {
+            await api.logout(true);
+        } else {
+            // Fallback for pages that don't have api loaded
+            clearAuthData();
+            window.location.href = '/index.html';
+        }
     },
 
     /**

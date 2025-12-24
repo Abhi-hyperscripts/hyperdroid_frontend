@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ==================== SignalR Real-time Updates ====================
 
 function initializeSignalR() {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
         console.warn('No auth token for SignalR connection');
         return;
