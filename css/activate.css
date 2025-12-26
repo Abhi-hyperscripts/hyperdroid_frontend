@@ -30,29 +30,44 @@
     color: var(--text-muted);
 }
 
-/* Success Card */
+/* Success Card - Wider layout for better space usage */
 .success-card {
     background-color: var(--bg-card);
     border: 1px solid var(--color-success);
     border-radius: var(--border-radius-lg);
-    padding: var(--space-8);
+    padding: var(--space-6);
     text-align: center;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Override auth-container max-width for activate page when success is shown */
+.auth-container.success-mode {
+    max-width: 800px !important;
+    width: 100%;
+}
+
+/* Override auth-card max-width when showing success */
+#successCard.auth-card {
+    max-width: 760px !important;
+    width: 100%;
 }
 
 .success-icon {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     background-color: var(--color-success);
     border-radius: var(--border-radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto var(--space-6);
+    margin: 0 auto var(--space-3);
 }
 
 .success-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     color: var(--text-inverse);
 }
 
@@ -61,15 +76,15 @@
     background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
-    padding: var(--space-6);
-    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
     text-align: left;
 }
 
 .credentials-box h4 {
     color: var(--text-primary);
-    margin-bottom: var(--space-4);
-    font-size: var(--font-size-base);
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
 }
 
@@ -77,7 +92,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-3) 0;
+    padding: var(--space-2) 0;
     border-bottom: 1px solid var(--border-color-light);
 }
 
@@ -87,16 +102,19 @@
 
 .credential-label {
     color: var(--text-secondary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
+    min-width: 70px;
 }
 
 .credential-value {
     font-family: var(--font-family-mono);
     font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
     color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    word-break: break-all;
 }
 
 /* Copy Button */
@@ -122,23 +140,25 @@
     transform: scale(0.95);
 }
 
-/* Warning Text Box */
+/* Warning Text Box - Inline compact version */
 .warning-text {
     background-color: var(--warning-alpha-10);
     border: 1px solid var(--color-warning);
     border-radius: var(--border-radius-md);
-    padding: var(--space-4);
-    margin-top: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    margin-top: var(--space-3);
     color: var(--color-warning);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-2);
+    text-align: left;
 }
 
 .warning-text svg {
     flex-shrink: 0;
-    margin-top: 2px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Activate Button */
@@ -179,6 +199,12 @@
     flex-shrink: 0;
 }
 
+/* Proceed to Login button in success card */
+.activate-btn.proceed-btn {
+    margin-top: var(--space-4);
+    text-decoration: none;
+}
+
 /* Loading Spinner */
 .spinner {
     width: 20px;
@@ -195,25 +221,39 @@
     }
 }
 
-/* License Info Section */
+/* License Info Section - Two-column grid layout */
 .license-info {
-    margin-top: var(--space-4);
-    padding: var(--space-4);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
     background-color: var(--bg-input);
     border-radius: var(--border-radius-md);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--text-secondary);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2) var(--space-4);
+    text-align: left;
 }
 
 .license-info-row {
     display: flex;
     justify-content: space-between;
-    padding: var(--space-2) 0;
+    align-items: center;
+    padding: var(--space-1) 0;
 }
 
 .license-info-row span:last-child {
     color: var(--text-primary);
     font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-xs);
+}
+
+/* Services row spans full width */
+.license-info-row.services-row {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
 }
 
 /* Services List */
@@ -221,7 +261,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-top: var(--space-2);
+    grid-column: 1 / -1;
 }
 
 .service-badge {
@@ -244,14 +284,31 @@
 /* Success Card Title */
 .success-card h2 {
     color: var(--text-primary);
-    margin-bottom: var(--space-2);
-    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
 }
 
 .success-card .subtitle {
     color: var(--text-secondary);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 600px) {
+    #successCard.auth-card {
+        max-width: 100%;
+        padding: var(--space-4);
+    }
+
+    .license-info {
+        grid-template-columns: 1fr;
+    }
+
+    .success-card {
+        padding: var(--space-4);
+    }
 }
 
 /* Dark Mode Overrides */

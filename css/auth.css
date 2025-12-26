@@ -1970,6 +1970,11 @@
     color: var(--text-inverse);
 }
 
+/* Hidden tab - used to hide sidebar buttons for non-SaaS admins */
+.sidebar-btn.hidden-tab {
+    display: none !important;
+}
+
 /* Admin Content - Main content area */
 .admin-content {
     width: 100%;
@@ -2419,4 +2424,300 @@
     margin: 0;
     max-width: 400px;
     margin: 0 auto;
+}
+
+/* ============================================
+   Sub-Tenants Tab Styles
+   ============================================ */
+
+.subtenants-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.subtenants-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.subtenants-summary {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.subtenants-summary .summary-stat {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 20px 24px;
+    min-width: 150px;
+    text-align: center;
+}
+
+.subtenants-summary .summary-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    background: var(--hover-overlay-subtle);
+}
+
+.subtenants-summary .summary-stat-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-secondary);
+}
+
+.subtenants-summary .summary-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.subtenants-summary .summary-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+}
+
+.subtenants-summary .summary-stat.active .summary-stat-icon {
+    background: var(--success-alpha-20);
+}
+
+.subtenants-summary .summary-stat.active .summary-stat-icon svg {
+    color: var(--status-success);
+}
+
+.subtenants-summary .summary-stat.active .summary-stat-value {
+    color: var(--status-success);
+}
+
+.subtenants-summary .summary-stat.expired .summary-stat-icon {
+    background: var(--error-alpha-20);
+}
+
+.subtenants-summary .summary-stat.expired .summary-stat-icon svg {
+    color: var(--status-error);
+}
+
+.subtenants-summary .summary-stat.expired .summary-stat-value {
+    color: var(--status-error);
+}
+
+/* Sub-Tenants Table */
+.subtenants-table-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.subtenants-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.subtenants-table thead {
+    background: var(--hover-overlay-subtle);
+}
+
+.subtenants-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.subtenants-table td {
+    padding: 16px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+    vertical-align: middle;
+}
+
+.subtenants-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.subtenants-table tbody tr:hover {
+    background: var(--hover-overlay-subtle);
+}
+
+/* Subtenant organization info */
+.subtenant-org {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.subtenant-org-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.subtenant-tenant-name {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Subtenant admin email */
+.subtenant-admin-email {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Subtenant users count */
+.subtenant-users {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.subtenant-users-count {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.subtenant-users-limit {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Subtenant services */
+.subtenant-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.subtenant-service-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--hover-overlay-medium);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Subtenant date */
+.subtenant-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Subtenant status badge */
+.subtenant-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.subtenant-status.active {
+    background: var(--success-alpha-20);
+    color: var(--status-success);
+}
+
+.subtenant-status.expired {
+    background: var(--error-alpha-20);
+    color: var(--status-error);
+}
+
+.subtenant-status.expiring-soon {
+    background: var(--warning-alpha-20);
+    color: var(--status-warning);
+}
+
+.subtenant-status.inactive {
+    background: var(--hover-overlay-medium);
+    color: var(--text-muted);
+}
+
+/* Status dot */
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Days until expiry tooltip */
+.days-until-expiry {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* No sub-tenants / Not SaaS card */
+.subtenants-info-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.no-subtenants-icon {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.subtenants-info-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.subtenants-info-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .subtenants-summary {
+        flex-direction: column;
+    }
+
+    .subtenants-summary .summary-stat {
+        min-width: 100%;
+    }
+
+    .subtenants-table-container {
+        overflow-x: auto;
+    }
+
+    .subtenants-table {
+        min-width: 800px;
+    }
 }

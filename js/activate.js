@@ -45,6 +45,12 @@ function showActivationSuccess(data, activationForm, successCard) {
     activationForm.style.display = 'none';
     successCard.style.display = 'block';
 
+    // Add success-mode class to auth-container for wider layout
+    const authContainer = document.querySelector('.auth-container');
+    if (authContainer) {
+        authContainer.classList.add('success-mode');
+    }
+
     // Populate success card with data
     const displayName = data.organizationName || data.tenantName;
     document.getElementById('tenantNameDisplay').textContent =

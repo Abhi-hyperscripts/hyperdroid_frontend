@@ -214,7 +214,7 @@
             }
         }
 
-        // Show/hide module cards based on user roles
+        // Show/hide module cards based on user roles AND licensed services
         function showAccessibleModules() {
             const user = api.getUser();
             if (!user || !user.roles) return;
@@ -227,10 +227,34 @@
                 'adminCard': 'SUPERADMIN'
             };
 
+            // Service name mapping (matches TenantManager service names)
+            const serviceNameMapping = {
+                'visionCard': 'Vision',
+                'driveCard': 'Drive',
+                'chatCard': 'Chat',
+                'hrmsCard': 'HRMS'
+            };
+
+            // Get licensed services from cached organization info (populated at login from JWT)
+            let licensedServices = null;
+            const orgInfo = getOrganizationInfo();
+            if (orgInfo && orgInfo.licensedServices) {
+                licensedServices = orgInfo.licensedServices;
+            }
+
             for (const [cardId, role] of Object.entries(roleMapping)) {
                 const card = document.getElementById(cardId);
                 if (card) {
-                    const hasAccess = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
+                    const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
+
+                    // Check if service is licensed (Admin panel is always shown if user has SUPERADMIN role)
+                    const serviceName = serviceNameMapping[cardId];
+                    const isLicensed = cardId === 'adminCard' ||
+                                       !licensedServices ||
+                                       licensedServices.includes(serviceName);
+
+                    const hasAccess = hasRole && isLicensed;
+
                     if (hasAccess) {
                         card.style.display = 'block';
                         if (cardId === 'adminCard') {

@@ -131,6 +131,9 @@
                             <button class="sidebar-btn" data-tab="license" id="licenseSidebarTab">
                                 <span class="nav-number">4</span><span class="nav-label">License</span>
                             </button>
+                            <button class="sidebar-btn hidden-tab" data-tab="subtenants" id="subtenantsSidebarTab">
+                                <span class="nav-number">5</span><span class="nav-label">Sub-Tenants</span>
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -320,6 +323,85 @@
                             </div>
                             <h3>No License Configured</h3>
                             <p>This system is running in unlicensed mode. Contact your administrator to configure a valid license.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tenants Tab (SaaS Platform Only) -->
+                <div class="tab-content" id="subtenants">
+                    <div class="subtenants-container">
+                        <div class="subtenants-header">
+                            <div class="subtenants-summary">
+                                <div class="summary-stat">
+                                    <div class="summary-stat-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                    </div>
+                                    <div class="summary-stat-value" id="totalSubtenants">-</div>
+                                    <div class="summary-stat-label">Total Sub-Tenants</div>
+                                </div>
+                                <div class="summary-stat active">
+                                    <div class="summary-stat-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                            <polyline points="22 4 12 14.01 9 11.01"/>
+                                        </svg>
+                                    </div>
+                                    <div class="summary-stat-value" id="activeSubtenants">-</div>
+                                    <div class="summary-stat-label">Active</div>
+                                </div>
+                                <div class="summary-stat expired">
+                                    <div class="summary-stat-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                    </div>
+                                    <div class="summary-stat-value" id="expiredSubtenants">-</div>
+                                    <div class="summary-stat-label">Expired</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="subtenants-table-container">
+                            <table class="subtenants-table">
+                                <thead>
+                                    <tr>
+                                        <th>Organization</th>
+                                        <th>Super Admin</th>
+                                        <th>Users</th>
+                                        <th>Services</th>
+                                        <th>Start Date</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subtenantsTableBody">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="loading-spinner">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="subtenants-info-card" id="subtenantsNotSaaS" style="display: none;">
+                            <div class="no-subtenants-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                            </div>
+                            <h3>Sub-Tenants Not Available</h3>
+                            <p>Sub-tenants are only available in SaaS deployments. This is either an on-premise deployment or you are logged in as a sub-tenant administrator.</p>
                         </div>
                     </div>
                 </div>

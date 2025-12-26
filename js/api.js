@@ -299,6 +299,10 @@ class API {
                     storeUser(data.user);
                 }
 
+                // Extract and store organization info from JWT token claims
+                // This includes organization_name and licensed_services
+                storeOrganizationInfoFromToken(accessToken);
+
                 // Start background refresh timer
                 this._startBackgroundRefresh();
             }
@@ -457,6 +461,11 @@ class API {
             method: 'PUT',
             body: JSON.stringify({ encryptedToken })
         });
+    }
+
+    // Sub-Tenants (SaaS Platform Only)
+    async getSubTenants(includeInactive = false) {
+        return this.request(`/tenants/sub-tenants?includeInactive=${includeInactive}`);
     }
 
     // Projects

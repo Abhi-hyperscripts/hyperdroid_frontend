@@ -9,6 +9,69 @@ let adminHubConnection = null;
 let showDeactivatedUsers = false;
 let licenseData = null;
 
+// ==================== License-Based Filtering ====================
+
+/**
+ * Get licensed services from JWT token (stored in localStorage by config.js)
+ * Returns array of service names like ["Authentication", "Chat", "Drive", "Vision"]
+ */
+function getLicensedServices() {
+    const orgInfo = getOrganizationInfo();
+    if (orgInfo && orgInfo.licensedServices) {
+        return orgInfo.licensedServices;
+    }
+    // Fallback: return empty array (will show nothing if no license info)
+    return [];
+}
+
+/**
+ * Check if a service name is licensed for the current tenant
+ * @param {string} serviceName - Service name to check (e.g., "Vision", "HRMS", "Drive")
+ */
+function isServiceLicensed(serviceName) {
+    const licensed = getLicensedServices();
+    // Case-insensitive comparison
+    const serviceNameLower = (serviceName || '').toLowerCase();
+    return licensed.some(s => (s || '').toLowerCase() === serviceNameLower);
+}
+
+/**
+ * Filter roles to only include roles for licensed services
+ * @param {Array} roles - Array of role names
+ * @returns {Array} Filtered roles for licensed services only
+ */
+function filterRolesByLicense(roles) {
+    const licensed = getLicensedServices();
+    const licensedLower = licensed.map(s => (s || '').toLowerCase());
+
+    return roles.filter(role => {
+        // SUPERADMIN is always allowed
+        if (role === 'SUPERADMIN') return true;
+
+        // For prefixed roles (e.g., VISION_USER, HRMS_ADMIN), extract service name
+        if (role.includes('_')) {
+            const serviceName = role.split('_')[0].toLowerCase();
+
+            // Map role prefixes to service names
+            // Most are direct matches, but some might need mapping
+            const serviceMapping = {
+                'vision': 'vision',
+                'drive': 'drive',
+                'hrms': 'hrms',
+                'chat': 'chat',
+                'auth': 'authentication',
+                'authentication': 'authentication'
+            };
+
+            const mappedService = serviceMapping[serviceName] || serviceName;
+            return licensedLower.includes(mappedService);
+        }
+
+        // Other roles without prefix - allow by default
+        return true;
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
@@ -212,6 +275,12 @@ function showConnectionStatus(status) {
 }
 
 function handleServiceStatusChange(serviceName, newStatus, lastSeen) {
+    // Check if this service is licensed - if not, ignore the update
+    if (!isServiceLicensed(serviceName)) {
+        console.log(`[LICENSE] Ignoring status change for unlicensed service: ${serviceName}`);
+        return;
+    }
+
     // Find and update the service card in the UI
     const serviceIndex = allServices.findIndex(s => s.name === serviceName || s.service_name === serviceName);
 
@@ -238,7 +307,7 @@ function handleServiceStatusChange(serviceName, newStatus, lastSeen) {
         const toastType = newStatus === 'running' ? 'success' : 'error';
         showToast(`${serviceName} is now ${statusLabel}`, toastType);
     } else {
-        // Service not in list, reload all services
+        // Service not in list, reload all services (will apply license filtering)
         loadServices();
     }
 }
@@ -259,7 +328,8 @@ async function loadAllData() {
         loadServices(),
         loadUsers(),
         loadRoles(),
-        loadLicense()
+        loadLicense(),
+        checkSubTenantsVisibility()
     ]);
 }
 
@@ -281,9 +351,21 @@ async function loadServices() {
     try {
         // Use getAllServices() to get full details including endpoint, ports, description
         const services = await api.getAllServices();
-        allServices = services || [];
+        const allRegisteredServices = services || [];
 
-        // Calculate counts
+        // Filter services by license - only show services that are licensed for this tenant
+        allServices = allRegisteredServices.filter(service => {
+            const serviceName = service.name || '';
+            return isServiceLicensed(serviceName);
+        });
+
+        // Log filtered services for debugging
+        const licensedList = getLicensedServices();
+        console.log('[LICENSE] Licensed services:', licensedList);
+        console.log('[LICENSE] Registered services:', allRegisteredServices.map(s => s.name));
+        console.log('[LICENSE] Filtered services (shown):', allServices.map(s => s.name));
+
+        // Calculate counts (only for licensed services)
         const total = allServices.length;
         const running = allServices.filter(s => s.status === 'running').length;
         const offline = allServices.filter(s => s.status === 'not_connected').length;
@@ -308,8 +390,8 @@ async function loadServices() {
                         <line x1="8" y1="21" x2="16" y2="21"/>
                         <line x1="12" y1="17" x2="12" y2="21"/>
                     </svg>
-                    <h3>No Services Registered</h3>
-                    <p>Services will appear here once they register with the system.</p>
+                    <h3>No Licensed Services</h3>
+                    <p>No services are licensed for your organization.</p>
                 </div>
             `;
         } else {
@@ -678,7 +760,14 @@ async function loadRoles() {
 
     try {
         const roles = await api.getAllRoles();
-        allRoles = roles || [];
+        const allRegisteredRoles = roles || [];
+
+        // Filter roles by license - only show roles for licensed services
+        allRoles = filterRolesByLicense(allRegisteredRoles);
+
+        // Log filtered roles for debugging
+        console.log('[LICENSE] All registered roles:', allRegisteredRoles);
+        console.log('[LICENSE] Filtered roles (shown):', allRoles);
 
         // Update count with null check for optional element
         const rolesCountEl = document.getElementById('rolesCount');
@@ -690,8 +779,8 @@ async function loadRoles() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     </svg>
-                    <h3>No Roles Found</h3>
-                    <p>Roles will be created when services register.</p>
+                    <h3>No Roles Available</h3>
+                    <p>No roles available for your licensed services.</p>
                 </div>
             `;
         } else {
@@ -1339,7 +1428,8 @@ function switchTab(tabName) {
         'services': 'Services',
         'users': 'Users',
         'roles': 'Roles',
-        'license': 'License'
+        'license': 'License',
+        'subtenants': 'Sub-Tenants'
     };
 
     // Update sidebar buttons
@@ -1365,6 +1455,11 @@ function switchTab(tabName) {
             userSearch.value = '';
             filterUsers();
         }
+    }
+
+    // Load sub-tenants when switching to that tab
+    if (tabName === 'subtenants') {
+        loadSubTenants();
     }
 }
 
@@ -1648,3 +1743,189 @@ async function updateLicense() {
 
 // ==================== User Dropdown ====================
 // Handled by navigation.js
+
+// ==================== Sub-Tenants Management ====================
+
+let subTenantsData = null;
+let isSaaSPlatformAdmin = false;
+
+async function checkSubTenantsVisibility() {
+    // Check if we should show the Sub-Tenants tab
+    // Only visible to SaaS platform admin (not sub-tenant admins)
+    const subtenantsTab = document.getElementById('subtenantsSidebarTab');
+
+    try {
+        const response = await api.getSubTenants();
+
+        if (response && response.success && response.isSaaSPlatform) {
+            // Show the Sub-Tenants tab (remove hidden-tab class)
+            if (subtenantsTab) {
+                subtenantsTab.classList.remove('hidden-tab');
+            }
+            isSaaSPlatformAdmin = true;
+            subTenantsData = response;
+        } else {
+            // Hide the Sub-Tenants tab (add hidden-tab class)
+            if (subtenantsTab) {
+                subtenantsTab.classList.add('hidden-tab');
+            }
+            isSaaSPlatformAdmin = false;
+        }
+    } catch (error) {
+        console.log('Not a SaaS platform admin or error checking sub-tenants:', error.message);
+        // Hide the Sub-Tenants tab on error (add hidden-tab class)
+        if (subtenantsTab) {
+            subtenantsTab.classList.add('hidden-tab');
+        }
+        isSaaSPlatformAdmin = false;
+    }
+}
+
+async function loadSubTenants() {
+    const tableBody = document.getElementById('subtenantsTableBody');
+    const notSaaSCard = document.getElementById('subtenantsNotSaaS');
+    const tableContainer = document.querySelector('.subtenants-table-container');
+    const summarySection = document.querySelector('.subtenants-summary');
+
+    try {
+        // If we already have data from visibility check, use it
+        if (!subTenantsData) {
+            const response = await api.getSubTenants();
+            subTenantsData = response;
+        }
+
+        if (!subTenantsData || !subTenantsData.success) {
+            // Show not SaaS or unauthorized message
+            if (tableContainer) tableContainer.style.display = 'none';
+            if (summarySection) summarySection.style.display = 'none';
+            if (notSaaSCard) {
+                notSaaSCard.style.display = 'block';
+                notSaaSCard.querySelector('h3').textContent = 'Access Denied';
+                notSaaSCard.querySelector('p').textContent = subTenantsData?.message || 'Sub-tenants are only visible to SaaS platform administrators.';
+            }
+            return;
+        }
+
+        // Show table and summary
+        if (tableContainer) tableContainer.style.display = 'block';
+        if (summarySection) summarySection.style.display = 'flex';
+        if (notSaaSCard) notSaaSCard.style.display = 'none';
+
+        const subTenants = subTenantsData.subTenants || [];
+
+        // Update summary stats
+        const total = subTenants.length;
+        const active = subTenants.filter(t => t.isActive && !t.isExpired).length;
+        const expired = subTenants.filter(t => t.isExpired).length;
+
+        const totalEl = document.getElementById('totalSubtenants');
+        const activeEl = document.getElementById('activeSubtenants');
+        const expiredEl = document.getElementById('expiredSubtenants');
+
+        if (totalEl) totalEl.textContent = total;
+        if (activeEl) activeEl.textContent = active;
+        if (expiredEl) expiredEl.textContent = expired;
+
+        // Render table
+        if (subTenants.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state" style="padding: 40px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 16px; color: var(--text-muted);">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            <h3 style="margin: 0 0 8px; color: var(--text-primary);">No Sub-Tenants Yet</h3>
+                            <p style="color: var(--text-secondary); margin: 0;">Sub-tenants will appear here once they activate their licenses.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tableBody.innerHTML = subTenants.map(tenant => renderSubTenantRow(tenant)).join('');
+        }
+
+    } catch (error) {
+        console.error('Failed to load sub-tenants:', error);
+
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (summarySection) summarySection.style.display = 'none';
+        if (notSaaSCard) {
+            notSaaSCard.style.display = 'block';
+            notSaaSCard.querySelector('h3').textContent = 'Error Loading Sub-Tenants';
+            notSaaSCard.querySelector('p').textContent = error.message || 'Failed to retrieve sub-tenant information.';
+        }
+    }
+}
+
+function renderSubTenantRow(tenant) {
+    // Format dates
+    const startDate = tenant.startDate ? formatDate(tenant.startDate) : '-';
+    const expiryDate = tenant.expiryDate ? formatDate(tenant.expiryDate) : '-';
+
+    // Determine status
+    let statusClass = 'active';
+    let statusText = 'Active';
+
+    if (!tenant.isActive) {
+        statusClass = 'inactive';
+        statusText = 'Inactive';
+    } else if (tenant.isExpired) {
+        statusClass = 'expired';
+        statusText = 'Expired';
+    } else if (tenant.daysUntilExpiry <= 30) {
+        statusClass = 'expiring-soon';
+        statusText = 'Expiring Soon';
+    }
+
+    // Format services
+    const servicesHtml = (tenant.services || []).slice(0, 3).map(
+        s => `<span class="subtenant-service-badge">${s}</span>`
+    ).join('');
+    const moreServices = (tenant.services || []).length > 3
+        ? `<span class="subtenant-service-badge">+${tenant.services.length - 3}</span>`
+        : '';
+
+    return `
+        <tr>
+            <td>
+                <div class="subtenant-org">
+                    <span class="subtenant-org-name">${tenant.organizationName || tenant.tenantName}</span>
+                    ${tenant.organizationName ? `<span class="subtenant-tenant-name">${tenant.tenantName}</span>` : ''}
+                </div>
+            </td>
+            <td>
+                <span class="subtenant-admin-email">${tenant.superAdminEmail || '-'}</span>
+            </td>
+            <td>
+                <div class="subtenant-users">
+                    <span class="subtenant-users-count">${tenant.currentUsers}</span>
+                    <span class="subtenant-users-limit">/ ${tenant.maxUsers === -1 ? '∞' : tenant.maxUsers}</span>
+                </div>
+            </td>
+            <td>
+                <div class="subtenant-services">
+                    ${servicesHtml}${moreServices}
+                </div>
+            </td>
+            <td>
+                <span class="subtenant-date">${startDate}</span>
+            </td>
+            <td>
+                <div>
+                    <span class="subtenant-date">${expiryDate}</span>
+                    ${tenant.daysUntilExpiry > 0 ? `<div class="days-until-expiry">${tenant.daysUntilExpiry} days left</div>` : ''}
+                </div>
+            </td>
+            <td>
+                <span class="subtenant-status ${statusClass}">
+                    <span class="status-dot"></span>
+                    ${statusText}
+                </span>
+            </td>
+        </tr>
+    `;
+}

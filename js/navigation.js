@@ -4,6 +4,9 @@
 // ============================================
 
 const Navigation = {
+    // Cached organization info
+    _organizationInfo: null,
+
     // Service to role mapping
     serviceRoles: {
         vision: 'VISION_USER',
@@ -88,6 +91,13 @@ const Navigation = {
 
         this.renderNavbar(currentPageId, basePath, user);
         this.setupDropdownListeners();
+
+        // Fetch organization info asynchronously and update display
+        this.getOrganizationInfo().then(orgInfo => {
+            if (orgInfo) {
+                this.updateOrganizationDisplay(orgInfo);
+            }
+        });
     },
 
     /**
@@ -95,6 +105,79 @@ const Navigation = {
      */
     getUser() {
         return getStoredUser();
+    },
+
+    /**
+     * Get organization info from cache (populated at login from JWT token)
+     */
+    async getOrganizationInfo() {
+        // Check memory cache first
+        if (this._organizationInfo) {
+            return this._organizationInfo;
+        }
+
+        // Check localStorage cache (populated at login from JWT token)
+        const cached = localStorage.getItem('organization_info');
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                this._organizationInfo = parsed;
+                return parsed;
+            } catch (e) {
+                console.warn('Error parsing cached organization info:', e);
+            }
+        }
+
+        // If not in cache, try to extract from current JWT token
+        if (typeof getAuthToken === 'function' && typeof storeOrganizationInfoFromToken === 'function') {
+            const token = getAuthToken();
+            if (token) {
+                const orgInfo = storeOrganizationInfoFromToken(token);
+                if (orgInfo) {
+                    this._organizationInfo = orgInfo;
+                    return orgInfo;
+                }
+            }
+        }
+
+        return null;
+    },
+
+    // Service name mapping for nav items
+    navServiceMapping: {
+        'vision': 'Vision',
+        'drive': 'Drive',
+        'chat': 'Chat',
+        'hrms': 'HRMS'
+        // 'admin' and 'home' don't require service licensing
+    },
+
+    /**
+     * Update the organization name in dropdown and filter nav items based on licensed services
+     */
+    updateOrganizationDisplay(orgInfo) {
+        const orgNameEl = document.getElementById('navOrgName');
+        if (orgNameEl && orgInfo) {
+            const displayName = orgInfo.organizationName || orgInfo.tenantName;
+            if (displayName) {
+                orgNameEl.textContent = displayName;
+                orgNameEl.style.display = 'block';
+            }
+        }
+
+        // Filter nav items based on licensed services
+        if (orgInfo && orgInfo.licensedServices) {
+            const navLinks = document.querySelectorAll('.nav-dropdown-link[data-nav-id]');
+            navLinks.forEach(link => {
+                const navId = link.getAttribute('data-nav-id');
+                const serviceName = this.navServiceMapping[navId];
+
+                // If service requires licensing and is not in the licensed list, hide it
+                if (serviceName && !orgInfo.licensedServices.includes(serviceName)) {
+                    link.style.display = 'none';
+                }
+            });
+        }
     },
 
     /**
@@ -148,6 +231,7 @@ const Navigation = {
         dropdownPortal.innerHTML = `
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <div class="user-dropdown-header">
+                    <span class="user-dropdown-org" id="navOrgName" style="display: none;"></span>
                     <span class="user-dropdown-name">${this.escapeHtml(displayName)}</span>
                     <span class="user-dropdown-email">${this.escapeHtml(user.email || '')}</span>
                 </div>

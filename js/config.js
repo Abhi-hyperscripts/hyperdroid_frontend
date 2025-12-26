@@ -268,11 +268,78 @@ function removeStoredUser() {
 }
 
 /**
- * Clear all auth data (tokens + user + expiry) - used for logout
+ * Clear all auth data (tokens + user + expiry + organization info) - used for logout
  */
 function clearAuthData() {
     removeAuthToken();
     removeRefreshToken();
     removeTokenExpiry();
     removeStoredUser();
+    // Also clear organization/license info cache
+    localStorage.removeItem('organization_info');
+}
+
+/**
+ * Decode JWT token payload (base64 decode, no verification)
+ * @param {string} token - The JWT token
+ * @returns {object|null} The decoded payload or null if invalid
+ */
+function decodeJwtPayload(token) {
+    try {
+        if (!token) return null;
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        // Base64url decode the payload
+        const payload = parts[1];
+        const padded = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = atob(padded);
+        return JSON.parse(decoded);
+    } catch (e) {
+        console.warn('Failed to decode JWT:', e);
+        return null;
+    }
+}
+
+/**
+ * Extract and store organization info from JWT token
+ * @param {string} token - The JWT token containing organization_name and licensed_services claims
+ */
+function storeOrganizationInfoFromToken(token) {
+    const payload = decodeJwtPayload(token);
+    if (!payload) return;
+
+    // Parse licensed_services JSON: { "serviceId": "serviceName", ... }
+    let licensedServicesMap = {};
+    try {
+        if (payload.licensed_services) {
+            licensedServicesMap = JSON.parse(payload.licensed_services);
+        }
+    } catch (e) {
+        console.warn('Failed to parse licensed_services JSON:', e);
+    }
+
+    const orgInfo = {
+        organizationName: payload.organization_name || '',
+        tenantName: payload.organization_name || '', // Same as org name
+        tenantId: payload.tenant_id || null,
+        // Full map of serviceId -> serviceName
+        licensedServicesMap: licensedServicesMap,
+        // Array of service names (for easy filtering/display)
+        licensedServices: Object.values(licensedServicesMap),
+        // Array of service IDs (for programmatic use)
+        licensedServiceIds: Object.keys(licensedServicesMap),
+        cachedAt: Date.now()
+    };
+
+    localStorage.setItem('organization_info', JSON.stringify(orgInfo));
+    return orgInfo;
+}
+
+/**
+ * Get cached organization info
+ * @returns {object|null} The organization info or null
+ */
+function getOrganizationInfo() {
+    const cached = localStorage.getItem('organization_info');
+    return cached ? JSON.parse(cached) : null;
 }
