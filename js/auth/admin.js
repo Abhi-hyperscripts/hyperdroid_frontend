@@ -7,6 +7,7 @@ let allServices = [];
 let currentUserRoles = [];
 let adminHubConnection = null;
 let showDeactivatedUsers = false;
+let licenseData = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -27,11 +28,90 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initializeUser();
+    initializeSidebar();
     await loadAllData();
 
     // Initialize SignalR for real-time updates
     initializeSignalR();
 });
+
+// ==================== Sidebar Navigation ====================
+
+function initializeSidebar() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('adminSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    // Sidebar toggle button click
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+
+    // Overlay click to close sidebar
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+    }
+
+    // Sidebar button clicks
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tab = btn.dataset.tab;
+            if (tab) {
+                switchTab(tab);
+                // Close sidebar on mobile after tab switch
+                if (window.innerWidth <= 992) {
+                    closeSidebar();
+                }
+            }
+        });
+    });
+
+    // Nav group header clicks (expand/collapse)
+    document.querySelectorAll('.nav-group-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+            const group = header.closest('.nav-group');
+            if (group) {
+                group.classList.toggle('collapsed');
+            }
+        });
+    });
+}
+
+function toggleSidebar() {
+    const container = document.querySelector('.admin-container');
+    const sidebar = document.getElementById('adminSidebar');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (sidebar) {
+        const isOpen = sidebar.classList.toggle('open');
+
+        // Toggle container class for content shifting
+        if (container) {
+            container.classList.toggle('sidebar-open', isOpen);
+        }
+
+        // Toggle button active state (changes hamburger to arrow)
+        if (toggle) {
+            toggle.classList.toggle('active', isOpen);
+        }
+    }
+}
+
+function closeSidebar() {
+    const container = document.querySelector('.admin-container');
+    const sidebar = document.getElementById('adminSidebar');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (sidebar) {
+        sidebar.classList.remove('open');
+    }
+    if (container) {
+        container.classList.remove('sidebar-open');
+    }
+    if (toggle) {
+        toggle.classList.remove('active');
+    }
+}
 
 // ==================== SignalR Real-time Updates ====================
 
@@ -178,7 +258,8 @@ async function loadAllData() {
     await Promise.all([
         loadServices(),
         loadUsers(),
-        loadRoles()
+        loadRoles(),
+        loadLicense()
     ]);
 }
 
@@ -207,11 +288,16 @@ async function loadServices() {
         const running = allServices.filter(s => s.status === 'running').length;
         const offline = allServices.filter(s => s.status === 'not_connected').length;
 
-        // Update summary
-        document.getElementById('totalServices').textContent = total;
-        document.getElementById('runningServices').textContent = running;
-        document.getElementById('offlineServices').textContent = offline;
-        document.getElementById('servicesCount').textContent = total;
+        // Update summary (with null checks for optional elements)
+        const totalEl = document.getElementById('totalServices');
+        const runningEl = document.getElementById('runningServices');
+        const offlineEl = document.getElementById('offlineServices');
+        const countEl = document.getElementById('servicesCount');
+
+        if (totalEl) totalEl.textContent = total;
+        if (runningEl) runningEl.textContent = running;
+        if (offlineEl) offlineEl.textContent = offline;
+        if (countEl) countEl.textContent = total;
 
         // Render services grid
         if (allServices.length === 0) {
@@ -245,6 +331,19 @@ async function loadServices() {
     }
 }
 
+function getServiceIcon(serviceName) {
+    const name = (serviceName || '').toLowerCase();
+    const icons = {
+        'vision': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`,
+        'drive': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+        'hrms': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+        'chat': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+        'authentication': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+        'auth': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`
+    };
+    return icons[name] || `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`;
+}
+
 function renderServiceCard(service) {
     const statusClass = service.status || 'unknown';
     const statusLabel = {
@@ -254,35 +353,44 @@ function renderServiceCard(service) {
     }[statusClass] || 'Unknown';
 
     const lastSeen = service.last_seen ? formatRelativeTime(new Date(service.last_seen)) : 'Never';
+    const serviceIcon = getServiceIcon(service.name);
 
     return `
-        <div class="service-card">
-            <div class="service-header">
-                <div>
-                    <h3 class="service-name">${service.name || 'Unknown Service'}</h3>
-                    <p class="service-description">${service.description || 'No description'}</p>
+        <div class="service-card ${statusClass}">
+            <div class="service-card-accent"></div>
+            <div class="service-card-body">
+                <div class="service-header">
+                    <div class="service-header-left">
+                        <div class="service-icon">
+                            ${serviceIcon}
+                        </div>
+                        <div>
+                            <h3 class="service-name">${service.name || 'Unknown Service'}</h3>
+                            <p class="service-description">${service.description || 'No description'}</p>
+                        </div>
+                    </div>
+                    <div class="service-status ${statusClass}">
+                        <span class="status-dot"></span>
+                        ${statusLabel}
+                    </div>
                 </div>
-                <div class="service-status ${statusClass}">
-                    <span class="status-dot"></span>
-                    ${statusLabel}
-                </div>
-            </div>
-            <div class="service-details">
-                <div class="service-detail">
-                    <span class="service-detail-label">Endpoint</span>
-                    <span class="service-detail-value">${service.endpoint || '-'}</span>
-                </div>
-                <div class="service-detail">
-                    <span class="service-detail-label">gRPC Port</span>
-                    <span class="service-detail-value">${service.grpc_port || '-'}</span>
-                </div>
-                <div class="service-detail">
-                    <span class="service-detail-label">HTTP Port</span>
-                    <span class="service-detail-value">${service.http_port || '-'}</span>
-                </div>
-                <div class="service-detail">
-                    <span class="service-detail-label">Last Seen</span>
-                    <span class="service-detail-value last-seen">${lastSeen}</span>
+                <div class="service-details">
+                    <div class="service-detail">
+                        <span class="service-detail-label">Endpoint</span>
+                        <span class="service-detail-value">${service.endpoint || '-'}</span>
+                    </div>
+                    <div class="service-detail">
+                        <span class="service-detail-label">gRPC Port</span>
+                        <span class="service-detail-value">${service.grpc_port || '-'}</span>
+                    </div>
+                    <div class="service-detail">
+                        <span class="service-detail-label">HTTP Port</span>
+                        <span class="service-detail-value">${service.http_port || '-'}</span>
+                    </div>
+                    <div class="service-detail">
+                        <span class="service-detail-label">Last Seen</span>
+                        <span class="service-detail-value last-seen">${lastSeen}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,9 +406,10 @@ async function loadUsers() {
         const users = await api.getAllUsersAdmin();
         allUsers = users || [];
 
-        // Show total active users count in tab
+        // Show total active users count in tab (with null check)
         const activeUsers = allUsers.filter(u => u.isActive !== false);
-        document.getElementById('usersCount').textContent = activeUsers.length;
+        const usersCountEl = document.getElementById('usersCount');
+        if (usersCountEl) usersCountEl.textContent = activeUsers.length;
 
         // Update deactivated count badge
         updateDeactivatedCount();
@@ -501,7 +610,37 @@ function getRoleBadgeClass(role) {
     if (role === 'SUPERADMIN') return 'superadmin';
     if (role.startsWith('VISION_')) return 'vision';
     if (role.startsWith('DRIVE_')) return 'drive';
+    if (role.startsWith('HRMS_')) return 'hrms';
+    if (role.startsWith('CHAT_')) return 'chat';
     return 'default';
+}
+
+function getRoleCategoryIcon(category) {
+    const icons = {
+        'System': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+        </svg>`,
+        'Vision': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>`,
+        'Drive': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+        </svg>`,
+        'Hrms': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+        </svg>`,
+        'Chat': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>`,
+        'Other': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+        </svg>`
+    };
+    return icons[category] || icons['Other'];
 }
 
 function formatRoleName(role) {
@@ -541,7 +680,9 @@ async function loadRoles() {
         const roles = await api.getAllRoles();
         allRoles = roles || [];
 
-        document.getElementById('rolesCount').textContent = allRoles.length;
+        // Update count with null check for optional element
+        const rolesCountEl = document.getElementById('rolesCount');
+        if (rolesCountEl) rolesCountEl.textContent = allRoles.length;
 
         if (allRoles.length === 0) {
             grid.innerHTML = `
@@ -582,13 +723,16 @@ async function loadRoles() {
             grid.innerHTML = Object.entries(roleGroups)
                 .filter(([_, roles]) => roles.length > 0)
                 .map(([group, roles]) => `
-                    <div class="service-card">
-                        <div class="service-header">
-                            <h3 class="service-name">${group} Roles</h3>
-                            <span class="tab-badge">${roles.length}</span>
+                    <div class="role-category-card">
+                        <div class="role-category-header">
+                            <div class="role-category-icon ${group.toLowerCase()}">${getRoleCategoryIcon(group)}</div>
+                            <div class="role-category-info">
+                                <h3 class="role-category-name">${group} Roles</h3>
+                                <span class="role-category-count">${roles.length} role${roles.length !== 1 ? 's' : ''}</span>
+                            </div>
                         </div>
-                        <div style="margin-top: 16px;">
-                            ${roles.map(role => `<span class="role-badge ${getRoleBadgeClass(role)}" style="margin: 4px 4px 4px 0;">${role}</span>`).join('')}
+                        <div class="role-badges-container">
+                            ${roles.map(role => `<span class="role-badge ${getRoleBadgeClass(role)}">${formatRoleName(role)}</span>`).join('')}
                         </div>
                     </div>
                 `).join('');
@@ -1190,15 +1334,29 @@ async function confirmReactivateUser() {
 // ==================== Tab Navigation ====================
 
 function switchTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    // Tab names for display
+    const tabDisplayNames = {
+        'services': 'Services',
+        'users': 'Users',
+        'roles': 'Roles',
+        'license': 'License'
+    };
+
+    // Update sidebar buttons
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
-    // Update tab content
+    // Update tab content (tab ID matches data-tab value directly)
     document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('active', content.id === `${tabName}Tab`);
+        content.classList.toggle('active', content.id === tabName);
     });
+
+    // Update active tab title
+    const activeTabName = document.getElementById('activeTabName');
+    if (activeTabName) {
+        activeTabName.textContent = tabDisplayNames[tabName] || tabName;
+    }
 
     // Clear search input and reset filter when switching to users tab
     if (tabName === 'users') {
@@ -1253,6 +1411,239 @@ function formatRelativeTime(date) {
         month: 'short',
         day: 'numeric'
     });
+}
+
+// ==================== License Management ====================
+
+async function loadLicense() {
+    const statusCard = document.getElementById('licenseStatusCard');
+    const servicesGrid = document.getElementById('licenseServicesGrid');
+    const noLicenseCard = document.getElementById('licenseNoLicense');
+
+    try {
+        const response = await api.getLicenseInfo();
+
+        if (!response || !response.isValid) {
+            // No valid license
+            if (statusCard) statusCard.style.display = 'none';
+            document.querySelector('.license-services-card').style.display = 'none';
+            if (noLicenseCard) noLicenseCard.style.display = 'block';
+            return;
+        }
+
+        licenseData = response;
+
+        // Show license cards, hide no-license message
+        if (statusCard) statusCard.style.display = 'block';
+        document.querySelector('.license-services-card').style.display = 'block';
+        if (noLicenseCard) noLicenseCard.style.display = 'none';
+
+        // Update tenant info
+        document.getElementById('licenseTenantName').textContent = response.tenantName || 'Unknown Tenant';
+        document.getElementById('licenseTenantId').textContent = response.tenantId || '-';
+        document.getElementById('licenseDeploymentType').textContent = formatDeploymentType(response.deploymentType);
+        document.getElementById('licenseStartDate').textContent = formatLicenseDate(response.startDate);
+        document.getElementById('licenseExpiryDate').textContent = formatLicenseDate(response.expiryDate);
+        document.getElementById('licenseMaxUsers').textContent = response.maxUsers === -1 ? 'Unlimited' : (response.maxUsers || '-');
+
+        // Sub-tenants only relevant for SaaS deployments
+        const deploymentType = (response.deploymentType || '').toLowerCase();
+        if (deploymentType === 'on-premise' || deploymentType === 'on_premise') {
+            document.getElementById('licenseMaxSubTenants').textContent = 'N/A';
+        } else {
+            document.getElementById('licenseMaxSubTenants').textContent = response.maxSubTenants === -1 ? 'Unlimited' : (response.maxSubTenants || '0');
+        }
+
+        // Show Update License button for on-premise and SaaS sub-tenant deployments
+        // SaaS Platform licenses require server restart with new key in config
+        const updateLicenseBtn = document.getElementById('updateLicenseBtn');
+        if (updateLicenseBtn) {
+            const isOnPremise = deploymentType === 'on-premise' || deploymentType === 'on_premise';
+            // SaaS sub-tenants have canCreateSubTenants=false (only SaaS Platform has it true)
+            const isSaaSSubTenant = deploymentType === 'saas' && response.canCreateSubTenants === false;
+
+            if (isOnPremise || isSaaSSubTenant) {
+                updateLicenseBtn.style.display = 'inline-flex';
+            } else {
+                updateLicenseBtn.style.display = 'none';
+            }
+        }
+
+        // Update badge status
+        const badge = document.getElementById('licenseBadge');
+        const daysRemaining = calculateDaysRemaining(response.expiryDate);
+
+        if (daysRemaining < 0) {
+            badge.textContent = 'Expired';
+            badge.className = 'license-badge expired';
+        } else if (daysRemaining <= 30) {
+            badge.textContent = `Expiring in ${daysRemaining} days`;
+            badge.className = 'license-badge expiring';
+        } else {
+            badge.textContent = 'Active';
+            badge.className = 'license-badge active';
+        }
+
+        // Update services count badge
+        const servicesCountBadge = document.getElementById('servicesCountBadge');
+        const serviceCount = response.services?.length || 0;
+        if (servicesCountBadge) {
+            servicesCountBadge.textContent = `${serviceCount} Service${serviceCount !== 1 ? 's' : ''}`;
+        }
+
+        // Render services grid
+        if (response.services && response.services.length > 0) {
+            servicesGrid.innerHTML = response.services.map(service => renderLicenseServiceCard(service)).join('');
+        } else {
+            servicesGrid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    <h3>No Services Licensed</h3>
+                    <p>This license does not include any services.</p>
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Failed to load license:', error);
+        // Show error state
+        if (statusCard) statusCard.style.display = 'none';
+        document.querySelector('.license-services-card').style.display = 'none';
+        if (noLicenseCard) {
+            noLicenseCard.style.display = 'block';
+            noLicenseCard.querySelector('h3').textContent = 'Failed to Load License';
+            noLicenseCard.querySelector('p').textContent = error.message || 'Unable to retrieve license information.';
+        }
+    }
+}
+
+function renderLicenseServiceCard(service) {
+    const permissions = [];
+    if (service.read) permissions.push('Read');
+    if (service.write) permissions.push('Write');
+
+    // Get service icon
+    const serviceIcon = getServiceIcon(service.name);
+
+    return `
+        <div class="license-service-item">
+            <div class="license-service-header">
+                <div class="license-service-header-left">
+                    <div class="license-service-icon">${serviceIcon}</div>
+                    <span class="license-service-name">${service.name}</span>
+                </div>
+                <span class="license-service-status active">Enabled</span>
+            </div>
+            <div class="license-service-details">
+                <div class="license-service-detail">
+                    <span class="detail-label">Permissions</span>
+                    <span class="detail-value">${permissions.join(', ') || 'None'}</span>
+                </div>
+                ${service.maxUsers !== undefined && service.maxUsers !== null ? `
+                    <div class="license-service-detail">
+                        <span class="detail-label">Max Users</span>
+                        <span class="detail-value">${service.maxUsers === 0 ? 'Unlimited' : service.maxUsers}</span>
+                    </div>
+                ` : ''}
+                ${service.storageLimitBytes ? `
+                    <div class="license-service-detail">
+                        <span class="detail-label">Storage</span>
+                        <span class="detail-value">${formatBytes(service.storageLimitBytes)}</span>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function formatDeploymentType(type) {
+    if (!type) return '-';
+    const types = {
+        'on-premise': 'On-Premise',
+        'saas': 'SaaS (Cloud)',
+        'hybrid': 'Hybrid'
+    };
+    return types[type.toLowerCase()] || type;
+}
+
+function formatLicenseDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function calculateDaysRemaining(expiryDate) {
+    if (!expiryDate) return -1;
+    const expiry = new Date(expiryDate);
+    const now = new Date();
+    const diff = expiry - now;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return 'Unlimited';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// ==================== License Update ====================
+
+function openUpdateLicenseModal() {
+    // Clear previous input
+    document.getElementById('newLicenseKey').value = '';
+    openModal('updateLicenseModal');
+}
+
+async function updateLicense() {
+    const licenseKey = document.getElementById('newLicenseKey').value.trim();
+
+    if (!licenseKey) {
+        showToast('Please enter a license key', 'error');
+        return;
+    }
+
+    // Get current tenant ID from loaded license data
+    if (!licenseData || !licenseData.tenantId) {
+        showToast('Unable to determine tenant ID. Please refresh the page.', 'error');
+        return;
+    }
+
+    const submitBtn = document.getElementById('updateLicenseSubmitBtn');
+    const spinner = document.getElementById('updateLicenseSpinner');
+
+    try {
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.style.display = 'inline-block';
+
+        const response = await api.updateLicense(licenseData.tenantId, licenseKey);
+
+        if (response.success) {
+            showToast('License updated successfully', 'success');
+            closeModal('updateLicenseModal');
+
+            // Reload license info to show updated data
+            await loadLicense();
+        } else {
+            showToast(response.message || 'Failed to update license', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating license:', error);
+        showToast(error.message || 'Failed to update license', 'error');
+    } finally {
+        // Reset loading state
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+    }
 }
 
 // ==================== User Dropdown ====================

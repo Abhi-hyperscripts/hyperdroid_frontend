@@ -1,6 +1,7 @@
 class API {
     constructor() {
-        this.token = getAuthToken();
+        // Safely get auth token - config.js must be loaded first
+        this.token = typeof getAuthToken === 'function' ? getAuthToken() : null;
         this._isRefreshing = false;
         this._refreshPromise = null;
         this._refreshTimer = null;
@@ -91,8 +92,8 @@ class API {
         if (endpoint.startsWith('/auth/')) {
             return CONFIG.authApiBaseUrl;
         }
-        // Services and Users endpoints go to Authentication service (admin APIs)
-        if (endpoint.startsWith('/services') || endpoint.startsWith('/users')) {
+        // Services, Users, Admin, and Tenants endpoints go to Authentication service (admin APIs)
+        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants')) {
             return CONFIG.authApiBaseUrl;
         }
         // Drive endpoints go directly to Drive service (independent microservice)
@@ -442,6 +443,19 @@ class API {
         return this.request(`/users/${userId}/reset-password`, {
             method: 'POST',
             body: JSON.stringify({ newPassword })
+        });
+    }
+
+    // License Info (SUPERADMIN)
+    async getLicenseInfo() {
+        return this.request('/admin/license');
+    }
+
+    // Update License (SUPERADMIN) - For on-premise and SaaS sub-tenants
+    async updateLicense(tenantId, encryptedToken) {
+        return this.request(`/tenants/${tenantId}/license`, {
+            method: 'PUT',
+            body: JSON.stringify({ encryptedToken })
         });
     }
 

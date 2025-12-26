@@ -1,0 +1,289 @@
+/*
+ * ACTIVATE PAGE STYLES
+ * ====================
+ * Styles for the tenant license activation page.
+ * Uses theme variables from theme.css for consistent styling.
+ */
+
+/* License Key Textarea */
+.license-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: var(--space-4);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    border: var(--input-border-width) solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    resize: vertical;
+    transition: var(--transition-base);
+}
+
+.license-textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: var(--focus-ring);
+}
+
+.license-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Success Card */
+.success-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--color-success);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-8);
+    text-align: center;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    background-color: var(--color-success);
+    border-radius: var(--border-radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-6);
+}
+
+.success-icon svg {
+    width: 32px;
+    height: 32px;
+    color: var(--text-inverse);
+}
+
+/* Credentials Box */
+.credentials-box {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-6);
+    margin: var(--space-6) 0;
+    text-align: left;
+}
+
+.credentials-box h4 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+}
+
+.credential-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.credential-row:last-child {
+    border-bottom: none;
+}
+
+.credential-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.credential-value {
+    font-family: var(--font-family-mono);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Copy Button */
+.copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--border-radius-xs);
+    transition: var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn:hover {
+    color: var(--brand-primary);
+    background-color: var(--hover-overlay);
+}
+
+.copy-btn:active {
+    transform: scale(0.95);
+}
+
+/* Warning Text Box */
+.warning-text {
+    background-color: var(--warning-alpha-10);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-4);
+    margin-top: var(--space-4);
+    color: var(--color-warning);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.warning-text svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Activate Button */
+.activate-btn {
+    width: 100%;
+    padding: var(--space-4);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    background: var(--gradient-primary);
+    color: var(--btn-primary-text);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    text-decoration: none;
+}
+
+.activate-btn:hover:not(:disabled) {
+    background: var(--gradient-primary-hover);
+    box-shadow: var(--shadow-primary-sm);
+    transform: translateY(-1px);
+}
+
+.activate-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.activate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.activate-btn svg {
+    flex-shrink: 0;
+}
+
+/* Loading Spinner */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--white-30);
+    border-top-color: var(--text-inverse);
+    border-radius: var(--border-radius-full);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* License Info Section */
+.license-info {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    background-color: var(--bg-input);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.license-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+}
+
+.license-info-row span:last-child {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Services List */
+.services-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.service-badge {
+    background: var(--gradient-primary);
+    color: var(--btn-primary-text);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Helper Text */
+.help-text {
+    color: var(--text-secondary);
+    display: block;
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+/* Success Card Title */
+.success-card h2 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+}
+
+.success-card .subtitle {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] .license-textarea {
+    background-color: var(--bg-input);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .license-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .success-card {
+    background-color: var(--bg-card);
+}
+
+[data-theme="dark"] .credentials-box {
+    background-color: var(--bg-input);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .license-info {
+    background-color: var(--bg-input);
+}
+
+[data-theme="dark"] .warning-text {
+    background-color: var(--warning-alpha-10);
+    color: var(--color-warning);
+}
+
+[data-theme="dark"] .activate-btn {
+    background: var(--gradient-primary);
+    color: var(--btn-primary-text);
+}

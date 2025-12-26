@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - HyperVision</title>
+    <title>Admin Dashboard - HyperDroid</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
@@ -15,7 +15,7 @@
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
-                <img src="../../assets/logo-svg.svg" alt="HyperVision Logo" class="navbar-logo">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
             </a>
         </div>
         <div class="navbar-menu">
@@ -25,134 +25,305 @@
 
     <div class="admin-container">
         <div class="admin-header">
-            <div>
-                <h1>Admin Dashboard</h1>
-                <p>Manage users and monitor system health</p>
-            </div>
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="23 4 23 10 17 10"/>
-                    <polyline points="1 20 1 14 7 14"/>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                </svg>
-                Refresh
-            </button>
-        </div>
-
-        <!-- Tabs -->
-        <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="services" onclick="switchTab('services')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
-                Services
-                <span class="tab-badge" id="servicesCount">0</span>
-            </button>
-            <button class="admin-tab" data-tab="users" onclick="switchTab('users')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                Users
-                <span class="tab-badge" id="usersCount">0</span>
-            </button>
-            <button class="admin-tab" data-tab="roles" onclick="switchTab('roles')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Roles
-                <span class="tab-badge" id="rolesCount">0</span>
-            </button>
-        </div>
-
-        <!-- Services Tab -->
-        <div class="tab-content active" id="servicesTab">
-            <div class="health-summary" id="healthSummary">
-                <div class="health-stat">
-                    <div class="health-stat-value" id="totalServices">-</div>
-                    <div class="health-stat-label">Total Services</div>
-                </div>
-                <div class="health-stat running">
-                    <div class="health-stat-value" id="runningServices">-</div>
-                    <div class="health-stat-label">Running</div>
-                </div>
-                <div class="health-stat not_connected">
-                    <div class="health-stat-value" id="offlineServices">-</div>
-                    <div class="health-stat-label">Offline</div>
-                </div>
-            </div>
-
-            <div class="services-grid" id="servicesGrid">
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Users Tab -->
-        <div class="tab-content" id="usersTab">
-            <div class="users-header">
-                <div class="users-search">
-                    <div class="search-input-wrapper">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="M21 21l-4.35-4.35"/>
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="../home.html">Home</a>
+                    <span class="separator">/</span>
+                    <span class="current">Admin</span>
+                </nav>
+                <div class="admin-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <!-- Hamburger icon (shown when sidebar closed) -->
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <!-- Left arrow icon (shown when sidebar open) -->
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
                         </svg>
-                        <input type="text" class="search-input" id="userSearch" placeholder="Search users..." oninput="filterUsers()" autocomplete="off">
-                    </div>
-                    <button class="btn-toggle-deactivated" id="toggleDeactivatedBtn" onclick="toggleShowDeactivated()">
+                    </button>
+                    <h1>Admin Dashboard</h1>
+                    <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
-                        <span id="toggleDeactivatedText">Show Deactivated</span>
-                        <span class="deactivated-count" id="deactivatedCount" style="display: none;">0</span>
+                        Refresh
                     </button>
                 </div>
-                <button class="btn btn-primary" onclick="openCreateUserModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Create User
-                </button>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Services</span>
+                </div>
             </div>
+        </div>
 
-            <div class="users-table-container">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Roles</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr>
-                            <td colspan="5">
+        <!-- Sidebar Overlay (hidden by CSS) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="admin-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="admin-sidebar" id="adminSidebar">
+                <div class="sidebar-header">
+                    <h3>Admin</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Monitoring Section -->
+                    <div class="nav-group" data-group="monitoring">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                </svg>
+                                Monitoring
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="services" id="servicesSidebarTab">
+                                <span class="nav-number">1</span><span class="nav-label">Services</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Access Control Section -->
+                    <div class="nav-group" data-group="access">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                Access Control
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="users" id="usersSidebarTab">
+                                <span class="nav-number">2</span><span class="nav-label">Users</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="roles" id="rolesSidebarTab">
+                                <span class="nav-number">3</span><span class="nav-label">Roles</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Section -->
+                    <div class="nav-group" data-group="system">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                                System
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="license" id="licenseSidebarTab">
+                                <span class="nav-number">4</span><span class="nav-label">License</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="admin-content">
+                <!-- Services Tab -->
+                <div class="tab-content active" id="services">
+                    <div class="health-summary" id="healthSummary">
+                        <div class="health-stat">
+                            <div class="health-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"/>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                                </svg>
+                            </div>
+                            <div class="health-stat-value" id="totalServices">-</div>
+                            <div class="health-stat-label">Total Services</div>
+                        </div>
+                        <div class="health-stat running">
+                            <div class="health-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <div class="health-stat-value" id="runningServices">-</div>
+                            <div class="health-stat-label">Running</div>
+                        </div>
+                        <div class="health-stat not_connected">
+                            <div class="health-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                            </div>
+                            <div class="health-stat-value" id="offlineServices">-</div>
+                            <div class="health-stat-label">Offline</div>
+                        </div>
+                    </div>
+
+                    <div class="services-grid" id="servicesGrid">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-content" id="users">
+                    <div class="users-header">
+                        <div class="users-search">
+                            <div class="search-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="M21 21l-4.35-4.35"/>
+                                </svg>
+                                <input type="text" class="search-input" id="userSearch" placeholder="Search users..." oninput="filterUsers()" autocomplete="off">
+                            </div>
+                            <button class="btn-toggle-deactivated" id="toggleDeactivatedBtn" onclick="toggleShowDeactivated()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <span id="toggleDeactivatedText">Show Deactivated</span>
+                                <span class="deactivated-count" id="deactivatedCount" style="display: none;">0</span>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" onclick="openCreateUserModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Create User
+                        </button>
+                    </div>
+
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Roles</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Roles Tab -->
+                <div class="tab-content" id="roles">
+                    <div class="services-grid" id="rolesGrid">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- License Tab -->
+                <div class="tab-content" id="license">
+                    <div class="license-container">
+                        <div class="license-status-card" id="licenseStatusCard">
+                            <div class="license-status-header">
+                                <div class="license-header-left">
+                                    <div class="license-icon">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="license-status-info">
+                                        <h3 id="licenseTenantName">Loading...</h3>
+                                        <span class="license-badge loading" id="licenseBadge">Loading</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-secondary" id="updateLicenseBtn" onclick="openUpdateLicenseModal()" style="display: none;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Update License
+                                </button>
+                            </div>
+                            <div class="license-status-body">
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Tenant ID</span>
+                                    <span class="license-detail-value mono" id="licenseTenantId">-</span>
+                                </div>
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Deployment Type</span>
+                                    <span class="license-detail-value" id="licenseDeploymentType">-</span>
+                                </div>
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Valid From</span>
+                                    <span class="license-detail-value" id="licenseStartDate">-</span>
+                                </div>
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Expires On</span>
+                                    <span class="license-detail-value" id="licenseExpiryDate">-</span>
+                                </div>
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Max Users</span>
+                                    <span class="license-detail-value" id="licenseMaxUsers">-</span>
+                                </div>
+                                <div class="license-detail-row">
+                                    <span class="license-detail-label">Max Sub-Tenants</span>
+                                    <span class="license-detail-value" id="licenseMaxSubTenants">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="license-services-card">
+                            <div class="license-services-header">
+                                <h4>Licensed Services</h4>
+                                <span class="services-count-badge" id="servicesCountBadge">0 Services</span>
+                            </div>
+                            <div class="license-services-grid" id="licenseServicesGrid">
                                 <div class="loading-spinner">
                                     <div class="spinner"></div>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            </div>
+                        </div>
 
-        <!-- Roles Tab -->
-        <div class="tab-content" id="rolesTab">
-            <div class="services-grid" id="rolesGrid">
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
+                        <div class="license-info-card" id="licenseNoLicense" style="display: none;">
+                            <div class="no-license-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                            </div>
+                            <h3>No License Configured</h3>
+                            <p>This system is running in unlicensed mode. Contact your administrator to configure a valid license.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
 
@@ -319,6 +490,40 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" onclick="confirmReactivateUser()">Reactivate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update License Modal -->
+    <div class="modal" id="updateLicenseModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Update License</h3>
+                    <button class="close-btn" onclick="closeModal('updateLicenseModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary" style="margin-bottom: 1rem;">Paste your new license key below. The license will be validated and applied immediately.</p>
+                    <div class="form-group">
+                        <label>License Key</label>
+                        <textarea id="newLicenseKey" rows="6" placeholder="Paste your encrypted license key here..." style="font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
+                    </div>
+                    <div class="alert alert-warning" style="margin-top: 1rem; font-size: 13px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        If the new license has an older issue date than the current license, it will be rejected.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('updateLicenseModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="updateLicense()" id="updateLicenseSubmitBtn">
+                        <span id="updateLicenseSpinner" class="spinner-sm" style="display: none;"></span>
+                        Apply License
+                    </button>
                 </div>
             </div>
         </div>

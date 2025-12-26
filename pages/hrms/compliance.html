@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statutory Compliance - HRMS | HyperDroid</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-compliance.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/logo-svg.svg" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="hrms-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">HRMS</a>
+                    <span class="separator">/</span>
+                    <span class="current">Statutory Compliance</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Statutory Compliance</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Company Information</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="organization-sidebar" id="organizationSidebar">
+                <div class="sidebar-header">
+                    <h3>Compliance</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Company Info Section -->
+                    <div class="nav-group" data-group="company">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 21h18"></path>
+                                    <path d="M9 8h1"></path>
+                                    <path d="M9 12h1"></path>
+                                    <path d="M9 16h1"></path>
+                                    <path d="M14 8h1"></path>
+                                    <path d="M14 12h1"></path>
+                                    <path d="M14 16h1"></path>
+                                    <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+                                </svg>
+                                Company Info
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="company-info" id="companyInfoBtn">
+                                <span class="nav-number">1</span><span class="nav-label">Registration Details</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PF/EPFO Section -->
+                    <div class="nav-group" data-group="pf">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                                    <path d="M12 9v6"></path>
+                                    <path d="M9 12h6"></path>
+                                </svg>
+                                Provident Fund (PF)
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="ecr-generation" id="ecrBtn">
+                                <span class="nav-number">2</span><span class="nav-label">ECR File</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ESI Section -->
+                    <div class="nav-group" data-group="esi">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                ESI
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="esi-challan" id="esiBtn">
+                                <span class="nav-number">3</span><span class="nav-label">ESI Challan</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Income Tax Section -->
+                    <div class="nav-group" data-group="tax">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Income Tax
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="form16" id="form16Btn">
+                                <span class="nav-number">4</span><span class="nav-label">Form 16</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <!-- Loading State -->
+                <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Loading...</p>
+                </div>
+
+                <!-- Company Info Tab -->
+                <div class="tab-content active" id="company-info">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Company Registration Details</h2>
+                            <p class="section-desc">Configure your company's statutory registration information required for compliance filings.</p>
+                        </div>
+
+                        <form id="companyInfoForm" class="compliance-form">
+                            <!-- Basic Company Info -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Basic Information</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="companyName">Company Name <span class="required">*</span></label>
+                                        <input type="text" id="companyName" class="form-control" placeholder="Enter company name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="companyPan">PAN Number <span class="required">*</span></label>
+                                        <input type="text" id="companyPan" class="form-control" placeholder="e.g., AAACT1234C" maxlength="10" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="companyTan">TAN Number <span class="required">*</span></label>
+                                        <input type="text" id="companyTan" class="form-control" placeholder="e.g., BLRT12345F" maxlength="10" pattern="[A-Z]{4}[0-9]{5}[A-Z]{1}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="companyGstin">GSTIN</label>
+                                        <input type="text" id="companyGstin" class="form-control" placeholder="e.g., 22AAAAA0000A1Z5" maxlength="15">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PF Registration -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Provident Fund (PF) Registration</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="pfEstablishmentId">PF Establishment ID</label>
+                                        <input type="text" id="pfEstablishmentId" class="form-control" placeholder="e.g., MHBAN0012345000">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfDbAccount">PF DB Account</label>
+                                        <input type="text" id="pfDbAccount" class="form-control" placeholder="Database Account Number">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ESI Registration -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">ESI Registration</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="esiEmployerCode">ESI Employer Code</label>
+                                        <input type="text" id="esiEmployerCode" class="form-control" placeholder="e.g., 27000123456789012">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiBranchCode">ESI Branch Code</label>
+                                        <input type="text" id="esiBranchCode" class="form-control" placeholder="Branch Code">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PT Registration -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Professional Tax Registration</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="ptRegistrationNumber">PT Registration Number</label>
+                                        <input type="text" id="ptRegistrationNumber" class="form-control" placeholder="Professional Tax Registration">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bank Details -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Bank Details (for challans)</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="bankName">Bank Name</label>
+                                        <input type="text" id="bankName" class="form-control" placeholder="e.g., State Bank of India">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bankAccountNumber">Account Number</label>
+                                        <input type="text" id="bankAccountNumber" class="form-control" placeholder="Bank Account Number">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bankIfscCode">IFSC Code</label>
+                                        <input type="text" id="bankIfscCode" class="form-control" placeholder="e.g., SBIN0001234" maxlength="11">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Authorized Signatory -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Authorized Signatory</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="signatoryName">Name</label>
+                                        <input type="text" id="signatoryName" class="form-control" placeholder="Full Name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="signatoryDesignation">Designation</label>
+                                        <input type="text" id="signatoryDesignation" class="form-control" placeholder="e.g., HR Manager">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="signatoryPan">PAN</label>
+                                        <input type="text" id="signatoryPan" class="form-control" placeholder="PAN of signatory" maxlength="10">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">Registered Address</h3>
+                                <div class="form-grid form-grid-full">
+                                    <div class="form-group full-width">
+                                        <label for="registeredAddress">Address</label>
+                                        <textarea id="registeredAddress" class="form-control" rows="3" placeholder="Complete registered address"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="saveCompanyInfoBtn">
+                                    <span class="btn-text">Save Company Information</span>
+                                    <span class="btn-spinner" style="display: none;"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ECR Generation Tab -->
+                <div class="tab-content" id="ecr-generation">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>PF ECR File Generation</h2>
+                            <p class="section-desc">Generate Electronic Challan cum Return (ECR) file for EPFO submission.</p>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>ECR Format:</strong> The generated file follows EPFO's prescribed format for monthly PF contribution filing.
+                                The file includes member-wise contribution details and can be directly uploaded to the EPFO Unified Portal.
+                            </div>
+                        </div>
+
+                        <form id="ecrForm" class="compliance-form">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Select Period</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="ecrMonth">Month <span class="required">*</span></label>
+                                        <select id="ecrMonth" class="form-select" required>
+                                            <option value="">Select Month</option>
+                                            <option value="1">January</option>
+                                            <option value="2">February</option>
+                                            <option value="3">March</option>
+                                            <option value="4">April</option>
+                                            <option value="5">May</option>
+                                            <option value="6">June</option>
+                                            <option value="7">July</option>
+                                            <option value="8">August</option>
+                                            <option value="9">September</option>
+                                            <option value="10">October</option>
+                                            <option value="11">November</option>
+                                            <option value="12">December</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ecrYear">Year <span class="required">*</span></label>
+                                        <select id="ecrYear" class="form-select" required>
+                                            <option value="">Select Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ecrOffice">Office (Optional)</label>
+                                        <select id="ecrOffice" class="form-select">
+                                            <option value="">All Offices</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="previewEcrBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Preview ECR
+                                </button>
+                                <button type="button" class="btn btn-primary" id="downloadEcrBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download ECR File
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- ECR Preview Table -->
+                        <div id="ecrPreview" class="preview-section" style="display: none;">
+                            <div class="preview-header">
+                                <h3>ECR Preview</h3>
+                                <div class="preview-summary">
+                                    <span id="ecrMemberCount">0 members</span>
+                                    <span class="separator">|</span>
+                                    <span id="ecrTotalAmount">₹0</span>
+                                </div>
+                            </div>
+                            <div class="preview-table-container">
+                                <table class="preview-table" id="ecrPreviewTable">
+                                    <thead>
+                                        <tr>
+                                            <th>UAN</th>
+                                            <th>Member Name</th>
+                                            <th>Gross Wages</th>
+                                            <th>EPF Wages</th>
+                                            <th>EPF EE</th>
+                                            <th>EPS ER</th>
+                                            <th>EPF ER Diff</th>
+                                            <th>NCP Days</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ecrPreviewBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ESI Challan Tab -->
+                <div class="tab-content" id="esi-challan">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>ESI Challan Generation</h2>
+                            <p class="section-desc">Generate ESI challan file for ESIC contribution submission.</p>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>ESI Contribution:</strong> Employee contribution is 0.75% and employer contribution is 3.25% of gross wages.
+                                ESI is applicable for employees with monthly wages up to ₹21,000.
+                            </div>
+                        </div>
+
+                        <form id="esiForm" class="compliance-form">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Select Period</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="esiMonth">Month <span class="required">*</span></label>
+                                        <select id="esiMonth" class="form-select" required>
+                                            <option value="">Select Month</option>
+                                            <option value="1">January</option>
+                                            <option value="2">February</option>
+                                            <option value="3">March</option>
+                                            <option value="4">April</option>
+                                            <option value="5">May</option>
+                                            <option value="6">June</option>
+                                            <option value="7">July</option>
+                                            <option value="8">August</option>
+                                            <option value="9">September</option>
+                                            <option value="10">October</option>
+                                            <option value="11">November</option>
+                                            <option value="12">December</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiYear">Year <span class="required">*</span></label>
+                                        <select id="esiYear" class="form-select" required>
+                                            <option value="">Select Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiOffice">Office (Optional)</label>
+                                        <select id="esiOffice" class="form-select">
+                                            <option value="">All Offices</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="previewEsiBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Preview ESI Challan
+                                </button>
+                                <button type="button" class="btn btn-primary" id="downloadEsiBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download ESI Challan
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- ESI Preview Table -->
+                        <div id="esiPreview" class="preview-section" style="display: none;">
+                            <div class="preview-header">
+                                <h3>ESI Challan Preview</h3>
+                                <div class="preview-summary">
+                                    <span id="esiIpCount">0 insured persons</span>
+                                    <span class="separator">|</span>
+                                    <span id="esiTotalAmount">₹0</span>
+                                </div>
+                            </div>
+                            <div class="preview-table-container">
+                                <table class="preview-table" id="esiPreviewTable">
+                                    <thead>
+                                        <tr>
+                                            <th>IP Number</th>
+                                            <th>Employee Name</th>
+                                            <th>Gross Wages</th>
+                                            <th>Days Worked</th>
+                                            <th>IP Contribution</th>
+                                            <th>ER Contribution</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="esiPreviewBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form 16 Tab -->
+                <div class="tab-content" id="form16">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Form 16 Generation</h2>
+                            <p class="section-desc">Generate Form 16 (TDS Certificate) for employees for the financial year.</p>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Form 16:</strong> Annual TDS certificate containing Part A (quarterly TDS details) and Part B (salary and tax computation).
+                                Required for employees to file their income tax returns.
+                            </div>
+                        </div>
+
+                        <!-- Sub-tabs for Single vs Bulk -->
+                        <div class="sub-tabs">
+                            <button class="sub-tab-btn active" data-subtab="single-form16" id="singleForm16Tab">Single Employee</button>
+                            <button class="sub-tab-btn" data-subtab="bulk-form16" id="bulkForm16Tab">Bulk Generate</button>
+                        </div>
+
+                        <!-- Single Employee Form 16 -->
+                        <div class="sub-tab-content active" id="single-form16">
+                            <form id="singleForm16Form" class="compliance-form">
+                                <div class="form-section">
+                                    <h3 class="form-section-title">Select Employee & Financial Year</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="form16Employee">Employee <span class="required">*</span></label>
+                                            <select id="form16Employee" class="form-select" required>
+                                                <option value="">Select Employee</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="form16FY">Financial Year <span class="required">*</span></label>
+                                            <select id="form16FY" class="form-select" required>
+                                                <option value="">Select FY</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary" id="previewForm16Btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        Preview Form 16
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="generateForm16Btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        Generate Form 16
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Form 16 Preview -->
+                            <div id="form16Preview" class="preview-section" style="display: none;">
+                                <div class="preview-header">
+                                    <h3>Form 16 Preview</h3>
+                                    <button type="button" class="btn btn-sm btn-secondary" id="printForm16Btn">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                            <rect x="6" y="14" width="12" height="8"></rect>
+                                        </svg>
+                                        Print
+                                    </button>
+                                </div>
+                                <div id="form16Content" class="form16-document">
+                                    <!-- Form 16 content will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Form 16 -->
+                        <div class="sub-tab-content" id="bulk-form16">
+                            <form id="bulkForm16Form" class="compliance-form">
+                                <div class="form-section">
+                                    <h3 class="form-section-title">Bulk Generation Options</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="bulkForm16FY">Financial Year <span class="required">*</span></label>
+                                            <select id="bulkForm16FY" class="form-select" required>
+                                                <option value="">Select FY</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="bulkForm16Office">Office (Optional)</label>
+                                            <select id="bulkForm16Office" class="form-select">
+                                                <option value="">All Offices</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="bulkForm16Dept">Department (Optional)</label>
+                                            <select id="bulkForm16Dept" class="form-select">
+                                                <option value="">All Departments</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-primary" id="bulkGenerateForm16Btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Generate All Form 16s
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Bulk Generation Progress -->
+                            <div id="bulkProgress" class="bulk-progress" style="display: none;">
+                                <div class="progress-header">
+                                    <h4>Generating Form 16s...</h4>
+                                    <span id="progressCount">0 / 0</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                                </div>
+                                <div id="bulkResultsList" class="bulk-results">
+                                    <!-- Results will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/compliance.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
