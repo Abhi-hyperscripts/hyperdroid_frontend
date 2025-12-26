@@ -606,6 +606,12 @@ function renderUsersTable(users) {
                 <td>
                     <div class="action-buttons">
                         ${isActive ? `
+                            <button class="action-btn" onclick="openEditUserModal('${user.userId}', '${user.firstName?.replace(/'/g, "\\'")}', '${user.lastName?.replace(/'/g, "\\'")}')" data-tooltip="Edit User">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
                             <button class="action-btn" onclick="openEditRolesModal('${user.userId}', '${escapedName}', ${JSON.stringify(roles).replace(/"/g, '&quot;')})" data-tooltip="Manage Roles">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -1354,6 +1360,34 @@ function openResetPasswordModal(userId, userName) {
     document.getElementById('newPassword').value = '';
 
     openModal('resetPasswordModal');
+}
+
+function openEditUserModal(userId, firstName, lastName) {
+    document.getElementById('editUserUserId').value = userId;
+    document.getElementById('editUserFirstName').value = firstName || '';
+    document.getElementById('editUserLastName').value = lastName || '';
+
+    openModal('editUserModal');
+}
+
+async function saveEditUser() {
+    const userId = document.getElementById('editUserUserId').value;
+    const firstName = document.getElementById('editUserFirstName').value.trim();
+    const lastName = document.getElementById('editUserLastName').value.trim();
+
+    if (!firstName || !lastName) {
+        showToast('Please fill in both first name and last name', 'error');
+        return;
+    }
+
+    try {
+        await api.updateUserAdmin(userId, firstName, lastName);
+        closeModal('editUserModal');
+        showToast('User updated successfully', 'success');
+        await loadUsers();
+    } catch (error) {
+        showToast(error.message || 'Failed to update user', 'error');
+    }
 }
 
 async function resetPassword() {

@@ -407,6 +407,16 @@ class API {
         });
     }
 
+    async updateUserAdmin(userId, firstName, lastName) {
+        return this.request(`/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                firstName,
+                lastName
+            })
+        });
+    }
+
     async deactivateUser(userId) {
         return this.request(`/users/${userId}`, {
             method: 'DELETE'
