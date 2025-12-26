@@ -2196,3 +2196,722 @@
     height: 100%;
     object-fit: cover;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ORGANIZATION CHART - SCALABLE TREE VIEW
+   Designed for handling 10,000+ employees efficiently
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Main Layout Container */
+.org-chart-wrapper {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 200px);
+    min-height: 500px;
+}
+
+.org-chart-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Stats Bar */
+.org-stats-bar {
+    display: flex;
+    gap: 24px;
+    padding: 16px 24px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.org-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.org-stat-item .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.org-stat-item .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Toolbar - Override old styles */
+.org-chart-container .org-chart-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 0;
+    padding: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-light);
+    background: var(--bg-card);
+}
+
+.org-chart-search {
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+}
+
+.org-chart-search input {
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.org-chart-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.org-chart-search input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: var(--focus-ring);
+}
+
+.org-chart-filters {
+    display: flex;
+    gap: 8px;
+}
+
+.org-chart-filters select {
+    padding: 10px 14px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 150px;
+}
+
+[data-theme="dark"] .org-chart-filters select option {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+.org-chart-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.org-chart-btn {
+    padding: 10px 16px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.org-chart-btn:hover {
+    background: var(--border-color-light);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.org-chart-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tree Container - Override old styles */
+.org-chart-container {
+    background: var(--bg-card);
+    border-radius: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    padding: 0;
+}
+
+.org-tree {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    display: block;
+}
+
+/* Tree Header */
+.tree-header {
+    display: flex;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color-light);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tree-body {
+    flex: 1;
+}
+
+/* Tree Row */
+.tree-row {
+    display: flex;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--bg-elevated);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    align-items: center;
+}
+
+.tree-row:hover {
+    background: var(--bg-elevated);
+}
+
+.tree-row.selected {
+    background: var(--color-info-light);
+    border-color: var(--brand-primary-light);
+}
+
+.tree-row.highlighted {
+    background: var(--color-warning-light);
+}
+
+.tree-row.search-match {
+    background: var(--color-success-light);
+}
+
+/* Tree Columns */
+.tree-col {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text-primary);
+    padding-right: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-col-name {
+    flex: 3;
+    min-width: 250px;
+    gap: 0;
+}
+
+.tree-col-designation {
+    flex: 1.5;
+    min-width: 140px;
+    color: var(--text-secondary);
+}
+
+.tree-col-department {
+    flex: 1.5;
+    min-width: 140px;
+    color: var(--text-secondary);
+}
+
+.tree-col-office {
+    flex: 1;
+    min-width: 100px;
+    color: var(--text-secondary);
+}
+
+.tree-col-reports {
+    flex: 0 0 80px;
+    justify-content: center;
+}
+
+/* Tree Indent & Toggle */
+.tree-indent {
+    flex-shrink: 0;
+}
+
+.tree-toggle {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.tree-toggle:hover {
+    background: var(--border-color-light);
+}
+
+.tree-toggle svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-secondary);
+    transition: transform 0.15s ease;
+}
+
+.tree-toggle.expanded svg {
+    transform: rotate(90deg);
+}
+
+.tree-toggle-placeholder {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+/* Tree Avatar */
+.tree-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--avatar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 12px;
+    overflow: hidden;
+}
+
+.tree-avatar span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--avatar-text);
+}
+
+.tree-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Tree Name Info */
+.tree-name-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tree-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-code {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Report Count Badge */
+.report-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 8px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Details Panel */
+.org-details-panel {
+    width: 0;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+}
+
+.org-details-panel.visible {
+    width: 360px;
+}
+
+.details-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.details-panel-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.details-close-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.details-close-btn:hover {
+    background: var(--border-color-light);
+    color: var(--text-primary);
+}
+
+.details-close-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.details-panel-content {
+    padding: 20px;
+    overflow-y: auto;
+    height: calc(100% - 60px);
+}
+
+/* Detail Header */
+.detail-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--avatar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.detail-avatar span {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--avatar-text);
+}
+
+.detail-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detail-name-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.detail-code {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Detail Info Grid */
+.detail-info-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.detail-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-info-item label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-info-item span {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.detail-info-item a {
+    color: var(--brand-primary);
+    text-decoration: none;
+}
+
+.detail-info-item a:hover {
+    text-decoration: underline;
+}
+
+/* Detail Actions */
+.detail-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.detail-actions .btn-secondary {
+    flex: 0 1 auto;
+    min-width: 130px;
+    padding: 10px 16px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.detail-actions .btn-secondary svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Direct Reports Section */
+.detail-reports-section {
+    border-top: 1px solid var(--border-color-light);
+    padding-top: 20px;
+}
+
+.detail-reports-section h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+}
+
+.detail-reports-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-report-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.detail-report-item:hover {
+    background: var(--border-color-light);
+}
+
+.mini-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--avatar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.mini-avatar span {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--avatar-text);
+}
+
+.mini-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.mini-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-role {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.more-reports {
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    border-radius: 8px;
+}
+
+/* Loading & Empty States */
+.tree-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px;
+    color: var(--text-secondary);
+}
+
+.tree-loading .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color-light);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.tree-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.tree-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.tree-error {
+    padding: 24px;
+    text-align: center;
+    color: var(--color-danger);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .org-chart-wrapper {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .org-details-panel.visible {
+        width: 100%;
+        border-radius: 16px;
+    }
+}
+
+@media (max-width: 900px) {
+    .tree-col-office,
+    .tree-col-department {
+        display: none;
+    }
+
+    .tree-col-name {
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 600px) {
+    .org-chart-container .org-chart-toolbar {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .org-chart-search {
+        max-width: none;
+        width: 100%;
+    }
+
+    .org-chart-filters {
+        width: 100%;
+    }
+
+    .org-chart-filters select {
+        flex: 1;
+    }
+
+    .org-chart-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .org-chart-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .tree-col-designation {
+        display: none;
+    }
+
+    .tree-col-name {
+        min-width: 150px;
+        flex: 1;
+    }
+
+    .tree-col-reports {
+        flex: 0 0 50px;
+    }
+
+    .org-stats-bar {
+        padding: 12px 16px;
+        gap: 16px;
+    }
+}

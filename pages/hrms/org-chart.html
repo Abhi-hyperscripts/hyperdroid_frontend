@@ -24,22 +24,90 @@
     <div class="ess-container">
         <h1 class="page-title">Organization Chart</h1>
 
-        <div class="org-chart-container">
-            <div class="org-chart-toolbar">
-                <div class="org-chart-search">
-                    <input type="text" id="searchInput" placeholder="Search employee..." oninput="debounceSearch()">
-                </div>
-                <div class="org-chart-actions">
-                    <button class="org-chart-btn" onclick="expandAll()">Expand All</button>
-                    <button class="org-chart-btn" onclick="collapseAll()">Collapse All</button>
-                    <button class="org-chart-btn" onclick="resetChart()">Reset</button>
+        <!-- Stats Bar -->
+        <div class="org-stats-bar">
+            <div class="org-stat-item">
+                <span class="stat-label">Total Employees:</span>
+                <span class="stat-value" id="totalCount">-</span>
+            </div>
+            <div class="org-stat-item">
+                <span class="stat-label">Departments:</span>
+                <span class="stat-value" id="deptCount">-</span>
+            </div>
+            <div class="org-stat-item">
+                <span class="stat-label">Managers:</span>
+                <span class="stat-value" id="managerCount">-</span>
+            </div>
+            <div class="org-stat-item">
+                <span class="stat-label">Showing:</span>
+                <span class="stat-value" id="visibleCount">-</span>
+            </div>
+        </div>
+
+        <!-- Main Content Wrapper -->
+        <div class="org-chart-wrapper">
+            <!-- Main Tree Area -->
+            <div class="org-chart-main">
+                <div class="org-chart-container">
+                    <!-- Toolbar -->
+                    <div class="org-chart-toolbar">
+                        <div class="org-chart-search">
+                            <input type="text" id="searchInput" placeholder="Search by name, code, department..." oninput="debounceSearch()">
+                        </div>
+                        <div class="org-chart-filters">
+                            <select id="departmentFilter" onchange="applyFilters()">
+                                <option value="">All Departments</option>
+                            </select>
+                            <select id="officeFilter" onchange="applyFilters()">
+                                <option value="">All Offices</option>
+                            </select>
+                        </div>
+                        <div class="org-chart-actions">
+                            <button class="org-chart-btn" onclick="expandAll()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                                Expand All
+                            </button>
+                            <button class="org-chart-btn" onclick="collapseAll()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18 15 12 9 6 15"/>
+                                </svg>
+                                Collapse All
+                            </button>
+                            <button class="org-chart-btn" onclick="resetChart()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                </svg>
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tree View -->
+                    <div class="org-tree" id="orgTree">
+                        <div class="tree-loading">
+                            <div class="spinner"></div>
+                            <span>Loading organization chart...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="org-tree" id="orgTree">
-                <div class="ess-loading">
-                    <div class="spinner"></div>
-                    <span>Loading organization chart...</span>
+            <!-- Details Panel (Slide-in) -->
+            <div class="org-details-panel" id="detailsPanel">
+                <div class="details-panel-header">
+                    <h3>Employee Details</h3>
+                    <button class="details-close-btn" onclick="hideDetailsPanel()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="details-panel-content" id="detailsContent">
+                    <!-- Dynamic content -->
                 </div>
             </div>
         </div>
@@ -52,17 +120,6 @@
                 </svg>
                 Back to Self-Service
             </a>
-        </div>
-    </div>
-
-    <!-- Employee Detail Modal -->
-    <div class="modal-overlay" id="employeeModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Employee Details</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div id="employeeDetails" class="employee-details"></div>
         </div>
     </div>
 
