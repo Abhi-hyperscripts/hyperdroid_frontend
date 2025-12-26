@@ -104,6 +104,7 @@ function initializeSidebar() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('adminSidebar');
     const overlay = document.getElementById('sidebarOverlay');
+    const container = document.querySelector('.admin-container');
 
     // Sidebar toggle button click
     if (sidebarToggle) {
@@ -138,6 +139,19 @@ function initializeSidebar() {
             }
         });
     });
+
+    // Open sidebar by default on desktop
+    if (window.innerWidth > 992) {
+        if (sidebar) {
+            sidebar.classList.add('open');
+        }
+        if (container) {
+            container.classList.add('sidebar-open');
+        }
+        if (sidebarToggle) {
+            sidebarToggle.classList.add('active');
+        }
+    }
 }
 
 function toggleSidebar() {
