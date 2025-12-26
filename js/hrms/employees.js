@@ -556,7 +556,7 @@ async function saveEmployee() {
         designation_id: document.getElementById('designationId').value,
         office_id: document.getElementById('officeId').value,
         shift_id: document.getElementById('shiftId').value || null,
-        reporting_manager_id: document.getElementById('reportingManagerId').value || null,
+        manager_user_id: document.getElementById('reportingManagerId').value || null,
         employment_type: document.getElementById('employmentType').value,
         hire_date: document.getElementById('dateOfJoining').value,
         probation_end_date: document.getElementById('probationEndDate').value,
@@ -1862,7 +1862,7 @@ async function openTransferModal(employeeId) {
     const currentOffice = offices.find(o => o.id === employee.office_id);
     const currentDept = departments.find(d => d.id === employee.department_id);
     const currentDesig = designations.find(d => d.id === employee.designation_id);
-    const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+    const currentManager = employees.find(e => e.user_id === employee.manager_user_id);
 
     document.getElementById('currentOfficeName').textContent = currentOffice?.office_name || 'Not assigned';
     document.getElementById('currentDepartmentName').textContent = currentDept?.department_name || 'Not assigned';
@@ -1915,7 +1915,7 @@ function populateTransferDropdowns(employee) {
     // Populate manager dropdown (exclude current employee and their direct reports)
     const managerSelect = document.getElementById('newManagerUserId');
     managerSelect.innerHTML = '<option value="">No manager (CEO/Top level)</option>' +
-        employees.filter(e => e.id !== employee.id && e.user_id !== employee.reporting_manager_id)
+        employees.filter(e => e.id !== employee.id && e.user_id !== employee.manager_user_id)
             .map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name} (${e.employee_code})</option>`).join('');
 }
 
@@ -2074,7 +2074,7 @@ function wouldCreateCircularDependency(employeeId, newManagerUserId) {
         }
 
         // Move up the chain
-        currentUserId = currentEmployee.manager_user_id || currentEmployee.reporting_manager_id;
+        currentUserId = currentEmployee.manager_user_id || currentEmployee.manager_user_id;
     }
 
     return false;
@@ -2198,12 +2198,27 @@ function onTransferManagerChange() {
 
 /**
  * Filter manager dropdown to exclude invalid options
+ * Only includes employees whose designation has manager/admin roles
  * @param {Array} employeeList - List of employees to filter
  * @param {string} currentEmployeeId - The employee being edited (to exclude from list)
  * @param {string} currentEmployeeUserId - The user_id of employee being edited (to check hierarchy)
  * @returns {Array} - Filtered list of valid managers
  */
 function getValidManagers(employeeList, currentEmployeeId, currentEmployeeUserId) {
+    // Roles that indicate manager capability
+    const managerRoles = ['HRMS_MANAGER', 'HRMS_ADMIN', 'HRMS_HR_MANAGER', 'HRMS_HR_ADMIN'];
+
+    // Helper function to check if designation has manager roles
+    const hasManagerRole = (designationId) => {
+        const desig = designations.find(d => d.id === designationId);
+        if (!desig) return false;
+        if (desig.is_manager === true) return true;
+        if (Array.isArray(desig.default_hrms_roles)) {
+            return desig.default_hrms_roles.some(role => managerRoles.includes(role));
+        }
+        return false;
+    };
+
     return employeeList.filter(e => {
         // Exclude the employee themselves
         if (e.id === currentEmployeeId) return false;
@@ -2211,6 +2226,9 @@ function getValidManagers(employeeList, currentEmployeeId, currentEmployeeUserId
 
         // Only include active employees
         if (e.employment_status !== 'active' && !e.is_active) return false;
+
+        // Only include employees with manager/admin roles
+        if (!hasManagerRole(e.designation_id)) return false;
 
         // Check if selecting this manager would create circular dependency
         if (currentEmployeeId && wouldCreateCircularDependency(currentEmployeeId, e.user_id)) {
@@ -2444,7 +2462,7 @@ async function loadManagerHistory(employeeId, employee) {
         let html = '';
 
         // Current manager (shown first with "Current" badge)
-        const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+        const currentManager = employees.find(e => e.user_id === employee.manager_user_id);
         const currentEffectiveDate = history && history.length > 0
             ? history[0].effective_date
             : employee.date_of_joining || employee.hire_date;
@@ -2506,7 +2524,7 @@ async function loadManagerHistory(employeeId, employee) {
         console.error('Error loading manager history:', error);
 
         // Fallback: show current manager only
-        const currentManager = employees.find(e => e.user_id === employee.reporting_manager_id);
+        const currentManager = employees.find(e => e.user_id === employee.manager_user_id);
         const joiningDate = employee.date_of_joining || employee.hire_date;
 
         historyContainer.innerHTML = `
@@ -2534,15 +2552,32 @@ async function loadManagerHistory(employeeId, employee) {
 
 /**
  * Prepare the list of valid managers for the dropdown
+ * Only includes employees whose designation has manager/admin roles
  */
 async function prepareManagerList(employee) {
+    // Roles that indicate manager capability
+    const managerRoles = ['HRMS_MANAGER', 'HRMS_ADMIN', 'HRMS_HR_MANAGER', 'HRMS_HR_ADMIN'];
+
+    // Helper function to check if designation has manager roles
+    const hasManagerRole = (designationId) => {
+        const desig = designations.find(d => d.id === designationId);
+        if (!desig) return false;
+        if (desig.is_manager === true) return true;
+        if (Array.isArray(desig.default_hrms_roles)) {
+            return desig.default_hrms_roles.some(role => managerRoles.includes(role));
+        }
+        return false;
+    };
+
     validManagersList = employees.filter(e => {
         // Exclude self
         if (e.id === employee.id) return false;
         // Exclude inactive employees
         if (e.employment_status !== 'active' && !e.is_active) return false;
         // Exclude current manager (no change)
-        if (e.user_id === employee.reporting_manager_id) return false;
+        if (e.user_id === employee.manager_user_id) return false;
+        // Only include employees with manager/admin roles
+        if (!hasManagerRole(e.designation_id)) return false;
         // Check circular dependency
         if (wouldCreateCircularDependency(employee.id, e.user_id)) return false;
         return true;
@@ -2821,7 +2856,7 @@ function wouldCreateCircularDependency(employeeId, newManagerUserId) {
         // If we reach the original employee, it's circular
         if (currentEmployee.id === employeeId) return true;
 
-        currentUserId = currentEmployee.reporting_manager_id;
+        currentUserId = currentEmployee.manager_user_id;
     }
 
     return false;
@@ -3806,11 +3841,30 @@ function updateSearchableDesignationsForDepartment(departmentId) {
 /**
  * Populate managers dropdown
  * Shows: Name, Office, Designation, Level, Email
+ * Only includes employees whose designation has manager/admin roles
  */
 function populateSearchableManagerDropdown(excludeEmployeeId = null) {
-    // Filter out the current employee and build manager list
+    // Roles that indicate manager capability
+    const managerRoles = ['HRMS_MANAGER', 'HRMS_ADMIN', 'HRMS_HR_MANAGER', 'HRMS_HR_ADMIN'];
+
+    // Helper function to check if designation has manager roles
+    const hasManagerRole = (designationId) => {
+        const desig = designations.find(d => d.id === designationId);
+        if (!desig) return false;
+
+        // Check is_manager flag first
+        if (desig.is_manager === true) return true;
+
+        // Check default_hrms_roles array for manager roles
+        if (Array.isArray(desig.default_hrms_roles)) {
+            return desig.default_hrms_roles.some(role => managerRoles.includes(role));
+        }
+        return false;
+    };
+
+    // Filter to only include employees with manager/admin designations
     const managerItems = employees
-        .filter(e => e.id !== excludeEmployeeId)
+        .filter(e => e.id !== excludeEmployeeId && hasManagerRole(e.designation_id))
         .map(e => {
             const office = offices.find(o => o.id === e.office_id);
             const desig = designations.find(d => d.id === e.designation_id);
@@ -3932,15 +3986,15 @@ function setEmploymentDropdownValues(emp) {
 
     // Populate and set manager
     populateSearchableManagerDropdown(emp.id);
-    if (emp.reporting_manager_id) {
-        const manager = employees.find(e => e.user_id === emp.reporting_manager_id);
+    if (emp.manager_user_id) {
+        const manager = employees.find(e => e.user_id === emp.manager_user_id);
         if (manager) {
             const managerDropdown = document.getElementById('managerDropdown');
             const managerText = managerDropdown.querySelector('.selected-text');
             managerText.textContent = `${manager.first_name} ${manager.last_name} (${manager.employee_code})`;
             managerText.classList.remove('placeholder');
-            document.getElementById('reportingManagerId').value = emp.reporting_manager_id;
-            searchableDropdownData.manager.selectedId = emp.reporting_manager_id;
+            document.getElementById('reportingManagerId').value = emp.manager_user_id;
+            searchableDropdownData.manager.selectedId = emp.manager_user_id;
         }
     }
 }
