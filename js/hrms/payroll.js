@@ -2150,6 +2150,7 @@ function updateEarningsTable(earnings) {
             <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
+                ${!c.is_balance_component ? `
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2157,7 +2158,6 @@ function updateEarningsTable(earnings) {
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    ${!c.is_balance_component ? `
                     <button class="action-btn danger" onclick="deleteComponent('${c.id}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -2166,8 +2166,8 @@ function updateEarningsTable(earnings) {
                             <line x1="14" y1="11" x2="14" y2="17"></line>
                         </svg>
                     </button>
-                    ` : ''}
                 </div>
+                ` : '<span class="text-muted">System managed</span>'}
             </td>
         </tr>
     `;}).join('');
