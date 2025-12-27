@@ -1186,14 +1186,24 @@ async function loadEmployeeDocuments(employeeId) {
                 }
                 document.getElementById('photo-doc-id').value = doc.id;
             } else {
-                // Show as uploaded
-                const previewEl = document.getElementById(`${docType}-preview`);
-                const uploadArea = document.getElementById(`${docType}-upload`);
+                // Show document preview with actual image
+                const previewCard = document.getElementById(`${docType}-preview-card`);
+                const placeholder = document.getElementById(`${docType}-placeholder`);
+                const thumbImg = document.getElementById(`${docType}-thumb`);
 
-                if (previewEl && uploadArea) {
-                    previewEl.querySelector('.file-name').textContent = doc.file_name || 'Uploaded';
-                    previewEl.style.display = 'flex';
-                    uploadArea.style.display = 'none';
+                if (previewCard && placeholder) {
+                    // Fetch and display the document image
+                    if (doc.s3_key && thumbImg) {
+                        try {
+                            const downloadUrl = await api.getEmployeeDocumentDownloadUrl(employeeId, doc.id);
+                            const docUrl = downloadUrl.url || downloadUrl;
+                            thumbImg.src = docUrl;
+                        } catch (e) {
+                            console.error(`Error loading ${docType} image:`, e);
+                        }
+                    }
+                    previewCard.style.display = 'block';
+                    placeholder.style.display = 'none';
                 }
 
                 // Set document number for pan/aadhar (shared across front/back)
