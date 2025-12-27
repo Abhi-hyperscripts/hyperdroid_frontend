@@ -200,7 +200,7 @@
                 </svg>
             </div>
 
-            <!-- 3. Attendance -->
+            <!-- 3. Attendance (Admin/Manager) -->
             <div class="action-card" id="cardAttendance" onclick="navigateIfSetupComplete('attendance.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -209,15 +209,15 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Attendance</h4>
-                    <p>View and manage employee attendance</p>
+                    <h4>Team Attendance</h4>
+                    <p>Manage team attendance & approvals</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
                 </svg>
             </div>
 
-            <!-- 4. Leave Management -->
+            <!-- 4. Leave Management (Admin/Manager) -->
             <div class="action-card" id="cardLeave" onclick="navigateIfSetupComplete('leave.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -228,8 +228,8 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Leave Management</h4>
-                    <p>Handle leave requests and balances</p>
+                    <h4>Leave Approvals</h4>
+                    <p>Review requests & team calendar</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -405,12 +405,14 @@
 
     <!-- Toast Container - Using unified toast.js instead -->
 
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

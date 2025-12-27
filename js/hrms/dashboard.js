@@ -509,3 +509,52 @@ function capitalizeFirst(str) {
 }
 
 // Local showToast removed - using unified toast.js instead
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when an employee is updated (from hrms-signalr.js)
+ */
+function onEmployeeUpdated(data) {
+    console.log('[Dashboard] Employee updated:', data);
+    // Refresh dashboard stats
+    loadDashboard();
+}
+
+/**
+ * Called when a new employee is created (from hrms-signalr.js)
+ */
+function onEmployeeCreated(data) {
+    console.log('[Dashboard] Employee created:', data);
+    showToast(`New employee ${data.EmployeeName || ''} added`, 'success');
+    loadDashboard();
+}
+
+/**
+ * Called when attendance is updated (from hrms-signalr.js)
+ */
+function onAttendanceUpdated(data) {
+    console.log('[Dashboard] Attendance updated:', data);
+    // Refresh dashboard to update attendance stats
+    loadDashboard();
+}
+
+/**
+ * Called when a leave request is updated (from hrms-signalr.js)
+ */
+function onLeaveRequestUpdated(data) {
+    console.log('[Dashboard] Leave request updated:', data);
+    // Refresh dashboard to update leave stats
+    loadDashboard();
+}
+
+/**
+ * Called when organization structure is updated (from hrms-signalr.js)
+ */
+function onOrganizationUpdated(data) {
+    console.log('[Dashboard] Organization updated:', data);
+    // Refresh dashboard to update org stats
+    loadDashboard();
+}

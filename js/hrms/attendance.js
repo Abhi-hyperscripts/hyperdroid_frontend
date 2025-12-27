@@ -19,44 +19,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup sidebar navigation
     setupSidebar();
 
-    // Set default date
+    // Set default date for daily attendance view
     document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
-
-    // Populate year filter
-    const currentYear = new Date().getFullYear();
-    const yearSelect = document.getElementById('yearFilter');
-    for (let y = currentYear; y >= currentYear - 5; y--) {
-        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
-    }
-    document.getElementById('monthFilter').value = new Date().getMonth() + 1;
 
     await loadAttendance();
 });
 
 // Apply RBAC visibility rules for attendance page
+// This page is now Admin/Manager only - regular employees use ESS
 function applyAttendanceRBAC() {
-    // Daily View tab - visible to HR users, managers, admins (team/org-wide view)
-    const dailyTabBtn = document.getElementById('dailyTab');
-    if (dailyTabBtn) {
-        // Users can only see My Attendance tab
-        if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin()) {
-            dailyTabBtn.style.display = 'none';
-        }
-    }
-
-    // Approvals nav group - visible to managers and HR admins
-    const approvalsNavGroup = document.getElementById('approvalsNavGroup');
-    if (approvalsNavGroup) {
-        if (hrmsRoles.canApproveAttendance()) {
-            approvalsNavGroup.style.display = 'block';
-        } else {
-            approvalsNavGroup.style.display = 'none';
-        }
-    }
-
-    // If user is basic HRMS_USER, switch to My Attendance tab by default
-    if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin()) {
-        switchTab('myAttendance');
+    // Only HR users, managers, and admins can access this page
+    if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin() && !hrmsRoles.isSuperAdmin()) {
+        // Redirect regular employees to ESS page
+        window.location.href = 'self-service.html';
+        return;
     }
 }
 
@@ -78,11 +54,9 @@ function switchTab(tabName) {
 
     // Update active tab title
     const tabNames = {
-        'daily': 'Daily View',
-        'myAttendance': 'My Attendance',
-        'regularization': 'Regularization',
-        'overtime': 'Overtime',
-        'approvals': 'Pending Approvals'
+        'daily': 'Daily Attendance',
+        'regularization': 'Regularization Requests',
+        'overtime': 'Overtime Requests'
     };
     const activeTabName = document.getElementById('activeTabName');
     if (activeTabName && tabNames[tabName]) {
@@ -92,15 +66,8 @@ function switchTab(tabName) {
     // Load data for the tab
     switch(tabName) {
         case 'daily': loadAttendance(); break;
-        case 'myAttendance': loadMyAttendance(); break;
-        case 'regularization': loadRegularizations(); break;
-        case 'overtime':
-            loadOvertimeRequests();
-            if (hrmsRoles.isManager() || hrmsRoles.isHRAdmin() || hrmsRoles.isSuperAdmin()) {
-                loadPendingOvertimeApprovals();
-            }
-            break;
-        case 'approvals': loadPendingApprovals(); break;
+        case 'regularization': loadTeamRegularizations(); break;
+        case 'overtime': loadTeamOvertime(); break;
     }
 }
 
@@ -159,6 +126,140 @@ function updateDailyStats(present, absent, late, onLeave) {
     document.getElementById('onLeaveCount').textContent = onLeave;
 }
 
+// Team Regularization Requests (Admin/Manager view)
+async function loadTeamRegularizations() {
+    const tbody = document.getElementById('teamRegularizationTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+    try {
+        const statusFilter = document.getElementById('regStatusFilter')?.value || 'pending';
+        // Use pending regularizations endpoint for team requests
+        const reqs = await api.getPendingRegularizations(hrmsRoles.isHRAdmin()) || [];
+
+        // Filter by status
+        const filtered = statusFilter === 'all' ? reqs : reqs.filter(r => r.status?.toLowerCase() === statusFilter);
+
+        if (!filtered || filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><p>No ${statusFilter === 'all' ? '' : statusFilter} regularization requests</p></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(r => {
+            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+            const canApprove = (
+                hrmsRoles.isSuperAdmin() ||
+                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
+                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
+            );
+
+            return `
+            <tr>
+                <td>
+                    <div class="employee-info">
+                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                    </div>
+                </td>
+                <td>${formatDate(r.date)}</td>
+                <td>${formatTime(r.requested_check_in)}</td>
+                <td>${formatTime(r.requested_check_out)}</td>
+                <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
+                <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
+                <td>
+                    ${r.status?.toLowerCase() === 'pending' && canApprove ? `
+                        <div class="action-buttons">
+                            <button class="action-btn success" onclick="approveRegularization('${r.id}')" data-tooltip="Approve">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn danger" onclick="openRejectModal('${r.id}')" data-tooltip="Reject">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    ` : '-'}
+                </td>
+            </tr>
+        `}).join('');
+
+    } catch (error) {
+        console.error('Error loading team regularizations:', error);
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading requests</p></td></tr>';
+    }
+}
+
+// Team Overtime Requests (Admin/Manager view)
+async function loadTeamOvertime() {
+    const tbody = document.getElementById('teamOvertimeTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+
+    try {
+        const statusFilter = document.getElementById('otStatusFilter')?.value || 'pending';
+        // Use pending overtime endpoint for team requests
+        const reqs = await api.getPendingOvertimeRequests(hrmsRoles.isHRAdmin()) || [];
+
+        // Filter by status
+        const filtered = statusFilter === 'all' ? reqs : reqs.filter(r => r.status?.toLowerCase() === statusFilter);
+
+        if (!filtered || filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><p>No ${statusFilter === 'all' ? '' : statusFilter} overtime requests</p></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(r => {
+            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+            const canApprove = (
+                hrmsRoles.isSuperAdmin() ||
+                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
+                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
+            );
+
+            return `
+            <tr>
+                <td>
+                    <div class="employee-info">
+                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                    </div>
+                </td>
+                <td>${formatDate(r.date)}</td>
+                <td>${formatTime(r.planned_start_time)}</td>
+                <td>${formatTime(r.planned_end_time)}</td>
+                <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
+                <td>${escapeHtml(r.task_project) || '-'}</td>
+                <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
+                <td>
+                    ${r.status?.toLowerCase() === 'pending' && canApprove ? `
+                        <div class="action-buttons">
+                            <button class="action-btn success" onclick="approveOvertime('${r.id}')" data-tooltip="Approve">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn danger" onclick="openOvertimeRejectModal('${r.id}')" data-tooltip="Reject">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    ` : '-'}
+                </td>
+            </tr>
+        `}).join('');
+
+    } catch (error) {
+        console.error('Error loading team overtime:', error);
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Error loading requests</p></td></tr>';
+    }
+}
+
+// Keep old function for backwards compatibility but remove it later
 async function loadMyAttendance() {
     const tbody = document.getElementById('myAttendanceTableBody');
     tbody.innerHTML = '<tr><td colspan="5"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
@@ -669,4 +770,44 @@ function setupSidebar() {
             container?.classList.remove('sidebar-open');
         }
     });
+}
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when attendance is updated (from hrms-signalr.js)
+ */
+function onAttendanceUpdated(data) {
+    console.log('[Attendance] Update received:', data);
+
+    const action = data.Action;
+    const employeeName = data.EmployeeName || 'Employee';
+
+    let message = '';
+    switch(action) {
+        case 'clock_in':
+            message = `${employeeName} clocked in`;
+            break;
+        case 'clock_out':
+            message = `${employeeName} clocked out`;
+            break;
+        case 'regularized':
+            message = `Attendance regularized for ${employeeName}`;
+            break;
+        case 'regularization_approved':
+            message = `Regularization approved for ${employeeName}`;
+            break;
+        case 'regularization_rejected':
+            message = `Regularization rejected for ${employeeName}`;
+            break;
+        default:
+            message = `Attendance updated for ${employeeName}`;
+    }
+
+    showToast(message, 'info');
+
+    // Reload attendance data
+    loadAttendance();
 }

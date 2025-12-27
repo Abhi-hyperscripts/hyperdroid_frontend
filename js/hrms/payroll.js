@@ -19,6 +19,11 @@ let taxRules = [];
 // Store for searchable dropdown instances
 const payrollSearchableDropdowns = new Map();
 
+// Month picker instances
+let draftMonthPicker = null;
+let runMonthPicker = null;
+let allPayslipsMonthPicker = null;
+
 // VD employee dropdown instance
 let vdEmployeeDropdown = null;
 
@@ -334,6 +339,250 @@ class PayrollSearchableDropdown {
     }
 }
 
+/**
+ * MonthPicker - A calendar-style month/year picker component
+ * Shows a dropdown with year navigation and month grid
+ */
+const monthPickerInstances = new Map();
+
+class MonthPicker {
+    constructor(containerId, options = {}) {
+        this.container = document.getElementById(containerId);
+        if (!this.container) return;
+
+        this.id = containerId;
+        this.yearsBack = options.yearsBack ?? 5;
+        this.yearsForward = options.yearsForward ?? 1;
+        this.allowAllMonths = options.allowAllMonths !== false; // Default true for filtering
+        this.onChange = options.onChange || (() => {});
+
+        const now = new Date();
+        this.currentYear = now.getFullYear();
+        this.currentMonth = now.getMonth() + 1; // 1-12
+
+        // Selected values (null month means "All Months")
+        this.selectedYear = options.year ?? this.currentYear;
+        this.selectedMonth = options.month ?? null; // null = All Months
+
+        // View year for navigation
+        this.viewYear = this.selectedYear;
+
+        this.isOpen = false;
+        this.monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        this.fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        this.render();
+        this.bindEvents();
+
+        monthPickerInstances.set(this.id, this);
+    }
+
+    getDisplayText() {
+        if (this.selectedMonth === null) {
+            return `All Months ${this.selectedYear}`;
+        }
+        return `${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}`;
+    }
+
+    render() {
+        const minYear = this.currentYear - this.yearsBack;
+        const maxYear = this.currentYear + this.yearsForward;
+
+        this.container.innerHTML = `
+            <div class="month-picker ${this.isOpen ? 'open' : ''}" id="${this.id}-picker">
+                <div class="month-picker-trigger" tabindex="0">
+                    <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span class="month-picker-text">${this.getDisplayText()}</span>
+                    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="month-picker-dropdown">
+                    <div class="month-picker-header">
+                        <button type="button" class="month-picker-nav prev" ${this.viewYear <= minYear ? 'disabled' : ''}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <span class="month-picker-year">${this.viewYear}</span>
+                        <button type="button" class="month-picker-nav next" ${this.viewYear >= maxYear ? 'disabled' : ''}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    ${this.allowAllMonths ? `
+                    <div class="month-picker-all">
+                        <button type="button" class="month-picker-all-btn ${this.selectedMonth === null && this.selectedYear === this.viewYear ? 'selected' : ''}">
+                            All Months
+                        </button>
+                    </div>
+                    ` : ''}
+                    <div class="month-picker-grid">
+                        ${this.monthNames.map((name, index) => {
+                            const month = index + 1;
+                            const isSelected = this.selectedMonth === month && this.selectedYear === this.viewYear;
+                            const isCurrent = this.currentMonth === month && this.currentYear === this.viewYear;
+                            const isFuture = this.viewYear > this.currentYear || (this.viewYear === this.currentYear && month > this.currentMonth);
+                            return `
+                                <button type="button"
+                                    class="month-picker-month ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}"
+                                    data-month="${month}">
+                                    ${name}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.pickerEl = this.container.querySelector('.month-picker');
+        this.triggerEl = this.container.querySelector('.month-picker-trigger');
+        this.dropdownEl = this.container.querySelector('.month-picker-dropdown');
+        this.textEl = this.container.querySelector('.month-picker-text');
+        this.yearEl = this.container.querySelector('.month-picker-year');
+        this.prevBtn = this.container.querySelector('.month-picker-nav.prev');
+        this.nextBtn = this.container.querySelector('.month-picker-nav.next');
+    }
+
+    bindEvents() {
+        // Toggle dropdown
+        this.triggerEl.addEventListener('click', () => this.toggle());
+        this.triggerEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.toggle();
+            }
+        });
+
+        // Year navigation
+        this.prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.navigateYear(-1);
+        });
+        this.nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.navigateYear(1);
+        });
+
+        // Month selection
+        this.container.querySelectorAll('.month-picker-month').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const month = parseInt(btn.dataset.month);
+                this.selectMonth(this.viewYear, month);
+            });
+        });
+
+        // All months button
+        const allBtn = this.container.querySelector('.month-picker-all-btn');
+        if (allBtn) {
+            allBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectMonth(this.viewYear, null);
+            });
+        }
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+    }
+
+    toggle() {
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+
+    open() {
+        this.isOpen = true;
+        this.viewYear = this.selectedYear;
+        this.pickerEl.classList.add('open');
+        this.updateDropdown();
+    }
+
+    close() {
+        this.isOpen = false;
+        this.pickerEl.classList.remove('open');
+    }
+
+    navigateYear(delta) {
+        const minYear = this.currentYear - this.yearsBack;
+        const maxYear = this.currentYear + this.yearsForward;
+        const newYear = this.viewYear + delta;
+
+        if (newYear >= minYear && newYear <= maxYear) {
+            this.viewYear = newYear;
+            this.updateDropdown();
+        }
+    }
+
+    updateDropdown() {
+        const minYear = this.currentYear - this.yearsBack;
+        const maxYear = this.currentYear + this.yearsForward;
+
+        this.yearEl.textContent = this.viewYear;
+        this.prevBtn.disabled = this.viewYear <= minYear;
+        this.nextBtn.disabled = this.viewYear >= maxYear;
+
+        // Update month buttons
+        this.container.querySelectorAll('.month-picker-month').forEach(btn => {
+            const month = parseInt(btn.dataset.month);
+            const isSelected = this.selectedMonth === month && this.selectedYear === this.viewYear;
+            const isCurrent = this.currentMonth === month && this.currentYear === this.viewYear;
+            btn.classList.toggle('selected', isSelected);
+            btn.classList.toggle('current', isCurrent);
+        });
+
+        // Update all months button
+        const allBtn = this.container.querySelector('.month-picker-all-btn');
+        if (allBtn) {
+            allBtn.classList.toggle('selected', this.selectedMonth === null && this.selectedYear === this.viewYear);
+        }
+    }
+
+    selectMonth(year, month) {
+        this.selectedYear = year;
+        this.selectedMonth = month;
+        this.textEl.textContent = this.getDisplayText();
+        this.close();
+        this.onChange({ year: this.selectedYear, month: this.selectedMonth });
+    }
+
+    getValue() {
+        return { year: this.selectedYear, month: this.selectedMonth };
+    }
+
+    getYear() {
+        return this.selectedYear;
+    }
+
+    getMonth() {
+        return this.selectedMonth;
+    }
+
+    setValue(year, month) {
+        this.selectedYear = year;
+        this.selectedMonth = month;
+        this.viewYear = year;
+        this.textEl.textContent = this.getDisplayText();
+        if (this.isOpen) {
+            this.updateDropdown();
+        }
+    }
+}
+
 // Modal utility functions
 function openModal(id) {
     document.getElementById(id).classList.add('active');
@@ -479,52 +728,49 @@ function applyPayrollRBAC() {
     }
 }
 
-// Populate year dropdowns dynamically from API
+// Initialize month pickers for payroll tabs
 async function populateYearDropdowns() {
-    try {
-        // Fetch years for each tab type in parallel
-        const [draftYears, runYears, payslipYears] = await Promise.all([
-            fetchDraftYears(),
-            fetchRunYears(),
-            fetchPayslipYears()
-        ]);
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1; // 1-12
 
-        // Populate drafts tab year dropdown
-        const draftYearSelect = document.getElementById('draftYear');
-        if (draftYearSelect && draftYears.length > 0) {
-            populateYearSelect(draftYearSelect, draftYears);
+    // Initialize Draft Month Picker - current month selected by default
+    draftMonthPicker = new MonthPicker('draftMonthPicker', {
+        yearsBack: 20,
+        yearsForward: 10,
+        year: currentYear,
+        month: currentMonth,
+        allowAllMonths: false,
+        onChange: () => loadPayrollDrafts()
+    });
+
+    // Initialize Run Month Picker - current month selected by default
+    runMonthPicker = new MonthPicker('runMonthPicker', {
+        yearsBack: 20,
+        yearsForward: 10,
+        year: currentYear,
+        month: currentMonth,
+        allowAllMonths: false,
+        onChange: () => loadPayrollRuns()
+    });
+
+    // Initialize All Payslips Month Picker - current month selected by default
+    allPayslipsMonthPicker = new MonthPicker('allPayslipsMonthPicker', {
+        yearsBack: 20,
+        yearsForward: 10,
+        year: currentYear,
+        month: currentMonth,
+        allowAllMonths: false,
+        onChange: () => loadAllPayslips()
+    });
+
+    // Keep draftPayrollYear select for create draft modal (if it exists)
+    const draftPayrollYearSelect = document.getElementById('draftPayrollYear');
+    if (draftPayrollYearSelect) {
+        const years = [];
+        for (let y = currentYear + 1; y >= currentYear - 5; y--) {
+            years.push(y);
         }
-
-        // Populate finalized runs tab year dropdown
-        const runYearSelect = document.getElementById('runYear');
-        if (runYearSelect && runYears.length > 0) {
-            populateYearSelect(runYearSelect, runYears);
-        }
-
-        // Populate all payslips tab year dropdown
-        const allPayslipsYearSelect = document.getElementById('allPayslipsYear');
-        if (allPayslipsYearSelect && payslipYears.length > 0) {
-            populateYearSelect(allPayslipsYearSelect, payslipYears);
-        }
-
-        // Populate create draft modal year dropdown (use draft years)
-        const draftPayrollYearSelect = document.getElementById('draftPayrollYear');
-        if (draftPayrollYearSelect && draftYears.length > 0) {
-            populateYearSelect(draftPayrollYearSelect, draftYears);
-        }
-
-    } catch (error) {
-        console.error('Error populating year dropdowns:', error);
-        // Fallback: populate with current year and previous year
-        const currentYear = new Date().getFullYear();
-        const fallbackYears = [currentYear, currentYear - 1];
-
-        ['draftYear', 'runYear', 'allPayslipsYear', 'draftPayrollYear'].forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select) {
-                populateYearSelect(select, fallbackYears);
-            }
-        });
+        populateYearSelect(draftPayrollYearSelect, years);
     }
 }
 
@@ -677,9 +923,10 @@ function setDefaultPayrollDates() {
 
 async function loadPayrollRuns() {
     try {
-        const year = document.getElementById('runYear').value;
-        const month = document.getElementById('runMonth').value;
-        const officeId = document.getElementById('runOffice').value;
+        const pickerValue = runMonthPicker?.getValue() || { year: new Date().getFullYear(), month: null };
+        const year = pickerValue.year;
+        const month = pickerValue.month || '';
+        const officeId = document.getElementById('runOffice')?.value || '';
 
         let url = `/hrms/payroll-processing/runs?year=${year}`;
         if (month) url += `&month=${month}`;
@@ -698,8 +945,9 @@ async function loadPayrollRuns() {
 
 async function loadPayrollDrafts() {
     try {
-        const year = document.getElementById('draftYear')?.value || new Date().getFullYear();
-        const month = document.getElementById('draftMonth')?.value || '';
+        const pickerValue = draftMonthPicker?.getValue() || { year: new Date().getFullYear(), month: null };
+        const year = pickerValue.year;
+        const month = pickerValue.month || '';
         const officeId = document.getElementById('draftOffice')?.value || '';
 
         let url = `/hrms/payroll-drafts?year=${year}`;
@@ -3539,8 +3787,9 @@ let allPayslips = [];
 async function loadAllPayslips() {
     try {
         showLoading();
-        const year = document.getElementById('allPayslipsYear')?.value || new Date().getFullYear();
-        const month = document.getElementById('allPayslipsMonth')?.value || '';
+        const pickerValue = allPayslipsMonthPicker?.getValue() || { year: new Date().getFullYear(), month: null };
+        const year = pickerValue.year;
+        const month = pickerValue.month || '';
         const officeId = document.getElementById('allPayslipsOffice')?.value || '';
         const departmentId = document.getElementById('allPayslipsDepartment')?.value || '';
         const search = document.getElementById('allPayslipsSearch')?.value || '';
@@ -5481,8 +5730,7 @@ function exportDraftToCSV() {
 
 // Event listeners
 document.getElementById('payslipYear')?.addEventListener('change', loadMyPayslips);
-document.getElementById('runYear')?.addEventListener('change', loadPayrollRuns);
-document.getElementById('runMonth')?.addEventListener('change', loadPayrollRuns);
+// Note: runYear/runMonth now handled by MonthPicker onChange callback
 document.getElementById('runOffice')?.addEventListener('change', loadPayrollRuns);
 document.getElementById('structureSearch')?.addEventListener('input', updateSalaryStructuresTable);
 document.getElementById('structureOfficeFilter')?.addEventListener('change', loadSalaryStructures);
@@ -10630,4 +10878,77 @@ function exportSalaryReport(format) {
     document.body.removeChild(link);
 
     showNotification('Salary report exported successfully', 'success');
+}
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when salary is updated (from hrms-signalr.js)
+ */
+function onSalaryUpdated(data) {
+    console.log('[Payroll] Salary updated:', data);
+
+    const action = data.Action;
+    const employeeName = data.EmployeeName || 'Employee';
+
+    let message = '';
+    switch(action) {
+        case 'created':
+            message = `Salary created for ${employeeName}`;
+            break;
+        case 'updated':
+            message = `Salary updated for ${employeeName}`;
+            break;
+        case 'revised':
+            message = `Salary revised for ${employeeName}`;
+            break;
+        default:
+            message = `Salary ${action} for ${employeeName}`;
+    }
+
+    showNotification(message, 'info');
+
+    // Reload relevant data based on current section
+    if (typeof loadSalaryComponents === 'function') {
+        loadSalaryComponents();
+    }
+    if (typeof loadSalaryStructures === 'function') {
+        loadSalaryStructures();
+    }
+}
+
+/**
+ * Called when payroll run is updated (from hrms-signalr.js)
+ */
+function onPayrollRunUpdated(data) {
+    console.log('[Payroll] Payroll run updated:', data);
+
+    const status = data.Status;
+    const period = data.Period || 'Payroll';
+
+    let message = '';
+    let toastType = 'info';
+
+    switch(status) {
+        case 'draft':
+            message = `${period} payroll draft created`;
+            break;
+        case 'processing':
+            message = `${period} payroll is being processed`;
+            break;
+        case 'completed':
+            message = `${period} payroll completed successfully`;
+            toastType = 'success';
+            break;
+        case 'failed':
+            message = `${period} payroll processing failed`;
+            toastType = 'error';
+            break;
+        default:
+            message = `${period} payroll status: ${status}`;
+    }
+
+    showNotification(message, toastType);
 }

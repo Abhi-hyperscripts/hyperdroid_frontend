@@ -397,13 +397,10 @@ function showEmployeeDetails(id) {
     const office = emp.office_name || emp.office || '--';
     const directReportsCount = emp.childCount || 0;
 
-    // Find manager name
-    let managerName = '--';
+    // Find manager details
+    let manager = null;
     if (emp.parent_id) {
-        const manager = flatOrgData.find(e => e.id === emp.parent_id);
-        if (manager) {
-            managerName = getDisplayName(manager);
-        }
+        manager = flatOrgData.find(e => e.id === emp.parent_id);
     }
 
     content.innerHTML = `
@@ -433,9 +430,23 @@ function showEmployeeDetails(id) {
                 <label>Office</label>
                 <span>${escapeHtml(office)}</span>
             </div>
-            <div class="detail-info-item">
+            <div class="detail-info-item reports-to-section">
                 <label>Reports To</label>
-                <span>${emp.parent_id ? `<a href="#" onclick="event.preventDefault(); focusOnEmployee('${emp.parent_id}')">${escapeHtml(managerName)}</a>` : '--'}</span>
+                ${manager ? `
+                <div class="manager-card" onclick="focusOnEmployee('${manager.id}')">
+                    <div class="manager-avatar ${manager.profile_photo_url ? 'has-photo' : ''}">
+                        ${manager.profile_photo_url
+                            ? `<img src="${manager.profile_photo_url}" alt="${escapeHtml(getDisplayName(manager))}">`
+                            : `<span>${getInitialsFromName(getDisplayName(manager))}</span>`
+                        }
+                    </div>
+                    <div class="manager-info">
+                        <span class="manager-name">${escapeHtml(getDisplayName(manager))}</span>
+                        <span class="manager-designation">${escapeHtml(manager.designation || manager.designation_name || '--')}</span>
+                        <span class="manager-details">${escapeHtml(manager.office_name || manager.office || '--')} • ${escapeHtml(manager.employee_code || '')}</span>
+                    </div>
+                </div>
+                ` : '<span>--</span>'}
             </div>
             <div class="detail-info-item">
                 <label>Direct Reports</label>

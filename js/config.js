@@ -89,6 +89,10 @@ const CONFIG = {
         return `${this.endpoints.chat}/hubs/chat`;
     },
 
+    get hrmsSignalRHubUrl() {
+        return `${this.endpoints.hrms}/hubs/hrms`;
+    },
+
     // Fetch ICE servers from backend
     async fetchIceServers() {
         try {

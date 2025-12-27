@@ -64,54 +64,29 @@
                     <h3>Attendance</h3>
                 </div>
                 <nav class="sidebar-nav">
-                    <!-- Tracking Section -->
-                    <div class="nav-group" data-group="tracking">
+                    <!-- Team Overview Section -->
+                    <div class="nav-group" data-group="overview">
                         <div class="nav-group-header">
                             <span class="nav-group-title">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                                Tracking
+                                Team Overview
                             </span>
                             <span class="chevron">▼</span>
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn active" data-tab="daily" id="dailyTab">
-                                <span class="nav-number">1</span><span class="nav-label">Daily View</span>
-                            </button>
-                            <button class="sidebar-btn" data-tab="myAttendance" id="myAttendanceTabBtn">
-                                <span class="nav-number">2</span><span class="nav-label">My Attendance</span>
+                                <span class="nav-number">1</span><span class="nav-label">Daily Attendance</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Requests Section -->
-                    <div class="nav-group" data-group="requests">
-                        <div class="nav-group-header">
-                            <span class="nav-group-title">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="12" y1="18" x2="12" y2="12"></line>
-                                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                                </svg>
-                                Requests
-                            </span>
-                            <span class="chevron">▼</span>
-                        </div>
-                        <div class="nav-group-items">
-                            <button class="sidebar-btn" data-tab="regularization" id="regularizationTabBtn">
-                                <span class="nav-number">3</span><span class="nav-label">Regularization</span>
-                            </button>
-                            <button class="sidebar-btn" data-tab="overtime" id="overtimeTabBtn">
-                                <span class="nav-number">4</span><span class="nav-label">Overtime</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Approvals Section (Admin/Manager Only) -->
-                    <div class="nav-group admin-only" data-group="approvals" id="approvalsNavGroup" style="display: none;">
+                    <!-- Approvals Section -->
+                    <div class="nav-group" data-group="approvals">
                         <div class="nav-group-header">
                             <span class="nav-group-title">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -123,8 +98,11 @@
                             <span class="chevron">▼</span>
                         </div>
                         <div class="nav-group-items">
-                            <button class="sidebar-btn" data-tab="approvals" id="approvalsTabBtn">
-                                <span class="nav-number">5</span><span class="nav-label">Pending Approvals</span>
+                            <button class="sidebar-btn" data-tab="regularization" id="regularizationTabBtn">
+                                <span class="nav-number">2</span><span class="nav-label">Regularization Requests</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="overtime" id="overtimeTabBtn">
+                                <span class="nav-number">3</span><span class="nav-label">Overtime Requests</span>
                             </button>
                         </div>
                     </div>
@@ -183,86 +161,25 @@
                     </div>
                 </div>
 
-                <!-- My Attendance Tab -->
-                <div class="tab-content" id="myAttendance">
-                    <div class="filters-bar">
-                        <select class="filter-select" id="monthFilter" onchange="loadMyAttendance()">
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                        <select class="filter-select" id="yearFilter" onchange="loadMyAttendance()">
-                        </select>
-                    </div>
-
-                    <div class="stats-row">
-                        <div class="stat-mini">
-                            <span class="stat-mini-value" id="myWorkingDays">-</span>
-                            <span class="stat-mini-label">Working Days</span>
-                        </div>
-                        <div class="stat-mini active">
-                            <span class="stat-mini-value" id="myPresentDays">-</span>
-                            <span class="stat-mini-label">Present</span>
-                        </div>
-                        <div class="stat-mini warning">
-                            <span class="stat-mini-value" id="myLateDays">-</span>
-                            <span class="stat-mini-label">Late</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="stat-mini-value" id="myTotalHours">-</span>
-                            <span class="stat-mini-label">Total Hours</span>
-                        </div>
-                    </div>
-
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Check In</th>
-                                    <th>Check Out</th>
-                                    <th>Working Hours</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="myAttendanceTableBody">
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="loading-spinner">
-                                            <div class="spinner"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Regularization Tab -->
+                <!-- Regularization Requests Tab (Team Pending) -->
                 <div class="tab-content" id="regularization">
                     <div class="filters-bar">
-                        <button class="btn btn-primary" onclick="openRegularizationModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            Request Regularization
-                        </button>
+                        <div class="filter-info">
+                            <span class="filter-label">Team Regularization Requests</span>
+                        </div>
+                        <select class="filter-select" id="regStatusFilter" onchange="loadTeamRegularizations()">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="all">All</option>
+                        </select>
                     </div>
 
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>Employee</th>
                                     <th>Date</th>
                                     <th>Requested Check In</th>
                                     <th>Requested Check Out</th>
@@ -271,46 +188,7 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="regularizationTableBody">
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="loading-spinner">
-                                            <div class="spinner"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Overtime Tab -->
-                <div class="tab-content" id="overtime">
-                    <div class="filters-bar">
-                        <button class="btn btn-primary" onclick="openOvertimeModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            Request Overtime
-                        </button>
-                    </div>
-
-                    <div class="data-table-container">
-                        <h4 style="margin-bottom: 16px;">My Overtime Requests</h4>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Planned Start</th>
-                                    <th>Planned End</th>
-                                    <th>Actual Start</th>
-                                    <th>Actual End</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="overtimeTableBody">
+                            <tbody id="teamRegularizationTableBody">
                                 <tr>
                                     <td colspan="7">
                                         <div class="loading-spinner">
@@ -321,10 +199,24 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <!-- Pending Overtime Approvals (Manager/Admin Only) -->
-                    <div class="data-table-container admin-only" style="margin-top: 24px;">
-                        <h4 style="margin-bottom: 16px;">Pending Overtime Approvals</h4>
+                <!-- Overtime Requests Tab (Team Pending) -->
+                <div class="tab-content" id="overtime">
+                    <div class="filters-bar">
+                        <div class="filter-info">
+                            <span class="filter-label">Team Overtime Requests</span>
+                        </div>
+                        <select class="filter-select" id="otStatusFilter" onchange="loadTeamOvertime()">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="completed">Completed</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+
+                    <div class="data-table-container">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -334,12 +226,13 @@
                                     <th>End Time</th>
                                     <th>Reason</th>
                                     <th>Task/Project</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="pendingOvertimeTableBody">
+                            <tbody id="teamOvertimeTableBody">
                                 <tr>
-                                    <td colspan="7">
+                                    <td colspan="8">
                                         <div class="loading-spinner">
                                             <div class="spinner"></div>
                                         </div>
@@ -350,122 +243,7 @@
                     </div>
                 </div>
 
-                <!-- Approvals Tab (Admin/Manager Only) -->
-                <div class="tab-content" id="approvals">
-                    <div class="data-table-container">
-                        <h4 style="margin-bottom: 16px;">Pending Regularization Requests</h4>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Date</th>
-                                    <th>Requested Check In</th>
-                                    <th>Requested Check Out</th>
-                                    <th>Reason</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pendingRegularizationsTableBody">
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="loading-spinner">
-                                            <div class="spinner"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </main>
-        </div>
-    </div>
-
-    <!-- Regularization Modal -->
-    <div class="modal" id="regularizationModal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Request Regularization</h3>
-                    <button class="close-btn" onclick="closeModal('regularizationModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="regularizationForm">
-                        <div class="form-group">
-                            <label>Date <span class="required">*</span></label>
-                            <input type="date" id="regDate" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Check In Time <span class="required">*</span></label>
-                                <input type="time" id="regCheckIn" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Check Out Time <span class="required">*</span></label>
-                                <input type="time" id="regCheckOut" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Reason <span class="required">*</span></label>
-                            <textarea id="regReason" required placeholder="Explain why regularization is needed..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="submitRegularization()">Submit Request</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Overtime Modal -->
-    <div class="modal" id="overtimeModal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Request Overtime</h3>
-                    <button class="close-btn" onclick="closeModal('overtimeModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="overtimeForm">
-                        <div class="form-group">
-                            <label>Date <span class="required">*</span></label>
-                            <input type="date" id="otDate" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Start Time <span class="required">*</span></label>
-                                <input type="time" id="otStartTime" required>
-                            </div>
-                            <div class="form-group">
-                                <label>End Time <span class="required">*</span></label>
-                                <input type="time" id="otEndTime" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Reason <span class="required">*</span></label>
-                            <textarea id="otReason" required placeholder="Why is overtime needed?"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Project/Task</label>
-                            <input type="text" id="otTask" placeholder="What will you work on?">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="submitOvertime()">Submit Request</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -566,12 +344,14 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

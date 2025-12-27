@@ -327,6 +327,65 @@ class SearchableDropdown {
     }
 }
 
+/**
+ * Generate year options for a searchable dropdown
+ * @param {number} yearsBack - How many years back from current year
+ * @param {number} yearsForward - How many years forward from current year
+ * @returns {Array} Array of {value, label} objects
+ */
+function generateYearOptions(yearsBack = 20, yearsForward = 5) {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+
+    // Future years first (descending)
+    for (let y = currentYear + yearsForward; y > currentYear; y--) {
+        years.push({ value: y, label: String(y) });
+    }
+
+    // Current year and past years
+    for (let y = currentYear; y >= currentYear - yearsBack; y--) {
+        years.push({ value: y, label: String(y) });
+    }
+
+    return years;
+}
+
+// Store for holiday year picker
+let holidayYearPicker = null;
+
+/**
+ * Initialize the holiday year searchable dropdown
+ */
+function initHolidayYearPicker() {
+    const container = document.getElementById('holidayYearPicker');
+    if (!container) return;
+
+    const currentYear = new Date().getFullYear();
+    const yearOptions = generateYearOptions(20, 5);
+
+    holidayYearPicker = new SearchableDropdown(container, {
+        id: 'holidayYearDropdown',
+        options: yearOptions,
+        value: currentYear,
+        placeholder: 'Select Year',
+        searchPlaceholder: 'Search year...',
+        onChange: (value) => {
+            loadHolidays();
+        }
+    });
+}
+
+/**
+ * Get the selected holiday year
+ * @returns {number} The selected year
+ */
+function getHolidayYear() {
+    if (holidayYearPicker) {
+        return holidayYearPicker.getValue();
+    }
+    return new Date().getFullYear();
+}
+
 // Helper function to create searchable dropdown from existing select element
 function convertToSearchableDropdown(selectId, options = {}) {
     const select = document.getElementById(selectId);
@@ -815,6 +874,9 @@ async function initializePage() {
 
         // Setup tabs
         setupTabs();
+
+        // Initialize holiday year picker (searchable dropdown)
+        initHolidayYearPicker();
 
         // Load all data
         await loadAllData();
@@ -1547,7 +1609,7 @@ function formatRosterType(type) {
 
 async function loadHolidays() {
     try {
-        const year = document.getElementById('holidayYear')?.value || new Date().getFullYear();
+        const year = getHolidayYear();
         const response = await api.request(`/hrms/holidays?year=${year}`);
         holidays = Array.isArray(response) ? response : (response?.data || []);
         updateHolidaysTable();
@@ -3094,7 +3156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('designationDepartment')?.addEventListener('change', updateDesignationsTable);
     document.getElementById('shiftSearch')?.addEventListener('input', updateShiftsTable);
     document.getElementById('shiftOffice')?.addEventListener('change', updateShiftsTable);
-    document.getElementById('holidayYear')?.addEventListener('change', loadHolidays);
+    // Note: holidayYear picker has its own onChange callback in initHolidayYearPicker()
     document.getElementById('holidayOffice')?.addEventListener('change', updateHolidaysTable);
     document.getElementById('holidayType')?.addEventListener('change', updateHolidaysTable);
     document.getElementById('rosterSearch')?.addEventListener('input', updateRostersTable);
@@ -3227,4 +3289,62 @@ function setupSidebar() {
 
 // Initialize sidebar on page load
 document.addEventListener('DOMContentLoaded', setupSidebar);
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when organization structure is updated (from hrms-signalr.js)
+ */
+function onOrganizationUpdated(data) {
+    console.log('[Organization] Update received:', data);
+
+    const entityType = data.EntityType;
+    const action = data.Action;
+    const entityName = data.EntityName || entityType;
+
+    // Show toast notification
+    let message = '';
+    switch(action) {
+        case 'created':
+            message = `${entityType} "${entityName}" was created`;
+            break;
+        case 'updated':
+            message = `${entityType} "${entityName}" was updated`;
+            break;
+        case 'deleted':
+            message = `${entityType} "${entityName}" was deleted`;
+            break;
+        case 'bulk_created':
+            message = `${entityName} were created`;
+            break;
+        default:
+            message = `${entityType} was ${action}`;
+    }
+    showToast(message, 'info');
+
+    // Reload the relevant data based on entity type
+    switch(entityType) {
+        case 'office':
+            loadOffices();
+            break;
+        case 'department':
+            loadDepartments();
+            break;
+        case 'designation':
+            loadDesignations();
+            break;
+        case 'shift':
+        case 'shift_roster':
+            loadShifts();
+            break;
+        case 'holiday':
+            loadHolidays();
+            break;
+        default:
+            // Reload current tab data
+            break;
+    }
+}
 

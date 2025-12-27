@@ -4008,3 +4008,34 @@ function setEmploymentDropdownValues(emp) {
         }
     }
 }
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when an employee is updated (from hrms-signalr.js)
+ */
+function onEmployeeUpdated(data) {
+    console.log('[Employees] Employee updated:', data);
+    showToast(`Employee ${data.EmployeeName || 'record'} was updated`, 'info');
+    loadEmployees();
+}
+
+/**
+ * Called when a new employee is created (from hrms-signalr.js)
+ */
+function onEmployeeCreated(data) {
+    console.log('[Employees] Employee created:', data);
+    showToast(`New employee ${data.EmployeeName || ''} added`, 'success');
+    loadEmployees();
+}
+
+/**
+ * Called when salary is updated (from hrms-signalr.js)
+ */
+function onSalaryUpdated(data) {
+    console.log('[Employees] Salary updated:', data);
+    // Reload to show updated CTC in employee list
+    loadEmployees();
+}

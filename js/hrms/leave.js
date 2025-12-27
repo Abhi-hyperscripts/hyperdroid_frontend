@@ -32,28 +32,19 @@ async function initializePage() {
         // Initialize RBAC
         hrmsRoles.init();
 
-        // Apply RBAC visibility
+        // Apply RBAC visibility - this may redirect to ESS for regular employees
         applyLeaveRBAC();
 
         // Setup tabs
         setupTabs();
 
-        // Load initial data
+        // Load initial data for admin/manager view
         await Promise.all([
             loadLeaveTypes(),
-            loadMyLeaveRequests(),
-            loadDepartments()
+            loadDepartments(),
+            loadPendingRequests(),
+            loadEmployees()
         ]);
-
-        if (hrmsRoles.canApproveLeave()) {
-            await loadPendingRequests();
-            await loadEmployees();
-        }
-
-        // Setup date change handlers
-        document.getElementById('fromDate').addEventListener('change', calculateLeaveDays);
-        document.getElementById('toDate').addEventListener('change', calculateLeaveDays);
-        document.getElementById('halfDay').addEventListener('change', calculateLeaveDays);
 
         hideLoading();
     } catch (error) {
@@ -64,23 +55,19 @@ async function initializePage() {
 }
 
 // Apply RBAC visibility rules for leave page
+// This page is for Managers/HR Admins only - regular employees use ESS
 function applyLeaveRBAC() {
-    // Management nav group (Leave Requests, Team Calendar) - visible to managers and HR admins
-    const managementNavGroup = document.getElementById('managementNavGroup');
-    if (managementNavGroup) {
-        managementNavGroup.style.display = hrmsRoles.canApproveLeave() ? 'block' : 'none';
+    // Only managers, HR users, and admins can access this page
+    // Regular employees should be redirected to ESS
+    if (!hrmsRoles.isHRUser() && !hrmsRoles.isManager() && !hrmsRoles.isHRAdmin() && !hrmsRoles.isSuperAdmin()) {
+        window.location.href = 'self-service.html';
+        return;
     }
 
     // Configuration nav group (Leave Types) - HR Admin only
     const configNavGroup = document.getElementById('configNavGroup');
     if (configNavGroup) {
         configNavGroup.style.display = hrmsRoles.isHRAdmin() ? 'block' : 'none';
-    }
-
-    // Admin actions (Create Leave Type button) - HR Admin only
-    const adminActions = document.getElementById('adminActions');
-    if (adminActions) {
-        adminActions.style.display = hrmsRoles.isHRAdmin() ? 'flex' : 'none';
     }
 
     // Allocate button - HR Admin only
@@ -111,26 +98,25 @@ function switchTab(tabName) {
     const tabContent = document.getElementById(tabName);
     if (tabContent) tabContent.classList.add('active');
 
-    // Update active tab title
+    // Update active tab title - Admin/Manager only tabs
     const titleMap = {
-        'my-leave': 'My Leave',
-        'leave-balance': 'Leave Balance',
         'leave-requests': 'Leave Requests',
+        'leave-balance': 'Leave Balances',
         'team-calendar': 'Team Calendar',
         'leave-types': 'Leave Types'
     };
     const titleEl = document.getElementById('activeTabName');
-    if (titleEl) titleEl.textContent = titleMap[tabName] || 'Leave';
+    if (titleEl) titleEl.textContent = titleMap[tabName] || 'Leave Management';
 
     // Load data for specific tabs
-    if (tabName === 'leave-balance' && hrmsRoles.canApproveLeave()) {
+    if (tabName === 'leave-requests') {
+        loadPendingRequests();
+    } else if (tabName === 'leave-balance') {
         loadLeaveBalances();
     } else if (tabName === 'team-calendar') {
         initializeTeamCalendar();
     } else if (tabName === 'leave-types') {
         updateLeaveTypesTable();
-    } else if (tabName === 'leave-requests') {
-        loadPendingRequests();
     }
 }
 
@@ -140,8 +126,8 @@ async function loadLeaveTypes() {
         // Handle both array response and { success, data } response format
         leaveTypes = Array.isArray(response) ? response : (response?.data || []);
 
-        // Populate leave type selects
-        const selects = ['leaveType', 'allocLeaveType'];
+        // Populate leave type selects (for admin allocation modal)
+        const selects = ['allocLeaveType'];
         selects.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
@@ -159,9 +145,6 @@ async function loadLeaveTypes() {
         if (hrmsRoles.isHRAdmin()) {
             updateLeaveTypesTable();
         }
-
-        // Update balance stats
-        await loadMyLeaveBalance();
     } catch (error) {
         console.error('Error loading leave types:', error);
     }
@@ -1457,10 +1440,8 @@ function hideLoading() {
 
 // Local showToast removed - using unified toast.js instead
 
-// Search handlers
+// Search handlers for admin/manager view
 document.getElementById('leaveTypeSearch')?.addEventListener('input', updateLeaveTypesTable);
-document.getElementById('myLeaveYear')?.addEventListener('change', loadMyLeaveRequests);
-document.getElementById('myLeaveStatus')?.addEventListener('change', loadMyLeaveRequests);
 document.getElementById('requestStatus')?.addEventListener('change', loadPendingRequests);
 document.getElementById('requestDepartment')?.addEventListener('change', loadPendingRequests);
 document.getElementById('balanceYear')?.addEventListener('change', loadLeaveBalances);
@@ -1761,4 +1742,49 @@ function setupSidebar() {
             container?.classList.remove('sidebar-open');
         }
     });
+}
+
+// ============================================
+// SignalR Real-Time Event Handlers
+// ============================================
+
+/**
+ * Called when a leave request is updated (from hrms-signalr.js)
+ */
+function onLeaveRequestUpdated(data) {
+    console.log('[Leave] Request updated:', data);
+
+    const status = data.Status;
+    const employeeName = data.EmployeeName || 'Employee';
+
+    let message = '';
+    let toastType = 'info';
+
+    switch(status) {
+        case 'pending':
+            message = `New leave request from ${employeeName}`;
+            break;
+        case 'approved':
+            message = `Leave request approved for ${employeeName}`;
+            toastType = 'success';
+            break;
+        case 'rejected':
+            message = `Leave request rejected for ${employeeName}`;
+            toastType = 'warning';
+            break;
+        case 'cancelled':
+            message = `Leave request cancelled by ${employeeName}`;
+            break;
+        default:
+            message = `Leave request updated for ${employeeName}`;
+    }
+
+    showToast(message, toastType);
+
+    // Reload leave data
+    loadMyLeaveRequests();
+
+    if (hrmsRoles && hrmsRoles.canApproveLeave()) {
+        loadPendingRequests();
+    }
 }

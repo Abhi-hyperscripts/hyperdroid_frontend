@@ -8,10 +8,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-ess.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
+    <!-- Top Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -23,174 +25,165 @@
         </div>
     </nav>
 
-    <div class="ess-container">
-        <!-- Welcome Header -->
-        <div class="ess-header">
-            <div class="ess-welcome">
-                <div class="ess-avatar" id="employeeAvatar">
-                    <span id="avatarInitials">--</span>
+    <!-- Mobile Sidebar Overlay -->
+    <div class="ess-sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main ESS Layout -->
+    <div class="ess-layout">
+        <!-- Sidebar -->
+        <aside class="ess-sidebar" id="essSidebar">
+            <!-- Close button for mobile -->
+            <button class="ess-sidebar-close" id="sidebarCloseBtn" aria-label="Close sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <!-- Employee Profile Section -->
+            <div class="ess-profile-section">
+                <div class="ess-profile-photo" id="employeePhoto">
+                    <span class="ess-photo-initials" id="photoInitials">--</span>
+                    <img src="" alt="" id="photoImg" style="display: none;">
                 </div>
-                <div class="ess-welcome-text">
-                    <h1 id="welcomeMessage">Welcome back!</h1>
-                    <p id="employeeInfo">Loading...</p>
+                <div class="ess-profile-info">
+                    <h3 class="ess-profile-name" id="employeeName">Loading...</h3>
+                    <p class="ess-profile-role" id="employeeRole">--</p>
+                    <p class="ess-profile-dept" id="employeeDept">--</p>
+                </div>
+                <div class="ess-profile-status">
+                    <span class="ess-clock-status" id="clockStatusBadge">Not Clocked In</span>
                 </div>
             </div>
-            <div class="ess-header-actions">
-                <a href="notifications.html" class="ess-notification-btn" id="notificationBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    </svg>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                </a>
-            </div>
-        </div>
 
-        <!-- Tab Navigation -->
-        <div class="hrms-tabs">
-            <button class="tab-btn active" data-tab="ess-dashboard">Dashboard</button>
-            <button class="tab-btn" data-tab="my-payslips">My Payslips</button>
-        </div>
-
-        <!-- Dashboard Tab -->
-        <div id="ess-dashboard" class="tab-content active">
-
-        <!-- Clock In/Out Section -->
-        <div class="ess-clock-section" id="clockSection">
-            <div class="clock-header">
-                <div class="clock-time-display">
-                    <div class="clock-time" id="currentTime">--:--:--</div>
-                    <div class="clock-date" id="currentDate">Loading...</div>
+            <!-- Sidebar Navigation -->
+            <nav class="ess-nav">
+                <!-- Main Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Main</div>
+                    <button class="ess-nav-btn active" data-panel="panel-dashboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-profile">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>My Profile</span>
+                    </button>
                 </div>
-                <div class="clock-actions">
-                    <div class="clock-status" id="clockStatus">Not checked in</div>
-                    <button class="clock-btn" id="clockBtn" onclick="handleClock()">
+
+                <!-- Time & Attendance Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Time & Attendance</div>
+                    <button class="ess-nav-btn" data-panel="panel-attendance">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <polyline points="12 6 12 12 16 14"/>
                         </svg>
-                        <span id="clockBtnText">Clock In</span>
+                        <span>My Attendance</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-regularization">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                        <span>Regularization</span>
+                        <span class="ess-nav-badge" id="regPendingBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-overtime">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 16"/>
+                        </svg>
+                        <span>Overtime</span>
+                        <span class="ess-nav-badge" id="otPendingBadge" style="display: none;">0</span>
                     </button>
                 </div>
-            </div>
-            <div class="clock-info" id="clockInfo">
-                <span id="checkInTime">Check-in: --:--</span>
-                <span id="workingHours">Working: -- hrs</span>
-            </div>
-        </div>
 
-        <!-- Stats Grid -->
-        <div class="ess-stats-grid">
-            <div class="ess-stat-card leave-balance">
-                <div class="stat-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="casualLeaveBalance">--</div>
-                    <div class="stat-label">Casual Leave</div>
-                </div>
-            </div>
-            <div class="ess-stat-card leave-balance">
-                <div class="stat-icon sick">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="sickLeaveBalance">--</div>
-                    <div class="stat-label">Sick Leave</div>
-                </div>
-            </div>
-            <div class="ess-stat-card leave-balance">
-                <div class="stat-icon earned">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="earnedLeaveBalance">--</div>
-                    <div class="stat-label">Earned Leave</div>
-                </div>
-            </div>
-            <div class="ess-stat-card pending">
-                <div class="stat-icon pending">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="pendingApprovals">--</div>
-                    <div class="stat-label">Pending Approvals</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="ess-section">
-            <h3 class="ess-section-title">Quick Actions</h3>
-            <div class="ess-quick-actions">
-                <a href="leave.html" class="ess-action-card">
-                    <div class="action-icon apply-leave">
+                <!-- Leaves Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Leaves</div>
+                    <button class="ess-nav-btn" data-panel="panel-leaves">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                             <line x1="16" y1="2" x2="16" y2="6"/>
                             <line x1="8" y1="2" x2="8" y2="6"/>
                             <line x1="3" y1="10" x2="21" y2="10"/>
-                            <line x1="12" y1="14" x2="12" y2="18"/>
-                            <line x1="10" y1="16" x2="14" y2="16"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>Apply Leave</h4>
-                        <p>Request time off</p>
-                    </div>
-                </a>
-                <a href="#" class="ess-action-card" onclick="switchToPayslipsTab(); return false;">
-                    <div class="action-icon payslip">
+                        <span>My Leaves</span>
+                        <span class="ess-nav-badge" id="leavePendingBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-leave-balance">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span>Leave Balance</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-holidays">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        <span>Holidays</span>
+                    </button>
+                </div>
+
+                <!-- Payroll Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Payroll</div>
+                    <button class="ess-nav-btn" data-panel="panel-payslips">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
                             <line x1="1" y1="10" x2="23" y2="10"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>View Payslips</h4>
-                        <p>Salary details</p>
-                    </div>
-                </a>
-                <a href="my-profile.html" class="ess-action-card">
-                    <div class="action-icon profile">
+                        <span>My Payslips</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-salary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
+                            <line x1="12" y1="1" x2="12" y2="23"/>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>My Profile</h4>
-                        <p>Personal details</p>
-                    </div>
-                </a>
-                <a href="directory.html" class="ess-action-card">
-                    <div class="action-icon directory">
+                        <span>Salary Details</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-loans">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                        <span>Loans & Advances</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-reimbursements">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        <span>Reimbursements</span>
+                    </button>
+                </div>
+
+                <!-- Company Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Company</div>
+                    <a href="directory.html" class="ess-nav-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>Team Directory</h4>
-                        <p>Find colleagues</p>
-                    </div>
-                </a>
-                <a href="org-chart.html" class="ess-action-card">
-                    <div class="action-icon org-chart">
+                        <span>Team Directory</span>
+                    </a>
+                    <a href="org-chart.html" class="ess-nav-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="9" y="2" width="6" height="6" rx="1"/>
                             <rect x="2" y="16" width="6" height="6" rx="1"/>
@@ -200,201 +193,1147 @@
                             <line x1="5" y1="13" x2="5" y2="16"/>
                             <line x1="19" y1="13" x2="19" y2="16"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>Org Chart</h4>
-                        <p>Company structure</p>
-                    </div>
-                </a>
-                <a href="attendance.html" class="ess-action-card">
-                    <div class="action-icon attendance">
+                        <span>Org Chart</span>
+                    </a>
+                    <button class="ess-nav-btn" data-panel="panel-announcements">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"/>
+                            <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/>
+                            <path d="M8 17v1a4 4 0 0 0 8 0v-1"/>
                         </svg>
-                    </div>
-                    <div class="action-text">
-                        <h4>My Attendance</h4>
-                        <p>Attendance history</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Announcements Section -->
-        <div class="ess-section">
-            <div class="ess-section-header">
-                <h3 class="ess-section-title">Recent Announcements</h3>
-                <a href="announcements.html" class="ess-view-all">View All</a>
-            </div>
-            <div class="ess-announcements" id="announcementsList">
-                <div class="ess-loading">
-                    <div class="spinner"></div>
-                    <span>Loading announcements...</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Upcoming Section -->
-        <div class="ess-section">
-            <h3 class="ess-section-title">Upcoming</h3>
-            <div class="ess-upcoming-grid">
-                <div class="ess-upcoming-card">
-                    <h4>
+                        <span>Announcements</span>
+                        <span class="ess-nav-badge ess-nav-badge-info" id="announcementBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="ess-nav-btn" data-panel="panel-policies">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
                         </svg>
-                        Upcoming Holidays
-                    </h4>
-                    <div class="upcoming-list" id="upcomingHolidays">
-                        <div class="ess-loading small">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="ess-upcoming-card">
-                    <h4>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        Team Birthdays
-                    </h4>
-                    <div class="upcoming-list" id="upcomingBirthdays">
-                        <div class="ess-loading small">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="ess-upcoming-card">
-                    <h4>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                            <path d="M2 17l10 5 10-5"/>
-                            <path d="M2 12l10 5 10-5"/>
-                        </svg>
-                        Work Anniversaries
-                    </h4>
-                    <div class="upcoming-list" id="upcomingAnniversaries">
-                        <div class="ess-loading small">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Navigation to Admin Dashboard (for admins) -->
-        <div class="ess-admin-link" id="adminLink" style="display: none;">
-            <a href="dashboard.html" class="admin-dashboard-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
-                </svg>
-                Go to Admin Dashboard
-            </a>
-        </div>
-
-        </div> <!-- End Dashboard Tab -->
-
-        <!-- My Payslips Tab -->
-        <div id="my-payslips" class="tab-content">
-            <div class="filters-bar">
-                <div class="filter-group">
-                    <select id="payslipYear" class="form-select">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Salary Summary -->
-            <div class="stats-row" id="mySalaryStats">
-                <div class="stat-card">
-                    <div class="stat-value" id="lastGross">₹0</div>
-                    <div class="stat-label">Last Gross Salary</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="lastDeductions">₹0</div>
-                    <div class="stat-label">Total Deductions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="lastNet">₹0</div>
-                    <div class="stat-label">Net Salary</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="ytdEarnings">₹0</div>
-                    <div class="stat-label">YTD Earnings</div>
-                </div>
-            </div>
-
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Month</th>
-                            <th>Pay Period</th>
-                            <th>Gross Salary</th>
-                            <th>Deductions</th>
-                            <th>Net Salary</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="myPayslipsTable">
-                        <tr class="empty-state">
-                            <td colspan="7">
-                                <div class="empty-message">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                                    </svg>
-                                    <p>No payslips found</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div> <!-- End My Payslips Tab -->
-
-        <!-- Payslip View Modal -->
-        <div class="modal" id="payslipModal">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>Payslip Details</h2>
-                    <button class="modal-close" onclick="closeModal('payslipModal')">&times;</button>
-                </div>
-                <div class="modal-body" id="payslipDetails">
-                    <!-- Payslip content loaded dynamically -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="downloadPayslipBtn" onclick="downloadPayslip()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                        Download PDF
+                        <span>Policies</span>
                     </button>
                 </div>
+
+                <!-- Admin Link (shown only for HR/Admin roles) -->
+                <div class="ess-nav-group ess-nav-admin" id="adminNavGroup" style="display: none;">
+                    <div class="ess-nav-group-title">Administration</div>
+                    <a href="dashboard.html" class="ess-nav-btn ess-nav-admin-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span>Admin Dashboard</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="ess-main">
+            <!-- Mobile Header -->
+            <div class="ess-mobile-header">
+                <button class="ess-menu-btn" id="menuToggleBtn" aria-label="Open menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <h1 class="ess-mobile-title" id="mobilePageTitle">Dashboard</h1>
+                <a href="#" class="ess-notification-btn" id="notificationBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </a>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Dashboard Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel active" id="panel-dashboard">
+                <div class="ess-panel-header">
+                    <h2>Welcome back!</h2>
+                    <p class="ess-panel-subtitle" id="welcomeDate">Loading...</p>
+                </div>
+
+                <!-- Clock In/Out Widget -->
+                <div class="ess-clock-widget" id="clockWidget">
+                    <div class="ess-clock-display">
+                        <div class="ess-clock-time" id="currentTime">--:--:--</div>
+                        <div class="ess-clock-date" id="currentDate">Loading...</div>
+                    </div>
+                    <div class="ess-clock-actions">
+                        <div class="ess-clock-info">
+                            <span id="checkInTime">Check-in: --:--</span>
+                            <span id="workingHours">Working: -- hrs</span>
+                        </div>
+                        <button class="ess-clock-btn" id="clockBtn" onclick="handleClock()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <span id="clockBtnText">Clock In</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Grid -->
+                <div class="ess-stats-grid">
+                    <div class="ess-stat-card">
+                        <div class="ess-stat-icon ess-stat-casual">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                        </div>
+                        <div class="ess-stat-content">
+                            <div class="ess-stat-value" id="casualLeaveBalance">--</div>
+                            <div class="ess-stat-label">Casual Leave</div>
+                        </div>
+                    </div>
+                    <div class="ess-stat-card">
+                        <div class="ess-stat-icon ess-stat-sick">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                            </svg>
+                        </div>
+                        <div class="ess-stat-content">
+                            <div class="ess-stat-value" id="sickLeaveBalance">--</div>
+                            <div class="ess-stat-label">Sick Leave</div>
+                        </div>
+                    </div>
+                    <div class="ess-stat-card">
+                        <div class="ess-stat-icon ess-stat-earned">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="ess-stat-content">
+                            <div class="ess-stat-value" id="earnedLeaveBalance">--</div>
+                            <div class="ess-stat-label">Earned Leave</div>
+                        </div>
+                    </div>
+                    <div class="ess-stat-card">
+                        <div class="ess-stat-icon ess-stat-pending">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <div class="ess-stat-content">
+                            <div class="ess-stat-value" id="pendingApprovals">--</div>
+                            <div class="ess-stat-label">Pending Requests</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="ess-section">
+                    <h3 class="ess-section-title">Quick Actions</h3>
+                    <div class="ess-quick-actions">
+                        <button class="ess-action-card" data-panel="panel-leaves">
+                            <div class="ess-action-icon ess-action-leave">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                    <line x1="12" y1="14" x2="12" y2="18"/>
+                                    <line x1="10" y1="16" x2="14" y2="16"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>Apply Leave</h4>
+                                <p>Request time off</p>
+                            </div>
+                        </button>
+                        <button class="ess-action-card" data-panel="panel-payslips">
+                            <div class="ess-action-icon ess-action-payslip">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>View Payslips</h4>
+                                <p>Salary details</p>
+                            </div>
+                        </button>
+                        <button class="ess-action-card" data-panel="panel-profile">
+                            <div class="ess-action-icon ess-action-profile">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>My Profile</h4>
+                                <p>Personal details</p>
+                            </div>
+                        </button>
+                        <button class="ess-action-card" data-panel="panel-attendance">
+                            <div class="ess-action-icon ess-action-attendance">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>My Attendance</h4>
+                                <p>View history</p>
+                            </div>
+                        </button>
+                        <button class="ess-action-card" data-panel="panel-directory">
+                            <div class="ess-action-icon ess-action-directory">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>Team Directory</h4>
+                                <p>Find colleagues</p>
+                            </div>
+                        </button>
+                        <button class="ess-action-card" data-panel="panel-regularization">
+                            <div class="ess-action-icon ess-action-regularize">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="12" y1="18" x2="12" y2="12"/>
+                                    <line x1="9" y1="15" x2="15" y2="15"/>
+                                </svg>
+                            </div>
+                            <div class="ess-action-text">
+                                <h4>Regularization</h4>
+                                <p>Fix attendance</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upcoming Section -->
+                <div class="ess-section">
+                    <h3 class="ess-section-title">Upcoming</h3>
+                    <div class="ess-upcoming-grid">
+                        <div class="ess-upcoming-card">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                                Upcoming Holidays
+                            </h4>
+                            <div class="ess-upcoming-list" id="upcomingHolidays">
+                                <div class="ess-loading small">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ess-upcoming-card">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                Team Birthdays
+                            </h4>
+                            <div class="ess-upcoming-list" id="upcomingBirthdays">
+                                <div class="ess-loading small">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ess-upcoming-card">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                </svg>
+                                Work Anniversaries
+                            </h4>
+                            <div class="ess-upcoming-list" id="upcomingAnniversaries">
+                                <div class="ess-loading small">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements -->
+                <div class="ess-section">
+                    <div class="ess-section-header">
+                        <h3 class="ess-section-title">Recent Announcements</h3>
+                        <button class="ess-view-all-btn" data-panel="panel-announcements">View All</button>
+                    </div>
+                    <div class="ess-announcements" id="announcementsList">
+                        <div class="ess-loading">
+                            <div class="spinner"></div>
+                            <span>Loading announcements...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- My Profile Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-profile">
+                <div class="ess-panel-header">
+                    <h2>My Profile</h2>
+                    <button class="btn btn-outline" id="editProfileBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit Profile
+                    </button>
+                </div>
+                <div class="ess-profile-content" id="profileContent">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading profile...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- My Attendance Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-attendance">
+                <div class="ess-panel-header">
+                    <h2>My Attendance</h2>
+                </div>
+                <div class="ess-filters-bar">
+                    <div class="ess-filter-group">
+                        <input type="month" class="form-control ess-month-picker" id="attendanceMonthPicker">
+                    </div>
+                </div>
+
+                <!-- Attendance Stats -->
+                <div class="ess-mini-stats">
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="myWorkingDays">-</div>
+                        <div class="ess-mini-stat-label">Working Days</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="myPresentDays">-</div>
+                        <div class="ess-mini-stat-label">Present</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="myLateDays">-</div>
+                        <div class="ess-mini-stat-label">Late</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="myTotalHours">-</div>
+                        <div class="ess-mini-stat-label">Total Hours</div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Working Hours</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myAttendanceTableBody">
+                            <tr class="ess-empty-state">
+                                <td colspan="5">
+                                    <div class="ess-empty-message">
+                                        <p>Loading attendance...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Regularization Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-regularization">
+                <div class="ess-panel-header">
+                    <h2>Regularization Requests</h2>
+                    <button class="btn btn-primary" onclick="openRegularizationModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Request
+                    </button>
+                </div>
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regularizationTableBody">
+                            <tr class="ess-empty-state">
+                                <td colspan="6">
+                                    <div class="ess-empty-message">
+                                        <p>Loading requests...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Overtime Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-overtime">
+                <div class="ess-panel-header">
+                    <h2>Overtime Requests</h2>
+                    <button class="btn btn-primary" onclick="openOvertimeModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Request Overtime
+                    </button>
+                </div>
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Planned Start</th>
+                                <th>Planned End</th>
+                                <th>Actual Start</th>
+                                <th>Actual End</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overtimeTableBody">
+                            <tr class="ess-empty-state">
+                                <td colspan="7">
+                                    <div class="ess-empty-message">
+                                        <p>Loading requests...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- My Leaves Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-leaves">
+                <div class="ess-panel-header">
+                    <h2>My Leaves</h2>
+                    <div class="ess-header-actions">
+                        <button class="btn btn-outline" onclick="showEncashLeaveModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"/>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            Encash Leave
+                        </button>
+                        <button class="btn btn-primary" onclick="showApplyLeaveModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Apply Leave
+                        </button>
+                    </div>
+                </div>
+                <div class="ess-filters-bar">
+                    <div class="ess-filter-group">
+                        <div class="ess-year-picker-container" id="myLeaveYearPicker" data-callback="loadMyLeaves">
+                            <div class="ess-year-picker-trigger">
+                                <span class="ess-year-picker-value">2025</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                            <div class="ess-year-picker-dropdown">
+                                <div class="ess-year-picker-search">
+                                    <input type="text" placeholder="Search year...">
+                                </div>
+                                <div class="ess-year-picker-list"></div>
+                            </div>
+                        </div>
+                        <select id="myLeaveStatus" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Leave Balance Cards -->
+                <div class="ess-leave-balance-cards" id="leaveBalanceCards">
+                    <div class="ess-leave-card">
+                        <div class="ess-leave-type">Annual Leave</div>
+                        <div class="ess-leave-value" id="annualBalance">0</div>
+                        <div class="ess-leave-label">days available</div>
+                    </div>
+                    <div class="ess-leave-card">
+                        <div class="ess-leave-type">Sick Leave</div>
+                        <div class="ess-leave-value" id="sickBalance">0</div>
+                        <div class="ess-leave-label">days available</div>
+                    </div>
+                    <div class="ess-leave-card">
+                        <div class="ess-leave-type">Casual Leave</div>
+                        <div class="ess-leave-value" id="casualBalance">0</div>
+                        <div class="ess-leave-label">days available</div>
+                    </div>
+                    <div class="ess-leave-card ess-leave-pending">
+                        <div class="ess-leave-type">Pending</div>
+                        <div class="ess-leave-value" id="pendingLeaveCount">0</div>
+                        <div class="ess-leave-label">requests</div>
+                    </div>
+                </div>
+
+                <!-- Leave Requests Table -->
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myLeaveTable">
+                            <tr class="ess-empty-state">
+                                <td colspan="7">
+                                    <div class="ess-empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                        <p>No leave requests found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Leave Balance Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-leave-balance">
+                <div class="ess-panel-header">
+                    <h2>Leave Balance</h2>
+                </div>
+                <div class="ess-leave-balance-detailed" id="leaveBalanceDetailed">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading leave balances...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Holidays Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-holidays">
+                <div class="ess-panel-header">
+                    <h2>Company Holidays</h2>
+                    <div class="ess-filter-group">
+                        <div class="ess-year-picker-container" id="holidayYearPicker">
+                            <div class="ess-year-picker-trigger">
+                                <span class="ess-year-picker-value">2025</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                            <div class="ess-year-picker-dropdown">
+                                <div class="ess-year-picker-search">
+                                    <input type="text" placeholder="Search year...">
+                                </div>
+                                <div class="ess-year-picker-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ess-holidays-list" id="holidaysList">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading holidays...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- My Payslips Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-payslips">
+                <div class="ess-panel-header">
+                    <h2>My Payslips</h2>
+                    <div class="ess-filter-group">
+                        <div class="ess-year-picker-container" id="payslipYearPicker">
+                            <div class="ess-year-picker-trigger">
+                                <span class="ess-year-picker-value">2025</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                            <div class="ess-year-picker-dropdown">
+                                <div class="ess-year-picker-search">
+                                    <input type="text" placeholder="Search year...">
+                                </div>
+                                <div class="ess-year-picker-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Summary -->
+                <div class="ess-mini-stats">
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="lastGross">0</div>
+                        <div class="ess-mini-stat-label">Last Gross</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="lastDeductions">0</div>
+                        <div class="ess-mini-stat-label">Deductions</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="lastNet">0</div>
+                        <div class="ess-mini-stat-label">Net Salary</div>
+                    </div>
+                    <div class="ess-mini-stat">
+                        <div class="ess-mini-stat-value" id="ytdEarnings">0</div>
+                        <div class="ess-mini-stat-label">YTD Earnings</div>
+                    </div>
+                </div>
+
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Pay Period</th>
+                                <th>Gross</th>
+                                <th>Deductions</th>
+                                <th>Net</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myPayslipsTable">
+                            <tr class="ess-empty-state">
+                                <td colspan="7">
+                                    <div class="ess-empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                            <line x1="1" y1="10" x2="23" y2="10"/>
+                                        </svg>
+                                        <p>No payslips found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Salary Details Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-salary">
+                <div class="ess-panel-header">
+                    <h2>Salary Details</h2>
+                </div>
+                <div class="ess-salary-details" id="salaryDetails">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading salary details...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Loans & Advances Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-loans">
+                <div class="ess-panel-header">
+                    <h2>Loans & Advances</h2>
+                    <button class="btn btn-primary" onclick="openLoanModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Apply for Loan
+                    </button>
+                </div>
+                <div class="ess-table-container" id="loansContainer">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading loans...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Reimbursements Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-reimbursements">
+                <div class="ess-panel-header">
+                    <h2>Reimbursements</h2>
+                    <button class="btn btn-primary" onclick="openReimbursementModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Claim
+                    </button>
+                </div>
+                <div class="ess-table-container" id="reimbursementsContainer">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading claims...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Team Directory Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-directory">
+                <div class="ess-panel-header">
+                    <h2>Team Directory</h2>
+                    <div class="ess-search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="directorySearch" placeholder="Search colleagues...">
+                    </div>
+                </div>
+                <div class="ess-directory-grid" id="directoryGrid">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading directory...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Org Chart Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-orgchart">
+                <div class="ess-panel-header">
+                    <h2>Organization Chart</h2>
+                </div>
+                <div class="ess-orgchart-container" id="orgChartContainer">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading org chart...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Announcements Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-announcements">
+                <div class="ess-panel-header">
+                    <h2>Announcements</h2>
+                </div>
+                <div class="ess-announcements-full" id="announcementsFull">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading announcements...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Policies Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-policies">
+                <div class="ess-panel-header">
+                    <h2>Company Policies</h2>
+                </div>
+                <div class="ess-policies-list" id="policiesList">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading policies...</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ======================= -->
+    <!-- MODALS -->
+    <!-- ======================= -->
+
+    <!-- Regularization Modal -->
+    <div class="modal" id="regularizationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Regularization</h2>
+                <button class="modal-close" onclick="closeModal('regularizationModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="regularizationForm">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" id="regDate" required>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Check In Time <span class="required">*</span></label>
+                            <input type="time" id="regCheckIn" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Check Out Time <span class="required">*</span></label>
+                            <input type="time" id="regCheckOut" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason <span class="required">*</span></label>
+                        <textarea id="regReason" required placeholder="Explain why regularization is needed..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitRegularization()">Submit Request</button>
             </div>
         </div>
+    </div>
 
+    <!-- Overtime Modal -->
+    <div class="modal" id="overtimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Overtime</h2>
+                <button class="modal-close" onclick="closeModal('overtimeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="overtimeForm">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" id="otDate" required>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Start Time <span class="required">*</span></label>
+                            <input type="time" id="otStartTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label>End Time <span class="required">*</span></label>
+                            <input type="time" id="otEndTime" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason <span class="required">*</span></label>
+                        <textarea id="otReason" required placeholder="Why is overtime needed?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Project/Task</label>
+                        <input type="text" id="otTask" placeholder="What will you work on?">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitOvertime()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Overtime Modal -->
+    <div class="modal" id="completeOvertimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Complete Overtime</h2>
+                <button class="modal-close" onclick="closeModal('completeOvertimeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="completeOvertimeForm">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Actual Start Time <span class="required">*</span></label>
+                            <input type="time" id="actualOtStartTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Actual End Time <span class="required">*</span></label>
+                            <input type="time" id="actualOtEndTime" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="completeOtNotes" placeholder="Any additional notes about the overtime work..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitCompleteOvertime()">Mark Complete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apply Leave Modal -->
+    <div class="modal" id="applyLeaveModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Apply for Leave</h2>
+                <button class="modal-close" onclick="closeModal('applyLeaveModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="applyLeaveForm">
+                    <div class="form-group">
+                        <label for="leaveType">Leave Type *</label>
+                        <select id="leaveType" name="leaveType" class="form-control" required>
+                            <option value="">Select Leave Type</option>
+                        </select>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="fromDate">From Date *</label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="toDate">To Date *</label>
+                            <input type="date" id="toDate" name="toDate" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="halfDay">Half Day</label>
+                            <select id="halfDay" name="halfDay" class="form-control">
+                                <option value="">No</option>
+                                <option value="first">First Half</option>
+                                <option value="second">Second Half</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveDays">Total Days</label>
+                            <input type="text" id="leaveDays" class="form-control" readonly value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaveReason">Reason *</label>
+                        <textarea id="leaveReason" name="reason" class="form-control" rows="3" required placeholder="Enter reason for leave..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="emergencyContact">Emergency Contact (Optional)</label>
+                        <input type="text" id="emergencyContact" name="emergencyContact" class="form-control" placeholder="Phone number during leave">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="submitLeaveApplication()">Submit Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encash Leave Modal -->
+    <div class="modal" id="encashLeaveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Encash Leave</h2>
+                <button class="modal-close" onclick="closeModal('encashLeaveModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="encashLeaveForm">
+                    <div class="encash-balance-info" id="encashBalanceInfo"></div>
+                    <div class="form-group">
+                        <label for="encashLeaveType">Leave Type *</label>
+                        <select id="encashLeaveType" name="leaveTypeId" class="form-control" required onchange="updateEncashPreview()">
+                            <option value="">Select Leave Type</option>
+                        </select>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="encashDays">Days to Encash *</label>
+                            <input type="number" id="encashDays" name="days" class="form-control" required min="0.5" step="0.5" oninput="updateEncashPreview()">
+                            <small class="form-text text-muted" id="encashAvailableDays">Available: 0 days</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Estimated Amount</label>
+                            <div class="encash-amount-preview" id="encashAmountPreview">--</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="encashReason">Reason</label>
+                        <textarea id="encashReason" name="reason" class="form-control" rows="2" placeholder="Reason for encashment (optional)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="submitLeaveEncashment()">Submit Encashment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Leave Details Modal -->
+    <div class="modal" id="viewLeaveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Leave Request Details</h2>
+                <button class="modal-close" onclick="closeModal('viewLeaveModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="leave-details" id="leaveDetails"></div>
+            </div>
+            <div class="modal-footer" id="leaveDetailsFooter" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Payslip View Modal -->
+    <div class="modal" id="payslipModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Payslip Details</h2>
+                <button class="modal-close" onclick="closeModal('payslipModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="payslipDetails">
+                <!-- Payslip content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="downloadPayslipBtn" onclick="downloadPayslip()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Application Modal -->
+    <div class="modal" id="loanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Apply for Loan</h2>
+                <button class="modal-close" onclick="closeModal('loanModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="loanForm">
+                    <div class="form-group">
+                        <label>Loan Type <span class="required">*</span></label>
+                        <select id="loanType" class="form-control" required>
+                            <option value="">Select Type</option>
+                            <option value="salary_advance">Salary Advance</option>
+                            <option value="personal">Personal Loan</option>
+                            <option value="emergency">Emergency Loan</option>
+                        </select>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Amount <span class="required">*</span></label>
+                            <input type="number" id="loanAmount" class="form-control" required min="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>EMI Months <span class="required">*</span></label>
+                            <input type="number" id="loanEmi" class="form-control" required min="1" max="24">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason <span class="required">*</span></label>
+                        <textarea id="loanReason" class="form-control" required placeholder="Purpose of the loan..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitLoanApplication()">Submit Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reimbursement Modal -->
+    <div class="modal" id="reimbursementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Reimbursement Claim</h2>
+                <button class="modal-close" onclick="closeModal('reimbursementModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="reimbursementForm">
+                    <div class="form-group">
+                        <label>Expense Type <span class="required">*</span></label>
+                        <select id="expenseType" class="form-control" required>
+                            <option value="">Select Type</option>
+                            <option value="travel">Travel</option>
+                            <option value="food">Food & Meals</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="medical">Medical</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" id="expenseDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount <span class="required">*</span></label>
+                            <input type="number" id="expenseAmount" class="form-control" required min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description <span class="required">*</span></label>
+                        <textarea id="expenseDescription" class="form-control" required placeholder="Describe the expense..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Receipt/Bill</label>
+                        <input type="file" id="expenseReceipt" class="form-control" accept="image/*,.pdf">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitReimbursement()">Submit Claim</button>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/self-service.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
