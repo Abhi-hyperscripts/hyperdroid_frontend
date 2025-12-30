@@ -17,6 +17,10 @@ let shiftRosters = [];
 let holidays = [];
 let employees = [];
 
+// Compliance-first: Countries and States from statutory compliance
+let complianceCountries = [];
+let complianceStates = [];  // States with PT configured
+
 // Store for searchable dropdown instances
 const searchableDropdowns = new Map();
 
@@ -633,35 +637,147 @@ function renderCountryOptions(filter = '') {
     const selectedValue = document.getElementById('officeCountry').value;
     const filterLower = filter.toLowerCase();
 
-    const filtered = COUNTRIES.filter(c =>
+    // Use compliance countries (only countries configured in statutory compliance)
+    // Fall back to hardcoded COUNTRIES if compliance data not loaded yet
+    const countriesToUse = complianceCountries.length > 0
+        ? complianceCountries.map(c => ({ value: c.country_name, code: c.country_code }))
+        : COUNTRIES;
+
+    const filtered = countriesToUse.filter(c =>
         c.value.toLowerCase().includes(filterLower) ||
         c.code.toLowerCase().includes(filterLower)
     );
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="dropdown-no-match">No countries found</div>';
+        container.innerHTML = '<div class="dropdown-no-match">No countries configured in compliance. Please configure countries in Statutory Compliance first.</div>';
         return;
     }
 
     container.innerHTML = filtered.map(c => `
         <div class="dropdown-option ${c.value === selectedValue ? 'selected' : ''}"
-             onclick="selectCountry('${c.value}')">
+             onclick="selectCountry('${escapeHtml(c.value)}', '${escapeHtml(c.code)}')">
             <span class="dropdown-option-text">${escapeHtml(c.value)}</span>
             <span class="dropdown-option-subtext">${c.code}</span>
         </div>
     `).join('');
 }
 
-function selectCountry(value) {
-    document.getElementById('officeCountry').value = value;
-    document.getElementById('countrySelection').textContent = value;
+function selectCountry(countryName, countryCode) {
+    document.getElementById('officeCountry').value = countryName;
+    document.getElementById('officeCountryCode').value = countryCode || '';
+    document.getElementById('countrySelection').textContent = countryName;
     document.getElementById('countrySelection').classList.remove('placeholder');
     document.getElementById('countryDropdown').classList.remove('open');
+
+    // Compliance-first: Update state dropdown based on selected country
+    updateStateDropdownForCountry(countryName);
 }
 
 function filterCountries() {
     const searchValue = document.getElementById('countrySearch').value;
     renderCountryOptions(searchValue);
+}
+
+// ==================== Compliance-First: State Dropdown Functions ====================
+
+function updateStateDropdownForCountry(countryName) {
+    const stateDropdown = document.getElementById('stateDropdown');
+    const stateSelection = document.getElementById('stateSelection');
+    const officeState = document.getElementById('officeState');
+
+    if (!stateDropdown || !stateSelection || !officeState) return;
+
+    // Get states with PT configured for this country
+    const availableStates = getStatesForCountry(countryName);
+
+    if (availableStates.length === 0) {
+        // No states configured - show message
+        stateDropdown.classList.add('disabled');
+        stateSelection.textContent = 'No states configured';
+        stateSelection.classList.add('placeholder');
+        officeState.value = '';
+    } else {
+        // States available - enable dropdown
+        stateDropdown.classList.remove('disabled');
+        stateSelection.textContent = 'Select State';
+        stateSelection.classList.add('placeholder');
+        officeState.value = '';
+    }
+
+    // Re-render state options
+    renderStateOptions('');
+}
+
+function renderStateOptions(filter = '') {
+    const container = document.getElementById('stateOptions');
+    if (!container) return;
+
+    const selectedValue = document.getElementById('officeState')?.value || '';
+    const filterLower = filter.toLowerCase();
+
+    // Get country and its states
+    const countryName = document.getElementById('officeCountry')?.value || '';
+    const availableStates = getStatesForCountry(countryName);
+
+    const filtered = availableStates.filter(s =>
+        s.state_name?.toLowerCase().includes(filterLower) ||
+        s.state_code?.toLowerCase().includes(filterLower)
+    );
+
+    if (availableStates.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No states with PT configured for this country</div>';
+        return;
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-match">No states found</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(s => `
+        <div class="dropdown-option ${s.state_name === selectedValue ? 'selected' : ''}"
+             onclick="selectState('${escapeHtml(s.state_name)}', '${escapeHtml(s.state_code || '')}')">
+            <span class="dropdown-option-text">${escapeHtml(s.state_name)}</span>
+            <span class="dropdown-option-subtext">${s.state_code || ''}</span>
+        </div>
+    `).join('');
+}
+
+function selectState(stateName, stateCode) {
+    document.getElementById('officeState').value = stateName;
+    document.getElementById('officeStateCode').value = stateCode || '';
+    document.getElementById('stateSelection').textContent = stateName;
+    document.getElementById('stateSelection').classList.remove('placeholder');
+    document.getElementById('stateDropdown').classList.remove('open');
+}
+
+function filterStates() {
+    const searchValue = document.getElementById('stateSearch')?.value || '';
+    renderStateOptions(searchValue);
+}
+
+function toggleStateDropdown() {
+    const stateDropdown = document.getElementById('stateDropdown');
+    if (!stateDropdown || stateDropdown.classList.contains('disabled')) return;
+
+    const isOpen = stateDropdown.classList.contains('open');
+
+    // Close other dropdowns
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== 'stateDropdown') d.classList.remove('open');
+    });
+
+    if (isOpen) {
+        stateDropdown.classList.remove('open');
+    } else {
+        stateDropdown.classList.add('open');
+        const searchInput = document.getElementById('stateSearch');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+            renderStateOptions('');
+        }
+    }
 }
 
 // Structure Office searchable dropdown functions
@@ -733,7 +849,7 @@ function initStructureOfficeDropdown(selectedOfficeId = '') {
 }
 
 // Initialize office modal dropdowns
-function initOfficeModalDropdowns(selectedTimezone = 'Asia/Kolkata', selectedCountry = 'India') {
+function initOfficeModalDropdowns(selectedTimezone = 'Asia/Kolkata', selectedCountry = 'India', selectedState = '') {
     // Initialize timezone dropdown
     const tz = TIMEZONES.find(t => t.value === selectedTimezone);
     if (tz) {
@@ -757,8 +873,35 @@ function initOfficeModalDropdowns(selectedTimezone = 'Asia/Kolkata', selectedCou
         document.getElementById('countrySelection').classList.add('placeholder');
     }
 
+    // Initialize state dropdown (compliance-first)
+    const stateDropdown = document.getElementById('stateDropdown');
+    const stateSelection = document.getElementById('stateSelection');
+    const officeStateInput = document.getElementById('officeState');
+
+    if (stateDropdown && stateSelection && officeStateInput) {
+        const availableStates = getStatesForCountry(selectedCountry);
+
+        if (availableStates.length === 0) {
+            stateDropdown.classList.add('disabled');
+            stateSelection.textContent = 'No states configured';
+            stateSelection.classList.add('placeholder');
+            officeStateInput.value = '';
+        } else if (selectedState) {
+            stateDropdown.classList.remove('disabled');
+            officeStateInput.value = selectedState;
+            stateSelection.textContent = selectedState;
+            stateSelection.classList.remove('placeholder');
+        } else {
+            stateDropdown.classList.remove('disabled');
+            officeStateInput.value = '';
+            stateSelection.textContent = 'Select State';
+            stateSelection.classList.add('placeholder');
+        }
+    }
+
     renderTimezoneOptions();
     renderCountryOptions();
+    renderStateOptions();
 }
 
 // Close dropdowns when clicking outside
@@ -844,6 +987,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     await initializePage();
 });
 
+/**
+ * Check if compliance setup is complete
+ * Returns true if compliance is complete, false otherwise
+ */
+async function checkComplianceStatus() {
+    try {
+        const response = await api.request('/hrms/dashboard/setup-status');
+        if (response && response.is_compliance_complete !== undefined) {
+            return response.is_compliance_complete;
+        }
+        // If we can't determine compliance status, allow access (fail open for UX)
+        console.warn('Could not determine compliance status, allowing access');
+        return true;
+    } catch (error) {
+        console.error('Error checking compliance status:', error);
+        // If API fails, allow access (fail open) but log the error
+        return true;
+    }
+}
+
 async function initializePage() {
     try {
         showLoading();
@@ -859,6 +1022,14 @@ async function initializePage() {
         if (!hrmsRoles.canAccessOrganization()) {
             showToast('You do not have access to the Organization page', 'error');
             window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // CRITICAL: Check if compliance setup is complete before allowing organization setup
+        const complianceComplete = await checkComplianceStatus();
+        if (!complianceComplete) {
+            showToast('Please complete Compliance setup first before configuring Organization', 'error');
+            window.location.href = 'compliance.html';
             return;
         }
 
@@ -945,7 +1116,9 @@ async function loadAllData() {
         loadDesignations(),
         loadShifts(),
         loadShiftRosters(),
-        loadHolidays()
+        loadHolidays(),
+        loadComplianceCountries(),
+        loadComplianceStates()
     ]);
 
     // Re-populate dropdowns after all data is loaded (fixes race condition)
@@ -984,6 +1157,50 @@ async function loadOffices() {
     } catch (error) {
         console.error('Error loading offices:', error);
     }
+}
+
+// ==================== Compliance-First: Load Countries & States ====================
+
+async function loadComplianceCountries() {
+    try {
+        const response = await api.request('/hrms/statutory/countries');
+        complianceCountries = response || [];
+        console.log('Compliance countries loaded:', complianceCountries.length);
+    } catch (error) {
+        console.error('Error loading compliance countries:', error);
+        complianceCountries = [];
+    }
+}
+
+async function loadComplianceStates() {
+    try {
+        // Load states that have Professional Tax applicable
+        // /hrms/professional-tax/states → api.js strips /hrms → final: /api/professional-tax/states
+        const response = await api.request('/hrms/professional-tax/states');
+        // Only include states that have PT applicable (has_professional_tax = true)
+        complianceStates = (response || []).filter(s => s.has_professional_tax === true);
+        console.log('Compliance states loaded (with PT):', complianceStates.length, complianceStates.map(s => s.state_name));
+    } catch (error) {
+        console.error('Error loading compliance states:', error);
+        complianceStates = [];
+    }
+}
+
+// Get states for a specific country (currently only India has states with PT)
+function getStatesForCountry(countryName) {
+    if (!countryName) return [];
+
+    // Currently, only India has state-level PT configuration
+    const country = complianceCountries.find(c =>
+        c.country_name?.toLowerCase() === countryName.toLowerCase() ||
+        c.country_code?.toLowerCase() === countryName.toLowerCase()
+    );
+
+    if (country && country.country_name === 'India') {
+        return complianceStates;
+    }
+
+    return [];
 }
 
 function updateOfficesTable() {
@@ -1700,6 +1917,10 @@ function showCreateOfficeModal() {
     // Initialize searchable dropdowns with defaults
     initOfficeModalDropdowns('Asia/Kolkata', 'India');
 
+    // Clear state_code and country_code, set default country_code for India
+    document.getElementById('officeStateCode').value = '';
+    document.getElementById('officeCountryCode').value = 'IN';
+
     // Reset new fields
     document.getElementById('officeEnableGeofence').checked = false;
     document.getElementById('officeIsActive').checked = true;
@@ -1719,12 +1940,15 @@ function editOffice(id) {
     document.getElementById('officeCode').value = office.office_code;
     document.getElementById('officeType').value = officeType;
 
-    // Initialize searchable dropdowns with office values
-    initOfficeModalDropdowns(office.timezone || 'Asia/Kolkata', office.country || 'India');
+    // Initialize searchable dropdowns with office values (including state)
+    initOfficeModalDropdowns(office.timezone || 'Asia/Kolkata', office.country || 'India', office.state || '');
+
+    // Set state_code and country_code hidden fields
+    document.getElementById('officeStateCode').value = office.state_code || '';
+    document.getElementById('officeCountryCode').value = office.country_code || '';
 
     document.getElementById('officeAddress').value = office.address_line1 || '';
     document.getElementById('officeCity').value = office.city || '';
-    document.getElementById('officeState').value = office.state || '';
     document.getElementById('officePostalCode').value = office.postal_code || '';
     document.getElementById('officePhone').value = office.phone || '';
     document.getElementById('officeEmail').value = office.email || '';
@@ -2401,7 +2625,9 @@ async function saveOffice() {
             address_line1: document.getElementById('officeAddress').value,
             city: document.getElementById('officeCity').value,
             state: document.getElementById('officeState').value || null,
+            state_code: document.getElementById('officeStateCode').value || null,
             country: document.getElementById('officeCountry').value,
+            country_code: document.getElementById('officeCountryCode').value || null,
             postal_code: document.getElementById('officePostalCode').value || null,
             phone: document.getElementById('officePhone').value || null,
             email: document.getElementById('officeEmail').value || null,
@@ -3300,29 +3526,32 @@ document.addEventListener('DOMContentLoaded', setupSidebar);
 function onOrganizationUpdated(data) {
     console.log('[Organization] Update received:', data);
 
-    const entityType = data.EntityType;
-    const action = data.Action;
-    const entityName = data.EntityName || entityType;
+    // Handle both camelCase (from SignalR) and PascalCase property names
+    const entityType = data.entityType || data.EntityType;
+    const action = data.action || data.Action;
+    const entityName = data.entityName || data.EntityName || entityType;
 
-    // Show toast notification
-    let message = '';
-    switch(action) {
-        case 'created':
-            message = `${entityType} "${entityName}" was created`;
-            break;
-        case 'updated':
-            message = `${entityType} "${entityName}" was updated`;
-            break;
-        case 'deleted':
-            message = `${entityType} "${entityName}" was deleted`;
-            break;
-        case 'bulk_created':
-            message = `${entityName} were created`;
-            break;
-        default:
-            message = `${entityType} was ${action}`;
+    // Show toast notification only if we have valid data
+    if (entityType && action) {
+        let message = '';
+        switch(action) {
+            case 'created':
+                message = `${entityType} "${entityName}" was created`;
+                break;
+            case 'updated':
+                message = `${entityType} "${entityName}" was updated`;
+                break;
+            case 'deleted':
+                message = `${entityType} "${entityName}" was deleted`;
+                break;
+            case 'bulk_created':
+                message = `${entityName} were created`;
+                break;
+            default:
+                message = `${entityType} was ${action}`;
+        }
+        showToast(message, 'info');
     }
-    showToast(message, 'info');
 
     // Reload the relevant data based on entity type
     switch(entityType) {

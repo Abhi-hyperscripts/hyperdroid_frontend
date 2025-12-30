@@ -13,8 +13,7 @@ let components = [];
 let structures = [];
 let currentPayslipId = null;
 let drafts = [];
-let taxTypes = [];
-let taxRules = [];
+let statutoryEmployeeDeductions = []; // Auto-attached to salary structures
 
 // Store for searchable dropdown instances
 const payrollSearchableDropdowns = new Map();
@@ -632,9 +631,7 @@ async function initializePage() {
                 loadPayrollRuns(),
                 loadEmployees(),
                 loadComponents(),
-                loadSalaryStructures(),
-                loadTaxTypes(),
-                loadOfficeTaxRules()
+                loadSalaryStructures()
             ]);
         }
 
@@ -677,12 +674,6 @@ function applyPayrollRBAC() {
     const salaryComponentsTab = document.getElementById('salaryComponentsTab');
     if (salaryComponentsTab) {
         salaryComponentsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
-
-    // Location Taxes tab - HR Admin only
-    const locationTaxesTab = document.getElementById('locationTaxesTab');
-    if (locationTaxesTab) {
-        locationTaxesTab.style.display = isHRAdminRole ? 'block' : 'none';
     }
 
     // Salary Structures tab - HR Admin only
@@ -842,15 +833,6 @@ function setupTabs() {
                 await loadPayrollRuns();
             } else if (tabId === 'loans') {
                 await loadLoans();
-            } else if (tabId === 'location-taxes') {
-                // Ensure default sub-tab is active and load data
-                const activeSubTab = document.querySelector('#location-taxes .sub-tab-btn.active');
-                if (activeSubTab?.dataset.subtab === 'office-tax-rules') {
-                    switchLocationTaxSubTab('office-tax-rules');
-                } else {
-                    // Default to tax-types
-                    switchLocationTaxSubTab('tax-types');
-                }
             } else if (tabId === 'voluntary-deductions') {
                 // Ensure default sub-tab is active and load data
                 const activeSubTab = document.querySelector('#voluntary-deductions .sub-tab-btn.active');
@@ -868,42 +850,6 @@ function setupTabs() {
         });
     });
 
-    // Setup sub-tabs for Location Taxes
-    setupSubTabs();
-}
-
-function setupSubTabs() {
-    // Setup Location Taxes sub-tabs (scoped to #location-taxes container)
-    const locationTaxBtns = document.querySelectorAll('#location-taxes .sub-tab-btn');
-    locationTaxBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            switchLocationTaxSubTab(this.dataset.subtab);
-        });
-    });
-}
-
-// Location Taxes sub-tab switcher (scoped to #location-taxes)
-function switchLocationTaxSubTab(subTabId) {
-    // Update sub-tab buttons within location-taxes only
-    document.querySelectorAll('#location-taxes .sub-tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.subtab === subTabId) {
-            btn.classList.add('active');
-        }
-    });
-
-    // Update sub-tab content within location-taxes only
-    document.querySelectorAll('#location-taxes .sub-tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(subTabId)?.classList.add('active');
-
-    // Load data for the selected sub-tab
-    if (subTabId === 'tax-types') {
-        loadTaxTypes();
-    } else if (subTabId === 'office-tax-rules') {
-        loadOfficeTaxRules();
-    }
 }
 
 function setDefaultPayrollDates() {
@@ -2310,6 +2256,98 @@ async function loadComponents() {
     }
 }
 
+/**
+ * Load statutory employee deductions that are auto-attached to salary structures.
+ * These are mandatory deductions like PF-EE, ESI-EE, LWF-EE, PT, TDS-EE that are
+ * automatically added by the backend and cannot be removed by users.
+ */
+async function loadStatutoryEmployeeDeductions() {
+    try {
+        const response = await api.request('/hrms/payroll/components/statutory-employee-deductions');
+        statutoryEmployeeDeductions = response?.components || [];
+        console.log(`Loaded ${statutoryEmployeeDeductions.length} statutory employee deductions`);
+    } catch (error) {
+        console.error('Error loading statutory employee deductions:', error);
+        statutoryEmployeeDeductions = [];
+    }
+}
+
+/**
+ * Render the statutory employee deductions section in the salary structure modal.
+ * These components are auto-attached by the backend and are displayed as locked/non-editable.
+ */
+function renderStatutoryDeductionsSection() {
+    const container = document.getElementById('statutoryDeductionsContainer');
+    if (!container) {
+        console.warn('Statutory deductions container not found');
+        return;
+    }
+
+    if (!statutoryEmployeeDeductions || statutoryEmployeeDeductions.length === 0) {
+        container.innerHTML = `
+            <div class="info-banner info-warning compact">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>No statutory employee deductions configured. Run compliance sync to create them.</span>
+            </div>
+        `;
+        return;
+    }
+
+    const html = `
+        <div class="statutory-collapsible">
+            <div class="statutory-collapse-header" onclick="toggleStatutorySection()">
+                <div class="statutory-collapse-title">
+                    <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>${statutoryEmployeeDeductions.length} Statutory Deductions</span>
+                </div>
+                <span class="statutory-collapse-hint">Auto-attached • Click to expand</span>
+            </div>
+            <div class="statutory-collapse-content collapsed">
+                <div class="statutory-deductions-compact">
+                    ${statutoryEmployeeDeductions.map(c => `
+                        <div class="statutory-item-compact">
+                            <span class="statutory-name-compact">${escapeHtml(c.component_name || c.name)}</span>
+                            <span class="statutory-code-compact">${escapeHtml(c.component_code || c.code)}</span>
+                            <span class="badge badge-statutory-compact">${formatStatutoryType(c.statutory_type)}</span>
+                            <svg class="lock-icon-compact" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+function toggleStatutorySection() {
+    const content = document.querySelector('.statutory-collapse-content');
+    const header = document.querySelector('.statutory-collapse-header');
+    const hint = document.querySelector('.statutory-collapse-hint');
+
+    if (content && header) {
+        const isCollapsed = content.classList.contains('collapsed');
+        content.classList.toggle('collapsed');
+        header.classList.toggle('expanded');
+
+        if (hint) {
+            hint.textContent = isCollapsed ? 'Auto-attached • Click to collapse' : 'Auto-attached • Click to expand';
+        }
+    }
+}
+
 function updateComponentsTables() {
     const searchTerm = document.getElementById('componentSearch')?.value?.toLowerCase() || '';
     const typeFilter = document.getElementById('componentType')?.value || '';
@@ -2324,11 +2362,211 @@ function updateComponentsTables() {
         return matchesSearch && matchesType;
     });
 
-    const earnings = filtered.filter(c => (c.component_type || c.category) === 'earning');
-    const deductions = filtered.filter(c => (c.component_type || c.category) === 'deduction');
+    // Separate statutory components from regular ones
+    const statutory = filtered.filter(c => c.is_statutory === true || isStatutoryComponent(c));
+    const nonStatutory = filtered.filter(c => !c.is_statutory && !isStatutoryComponent(c));
+
+    const earnings = nonStatutory.filter(c => (c.component_type || c.category) === 'earning');
+    const deductions = nonStatutory.filter(c => (c.component_type || c.category) === 'deduction');
 
     updateEarningsTable(earnings);
     updateDeductionsTable(deductions);
+    updateStatutoryContributionsSection(statutory);
+}
+
+/**
+ * Check if a component is a statutory component based on code or type
+ */
+function isStatutoryComponent(component) {
+    const code = (component.component_code || component.code || '').toUpperCase();
+    const statutoryType = component.statutory_type || '';
+
+    // Check by component code patterns
+    const statutoryCodes = ['PF-EE', 'PF-ER', 'PF_EE', 'PF_ER', 'ESI-EE', 'ESI-ER', 'ESI_EE', 'ESI_ER',
+                           'LWF_EE', 'LWF_ER', 'LWF-EE', 'LWF-ER', 'PT', 'PROF_TAX', 'PROFESSIONAL_TAX'];
+
+    if (statutoryCodes.includes(code)) return true;
+    if (statutoryType && statutoryType.length > 0) return true;
+    if (component.calculation_type === 'compliance_linked') return true;
+
+    return false;
+}
+
+/**
+ * Update the Statutory Contributions section with grouped display
+ */
+function updateStatutoryContributionsSection(statutoryComponents) {
+    const container = document.getElementById('statutoryContributionsContainer');
+
+    if (!statutoryComponents || statutoryComponents.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>No statutory contributions configured</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group by statutory type
+    const groups = {};
+
+    statutoryComponents.forEach(c => {
+        const code = (c.component_code || c.code || '').toUpperCase();
+        let groupKey = 'OTHER';
+        let contributorType = 'employee'; // Default
+
+        // Determine group and contributor type
+        if (code.includes('PF') || code.includes('EPF')) {
+            groupKey = 'PF';
+            contributorType = code.includes('ER') ? 'employer' : 'employee';
+        } else if (code.includes('ESI')) {
+            groupKey = 'ESI';
+            contributorType = code.includes('ER') ? 'employer' : 'employee';
+        } else if (code.includes('LWF')) {
+            groupKey = 'LWF';
+            contributorType = code.includes('ER') ? 'employer' : 'employee';
+        } else if (code.includes('PT') || code.includes('PROF') || c.statutory_type === 'professional_tax') {
+            groupKey = 'PT';
+            contributorType = 'employee';
+        }
+
+        if (!groups[groupKey]) {
+            groups[groupKey] = { employee: null, employer: null };
+        }
+
+        groups[groupKey][contributorType] = c;
+    });
+
+    // Build the HTML for grouped display
+    let html = '<div class="statutory-contributions-grid">';
+
+    const groupInfo = {
+        'PF': {
+            name: 'Provident Fund (EPF)',
+            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-8h6v8"/></svg>',
+            authority: 'EPFO',
+            description: 'Employee Provident Fund - Retirement savings'
+        },
+        'ESI': {
+            name: 'Employee State Insurance',
+            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+            authority: 'ESIC',
+            description: 'Health insurance for employees'
+        },
+        'LWF': {
+            name: 'Labour Welfare Fund',
+            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>',
+            authority: 'State Labour Board',
+            description: 'State welfare fund for workers'
+        },
+        'PT': {
+            name: 'Professional Tax',
+            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+            authority: 'State Government',
+            description: 'State-level professional tax'
+        },
+        'OTHER': {
+            name: 'Tax Deducted at Source (TDS)',
+            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+            authority: 'Income Tax Dept',
+            description: 'Income tax deducted at source by employer'
+        }
+    };
+
+    // Define order of display
+    const groupOrder = ['PF', 'ESI', 'LWF', 'PT', 'OTHER'];
+
+    groupOrder.forEach(groupKey => {
+        if (!groups[groupKey]) return;
+
+        const group = groups[groupKey];
+        const info = groupInfo[groupKey];
+        const hasEmployee = group.employee !== null;
+        const hasEmployer = group.employer !== null;
+
+        if (!hasEmployee && !hasEmployer) return;
+
+        html += `
+            <div class="statutory-card">
+                <div class="statutory-card-header">
+                    <div class="statutory-icon">${info.icon}</div>
+                    <div class="statutory-title-area">
+                        <h4>${info.name}</h4>
+                        <span class="statutory-authority">Paid to: ${info.authority}</span>
+                    </div>
+                </div>
+                <p class="statutory-description">${info.description}</p>
+                <div class="statutory-breakdown">
+        `;
+
+        if (hasEmployee) {
+            const emp = group.employee;
+            const value = formatStatutoryValue(emp);
+            const status = emp.is_active !== false ? 'Active' : 'Inactive';
+            const statusClass = emp.is_active !== false ? 'active' : 'inactive';
+            html += `
+                <div class="contribution-row employee-contribution">
+                    <div class="contribution-label">
+                        <span class="contributor-badge employee">Employee</span>
+                        <span class="component-code">${emp.component_code || emp.code}</span>
+                    </div>
+                    <div class="contribution-details">
+                        <span class="contribution-value">${value}</span>
+                        <span class="contribution-status ${statusClass}">${status}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (hasEmployer) {
+            const er = group.employer;
+            const value = formatStatutoryValue(er);
+            const status = er.is_active !== false ? 'Active' : 'Inactive';
+            const statusClass = er.is_active !== false ? 'active' : 'inactive';
+            html += `
+                <div class="contribution-row employer-contribution">
+                    <div class="contribution-label">
+                        <span class="contributor-badge employer">Employer</span>
+                        <span class="component-code">${er.component_code || er.code}</span>
+                    </div>
+                    <div class="contribution-details">
+                        <span class="contribution-value">${value}</span>
+                        <span class="contribution-status ${statusClass}">${status}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Format statutory component value for display
+ */
+function formatStatutoryValue(component) {
+    const calcType = (component.calculation_type || 'fixed').toLowerCase();
+
+    if (calcType === 'compliance_linked') {
+        return '<span class="compliance-tag">From Compliance Rules</span>';
+    } else if (calcType === 'percentage') {
+        const pct = component.percentage || component.percentage_of_basic || 0;
+        const base = component.calculation_base || 'basic';
+        return `${pct}% of ${base.toUpperCase()}`;
+    } else if (calcType === 'fixed') {
+        const amt = component.fixed_amount || component.default_value || 0;
+        if (amt) {
+            return `₹${Number(amt).toLocaleString('en-IN')}`;
+        }
+        return 'Per structure';
+    }
+    return '-';
 }
 
 /**
@@ -2362,10 +2600,41 @@ function formatComponentValue(component) {
         return '<span class="text-muted">Per structure</span>';
     } else if (calcType === 'balance' || calcType === 'remainder') {
         return '<span class="text-muted">Balance amount</span>';
+    } else if (calcType === 'compliance_linked') {
+        // Compliance-linked components get their rates from statutory compliance rules at runtime
+        const statutoryType = component.statutory_type || '';
+        const typeLabel = formatStatutoryType(statutoryType);
+        return `<span class="text-muted compliance-linked-value" title="Rate from ${typeLabel} compliance rules">From compliance rules</span>`;
     } else {
         const value = component.default_value || component.fixed_amount || component.percentage || 0;
         return value ? value.toString() : '-';
     }
+}
+
+/**
+ * Format statutory type for display
+ */
+function formatStatutoryType(statutoryType) {
+    const typeMap = {
+        'PF_EE': 'PF Employee',
+        'PF_ER': 'PF Employer',
+        'ESI_EE': 'ESI Employee',
+        'ESI_ER': 'ESI Employer',
+        'PT': 'Professional Tax',
+        'pf_employee': 'PF Employee',
+        'pf_employer': 'PF Employer',
+        'esi_employee': 'ESI Employee',
+        'esi_employer': 'ESI Employer',
+        'professional_tax': 'Professional Tax'
+    };
+    return typeMap[statutoryType] || statutoryType || 'Statutory';
+}
+
+/**
+ * Check if a component is immutable (compliance-linked)
+ */
+function isImmutableComponent(component) {
+    return component.is_immutable || component.source === 'compliance';
 }
 
 function updateEarningsTable(earnings) {
@@ -2385,20 +2654,35 @@ function updateEarningsTable(earnings) {
         if (c.is_balance_component) {
             badges += '<span class="component-badge balance-badge">Auto-Balance</span>';
         }
+        // Check for immutable/statutory compliance components
+        const isImmutable = isImmutableComponent(c);
+        if (isImmutable) {
+            const statutoryLabel = formatStatutoryType(c.statutory_type);
+            badges += `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Statutory
+            </span>`;
+        }
+
+        // Determine if actions should be disabled
+        const isSystemManaged = c.is_balance_component || isImmutable;
 
         return `
-        <tr>
+        <tr class="${isImmutable ? 'immutable-row' : ''}">
             <td>
-                <strong>${c.component_name || c.name}</strong>
+                <strong>${escapeHtml(c.component_name || c.name)}</strong>
                 ${badges}
             </td>
-            <td><code>${c.component_code || c.code}</code></td>
-            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+            <td><code>${escapeHtml(c.component_code || c.code)}</code></td>
+            <td>${escapeHtml(c.calculation_type || c.calculationType || 'Fixed')}</td>
             <td>${c.is_balance_component ? '<em>Auto-calculated</em>' : formatComponentValue(c)}</td>
             <td>${(c.is_taxable !== undefined ? c.is_taxable : c.isTaxable) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
-                ${!c.is_balance_component ? `
+                ${!isSystemManaged ? `
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2415,7 +2699,13 @@ function updateEarningsTable(earnings) {
                         </svg>
                     </button>
                 </div>
-                ` : '<span class="text-muted">System managed</span>'}
+                ` : `<span class="text-muted locked-indicator" title="${isImmutable ? 'Statutory component - managed via Compliance settings' : 'System managed component'}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    ${isImmutable ? 'Compliance linked' : 'System managed'}
+                </span>`}
             </td>
         </tr>
     `;}).join('');
@@ -2429,15 +2719,34 @@ function updateDeductionsTable(deductions) {
         return;
     }
 
-    tbody.innerHTML = deductions.map(c => `
-        <tr>
-            <td><strong>${c.component_name || c.name}</strong></td>
-            <td><code>${c.component_code || c.code}</code></td>
-            <td>${c.calculation_type || c.calculationType || 'Fixed'}</td>
+    tbody.innerHTML = deductions.map(c => {
+        // Check for immutable/statutory compliance components
+        const isImmutable = isImmutableComponent(c);
+        let badges = '';
+        if (isImmutable) {
+            const statutoryLabel = formatStatutoryType(c.statutory_type);
+            badges = `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Statutory
+            </span>`;
+        }
+
+        return `
+        <tr class="${isImmutable ? 'immutable-row' : ''}">
+            <td>
+                <strong>${escapeHtml(c.component_name || c.name)}</strong>
+                ${badges}
+            </td>
+            <td><code>${escapeHtml(c.component_code || c.code)}</code></td>
+            <td>${escapeHtml(c.calculation_type || c.calculationType || 'Fixed')}</td>
             <td>${formatComponentValue(c)}</td>
             <td>${(c.is_pre_tax !== undefined ? c.is_pre_tax : c.isPreTax) ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'active' : 'inactive'}">${(c.is_active !== undefined ? c.is_active : c.isActive) ? 'Active' : 'Inactive'}</span></td>
             <td>
+                ${!isImmutable ? `
                 <div class="action-buttons">
                     <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2454,9 +2763,16 @@ function updateDeductionsTable(deductions) {
                         </svg>
                     </button>
                 </div>
+                ` : `<span class="text-muted locked-indicator" title="Statutory component - managed via Compliance settings">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Compliance linked
+                </span>`}
             </td>
         </tr>
-    `).join('');
+    `;}).join('');
 }
 
 async function loadLoans() {
@@ -2628,7 +2944,7 @@ function showSalaryStructureModal() {
     document.getElementById('salary-structures').classList.add('active');
 }
 
-function showCreateStructureModal() {
+async function showCreateStructureModal() {
     document.getElementById('structureForm').reset();
     document.getElementById('structureId').value = '';
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
@@ -2643,6 +2959,11 @@ function showCreateStructureModal() {
     // Reset status to active for new structures
     const isActiveCheckbox = document.getElementById('structureIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
+
+    // Load and display statutory employee deductions (auto-attached by backend)
+    await loadStatutoryEmployeeDeductions();
+    renderStatutoryDeductionsSection();
+
     document.getElementById('structureModal').classList.add('active');
 }
 
@@ -2680,13 +3001,28 @@ async function editSalaryStructure(structureId) {
             isActiveCheckbox.checked = structure.is_active !== false; // Default to true if not set
         }
 
-        // Load and populate structure components
+        // Load and populate structure components (excluding statutory - those are auto-attached)
         if (structure.components && structure.components.length > 0) {
-            populateStructureComponents(structure.components);
+            // Filter out statutory employee deductions from display - they're auto-managed
+            const nonStatutoryComponents = structure.components.filter(c => {
+                const statutoryType = c.statutory_type || '';
+                const isStatutoryEmployeeDeduction = statutoryType === 'pf_employee' ||
+                    statutoryType === 'esi_employee' ||
+                    statutoryType === 'lwf_employee' ||
+                    statutoryType === 'pt' ||
+                    statutoryType === 'tds_employee' ||
+                    statutoryType.endsWith('_employee');
+                return !isStatutoryEmployeeDeduction;
+            });
+            populateStructureComponents(nonStatutoryComponents);
         } else {
             document.getElementById('structureComponents').innerHTML = '';
             structureComponentCounter = 0;
         }
+
+        // Load and display statutory employee deductions (auto-attached by backend)
+        await loadStatutoryEmployeeDeductions();
+        renderStatutoryDeductionsSection();
 
         document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
         document.getElementById('structureModal').classList.add('active');
@@ -2754,12 +3090,14 @@ async function saveSalaryStructure() {
     const container = document.getElementById('structureComponents');
     const rows = container.querySelectorAll('.structure-component-row');
     rows.forEach(row => {
-        const componentSelect = row.querySelector('.component-select');
-        if (componentSelect && componentSelect.value) {
-            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+        const hiddenInput = row.querySelector('.component-select-value');
+        if (hiddenInput && hiddenInput.value) {
+            // Get the selected option from the searchable dropdown
+            const dropdown = row.querySelector('.searchable-dropdown');
+            const selectedOption = dropdown?.querySelector(`.dropdown-option[data-value="${hiddenInput.value}"]`);
             const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
             if (isBasic) {
-                basicComponentsInStructure.push(selectedOption?.textContent || 'Unknown');
+                basicComponentsInStructure.push(selectedOption?.getAttribute('data-name') || 'Unknown');
             }
         }
     });
@@ -4471,6 +4809,335 @@ async function deleteComponent(componentId) {
 // Structure component management
 let structureComponentCounter = 0;
 
+/**
+ * Get components available for manual selection in salary structures.
+ * Filters out statutory employee deductions that are auto-attached.
+ */
+function getSelectableComponents() {
+    if (!components || components.length === 0) return [];
+
+    // Filter out ALL statutory components - only show user-defined components
+    // Statutory components are auto-managed by compliance rules
+    return components.filter(c => !c.is_statutory);
+}
+
+/**
+ * Create a searchable dropdown component with virtual scroll support
+ */
+function createSearchableDropdown(componentId, containerId) {
+    const selectableComponents = getSelectableComponents();
+    const dropdownId = `dropdown_${componentId}`;
+
+    return `
+        <div class="searchable-dropdown" id="${dropdownId}">
+            <div class="dropdown-trigger" onclick="toggleSearchDropdown('${dropdownId}')">
+                <span class="dropdown-selected-text">Select Component</span>
+                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+            <div class="dropdown-menu">
+                <div class="dropdown-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" class="dropdown-search-input" placeholder="Search components..."
+                           oninput="filterDropdownOptions('${dropdownId}', this.value)"
+                           onclick="event.stopPropagation()">
+                </div>
+                <div class="dropdown-options" data-component-id="${componentId}">
+                    ${selectableComponents.map(c => `
+                        <div class="dropdown-option"
+                             data-value="${c.id}"
+                             data-type="${c.component_type || c.category}"
+                             data-calc-type="${c.calculation_type || 'fixed'}"
+                             data-calc-base="${c.calculation_base || 'basic'}"
+                             data-is-basic="${c.is_basic_component || false}"
+                             data-is-balance="${c.is_balance_component || false}"
+                             data-percentage="${c.percentage || ''}"
+                             data-fixed="${c.fixed_amount || ''}"
+                             data-name="${escapeHtml(c.component_name || c.name)}"
+                             data-code="${escapeHtml(c.component_code || c.code)}"
+                             onclick="selectDropdownOption('${dropdownId}', this, '${componentId}')">
+                            <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
+                            <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
+                            <span class="option-type badge badge-${(c.component_type || c.category) === 'earning' ? 'success' : 'warning'}">${c.component_type || c.category}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <input type="hidden" class="component-select-value" name="component_${componentId}" required>
+        </div>
+    `;
+}
+
+function toggleSearchDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const isOpen = dropdown.classList.contains('open');
+
+    // Close all other dropdowns first
+    closeAllSearchDropdowns(dropdownId);
+
+    if (isOpen) {
+        closeSearchDropdown(dropdown);
+    } else {
+        openSearchDropdown(dropdown);
+    }
+}
+
+function closeAllSearchDropdowns(exceptId = null) {
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (!exceptId || d.id !== exceptId) {
+            closeSearchDropdown(d);
+        }
+    });
+    // Also close any orphaned portal menus
+    document.querySelectorAll('.dropdown-menu-portal').forEach(menu => {
+        if (!exceptId || !menu.dataset.dropdownId || menu.dataset.dropdownId !== exceptId) {
+            menu.remove();
+        }
+    });
+}
+
+function closeSearchDropdown(dropdown) {
+    dropdown.classList.remove('open');
+    // Remove portal menu if exists
+    const portalMenu = document.querySelector(`.dropdown-menu-portal[data-dropdown-id="${dropdown.id}"]`);
+    if (portalMenu) {
+        portalMenu.remove();
+    }
+}
+
+function openSearchDropdown(dropdown) {
+    dropdown.classList.add('open');
+
+    const trigger = dropdown.querySelector('.dropdown-trigger');
+    const originalMenu = dropdown.querySelector('.dropdown-menu');
+
+    if (trigger && originalMenu) {
+        // Clone the menu and append to body as a portal
+        const portalMenu = originalMenu.cloneNode(true);
+        portalMenu.classList.add('dropdown-menu-portal');
+        portalMenu.dataset.dropdownId = dropdown.id;
+
+        // Position using fixed coordinates
+        const rect = trigger.getBoundingClientRect();
+        portalMenu.style.position = 'fixed';
+        portalMenu.style.top = (rect.bottom + 4) + 'px';
+        portalMenu.style.left = rect.left + 'px';
+        portalMenu.style.width = rect.width + 'px';
+        portalMenu.style.display = 'block';
+        portalMenu.style.zIndex = '999999';
+
+        // Hide original menu
+        originalMenu.style.display = 'none';
+
+        // Append to body
+        document.body.appendChild(portalMenu);
+
+        // Re-attach event listeners to portal menu
+        attachPortalMenuListeners(portalMenu, dropdown.id);
+
+        // Focus search input in portal
+        const searchInput = portalMenu.querySelector('.dropdown-search-input');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 100);
+        }
+    }
+}
+
+function attachPortalMenuListeners(portalMenu, dropdownId) {
+    // Search input listener
+    const searchInput = portalMenu.querySelector('.dropdown-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            filterPortalDropdownOptions(portalMenu, e.target.value);
+        });
+        searchInput.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    // Option click listeners
+    portalMenu.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById(dropdownId);
+            selectDropdownOption(dropdownId, opt, opt.dataset.value);
+            closeSearchDropdown(dropdown);
+        });
+    });
+}
+
+function filterPortalDropdownOptions(portalMenu, searchTerm) {
+    const options = portalMenu.querySelectorAll('.dropdown-option');
+    const term = searchTerm.toLowerCase().trim();
+
+    options.forEach(opt => {
+        const name = (opt.dataset.name || '').toLowerCase();
+        const code = (opt.dataset.code || '').toLowerCase();
+        const type = (opt.dataset.type || '').toLowerCase();
+
+        if (!term || name.includes(term) || code.includes(term) || type.includes(term)) {
+            opt.style.display = 'flex';
+        } else {
+            opt.style.display = 'none';
+        }
+    });
+}
+
+function filterDropdownOptions(dropdownId, searchTerm) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const options = dropdown.querySelectorAll('.dropdown-option');
+    const term = searchTerm.toLowerCase().trim();
+
+    options.forEach(opt => {
+        const name = (opt.dataset.name || '').toLowerCase();
+        const code = (opt.dataset.code || '').toLowerCase();
+        const type = (opt.dataset.type || '').toLowerCase();
+
+        if (!term || name.includes(term) || code.includes(term) || type.includes(term)) {
+            opt.style.display = 'flex';
+        } else {
+            opt.style.display = 'none';
+        }
+    });
+}
+
+function selectDropdownOption(dropdownId, optionElement, componentId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown || !optionElement) return;
+
+    const value = optionElement.dataset.value;
+    const name = optionElement.dataset.name;
+    const code = optionElement.dataset.code;
+    const componentType = optionElement.dataset.type || '';
+
+    // Update display
+    const trigger = dropdown.querySelector('.dropdown-selected-text');
+    if (trigger) {
+        trigger.textContent = `${name} (${code})`;
+        trigger.classList.add('has-selection');
+    }
+
+    // Update hidden input with value and component type
+    const hiddenInput = dropdown.querySelector('.component-select-value');
+    if (hiddenInput) {
+        hiddenInput.value = value;
+        hiddenInput.dataset.componentType = componentType;  // Store component type for validation
+    }
+
+    // Mark as selected in original dropdown (find by value)
+    dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.value === value) {
+            opt.classList.add('selected');
+        }
+    });
+
+    // Close dropdown
+    dropdown.classList.remove('open');
+
+    // Clear search
+    const searchInput = dropdown.querySelector('.dropdown-search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        filterDropdownOptions(dropdownId, '');
+    }
+
+    // Trigger calc type update
+    updateStructureCalcTypeFromDropdown(optionElement, componentId);
+}
+
+function updateStructureCalcTypeFromDropdown(optionElement, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const calcTypeSelect = row.querySelector('.calc-type-select');
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    // Check for duplicate
+    const selectedValue = optionElement.dataset.value;
+    if (selectedValue) {
+        const isDuplicate = checkDuplicateComponentDropdown(selectedValue, componentId);
+        const dropdown = row.querySelector('.searchable-dropdown');
+        if (isDuplicate && dropdown) {
+            dropdown.classList.add('duplicate-warning');
+            showToast('Warning: This component is already added to the structure', 'warning');
+        } else if (dropdown) {
+            dropdown.classList.remove('duplicate-warning');
+        }
+    }
+
+    const calcType = optionElement.dataset.calcType || 'fixed';
+    const calcBase = optionElement.dataset.calcBase || 'basic';
+    const isBasic = optionElement.dataset.isBasic === 'true';
+    const defaultPercentage = optionElement.dataset.percentage;
+    const defaultFixed = optionElement.dataset.fixed;
+
+    // Build label based on calculation base
+    let percentageLabel = '% of Basic';
+    if (calcBase === 'ctc') {
+        percentageLabel = '% of CTC';
+    } else if (calcBase === 'gross') {
+        percentageLabel = '% of Gross';
+    } else if (isBasic) {
+        percentageLabel = '% of CTC';
+    }
+
+    // Update dropdown options
+    calcTypeSelect.innerHTML = `
+        <option value="percentage">${percentageLabel}</option>
+        <option value="fixed">Fixed Amount</option>
+    `;
+
+    // Set the default calculation type
+    if (calcType === 'fixed') {
+        calcTypeSelect.value = 'fixed';
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+        if (defaultFixed) fixedInput.value = defaultFixed;
+    } else {
+        calcTypeSelect.value = 'percentage';
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+        if (defaultPercentage) percentageInput.value = defaultPercentage;
+    }
+
+    updateStructureSummary();
+}
+
+function checkDuplicateComponentDropdown(componentId, currentRowId) {
+    const container = document.getElementById('structureComponents');
+    if (!container) return false;
+
+    const rows = container.querySelectorAll('.structure-component-row');
+    for (const row of rows) {
+        if (row.id === currentRowId) continue;
+        const hiddenInput = row.querySelector('.component-select-value');
+        if (hiddenInput && hiddenInput.value === componentId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    // Check if click is on dropdown or portal menu
+    if (!e.target.closest('.searchable-dropdown') && !e.target.closest('.dropdown-menu-portal')) {
+        closeAllSearchDropdowns();
+    }
+});
+
 function addStructureComponent() {
     const container = document.getElementById('structureComponents');
     const componentId = `sc_${structureComponentCounter++}`;
@@ -4479,18 +5146,7 @@ function addStructureComponent() {
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
                 <div class="form-group" style="flex: 2;">
-                    <select class="form-control component-select" required onchange="updateStructureCalcType(this, '${componentId}')">
-                        <option value="">Select Component</option>
-                        ${components.map(c => `<option value="${c.id}"
-                            data-type="${c.component_type || c.category}"
-                            data-calc-type="${c.calculation_type || 'fixed'}"
-                            data-calc-base="${c.calculation_base || 'basic'}"
-                            data-is-basic="${c.is_basic_component || false}"
-                            data-is-balance="${c.is_balance_component || false}"
-                            data-percentage="${c.percentage || ''}"
-                            data-fixed="${c.fixed_amount || ''}"
-                            >${c.component_name || c.name} (${c.component_code || c.code})</option>`).join('')}
-                    </select>
+                    ${createSearchableDropdown(componentId)}
                 </div>
                 <div class="form-group" style="flex: 1;">
                     <select class="form-control calc-type-select" onchange="toggleComponentValueFields(this, '${componentId}')">
@@ -4603,8 +5259,8 @@ function checkDuplicateComponent(componentId, currentRowId) {
 
     for (const row of rows) {
         if (row.id === currentRowId) continue; // Skip current row
-        const select = row.querySelector('.component-select');
-        if (select && select.value === componentId) {
+        const hiddenInput = row.querySelector('.component-select-value');
+        if (hiddenInput && hiddenInput.value === componentId) {
             return true; // Found duplicate
         }
     }
@@ -4643,26 +5299,28 @@ function updateStructureSummary() {
     let balanceComponentName = null;
 
     rows.forEach(row => {
-        const componentSelect = row.querySelector('.component-select');
+        const hiddenInput = row.querySelector('.component-select-value');
         const calcTypeSelect = row.querySelector('.calc-type-select');
         const percentageInput = row.querySelector('.percentage-value');
         const fixedInput = row.querySelector('.fixed-value');
 
-        if (!componentSelect.value) return;
+        if (!hiddenInput || !hiddenInput.value) return;
 
         hasComponents = true;
-        const selectedOption = componentSelect.options[componentSelect.selectedIndex];
+        // Get the selected option from the searchable dropdown
+        const dropdown = row.querySelector('.searchable-dropdown');
+        const selectedOption = dropdown?.querySelector(`.dropdown-option[data-value="${hiddenInput.value}"]`);
         const componentType = selectedOption?.getAttribute('data-type') || '';
         const calcBase = selectedOption?.getAttribute('data-calc-base') || 'basic';
         const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
         const isBalance = selectedOption?.getAttribute('data-is-balance') === 'true';
-        const componentName = selectedOption?.textContent || '';
+        const componentName = selectedOption?.getAttribute('data-name') || '';
 
         // Track for duplicate detection
-        if (selectedComponents.includes(componentSelect.value)) {
+        if (selectedComponents.includes(hiddenInput.value)) {
             warnings.push(`Duplicate: ${componentName}`);
         }
-        selectedComponents.push(componentSelect.value);
+        selectedComponents.push(hiddenInput.value);
 
         // Track components marked as "is_basic"
         if (isBasic) {
@@ -4841,18 +5499,18 @@ function getStructureComponents() {
     const componentsList = [];
 
     rows.forEach((row, index) => {
-        const componentSelect = row.querySelector('.component-select');
+        // Use hidden input from searchable dropdown
+        const hiddenInput = row.querySelector('.component-select-value');
         const calcTypeSelect = row.querySelector('.calc-type-select');
         const percentageInput = row.querySelector('.percentage-value');
         const fixedInput = row.querySelector('.fixed-value');
 
-        if (componentSelect.value) {
-            // Get component_type from the selected option's data-type attribute
-            const selectedOption = componentSelect.options[componentSelect.selectedIndex];
-            const componentType = selectedOption?.getAttribute('data-type') || '';
+        if (hiddenInput && hiddenInput.value) {
+            // Get component_type from hidden input's data attribute (stored during selection)
+            const componentType = hiddenInput.dataset.componentType || '';
 
             componentsList.push({
-                component_id: componentSelect.value,
+                component_id: hiddenInput.value,
                 component_type: componentType,
                 calculation_type: calcTypeSelect.value,
                 percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
@@ -4875,19 +5533,32 @@ function populateStructureComponents(structureComponents) {
             addStructureComponent();
             const lastRow = container.lastElementChild;
             if (lastRow) {
-                const componentSelect = lastRow.querySelector('.component-select');
+                const dropdown = lastRow.querySelector('.searchable-dropdown');
+                const hiddenInput = lastRow.querySelector('.component-select-value');
                 const calcTypeSelect = lastRow.querySelector('.calc-type-select');
                 const percentageInput = lastRow.querySelector('.percentage-value');
                 const fixedInput = lastRow.querySelector('.fixed-value');
 
-                // Set the component value
-                componentSelect.value = sc.component_id;
+                // Find and select the dropdown option
+                const option = dropdown?.querySelector(`.dropdown-option[data-value="${sc.component_id}"]`);
+                if (option && dropdown) {
+                    // Set hidden input value and component type
+                    hiddenInput.value = sc.component_id;
+                    hiddenInput.dataset.componentType = option.dataset.type || sc.component_type || '';
 
-                // Get component info for dynamic label update
-                const selectedOption = componentSelect.options[componentSelect.selectedIndex];
-                if (selectedOption && selectedOption.value) {
-                    const calcBase = selectedOption.getAttribute('data-calc-base') || 'basic';
-                    const isBasic = selectedOption.getAttribute('data-is-basic') === 'true';
+                    // Update display text
+                    const trigger = dropdown.querySelector('.dropdown-selected-text');
+                    if (trigger) {
+                        trigger.textContent = `${option.dataset.name} (${option.dataset.code})`;
+                        trigger.classList.add('has-selection');
+                    }
+
+                    // Mark option as selected
+                    option.classList.add('selected');
+
+                    // Get component info for dynamic label update
+                    const calcBase = option.getAttribute('data-calc-base') || 'basic';
+                    const isBasic = option.getAttribute('data-is-basic') === 'true';
 
                     // Build label based on calculation base
                     let percentageLabel = '% of Basic';
@@ -5880,9 +6551,17 @@ async function viewVersionDetails(versionId) {
             `;
 
             components.forEach(c => {
-                const valueStr = c.calculation_type === 'percentage'
-                    ? `${c.percentage || c.percentage_of_basic || 0}% of ${c.calculation_base || 'basic'}`
-                    : `₹${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                let valueStr;
+                const calcType = (c.calculation_type || 'fixed').toLowerCase();
+                if (calcType === 'compliance_linked') {
+                    valueStr = '<span class="compliance-tag" style="color: var(--brand-primary); font-style: italic;">From Compliance Rules</span>';
+                } else if (calcType === 'percentage') {
+                    valueStr = `${c.percentage || c.percentage_of_basic || 0}% of ${c.calculation_base || 'basic'}`;
+                } else if (calcType === 'balance') {
+                    valueStr = '<span style="color: var(--text-secondary);">Balance amount</span>';
+                } else {
+                    valueStr = `₹${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                }
                 const badgeClass = c.component_type === 'earning' ? 'badge-earning' : 'badge-deduction';
 
                 htmlContent += `
@@ -8358,697 +9037,6 @@ async function showBulkApplyCtcArrearsModal() {
     }
 }
 
-// ============================================
-// Location Tax Management
-// ============================================
-
-async function loadTaxTypes() {
-    try {
-        const showInactive = document.getElementById('showInactiveTaxTypes')?.checked || false;
-        const response = await api.getLocationTaxTypes(showInactive);
-        taxTypes = Array.isArray(response) ? response : (response?.data || []);
-        updateTaxTypesTable();
-        populateTaxTypeSelects();
-    } catch (error) {
-        console.error('Error loading tax types:', error);
-        showToast('Failed to load tax types', 'error');
-    }
-}
-
-function updateTaxTypesTable() {
-    const tbody = document.getElementById('taxTypesTable');
-    if (!tbody) return;
-
-    const searchTerm = document.getElementById('taxTypeSearch')?.value?.toLowerCase() || '';
-
-    const filtered = taxTypes.filter(t =>
-        t.tax_name?.toLowerCase().includes(searchTerm) ||
-        t.tax_code?.toLowerCase().includes(searchTerm) ||
-        t.description?.toLowerCase().includes(searchTerm)
-    );
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-state">
-                <td colspan="6">
-                    <div class="empty-message">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M4 7h16M4 12h16M4 17h10"></path>
-                        </svg>
-                        <p>No tax types configured</p>
-                    </div>
-                </td>
-            </tr>`;
-        return;
-    }
-
-    tbody.innerHTML = filtered.map(taxType => `
-        <tr>
-            <td><strong>${escapeHtml(taxType.tax_name)}</strong></td>
-            <td><code>${escapeHtml(taxType.tax_code)}</code></td>
-            <td><span class="badge badge-${escapeHtml(taxType.deduction_from || 'employee')}">${escapeHtml(formatDeductionFrom(taxType.deduction_from))}</span></td>
-            <td>${escapeHtml(taxType.description || '-')}</td>
-            <td><span class="status-badge status-${taxType.is_active ? 'active' : 'inactive'}">${taxType.is_active ? 'Active' : 'Inactive'}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="editTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Edit Tax Type">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="action-btn danger" onclick="deleteTaxType('${escapeHtml(taxType.id)}')" data-tooltip="Delete Tax Type">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function populateTaxTypeSelects() {
-    const selects = ['taxRuleTaxType', 'taxRuleTaxTypeId'];
-    selects.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            const firstOption = id === 'taxRuleTaxType' ? '<option value="">All Tax Types</option>' : '<option value="">Select Tax Type</option>';
-            select.innerHTML = firstOption;
-            taxTypes.filter(t => t.is_active).forEach(taxType => {
-                select.innerHTML += `<option value="${escapeHtml(taxType.id)}">${escapeHtml(taxType.tax_name)} (${escapeHtml(taxType.tax_code)})</option>`;
-            });
-        }
-    });
-}
-
-function formatDeductionFrom(deductionFrom) {
-    const map = {
-        'employee': 'Employee',
-        'employer': 'Employer',
-        'both': 'Both'
-    };
-    return map[deductionFrom] || 'Employee';
-}
-
-// Tax Type Modal Functions
-function showCreateTaxTypeModal() {
-    document.getElementById('taxTypeForm').reset();
-    document.getElementById('taxTypeId').value = '';
-    document.getElementById('taxTypeIsActive').checked = true;
-    document.getElementById('taxTypeModalTitle').textContent = 'Create Tax Type';
-    document.getElementById('taxTypeModal').classList.add('active');
-}
-
-function editTaxType(id) {
-    const taxType = taxTypes.find(t => t.id === id);
-    if (!taxType) return;
-
-    document.getElementById('taxTypeId').value = taxType.id;
-    document.getElementById('taxTypeName').value = taxType.tax_name || '';
-    document.getElementById('taxTypeCode').value = taxType.tax_code || '';
-    document.getElementById('taxTypeDeductionFrom').value = taxType.deduction_from || 'employee';
-    document.getElementById('taxTypeDisplayOrder').value = taxType.display_order || 0;
-    document.getElementById('taxTypeDescription').value = taxType.description || '';
-    document.getElementById('taxTypeIsActive').checked = taxType.is_active !== false;
-
-    document.getElementById('taxTypeModalTitle').textContent = 'Edit Tax Type';
-    document.getElementById('taxTypeModal').classList.add('active');
-}
-
-async function saveTaxType() {
-    const form = document.getElementById('taxTypeForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    try {
-        showLoading();
-        const id = document.getElementById('taxTypeId').value;
-        const data = {
-            tax_name: document.getElementById('taxTypeName').value,
-            tax_code: document.getElementById('taxTypeCode').value,
-            deduction_from: document.getElementById('taxTypeDeductionFrom').value,
-            display_order: parseInt(document.getElementById('taxTypeDisplayOrder').value) || 0,
-            description: document.getElementById('taxTypeDescription').value,
-            is_active: document.getElementById('taxTypeIsActive').checked
-        };
-
-        if (id) {
-            data.id = id;  // Include ID in request body for update validation
-            await api.updateLocationTaxType(id, data);
-        } else {
-            await api.createLocationTaxType(data);
-        }
-
-        closeModal('taxTypeModal');
-        showToast(`Tax type ${id ? 'updated' : 'created'} successfully`, 'success');
-        await loadTaxTypes();
-        hideLoading();
-    } catch (error) {
-        console.error('Error saving tax type:', error);
-        showToast(error.message || 'Failed to save tax type', 'error');
-        hideLoading();
-    }
-}
-
-async function deleteTaxType(id) {
-    const confirmed = await Confirm.show({
-        title: 'Delete Tax Type',
-        message: 'Are you sure you want to delete this tax type? This may affect associated tax rules.',
-        type: 'danger',
-        confirmText: 'Delete',
-        cancelText: 'Cancel'
-    });
-
-    if (!confirmed) return;
-
-    try {
-        showLoading();
-        await api.deleteLocationTaxType(id);
-        showToast('Tax type deleted successfully', 'success');
-        await loadTaxTypes();
-        hideLoading();
-    } catch (error) {
-        console.error('Error deleting tax type:', error);
-        showToast(error.message || 'Failed to delete tax type', 'error');
-        hideLoading();
-    }
-}
-
-// ============================================
-// Office Tax Rules Management
-// ============================================
-
-async function loadOfficeTaxRules() {
-    try {
-        const officeFilter = document.getElementById('taxRuleOffice')?.value || '';
-        const showInactive = document.getElementById('showInactiveTaxRules')?.checked || false;
-
-        let response;
-        if (officeFilter) {
-            response = await api.getOfficeTaxRules(officeFilter, showInactive);
-        } else {
-            // Load all rules by making a request without office filter
-            response = await api.request(`/hrms/location-taxes/rules?includeInactive=${showInactive}`);
-        }
-        taxRules = Array.isArray(response) ? response : (response?.data || []);
-        updateTaxRulesTable();
-        populateTaxRuleOfficeSelects();
-    } catch (error) {
-        console.error('Error loading tax rules:', error);
-        showToast('Failed to load tax rules', 'error');
-    }
-}
-
-function updateTaxRulesTable() {
-    const tbody = document.getElementById('taxRulesTable');
-    if (!tbody) return;
-
-    const searchTerm = document.getElementById('taxRuleSearch')?.value?.toLowerCase() || '';
-    const taxTypeFilter = document.getElementById('taxRuleTaxType')?.value || '';
-
-    let filtered = taxRules.filter(r =>
-        r.rule_name?.toLowerCase().includes(searchTerm) ||
-        r.tax_code?.toLowerCase().includes(searchTerm) ||
-        r.jurisdiction_name?.toLowerCase().includes(searchTerm)
-    );
-
-    if (taxTypeFilter) {
-        filtered = filtered.filter(r => r.tax_type_id === taxTypeFilter);
-    }
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-state">
-                <td colspan="9">
-                    <div class="empty-message">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        <p>No tax rules configured</p>
-                    </div>
-                </td>
-            </tr>`;
-        return;
-    }
-
-    tbody.innerHTML = filtered.map(rule => {
-        const officeName = getOfficeName(rule.office_id);
-        const taxTypeName = getTaxTypeName(rule.tax_type_id);
-        const calcBadge = getCalculationBadge(rule.calculation_type);
-        const amountDisplay = formatAmountDisplay(rule);
-
-        return `
-        <tr>
-            <td><strong>${escapeHtml(officeName)}</strong></td>
-            <td>${escapeHtml(taxTypeName)}</td>
-            <td><strong>${escapeHtml(rule.rule_name || '-')}</strong></td>
-            <td>${escapeHtml(rule.jurisdiction_name || '-')} <small>(${escapeHtml(rule.jurisdiction_level || '-')})</small></td>
-            <td><span class="badge ${escapeHtml(calcBadge.class)}">${escapeHtml(calcBadge.label)}</span></td>
-            <td>${amountDisplay}</td>
-            <td>${escapeHtml(formatDate(rule.effective_from))}</td>
-            <td><span class="status-badge status-${rule.is_active ? 'active' : 'inactive'}">${rule.is_active ? 'Active' : 'Inactive'}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="editTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Edit Rule">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="action-btn danger" onclick="deleteTaxRule('${escapeHtml(rule.id)}')" data-tooltip="Delete Rule">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
-}
-
-function getOfficeName(officeId) {
-    if (!officeId) return 'Unknown';
-    const office = offices.find(o => o.id === officeId);
-    return office?.office_name || 'Unknown';
-}
-
-function getTaxTypeName(taxTypeId) {
-    if (!taxTypeId) return 'Unknown';
-    const taxType = taxTypes.find(t => t.id === taxTypeId);
-    return taxType?.tax_name || 'Unknown';
-}
-
-function getCalculationBadge(calcType) {
-    const badges = {
-        'fixed': { class: 'badge-fixed', label: 'Fixed' },
-        'percentage': { class: 'badge-percentage', label: 'Percentage' },
-        'slab': { class: 'badge-slab', label: 'Slab' },
-        'formula': { class: 'badge-formula', label: 'Formula' }
-    };
-    return badges[calcType] || { class: 'badge-fixed', label: 'Fixed' };
-}
-
-function formatAmountDisplay(rule) {
-    switch (rule.calculation_type) {
-        case 'fixed':
-            return `<strong>${formatCurrency(rule.fixed_amount || 0)}</strong>`;
-        case 'percentage':
-            return `<strong>${rule.percentage || 0}%</strong> of ${rule.percentage_of || 'gross'}`;
-        case 'slab':
-            return '<em>Slab based</em>';
-        case 'formula':
-            return '<em>Formula</em>';
-        default:
-            return '-';
-    }
-}
-
-function populateTaxRuleOfficeSelects() {
-    const selects = ['taxRuleOffice', 'taxRuleOfficeId', 'copySourceOffice', 'copyTargetOffice', 'previewOffice'];
-    selects.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            const firstOption = (id === 'taxRuleOffice') ? '<option value="">All Offices</option>' : '<option value="">Select Office</option>';
-            select.innerHTML = firstOption;
-            offices.filter(o => o.is_active).forEach(office => {
-                select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
-            });
-        }
-    });
-}
-
-// Tax Rule Modal Functions
-function showCreateTaxRuleModal() {
-    if (offices.filter(o => o.is_active).length === 0) {
-        showToast('Please create an office first', 'error');
-        return;
-    }
-
-    if (taxTypes.filter(t => t.is_active).length === 0) {
-        showToast('Please create a tax type first', 'error');
-        return;
-    }
-
-    document.getElementById('taxRuleForm').reset();
-    document.getElementById('taxRuleId').value = '';
-    document.getElementById('taxRuleIsActive').checked = true;
-    document.getElementById('taxRuleEffectiveFrom').value = new Date().toISOString().split('T')[0];
-
-    // Populate dropdowns
-    populateTaxRuleOfficeSelects();
-    populateTaxTypeSelects();
-
-    // Reset calculation fields visibility
-    toggleCalculationFields();
-
-    // Reset slab rows
-    resetSlabRows();
-
-    document.getElementById('taxRuleModalTitle').textContent = 'Create Tax Rule';
-    document.getElementById('taxRuleModal').classList.add('active');
-}
-
-function editTaxRule(id) {
-    const rule = taxRules.find(r => r.id === id);
-    if (!rule) return;
-
-    // Populate dropdowns first
-    populateTaxRuleOfficeSelects();
-    populateTaxTypeSelects();
-
-    document.getElementById('taxRuleId').value = rule.id;
-    document.getElementById('taxRuleOfficeId').value = rule.office_id || '';
-    document.getElementById('taxRuleTaxTypeId').value = rule.tax_type_id || '';
-    document.getElementById('taxRuleName').value = rule.rule_name || '';
-    document.getElementById('taxRuleCode').value = rule.tax_code || '';
-    document.getElementById('taxRuleJurisdictionLevel').value = rule.jurisdiction_level || 'state';
-    document.getElementById('taxRuleJurisdictionName').value = rule.jurisdiction_name || '';
-    document.getElementById('taxRuleJurisdictionCode').value = rule.jurisdiction_code || '';
-    document.getElementById('taxRuleCalculationType').value = rule.calculation_type || 'fixed';
-    document.getElementById('taxRuleFixedAmount').value = rule.fixed_amount || '';
-    document.getElementById('taxRulePercentage').value = rule.percentage || '';
-    document.getElementById('taxRulePercentageOf').value = rule.percentage_of || 'gross';
-    document.getElementById('taxRuleFormula').value = rule.formula_expression || '';
-    document.getElementById('taxRuleEffectiveFrom').value = rule.effective_from?.split('T')[0] || '';
-    document.getElementById('taxRuleEffectiveTo').value = rule.effective_to?.split('T')[0] || '';
-    document.getElementById('taxRuleNotes').value = rule.notes || '';
-    document.getElementById('taxRuleIsActive').checked = rule.is_active !== false;
-
-    // Toggle calculation fields visibility
-    toggleCalculationFields();
-
-    // Populate slab rows if calculation type is slab
-    if (rule.calculation_type === 'slab' && rule.slab_config) {
-        populateSlabRows(rule.slab_config);
-    }
-
-    document.getElementById('taxRuleModalTitle').textContent = 'Edit Tax Rule';
-    document.getElementById('taxRuleModal').classList.add('active');
-}
-
-async function saveTaxRule() {
-    const form = document.getElementById('taxRuleForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    try {
-        showLoading();
-        const id = document.getElementById('taxRuleId').value;
-        const calculationType = document.getElementById('taxRuleCalculationType').value;
-
-        const data = {
-            office_id: document.getElementById('taxRuleOfficeId').value,
-            tax_type_id: document.getElementById('taxRuleTaxTypeId').value,
-            rule_name: document.getElementById('taxRuleName').value,
-            tax_code: document.getElementById('taxRuleCode').value,
-            jurisdiction_level: document.getElementById('taxRuleJurisdictionLevel').value,
-            jurisdiction_name: document.getElementById('taxRuleJurisdictionName').value,
-            jurisdiction_code: document.getElementById('taxRuleJurisdictionCode').value,
-            calculation_type: calculationType,
-            effective_from: document.getElementById('taxRuleEffectiveFrom').value,
-            effective_to: document.getElementById('taxRuleEffectiveTo').value || null,
-            notes: document.getElementById('taxRuleNotes').value,
-            is_active: document.getElementById('taxRuleIsActive').checked
-        };
-
-        // Add calculation-specific fields
-        switch (calculationType) {
-            case 'fixed':
-                data.fixed_amount = parseFloat(document.getElementById('taxRuleFixedAmount').value) || 0;
-                break;
-            case 'percentage':
-                data.percentage = parseFloat(document.getElementById('taxRulePercentage').value) || 0;
-                data.percentage_of = document.getElementById('taxRulePercentageOf').value;
-                break;
-            case 'slab':
-                data.slab_config = getSlabConfig();
-                break;
-            case 'formula':
-                data.formula_expression = document.getElementById('taxRuleFormula').value;
-                break;
-        }
-
-        if (id) {
-            data.id = id; // Include ID in request body for backend validation
-            await api.updateOfficeTaxRule(id, data);
-        } else {
-            await api.createOfficeTaxRule(data);
-        }
-
-        closeModal('taxRuleModal');
-        showToast(`Tax rule ${id ? 'updated' : 'created'} successfully`, 'success');
-        await loadOfficeTaxRules();
-        hideLoading();
-    } catch (error) {
-        console.error('Error saving tax rule:', error);
-        showToast(error.message || 'Failed to save tax rule', 'error');
-        hideLoading();
-    }
-}
-
-async function deleteTaxRule(id) {
-    const confirmed = await Confirm.show({
-        title: 'Delete Tax Rule',
-        message: 'Are you sure you want to delete this tax rule?',
-        type: 'danger',
-        confirmText: 'Delete',
-        cancelText: 'Cancel'
-    });
-
-    if (!confirmed) return;
-
-    try {
-        showLoading();
-        await api.deleteOfficeTaxRule(id);
-        showToast('Tax rule deleted successfully', 'success');
-        await loadOfficeTaxRules();
-        hideLoading();
-    } catch (error) {
-        console.error('Error deleting tax rule:', error);
-        showToast(error.message || 'Failed to delete tax rule', 'error');
-        hideLoading();
-    }
-}
-
-// Toggle calculation fields based on type
-function toggleCalculationFields() {
-    const calcType = document.getElementById('taxRuleCalculationType').value;
-
-    document.getElementById('fixedAmountFields').style.display = calcType === 'fixed' ? 'flex' : 'none';
-    document.getElementById('percentageFields').style.display = calcType === 'percentage' ? 'flex' : 'none';
-    document.getElementById('slabFields').style.display = calcType === 'slab' ? 'block' : 'none';
-}
-
-// Slab row management
-function addSlabRow() {
-    const container = document.getElementById('slabContainer');
-    const newRow = document.createElement('div');
-    newRow.className = 'slab-row';
-    newRow.innerHTML = `
-        <input type="number" class="form-control slab-from" placeholder="From" min="0">
-        <span class="slab-separator">to</span>
-        <input type="number" class="form-control slab-to" placeholder="To" min="0">
-        <span class="slab-separator">=</span>
-        <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
-        <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-    `;
-    container.appendChild(newRow);
-}
-
-function removeSlabRow(button) {
-    const container = document.getElementById('slabContainer');
-    if (container.children.length > 1) {
-        button.closest('.slab-row').remove();
-    } else {
-        showToast('At least one slab row is required', 'error');
-    }
-}
-
-function resetSlabRows() {
-    const container = document.getElementById('slabContainer');
-    container.innerHTML = `
-        <div class="slab-row">
-            <input type="number" class="form-control slab-from" placeholder="From" min="0">
-            <span class="slab-separator">to</span>
-            <input type="number" class="form-control slab-to" placeholder="To" min="0">
-            <span class="slab-separator">=</span>
-            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
-            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-    `;
-}
-
-function populateSlabRows(slabConfig) {
-    const container = document.getElementById('slabContainer');
-    container.innerHTML = '';
-
-    const slabs = typeof slabConfig === 'string' ? JSON.parse(slabConfig) : slabConfig;
-    if (!Array.isArray(slabs) || slabs.length === 0) {
-        resetSlabRows();
-        return;
-    }
-
-    slabs.forEach(slab => {
-        const row = document.createElement('div');
-        row.className = 'slab-row';
-        row.innerHTML = `
-            <input type="number" class="form-control slab-from" placeholder="From" min="0" value="${slab.from || ''}">
-            <span class="slab-separator">to</span>
-            <input type="number" class="form-control slab-to" placeholder="To" min="0" value="${slab.to || ''}">
-            <span class="slab-separator">=</span>
-            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01" value="${slab.amount || ''}">
-            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        `;
-        container.appendChild(row);
-    });
-}
-
-function getSlabConfig() {
-    const slabs = [];
-    document.querySelectorAll('#slabContainer .slab-row').forEach(row => {
-        const from = parseFloat(row.querySelector('.slab-from').value) || 0;
-        const to = parseFloat(row.querySelector('.slab-to').value) || 0;
-        const amount = parseFloat(row.querySelector('.slab-amount').value) || 0;
-        slabs.push({ from, to, amount });
-    });
-    return slabs;
-}
-
-// Copy Tax Rules
-function showCopyTaxRulesModal() {
-    if (offices.filter(o => o.is_active).length < 2) {
-        showToast('You need at least 2 offices to copy tax rules', 'error');
-        return;
-    }
-
-    document.getElementById('copyTaxRulesForm').reset();
-    populateTaxRuleOfficeSelects();
-    document.getElementById('copyTaxRulesModal').classList.add('active');
-}
-
-async function copyTaxRules() {
-    const sourceOffice = document.getElementById('copySourceOffice').value;
-    const targetOffice = document.getElementById('copyTargetOffice').value;
-
-    if (!sourceOffice || !targetOffice) {
-        showToast('Please select both source and target offices', 'error');
-        return;
-    }
-
-    if (sourceOffice === targetOffice) {
-        showToast('Source and target offices must be different', 'error');
-        return;
-    }
-
-    try {
-        showLoading();
-        await api.copyOfficeTaxRules(sourceOffice, targetOffice);
-        closeModal('copyTaxRulesModal');
-        showToast('Tax rules copied successfully', 'success');
-        await loadOfficeTaxRules();
-        hideLoading();
-    } catch (error) {
-        console.error('Error copying tax rules:', error);
-        showToast(error.message || 'Failed to copy tax rules', 'error');
-        hideLoading();
-    }
-}
-
-// Tax Preview
-function showTaxPreviewModal() {
-    if (offices.filter(o => o.is_active).length === 0) {
-        showToast('No offices configured', 'error');
-        return;
-    }
-
-    document.getElementById('taxPreviewForm').reset();
-    document.getElementById('taxPreviewResults').style.display = 'none';
-    document.getElementById('previewEffectiveDate').value = new Date().toISOString().split('T')[0];
-    populateTaxRuleOfficeSelects();
-    document.getElementById('taxPreviewModal').classList.add('active');
-}
-
-async function calculateTaxPreview() {
-    const officeId = document.getElementById('previewOffice').value;
-    const effectiveDate = document.getElementById('previewEffectiveDate').value;
-    const grossSalary = parseFloat(document.getElementById('previewGrossSalary').value) || 0;
-
-    if (!officeId || !effectiveDate || !grossSalary) {
-        showToast('Please fill in all required fields', 'error');
-        return;
-    }
-
-    try {
-        showLoading();
-        const request = {
-            office_id: officeId,
-            effective_date: effectiveDate,
-            basic_salary: parseFloat(document.getElementById('previewBasicSalary').value) || 0,
-            gross_salary: grossSalary,
-            taxable_income: parseFloat(document.getElementById('previewTaxableIncome').value) || grossSalary
-        };
-
-        const result = await api.calculateTaxPreview(request);
-        displayTaxPreviewResults(result);
-        hideLoading();
-    } catch (error) {
-        console.error('Error calculating tax preview:', error);
-        showToast(error.message || 'Failed to calculate tax preview', 'error');
-        hideLoading();
-    }
-}
-
-function displayTaxPreviewResults(result) {
-    const tbody = document.getElementById('taxPreviewResultsTable');
-    const totalEl = document.getElementById('taxPreviewTotal');
-    const resultsDiv = document.getElementById('taxPreviewResults');
-
-    // Backend returns tax_items, not tax_calculations
-    if (!result || !result.tax_items || result.tax_items.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center">No applicable taxes found for this configuration</td>
-            </tr>
-        `;
-        totalEl.textContent = formatCurrency(0);
-    } else {
-        tbody.innerHTML = result.tax_items.map(item => `
-            <tr>
-                <td>${escapeHtml(item.tax_code || '-')}</td>
-                <td>${escapeHtml(item.rule_name || '-')}</td>
-                <td>${escapeHtml(item.calculation_type || '-')}</td>
-                <td><strong>${formatCurrency(item.tax_amount || 0)}</strong></td>
-            </tr>
-        `).join('');
-        totalEl.textContent = formatCurrency(result.total_tax || 0);
-    }
-
-    resultsDiv.style.display = 'block';
-}
-
-// Add search event listeners for tax management
-document.addEventListener('DOMContentLoaded', function() {
-    // Tax search listeners
-    document.getElementById('taxTypeSearch')?.addEventListener('input', updateTaxTypesTable);
-    document.getElementById('taxRuleSearch')?.addEventListener('input', updateTaxRulesTable);
-    document.getElementById('taxRuleOffice')?.addEventListener('change', loadOfficeTaxRules);
-    document.getElementById('taxRuleTaxType')?.addEventListener('change', updateTaxRulesTable);
-});
-
 // ============================================================================
 // VOLUNTARY DEDUCTIONS MANAGEMENT
 // ============================================================================
@@ -10513,7 +10501,6 @@ function setupSidebar() {
     // Tab name mapping for display
     const tabNames = {
         'salary-components': 'Salary Components',
-        'location-taxes': 'Location Taxes',
         'salary-structures': 'Salary Structures',
         'employee-salaries': 'Employee Salaries',
         'payroll-drafts': 'Payroll Drafts',

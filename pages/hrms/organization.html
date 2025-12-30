@@ -633,8 +633,23 @@
                             <input type="text" id="officeCity" name="city" class="form-control" required placeholder="Mumbai">
                         </div>
                         <div class="form-group">
-                            <label for="officeState">State</label>
-                            <input type="text" id="officeState" name="state" class="form-control" placeholder="Maharashtra">
+                            <label for="officeStateSearch">State</label>
+                            <div class="searchable-dropdown" id="stateDropdown">
+                                <div class="searchable-dropdown-trigger" id="stateTrigger" onclick="toggleStateDropdown()">
+                                    <span class="dropdown-selection placeholder" id="stateSelection">Select State</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
+                                <div class="searchable-dropdown-menu" id="stateMenu">
+                                    <div class="dropdown-search-box">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        <input type="text" id="stateSearch" class="dropdown-search-input" placeholder="Search..." oninput="filterStates()">
+                                    </div>
+                                    <div class="dropdown-options" id="stateOptions"></div>
+                                </div>
+                                <input type="hidden" id="officeState" name="state">
+                                <input type="hidden" id="officeStateCode" name="state_code">
+                            </div>
+                            <small class="form-help-text">Only states with PT configured appear here</small>
                         </div>
                         <div class="form-group">
                             <label for="officeCountrySearch">Country *</label>
@@ -651,6 +666,7 @@
                                     <div class="dropdown-options" id="countryOptions"></div>
                                 </div>
                                 <input type="hidden" id="officeCountry" name="country" required>
+                                <input type="hidden" id="officeCountryCode" name="country_code">
                             </div>
                         </div>
                         <div class="form-group">

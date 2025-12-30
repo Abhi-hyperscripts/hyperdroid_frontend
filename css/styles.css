@@ -3821,11 +3821,6 @@ body:has(.pre-meeting-container) {
     gap: 8px;
 }
 
-.section-subtitle::before {
-    content: '🎯';
-    font-size: 1rem;
-}
-
 .my-projects-subtitle {
     margin-top: 20px;
     color: var(--gray-700);

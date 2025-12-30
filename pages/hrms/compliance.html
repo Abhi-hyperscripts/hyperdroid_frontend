@@ -82,6 +82,34 @@
                             <button class="sidebar-btn active" data-tab="company-info" id="companyInfoBtn">
                                 <span class="nav-number">1</span><span class="nav-label">Registration Details</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="financial-years" id="financialYearsBtn">
+                                <span class="nav-number">2</span><span class="nav-label">Financial Years</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contribution Rules Section -->
+                    <div class="nav-group" data-group="contrib-rules">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v4"></path>
+                                    <path d="M12 18v4"></path>
+                                    <path d="M4.93 4.93l2.83 2.83"></path>
+                                    <path d="M16.24 16.24l2.83 2.83"></path>
+                                    <path d="M2 12h4"></path>
+                                    <path d="M18 12h4"></path>
+                                    <path d="M4.93 19.07l2.83-2.83"></path>
+                                    <path d="M16.24 7.76l2.83-2.83"></path>
+                                </svg>
+                                Contribution Rules
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="contribution-rules" id="contribRulesBtn">
+                                <span class="nav-number">3</span><span class="nav-label">PF & ESI Rules</span>
+                            </button>
                         </div>
                     </div>
 
@@ -100,7 +128,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="ecr-generation" id="ecrBtn">
-                                <span class="nav-number">2</span><span class="nav-label">ECR File</span>
+                                <span class="nav-number">4</span><span class="nav-label">ECR File</span>
                             </button>
                         </div>
                     </div>
@@ -120,7 +148,61 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="esi-challan" id="esiBtn">
-                                <span class="nav-number">3</span><span class="nav-label">ESI Challan</span>
+                                <span class="nav-number">5</span><span class="nav-label">ESI Challan</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Professional Tax Section -->
+                    <div class="nav-group" data-group="pt">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                                Professional Tax
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="pt-states" id="ptStatesBtn">
+                                <span class="nav-number">6</span><span class="nav-label">Indian States</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pt-configs" id="ptConfigsBtn">
+                                <span class="nav-number">7</span><span class="nav-label">PT Configurations</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pt-slabs" id="ptSlabsBtn">
+                                <span class="nav-number">8</span><span class="nav-label">PT Slabs</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pt-exemptions" id="ptExemptionsBtn">
+                                <span class="nav-number">9</span><span class="nav-label">Exemption Rules</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pt-calculator" id="ptCalculatorBtn">
+                                <span class="nav-number">10</span><span class="nav-label">PT Calculator</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Labour Welfare Fund (LWF) Section -->
+                    <div class="nav-group" data-group="lwf">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Labour Welfare Fund
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="lwf-configs" id="lwfConfigsBtn">
+                                <span class="nav-number">11</span><span class="nav-label">LWF Configurations</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="lwf-calculator" id="lwfCalculatorBtn">
+                                <span class="nav-number">12</span><span class="nav-label">LWF Calculator</span>
                             </button>
                         </div>
                     </div>
@@ -140,8 +222,60 @@
                             <span class="chevron">▼</span>
                         </div>
                         <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="tax-regimes" id="taxRegimesBtn">
+                                <span class="nav-number">13</span><span class="nav-label">Tax Regimes</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tax-rebates" id="taxRebatesBtn">
+                                <span class="nav-number">14</span><span class="nav-label">Tax Rebates (87A)</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="deduction-sections" id="deductionSectionsBtn">
+                                <span class="nav-number">15</span><span class="nav-label">Deduction Sections</span>
+                            </button>
                             <button class="sidebar-btn" data-tab="form16" id="form16Btn">
-                                <span class="nav-number">4</span><span class="nav-label">Form 16</span>
+                                <span class="nav-number">16</span><span class="nav-label">Form 16</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tax-calculator" id="taxCalculatorBtn">
+                                <span class="nav-number">17</span><span class="nav-label">Tax Calculator</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statutory Returns Section -->
+                    <div class="nav-group" data-group="returns">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zM5 5a2 2 0 0 0-2 2v3a2 2 0 1 0 4 0V7a2 2 0 0 0-2-2zm7 0a2 2 0 0 0-2 2v7a2 2 0 1 0 4 0V7a2 2 0 0 0-2-2zm7 0a2 2 0 0 0-2 2v3a2 2 0 1 0 4 0V7a2 2 0 0 0-2-2z"></path>
+                                </svg>
+                                Statutory Returns
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="returns-types" id="returnsTypesBtn">
+                                <span class="nav-number">18</span><span class="nav-label">Returns Types</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="statements-types" id="statementsTypesBtn">
+                                <span class="nav-number">19</span><span class="nav-label">Statements Types</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Validation Section -->
+                    <div class="nav-group" data-group="validation">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 11l3 3L22 4"></path>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                Validation
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="compliance-validation" id="complianceValidationBtn">
+                                <span class="nav-number">20</span><span class="nav-label">Compliance Check</span>
                             </button>
                         </div>
                     </div>
@@ -149,6 +283,26 @@
             </aside>
 
             <main class="organization-content">
+                <!-- Compliance Status Banner -->
+                <div class="compliance-status-banner" id="complianceStatusBanner" style="display: none;">
+                    <div class="compliance-status-header">
+                        <div class="compliance-status-icon" id="complianceStatusIcon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 8v4"></path>
+                                <path d="M12 16h.01"></path>
+                            </svg>
+                        </div>
+                        <div class="compliance-status-text">
+                            <h3 id="complianceStatusTitle">Compliance Setup Required</h3>
+                            <p id="complianceStatusDesc">Complete the following items to enable Organization setup</p>
+                        </div>
+                    </div>
+                    <div class="compliance-checklist" id="complianceChecklist">
+                        <!-- Checklist items will be populated by JavaScript -->
+                    </div>
+                </div>
+
                 <!-- Loading State -->
                 <div class="loading-overlay" id="loadingOverlay" style="display: none;">
                     <div class="loading-spinner"></div>
@@ -159,11 +313,33 @@
                 <div class="tab-content active" id="company-info">
                     <div class="compliance-section">
                         <div class="section-header">
-                            <h2>Company Registration Details</h2>
-                            <p class="section-desc">Configure your company's statutory registration information required for compliance filings.</p>
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Company Registration Details</h2>
+                                    <p class="section-desc">Configure your company's statutory registration information required for compliance filings.</p>
+                                </div>
+                                <button type="button" class="btn btn-secondary" onclick="reinitializeStatutoryConfig()" title="Re-initialize statutory configuration for India (PF, ESI, PT, Income Tax)">
+                                    <span class="btn-icon">🔄</span> Re-initialize Statutory Config
+                                </button>
+                            </div>
                         </div>
 
                         <form id="companyInfoForm" class="compliance-form">
+                            <!-- Country Configuration (India Only) -->
+                            <div class="form-section" id="countrySection">
+                                <h3 class="form-section-title">Country</h3>
+                                <div class="country-display">
+                                    <div class="country-info">
+                                        <span class="country-flag">🇮🇳</span>
+                                        <div class="country-details">
+                                            <strong>India</strong>
+                                            <span class="country-meta">Currency: ₹ INR | Fiscal Year: April - March</span>
+                                        </div>
+                                        <span id="countryStatus" class="status-badge"></span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Basic Company Info -->
                             <div class="form-section">
                                 <h3 class="form-section-title">Basic Information</h3>
@@ -287,6 +463,287 @@
                     </div>
                 </div>
 
+                <!-- Financial Years Tab -->
+                <div class="tab-content" id="financial-years">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Financial Years</h2>
+                                    <p class="section-desc">Manage financial years for statutory compliance and tax calculations. Each year runs from April 1st to March 31st.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showAddFinancialYearModal()">
+                                    <span class="btn-icon">+</span> Add Financial Year
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Indian Financial Year:</strong> Runs from April 1st to March 31st. For example, FY 2024-25 starts on April 1, 2024 and ends on March 31, 2025.
+                                The "Current" year is used as the default for tax calculations and statutory filings.
+                            </div>
+                        </div>
+
+                        <!-- Financial Years Table -->
+                        <div class="data-table-container" id="financialYearsContainer">
+                            <table class="data-table" id="financialYearsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Financial Year</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="financialYearsBody">
+                                    <tr>
+                                        <td colspan="5" class="loading-cell">Loading financial years...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contribution Rules Tab -->
+                <div class="tab-content" id="contribution-rules">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Contribution Rules Configuration</h2>
+                            <p class="section-desc">Configure PF and ESI contribution rates and thresholds for statutory compliance.</p>
+                        </div>
+
+                        <!-- Existing Rules Display -->
+                        <div id="existingRulesSection" class="existing-rules-section">
+                            <div class="info-box info-box-secondary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div id="rulesStatusMessage">Loading current contribution rules...</div>
+                            </div>
+
+                            <div id="currentRulesDisplay" class="current-rules-grid" style="display: none;">
+                                <!-- PF Rules Card -->
+                                <div class="rule-card" id="pfRuleCard">
+                                    <div class="rule-card-header">
+                                        <h4>Provident Fund (PF)</h4>
+                                        <span class="rule-status" id="pfRuleStatus">Not Configured</span>
+                                    </div>
+                                    <div class="rule-card-body" id="pfRuleDetails">
+                                        <p class="no-rule-text">No PF contribution rules configured.</p>
+                                    </div>
+                                </div>
+
+                                <!-- ESI Rules Card -->
+                                <div class="rule-card" id="esiRuleCard">
+                                    <div class="rule-card-header">
+                                        <h4>Employee State Insurance (ESI)</h4>
+                                        <span class="rule-status" id="esiRuleStatus">Not Configured</span>
+                                    </div>
+                                    <div class="rule-card-body" id="esiRuleDetails">
+                                        <p class="no-rule-text">No ESI contribution rules configured.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PF Configuration Form -->
+                        <div class="form-section-wrapper">
+                            <h3 class="form-section-title-main">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                                    <path d="M12 9v6"></path>
+                                    <path d="M9 12h6"></path>
+                                </svg>
+                                Provident Fund (PF) Configuration
+                            </h3>
+
+                            <div class="info-box info-box-primary" style="margin-bottom: 1.5rem;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div>
+                                    <strong>Standard PF Rates (India):</strong> Employee contribution: 12% of Basic, Employer contribution: 12% of Basic.
+                                    Wage ceiling: ₹15,000 (PF calculated on max ₹15,000 even if basic is higher).
+                                </div>
+                            </div>
+
+                            <form id="pfRuleForm" class="compliance-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="pfEffectiveFrom">Effective From <span class="required">*</span></label>
+                                        <input type="date" id="pfEffectiveFrom" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Financial Year</label>
+                                        <div id="pfFinancialYearDropdown"></div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-4">
+                                    <div class="form-group">
+                                        <label for="pfEmployeeRate">Employee Rate (%) <span class="required">*</span></label>
+                                        <input type="number" id="pfEmployeeRate" class="form-control" step="0.01" min="0" max="100" value="12.00" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfEmployeeRateOf">Rate Of</label>
+                                        <select id="pfEmployeeRateOf" class="form-select">
+                                            <option value="basic" selected>Basic Salary</option>
+                                            <option value="gross">Gross Salary</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfEmployerRate">Employer Rate (%) <span class="required">*</span></label>
+                                        <input type="number" id="pfEmployerRate" class="form-control" step="0.01" min="0" max="100" value="12.00" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfEmployerRateOf">Rate Of</label>
+                                        <select id="pfEmployerRateOf" class="form-select">
+                                            <option value="basic" selected>Basic Salary</option>
+                                            <option value="gross">Gross Salary</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-3">
+                                    <div class="form-group">
+                                        <label for="pfWageCeiling">Wage Ceiling (₹) <span class="required">*</span></label>
+                                        <input type="number" id="pfWageCeiling" class="form-control" step="0.01" min="0" value="15000.00" required>
+                                        <small class="form-text">PF is calculated on maximum of this amount</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfAdminCharge">Admin Charge Rate (%)</label>
+                                        <input type="number" id="pfAdminCharge" class="form-control" step="0.01" min="0" max="100" value="0.50">
+                                        <small class="form-text">EPFO admin charge on employer contribution</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pfWageCeilingAppliesTo">Wage Ceiling Applies To</label>
+                                        <select id="pfWageCeilingAppliesTo" class="form-select">
+                                            <option value="both" selected>Both (Employee & Employer)</option>
+                                            <option value="employee">Employee Only</option>
+                                            <option value="employer">Employer Only</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-full">
+                                    <div class="form-group">
+                                        <label for="pfNotes">Notes</label>
+                                        <textarea id="pfNotes" class="form-control" rows="2" placeholder="Optional notes about this rule"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="savePfRuleBtn">
+                                        <span class="btn-text">Save PF Rule</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- ESI Configuration Form -->
+                        <div class="form-section-wrapper" style="margin-top: 2rem;">
+                            <h3 class="form-section-title-main">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                Employee State Insurance (ESI) Configuration
+                            </h3>
+
+                            <div class="info-box info-box-primary" style="margin-bottom: 1.5rem;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div>
+                                    <strong>Standard ESI Rates (India):</strong> Employee contribution: 0.75% of Gross, Employer contribution: 3.25% of Gross.
+                                    ESI is applicable only for employees with monthly wages up to ₹21,000.
+                                </div>
+                            </div>
+
+                            <form id="esiRuleForm" class="compliance-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="esiEffectiveFrom">Effective From <span class="required">*</span></label>
+                                        <input type="date" id="esiEffectiveFrom" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Financial Year</label>
+                                        <div id="esiFinancialYearDropdown"></div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-4">
+                                    <div class="form-group">
+                                        <label for="esiEmployeeRate">Employee Rate (%) <span class="required">*</span></label>
+                                        <input type="number" id="esiEmployeeRate" class="form-control" step="0.01" min="0" max="100" value="0.75" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiEmployeeRateOf">Rate Of</label>
+                                        <select id="esiEmployeeRateOf" class="form-select">
+                                            <option value="gross" selected>Gross Salary</option>
+                                            <option value="basic">Basic Salary</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiEmployerRate">Employer Rate (%) <span class="required">*</span></label>
+                                        <input type="number" id="esiEmployerRate" class="form-control" step="0.01" min="0" max="100" value="3.25" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiEmployerRateOf">Rate Of</label>
+                                        <select id="esiEmployerRateOf" class="form-select">
+                                            <option value="gross" selected>Gross Salary</option>
+                                            <option value="basic">Basic Salary</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-2">
+                                    <div class="form-group">
+                                        <label for="esiMaxSalaryThreshold">Max Salary Threshold (₹) <span class="required">*</span></label>
+                                        <input type="number" id="esiMaxSalaryThreshold" class="form-control" step="0.01" min="0" value="21000.00" required>
+                                        <small class="form-text">ESI applicable only if gross salary is at or below this amount</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="esiMinSalaryThreshold">Min Salary Threshold (₹)</label>
+                                        <input type="number" id="esiMinSalaryThreshold" class="form-control" step="0.01" min="0" value="0">
+                                        <small class="form-text">Optional: Minimum salary for ESI applicability</small>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid form-grid-full">
+                                    <div class="form-group">
+                                        <label for="esiNotes">Notes</label>
+                                        <textarea id="esiNotes" class="form-control" rows="2" placeholder="Optional notes about this rule"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="saveEsiRuleBtn">
+                                        <span class="btn-text">Save ESI Rule</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ECR Generation Tab -->
                 <div class="tab-content" id="ecr-generation">
                     <div class="compliance-section">
@@ -312,28 +769,8 @@
                                 <h3 class="form-section-title">Select Period</h3>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="ecrMonth">Month <span class="required">*</span></label>
-                                        <select id="ecrMonth" class="form-select" required>
-                                            <option value="">Select Month</option>
-                                            <option value="1">January</option>
-                                            <option value="2">February</option>
-                                            <option value="3">March</option>
-                                            <option value="4">April</option>
-                                            <option value="5">May</option>
-                                            <option value="6">June</option>
-                                            <option value="7">July</option>
-                                            <option value="8">August</option>
-                                            <option value="9">September</option>
-                                            <option value="10">October</option>
-                                            <option value="11">November</option>
-                                            <option value="12">December</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="ecrYear">Year <span class="required">*</span></label>
-                                        <select id="ecrYear" class="form-select" required>
-                                            <option value="">Select Year</option>
-                                        </select>
+                                        <label>Period <span class="required">*</span></label>
+                                        <div id="ecrMonthPicker"></div>
                                     </div>
                                     <div class="form-group">
                                         <label for="ecrOffice">Office (Optional)</label>
@@ -420,28 +857,8 @@
                                 <h3 class="form-section-title">Select Period</h3>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="esiMonth">Month <span class="required">*</span></label>
-                                        <select id="esiMonth" class="form-select" required>
-                                            <option value="">Select Month</option>
-                                            <option value="1">January</option>
-                                            <option value="2">February</option>
-                                            <option value="3">March</option>
-                                            <option value="4">April</option>
-                                            <option value="5">May</option>
-                                            <option value="6">June</option>
-                                            <option value="7">July</option>
-                                            <option value="8">August</option>
-                                            <option value="9">September</option>
-                                            <option value="10">October</option>
-                                            <option value="11">November</option>
-                                            <option value="12">December</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="esiYear">Year <span class="required">*</span></label>
-                                        <select id="esiYear" class="form-select" required>
-                                            <option value="">Select Year</option>
-                                        </select>
+                                        <label>Period <span class="required">*</span></label>
+                                        <div id="esiMonthPicker"></div>
                                     </div>
                                     <div class="form-group">
                                         <label for="esiOffice">Office (Optional)</label>
@@ -502,6 +919,654 @@
                     </div>
                 </div>
 
+                <!-- Professional Tax - Indian States Tab -->
+                <div class="tab-content" id="pt-states">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Indian States & Professional Tax Status</h2>
+                                    <p class="section-desc">View all Indian states/UTs and their Professional Tax applicability. States like Delhi, Haryana, Rajasthan, and UP do not levy PT.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showCreateStateModal()">
+                                    <span class="btn-icon">+</span> Add State
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Constitutional Limit:</strong> Professional Tax cannot exceed ₹2,500 per year per employee (Article 276).
+                                States determine their own PT slabs and rules. Some states like Maharashtra have special month handling (February ₹300).
+                            </div>
+                        </div>
+
+                        <!-- State Filters -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <input type="text" id="ptStateSearch" class="form-control" placeholder="Search states..." style="width: 250px;">
+                            </div>
+                            <div class="filter-group">
+                                <select id="ptStateFilter" class="form-control">
+                                    <option value="all">All States</option>
+                                    <option value="has_pt">States with PT</option>
+                                    <option value="no_pt">States without PT</option>
+                                    <option value="configured">Configured</option>
+                                    <option value="not_configured">Not Configured</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- States Table -->
+                        <div class="data-table-container" id="ptStatesContainer">
+                            <table class="data-table" id="ptStatesTable">
+                                <thead>
+                                    <tr>
+                                        <th>State Code</th>
+                                        <th>State Name</th>
+                                        <th>Type</th>
+                                        <th>PT Applicable</th>
+                                        <th>Configuration</th>
+                                        <th>Max Amount</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ptStatesBody">
+                                    <tr>
+                                        <td colspan="7" class="loading-cell">Loading Indian states...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Tax - Configurations Tab -->
+                <div class="tab-content" id="pt-configs">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Professional Tax Configurations</h2>
+                                    <p class="section-desc">State-wise PT configurations with effective dates, calculation types (fixed/slab), and special month handling.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showCreatePTConfigModal()">
+                                    <span class="btn-icon">+</span> Add PT Configuration
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Filters -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <select id="ptConfigStateFilter" class="form-control">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <select id="ptConfigTypeFilter" class="form-control">
+                                    <option value="">All Types</option>
+                                    <option value="fixed">Fixed Amount</option>
+                                    <option value="slab">Slab-based</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="ptConfigShowInactive">
+                                    Show Inactive
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Configurations Cards -->
+                        <div class="pt-configs-grid" id="ptConfigsGrid">
+                            <div class="loading-cell">Loading PT configurations...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Tax - Slabs Tab -->
+                <div class="tab-content" id="pt-slabs">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Professional Tax Slabs</h2>
+                                    <p class="section-desc">Income-based tax slabs for slab-type PT configurations. Select a state configuration to view/edit its slabs.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- State/Config Selection -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <label>Select State:</label>
+                                <select id="ptSlabStateSelect" class="form-control" style="width: 250px;">
+                                    <option value="">-- Select State --</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Configuration:</label>
+                                <select id="ptSlabConfigSelect" class="form-control" style="width: 300px;" disabled>
+                                    <option value="">-- Select Configuration --</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="addSlabBtn" onclick="showAddSlabModal()" disabled>
+                                <span class="btn-icon">+</span> Add Slab
+                            </button>
+                        </div>
+
+                        <!-- Slabs Display -->
+                        <div id="ptSlabsContainer">
+                            <div class="empty-state">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M3 3h18v18H3z"></path>
+                                    <path d="M3 9h18"></path>
+                                    <path d="M9 3v18"></path>
+                                </svg>
+                                <p>Select a state and configuration to view PT slabs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Tax - Exemptions Tab -->
+                <div class="tab-content" id="pt-exemptions">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>PT Exemption Rules</h2>
+                                    <p class="section-desc">State-level exemption rules based on gender (e.g., Karnataka women exemption), age (senior citizens), disability, or income thresholds.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showCreatePTExemptionModal()">
+                                    <span class="btn-icon">+</span> Add Exemption Rule
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-warning">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <div>
+                                <strong>Common Exemptions:</strong> Women (Karnataka), Senior Citizens (60+), Persons with Disabilities (40%+), Freedom Fighters.
+                                Employees must submit proof documents to claim exemptions.
+                            </div>
+                        </div>
+
+                        <!-- Exemption Filters -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <select id="ptExemptionStateFilter" class="form-control">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <select id="ptExemptionTypeFilter" class="form-control">
+                                    <option value="">All Types</option>
+                                    <option value="gender">Gender</option>
+                                    <option value="age">Age/Senior Citizen</option>
+                                    <option value="disability">Disability</option>
+                                    <option value="income">Income Threshold</option>
+                                    <option value="category">Category</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Exemptions Table -->
+                        <div class="data-table-container" id="ptExemptionsContainer">
+                            <table class="data-table" id="ptExemptionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>State</th>
+                                        <th>Exemption Code</th>
+                                        <th>Exemption Name</th>
+                                        <th>Type</th>
+                                        <th>Criteria</th>
+                                        <th>Documents Required</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ptExemptionsBody">
+                                    <tr>
+                                        <td colspan="8" class="loading-cell">Loading exemption rules...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Tax - Calculator Tab -->
+                <div class="tab-content" id="pt-calculator">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Tax Calculator</h2>
+                            <p class="section-desc">Calculate Professional Tax for any state, salary, and month.</p>
+                        </div>
+
+                        <div class="calculator-grid">
+                            <!-- PT Calculator Card -->
+                            <div class="calc-card">
+                                <div class="calc-card-header">
+                                    <h3>Professional Tax Calculator</h3>
+                                    <p>Calculate state-wise PT based on salary slabs and exemptions</p>
+                                </div>
+                                <form id="ptCalculatorForm" class="calc-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>State</label>
+                                            <select id="ptCalcState" class="form-control" required>
+                                                <option value="">Select State</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Gross Salary (Monthly)</label>
+                                            <input type="number" id="ptCalcGrossSalary" class="form-control" placeholder="e.g., 50000" min="0" step="100" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Month</label>
+                                            <select id="ptCalcMonth" class="form-control" required>
+                                                <option value="1">January</option>
+                                                <option value="2">February</option>
+                                                <option value="3">March</option>
+                                                <option value="4">April</option>
+                                                <option value="5">May</option>
+                                                <option value="6">June</option>
+                                                <option value="7">July</option>
+                                                <option value="8">August</option>
+                                                <option value="9">September</option>
+                                                <option value="10">October</option>
+                                                <option value="11">November</option>
+                                                <option value="12">December</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Year</label>
+                                            <input type="number" id="ptCalcYear" class="form-control" value="2025" min="2020" max="2030" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Gender (optional)</label>
+                                            <select id="ptCalcGender" class="form-control">
+                                                <option value="">Not Specified</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                                            <button type="button" class="btn btn-secondary" onclick="clearPTCalculator()" style="margin-right: 8px;">Clear</button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="btn-text">Calculate PT</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="ptCalcResult" class="calc-result" style="display: none;">
+                                    <h4>PT Calculation Result</h4>
+                                    <div class="result-grid" id="ptResultGrid">
+                                        <div class="result-item">
+                                            <span class="result-label">PT Amount</span>
+                                            <span class="result-value" id="ptCalcAmount">₹0</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="result-label">State</span>
+                                            <span class="result-value" id="ptCalcResultState">-</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="result-label">Calculation Type</span>
+                                            <span class="result-value" id="ptCalcResultType">-</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="result-label">Applicable Slab</span>
+                                            <span class="result-value" id="ptCalcResultSlab">-</span>
+                                        </div>
+                                        <div class="result-item" id="ptCalcSpecialMonthRow" style="display: none;">
+                                            <span class="result-label">Special Month</span>
+                                            <span class="result-value" id="ptCalcSpecialMonth">-</span>
+                                        </div>
+                                        <div class="result-item" id="ptCalcExemptionRow" style="display: none;">
+                                            <span class="result-label">Exemption</span>
+                                            <span class="result-value exemption-badge" id="ptCalcExemption">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PT Info Card -->
+                            <div class="calc-card">
+                                <div class="calc-card-header">
+                                    <h3>PT Slab Breakdown</h3>
+                                    <p>View detailed slab-wise breakdown after calculation</p>
+                                </div>
+                                <div id="ptCalcSlabBreakdown" class="calc-form" style="padding: var(--space-4);">
+                                    <div class="empty-state" id="ptSlabEmptyState">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5; margin-bottom: 12px;">
+                                            <path d="M9 7h6m-6 4h6m-6 4h4"></path>
+                                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                        </svg>
+                                        <p style="color: var(--text-secondary); margin: 0;">Calculate PT to see slab breakdown</p>
+                                    </div>
+                                    <table class="preview-table" id="ptSlabTable" style="display: none;">
+                                        <thead>
+                                            <tr>
+                                                <th>Slab</th>
+                                                <th>Salary Range</th>
+                                                <th>Tax Amount</th>
+                                                <th>Applied</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ptCalcSlabsBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LWF Configurations Tab -->
+                <div class="tab-content" id="lwf-configs">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Labour Welfare Fund Configurations</h2>
+                                    <p class="section-desc">Configure state-wise LWF rules with contribution rates, frequency (monthly/half-yearly/annual), and applicable months.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showCreateLWFConfigModal()">
+                                    <span class="btn-icon">+</span> Add LWF Configuration
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-warning">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <div>
+                                <strong>LWF Applicability:</strong> Labour Welfare Fund is a state-level statutory contribution. Not all states have LWF - only applicable in states like Maharashtra, Karnataka, Gujarat, Tamil Nadu, etc.
+                                Contribution frequency varies by state (e.g., Maharashtra: Half-yearly in June & December).
+                            </div>
+                        </div>
+
+                        <!-- Configuration Filters -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <select id="lwfConfigStateFilter" class="form-control" onchange="loadLWFConfigs()">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <select id="lwfConfigFrequencyFilter" class="form-control" onchange="loadLWFConfigs()">
+                                    <option value="">All Frequencies</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="half_yearly">Half-Yearly</option>
+                                    <option value="annual">Annual</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="lwfConfigShowInactive" onchange="loadLWFConfigs()">
+                                    Show Inactive
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Configurations Grid -->
+                        <div class="lwf-configs-grid" id="lwfConfigsGrid">
+                            <div class="loading-cell">Loading LWF configurations...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LWF Calculator Tab -->
+                <div class="tab-content" id="lwf-calculator">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div>
+                                <h2>LWF Calculator</h2>
+                                <p class="section-desc">Calculate LWF contribution for an employee based on their office location and applicable rules.</p>
+                            </div>
+                        </div>
+
+                        <div class="calculator-grid">
+                            <div class="calculator-form">
+                                <div class="form-group">
+                                    <label for="lwfCalcState">State *</label>
+                                    <select id="lwfCalcState" class="form-control" required>
+                                        <option value="">-- Select State --</option>
+                                    </select>
+                                    <small class="form-text">Select a state with LWF configuration</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="lwfCalcDeductionMonth">Deduction Month *</label>
+                                    <select id="lwfCalcDeductionMonth" class="form-control" required>
+                                        <option value="">-- Select Month --</option>
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <small class="form-text">Month for which LWF should be calculated</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="lwfCalcGrossSalary">Gross Salary *</label>
+                                    <input type="number" id="lwfCalcGrossSalary" class="form-control" placeholder="e.g., 50000" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="lwfCalcBasicSalary">Basic Salary</label>
+                                    <input type="number" id="lwfCalcBasicSalary" class="form-control" placeholder="e.g., 20000" min="0">
+                                    <small class="form-text">Optional - for percentage-of-basic calculations</small>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="calculateLWF()">
+                                    <span class="btn-icon">📊</span> Calculate LWF
+                                </button>
+                            </div>
+
+                            <div class="calculator-result" id="lwfCalcResult">
+                                <div class="empty-state">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                                        <path d="M12 9v6"></path>
+                                        <path d="M9 12h6"></path>
+                                    </svg>
+                                    <p>Select a state and enter salary details to calculate LWF</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Regimes Tab -->
+                <div class="tab-content" id="tax-regimes">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Income Tax Regimes & Slabs</h2>
+                                    <p class="section-desc">Configure Old and New Tax Regimes with their respective tax slabs, surcharge rates, and cess.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showCreateRegimeModal()">
+                                    <span class="btn-icon">+</span> Add Tax Regime
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Income Tax Regimes (India FY 2024-25):</strong><br>
+                                <strong>New Regime:</strong> Lower rates, limited deductions. Default for new taxpayers.<br>
+                                <strong>Old Regime:</strong> Higher rates but allows deductions under 80C, 80D, HRA etc.
+                            </div>
+                        </div>
+
+                        <!-- Tax Regimes List -->
+                        <div id="taxRegimesContainer" class="tax-regimes-container">
+                            <div class="loading-text">Loading tax regimes...</div>
+                        </div>
+
+                        <!-- Tax Cess Section -->
+                        <div class="form-section-wrapper" style="margin-top: 2rem;">
+                            <h3 class="form-section-title-main">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                Health & Education Cess
+                            </h3>
+                            <div class="info-box info-box-secondary" style="margin-bottom: 1rem;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div>
+                                    Health & Education Cess is 4% of (Tax + Surcharge). This applies to both Old and New regimes.
+                                </div>
+                            </div>
+                            <div id="taxCessContainer" class="tax-cess-display">
+                                <div class="loading-text">Loading cess configuration...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Rebates Tab -->
+                <div class="tab-content" id="tax-rebates">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Tax Rebates (Section 87A)</h2>
+                                    <p class="section-desc">Configure tax rebates under Section 87A for eligible taxpayers. Rebates reduce tax liability for income below threshold limits.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showAddRebateModal()">
+                                    <span class="btn-icon">+</span> Add Tax Rebate
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Section 87A Rebate (India FY 2024-25):</strong><br>
+                                <strong>New Regime:</strong> If taxable income ≤ ₹12,00,000, rebate up to ₹60,000 (no tax up to ₹12L).<br>
+                                <strong>Old Regime:</strong> If taxable income ≤ ₹5,00,000, rebate up to ₹12,500 (no tax up to ₹5L).
+                            </div>
+                        </div>
+
+                        <!-- Tax Rebates Table -->
+                        <div class="data-table-container" id="taxRebatesContainer">
+                            <table class="data-table" id="taxRebatesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Section</th>
+                                        <th>Regime</th>
+                                        <th>Income Threshold</th>
+                                        <th>Max Rebate</th>
+                                        <th>Effective From</th>
+                                        <th>Effective To</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="taxRebatesBody">
+                                    <tr>
+                                        <td colspan="8" class="loading-cell">Loading tax rebates...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Deduction Sections Tab -->
+                <div class="tab-content" id="deduction-sections">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Tax Deduction Sections</h2>
+                                    <p class="section-desc">Configure tax deduction sections (80C, 80D, Standard Deduction, etc.) with their limits and effective dates.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showAddDeductionSectionModal()">
+                                    <span class="btn-icon">+</span> Add Deduction Section
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Tax Deductions (India FY 2024-25):</strong><br>
+                                <strong>Standard Deduction:</strong> ₹75,000 (New Regime), ₹50,000 (Old Regime).<br>
+                                <strong>Section 80C:</strong> Up to ₹1,50,000 (Old Regime only - PF, PPF, ELSS, LIC, etc.).<br>
+                                <strong>Section 80D:</strong> Up to ₹25,000-₹1,00,000 (Health Insurance - Old Regime only).
+                            </div>
+                        </div>
+
+                        <!-- Deduction Sections Table -->
+                        <div class="data-table-container" id="deductionSectionsContainer">
+                            <table class="data-table" id="deductionSectionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Section Code</th>
+                                        <th>Section Name</th>
+                                        <th>Maximum Limit</th>
+                                        <th>Applicable Regimes</th>
+                                        <th>Effective From</th>
+                                        <th>Effective To</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deductionSectionsBody">
+                                    <tr>
+                                        <td colspan="8" class="loading-cell">Loading deduction sections...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Form 16 Tab -->
                 <div class="tab-content" id="form16">
                     <div class="compliance-section">
@@ -541,10 +1606,8 @@
                                             </select>
                                         </div>
                                         <div class="form-group">
-                                            <label for="form16FY">Financial Year <span class="required">*</span></label>
-                                            <select id="form16FY" class="form-select" required>
-                                                <option value="">Select FY</option>
-                                            </select>
+                                            <label>Financial Year <span class="required">*</span></label>
+                                            <div id="form16FYDropdown"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -593,10 +1656,8 @@
                                     <h3 class="form-section-title">Bulk Generation Options</h3>
                                     <div class="form-grid">
                                         <div class="form-group">
-                                            <label for="bulkForm16FY">Financial Year <span class="required">*</span></label>
-                                            <select id="bulkForm16FY" class="form-select" required>
-                                                <option value="">Select FY</option>
-                                            </select>
+                                            <label>Financial Year <span class="required">*</span></label>
+                                            <div id="bulkForm16FYDropdown"></div>
                                         </div>
                                         <div class="form-group">
                                             <label for="bulkForm16Office">Office (Optional)</label>
@@ -641,7 +1702,1383 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tax Calculator Tab -->
+                <div class="tab-content" id="tax-calculator">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Tax Calculator</h2>
+                            <p class="section-desc">Calculate tax, TDS, and statutory contributions for employees.</p>
+                        </div>
+
+                        <div class="calculator-grid">
+                            <!-- Calculate Tax Card -->
+                            <div class="calc-card">
+                                <div class="calc-card-header">
+                                    <h3>Income Tax Calculator</h3>
+                                    <p>Calculate annual income tax based on regime and income</p>
+                                </div>
+                                <form id="taxCalculatorForm" class="calc-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Regime</label>
+                                            <select id="calcRegimeId" class="form-control" required>
+                                                <option value="">Select Regime</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Annual Income (₹)</label>
+                                            <input type="number" id="calcAnnualIncome" class="form-control" placeholder="e.g., 1200000" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Financial Year</label>
+                                            <div id="calcFYDropdown"></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Calculation Date</label>
+                                            <input type="date" id="calcDate" class="form-control">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="btn-text">Calculate Tax</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="taxCalculationResult" class="calc-result" style="display: none;">
+                                    <h4>Tax Calculation Result</h4>
+                                    <div class="result-grid" id="taxResultGrid"></div>
+                                </div>
+                            </div>
+
+                            <!-- Monthly TDS Calculator Card -->
+                            <div class="calc-card">
+                                <div class="calc-card-header">
+                                    <h3>Monthly TDS Calculator</h3>
+                                    <p>Calculate monthly TDS with YTD projections</p>
+                                </div>
+                                <form id="tdsCalculatorForm" class="calc-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Employee</label>
+                                            <select id="tdsEmployeeId" class="form-control" required>
+                                                <option value="">Select Employee</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Payroll Month</label>
+                                            <div id="tdsMonthPicker"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Monthly Gross (₹)</label>
+                                            <input type="number" id="tdsMonthlyGross" class="form-control" placeholder="e.g., 100000" min="0" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Arrears (₹)</label>
+                                            <input type="number" id="tdsArrears" class="form-control" placeholder="0" min="0" value="0">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="btn-text">Calculate TDS</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="tdsCalculationResult" class="calc-result" style="display: none;">
+                                    <h4>TDS Calculation Result</h4>
+                                    <div class="result-grid" id="tdsResultGrid"></div>
+                                </div>
+                            </div>
+
+                            <!-- Contribution Calculator Card -->
+                            <div class="calc-card">
+                                <div class="calc-card-header">
+                                    <h3>Contribution Calculator</h3>
+                                    <p>Calculate PF, ESI, and other statutory contributions</p>
+                                </div>
+                                <form id="contributionCalculatorForm" class="calc-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Contribution Type</label>
+                                            <select id="contribTypeId" class="form-control" required>
+                                                <option value="">Select Type</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Basic Salary (₹)</label>
+                                            <input type="number" id="contribBasic" class="form-control" placeholder="e.g., 40000" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Gross Salary (₹)</label>
+                                            <input type="number" id="contribGross" class="form-control" placeholder="e.g., 100000" min="0" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Calculation Date</label>
+                                            <input type="date" id="contribDate" class="form-control">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="btn-text">Calculate Contribution</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="contributionResult" class="calc-result" style="display: none;">
+                                    <h4>Contribution Calculation Result</h4>
+                                    <div class="result-grid" id="contribResultGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Returns Types Tab -->
+                <div class="tab-content" id="returns-types">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Statutory Returns Types</h2>
+                                    <p class="section-desc">Configure types of statutory returns (ECR, ESI, Form 16, etc.) that need to be filed.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showAddReturnTypeModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Return Type
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table" id="returnsTypesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Frequency</th>
+                                        <th>Due Day</th>
+                                        <th>Authority</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="returnsTypesTableBody">
+                                    <tr class="loading-row">
+                                        <td colspan="7" style="text-align: center; padding: 40px;">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statements Types Tab -->
+                <div class="tab-content" id="statements-types">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <div class="section-header-row">
+                                <div>
+                                    <h2>Statement Types</h2>
+                                    <p class="section-desc">Configure types of statements (Form 16, TDS certificates, etc.) for tax compliance.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="showAddStatementTypeModal()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Statement Type
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table" id="statementsTypesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Template</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statementsTypesTableBody">
+                                    <tr class="loading-row">
+                                        <td colspan="6" style="text-align: center; padding: 40px;">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compliance Validation Tab -->
+                <div class="tab-content" id="compliance-validation">
+                    <div class="compliance-section">
+                        <div class="section-header">
+                            <h2>Compliance Validation</h2>
+                            <p class="section-desc">Validate tax and contribution compliance for employees.</p>
+                        </div>
+
+                        <div class="validation-grid">
+                            <!-- Tax Compliance Validation -->
+                            <div class="validation-card">
+                                <div class="validation-card-header">
+                                    <h3>Tax Compliance Check</h3>
+                                    <p>Validate employee tax configuration and calculations</p>
+                                </div>
+                                <form id="taxValidationForm" class="validation-form">
+                                    <div class="form-group">
+                                        <label>Employee</label>
+                                        <select id="taxValidationEmployeeId" class="form-control" required>
+                                            <option value="">Select Employee</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Financial Year</label>
+                                        <div id="taxValidationFYDropdown"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 11l3 3L22 4"></path>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                        </svg>
+                                        <span class="btn-text">Validate Tax Compliance</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="taxValidationResult" class="validation-result" style="display: none;"></div>
+                            </div>
+
+                            <!-- Contribution Compliance Validation -->
+                            <div class="validation-card">
+                                <div class="validation-card-header">
+                                    <h3>Contribution Compliance Check</h3>
+                                    <p>Validate PF, ESI, and other statutory contributions</p>
+                                </div>
+                                <form id="contributionValidationForm" class="validation-form">
+                                    <div class="form-group">
+                                        <label>Employee</label>
+                                        <select id="contribValidationEmployeeId" class="form-control" required>
+                                            <option value="">Select Employee</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Payroll Month</label>
+                                        <div id="contribValidationMonthPicker"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 11l3 3L22 4"></path>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                        </svg>
+                                        <span class="btn-text">Validate Contributions</span>
+                                        <span class="btn-spinner" style="display: none;"></span>
+                                    </button>
+                                </form>
+                                <div id="contributionValidationResult" class="validation-result" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Tax Regime Modal -->
+    <div class="modal" id="taxRegimeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxRegimeModalTitle">Add Tax Regime</h5>
+                    <button class="close-btn" onclick="closeTaxRegimeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="taxRegimeForm" onsubmit="saveTaxRegime(event)">
+                    <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="regimeCode">Regime Code <span class="required">*</span></label>
+                            <input type="text" id="regimeCode" class="form-control" placeholder="e.g., NEW_REGIME" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regimeName">Regime Name <span class="required">*</span></label>
+                            <input type="text" id="regimeName" class="form-control" placeholder="e.g., New Tax Regime" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regimeDescription">Description</label>
+                        <textarea id="regimeDescription" class="form-control" rows="2" placeholder="Brief description of this regime"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="regimeIsDefault">
+                            Set as Default Regime
+                        </label>
+                        <small class="form-text">Default regime is used when employee hasn't chosen a specific regime</small>
+                    </div>
+                    <input type="hidden" id="regimeId">
+                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeTaxRegimeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveRegimeBtn">Save Regime</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Slab Modal -->
+    <div class="modal" id="taxSlabModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxSlabModalTitle">Manage Tax Slabs</h5>
+                    <button class="close-btn" onclick="closeTaxSlabModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                <div class="info-box info-box-secondary" style="margin-bottom: 1rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div>
+                        <strong>Regime:</strong> <span id="slabRegimeName">-</span><br>
+                        Configure income tax slabs with progressive rates. Leave "To" empty for the last slab (unlimited).
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-2" style="margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>Financial Year</label>
+                        <div id="slabFinancialYearDropdown"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="slabEffectiveFrom">Effective From <span class="required">*</span></label>
+                        <input type="date" id="slabEffectiveFrom" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="slab-table-wrapper">
+                    <table class="slab-table" id="slabTable">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>From (₹)</th>
+                                <th>To (₹)</th>
+                                <th>Rate (%)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slabTableBody">
+                            <!-- Slabs will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addSlabRowToModal()" style="margin-top: 0.5rem;">
+                    + Add Slab
+                </button>
+
+                <input type="hidden" id="currentRegimeId">
+            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaxSlabModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAllSlabs()">Save All Slabs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Surcharge Modal -->
+    <div class="modal" id="surchargeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="surchargeModalTitle">Manage Surcharge Slabs</h5>
+                    <button class="close-btn" onclick="closeSurchargeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                <div class="info-box info-box-secondary" style="margin-bottom: 1rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div>
+                        <strong>Regime:</strong> <span id="surchargeRegimeName">-</span><br>
+                        Surcharge is an additional tax on high-income earners, calculated on base tax amount.
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-2" style="margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>Financial Year</label>
+                        <div id="surchargeFinancialYearDropdown"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="surchargeEffectiveFrom">Effective From <span class="required">*</span></label>
+                        <input type="date" id="surchargeEffectiveFrom" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="slab-table-wrapper">
+                    <table class="slab-table surcharge-table" id="surchargeTable">
+                        <thead>
+                            <tr>
+                                <th>Income From (₹)</th>
+                                <th>Income To (₹)</th>
+                                <th>Surcharge Rate (%)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="surchargeTableBody">
+                            <!-- Surcharge slabs will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addSurchargeRow()" style="margin-top: 0.5rem;">
+                    + Add Surcharge Slab
+                </button>
+
+                <input type="hidden" id="surchargeRegimeId">
+            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSurchargeModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAllSurcharges()">Save Surcharge Slabs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Cess Modal -->
+    <div class="modal" id="taxCessModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxCessModalTitle">Configure Tax Cess</h5>
+                    <button class="close-btn" onclick="closeTaxCessModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="taxCessForm" onsubmit="saveTaxCess(event)">
+                    <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cessCode">Cess Code <span class="required">*</span></label>
+                            <input type="text" id="cessCode" class="form-control" value="HEC" placeholder="e.g., HEC" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cessName">Cess Name <span class="required">*</span></label>
+                            <input type="text" id="cessName" class="form-control" value="Health & Education Cess" placeholder="e.g., Health & Education Cess" required>
+                        </div>
+                    </div>
+                    <div class="form-grid form-grid-2">
+                        <div class="form-group">
+                            <label for="cessRate">Cess Rate (%) <span class="required">*</span></label>
+                            <input type="number" id="cessRate" class="form-control" step="0.01" min="0" max="100" value="4.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cessAppliesOn">Applies On</label>
+                            <select id="cessAppliesOn" class="form-select">
+                                <option value="tax_plus_surcharge" selected>Tax + Surcharge</option>
+                                <option value="tax_only">Tax Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid form-grid-2">
+                        <div class="form-group">
+                            <label>Financial Year</label>
+                            <div id="cessFinancialYearDropdown"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cessEffectiveFrom">Effective From <span class="required">*</span></label>
+                            <input type="date" id="cessEffectiveFrom" class="form-control" required>
+                        </div>
+                    </div>
+                        <input type="hidden" id="cessId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeTaxCessModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Cess</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Year Modal -->
+    <div class="modal" id="financialYearModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financialYearModalTitle">Add Financial Year</h5>
+                    <button class="close-btn" onclick="closeFinancialYearModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="financialYearForm" onsubmit="saveFinancialYear(event)">
+                    <div class="modal-body">
+                        <div class="info-box info-box-secondary" style="margin-bottom: 1rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                Enter the starting year (e.g., 2024 for FY 2024-25). Dates will be auto-calculated.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fyStartYear">Starting Year <span class="required">*</span></label>
+                            <input type="number" id="fyStartYear" class="form-control" placeholder="e.g., 2024" min="2000" max="2100" required onchange="updateFYPreview()">
+                            <small class="form-text" id="fyPreviewText"></small>
+                        </div>
+
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label for="fyStartDate">Start Date</label>
+                                <input type="date" id="fyStartDate" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="fyEndDate">End Date</label>
+                                <input type="date" id="fyEndDate" class="form-control" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="fyIsCurrent">
+                                Set as Current Financial Year
+                            </label>
+                            <small class="form-text">The current FY is used as default for tax calculations and statutory filings</small>
+                        </div>
+
+                        <input type="hidden" id="fyId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeFinancialYearModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveFYBtn">Save Financial Year</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Rebate Modal -->
+    <div class="modal" id="taxRebateModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxRebateModalTitle">Add Tax Rebate</h5>
+                    <button class="close-btn" onclick="closeRebateModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="taxRebateForm" onsubmit="saveTaxRebate(event)">
+                    <div class="modal-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rebateSectionCode">Section Code <span class="required">*</span></label>
+                                <input type="text" id="rebateSectionCode" class="form-control" value="87A" placeholder="e.g., 87A" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="rebateSectionName">Section Name <span class="required">*</span></label>
+                                <input type="text" id="rebateSectionName" class="form-control" value="Section 87A Rebate" placeholder="e.g., Section 87A Rebate" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rebateRegimeId">Tax Regime <span class="required">*</span></label>
+                            <select id="rebateRegimeId" class="form-select" required>
+                                <option value="">Select Tax Regime</option>
+                            </select>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rebateIncomeThreshold">Income Threshold (₹) <span class="required">*</span></label>
+                                <input type="number" id="rebateIncomeThreshold" class="form-control" step="1" min="0" placeholder="e.g., 1200000" required>
+                                <small class="form-text">Maximum taxable income to qualify for rebate</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="rebateMaxAmount">Max Rebate Amount (₹) <span class="required">*</span></label>
+                                <input type="number" id="rebateMaxAmount" class="form-control" step="1" min="0" placeholder="e.g., 60000" required>
+                                <small class="form-text">Maximum rebate that can be claimed</small>
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label>Financial Year</label>
+                                <div id="rebateFinancialYearDropdown"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="rebateEffectiveFrom">Effective From <span class="required">*</span></label>
+                                <input type="date" id="rebateEffectiveFrom" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label for="rebateEffectiveTo">Effective To</label>
+                                <input type="date" id="rebateEffectiveTo" class="form-control">
+                                <small class="form-text">Leave empty for ongoing validity</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="rebatePriority">Priority</label>
+                                <input type="number" id="rebatePriority" class="form-control" value="0" min="0">
+                                <small class="form-text">Higher priority rebates are applied first</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rebateDescription">Description</label>
+                            <textarea id="rebateDescription" class="form-control" rows="2" placeholder="Brief description of this rebate"></textarea>
+                        </div>
+                        <input type="hidden" id="rebateId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeRebateModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveRebateBtn">Save Rebate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deduction Section Modal -->
+    <div class="modal" id="deductionSectionModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deductionSectionModalTitle">Add Deduction Section</h5>
+                    <button class="close-btn" onclick="closeDeductionSectionModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="deductionSectionForm" onsubmit="saveDeductionSection(event)">
+                    <div class="modal-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="deductionSectionCode">Section Code <span class="required">*</span></label>
+                                <input type="text" id="deductionSectionCode" class="form-control" placeholder="e.g., 80C, 80D, SD" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="deductionSectionName">Section Name <span class="required">*</span></label>
+                                <input type="text" id="deductionSectionName" class="form-control" placeholder="e.g., Investments under 80C" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="deductionMaxLimit">Maximum Limit (₹) <span class="required">*</span></label>
+                                <input type="number" id="deductionMaxLimit" class="form-control" step="1" min="0" placeholder="e.g., 150000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="deductionCategory">Category <span class="required">*</span></label>
+                                <select id="deductionCategory" class="form-select" required>
+                                    <option value="">Select Category</option>
+                                    <option value="standard_deduction">Standard Deduction</option>
+                                    <option value="investment">Investment (80C)</option>
+                                    <option value="health_insurance">Health Insurance (80D)</option>
+                                    <option value="housing_loan">Housing Loan Interest (24b)</option>
+                                    <option value="education_loan">Education Loan (80E)</option>
+                                    <option value="donation">Donations (80G)</option>
+                                    <option value="nps">NPS Contribution (80CCD)</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Applicable Tax Regimes <span class="required">*</span></label>
+                            <div class="checkbox-group" id="deductionRegimesCheckboxes">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <small class="form-text">Select which regimes allow this deduction</small>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label>Financial Year</label>
+                                <div id="deductionFinancialYearDropdown"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="deductionEffectiveFrom">Effective From <span class="required">*</span></label>
+                                <input type="date" id="deductionEffectiveFrom" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label for="deductionEffectiveTo">Effective To</label>
+                                <input type="date" id="deductionEffectiveTo" class="form-control">
+                                <small class="form-text">Leave empty for ongoing validity</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label" style="margin-top: 1.5rem;">
+                                    <input type="checkbox" id="deductionRequiresProof">
+                                    Requires Proof/Documentation
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="deductionDescription">Description</label>
+                            <textarea id="deductionDescription" class="form-control" rows="2" placeholder="Brief description of this deduction section"></textarea>
+                        </div>
+                        <input type="hidden" id="deductionSectionId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeDeductionSectionModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveDeductionSectionBtn">Save Deduction Section</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contribution Rule Edit Modal -->
+    <div class="modal" id="contributionRuleEditModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="contributionRuleEditModalTitle">Edit Contribution Rule</h5>
+                    <button class="close-btn" onclick="closeContributionRuleEditModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="contributionRuleEditForm" onsubmit="updateContributionRule(event)">
+                    <div class="modal-body">
+                        <div class="info-box info-box-secondary" style="margin-bottom: 1rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <div>
+                                <strong>Contribution Type:</strong> <span id="editRuleTypeName">-</span>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="editRuleEffectiveFrom">Effective From <span class="required">*</span></label>
+                                <input type="date" id="editRuleEffectiveFrom" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editRuleEffectiveTo">Effective To</label>
+                                <input type="date" id="editRuleEffectiveTo" class="form-control">
+                                <small class="form-text">Leave empty for ongoing validity</small>
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-4">
+                            <div class="form-group">
+                                <label for="editEmployeeRate">Employee Rate (%) <span class="required">*</span></label>
+                                <input type="number" id="editEmployeeRate" class="form-control" step="0.01" min="0" max="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editEmployerRate">Employer Rate (%) <span class="required">*</span></label>
+                                <input type="number" id="editEmployerRate" class="form-control" step="0.01" min="0" max="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editWageCeiling">Wage Ceiling (₹)</label>
+                                <input type="number" id="editWageCeiling" class="form-control" step="1" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="editMinWage">Min Wage (₹)</label>
+                                <input type="number" id="editMinWage" class="form-control" step="1" min="0">
+                            </div>
+                        </div>
+                        <input type="hidden" id="editRuleId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeContributionRuleEditModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Rule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Type Modal -->
+    <div class="modal" id="returnTypeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="returnTypeModalTitle">Add Return Type</h5>
+                    <button class="close-btn" onclick="closeReturnTypeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="returnTypeForm" onsubmit="saveReturnType(event)">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="returnTypeCode">Return Code <span class="required">*</span></label>
+                                <input type="text" id="returnTypeCode" class="form-control" placeholder="e.g., ECR" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="returnTypeName">Return Name <span class="required">*</span></label>
+                                <input type="text" id="returnTypeName" class="form-control" placeholder="e.g., Electronic Challan Return" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="returnFrequency">Filing Frequency <span class="required">*</span></label>
+                                <select id="returnFrequency" class="form-control" required>
+                                    <option value="">Select Frequency</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="half_yearly">Half Yearly</option>
+                                    <option value="annual">Annual</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="returnDueDay">Due Day of Month</label>
+                                <input type="number" id="returnDueDay" class="form-control" placeholder="e.g., 15" min="1" max="31">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="returnAuthority">Filing Authority</label>
+                                <input type="text" id="returnAuthority" class="form-control" placeholder="e.g., EPFO">
+                            </div>
+                            <div class="form-group">
+                                <label for="returnPortal">Portal URL</label>
+                                <input type="url" id="returnPortal" class="form-control" placeholder="e.g., https://unifiedportal.epfindia.gov.in">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="returnDescription">Description</label>
+                            <textarea id="returnDescription" class="form-control" rows="2" placeholder="Return description..."></textarea>
+                        </div>
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="returnIsActive" class="form-check-input" checked>
+                            <label for="returnIsActive" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeReturnTypeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveReturnTypeBtn">
+                            <span class="btn-text">Save</span>
+                            <span class="btn-spinner" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statement Type Modal -->
+    <div class="modal" id="statementTypeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statementTypeModalTitle">Add Statement Type</h5>
+                    <button class="close-btn" onclick="closeStatementTypeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="statementTypeForm" onsubmit="saveStatementType(event)">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="statementTypeCode">Statement Code <span class="required">*</span></label>
+                                <input type="text" id="statementTypeCode" class="form-control" placeholder="e.g., FORM16" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="statementTypeName">Statement Name <span class="required">*</span></label>
+                                <input type="text" id="statementTypeName" class="form-control" placeholder="e.g., Form 16 - TDS Certificate" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="statementCategory">Category <span class="required">*</span></label>
+                                <select id="statementCategory" class="form-control" required>
+                                    <option value="">Select Category</option>
+                                    <option value="tds_certificate">TDS Certificate</option>
+                                    <option value="salary_statement">Salary Statement</option>
+                                    <option value="investment_proof">Investment Proof</option>
+                                    <option value="tax_computation">Tax Computation</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="statementTemplate">Template Code</label>
+                                <input type="text" id="statementTemplate" class="form-control" placeholder="e.g., TPL_FORM16_A">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="statementFormat">Output Format</label>
+                                <select id="statementFormat" class="form-control">
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="csv">CSV</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="statementSection">Tax Section</label>
+                                <input type="text" id="statementSection" class="form-control" placeholder="e.g., Section 203">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="statementDescription">Description</label>
+                            <textarea id="statementDescription" class="form-control" rows="2" placeholder="Statement description..."></textarea>
+                        </div>
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="statementIsActive" class="form-check-input" checked>
+                            <label for="statementIsActive" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeStatementTypeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveStatementTypeBtn">
+                            <span class="btn-text">Save</span>
+                            <span class="btn-spinner" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indian State Modal -->
+    <div class="modal" id="indianStateModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="indianStateModalTitle">Add Indian State</h5>
+                    <button class="close-btn" onclick="closeIndianStateModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="indianStateForm" onsubmit="saveIndianState(event)">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stateCode">State Code <span class="required">*</span></label>
+                                <input type="text" id="stateCode" class="form-control" placeholder="e.g., MH, KA, DL" maxlength="3" required>
+                                <small class="form-text">2-3 uppercase letters (e.g., MH for Maharashtra)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="stateName">State Name <span class="required">*</span></label>
+                                <input type="text" id="stateName" class="form-control" placeholder="e.g., Maharashtra" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stateNameLocal">State Name (Local)</label>
+                                <input type="text" id="stateNameLocal" class="form-control" placeholder="e.g., महाराष्ट्र">
+                                <small class="form-text">Name in regional script (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="stateDisplayOrder">Display Order</label>
+                                <input type="number" id="stateDisplayOrder" class="form-control" placeholder="1" min="1" value="1">
+                            </div>
+                        </div>
+                        <div class="form-row state-toggles-row">
+                            <label class="toggle-switch" for="stateIsUT">
+                                <input type="checkbox" id="stateIsUT">
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Union Territory</span>
+                            </label>
+                            <label class="toggle-switch" for="stateHasPT">
+                                <input type="checkbox" id="stateHasPT" checked>
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Has Professional Tax</span>
+                            </label>
+                            <label class="toggle-switch" for="stateHasLWF">
+                                <input type="checkbox" id="stateHasLWF">
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Has LWF</span>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="statePTRegBody">PT Regulatory Body</label>
+                                <input type="text" id="statePTRegBody" class="form-control" placeholder="e.g., Maharashtra State Tax on Professions">
+                            </div>
+                            <div class="form-group">
+                                <label for="statePTRegWebsite">PT Regulatory Website</label>
+                                <input type="url" id="statePTRegWebsite" class="form-control" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="form-row" id="lwfFieldsRow">
+                            <div class="form-group">
+                                <label for="stateLWFRegBody">LWF Regulatory Body</label>
+                                <input type="text" id="stateLWFRegBody" class="form-control" placeholder="e.g., Maharashtra Labour Welfare Board">
+                            </div>
+                            <div class="form-group">
+                                <label for="stateLWFRegWebsite">LWF Regulatory Website</label>
+                                <input type="url" id="stateLWFRegWebsite" class="form-control" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stateEffectiveFrom">Effective From</label>
+                                <input type="date" id="stateEffectiveFrom" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="stateNotes">Notes</label>
+                            <textarea id="stateNotes" class="form-control" rows="2" placeholder="Additional notes about the state..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeIndianStateModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveIndianStateBtn">
+                            <span class="btn-text">Save</span>
+                            <span class="btn-spinner" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PT Configuration Modal -->
+    <div class="modal" id="ptConfigModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ptConfigModalTitle">Add PT Configuration</h5>
+                    <button class="close-btn" onclick="closePTConfigModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="ptConfigForm">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptConfigState">State <span class="required">*</span></label>
+                                <select id="ptConfigState" class="form-control" required>
+                                    <option value="">-- Select State --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigCalcType">Calculation Type <span class="required">*</span></label>
+                                <select id="ptConfigCalcType" class="form-control" required onchange="togglePTConfigCalcType()">
+                                    <option value="slab">Slab-based</option>
+                                    <option value="fixed">Fixed Amount</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="ptConfigName">Configuration Name <span class="required">*</span></label>
+                                <input type="text" id="ptConfigName" class="form-control" placeholder="e.g., Maharashtra PT FY 2024-25" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptConfigFY">Financial Year</label>
+                                <input type="text" id="ptConfigFY" class="form-control" placeholder="e.g., 2024-25">
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigEffectiveFrom">Effective From <span class="required">*</span></label>
+                                <input type="date" id="ptConfigEffectiveFrom" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigEffectiveTo">Effective To</label>
+                                <input type="date" id="ptConfigEffectiveTo" class="form-control">
+                            </div>
+                        </div>
+
+                        <div id="ptConfigFixedSection" style="display: none;">
+                            <div class="form-group">
+                                <label for="ptConfigFixedAmount">Fixed Amount (Monthly) <span class="required">*</span></label>
+                                <input type="number" id="ptConfigFixedAmount" class="form-control" min="0" step="1" placeholder="e.g., 200">
+                            </div>
+                        </div>
+
+                        <div id="ptConfigSlabNote" class="info-box info-box-primary" style="margin: 16px 0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <span>For slab-based calculation, save this configuration first, then add slabs from the PT Slabs tab.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ptConfigExemptionThreshold">Exemption Threshold (Salary below this is exempt)</label>
+                            <input type="number" id="ptConfigExemptionThreshold" class="form-control" min="0" step="100" placeholder="e.g., 15000">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptConfigSpecialMonth">Special Month (e.g., February for MH)</label>
+                                <select id="ptConfigSpecialMonth" class="form-control">
+                                    <option value="">None</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigSpecialMonthAmount">Special Month Amount</label>
+                                <input type="number" id="ptConfigSpecialMonthAmount" class="form-control" min="0" step="1" placeholder="e.g., 300">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptConfigGender">Applies to Gender</label>
+                                <select id="ptConfigGender" class="form-control">
+                                    <option value="">All</option>
+                                    <option value="male">Male Only</option>
+                                    <option value="female">Female Only</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigMinAge">Min Age</label>
+                                <input type="number" id="ptConfigMinAge" class="form-control" min="18" max="99" placeholder="e.g., 18">
+                            </div>
+                            <div class="form-group">
+                                <label for="ptConfigMaxAge">Max Age</label>
+                                <input type="number" id="ptConfigMaxAge" class="form-control" min="18" max="99" placeholder="e.g., 60">
+                            </div>
+                        </div>
+
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="ptConfigIsActive" class="form-check-input" checked>
+                            <label for="ptConfigIsActive" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closePTConfigModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="savePTConfig()">
+                            <span class="btn-text">Save Configuration</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- LWF Configuration Modal -->
+    <div class="modal" id="lwfConfigModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lwfConfigModalTitle">Add LWF Configuration</h5>
+                    <button class="close-btn" onclick="closeLWFConfigModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="lwfConfigForm">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="lwfConfigState">State <span class="required">*</span></label>
+                                <select id="lwfConfigState" class="form-control" required>
+                                    <option value="">-- Select State (LWF Enabled) --</option>
+                                </select>
+                                <small class="form-text">Only states with LWF enabled are shown. Enable LWF in Indian States configuration first.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="lwfConfigName">Configuration Name <span class="required">*</span></label>
+                                <input type="text" id="lwfConfigName" class="form-control" placeholder="e.g., Maharashtra LWF Half-Yearly" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="lwfConfigFinancialYear">Financial Year</label>
+                                <input type="text" id="lwfConfigFinancialYear" class="form-control" placeholder="e.g., 2024-25">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lwfConfigFrequency">Deduction Frequency <span class="required">*</span></label>
+                                <select id="lwfConfigFrequency" class="form-control" required onchange="toggleLWFApplicableMonths()">
+                                    <option value="monthly">Monthly</option>
+                                    <option value="half_yearly">Half-Yearly</option>
+                                    <option value="annual">Annual</option>
+                                </select>
+                                <small class="form-text">How often the LWF is deducted from employees</small>
+                            </div>
+                            <div class="form-group" id="lwfApplicableMonthsGroup" style="display: none;">
+                                <label>Applicable Months <span class="required">*</span></label>
+                                <div class="month-dropdown-container" id="lwfMonthDropdown">
+                                    <div class="month-dropdown-trigger" onclick="toggleMonthDropdown()">
+                                        <div class="month-selected-tags" id="lwfSelectedMonthsTags">
+                                            <span class="month-placeholder">Select months...</span>
+                                        </div>
+                                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="month-dropdown-menu" id="lwfMonthDropdownMenu">
+                                        <div class="month-toggle-grid">
+                                            <button type="button" class="month-toggle-btn" data-month="1" onclick="toggleMonth(1)">Jan</button>
+                                            <button type="button" class="month-toggle-btn" data-month="2" onclick="toggleMonth(2)">Feb</button>
+                                            <button type="button" class="month-toggle-btn" data-month="3" onclick="toggleMonth(3)">Mar</button>
+                                            <button type="button" class="month-toggle-btn" data-month="4" onclick="toggleMonth(4)">Apr</button>
+                                            <button type="button" class="month-toggle-btn" data-month="5" onclick="toggleMonth(5)">May</button>
+                                            <button type="button" class="month-toggle-btn" data-month="6" onclick="toggleMonth(6)">Jun</button>
+                                            <button type="button" class="month-toggle-btn" data-month="7" onclick="toggleMonth(7)">Jul</button>
+                                            <button type="button" class="month-toggle-btn" data-month="8" onclick="toggleMonth(8)">Aug</button>
+                                            <button type="button" class="month-toggle-btn" data-month="9" onclick="toggleMonth(9)">Sep</button>
+                                            <button type="button" class="month-toggle-btn" data-month="10" onclick="toggleMonth(10)">Oct</button>
+                                            <button type="button" class="month-toggle-btn" data-month="11" onclick="toggleMonth(11)">Nov</button>
+                                            <button type="button" class="month-toggle-btn" data-month="12" onclick="toggleMonth(12)">Dec</button>
+                                        </div>
+                                        <div class="month-dropdown-footer">
+                                            <button type="button" class="btn-link" onclick="clearAllMonths()">Clear All</button>
+                                            <button type="button" class="btn-link" onclick="closeMonthDropdown()">Done</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="form-text">Select months when LWF is deducted (e.g., June & December for half-yearly)</small>
+                            </div>
+                        </div>
+
+                        <div class="info-box info-box-primary" style="margin: 16px 0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <span>LWF has both employee and employer contributions. The employer contribution is booked as company expense, not deducted from salary.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lwfConfigEmployeeAmount">Employee Contribution <span class="required">*</span></label>
+                                <input type="number" id="lwfConfigEmployeeAmount" class="form-control" min="0" step="0.01" placeholder="e.g., 25" required>
+                                <small class="form-text">Fixed amount deducted from employee salary</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="lwfConfigEmployerAmount">Employer Contribution <span class="required">*</span></label>
+                                <input type="number" id="lwfConfigEmployerAmount" class="form-control" min="0" step="0.01" placeholder="e.g., 75" required>
+                                <small class="form-text">Amount paid by employer (not deducted from salary)</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lwfConfigEffectiveFrom">Effective From <span class="required">*</span></label>
+                                <input type="date" id="lwfConfigEffectiveFrom" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lwfConfigEffectiveTo">Effective To</label>
+                                <input type="date" id="lwfConfigEffectiveTo" class="form-control">
+                                <small class="form-text">Leave empty for no end date</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lwfConfigNotes">Notes</label>
+                            <textarea id="lwfConfigNotes" class="form-control" rows="2" placeholder="Additional notes about this LWF configuration"></textarea>
+                        </div>
+
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="lwfConfigIsActive" class="form-check-input" checked>
+                            <label for="lwfConfigIsActive" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeLWFConfigModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveLWFConfig()">
+                            <span class="btn-text">Save Configuration</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PT Exemption Modal -->
+    <div class="modal" id="ptExemptionModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ptExemptionModalTitle">Add Exemption Rule</h5>
+                    <button class="close-btn" onclick="closeModal('ptExemptionModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <form id="ptExemptionForm">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptExemptionState">State (leave empty for all states)</label>
+                                <select id="ptExemptionState" class="form-control">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptExemptionType">Exemption Type <span class="required">*</span></label>
+                                <select id="ptExemptionType" class="form-control" required>
+                                    <option value="">Select Type</option>
+                                    <option value="gender">Gender-based</option>
+                                    <option value="age">Age/Senior Citizen</option>
+                                    <option value="disability">Disability</option>
+                                    <option value="income">Income Threshold</option>
+                                    <option value="category">Category (Freedom Fighter, etc.)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptExemptionCode">Exemption Code <span class="required">*</span></label>
+                                <input type="text" id="ptExemptionCode" class="form-control" placeholder="e.g., KA-WOMEN" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptExemptionName">Exemption Name <span class="required">*</span></label>
+                                <input type="text" id="ptExemptionName" class="form-control" placeholder="e.g., Women Exemption - Karnataka" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptExemptionGender">Applicable Gender</label>
+                                <select id="ptExemptionGender" class="form-control">
+                                    <option value="">Any</option>
+                                    <option value="female">Female</option>
+                                    <option value="male">Male</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ptExemptionMinAge">Min Age</label>
+                                <input type="number" id="ptExemptionMinAge" class="form-control" min="0" max="120" placeholder="e.g., 60">
+                            </div>
+                            <div class="form-group">
+                                <label for="ptExemptionMaxAge">Max Age</label>
+                                <input type="number" id="ptExemptionMaxAge" class="form-control" min="0" max="120" placeholder="e.g., 99">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ptExemptionDisabilityPct">Disability Percentage (min %)</label>
+                                <input type="number" id="ptExemptionDisabilityPct" class="form-control" min="0" max="100" step="1" placeholder="e.g., 40">
+                            </div>
+                            <div class="form-group">
+                                <label for="ptExemptionIncomeThreshold">Income Threshold (max)</label>
+                                <input type="number" id="ptExemptionIncomeThreshold" class="form-control" min="0" step="1000" placeholder="e.g., 15000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ptExemptionCategory">Category Name (for category-based exemptions)</label>
+                            <input type="text" id="ptExemptionCategory" class="form-control" placeholder="e.g., Freedom Fighter">
+                        </div>
+
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="ptExemptionRequiresDoc" class="form-check-input">
+                            <label for="ptExemptionRequiresDoc" class="form-check-label">Requires Document Proof</label>
+                        </div>
+
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="ptExemptionIsActive" class="form-check-input" checked>
+                            <label for="ptExemptionIsActive" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('ptExemptionModal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="savePTExemption()">
+                            <span class="btn-text">Save Exemption</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

@@ -2,6 +2,7 @@
 let currentEmployee = null;
 let isClockedIn = false;
 let isSetupComplete = false;
+let isComplianceComplete = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -86,20 +87,64 @@ async function checkSetupStatus() {
     try {
         const status = await api.request('/hrms/dashboard/setup-status');
         isSetupComplete = status.is_setup_complete;
+        isComplianceComplete = status.is_compliance_complete;
 
         // Check if we have at least basic organization setup (office, department, designation, shift)
         // Payroll should be accessible even if salary structures aren't set up yet
         hasBasicSetup = status.has_office && status.has_department &&
                         status.has_designation && status.has_shift;
 
-        if (!isSetupComplete) {
-            // Show warning banner
-            const banner = document.getElementById('setupWarningBanner');
-            const message = document.getElementById('setupWarningMessage');
-            const missingList = document.getElementById('setupMissingItems');
+        const banner = document.getElementById('setupWarningBanner');
+        const message = document.getElementById('setupWarningMessage');
+        const missingList = document.getElementById('setupMissingItems');
 
+        // STEP 1: Check Compliance First (MUST be complete before organization setup)
+        if (!isComplianceComplete) {
+            // Show compliance warning banner
             if (banner) {
                 banner.style.display = 'flex';
+                banner.classList.add('compliance-warning');
+            }
+
+            if (message) {
+                message.textContent = status.compliance_message || 'Please complete the Compliance section first before setting up the organization.';
+            }
+
+            if (missingList && status.compliance_missing_items && status.compliance_missing_items.length > 0) {
+                missingList.innerHTML = status.compliance_missing_items.map(item => `<li>${item}</li>`).join('');
+            }
+
+            // Disable ALL cards except Compliance until compliance is done
+            const cardsToDisable = ['cardOrganization', 'cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
+            cardsToDisable.forEach(cardId => {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.classList.add('disabled');
+                }
+            });
+
+            // Enable Compliance card - it should always be accessible
+            const complianceCard = document.getElementById('cardCompliance');
+            if (complianceCard) {
+                complianceCard.classList.remove('disabled');
+                complianceCard.classList.add('highlight-action');
+            }
+
+            // Update the "Complete Setup" button to go to compliance page
+            const setupButton = document.getElementById('setupActionButton');
+            if (setupButton) {
+                setupButton.setAttribute('onclick', "navigateTo('compliance.html')");
+            }
+
+            return; // Don't check organization setup if compliance is not complete
+        }
+
+        // STEP 2: Check Organization Setup (only if compliance is complete)
+        if (!isSetupComplete) {
+            // Show organization setup warning banner
+            if (banner) {
+                banner.style.display = 'flex';
+                banner.classList.remove('compliance-warning');
             }
 
             if (message && status.setup_message) {
@@ -108,6 +153,20 @@ async function checkSetupStatus() {
 
             if (missingList && status.missing_items && status.missing_items.length > 0) {
                 missingList.innerHTML = status.missing_items.map(item => `<li>${item}</li>`).join('');
+            }
+
+            // Enable Compliance card (it's complete)
+            const complianceCard = document.getElementById('cardCompliance');
+            if (complianceCard) {
+                complianceCard.classList.remove('disabled');
+                complianceCard.classList.remove('highlight-action');
+            }
+
+            // Enable Organization card - this is what needs to be done next
+            const organizationCard = document.getElementById('cardOrganization');
+            if (organizationCard) {
+                organizationCard.classList.remove('disabled');
+                organizationCard.classList.add('highlight-action');
             }
 
             // Disable cards that require full setup
@@ -120,7 +179,6 @@ async function checkSetupStatus() {
             });
 
             // Payroll should be accessible when basic organization is set up
-            // (office, department, designation, shift) so users can create salary structures
             const payrollCard = document.getElementById('cardPayroll');
             if (payrollCard) {
                 if (hasBasicSetup) {
@@ -130,18 +188,19 @@ async function checkSetupStatus() {
                 }
             }
         } else {
+            // STEP 3: Everything is complete!
             // Hide warning banner if visible
-            const banner = document.getElementById('setupWarningBanner');
             if (banner) {
                 banner.style.display = 'none';
             }
 
-            // Enable all cards
-            const cardsToEnable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
+            // Enable all cards and remove highlight
+            const cardsToEnable = ['cardCompliance', 'cardOrganization', 'cardEmployees', 'cardAttendance', 'cardLeave', 'cardPayroll', 'cardReports'];
             cardsToEnable.forEach(cardId => {
                 const card = document.getElementById(cardId);
                 if (card) {
                     card.classList.remove('disabled');
+                    card.classList.remove('highlight-action');
                 }
             });
         }
@@ -149,10 +208,11 @@ async function checkSetupStatus() {
         console.error('Error checking setup status:', error);
         // If error, assume setup is NOT complete - disable cards that require setup
         isSetupComplete = false;
+        isComplianceComplete = false;
         hasBasicSetup = false;
 
-        // Disable cards that require setup
-        const cardsToDisable = ['cardEmployees', 'cardAttendance', 'cardLeave', 'cardReports', 'cardPayroll'];
+        // Disable cards that require setup (except compliance which should always work)
+        const cardsToDisable = ['cardOrganization', 'cardEmployees', 'cardAttendance', 'cardLeave', 'cardReports', 'cardPayroll'];
         cardsToDisable.forEach(cardId => {
             const card = document.getElementById(cardId);
             if (card) {
@@ -167,7 +227,7 @@ async function checkSetupStatus() {
         }
         const message = document.getElementById('setupWarningMessage');
         if (message) {
-            message.textContent = 'Please complete organization setup before accessing other features.';
+            message.textContent = 'Please complete Compliance and Organization setup before accessing other features.';
         }
     }
 }
@@ -176,6 +236,26 @@ async function checkSetupStatus() {
 let hasBasicSetup = false;
 
 function navigateIfSetupComplete(page) {
+    // Compliance is always accessible
+    if (page === 'compliance.html') {
+        navigateTo(page);
+        return;
+    }
+
+    // Check compliance first
+    if (!isComplianceComplete) {
+        showToast('Please complete Compliance setup first', 'error');
+        // Redirect to compliance page
+        navigateTo('compliance.html');
+        return;
+    }
+
+    // Allow organization navigation once compliance is done
+    if (page === 'organization.html') {
+        navigateTo(page);
+        return;
+    }
+
     // Allow payroll navigation if basic setup is done (office, department, designation, shift)
     if (page === 'payroll.html' && hasBasicSetup) {
         navigateTo(page);

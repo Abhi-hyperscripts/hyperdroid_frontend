@@ -762,7 +762,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-xl);
-    overflow: hidden !important;
+    overflow: hidden;
     max-height: calc(100vh - 100px) !important;
     width: 100%;
 }
@@ -1118,7 +1118,7 @@
     align-items: center;
     gap: 4px;
     padding: 6px 12px;
-    background: linear-gradient(135deg, var(--color-success, #10b981) 0%, #059669 100%);
+    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
     color: white;
     font-size: 0.7rem;
     font-weight: 600;
@@ -5334,7 +5334,7 @@ input:checked + .slider:before {
 }
 
 .photo-remove-btn:hover {
-    background: #dc2626;
+    background: var(--color-danger-dark);
     transform: scale(1.1);
 }
 
@@ -6944,7 +6944,7 @@ input:checked + .slider:before {
    Ensures timeline cards in history modals have proper dark backgrounds
    ============================================================= */
 [data-theme="dark"] .timeline-content {
-    background-color: #334155 !important;
+    background-color: var(--bg-tertiary) !important;
     border-color: var(--border-color) !important;
 }
 
@@ -8172,10 +8172,19 @@ input:checked + .slider:before {
     gap: 8px;
 }
 
-.office-name {
+.office-name,
+.state-name {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.state-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
 
 .office-dept-count {
@@ -9521,7 +9530,7 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .current-salary-section h4 {
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .salary-card .salary-label {
@@ -9529,7 +9538,7 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .salary-card .salary-value {
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .current-salary-section .effective-date {
@@ -9542,7 +9551,7 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .salary-history-table tbody tr.current-salary td {
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Office Status Cards */
@@ -9559,12 +9568,12 @@ input:checked + .slider:before {
 /* Document Status Badges */
 [data-theme="dark"] .doc-status.pending {
     background: rgba(245, 158, 11, 0.2) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
 }
 
 [data-theme="dark"] .doc-status.verified {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Status Badges - Success variants */
@@ -9572,7 +9581,7 @@ input:checked + .slider:before {
 [data-theme="dark"] .status-badge.present,
 [data-theme="dark"] .status-badge.approved {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Status Badges - Danger variants */
@@ -9581,7 +9590,7 @@ input:checked + .slider:before {
 [data-theme="dark"] .status-badge.rejected,
 [data-theme="dark"] .status-badge.terminated {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 /* Status Badges - Warning variants */
@@ -9590,40 +9599,40 @@ input:checked + .slider:before {
 [data-theme="dark"] .status-badge.leave,
 [data-theme="dark"] .status-badge.late {
     background: rgba(245, 158, 11, 0.2) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
 }
 
 /* Status Badges - Info variants */
 [data-theme="dark"] .status-badge.processing {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 /* Office Type Badges */
 [data-theme="dark"] .badge-regional {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 [data-theme="dark"] .badge-branch {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .badge-satellite {
     background: rgba(245, 158, 11, 0.2) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
 }
 
 /* Holiday Type Badges */
 [data-theme="dark"] .badge-public {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 [data-theme="dark"] .badge-restricted {
     background: rgba(245, 158, 11, 0.2) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
 }
 
 /* Info Boxes & Alerts */
@@ -9651,43 +9660,43 @@ input:checked + .slider:before {
 /* Roster Type Badges */
 [data-theme="dark"] .badge-scheduled {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .badge-temporary {
     background: rgba(245, 158, 11, 0.2) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
 }
 
 [data-theme="dark"] .badge-swap {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 [data-theme="dark"] .badge-override {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 /* Transfer Type Badges */
 [data-theme="dark"] .transfer-type-badge.transfer {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 [data-theme="dark"] .transfer-type-badge.promotion {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .transfer-type-badge.demotion {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 [data-theme="dark"] .transfer-type-badge.deputation {
     background: rgba(168, 85, 247, 0.2) !important;
-    color: #c084fc !important;
+    color: var(--color-purple-text) !important;
 }
 
 /* Calendar Days */
@@ -9717,24 +9726,24 @@ input:checked + .slider:before {
 /* Weekend Badge */
 [data-theme="dark"] .weekend-badge {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 /* Current Badge */
 [data-theme="dark"] .current-badge {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Designation Count Badges */
 [data-theme="dark"] .designation-count {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .designation-count-zero {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 /* No Designations Warning */
@@ -9755,42 +9764,42 @@ input:checked + .slider:before {
 /* Tree Node Badges */
 [data-theme="dark"] .tree-node-badge {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .tree-node-badge.inactive {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 /* Upload Button with File */
 [data-theme="dark"] .upload-btn-sm.has-file {
     background: rgba(16, 185, 129, 0.2) !important;
     border-color: rgba(16, 185, 129, 0.4) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 [data-theme="dark"] .file-name-badge {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Encash Balance Alerts */
 [data-theme="dark"] .encash-balance-info .alert-info {
     background: rgba(59, 130, 246, 0.15) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
     border-color: rgba(59, 130, 246, 0.4) !important;
 }
 
 [data-theme="dark"] .encash-balance-info .alert-success {
     background: rgba(16, 185, 129, 0.15) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
     border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
 [data-theme="dark"] .encash-payout-value {
     background: rgba(16, 185, 129, 0.15) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Info Salary Box */
@@ -9818,7 +9827,7 @@ input:checked + .slider:before {
 
 [data-theme="dark"] .dropdown-dept-item.selected .dept-code {
     background: rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
+    color: var(--color-info-text) !important;
 }
 
 /* Payroll Draft Row Highlight */
@@ -9829,20 +9838,20 @@ input:checked + .slider:before {
 /* Button Icon Variants */
 [data-theme="dark"] .btn-icon-warning {
     background: rgba(245, 158, 11, 0.15) !important;
-    color: #fbbf24 !important;
+    color: var(--color-warning-text) !important;
     border-color: rgba(245, 158, 11, 0.4) !important;
 }
 
 [data-theme="dark"] .btn-icon-success {
     background: rgba(16, 185, 129, 0.15) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
     border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
 /* Remove Button */
 [data-theme="dark"] .remove-btn-sm {
     background: rgba(239, 68, 68, 0.2) !important;
-    color: #f87171 !important;
+    color: var(--color-danger-text) !important;
 }
 
 [data-theme="dark"] .remove-btn-sm:hover {
@@ -9852,7 +9861,7 @@ input:checked + .slider:before {
 /* Payslip Status Badge */
 [data-theme="dark"] .status-badge.status-paid {
     background: rgba(16, 185, 129, 0.2) !important;
-    color: #4ade80 !important;
+    color: var(--color-success-text) !important;
 }
 
 /* Action Button Hover States */
@@ -10768,14 +10777,14 @@ input:checked + .slider:before {
 }
 
 .salary-actions .btn-icon.btn-danger {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #ef4444;
+    background: var(--danger-alpha-10);
+    border-color: var(--danger-alpha-30);
+    color: var(--color-danger);
 }
 
 .salary-actions .btn-icon.btn-danger:hover {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: #ef4444;
+    background: var(--danger-alpha-20);
+    border-color: var(--color-danger);
 }
 
 .salary-actions .btn-icon svg {
@@ -11026,4 +11035,1310 @@ input:checked + .slider:before {
 [data-theme="dark"] .month-picker-all-btn:hover,
 [data-theme="dark"] .month-picker-nav:hover:not(:disabled) {
     background: var(--bg-hover, #374151);
+}
+
+/* =====================================================
+   Salary Component Badges & Immutable Components
+   ===================================================== */
+
+/* Component badges container */
+.component-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Basic component badge (orange/amber) */
+.component-badge.basic-badge {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+/* Balance/auto-balance component badge (blue) */
+.component-badge.balance-badge {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+/* Statutory/compliance-linked component badge (green) */
+.component-badge.statutory-badge {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.component-badge.statutory-badge svg {
+    width: 12px;
+    height: 12px;
+    stroke: #065f46;
+}
+
+/* Immutable row styling */
+tr.immutable-row {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+}
+
+tr.immutable-row:hover {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, var(--bg-hover, #f9fafb) 50%);
+}
+
+/* Locked indicator (replaces edit/delete buttons for immutable components) */
+.locked-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--bg-tertiary, #f3f4f6);
+    border: 1px solid var(--border-secondary, #e5e7eb);
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.locked-indicator svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-secondary, #6b7280);
+}
+
+/* Compliance linked value display */
+.compliance-linked-value {
+    font-style: italic;
+    color: var(--color-success, #10b981);
+}
+
+/* Dark theme adjustments for component badges */
+[data-theme="dark"] .component-badge.basic-badge {
+    background: linear-gradient(135deg, #78350f, #92400e);
+    color: #fef3c7;
+    border-color: #b45309;
+}
+
+[data-theme="dark"] .component-badge.balance-badge {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+    color: #dbeafe;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .component-badge.statutory-badge {
+    background: linear-gradient(135deg, #064e3b, #065f46);
+    color: #d1fae5;
+    border-color: #10b981;
+}
+
+[data-theme="dark"] .component-badge.statutory-badge svg {
+    stroke: #d1fae5;
+}
+
+[data-theme="dark"] tr.immutable-row {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+}
+
+[data-theme="dark"] tr.immutable-row:hover {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, var(--bg-hover, #374151) 50%);
+}
+
+[data-theme="dark"] .locked-indicator {
+    background: var(--bg-tertiary, #374151);
+    border-color: var(--border-secondary, #4b5563);
+}
+
+[data-theme="dark"] .compliance-linked-value {
+    color: #34d399;
+}
+
+/* =====================================================
+   Month Dropdown Multi-Select
+   ===================================================== */
+.month-dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.month-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg-secondary, #1f2937);
+    border: 1px solid var(--border-primary, #374151);
+    border-radius: 8px;
+    cursor: pointer;
+    min-height: 44px;
+    transition: border-color 0.2s ease;
+}
+
+.month-dropdown-trigger:hover {
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.month-dropdown-container.open .month-dropdown-trigger {
+    border-color: var(--brand-primary, #6366f1);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.month-selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.month-placeholder {
+    color: var(--text-tertiary, #6b7280);
+    font-size: 14px;
+}
+
+.month-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--brand-primary, #6366f1);
+    color: white;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.month-tag .remove-month {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    line-height: 1;
+}
+
+.month-tag .remove-month:hover {
+    opacity: 1;
+}
+
+.dropdown-arrow {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+    stroke: var(--text-secondary, #9ca3af);
+}
+
+.month-dropdown-container.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.month-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary, #1f2937);
+    border: 1px solid var(--brand-primary, #6366f1);
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.month-dropdown-container.open .month-dropdown-menu {
+    display: block;
+}
+
+.month-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px;
+}
+
+.month-toggle-btn {
+    padding: 10px 8px;
+    background: var(--bg-tertiary, #374151);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text-primary, #e5e7eb);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.month-toggle-btn:hover {
+    background: var(--bg-hover, #4b5563);
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.month-toggle-btn.selected {
+    background: var(--brand-primary, #6366f1);
+    color: white;
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.month-dropdown-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border-primary, #374151);
+    background: var(--bg-tertiary, #111827);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.month-dropdown-footer .btn-link {
+    background: none;
+    border: none;
+    color: var(--brand-primary, #6366f1);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.month-dropdown-footer .btn-link:hover {
+    background: var(--bg-hover, #374151);
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .month-dropdown-trigger {
+    background: var(--bg-primary, #ffffff);
+    border-color: var(--border-primary, #d1d5db);
+}
+
+[data-theme="light"] .month-toggle-btn {
+    background: var(--bg-tertiary, #f3f4f6);
+    color: var(--text-primary, #111827);
+}
+
+[data-theme="light"] .month-toggle-btn:hover {
+    background: var(--bg-hover, #e5e7eb);
+}
+
+[data-theme="light"] .month-dropdown-menu {
+    background: var(--bg-primary, #ffffff);
+}
+
+[data-theme="light"] .month-dropdown-footer {
+    background: var(--bg-secondary, #f9fafb);
+}
+
+/* =====================================================
+   Statutory Contributions Section
+   ===================================================== */
+
+/* Section styling */
+.statutory-section {
+    margin-top: 24px;
+    border-top: 2px solid var(--border-secondary, #e5e7eb);
+    padding-top: 24px;
+}
+
+.statutory-section h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--text-primary, #111827);
+    margin-bottom: 16px;
+}
+
+.statutory-section h3 svg {
+    color: var(--brand-primary, #6366f1);
+}
+
+.section-subtitle {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-secondary, #6b7280);
+    margin-left: 8px;
+    vertical-align: baseline;
+}
+
+/* Info banner */
+.statutory-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.statutory-info-banner svg {
+    flex-shrink: 0;
+    color: var(--color-info, #3b82f6);
+    margin-top: 2px;
+}
+
+.statutory-info-banner span {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    line-height: 1.5;
+}
+
+.statutory-info-banner strong {
+    color: var(--text-primary, #111827);
+}
+
+/* Contributions Grid */
+.statutory-contributions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+/* Individual Statutory Card */
+.statutory-card {
+    background: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-primary, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.statutory-card:hover {
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Card Header */
+.statutory-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.statutory-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--brand-primary, #6366f1), var(--brand-secondary, #8b5cf6));
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.statutory-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: #ffffff;
+}
+
+.statutory-title-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.statutory-title-area h4 {
+    margin: 0 0 4px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.statutory-authority {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--color-info, #3b82f6);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Description */
+.statutory-description {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+}
+
+/* Breakdown Section */
+.statutory-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border-secondary, #e5e7eb);
+    padding-top: 12px;
+}
+
+/* Contribution Row - Redesigned for better fit */
+.contribution-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary, #f9fafb);
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.contribution-row:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.contribution-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Contributor Badge - More compact */
+.contributor-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.contributor-badge.employee {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+}
+
+.contributor-badge.employer {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: #ffffff;
+}
+
+.component-code {
+    font-size: 0.7rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: var(--text-secondary, #6b7280);
+    background: var(--bg-secondary, #ffffff);
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border-secondary, #e5e7eb);
+    white-space: nowrap;
+}
+
+/* Contribution Details - Centered value area */
+.contribution-details {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.contribution-value {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    white-space: nowrap;
+}
+
+.contribution-status {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.contribution-status.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--color-success, #059669);
+}
+
+.contribution-status.inactive {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--color-error, #dc2626);
+}
+
+/* Compliance Tag - More compact */
+.compliance-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    font-style: normal;
+    color: var(--color-success, #10b981);
+    white-space: nowrap;
+}
+
+.compliance-tag::before {
+    content: '⚡';
+    font-size: 0.65rem;
+}
+
+/* Dark Theme */
+[data-theme="dark"] .statutory-section {
+    border-top-color: var(--border-primary, #374151);
+}
+
+[data-theme="dark"] .statutory-info-banner {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1));
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .statutory-info-banner span {
+    color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme="dark"] .statutory-info-banner strong {
+    color: var(--text-primary, #f3f4f6);
+}
+
+[data-theme="dark"] .statutory-card {
+    background: var(--bg-secondary, #1f2937);
+    border-color: var(--border-primary, #374151);
+}
+
+[data-theme="dark"] .statutory-card:hover {
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .statutory-title-area h4 {
+    color: var(--text-primary, #f3f4f6);
+}
+
+[data-theme="dark"] .statutory-authority {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .statutory-breakdown {
+    border-top-color: var(--border-primary, #374151);
+}
+
+[data-theme="dark"] .contribution-row {
+    background: var(--bg-tertiary, #111827);
+}
+
+[data-theme="dark"] .contribution-row:hover {
+    background: var(--bg-hover, #1f2937);
+}
+
+[data-theme="dark"] .component-code {
+    background: var(--bg-primary, #0f172a);
+    border-color: var(--border-primary, #374151);
+    color: var(--text-secondary, #9ca3af);
+}
+
+[data-theme="dark"] .contribution-value {
+    color: var(--text-primary, #f3f4f6);
+}
+
+[data-theme="dark"] .contribution-status.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+[data-theme="dark"] .contribution-status.inactive {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+[data-theme="dark"] .compliance-tag {
+    color: #34d399;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .statutory-contributions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contribution-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .contribution-details {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* ========================================
+   Statutory Employee Deductions Section
+   For salary structure modal
+   ======================================== */
+
+.statutory-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-tertiary, #f8fafc);
+    border-radius: 8px;
+    border: 1px solid var(--border-secondary, #e2e8f0);
+}
+
+.statutory-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.statutory-header .components-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.statutory-header .components-title svg {
+    color: var(--color-warning, #f59e0b);
+}
+
+.badge-locked {
+    background: var(--color-warning-light, #fef3c7);
+    color: var(--color-warning-dark, #92400e);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.info-banner svg {
+    flex-shrink: 0;
+}
+
+.info-banner.info-locked {
+    background: var(--color-info-light, #dbeafe);
+    color: var(--color-info-dark, #1e40af);
+    border: 1px solid var(--color-info, #3b82f6);
+}
+
+.info-banner.info-warning {
+    background: var(--color-warning-light, #fef3c7);
+    color: var(--color-warning-dark, #92400e);
+    border: 1px solid var(--color-warning, #f59e0b);
+}
+
+.statutory-deductions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.statutory-deduction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-primary, #e5e7eb);
+    border-radius: 6px;
+}
+
+.statutory-deduction-info {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.statutory-deduction-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.statutory-deduction-code {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono, monospace);
+}
+
+.statutory-deduction-type {
+    flex: 1;
+}
+
+.badge-statutory {
+    background: var(--color-success-light, #d1fae5);
+    color: var(--color-success-dark, #065f46);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.statutory-deduction-calc {
+    flex: 1.5;
+    text-align: right;
+}
+
+.statutory-deduction-calc .calc-type {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.statutory-deduction-lock {
+    flex-shrink: 0;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.statutory-deduction-lock svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .statutory-section {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-primary, #334155);
+}
+
+[data-theme="dark"] .badge-locked {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .info-banner.info-locked {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .info-banner.info-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .statutory-deduction-item {
+    background: var(--bg-tertiary, #0f172a);
+    border-color: var(--border-secondary, #475569);
+}
+
+[data-theme="dark"] .badge-statutory {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+/* Responsive adjustments for statutory deductions */
+@media (max-width: 768px) {
+    .statutory-deduction-item {
+        flex-wrap: wrap;
+    }
+
+    .statutory-deduction-info {
+        flex: 1 1 100%;
+        margin-bottom: 8px;
+    }
+
+    .statutory-deduction-type,
+    .statutory-deduction-calc,
+    .statutory-deduction-lock {
+        flex: 1;
+    }
+
+    .statutory-deduction-calc {
+        text-align: left;
+    }
+}
+
+/* ===========================
+   Searchable Dropdown Component
+   =========================== */
+
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-primary, #d1d5db);
+    border-radius: 6px;
+    cursor: pointer;
+    min-height: 38px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dropdown-trigger:hover {
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.searchable-dropdown.open .dropdown-trigger {
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.dropdown-selected-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-tertiary, #9ca3af);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dropdown-selected-text.has-selection {
+    color: var(--text-primary, #111827);
+}
+
+.dropdown-arrow {
+    flex-shrink: 0;
+    margin-left: 8px;
+    color: var(--text-secondary, #6b7280);
+    transition: transform 0.2s;
+}
+
+.searchable-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-primary, #d1d5db);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: none;
+    max-height: 320px;
+    overflow: hidden;
+}
+
+/* Portal dropdown menu - appended to body to escape overflow containers */
+.dropdown-menu-portal {
+    position: fixed !important;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: var(--shadow-lg);
+    z-index: 999999 !important;
+    max-height: 220px;
+    overflow: hidden;
+}
+
+.dropdown-menu-portal .dropdown-search {
+    padding: 6px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.dropdown-menu-portal .dropdown-search-input {
+    width: 100%;
+    padding: 5px 8px 5px 28px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.dropdown-menu-portal .dropdown-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.dropdown-menu-portal .dropdown-search-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: var(--focus-ring);
+}
+
+.dropdown-menu-portal .dropdown-options {
+    max-height: 160px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dropdown-menu-portal .dropdown-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    gap: 6px;
+    font-size: 0.72rem;
+}
+
+.dropdown-menu-portal .dropdown-option:hover {
+    background: var(--bg-hover);
+}
+
+.dropdown-menu-portal .dropdown-option .option-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    font-size: 0.72rem;
+}
+
+.dropdown-menu-portal .dropdown-option .option-code {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+}
+
+.dropdown-menu-portal .dropdown-option .option-type {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    color: var(--brand-primary);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* Hide original menu in modal when portal is used */
+.modal .searchable-dropdown .dropdown-menu {
+    display: none !important;
+}
+
+/* Ensure modal and all parents allow dropdown to overflow when open */
+/* Using .dropdown-open class added by JS for better browser support */
+.modal-content.dropdown-open {
+    overflow: visible !important;
+}
+
+.modal-content:has(.searchable-dropdown.open),
+.modal-overlay .modal-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal-content.dropdown-open .modal-body,
+.modal-body:has(.searchable-dropdown.open),
+.modal-overlay .modal-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .form-group:has(.searchable-dropdown.open),
+.modal-body .form-group:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .form-row:has(.searchable-dropdown.open),
+.modal-body .form-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .structure-component-row:has(.searchable-dropdown.open),
+.modal-body .structure-component-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .component-row:has(.searchable-dropdown.open),
+.modal-body .component-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+#structureComponents:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Also ensure the searchable-dropdown container itself and all ancestors have proper overflow */
+.searchable-dropdown.open {
+    overflow: visible !important;
+}
+
+.searchable-dropdown.open .dropdown-menu {
+    overflow: visible !important;
+}
+
+.searchable-dropdown.open .dropdown-menu {
+    display: block;
+}
+
+.dropdown-search {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-secondary, #e5e7eb);
+    gap: 8px;
+}
+
+.dropdown-search svg {
+    flex-shrink: 0;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.dropdown-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: var(--text-primary, #111827);
+}
+
+.dropdown-search-input::placeholder {
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.dropdown-options {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.dropdown-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    gap: 10px;
+    transition: background-color 0.15s;
+}
+
+.dropdown-option:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.dropdown-option.selected {
+    background: var(--brand-primary-light, #eef2ff);
+}
+
+.dropdown-option .option-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dropdown-option .option-code {
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    font-family: monospace;
+}
+
+.dropdown-option .option-type {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Duplicate warning */
+.searchable-dropdown.duplicate-warning .dropdown-trigger {
+    border-color: var(--color-warning, #f59e0b);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+/* Dark theme for searchable dropdown */
+[data-theme="dark"] .dropdown-trigger {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-primary, #334155);
+}
+
+[data-theme="dark"] .dropdown-menu {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-primary, #334155);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .dropdown-search {
+    border-color: var(--border-secondary, #475569);
+}
+
+[data-theme="dark"] .dropdown-option:hover {
+    background: var(--bg-hover, #334155);
+}
+
+[data-theme="dark"] .dropdown-option.selected {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* ===========================
+   Collapsible Statutory Section
+   =========================== */
+
+.statutory-collapsible {
+    background: var(--bg-tertiary, #f9fafb);
+    border: 1px solid var(--border-secondary, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.statutory-collapse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: var(--bg-secondary, #f3f4f6);
+    border-bottom: 1px solid transparent;
+    transition: background-color 0.2s;
+}
+
+.statutory-collapse-header:hover {
+    background: var(--bg-hover, #e5e7eb);
+}
+
+.statutory-collapse-header.expanded {
+    border-bottom-color: var(--border-secondary, #e5e7eb);
+}
+
+.statutory-collapse-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #111827);
+}
+
+.collapse-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary, #6b7280);
+    transition: transform 0.2s;
+}
+
+.statutory-collapse-header.expanded .collapse-icon {
+    transform: rotate(90deg);
+}
+
+.statutory-collapse-hint {
+    font-size: 12px;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.statutory-collapse-content {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 12px;
+}
+
+.statutory-collapse-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Compact Statutory Deductions Items */
+.statutory-deductions-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.statutory-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-secondary, #e5e7eb);
+    border-radius: 6px;
+}
+
+.statutory-name-compact {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.statutory-code-compact {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    font-family: monospace;
+    background: var(--bg-tertiary, #f3f4f6);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.badge-statutory-compact {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-success, #10b981);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.lock-icon-compact {
+    width: 14px;
+    height: 14px;
+    color: var(--text-tertiary, #9ca3af);
+    flex-shrink: 0;
+}
+
+/* Dark theme for collapsible statutory section */
+[data-theme="dark"] .statutory-collapsible {
+    background: var(--bg-tertiary, #0f172a);
+    border-color: var(--border-primary, #334155);
+}
+
+[data-theme="dark"] .statutory-collapse-header {
+    background: var(--bg-secondary, #1e293b);
+}
+
+[data-theme="dark"] .statutory-collapse-header:hover {
+    background: var(--bg-hover, #334155);
+}
+
+[data-theme="dark"] .statutory-collapse-header.expanded {
+    border-bottom-color: var(--border-primary, #334155);
+}
+
+[data-theme="dark"] .statutory-item-compact {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-primary, #334155);
+}
+
+[data-theme="dark"] .statutory-code-compact {
+    background: var(--bg-tertiary, #0f172a);
+}
+
+[data-theme="dark"] .badge-statutory-compact {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
 }

@@ -87,11 +87,8 @@
                             <button class="sidebar-btn active" data-tab="salary-components" id="salaryComponentsTab">
                                 <span class="nav-number">1</span><span class="nav-label">Salary Components</span>
                             </button>
-                            <button class="sidebar-btn" data-tab="location-taxes" id="locationTaxesTab">
-                                <span class="nav-number">2</span><span class="nav-label">Location Taxes</span>
-                            </button>
                             <button class="sidebar-btn" data-tab="salary-structures" id="salaryStructuresTab">
-                                <span class="nav-number">3</span><span class="nav-label">Salary Structures</span>
+                                <span class="nav-number">2</span><span class="nav-label">Salary Structures</span>
                             </button>
                         </div>
                     </div>
@@ -112,16 +109,16 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="loans" id="loansTab">
-                                <span class="nav-number">4</span><span class="nav-label">Loans & Advances</span>
+                                <span class="nav-number">3</span><span class="nav-label">Loans & Advances</span>
                             </button>
                             <button class="sidebar-btn" data-tab="voluntary-deductions" id="voluntaryDeductionsTab">
-                                <span class="nav-number">5</span><span class="nav-label">Voluntary Deductions</span>
+                                <span class="nav-number">4</span><span class="nav-label">Voluntary Deductions</span>
                             </button>
                             <button class="sidebar-btn" data-tab="adjustments" id="adjustmentsTab">
-                                <span class="nav-number">6</span><span class="nav-label">Adjustments</span>
+                                <span class="nav-number">5</span><span class="nav-label">Adjustments</span>
                             </button>
                             <button class="sidebar-btn" data-tab="arrears" id="arrearsTab">
-                                <span class="nav-number">7</span><span class="nav-label">Arrears</span>
+                                <span class="nav-number">6</span><span class="nav-label">Arrears</span>
                             </button>
                         </div>
                     </div>
@@ -142,16 +139,16 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="payroll-drafts" id="payrollDraftsTab">
-                                <span class="nav-number">8</span><span class="nav-label">Payroll Drafts</span>
+                                <span class="nav-number">7</span><span class="nav-label">Payroll Drafts</span>
                             </button>
                             <button class="sidebar-btn" data-tab="payroll-runs" id="payrollRunsTab">
-                                <span class="nav-number">9</span><span class="nav-label">Finalized Runs</span>
+                                <span class="nav-number">8</span><span class="nav-label">Finalized Runs</span>
                             </button>
                             <button class="sidebar-btn" data-tab="all-payslips" id="allPayslipsTab">
-                                <span class="nav-number">10</span><span class="nav-label">All Payslips</span>
+                                <span class="nav-number">9</span><span class="nav-label">All Payslips</span>
                             </button>
                             <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
-                                <span class="nav-number">11</span><span class="nav-label">Salary Reports</span>
+                                <span class="nav-number">10</span><span class="nav-label">Salary Reports</span>
                             </button>
                         </div>
                     </div>
@@ -238,144 +235,31 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Location Taxes Tab -->
-        <div class="tab-content" id="location-taxes">
-            <!-- Sub-tabs for Tax Types and Office Tax Rules -->
-            <div class="sub-tabs">
-                <button class="sub-tab-btn active" data-subtab="tax-types">Tax Types</button>
-                <button class="sub-tab-btn" data-subtab="office-tax-rules">Office Tax Rules</button>
-            </div>
-
-            <!-- Tax Types Sub-tab -->
-            <div class="sub-tab-content active" id="tax-types">
-                <div class="filters-bar">
-                    <div class="search-box-modern">
-                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="m21 21-4.35-4.35"/>
+                <!-- Statutory Contributions Section -->
+                <div class="component-section statutory-section">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l7-4 7 4v14"/>
+                            <path d="M9 21v-8h6v8"/>
                         </svg>
-                        <input type="text" id="taxTypeSearch" placeholder="Search tax types...">
+                        Statutory Contributions
+                        <span class="section-subtitle">(Paid to Government)</span>
+                    </h3>
+                    <div class="statutory-info-banner">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        <span>These contributions are deducted/contributed and deposited to government bodies. They are <strong>not</strong> paid directly to employees.</span>
                     </div>
-                    <label class="toggle-inactive-label">
-                        <input type="checkbox" id="showInactiveTaxTypes" onchange="loadTaxTypes()">
-                        <span>Show Inactive</span>
-                    </label>
-                    <button class="btn btn-primary" onclick="showCreateTaxTypeModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Tax Type
-                    </button>
-                </div>
-
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Tax Name</th>
-                                <th>Code</th>
-                                <th>Deduction From</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="taxTypesTable">
-                            <tr class="empty-state">
-                                <td colspan="6">
-                                    <div class="empty-message">
-                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                            <path d="M4 7h16M4 12h16M4 17h10"></path>
-                                        </svg>
-                                        <p>No tax types configured</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Office Tax Rules Sub-tab -->
-            <div class="sub-tab-content" id="office-tax-rules">
-                <div class="filters-bar">
-                    <div class="search-box-modern">
-                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="m21 21-4.35-4.35"/>
-                        </svg>
-                        <input type="text" id="taxRuleSearch" placeholder="Search tax rules...">
+                    <div id="statutoryContributionsContainer">
+                        <div class="empty-state">
+                            <p>No statutory contributions configured</p>
+                        </div>
                     </div>
-                    <div class="filter-group">
-                        <select id="taxRuleOffice" class="form-select" onchange="loadOfficeTaxRules()">
-                            <option value="">All Offices</option>
-                        </select>
-                        <select id="taxRuleTaxType" class="form-select" onchange="loadOfficeTaxRules()">
-                            <option value="">All Tax Types</option>
-                        </select>
-                    </div>
-                    <label class="toggle-inactive-label">
-                        <input type="checkbox" id="showInactiveTaxRules" onchange="loadOfficeTaxRules()">
-                        <span>Show Inactive</span>
-                    </label>
-                    <button class="btn btn-secondary" onclick="showCopyTaxRulesModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        Copy Rules
-                    </button>
-                    <button class="btn btn-secondary" onclick="showTaxPreviewModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                        Preview Tax
-                    </button>
-                    <button class="btn btn-primary" onclick="showCreateTaxRuleModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Tax Rule
-                    </button>
-                </div>
-
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Office</th>
-                                <th>Tax Type</th>
-                                <th>Rule Name</th>
-                                <th>Jurisdiction</th>
-                                <th>Calculation</th>
-                                <th>Amount/Rate</th>
-                                <th>Effective From</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="taxRulesTable">
-                            <tr class="empty-state">
-                                <td colspan="9">
-                                    <div class="empty-message">
-                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                            <polyline points="14 2 14 8 20 8"></polyline>
-                                        </svg>
-                                        <p>No tax rules configured</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -1589,6 +1473,24 @@
                             <span id="balancePreview" style="display:none;"></span>
                             <span id="remainingItem" style="display:none;"></span>
                         </div>
+                        <!-- Statutory Employee Deductions (Auto-attached, Locked) -->
+                        <div class="statutory-section">
+                            <div class="components-header statutory-header">
+                                <span class="components-title">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    Statutory Employee Deductions
+                                </span>
+                                <span class="badge badge-locked">Auto-attached</span>
+                            </div>
+                            <div id="statutoryDeductionsContainer">
+                                <!-- Dynamically populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- User-configurable Components -->
                         <div class="components-header">
                             <span class="components-title">Components</span>
                             <button type="button" class="btn-add-component" onclick="addStructureComponent()">
@@ -2545,339 +2447,6 @@
                         </svg>
                         Apply to Next Payroll
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tax Type Modal -->
-    <div id="taxTypeModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="taxTypeModalTitle">Create Tax Type</h5>
-                    <button class="close-btn" onclick="closeModal('taxTypeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="taxTypeForm">
-                        <input type="hidden" id="taxTypeId" name="id">
-                        <div class="form-section">
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="taxTypeName">Tax Name *</label>
-                                    <input type="text" id="taxTypeName" name="tax_name" class="form-control" required placeholder="e.g., Professional Tax">
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxTypeCode">Tax Code *</label>
-                                    <input type="text" id="taxTypeCode" name="tax_code" class="form-control" required placeholder="e.g., PT">
-                                </div>
-                            </div>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="taxTypeDeductionFrom">Deduction From *</label>
-                                    <select id="taxTypeDeductionFrom" name="deduction_from" class="form-control" required>
-                                        <option value="employee">Employee</option>
-                                        <option value="employer">Employer</option>
-                                        <option value="both">Both</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxTypeDisplayOrder">Display Order</label>
-                                    <input type="number" id="taxTypeDisplayOrder" name="display_order" class="form-control" min="0" value="0">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="taxTypeDescription">Description</label>
-                                    <textarea id="taxTypeDescription" name="description" class="form-control" rows="2" placeholder="Brief description of this tax type"></textarea>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <div class="status-toggle-row">
-                                        <label>Status</label>
-                                        <div class="status-toggle-container">
-                                            <span class="status-label inactive">Inactive</span>
-                                            <label class="status-toggle">
-                                                <input type="checkbox" id="taxTypeIsActive" name="is_active" checked>
-                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                            </label>
-                                            <span class="status-label active">Active</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="saveTaxType()">Save Tax Type</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tax Rule Modal -->
-    <div id="taxRuleModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="taxRuleModalTitle">Create Tax Rule</h5>
-                    <button class="close-btn" onclick="closeModal('taxRuleModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="taxRuleForm">
-                        <input type="hidden" id="taxRuleId" name="id">
-                        <div class="form-section">
-                            <div class="form-row three-col">
-                                <div class="form-group">
-                                    <label for="taxRuleOfficeId">Office *</label>
-                                    <select id="taxRuleOfficeId" name="office_id" class="form-control" required>
-                                        <option value="">Select Office</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleTaxTypeId">Tax Type *</label>
-                                    <select id="taxRuleTaxTypeId" name="tax_type_id" class="form-control" required>
-                                        <option value="">Select Tax Type</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleName">Rule Name *</label>
-                                    <input type="text" id="taxRuleName" name="rule_name" class="form-control" required placeholder="e.g., Maharashtra PT">
-                                </div>
-                            </div>
-                            <div class="form-row three-col">
-                                <div class="form-group">
-                                    <label for="taxRuleCode">Tax Code</label>
-                                    <input type="text" id="taxRuleCode" name="tax_code" class="form-control" placeholder="e.g., MH-PT">
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleJurisdictionLevel">Jurisdiction Level *</label>
-                                    <select id="taxRuleJurisdictionLevel" name="jurisdiction_level" class="form-control" required>
-                                        <option value="federal">Federal</option>
-                                        <option value="state" selected>State</option>
-                                        <option value="province">Province</option>
-                                        <option value="city">City</option>
-                                        <option value="county">County</option>
-                                        <option value="local">Local</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleJurisdictionName">Jurisdiction Name *</label>
-                                    <input type="text" id="taxRuleJurisdictionName" name="jurisdiction_name" class="form-control" required placeholder="e.g., Maharashtra">
-                                </div>
-                            </div>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="taxRuleJurisdictionCode">Jurisdiction Code</label>
-                                    <input type="text" id="taxRuleJurisdictionCode" name="jurisdiction_code" class="form-control" placeholder="e.g., MH">
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleCalculationType">Calculation Type *</label>
-                                    <select id="taxRuleCalculationType" name="calculation_type" class="form-control" required onchange="toggleCalculationFields()">
-                                        <option value="fixed">Fixed Amount</option>
-                                        <option value="percentage">Percentage</option>
-                                        <option value="slab">Slab Based</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Fixed Amount Fields -->
-                            <div class="form-row" id="fixedAmountFields">
-                                <div class="form-group">
-                                    <label for="taxRuleFixedAmount">Fixed Amount *</label>
-                                    <input type="number" id="taxRuleFixedAmount" name="fixed_amount" class="form-control" step="0.01" min="0" placeholder="e.g., 200">
-                                </div>
-                            </div>
-
-                            <!-- Percentage Fields -->
-                            <div class="form-row two-col" id="percentageFields" style="display: none;">
-                                <div class="form-group">
-                                    <label for="taxRulePercentage">Percentage *</label>
-                                    <input type="number" id="taxRulePercentage" name="percentage" class="form-control" step="0.01" min="0" max="100" placeholder="e.g., 12.5">
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRulePercentageOf">Percentage Of *</label>
-                                    <select id="taxRulePercentageOf" name="percentage_of" class="form-control">
-                                        <option value="basic">Basic Salary</option>
-                                        <option value="gross">Gross Salary</option>
-                                        <option value="taxable">Taxable Income</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Slab Fields -->
-                            <div id="slabFields" style="display: none;">
-                                <div class="form-group">
-                                    <div class="slab-header">
-                                        <div>
-                                            <label>Tax Slabs</label>
-                                            <small class="form-text">Define income slabs and corresponding tax amounts</small>
-                                        </div>
-                                        <button type="button" class="btn btn-secondary btn-sm" onclick="addSlabRow()">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                            Add Slab
-                                        </button>
-                                    </div>
-                                    <div id="slabContainer" class="slab-container-scroll">
-                                        <div class="slab-row">
-                                            <input type="number" class="form-control slab-from" placeholder="From" min="0">
-                                            <span class="slab-separator">to</span>
-                                            <input type="number" class="form-control slab-to" placeholder="To" min="0">
-                                            <span class="slab-separator">=</span>
-                                            <input type="number" class="form-control slab-amount" placeholder="Amount" min="0" step="0.01">
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeSlabRow(this)">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-row three-col">
-                                <div class="form-group">
-                                    <label for="taxRuleEffectiveFrom">Effective From *</label>
-                                    <input type="date" id="taxRuleEffectiveFrom" name="effective_from" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taxRuleEffectiveTo">Effective To</label>
-                                    <input type="date" id="taxRuleEffectiveTo" name="effective_to" class="form-control">
-                                    <small class="form-text">Leave empty for no end date</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Status</label>
-                                    <div class="status-toggle-container">
-                                        <span class="status-label inactive">Inactive</span>
-                                        <label class="status-toggle">
-                                            <input type="checkbox" id="taxRuleIsActive" name="is_active" checked>
-                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                        </label>
-                                        <span class="status-label active">Active</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="taxRuleNotes">Notes</label>
-                                    <textarea id="taxRuleNotes" name="notes" class="form-control" rows="2" placeholder="Additional notes about this rule"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="saveTaxRule()">Save Tax Rule</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Copy Tax Rules Modal -->
-    <div id="copyTaxRulesModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Copy Tax Rules</h5>
-                    <button class="close-btn" onclick="closeModal('copyTaxRulesModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="copyTaxRulesForm">
-                        <div class="form-section">
-                            <div class="form-group">
-                                <label for="copySourceOffice">Source Office *</label>
-                                <select id="copySourceOffice" name="source_office_id" class="form-control" required>
-                                    <option value="">Select Source Office</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="copyTargetOffice">Target Office *</label>
-                                <select id="copyTargetOffice" name="target_office_id" class="form-control" required>
-                                    <option value="">Select Target Office</option>
-                                </select>
-                            </div>
-                            <div class="alert alert-info" style="margin-top: 12px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                This will copy all active tax rules from the source office to the target office. Existing rules in the target office will not be affected.
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="copyTaxRules()">Copy Rules</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tax Preview Modal -->
-    <div id="taxPreviewModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tax Calculation Preview</h5>
-                    <button class="close-btn" onclick="closeModal('taxPreviewModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="taxPreviewForm">
-                        <div class="form-section">
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="previewOffice">Office *</label>
-                                    <select id="previewOffice" name="office_id" class="form-control" required>
-                                        <option value="">Select Office</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="previewEffectiveDate">Effective Date *</label>
-                                    <input type="date" id="previewEffectiveDate" name="effective_date" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="form-row three-col">
-                                <div class="form-group">
-                                    <label for="previewBasicSalary">Basic Salary</label>
-                                    <input type="number" id="previewBasicSalary" name="basic_salary" class="form-control" step="0.01" min="0" placeholder="e.g., 50000">
-                                </div>
-                                <div class="form-group">
-                                    <label for="previewGrossSalary">Gross Salary *</label>
-                                    <input type="number" id="previewGrossSalary" name="gross_salary" class="form-control" step="0.01" min="0" required placeholder="e.g., 100000">
-                                </div>
-                                <div class="form-group">
-                                    <label for="previewTaxableIncome">Taxable Income</label>
-                                    <input type="number" id="previewTaxableIncome" name="taxable_income" class="form-control" step="0.01" min="0" placeholder="e.g., 90000">
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="calculateTaxPreview()">Calculate</button>
-                        </div>
-                    </form>
-
-                    <div id="taxPreviewResults" style="display: none; margin-top: 20px;">
-                        <h6>Tax Calculation Results</h6>
-                        <div class="data-table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tax Type</th>
-                                        <th>Rule</th>
-                                        <th>Calculation</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="taxPreviewResultsTable">
-                                </tbody>
-                                <tfoot>
-                                    <tr style="font-weight: bold; background: var(--gray-50);">
-                                        <td colspan="3">Total Tax</td>
-                                        <td id="taxPreviewTotal">0.00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
