@@ -318,8 +318,9 @@
                                     <h2>Company Registration Details</h2>
                                     <p class="section-desc">Configure your company's statutory registration information required for compliance filings.</p>
                                 </div>
-                                <button type="button" class="btn btn-secondary" onclick="reinitializeStatutoryConfig()" title="Re-initialize statutory configuration for India (PF, ESI, PT, Income Tax)">
-                                    <span class="btn-icon">🔄</span> Re-initialize Statutory Config
+                                <input type="file" id="statutoryConfigFile" accept=".json" style="display: none;" onchange="handleStatutoryConfigUpload(event)">
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('statutoryConfigFile').click()" title="Upload statutory compliance configuration JSON file">
+                                    <span class="btn-icon">📤</span> Upload Statutory Config
                                 </button>
                             </div>
                         </div>

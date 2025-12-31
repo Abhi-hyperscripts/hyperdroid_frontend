@@ -1397,21 +1397,67 @@ async function seedIndiaConfiguration() {
     }
 }
 
-// Re-initialize statutory configuration (callable from UI button)
-async function reinitializeStatutoryConfig() {
-    if (!confirm('This will REPLACE the India statutory configuration (PF, ESI, Professional Tax, Income Tax). Any custom rules will be lost. Continue?')) {
+// Handle statutory configuration JSON file upload
+async function handleStatutoryConfigUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.json')) {
+        showToast('Please select a JSON file', 'error');
+        event.target.value = ''; // Reset file input
+        return;
+    }
+
+    if (!confirm('This will IMPORT the statutory configuration from the selected JSON file. Existing data will be replaced. Continue?')) {
+        event.target.value = ''; // Reset file input
         return;
     }
 
     try {
         showLoading();
-        showToast('Re-initializing statutory configuration...', 'info');
+        showToast('Uploading statutory configuration...', 'info');
 
-        // Use force=true to delete existing config and re-seed
-        const response = await api.request('/hrms/statutory/seed/india?force=true', {
-            method: 'POST'
+        // Create FormData and append the file
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('clearExisting', 'true');
+
+        // Upload to the import endpoint
+        const token = getAuthToken();
+        const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/statutory/import`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
         });
-        console.log('Re-seed response:', response);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Import response:', result);
+
+        // Show success message with import statistics
+        const stats = [];
+        const summary = result.summary || {};
+        if (summary.countries > 0) stats.push(`${summary.countries} countries`);
+        if (summary.states > 0) stats.push(`${summary.states} states`);
+        if (summary.contribution_types > 0) stats.push(`${summary.contribution_types} contribution types`);
+        if (summary.contribution_rules > 0) stats.push(`${summary.contribution_rules} contribution rules`);
+        if (summary.financial_years > 0) stats.push(`${summary.financial_years} financial years`);
+        if (summary.tax_slabs > 0) stats.push(`${summary.tax_slabs} tax slabs`);
+        if (summary.pt_configs > 0) stats.push(`${summary.pt_configs} PT configs`);
+        if (summary.lwf_configs > 0) stats.push(`${summary.lwf_configs} LWF configs`);
+        if (summary.tax_regimes > 0) stats.push(`${summary.tax_regimes} tax regimes`);
+        if (summary.total_records > 0) stats.push(`${summary.total_records} total records`);
+
+        const statsMessage = stats.length > 0 ? `Imported: ${stats.join(', ')}` : 'Configuration imported';
+        const durationMs = result.duration_ms ? Math.round(result.duration_ms) : 0;
+        showToast(`${statsMessage} (${durationMs}ms)`, 'success');
 
         // Reload all statutory data
         await loadCountries();
@@ -1424,16 +1470,16 @@ async function reinitializeStatutoryConfig() {
             await loadExistingRules();
         }
 
-        showToast('Statutory configuration re-initialized successfully!', 'success');
-
         // Refresh compliance status banner
         await checkAndDisplayComplianceStatus();
 
         hideLoading();
     } catch (error) {
-        console.error('Error re-initializing statutory configuration:', error);
-        showToast('Failed to re-initialize: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Error uploading statutory configuration:', error);
+        showToast('Failed to upload: ' + (error.message || 'Unknown error'), 'error');
         hideLoading();
+    } finally {
+        event.target.value = ''; // Reset file input for future uploads
     }
 }
 
