@@ -12342,3 +12342,2534 @@ tr.immutable-row:hover {
     background: rgba(16, 185, 129, 0.15);
     color: #34d399;
 }
+
+/* ============================================
+   COMPLIANCE CONFIGURATION MODAL STYLES
+   Theme-aware, brand-consistent styling
+   ============================================ */
+
+/* Horizontal Scrolling Tabs Container */
+.config-tabs-scroll {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.config-tabs-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.config-tabs-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.config-tabs-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+/* Config Tab Buttons */
+.config-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.config-tab:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+}
+
+.config-tab.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.config-tab svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.config-tab .tab-label {
+    font-size: 11px;
+}
+
+/* Config Content Area */
+.config-content {
+    padding: 16px 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* ============================================
+   OVERVIEW TAB - Compact Card Grid
+   ============================================ */
+
+.config-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.overview-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.overview-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.overview-card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.overview-card-icon.secondary {
+    background: var(--color-info);
+}
+
+.overview-card-icon.success {
+    background: var(--color-success);
+}
+
+.overview-card-icon.warning {
+    background: var(--color-warning);
+}
+
+.overview-card-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.overview-card-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.overview-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.overview-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-value.highlight {
+    color: var(--brand-primary);
+}
+
+/* ============================================
+   ASSESSMENT MODEL TAB - Audit Critical
+   ============================================ */
+
+.audit-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.audit-alert svg {
+    width: 20px;
+    height: 20px;
+    color: var(--color-warning);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.audit-alert-content {
+    flex: 1;
+}
+
+.audit-alert-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-warning-text);
+    margin-bottom: 4px;
+}
+
+.audit-alert-text {
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.assessment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.assessment-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.assessment-item-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.assessment-item-value {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.assessment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.assessment-badge.badge-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.assessment-badge.badge-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.assessment-badge.badge-info {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+/* ============================================
+   TAX JURISDICTION TAB
+   ============================================ */
+
+.jurisdiction-section {
+    margin-bottom: 16px;
+}
+
+.jurisdiction-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jurisdiction-section-title svg {
+    width: 14px;
+    height: 14px;
+    color: var(--brand-primary);
+}
+
+.jurisdiction-basis {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.basis-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.basis-badge {
+    padding: 2px 6px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.basis-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.residency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.residency-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.residency-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.residency-value {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.categories-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.category-chip.default {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.dtaa-countries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.dtaa-country {
+    padding: 2px 6px;
+    background: var(--color-info-light);
+    color: var(--color-info);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 500;
+}
+
+/* ============================================
+   SOCIAL SECURITY TAB - Pillars
+   ============================================ */
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.pillar-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.pillar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pillar-title-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pillar-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.pillar-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.pillar-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pillar-code {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--bg-card);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.pillar-content {
+    padding: 14px;
+}
+
+.contribution-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.contribution-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.contribution-row.employee {
+    border-left: 3px solid var(--color-info);
+}
+
+.contribution-row.employer {
+    border-left: 3px solid var(--color-success);
+}
+
+.contribution-label {
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.contribution-value {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.eligibility-info {
+    padding: 10px;
+    background: var(--color-info-light);
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.eligibility-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--color-info);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.eligibility-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eligibility-rule {
+    font-size: 9px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.eligibility-rule::before {
+    content: "•";
+    color: var(--color-info);
+}
+
+.split-components {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.split-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.split-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.split-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.split-item-name {
+    color: var(--text-secondary);
+}
+
+.split-item-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   REGIONAL TAXES TAB - Compact Design for 28+ States
+   ============================================ */
+
+/* Compact Section Container */
+.regional-compact-section {
+    margin-bottom: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.regional-section-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.regional-section-header .section-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 3px;
+}
+
+.regional-section-header .section-icon:first-child {
+    background: var(--color-success);
+    color: white;
+}
+
+.regional-compact-section:last-child .regional-section-header .section-icon {
+    background: var(--color-warning);
+    color: white;
+}
+
+.regional-section-header .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.regional-section-header .section-count {
+    margin-left: auto;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-inverse);
+    background: var(--brand-primary);
+    padding: 1px 5px;
+    border-radius: 8px;
+}
+
+/* State Mini Chips Container */
+.states-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 10px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+/* State Mini Chip */
+.state-mini-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    line-height: 1.2;
+    cursor: default;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.state-mini-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.state-mini-chip.has-pt {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.state-mini-chip.no-pt {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.state-mini-chip .chip-code {
+    font-weight: 700;
+    font-family: monospace;
+    color: var(--brand-primary);
+    font-size: 8px;
+}
+
+.state-mini-chip .chip-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 9px;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Regional Tax Table Section */
+.regional-tax-table-section {
+    margin-bottom: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.tax-table-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tax-type-icon {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.tax-type-icon.pt {
+    background: #8b5cf6;
+    color: white;
+}
+
+.tax-type-icon.lwf {
+    background: #06b6d4;
+    color: white;
+}
+
+.tax-type-icon.other {
+    background: #64748b;
+    color: white;
+}
+
+.tax-table-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tax-table-count {
+    margin-left: auto;
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+/* Compact Tax Table */
+.tax-table-wrapper {
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.regional-tax-compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.regional-tax-compact-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.regional-tax-compact-table th {
+    padding: 4px 6px;
+    text-align: left;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.regional-tax-compact-table td {
+    padding: 4px 6px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+    vertical-align: middle;
+}
+
+.regional-tax-compact-table tr:last-child td {
+    border-bottom: none;
+}
+
+.regional-tax-compact-table tr:hover td {
+    background: var(--bg-hover);
+}
+
+/* Table Columns */
+.col-state {
+    min-width: 100px;
+}
+
+.col-freq,
+.col-payer,
+.col-method {
+    width: 45px;
+    text-align: center;
+}
+
+.col-details {
+    min-width: 100px;
+}
+
+/* State Code & Name in Table */
+.state-code-mini {
+    display: inline-block;
+    padding: 1px 4px;
+    background: var(--brand-primary);
+    color: white;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 700;
+    font-family: monospace;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.state-name-mini {
+    font-size: 9px;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+/* Payer Mini Badge */
+.payer-mini {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.payer-mini.emp {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.payer-mini.er {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.payer-mini.both {
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+}
+
+.payer-mini.na {
+    color: var(--text-muted);
+}
+
+/* Method Badge */
+.method-badge {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.method-badge.slab {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.method-badge.fixed {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+.method-badge.pct {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.method-badge.na {
+    color: var(--text-muted);
+}
+
+/* Compact Slabs */
+.compact-slabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
+}
+
+.slab-mini {
+    display: inline-block;
+    padding: 1px 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    font-size: 8px;
+    font-family: monospace;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.slab-more {
+    display: inline-block;
+    padding: 1px 4px;
+    background: var(--brand-primary);
+    color: white;
+    border-radius: 2px;
+    font-size: 7px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.slab-more:hover {
+    background: var(--brand-primary-hover);
+}
+
+/* Fixed Amount & Percentage */
+.fixed-amt,
+.pct-val {
+    font-family: monospace;
+    font-weight: 600;
+    font-size: 9px;
+    color: var(--color-success);
+}
+
+.na-val {
+    color: var(--text-muted);
+}
+
+/* Legacy - keep old mini-slab-table for backward compat */
+.mini-slab-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.mini-slab-table th {
+    text-align: left;
+    padding: 4px 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mini-slab-table td {
+    padding: 4px 6px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.mini-slab-table tr:last-child td {
+    border-bottom: none;
+}
+
+.mini-slab-table .amount {
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+.regional-tax-notes {
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   DEDUCTION SECTIONS TAB - 80C, 80D, etc.
+   ============================================ */
+
+.deduction-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.deduction-section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.deduction-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-code-badge {
+    padding: 2px 6px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.section-limit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.limit-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.limit-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-success);
+}
+
+.deduction-section-content {
+    padding: 14px;
+}
+
+.section-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.eligible-investments {
+    margin-top: 10px;
+}
+
+.investments-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.investments-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.investment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.investment-chip svg {
+    width: 12px;
+    height: 12px;
+    color: var(--color-success);
+}
+
+.sub-limits {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.sub-limits-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.sub-limit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.sub-limit-name {
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.sub-limit-amount {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   YTD TRACKING TAB
+   ============================================ */
+
+.ytd-section {
+    margin-bottom: 20px;
+}
+
+.ytd-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ytd-section-title svg {
+    width: 14px;
+    height: 14px;
+    color: var(--brand-primary);
+}
+
+.ytd-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.ytd-field-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.ytd-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ytd-field-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ytd-field-key {
+    font-size: 8px;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--bg-tertiary);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.ytd-field-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.ytd-field-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ytd-meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 500;
+}
+
+.ytd-meta-badge.reset {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.ytd-meta-badge.cap {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.ytd-meta-badge.affects {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.carryover-rules {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.carryover-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.carryover-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-info);
+    color: var(--text-inverse);
+}
+
+.carryover-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+.carryover-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.carryover-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.carryover-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.carryover-field {
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.carryover-value {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   DEDUCTION REGISTRY TAB
+   ============================================ */
+
+.registry-group {
+    margin-bottom: 20px;
+}
+
+.registry-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.registry-group-badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.registry-group-badge.pre-tax {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.registry-group-badge.post-tax {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.registry-group-badge.tax-credit {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.registry-group-badge.employer-only {
+    background: var(--color-purple-light);
+    color: var(--color-purple-text);
+}
+
+.registry-group-count {
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
+.deduction-registry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+}
+
+.registry-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.registry-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.registry-item-code {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    font-family: monospace;
+}
+
+.registry-order {
+    font-size: 8px;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.registry-item-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.item-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.flag.reduces-net {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.flag.affects-tax {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.flag.ytd-tracked {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+/* ============================================
+   REPORTING TAB - Forms & Deadlines
+   ============================================ */
+
+.reporting-section {
+    margin-bottom: 20px;
+}
+
+.reporting-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.reporting-section-title svg {
+    width: 14px;
+    height: 14px;
+    color: var(--brand-primary);
+}
+
+.forms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+}
+
+.form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.form-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.form-code {
+    padding: 2px 6px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.form-frequency {
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.form-name {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.form-due {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+.form-due svg {
+    width: 12px;
+    height: 12px;
+    color: var(--color-warning);
+}
+
+.deadlines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.deadline-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.deadline-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.deadline-value {
+    font-size: 10px;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+/* ============================================
+   EMPTY STATES & UTILITIES
+   ============================================ */
+
+.config-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.config-empty-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.config-empty-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.config-empty-text {
+    font-size: 9px;
+    color: var(--text-secondary);
+}
+
+/* Compact Divider */
+.config-divider {
+    height: 1px;
+    background: var(--border-color-light);
+    margin: 16px 0;
+}
+
+/* Info Banner */
+.config-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--color-info-light);
+    border: 1px solid var(--color-info);
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.config-info-banner svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-info);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.config-info-banner span {
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* ============================================
+   CONFIG VIEWER - SCHEMA-AWARE COMPACT STYLES
+   All cfg- prefixed for namespace isolation
+   ============================================ */
+
+/* Tab Navigation */
+.config-tabs-scroll {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color-light);
+    scrollbar-width: thin;
+}
+
+.config-tabs-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.config-tabs-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.config-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color-light);
+    background: var(--bg-card);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.config-tab:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.config-tab.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}
+
+.config-tab .tab-icon {
+    font-size: 14px;
+}
+
+.config-tab .tab-name {
+    font-size: 11px;
+}
+
+/* Overview Section */
+.cfg-overview {
+    padding: 16px;
+}
+
+.cfg-header-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.cfg-country-badge {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-size: 28px;
+}
+
+.cfg-header-info {
+    flex: 1;
+}
+
+.cfg-header-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+.cfg-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.cfg-header-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Stats Grid */
+.cfg-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.cfg-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+}
+
+.cfg-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+}
+
+.cfg-stat-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Section Container */
+.cfg-section {
+    padding: 16px;
+}
+
+.cfg-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--brand-primary);
+}
+
+.cfg-section-title .icon {
+    font-size: 16px;
+}
+
+/* Field Display */
+.cfg-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.cfg-field-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cfg-field-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Subsection */
+.cfg-subsection {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.cfg-subsection-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Compact Tables */
+.cfg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.cfg-table th {
+    background: var(--bg-elevated);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color-light);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+}
+
+.cfg-table td {
+    padding: 8px 10px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cfg-table tr:hover {
+    background: var(--bg-elevated);
+}
+
+/* Regime Cards (Tax System) */
+.cfg-regime-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.cfg-regime-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.cfg-regime-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-badge-default {
+    padding: 3px 8px;
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Contribution Cards (Social) */
+.cfg-contrib-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.cfg-contrib-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.cfg-contrib-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-contrib-code {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--bg-elevated);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.cfg-rate-box {
+    display: flex;
+    gap: 8px;
+}
+
+.cfg-rate-item {
+    flex: 1;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+}
+
+.cfg-rate-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.cfg-rate-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+/* Jurisdiction/Regional Cards */
+.cfg-jurisdiction {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.cfg-jurisdiction summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-jurisdiction summary::-webkit-details-marker {
+    display: none;
+}
+
+.cfg-jurisdiction summary::before {
+    content: '▶';
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.cfg-jurisdiction[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.cfg-jurisdiction-content {
+    padding: 0 12px 12px;
+}
+
+.cfg-jurisdiction-code {
+    background: var(--brand-primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Regional Taxes Expanded Content */
+.cfg-jurisdiction-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.cfg-jurisdictions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfg-jur-code {
+    background: var(--brand-primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.cfg-jur-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.cfg-jur-count {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: auto;
+}
+
+.cfg-jur-taxes {
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfg-tax-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.cfg-tax-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cfg-code {
+    background: var(--bg-elevated);
+    color: var(--brand-primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.cfg-tax-calc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cfg-calc-method {
+    background: var(--color-info-light);
+    color: var(--color-info);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.cfg-field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-field-inline label {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.cfg-field-inline span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cfg-muted {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.cfg-rate {
+    font-weight: 700;
+    color: var(--brand-primary);
+    font-size: 12px;
+}
+
+.cfg-amount {
+    font-weight: 700;
+    color: var(--color-success);
+    font-size: 12px;
+}
+
+/* Mini Table for Slabs */
+.cfg-table-mini {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    margin-top: 6px;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cfg-table-mini th {
+    background: var(--bg-tertiary);
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 9px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-table-mini td {
+    padding: 6px 8px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-table-mini tr:last-child td {
+    border-bottom: none;
+}
+
+/* Binding Cards (Jurisdiction Resolution) */
+.cfg-binding-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.cfg-binding-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.cfg-binding-path {
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--brand-accent);
+    background: var(--bg-card);
+    padding: 4px 8px;
+    border-radius: 4px;
+    word-break: break-all;
+}
+
+/* Badges */
+.cfg-badge-type {
+    padding: 2px 8px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-yes {
+    padding: 2px 8px;
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-no {
+    padding: 2px 8px;
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-pre_tax {
+    padding: 2px 8px;
+    background: var(--color-info-light);
+    color: var(--color-info);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-post_tax {
+    padding: 2px 8px;
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-employer_only {
+    padding: 2px 8px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.cfg-badge-other {
+    padding: 2px 8px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+/* Empty State */
+.cfg-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Deduction Order Table */
+.cfg-order-table {
+    width: 100%;
+}
+
+.cfg-order-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.cfg-order-num {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.cfg-order-info {
+    flex: 1;
+}
+
+.cfg-order-code {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: monospace;
+}
+
+.cfg-order-type {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Compact Data Display */
+.cfg-data-section {
+    padding: 16px;
+}
+
+.cfg-data-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.cfg-data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+}
+
+.cfg-data-key {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.cfg-data-value {
+    font-size: 11px;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Nested Objects */
+.cfg-nested {
+    margin-left: 16px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border-color-light);
+}
+
+.cfg-nested-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 8px 0 6px;
+}
+
+/* Calendar Section */
+.cfg-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.cfg-calendar-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.cfg-calendar-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* State Cards (Legacy) */
+.cfg-state-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cfg-state-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-state-code {
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--text-muted);
+}
+
+/* Grid Layouts */
+.cfg-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.cfg-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.cfg-grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+/* Surcharge/Cess Display */
+.cfg-tax-addon {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.cfg-tax-addon-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-warning-light);
+    border-radius: 8px;
+    font-size: 18px;
+}
+
+.cfg-tax-addon-info {
+    flex: 1;
+}
+
+.cfg-tax-addon-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.cfg-tax-addon-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-warning);
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] .cfg-header-card {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+}
+
+[data-theme="dark"] .cfg-field {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-table th {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-rate-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-order-row {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-data-row {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-badge-default {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--color-success-text);
+}
+
+[data-theme="dark"] .cfg-badge-yes {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--color-success-text);
+}
+
+[data-theme="dark"] .cfg-badge-no {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-danger-text);
+}
+
+[data-theme="dark"] .cfg-badge-pre_tax {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--color-info-text);
+}
+
+[data-theme="dark"] .cfg-badge-post_tax {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--color-warning-text);
+}
+
+[data-theme="dark"] .cfg-badge-employer_only {
+    background: rgba(139, 92, 246, 0.25);
+    color: #a78bfa;
+}
+
+[data-theme="dark"] .cfg-badge-other {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+
+/* Regional Taxes Dark Mode */
+[data-theme="dark"] .cfg-jur-taxes {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-tax-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-jur-count {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-code {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-calc-method {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--color-info-text);
+}
+
+[data-theme="dark"] .cfg-field-inline {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-table-mini {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-table-mini th {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-table-mini td {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+    .config-tabs-scroll {
+        padding: 4px 8px;
+    }
+
+    .config-tab {
+        padding: 6px 10px;
+    }
+
+    .config-tab .tab-name {
+        display: none;
+    }
+
+    .cfg-grid-2,
+    .cfg-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .cfg-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cfg-header-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .cfg-header-meta {
+        justify-content: center;
+    }
+
+    .config-overview-grid,
+    .pillars-grid,
+    .regional-taxes-grid,
+    .deduction-sections-grid,
+    .ytd-fields-grid,
+    .deduction-registry-grid,
+    .forms-grid,
+    .deadlines-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .assessment-grid,
+    .residency-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

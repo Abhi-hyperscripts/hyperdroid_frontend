@@ -1163,44 +1163,43 @@ async function loadOffices() {
 
 async function loadComplianceCountries() {
     try {
-        const response = await api.request('/hrms/statutory/countries');
+        // Use the global countries API endpoint
+        const response = await api.request('/hrms/countries');
         complianceCountries = response || [];
-        console.log('Compliance countries loaded:', complianceCountries.length);
+        console.log('Countries loaded:', complianceCountries.length);
     } catch (error) {
-        console.error('Error loading compliance countries:', error);
+        console.error('Error loading countries:', error);
         complianceCountries = [];
     }
 }
 
 async function loadComplianceStates() {
     try {
-        // Load states that have Professional Tax applicable
-        // /hrms/professional-tax/states → api.js strips /hrms → final: /api/professional-tax/states
-        const response = await api.request('/hrms/professional-tax/states');
-        // Only include states that have PT applicable (has_professional_tax = true)
-        complianceStates = (response || []).filter(s => s.has_professional_tax === true);
-        console.log('Compliance states loaded (with PT):', complianceStates.length, complianceStates.map(s => s.state_name));
+        // Load all states from the global countries API
+        const response = await api.request('/hrms/countries/states');
+        complianceStates = response || [];
+        console.log('States loaded:', complianceStates.length, complianceStates.map(s => s.state_name));
     } catch (error) {
-        console.error('Error loading compliance states:', error);
+        console.error('Error loading states:', error);
         complianceStates = [];
     }
 }
 
-// Get states for a specific country (currently only India has states with PT)
-function getStatesForCountry(countryName) {
-    if (!countryName) return [];
+// Get states for a specific country
+function getStatesForCountry(countryIdOrName) {
+    if (!countryIdOrName) return [];
 
-    // Currently, only India has state-level PT configuration
+    // Find the country by ID, name, or code
     const country = complianceCountries.find(c =>
-        c.country_name?.toLowerCase() === countryName.toLowerCase() ||
-        c.country_code?.toLowerCase() === countryName.toLowerCase()
+        c.id === countryIdOrName ||
+        c.country_name?.toLowerCase() === countryIdOrName.toLowerCase() ||
+        c.country_code?.toLowerCase() === countryIdOrName.toLowerCase()
     );
 
-    if (country && country.country_name === 'India') {
-        return complianceStates;
-    }
+    if (!country) return [];
 
-    return [];
+    // Filter states that belong to this country
+    return complianceStates.filter(s => s.country_id === country.id);
 }
 
 function updateOfficesTable() {
