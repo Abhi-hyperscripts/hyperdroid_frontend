@@ -9,6 +9,7 @@ let countries = [];
 let countryConfigs = [];
 let selectedConfigFile = null;
 let parsedConfigData = null;
+let rawConfigJson = null;  // Store the raw JSON string for upload
 let currentViewingConfig = null;
 
 // ==================== Utility Functions ====================
@@ -551,6 +552,7 @@ async function processConfigFile(file) {
     // Parse and validate the file
     try {
         const text = await file.text();
+        rawConfigJson = text;  // Store raw JSON for upload
         parsedConfigData = JSON.parse(text);
 
         // Validate required fields
@@ -564,6 +566,7 @@ async function processConfigFile(file) {
         }
     } catch (error) {
         console.error('Error parsing config file:', error);
+        rawConfigJson = null;
         showValidationResult({
             valid: false,
             errors: ['Invalid JSON format: ' + error.message]
@@ -582,22 +585,35 @@ function formatFileSize(bytes) {
 function validateConfigData(data) {
     const errors = [];
 
-    // Check required top-level fields
-    if (!data.country_code) {
-        errors.push('Missing required field: country_code');
+    // Extract country info - support both flat and nested formats
+    // Flat: country_code, country_name, effective_from
+    // Nested: country.code, country.name, effective_period.from
+    const countryCode = data.country_code || data.country?.code;
+    const countryName = data.country_name || data.country?.name;
+    const effectiveFrom = data.effective_from || data.effective_period?.from;
+
+    // Check required fields
+    if (!countryCode) {
+        errors.push('Missing required field: country.code or country_code');
     }
-    if (!data.country_name) {
-        errors.push('Missing required field: country_name');
+    if (!countryName) {
+        errors.push('Missing required field: country.name or country_name');
     }
-    if (!data.effective_from) {
-        errors.push('Missing required field: effective_from');
+    if (!effectiveFrom) {
+        errors.push('Missing required field: effective_from or effective_period.from');
     }
 
-    // Check for at least some statutory rules
+    // Normalize data for downstream processing
+    data.country_code = countryCode;
+    data.country_name = countryName;
+    data.effective_from = effectiveFrom;
+
+    // Check for at least some statutory rules (support v3 schema format)
     const hasRules = data.pf || data.pf_rules || data.esi || data.esi_rules ||
                      data.pt || data.pt_rules || data.tax || data.tax_slabs ||
                      data.social_security || data.pension || data.contributions ||
-                     data.statutory_deductions || data.deduction_order;
+                     data.statutory_deductions || data.deduction_order ||
+                     data.statutory_charges || data.component_categories;
 
     if (!hasRules) {
         errors.push('Config should contain at least one statutory rule section (pf, esi, pt, tax, social_security, etc.)');
@@ -710,6 +726,7 @@ function showConfigPreview(data) {
 function clearSelectedFile() {
     selectedConfigFile = null;
     parsedConfigData = null;
+    rawConfigJson = null;
 
     const fileInput = document.getElementById('configFileInput');
     const fileInfo = document.getElementById('selectedFileInfo');
@@ -729,7 +746,7 @@ function clearSelectedFile() {
 }
 
 async function confirmConfigUpload() {
-    if (!parsedConfigData) {
+    if (!parsedConfigData || !rawConfigJson) {
         showToast('No configuration data to upload', 'error');
         return;
     }
@@ -748,9 +765,10 @@ async function confirmConfigUpload() {
             `;
         }
 
+        // Send raw JSON wrapped in the expected DTO format
         await api.request('/hrms/statutory/configs/upload', {
             method: 'POST',
-            body: JSON.stringify(parsedConfigData)
+            body: JSON.stringify({ jsonContent: rawConfigJson })
         });
 
         showToast(`${parsedConfigData.country_name} configuration uploaded successfully`, 'success');
