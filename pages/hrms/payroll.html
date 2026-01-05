@@ -160,6 +160,11 @@
         <!-- Salary Components Tab -->
         <div class="tab-content active" id="salary-components">
             <div class="filters-bar">
+                <div class="filter-group">
+                    <select id="countryFilter" class="form-select" onchange="onCountryFilterChange()">
+                        <option value="">All Countries</option>
+                    </select>
+                </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -1528,19 +1533,35 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                <!-- Info banner about statutory components -->
+                <div class="info-banner" style="background: var(--bg-tertiary); border-left: 4px solid var(--brand-primary); padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <div style="font-size: 13px; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Custom Components Only</strong><br>
+                            Create custom allowances and deductions for your organization.
+                            <span style="color: var(--text-tertiary);">Basic Salary and statutory components are auto-created from your country's compliance configuration.</span>
+                        </div>
+                    </div>
+                </div>
                 <form id="componentForm">
                     <input type="hidden" id="componentId" name="id">
                     <div class="form-section">
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="componentName">Component Name *</label>
-                                <input type="text" id="componentName" name="name" class="form-control" required placeholder="e.g., Basic Salary">
+                                <input type="text" id="componentName" name="name" class="form-control" required placeholder="e.g., House Rent Allowance">
                             </div>
                             <div class="form-group">
                                 <label for="componentCode">Code *</label>
-                                <input type="text" id="componentCode" name="code" class="form-control" required placeholder="e.g., BASIC">
+                                <input type="text" id="componentCode" name="code" class="form-control" required placeholder="e.g., HRA">
                             </div>
                         </div>
+                        <!-- Country is set from global filter, state not required for custom components -->
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="componentCategory">Category *</label>
@@ -1589,21 +1610,6 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="isStatutory">Statutory</label>
-                                <select id="isStatutory" name="isStatutory" class="form-control">
-                                    <option value="false">No</option>
-                                    <option value="true">Yes</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="componentDescription">Description</label>
-                                <textarea id="componentDescription" name="description" class="form-control" rows="2"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
                                 <div class="status-toggle-row">
                                     <label>Status</label>
                                     <div class="status-toggle-container">
@@ -1616,19 +1622,11 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group">
-                                <div class="status-toggle-row">
-                                    <label>Mark as Basic Component</label>
-                                    <div class="status-toggle-container">
-                                        <span class="status-label inactive">No</span>
-                                        <label class="status-toggle">
-                                            <input type="checkbox" id="isBasicComponent" name="is_basic_component">
-                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                        </label>
-                                        <span class="status-label active">Yes</span>
-                                    </div>
-                                    <small class="form-text text-muted">Enable to use this component as base for percentage calculations (e.g., HRA = 50% of Basic)</small>
-                                </div>
+                                <label for="componentDescription">Description</label>
+                                <textarea id="componentDescription" name="description" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
                         <!-- Balance Component Option REMOVED - Balance is now automatic and implicit in every salary structure -->

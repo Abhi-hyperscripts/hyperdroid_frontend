@@ -640,7 +640,7 @@ function renderCountryOptions(filter = '') {
     // Use compliance countries (only countries configured in statutory compliance)
     // Fall back to hardcoded COUNTRIES if compliance data not loaded yet
     const countriesToUse = complianceCountries.length > 0
-        ? complianceCountries.map(c => ({ value: c.country_name, code: c.country_code }))
+        ? complianceCountries.map(c => ({ value: c.country_name, code: c.country_code, id: c.id }))
         : COUNTRIES;
 
     const filtered = countriesToUse.filter(c =>
@@ -655,19 +655,25 @@ function renderCountryOptions(filter = '') {
 
     container.innerHTML = filtered.map(c => `
         <div class="dropdown-option ${c.value === selectedValue ? 'selected' : ''}"
-             onclick="selectCountry('${escapeHtml(c.value)}', '${escapeHtml(c.code)}')">
+             onclick="selectCountry('${escapeHtml(c.value)}', '${escapeHtml(c.code)}', '${c.id || ''}')">
             <span class="dropdown-option-text">${escapeHtml(c.value)}</span>
             <span class="dropdown-option-subtext">${c.code}</span>
         </div>
     `).join('');
 }
 
-function selectCountry(countryName, countryCode) {
+function selectCountry(countryName, countryCode, countryId) {
     document.getElementById('officeCountry').value = countryName;
     document.getElementById('officeCountryCode').value = countryCode || '';
+    document.getElementById('officeCountryId').value = countryId || '';
     document.getElementById('countrySelection').textContent = countryName;
     document.getElementById('countrySelection').classList.remove('placeholder');
     document.getElementById('countryDropdown').classList.remove('open');
+
+    // Clear state selection when country changes
+    document.getElementById('officeState').value = '';
+    document.getElementById('officeStateCode').value = '';
+    document.getElementById('officeStateId').value = '';
 
     // Compliance-first: Update state dropdown based on selected country
     updateStateDropdownForCountry(countryName);
@@ -736,16 +742,17 @@ function renderStateOptions(filter = '') {
 
     container.innerHTML = filtered.map(s => `
         <div class="dropdown-option ${s.state_name === selectedValue ? 'selected' : ''}"
-             onclick="selectState('${escapeHtml(s.state_name)}', '${escapeHtml(s.state_code || '')}')">
+             onclick="selectState('${escapeHtml(s.state_name)}', '${escapeHtml(s.state_code || '')}', '${s.id || ''}')">
             <span class="dropdown-option-text">${escapeHtml(s.state_name)}</span>
             <span class="dropdown-option-subtext">${s.state_code || ''}</span>
         </div>
     `).join('');
 }
 
-function selectState(stateName, stateCode) {
+function selectState(stateName, stateCode, stateId) {
     document.getElementById('officeState').value = stateName;
     document.getElementById('officeStateCode').value = stateCode || '';
+    document.getElementById('officeStateId').value = stateId || '';
     document.getElementById('stateSelection').textContent = stateName;
     document.getElementById('stateSelection').classList.remove('placeholder');
     document.getElementById('stateDropdown').classList.remove('open');
@@ -1916,9 +1923,16 @@ function showCreateOfficeModal() {
     // Initialize searchable dropdowns with defaults
     initOfficeModalDropdowns('Asia/Kolkata', 'India');
 
-    // Clear state_code and country_code, set default country_code for India
+    // Clear state fields
+    document.getElementById('officeState').value = '';
     document.getElementById('officeStateCode').value = '';
+    document.getElementById('officeStateId').value = '';
+
+    // Set default country to India (find India from compliance countries)
+    const india = complianceCountries.find(c => c.country_code === 'IN');
+    document.getElementById('officeCountry').value = 'India';
     document.getElementById('officeCountryCode').value = 'IN';
+    document.getElementById('officeCountryId').value = india?.id || '';
 
     // Reset new fields
     document.getElementById('officeEnableGeofence').checked = false;
@@ -1942,9 +1956,15 @@ function editOffice(id) {
     // Initialize searchable dropdowns with office values (including state)
     initOfficeModalDropdowns(office.timezone || 'Asia/Kolkata', office.country || 'India', office.state || '');
 
-    // Set state_code and country_code hidden fields
+    // Set state fields (including FK state_id)
+    document.getElementById('officeState').value = office.state || '';
     document.getElementById('officeStateCode').value = office.state_code || '';
+    document.getElementById('officeStateId').value = office.state_id || '';
+
+    // Set country fields (including FK country_id)
+    document.getElementById('officeCountry').value = office.country || '';
     document.getElementById('officeCountryCode').value = office.country_code || '';
+    document.getElementById('officeCountryId').value = office.country_id || '';
 
     document.getElementById('officeAddress').value = office.address_line1 || '';
     document.getElementById('officeCity').value = office.city || '';
@@ -2614,6 +2634,10 @@ async function saveOffice() {
         // Get office_type from dropdown
         const officeTypeVal = document.getElementById('officeType').value;
 
+        // Get country_id and state_id (required for compliance-driven payroll)
+        const countryId = document.getElementById('officeCountryId').value;
+        const stateId = document.getElementById('officeStateId').value;
+
         const data = {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
@@ -2623,6 +2647,10 @@ async function saveOffice() {
             timezone: document.getElementById('officeTimezone').value,
             address_line1: document.getElementById('officeAddress').value,
             city: document.getElementById('officeCity').value,
+            // FK references to countries and country_states tables (REQUIRED for compliance)
+            country_id: countryId || null,
+            state_id: stateId || null,
+            // Deprecated text fields - maintained for backward compatibility
             state: document.getElementById('officeState').value || null,
             state_code: document.getElementById('officeStateCode').value || null,
             country: document.getElementById('officeCountry').value,
