@@ -14,6 +14,7 @@ let structures = [];
 let currentPayslipId = null;
 let drafts = [];
 let statutoryEmployeeDeductions = []; // Auto-attached to salary structures
+let statutoryEmployerContributions = []; // Employer-side statutory contributions (PF_ER, ESI_ER, etc.)
 
 // Store for searchable dropdown instances
 const payrollSearchableDropdowns = new Map();
@@ -1484,6 +1485,16 @@ async function viewDraftPayslip(payslipId) {
         // Build structure-wise breakdown HTML
         let structureBreakdownHtml = '';
 
+        // Calculate employer contributions for both single and multi-structure views
+        const isEmployerComponentMulti = (item) => {
+            return item.component_type === 'employer_contribution' ||
+                   item.component_type === 'benefit' ||
+                   (item.charge_category && item.charge_category.endsWith('_employer'));
+        };
+        const employerContributionsAll = items.filter(i => isEmployerComponentMulti(i));
+        const ctcIncludedItemsAll = employerContributionsAll.filter(i => i.cost_classification_employer === 'included_in_ctc');
+        const overheadItemsAll = employerContributionsAll.filter(i => i.cost_classification_employer === 'organizational_overhead');
+
         if (hasMultipleStructures) {
             structureBreakdownHtml = `
                 <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: var(--color-warning-light); border: 1px solid var(--color-warning); border-radius: 8px;">
@@ -1701,19 +1712,133 @@ async function viewDraftPayslip(payslipId) {
                         </div>
                     </div>
                 </div>
+                ${(ctcIncludedItemsAll.length > 0 || overheadItemsAll.length > 0) ? `
+                <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <h5 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--text-secondary);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Employer Cost Classification
+                    </h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.8rem;">
+                        ${ctcIncludedItemsAll.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-success-rgb, 34, 197, 94), 0.08); border-radius: 6px; border-left: 3px solid var(--color-success);">
+                            <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
+                            ${ctcIncludedItemsAll.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(ctcIncludedItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${overheadItemsAll.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-info-rgb, 59, 130, 246), 0.08); border-radius: 6px; border-left: 3px solid var(--color-info);">
+                            <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
+                            ${overheadItemsAll.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(overheadItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
             `;
         } else {
-            // Single structure - use original layout
+            // Single structure - use original layout with eligibility and cost classification
             const earnings = items.filter(i => i.component_type === 'earning');
             const deductions = items.filter(i => i.component_type === 'deduction');
+
+            // Separate employer contributions for cost classification display
+            // COUNTRY-AGNOSTIC: Only show employer-side components based on:
+            // 1. component_type === 'employer_contribution' OR 'benefit' (backend stores employer contributions as 'benefit')
+            // 2. charge_category ends with '_employer' (e.g., retirement_employer, social_insurance_employer)
+            // NEVER show employee deductions under employer cost
+            const isEmployerComponent = (item) => {
+                return item.component_type === 'employer_contribution' ||
+                       item.component_type === 'benefit' ||
+                       (item.charge_category && item.charge_category.endsWith('_employer'));
+            };
+            const employerContributions = items.filter(i => isEmployerComponent(i));
+            const ctcIncludedItems = employerContributions.filter(i => i.cost_classification_employer === 'included_in_ctc');
+            const overheadItems = employerContributions.filter(i => i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
                 earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
-                deductions.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                deductions.map(i => {
+                    const isEligible = i.is_eligible !== false;
+                    const eligibilityIcon = i.amount === 0 && !isEligible ? '<span style="color:var(--color-warning);" title="Not eligible">⚠</span> ' : '';
+                    const eligibilityReason = !isEligible && i.eligibility_reason ?
+                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${i.eligibility_reason}</div>` : '';
+                    const proratedTag = i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : '';
+                    return `<tr>
+                        <td>
+                            ${eligibilityIcon}${i.component_name}${proratedTag}
+                            ${eligibilityReason}
+                        </td>
+                        <td class="text-right">${formatCurrency(i.amount)}</td>
+                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                    </tr>`;
+                }).join('') :
                 '<tr><td colspan="3" class="text-muted">No deductions</td></tr>';
+
+            // Employer cost classification section
+            const employerCostHtml = (ctcIncludedItems.length > 0 || overheadItems.length > 0) ? `
+                <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <h5 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--text-secondary);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Employer Cost Classification
+                    </h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.8rem;">
+                        ${ctcIncludedItems.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-success-rgb, 34, 197, 94), 0.08); border-radius: 6px; border-left: 3px solid var(--color-success);">
+                            <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
+                            ${ctcIncludedItems.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${overheadItems.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-info-rgb, 59, 130, 246), 0.08); border-radius: 6px; border-left: 3px solid var(--color-info);">
+                            <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
+                            ${overheadItems.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : '';
 
             structureBreakdownHtml = `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1775,6 +1900,7 @@ async function viewDraftPayslip(payslipId) {
                         </table>
                     </div>
                 </div>
+                ${employerCostHtml}
             `;
         }
 
@@ -1913,14 +2039,17 @@ function groupItemsByStructure(items) {
     const groupMap = new Map();
 
     for (const item of items) {
-        // Group by period dates (not structure_id) to handle same structure with different salaries
-        // This is critical for mid-period appraisals where structure stays same but CTC changes
-        const periodKey = `${item.period_start || 'none'}_${item.period_end || 'none'}`;
+        // Group by period dates AND structure_name to handle:
+        // 1. Mid-period appraisals (same structure, different CTC, different period dates)
+        // 2. Structure version changes (different structure_name like "v1" vs "v2", same period dates)
+        // Including structure_name ensures versioned structures are shown separately
+        const structureName = item.structure_name || 'Standard';
+        const periodKey = `${structureName}_${item.period_start || 'none'}_${item.period_end || 'none'}`;
 
         if (!groupMap.has(periodKey)) {
             const group = {
                 structure_id: item.structure_id,
-                structure_name: item.structure_name || 'Standard',
+                structure_name: structureName,
                 period_start: item.period_start,
                 period_end: item.period_end,
                 items: []
@@ -1932,11 +2061,14 @@ function groupItemsByStructure(items) {
         groupMap.get(periodKey).items.push(item);
     }
 
-    // Sort groups by period_start date
+    // Sort groups by period_start date, then by structure_name (version order)
     groups.sort((a, b) => {
         if (!a.period_start) return -1;
         if (!b.period_start) return 1;
-        return new Date(a.period_start) - new Date(b.period_start);
+        const dateCompare = new Date(a.period_start) - new Date(b.period_start);
+        if (dateCompare !== 0) return dateCompare;
+        // Same period - sort by structure_name to maintain version order
+        return (a.structure_name || '').localeCompare(b.structure_name || '');
     });
 
     return groups;
@@ -2345,7 +2477,7 @@ function renderStatutoryDeductionsSection() {
                         <div class="statutory-item-compact">
                             <span class="statutory-name-compact">${escapeHtml(c.component_name || c.name)}</span>
                             <span class="statutory-code-compact">${escapeHtml(c.component_code || c.code)}</span>
-                            <span class="badge badge-statutory-compact">${formatStatutoryType(c.statutory_type)}</span>
+                            <span class="badge badge-statutory-compact">${formatStatutoryType(c.statutory_type, c.component_name || c.name)}</span>
                             <svg class="lock-icon-compact" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -2373,6 +2505,122 @@ function toggleStatutorySection() {
             hint.textContent = isCollapsed ? 'Auto-attached • Click to collapse' : 'Auto-attached • Click to expand';
         }
     }
+}
+
+/**
+ * Toggle the employer contributions section collapse state
+ */
+function toggleEmployerContributionsSection() {
+    const content = document.querySelector('.employer-collapse-content');
+    const header = document.querySelector('.employer-collapse-header');
+    const hint = document.querySelector('.employer-collapse-hint');
+
+    if (content && header) {
+        const isCollapsed = content.classList.contains('collapsed');
+        content.classList.toggle('collapsed');
+        header.classList.toggle('expanded');
+
+        if (hint) {
+            hint.textContent = isCollapsed ? 'Auto-attached • Click to collapse' : 'Auto-attached • Click to expand';
+        }
+    }
+}
+
+/**
+ * Load statutory employer contributions for a given country/state.
+ * These are the employer-side statutory components (PF_ER, ESI_ER, GRATUITY, EDLI, etc.)
+ * that are auto-attached to salary structures.
+ */
+async function loadStatutoryEmployerContributions(countryCode, stateCode) {
+    try {
+        if (!countryCode || !stateCode) {
+            console.log('No country/state code provided, skipping employer contributions load');
+            statutoryEmployerContributions = [];
+            return;
+        }
+        const response = await api.request(`/hrms/payroll/components/statutory-employer-contributions?countryCode=${encodeURIComponent(countryCode)}&stateCode=${encodeURIComponent(stateCode)}`);
+        statutoryEmployerContributions = response?.components || [];
+        console.log(`Loaded ${statutoryEmployerContributions.length} statutory employer contributions for ${countryCode}/${stateCode}`);
+    } catch (error) {
+        console.error('Error loading statutory employer contributions:', error);
+        statutoryEmployerContributions = [];
+    }
+}
+
+/**
+ * Render the statutory employer contributions section in the salary structure modal.
+ * These components are auto-attached by the backend and are displayed as locked/non-editable.
+ */
+function renderStatutoryEmployerContributionsSection() {
+    const container = document.getElementById('statutoryEmployerContributionsContainer');
+    if (!container) {
+        console.warn('Statutory employer contributions container not found');
+        return;
+    }
+
+    // Check if an office is selected
+    const selectedOfficeId = document.getElementById('structureOffice')?.value;
+
+    if (!selectedOfficeId) {
+        container.innerHTML = `
+            <div class="info-banner info-muted compact">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Select an office to see applicable employer contributions</span>
+            </div>
+        `;
+        return;
+    }
+
+    if (!statutoryEmployerContributions || statutoryEmployerContributions.length === 0) {
+        container.innerHTML = `
+            <div class="info-banner info-warning compact">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>No statutory employer contributions configured for this location. Check country config.</span>
+            </div>
+        `;
+        return;
+    }
+
+    const html = `
+        <div class="statutory-collapsible employer-collapsible">
+            <div class="employer-collapse-header" onclick="toggleEmployerContributionsSection()">
+                <div class="statutory-collapse-title">
+                    <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>${statutoryEmployerContributions.length} Employer Contributions</span>
+                </div>
+                <span class="employer-collapse-hint">Auto-attached • Click to expand</span>
+            </div>
+            <div class="employer-collapse-content collapsed">
+                <div class="statutory-deductions-compact employer-contributions-compact">
+                    ${statutoryEmployerContributions.map(c => `
+                        <div class="statutory-item-compact employer-item-compact">
+                            <span class="statutory-name-compact">${escapeHtml(c.component_name || c.name)}</span>
+                            <span class="statutory-code-compact">${escapeHtml(c.component_code || c.code)}</span>
+                            <span class="badge badge-employer-compact">${formatStatutoryType(c.statutory_type, c.component_name || c.name)}</span>
+                            <svg class="lock-icon-compact" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
 }
 
 function updateComponentsTables() {
@@ -2420,26 +2668,38 @@ function updateComponentsTables() {
 }
 
 /**
- * Check if a component is a statutory component based on code or type
+ * Check if a component is a statutory component.
+ * COUNTRY-AGNOSTIC: Uses backend flags instead of hardcoded component codes.
+ *
+ * Backend flags:
+ * - source === 'compliance': Created from country config
+ * - is_immutable === true: Cannot be edited/deleted
+ * - statutory_type: Set for statutory components (contains charge_code)
+ * - calculation_type === 'compliance_linked': Gets rates from compliance rules
  */
 function isStatutoryComponent(component) {
-    const code = (component.component_code || component.code || '').toUpperCase();
-    const statutoryType = component.statutory_type || '';
-
-    // Check by component code patterns
-    const statutoryCodes = ['PF-EE', 'PF-ER', 'PF_EE', 'PF_ER', 'ESI-EE', 'ESI-ER', 'ESI_EE', 'ESI_ER',
-                           'LWF_EE', 'LWF_ER', 'LWF-EE', 'LWF-ER', 'PT', 'PROF_TAX', 'PROFESSIONAL_TAX'];
-
-    if (statutoryCodes.includes(code)) return true;
-    if (statutoryType && statutoryType.length > 0) return true;
+    // Use backend flags - no hardcoded codes
+    if (component.source === 'compliance') return true;
+    if (component.is_immutable === true) return true;
+    if (component.statutory_type && component.statutory_type.length > 0) return true;
     if (component.calculation_type === 'compliance_linked') return true;
 
     return false;
 }
 
 /**
- * Update the Statutory Contributions section with grouped display
- * Now accepts benefits as second parameter and shows ALL components (no overwriting)
+ * Update the Statutory Contributions section with grouped display.
+ * COUNTRY-AGNOSTIC: Groups by charge_category from backend, uses component_name for labels.
+ * No hardcoded country-specific names (PF, ESI, TDS are India-specific).
+ *
+ * Groups by backend charge_category values:
+ * - retirement_employee, retirement_employer → Retirement
+ * - health_insurance_*, social_insurance_* → Insurance
+ * - welfare_fund_* → Welfare
+ * - regional_tax, professional_tax, state_tax → Regional Tax
+ * - income_tax, federal_tax → Income Tax
+ * - gratuity, severance, benefit_accrual → Benefits
+ * - Other → Other Statutory
  */
 function updateStatutoryContributionsSection(statutoryComponents, benefitComponents = []) {
     const container = document.getElementById('statutoryContributionsContainer');
@@ -2454,37 +2714,36 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
         return;
     }
 
-    // Group by statutory type - using ARRAYS to collect ALL components (no overwriting)
+    // COUNTRY-AGNOSTIC grouping based on charge_category from backend
     const groups = {};
 
     allComponents.forEach(c => {
-        const code = (c.component_code || c.code || '').toUpperCase();
         const chargeCategory = (c.charge_category || '').toLowerCase();
-        const componentType = c.component_type || c.category || '';
+        const componentType = (c.component_type || '').toLowerCase();
         let groupKey = 'OTHER';
         let contributorType = 'employee'; // Default
 
-        // Determine group based on code patterns and charge_category
-        if (code.includes('PF') || code.includes('EPF') || chargeCategory.includes('retirement')) {
-            groupKey = 'PF';
-            contributorType = code.includes('ER') || chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (code.includes('ESI') || chargeCategory.includes('insurance') || chargeCategory.includes('social')) {
-            groupKey = 'ESI';
-            contributorType = code.includes('ER') || chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (code.includes('LWF') || code.includes('LABOUR') || chargeCategory.includes('welfare')) {
-            groupKey = 'LWF';
-            contributorType = code.includes('ER') || chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (code.includes('PT') || code.includes('PROF') || chargeCategory.includes('regional') || chargeCategory.includes('professional')) {
-            groupKey = 'PT';
+        // Determine group based on charge_category (country-agnostic)
+        if (chargeCategory.includes('retirement')) {
+            groupKey = 'RETIREMENT';
+            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
+        } else if (chargeCategory.includes('insurance') || chargeCategory.includes('social')) {
+            groupKey = 'INSURANCE';
+            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
+        } else if (chargeCategory.includes('welfare')) {
+            groupKey = 'WELFARE';
+            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
+        } else if (chargeCategory.includes('regional') || chargeCategory.includes('state_tax') || chargeCategory.includes('local_tax')) {
+            groupKey = 'REGIONAL_TAX';
             contributorType = 'employee';
-        } else if (code.includes('TDS') || code.includes('TAX') || chargeCategory.includes('income_tax')) {
-            groupKey = 'TDS';
+        } else if (chargeCategory.includes('income_tax') || chargeCategory.includes('federal_tax') || chargeCategory.includes('national_tax')) {
+            groupKey = 'INCOME_TAX';
             contributorType = 'employee';
-        } else if (code.includes('GRATUITY') || chargeCategory.includes('gratuity')) {
-            groupKey = 'GRATUITY';
+        } else if (chargeCategory.includes('gratuity') || chargeCategory.includes('severance') || chargeCategory.includes('benefit_accrual')) {
+            groupKey = 'BENEFITS';
             contributorType = 'employer';
-        } else if (code.includes('EDLI') || chargeCategory.includes('edli')) {
-            groupKey = 'EDLI';
+        } else if (componentType === 'benefit' || componentType === 'employer_contribution') {
+            groupKey = 'OTHER';
             contributorType = 'employer';
         }
 
@@ -2498,59 +2757,47 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
     // Build the HTML for grouped display
     let html = '<div class="statutory-contributions-grid">';
 
+    // COUNTRY-AGNOSTIC group info - generic names, no country-specific terms
     const groupInfo = {
-        'PF': {
-            name: 'Provident Fund (EPF)',
+        'RETIREMENT': {
+            name: 'Retirement Contributions',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-8h6v8"/></svg>',
-            authority: 'EPFO',
-            description: 'Employee Provident Fund - Retirement savings'
+            description: 'Retirement savings contributions'
         },
-        'ESI': {
-            name: 'Employee State Insurance',
+        'INSURANCE': {
+            name: 'Insurance Contributions',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-            authority: 'ESIC',
-            description: 'Health insurance for employees'
+            description: 'Health and social insurance'
         },
-        'LWF': {
-            name: 'Labour Welfare Fund',
+        'WELFARE': {
+            name: 'Welfare Fund',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>',
-            authority: 'State Labour Board',
-            description: 'State welfare fund for workers'
+            description: 'Welfare fund contributions'
         },
-        'PT': {
-            name: 'Professional Tax',
+        'REGIONAL_TAX': {
+            name: 'Regional/State Tax',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
-            authority: 'State Government',
-            description: 'State-level professional tax'
+            description: 'Regional, state, or local taxes'
         },
-        'TDS': {
-            name: 'Tax Deducted at Source (TDS)',
+        'INCOME_TAX': {
+            name: 'Income Tax',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
-            authority: 'Income Tax Dept',
-            description: 'Income tax deducted at source by employer'
+            description: 'Income tax deducted at source'
         },
-        'GRATUITY': {
-            name: 'Gratuity',
+        'BENEFITS': {
+            name: 'Employer Benefits',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-            authority: 'Employer Provision',
-            description: 'Employer gratuity provision for employee retirement'
-        },
-        'EDLI': {
-            name: 'EDLI (Employees\' Deposit Linked Insurance)',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-            authority: 'EPFO',
-            description: 'Life insurance scheme linked to PF account'
+            description: 'Employer-funded benefits and provisions'
         },
         'OTHER': {
             name: 'Other Statutory',
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
-            authority: 'Various',
             description: 'Other statutory contributions'
         }
     };
 
-    // Define order of display
-    const groupOrder = ['PF', 'ESI', 'LWF', 'PT', 'TDS', 'GRATUITY', 'EDLI', 'OTHER'];
+    // Define order of display (generic categories)
+    const groupOrder = ['RETIREMENT', 'INSURANCE', 'WELFARE', 'REGIONAL_TAX', 'INCOME_TAX', 'BENEFITS', 'OTHER'];
 
     groupOrder.forEach(groupKey => {
         if (!groups[groupKey]) return;
@@ -2568,23 +2815,25 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
                     <div class="statutory-icon">${info.icon}</div>
                     <div class="statutory-title-area">
                         <h4>${info.name}</h4>
-                        <span class="statutory-authority">Paid to: ${info.authority}</span>
                     </div>
                 </div>
                 <p class="statutory-description">${info.description}</p>
                 <div class="statutory-breakdown">
         `;
 
-        // Render ALL employee contributions (no overwriting)
+        // Render ALL employee contributions - use component_name from backend
         if (hasEmployee) {
             group.employee.forEach(emp => {
                 const value = formatStatutoryValue(emp);
                 const status = emp.is_active !== false ? 'Active' : 'Inactive';
                 const statusClass = emp.is_active !== false ? 'active' : 'inactive';
+                // Use component_name from backend for display
+                const displayName = emp.component_name || emp.name || emp.component_code || emp.code;
                 html += `
                     <div class="contribution-row employee-contribution">
                         <div class="contribution-label">
                             <span class="contributor-badge employee">Employee</span>
+                            <span class="component-name">${escapeHtml(displayName)}</span>
                             <span class="component-code">${emp.component_code || emp.code}</span>
                         </div>
                         <div class="contribution-details">
@@ -2596,16 +2845,19 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
             });
         }
 
-        // Render ALL employer contributions (no overwriting)
+        // Render ALL employer contributions - use component_name from backend
         if (hasEmployer) {
             group.employer.forEach(er => {
                 const value = formatStatutoryValue(er);
                 const status = er.is_active !== false ? 'Active' : 'Inactive';
                 const statusClass = er.is_active !== false ? 'active' : 'inactive';
+                // Use component_name from backend for display
+                const displayName = er.component_name || er.name || er.component_code || er.code;
                 html += `
                     <div class="contribution-row employer-contribution">
                         <div class="contribution-label">
                             <span class="contributor-badge employer">Employer</span>
+                            <span class="component-name">${escapeHtml(displayName)}</span>
                             <span class="component-code">${er.component_code || er.code}</span>
                         </div>
                         <div class="contribution-details">
@@ -2683,7 +2935,7 @@ function formatComponentValue(component) {
     } else if (calcType === 'compliance_linked') {
         // Compliance-linked components get their rates from statutory compliance rules at runtime
         const statutoryType = component.statutory_type || '';
-        const typeLabel = formatStatutoryType(statutoryType);
+        const typeLabel = formatStatutoryType(statutoryType, component.component_name);
         return `<span class="text-muted compliance-linked-value" title="Rate from ${typeLabel} compliance rules">From compliance rules</span>`;
     } else {
         const value = component.default_value || component.fixed_amount || component.percentage || 0;
@@ -2692,22 +2944,15 @@ function formatComponentValue(component) {
 }
 
 /**
- * Format statutory type for display
+ * Format statutory type for display.
+ * COUNTRY-AGNOSTIC: No hardcoded mappings - just display what backend sends.
+ * The backend sends component_name from country config which contains proper labels.
  */
-function formatStatutoryType(statutoryType) {
-    const typeMap = {
-        'PF_EE': 'PF Employee',
-        'PF_ER': 'PF Employer',
-        'ESI_EE': 'ESI Employee',
-        'ESI_ER': 'ESI Employer',
-        'PT': 'Professional Tax',
-        'pf_employee': 'PF Employee',
-        'pf_employer': 'PF Employer',
-        'esi_employee': 'ESI Employee',
-        'esi_employer': 'ESI Employer',
-        'professional_tax': 'Professional Tax'
-    };
-    return typeMap[statutoryType] || statutoryType || 'Statutory';
+function formatStatutoryType(statutoryType, componentName) {
+    // Prefer component_name from backend (contains proper label from country config)
+    if (componentName) return componentName;
+    // Fallback to statutory_type or generic label
+    return statutoryType || 'Statutory';
 }
 
 /**
@@ -2737,7 +2982,7 @@ function updateEarningsTable(earnings) {
         // Check for immutable/statutory compliance components
         const isImmutable = isImmutableComponent(c);
         if (isImmutable) {
-            const statutoryLabel = formatStatutoryType(c.statutory_type);
+            const statutoryLabel = formatStatutoryType(c.statutory_type, c.component_name || c.name);
             badges += `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -2804,7 +3049,7 @@ function updateDeductionsTable(deductions) {
         const isImmutable = isImmutableComponent(c);
         let badges = '';
         if (isImmutable) {
-            const statutoryLabel = formatStatutoryType(c.statutory_type);
+            const statutoryLabel = formatStatutoryType(c.statutory_type, c.component_name || c.name);
             badges = `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -3040,26 +3285,30 @@ async function showCreateStructureModal() {
     const isActiveCheckbox = document.getElementById('structureIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
 
-    // Don't load statutory deductions yet - wait for office selection
-    // This will show "Select an office to see applicable statutory deductions"
+    // Don't load statutory deductions/contributions yet - wait for office selection
+    // This will show "Select an office to see applicable statutory deductions/contributions"
     statutoryEmployeeDeductions = [];
+    statutoryEmployerContributions = [];
     renderStatutoryDeductionsSection();
+    renderStatutoryEmployerContributionsSection();
 
     document.getElementById('structureModal').classList.add('active');
 }
 
 /**
  * Handle office selection change in the salary structure modal.
- * When an office is selected, load the applicable statutory deductions
+ * When an office is selected, load the applicable statutory deductions and employer contributions
  * based on the office's country and state codes.
  */
 async function onStructureOfficeChange() {
     const officeId = document.getElementById('structureOffice')?.value;
 
     if (!officeId) {
-        // No office selected, clear statutory deductions
+        // No office selected, clear statutory deductions and employer contributions
         statutoryEmployeeDeductions = [];
+        statutoryEmployerContributions = [];
         renderStatutoryDeductionsSection();
+        renderStatutoryEmployerContributionsSection();
         return;
     }
 
@@ -3068,7 +3317,9 @@ async function onStructureOfficeChange() {
     if (!selectedOffice) {
         console.warn('Selected office not found in offices array:', officeId);
         statutoryEmployeeDeductions = [];
+        statutoryEmployerContributions = [];
         renderStatutoryDeductionsSection();
+        renderStatutoryEmployerContributionsSection();
         return;
     }
 
@@ -3077,9 +3328,13 @@ async function onStructureOfficeChange() {
 
     console.log(`Office changed: ${selectedOffice.office_name} (${countryCode}/${stateCode})`);
 
-    // Load statutory deductions for this office's country/state
-    await loadStatutoryEmployeeDeductions(countryCode, stateCode);
+    // Load both statutory employee deductions and employer contributions in parallel
+    await Promise.all([
+        loadStatutoryEmployeeDeductions(countryCode, stateCode),
+        loadStatutoryEmployerContributions(countryCode, stateCode)
+    ]);
     renderStatutoryDeductionsSection();
+    renderStatutoryEmployerContributionsSection();
 }
 
 async function editSalaryStructure(structureId) {
@@ -3119,14 +3374,19 @@ async function editSalaryStructure(structureId) {
         // Load and populate structure components (excluding statutory - those are auto-attached)
         if (structure.components && structure.components.length > 0) {
             // Filter out statutory employee deductions from display - they're auto-managed
+            // COUNTRY-AGNOSTIC: Use backend flags instead of hardcoded statutory_type values
             const nonStatutoryComponents = structure.components.filter(c => {
-                const statutoryType = c.statutory_type || '';
-                const isStatutoryEmployeeDeduction = statutoryType === 'pf_employee' ||
-                    statutoryType === 'esi_employee' ||
-                    statutoryType === 'lwf_employee' ||
-                    statutoryType === 'pt' ||
-                    statutoryType === 'tds_employee' ||
-                    statutoryType.endsWith('_employee');
+                // Check if it's a statutory employee deduction using backend flags
+                const isStatutoryComponent = c.source === 'compliance' ||
+                    c.is_immutable === true ||
+                    c.calculation_type === 'compliance_linked';
+
+                // Check if it's an employee deduction (not employer contribution)
+                const isEmployeeDeduction = c.component_type === 'deduction' ||
+                    (c.charge_category && c.charge_category.includes('employee')) ||
+                    (c.charge_category && !c.charge_category.includes('employer'));
+
+                const isStatutoryEmployeeDeduction = isStatutoryComponent && isEmployeeDeduction;
                 return !isStatutoryEmployeeDeduction;
             });
             populateStructureComponents(nonStatutoryComponents);
@@ -3135,16 +3395,21 @@ async function editSalaryStructure(structureId) {
             structureComponentCounter = 0;
         }
 
-        // Load and display statutory employee deductions based on office's country/state
+        // Load and display both statutory employee deductions and employer contributions based on office's country/state
         const officeForStatutory = offices.find(o => o.id === structure.office_id);
         if (officeForStatutory) {
             const countryCode = officeForStatutory.country_code;
             const stateCode = officeForStatutory.state_code || 'ALL';
-            await loadStatutoryEmployeeDeductions(countryCode, stateCode);
+            await Promise.all([
+                loadStatutoryEmployeeDeductions(countryCode, stateCode),
+                loadStatutoryEmployerContributions(countryCode, stateCode)
+            ]);
         } else {
             statutoryEmployeeDeductions = [];
+            statutoryEmployerContributions = [];
         }
         renderStatutoryDeductionsSection();
+        renderStatutoryEmployerContributionsSection();
 
         document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
         document.getElementById('structureModal').classList.add('active');
@@ -3992,12 +4257,40 @@ async function viewPayslip(payslipId) {
             const earnings = items.filter(i => i.component_type === 'earning');
             const deductions = items.filter(i => i.component_type === 'deduction');
 
+            // Separate employer contributions for cost classification display
+            // COUNTRY-AGNOSTIC: Only show employer-side components based on:
+            // 1. component_type === 'employer_contribution' OR 'benefit' (backend stores employer contributions as 'benefit')
+            // 2. charge_category ends with '_employer' (e.g., retirement_employer, social_insurance_employer)
+            // NEVER show employee deductions under employer cost
+            const isEmployerComponent = (item) => {
+                return item.component_type === 'employer_contribution' ||
+                       item.component_type === 'benefit' ||
+                       (item.charge_category && item.charge_category.endsWith('_employer'));
+            };
+            const employerContributions = items.filter(i => isEmployerComponent(i));
+            const ctcIncludedItems = employerContributions.filter(i => i.cost_classification_employer === 'included_in_ctc');
+            const overheadItems = employerContributions.filter(i => i.cost_classification_employer === 'organizational_overhead');
+
             const earningsHtml = earnings.length > 0 ?
                 earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
-                deductions.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                deductions.map(i => {
+                    const isEligible = i.is_eligible !== false;
+                    const eligibilityIcon = i.amount === 0 && !isEligible ? '<span style="color:var(--color-warning);" title="Not eligible">⚠</span> ' : '';
+                    const eligibilityReason = !isEligible && i.eligibility_reason ?
+                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${i.eligibility_reason}</div>` : '';
+                    const proratedTag = i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : '';
+                    return `<tr>
+                        <td>
+                            ${eligibilityIcon}${i.component_name}${proratedTag}
+                            ${eligibilityReason}
+                        </td>
+                        <td class="text-right">${formatCurrency(i.amount)}</td>
+                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                    </tr>`;
+                }).join('') :
                 '<tr><td colspan="3" class="text-muted">No deductions</td></tr>';
 
             // Arrears breakdown for single structure
@@ -4101,6 +4394,48 @@ async function viewPayslip(payslipId) {
                     </div>
                 </div>
                 ${arrearsBreakdownHtml}
+                ${(ctcIncludedItems.length > 0 || overheadItems.length > 0) ? `
+                <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: 8px;">
+                    <h5 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--text-secondary);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        Employer Cost Classification
+                    </h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.8rem;">
+                        ${ctcIncludedItems.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-success-rgb, 34, 197, 94), 0.08); border-radius: 6px; border-left: 3px solid var(--color-success);">
+                            <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
+                            ${ctcIncludedItems.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${overheadItems.length > 0 ? `
+                        <div style="padding: 0.5rem; background: rgba(var(--color-info-rgb, 59, 130, 246), 0.08); border-radius: 6px; border-left: 3px solid var(--color-info);">
+                            <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
+                            ${overheadItems.map(i => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
+                                    <span>${i.component_name}</span>
+                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
+                                <span>Total</span>
+                                <span>${formatCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
             `;
         }
 
@@ -5005,13 +5340,14 @@ let structureComponentCounter = 0;
 
 /**
  * Get components available for manual selection in salary structures.
+ * COUNTRY-AGNOSTIC: Uses backend flags only, no hardcoded component codes.
  *
  * Rules:
  * 1. Show user-created components (source !== 'compliance')
  * 2. Show BASIC component (is_basic_component = true) - required for salary calculation
- * 3. Exclude statutory employee deductions (PF_EE, ESI_EE, PT, TDS, LWF_EE) - these are auto-attached
+ * 3. Exclude statutory components from compliance - these are auto-attached based on country config
  *
- * Statutory employee deductions have: source='compliance', component_type='deduction'
+ * Statutory components have: source='compliance', and are auto-calculated
  * BASIC has: source='compliance', is_basic_component=true, component_type='earning'
  */
 function getSelectableComponents() {
@@ -5030,7 +5366,7 @@ function getSelectableComponents() {
         }
 
         // Exclude compliance components that are NOT basic
-        // This filters out PF_EE, ESI_EE, PT, TDS, LWF_EE, PF_ER, ESI_ER, etc.
+        // This filters out all statutory deductions/contributions (auto-attached based on country config)
         return false;
     });
 }

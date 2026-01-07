@@ -12344,6 +12344,140 @@ tr.immutable-row:hover {
 }
 
 /* ============================================
+   EMPLOYER CONTRIBUTIONS SECTION STYLES
+   Styling for statutory employer contributions
+   in the salary structure modal
+   ============================================ */
+
+/* Employer section styling */
+.employer-contributions-section {
+    margin-top: 8px;
+}
+
+.employer-header {
+    border-color: var(--color-info, #3b82f6);
+}
+
+/* Employer badge styles */
+.badge-employer {
+    background: var(--color-info-light, #dbeafe);
+    color: var(--color-info-dark, #1e40af);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-employer-compact {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--color-info, #3b82f6);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Employer collapsible section */
+.employer-collapsible {
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.employer-collapse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(59, 130, 246, 0.05);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.employer-collapse-header:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.employer-collapse-header.expanded {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.employer-collapse-hint {
+    font-size: 11px;
+    color: var(--text-muted, #6b7280);
+    font-style: italic;
+}
+
+.employer-collapse-content {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 12px;
+    background: var(--bg-secondary, #f8fafc);
+}
+
+.employer-collapse-content.collapsed {
+    max-height: 0;
+    padding: 0 12px;
+}
+
+/* Employer contributions list items */
+.employer-contributions-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.employer-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(59, 130, 246, 0.03);
+    border-radius: 6px;
+    border-left: 3px solid var(--color-info, #3b82f6);
+}
+
+/* Dark theme adjustments for employer contributions */
+[data-theme="dark"] .badge-employer {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .badge-employer-compact {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .employer-collapsible {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .employer-collapse-header {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme="dark"] .employer-collapse-header:hover {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+[data-theme="dark"] .employer-collapse-header.expanded {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .employer-collapse-content {
+    background: var(--bg-secondary, #1e293b);
+}
+
+[data-theme="dark"] .employer-item-compact {
+    background: rgba(59, 130, 246, 0.06);
+}
+
+/* ============================================
    COMPLIANCE CONFIGURATION MODAL STYLES
    Theme-aware, brand-consistent styling
    ============================================ */
