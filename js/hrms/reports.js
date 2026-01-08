@@ -99,13 +99,16 @@ const reportConfig = {
     'deductions-report': {
         title: 'Deductions Report',
         endpoint: '/hrms/reports/deductions',
-        columns: ['Employee Code', 'Employee Name', 'PF', 'ESI', 'PT', 'TDS', 'Other', 'Total'],
+        // Country-agnostic columns using charge_type from globalSchemaV3:
+        // retirement, social_insurance, regional_tax, income_tax
+        columns: ['Employee Code', 'Employee Name', 'Retirement', 'Social Insurance', 'Regional Tax', 'Income Tax', 'Other', 'Total'],
         dataExtractor: null
     },
     'tax-report': {
         title: 'Tax Computation Report',
         endpoint: '/hrms/reports/tax',
-        columns: ['Month', 'Month Name', 'Total TDS', 'Employee Count'],
+        // Country-agnostic: "Income Tax" instead of hardcoded "TDS"
+        columns: ['Month', 'Month Name', 'Total Income Tax', 'Employee Count'],
         dataExtractor: null
     },
     'loan-report': {

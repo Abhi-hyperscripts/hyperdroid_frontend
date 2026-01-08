@@ -1912,6 +1912,15 @@ class API {
         return this.request(`/hrms/payroll/payslips/${id}/download`);
     }
 
+    // --- Statutory Compliance Configs ---
+    async getHrmsStatutoryConfigSummaries() {
+        return this.request('/hrms/statutory/configs');
+    }
+
+    async getHrmsStatutoryConfigByCountry(countryCode) {
+        return this.request(`/hrms/statutory/configs/country/${countryCode}`);
+    }
+
     // --- Loans ---
     async getLoans(employeeId = null) {
         const query = employeeId ? `?employeeId=${employeeId}` : '';

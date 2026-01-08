@@ -693,7 +693,7 @@ function updateStateDropdownForCountry(countryName) {
 
     if (!stateDropdown || !stateSelection || !officeState) return;
 
-    // Get states with PT configured for this country
+    // Get states with tax rules configured for this country
     const availableStates = getStatesForCountry(countryName);
 
     if (availableStates.length === 0) {
@@ -731,7 +731,7 @@ function renderStateOptions(filter = '') {
     );
 
     if (availableStates.length === 0) {
-        container.innerHTML = '<div class="dropdown-no-match">No states with PT configured for this country</div>';
+        container.innerHTML = '<div class="dropdown-no-match">No states with tax rules configured for this country</div>';
         return;
     }
 

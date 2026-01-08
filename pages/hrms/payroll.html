@@ -241,7 +241,7 @@
                     </div>
                 </div>
 
-                <!-- Statutory Contributions Section -->
+                <!-- Statutory Contributions Section (Paid to Government) -->
                 <div class="component-section statutory-section">
                     <h3>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
@@ -263,6 +263,30 @@
                     <div id="statutoryContributionsContainer">
                         <div class="empty-state">
                             <p>No statutory contributions configured</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statutory Provisions Section (Employer Accruals - NOT paid to Government) -->
+                <div class="component-section statutory-section provisions-section" id="statutoryProvisionsSection" style="display: none;">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        Statutory Provisions
+                        <span class="section-subtitle">(Employer Accruals)</span>
+                    </h3>
+                    <div class="statutory-info-banner provisions-banner">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        <span>These are employer accrued liabilities provisioned monthly. They are <strong>paid to employees</strong> upon eligibility, not to government bodies.</span>
+                    </div>
+                    <div id="statutoryProvisionsContainer">
+                        <div class="empty-state">
+                            <p>No statutory provisions configured</p>
                         </div>
                     </div>
                 </div>
@@ -1442,8 +1466,30 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-section">
-                        <!-- Compact Structure Summary - Above Components -->
+                    <!-- Tab Navigation for Structure Components -->
+                    <div class="structure-tabs">
+                        <button type="button" class="structure-tab active" data-tab="components" onclick="switchStructureTab('components')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            Components
+                        </button>
+                        <button type="button" class="structure-tab" data-tab="statutory" onclick="switchStructureTab('statutory')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Auto-Attached
+                            <span class="statutory-count-badge" id="statutoryCountBadge">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab Content: Components -->
+                    <div class="structure-tab-content active" id="tab-components">
+                        <!-- Compact Structure Summary -->
                         <div class="structure-summary-compact" id="structureSummary" style="display: none;">
                             <div class="summary-metrics">
                                 <div class="metric gross">
@@ -1478,52 +1524,62 @@
                             <span id="balancePreview" style="display:none;"></span>
                             <span id="remainingItem" style="display:none;"></span>
                         </div>
-                        <!-- Statutory Employee Deductions (Auto-attached, Locked) -->
-                        <div class="statutory-section">
-                            <div class="components-header statutory-header">
-                                <span class="components-title">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                    Statutory Employee Deductions
-                                </span>
-                                <span class="badge badge-locked">Auto-attached</span>
-                            </div>
-                            <div id="statutoryDeductionsContainer">
-                                <!-- Dynamically populated by JS -->
-                            </div>
-                        </div>
-
-                        <!-- Statutory Employer Contributions (Auto-attached, Locked) -->
-                        <div class="statutory-section employer-contributions-section">
-                            <div class="components-header statutory-header employer-header">
-                                <span class="components-title">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                                    </svg>
-                                    Statutory Employer Contributions
-                                </span>
-                                <span class="badge badge-employer">Auto-attached</span>
-                            </div>
-                            <div id="statutoryEmployerContributionsContainer">
-                                <!-- Dynamically populated by JS -->
-                            </div>
-                        </div>
 
                         <!-- User-configurable Components -->
                         <div class="components-header">
-                            <span class="components-title">Components</span>
+                            <span class="components-title">Salary Components</span>
                             <button type="button" class="btn-add-component" onclick="addStructureComponent()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
-                                Add
+                                Add Component
                             </button>
                         </div>
                         <div class="components-list" id="structureComponents">
                             <!-- Dynamically populated -->
+                        </div>
+                        <div class="components-empty-state" id="componentsEmptyState">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            <p>No components added yet</p>
+                            <span>Click "Add Component" to add earnings and deductions to this structure</span>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: Auto-Attached (Statutory) -->
+                    <div class="structure-tab-content" id="tab-statutory">
+                        <div class="statutory-info-note compact">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <span>Auto-attached based on office location. Cannot be modified.</span>
+                        </div>
+
+                        <div class="statutory-compact-sections">
+                            <!-- Employee Deductions -->
+                            <div class="statutory-compact-section">
+                                <div class="statutory-compact-header deduction">
+                                    <span class="statutory-compact-label">Employee Deductions</span>
+                                    <span class="statutory-compact-count" id="deductionCount">0</span>
+                                </div>
+                                <div id="statutoryDeductionsContainer"></div>
+                            </div>
+
+                            <!-- Employer Contributions -->
+                            <div class="statutory-compact-section">
+                                <div class="statutory-compact-header employer">
+                                    <span class="statutory-compact-label">Employer Contributions</span>
+                                    <span class="statutory-compact-count" id="contributionCount">0</span>
+                                </div>
+                                <div id="statutoryEmployerContributionsContainer"></div>
+                            </div>
                         </div>
                     </div>
                 </form>

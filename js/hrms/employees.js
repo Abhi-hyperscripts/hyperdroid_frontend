@@ -10,6 +10,17 @@ let currentViewEmployee = null;
 const USER_BATCH_SIZE = 50;
 let displayedUserCount = 0;
 
+// Currency lookup by country code (populated from statutory configs)
+let currencyByCountry = {};
+
+// Utility function to escape HTML special characters
+function escapeHtml(text) {
+    if (text == null) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
         window.location.href = '/index.html';
@@ -74,9 +85,80 @@ async function loadFormData() {
         document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
         document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
 
+        // Load currency info for all countries (for proper currency formatting)
+        await loadCurrencyInfo();
+
     } catch (error) {
         console.error('Error loading form data:', error);
     }
+}
+
+/**
+ * Load currency info from statutory configs for all active countries.
+ * Populates the currencyByCountry lookup map.
+ */
+async function loadCurrencyInfo() {
+    try {
+        // Get unique country codes from loaded offices
+        const countryCodes = [...new Set(offices.filter(o => o.country_code).map(o => o.country_code))];
+
+        if (countryCodes.length === 0) {
+            console.log('[Currency] No country codes found in offices');
+            return;
+        }
+
+        // Fetch statutory config for each country in parallel
+        const configPromises = countryCodes.map(async (countryCode) => {
+            try {
+                const response = await api.getHrmsStatutoryConfigByCountry(countryCode);
+                // Note: JSON serialization uses camelCase (configData, not config_data)
+                if (response?.success && response?.config?.configData?.country?.currency) {
+                    const currency = response.config.configData.country.currency;
+                    return {
+                        countryCode,
+                        currency: {
+                            code: currency.code,
+                            symbol: currency.symbol,
+                            locale: getLocaleForCurrency(currency.code)
+                        }
+                    };
+                }
+            } catch (err) {
+                console.warn(`[Currency] Could not load config for ${countryCode}:`, err.message);
+            }
+            return null;
+        });
+
+        const results = await Promise.all(configPromises);
+        results.filter(r => r !== null).forEach(r => {
+            currencyByCountry[r.countryCode] = r.currency;
+        });
+
+        console.log('[Currency] Loaded currency info for countries:', Object.keys(currencyByCountry));
+    } catch (error) {
+        console.error('[Currency] Error loading currency info:', error);
+    }
+}
+
+/**
+ * Get appropriate locale for a currency code.
+ */
+function getLocaleForCurrency(currencyCode) {
+    const localeMap = {
+        'INR': 'en-IN',
+        'USD': 'en-US',
+        'EUR': 'de-DE',
+        'GBP': 'en-GB',
+        'IDR': 'id-ID',
+        'MVR': 'dv-MV',
+        'AED': 'ar-AE',
+        'SGD': 'en-SG',
+        'JPY': 'ja-JP',
+        'CNY': 'zh-CN',
+        'AUD': 'en-AU',
+        'CAD': 'en-CA'
+    };
+    return localeMap[currencyCode] || 'en-US';
 }
 
 function populateSelect(elementId, items, labelField, isFilter = false) {
@@ -208,7 +290,7 @@ function renderEmployees() {
                 <td>${desig?.designation_name || '-'}</td>
                 <td>${office?.office_name || '-'}</td>
                 <td>${formatDate(emp.hire_date)}</td>
-                <td>${formatCurrency(emp.current_ctc || 0)}</td>
+                <td>${formatCurrency(emp.current_ctc || 0, office?.country_code)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
                 <td>
                     <div class="action-buttons">
@@ -1345,6 +1427,16 @@ function resetDocumentsAndBanking() {
         const input = document.getElementById(`${docType}-file`);
         if (input) input.value = '';
 
+        // NEW structure: Reset placeholder, preview-card, and thumb
+        const placeholderEl = document.getElementById(`${docType}-placeholder`);
+        const previewCardEl = document.getElementById(`${docType}-preview-card`);
+        const thumbEl = document.getElementById(`${docType}-thumb`);
+
+        if (placeholderEl) placeholderEl.style.display = 'flex';
+        if (previewCardEl) previewCardEl.style.display = 'none';
+        if (thumbEl) thumbEl.src = '';
+
+        // OLD structure fallback: Reset preview and upload area
         const previewEl = document.getElementById(`${docType}-preview`);
         const uploadArea = document.getElementById(`${docType}-upload`);
 
@@ -1436,8 +1528,13 @@ async function openSalaryModal(employeeId) {
         const structureSelect = document.getElementById('salaryStructureId');
         structureSelect.innerHTML = '<option value="">Select Salary Structure...</option>';
         salaryStructures.forEach(s => {
-            structureSelect.innerHTML += `<option value="${s.id}">${s.structure_name}</option>`;
+            // Include currency info as data attributes for dynamic currency display
+            const currencySymbol = s.currency_symbol || '';
+            const currencyCode = s.currency_code || '';
+            structureSelect.innerHTML += `<option value="${s.id}" data-currency-symbol="${escapeHtml(currencySymbol)}" data-currency-code="${escapeHtml(currencyCode)}">${s.structure_name}</option>`;
         });
+        // Reset currency prefix to default
+        updateCurrencyPrefix();
     } catch (error) {
         console.error('Error loading salary structures:', error);
         showToast('Failed to load salary structures', 'error');
@@ -1451,10 +1548,14 @@ async function openSalaryModal(employeeId) {
             document.getElementById('existingSalaryId').value = salary.id;
 
             // Show current salary section
+            // Get the employee's country code for proper currency formatting
+            const empOffice = offices.find(o => o.id === employee.office_id);
+            const empCountryCode = empOffice?.country_code;
+
             document.getElementById('currentSalarySection').style.display = 'block';
-            document.getElementById('currentCTC').textContent = formatCurrency(salary.ctc);
-            document.getElementById('currentMonthlyGross').textContent = formatCurrency(salary.gross / 12);
-            document.getElementById('currentMonthlyNet').textContent = formatCurrency(salary.net / 12);
+            document.getElementById('currentCTC').textContent = formatCurrency(salary.ctc, empCountryCode);
+            document.getElementById('currentMonthlyGross').textContent = formatCurrency(salary.gross / 12, empCountryCode);
+            document.getElementById('currentMonthlyNet').textContent = formatCurrency(salary.net / 12, empCountryCode);
             document.getElementById('currentEffectiveFrom').textContent =
                 salary.effective_from ? new Date(salary.effective_from).toLocaleDateString() : '-';
 
@@ -1491,6 +1592,11 @@ async function openSalaryModal(employeeId) {
 
 async function loadSalaryHistory(employeeId) {
     try {
+        // Get employee's country code for currency formatting
+        const emp = employees.find(e => e.id === employeeId);
+        const empOffice = emp ? offices.find(o => o.id === emp.office_id) : null;
+        const empCountryCode = empOffice?.country_code;
+
         // Use revisions endpoint which tracks all salary changes including same-day updates
         const revisions = await api.getEmployeeSalaryRevisions(employeeId);
         const tbody = document.getElementById('salaryHistoryTableBody');
@@ -1529,8 +1635,8 @@ async function loadSalaryHistory(employeeId) {
 
             const revisionType = item.revision_type || '-';
             const changeInfo = item.old_ctc && item.new_ctc
-                ? `${formatCurrency(item.old_ctc)} → ${formatCurrency(item.new_ctc)}`
-                : formatCurrency(item.new_ctc);
+                ? `${formatCurrency(item.old_ctc, empCountryCode)} → ${formatCurrency(item.new_ctc, empCountryCode)}`
+                : formatCurrency(item.new_ctc, empCountryCode);
             const percentChange = item.increment_percentage
                 ? `(${item.increment_percentage > 0 ? '+' : ''}${item.increment_percentage.toFixed(1)}%)`
                 : '';
@@ -1682,7 +1788,39 @@ async function deleteScheduledSalary(salaryId, employeeId) {
     }
 }
 
+/**
+ * Updates the currency prefix display based on the selected salary structure.
+ * Prefers currency symbol (₹, $, Rp) if available, falls back to currency code (INR, USD, IDR).
+ */
+function updateCurrencyPrefix() {
+    const structureSelect = document.getElementById('salaryStructureId');
+    const currencyPrefix = document.getElementById('salaryCurrencyPrefix');
+
+    if (!currencyPrefix) return;
+
+    const selectedOption = structureSelect.options[structureSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        // No structure selected - show nothing
+        currencyPrefix.textContent = '';
+        return;
+    }
+
+    const currencySymbol = selectedOption.getAttribute('data-currency-symbol');
+    const currencyCode = selectedOption.getAttribute('data-currency-code');
+
+    // Prefer symbol (₹, $, Rp), fallback to code (INR, USD, IDR)
+    if (currencySymbol && currencySymbol.trim()) {
+        currencyPrefix.textContent = currencySymbol;
+    } else if (currencyCode && currencyCode.trim()) {
+        currencyPrefix.textContent = currencyCode;
+    } else {
+        currencyPrefix.textContent = '';
+    }
+}
+
 async function previewSalaryBreakdown() {
+    // Update currency symbol when structure changes
+    updateCurrencyPrefix();
     const structureId = document.getElementById('salaryStructureId').value;
     const ctc = parseFloat(document.getElementById('salaryCTC').value);
 
@@ -1698,7 +1836,12 @@ async function previewSalaryBreakdown() {
         });
 
         if (breakdown) {
-            renderSalaryBreakdown(breakdown);
+            // Get currency code from selected structure for proper formatting
+            const structureSelect = document.getElementById('salaryStructureId');
+            const selectedOption = structureSelect.options[structureSelect.selectedIndex];
+            const currencyCode = selectedOption?.getAttribute('data-currency-code');
+
+            renderSalaryBreakdown(breakdown, currencyCode);
             document.getElementById('salaryBreakdownSection').style.display = 'block';
         }
     } catch (error) {
@@ -1710,10 +1853,13 @@ async function previewSalaryBreakdown() {
 // Track if salary breakdown has validation errors
 let salaryBreakdownHasErrors = false;
 
-function renderSalaryBreakdown(breakdown) {
+function renderSalaryBreakdown(breakdown, currencyCode = null) {
     const grid = document.getElementById('salaryBreakdownGrid');
     let html = '';
     salaryBreakdownHasErrors = false;
+
+    // Get country code from currency code for formatting
+    const countryCode = getCountryCodeForCurrency(currencyCode);
 
     // Earnings
     if (breakdown.earnings && breakdown.earnings.length > 0) {
@@ -1725,7 +1871,7 @@ function renderSalaryBreakdown(breakdown) {
             html += `
                 <div class="breakdown-item ${isNegative ? 'error' : ''}">
                     <span class="item-name">${e.component_name}${e.is_balance_component ? ' (Balance)' : ''}</span>
-                    <span class="item-value ${isNegative ? 'negative' : ''}">${formatCurrency(e.monthly_amount)}</span>
+                    <span class="item-value ${isNegative ? 'negative' : ''}">${formatCurrency(e.monthly_amount, countryCode)}</span>
                 </div>
             `;
         });
@@ -1740,7 +1886,7 @@ function renderSalaryBreakdown(breakdown) {
             html += `
                 <div class="breakdown-item">
                     <span class="item-name">${d.component_name}</span>
-                    <span class="item-value">-${formatCurrency(d.monthly_amount)}</span>
+                    <span class="item-value">-${formatCurrency(d.monthly_amount, countryCode)}</span>
                 </div>
             `;
         });
@@ -1759,10 +1905,11 @@ function renderSalaryBreakdown(breakdown) {
     }
 
     if (salaryBreakdownHasErrors) {
+        const ctcValue = parseFloat(document.getElementById('salaryCTC').value) || 0;
         errorDiv.innerHTML = `
             <div class="info-alert">
                 <strong>Note:</strong> The balance component (Special Allowance) is negative because the CTC
-                (₹${(parseFloat(document.getElementById('salaryCTC').value) || 0).toLocaleString('en-IN')})
+                (${formatCurrency(ctcValue, countryCode)})
                 is less than the sum of fixed components. This is allowed but may need review.
             </div>
         `;
@@ -1772,10 +1919,23 @@ function renderSalaryBreakdown(breakdown) {
     }
 
     // Update totals (backend returns annual amounts, convert to monthly)
-    document.getElementById('previewMonthlyGross').textContent = formatCurrency(breakdown.gross / 12);
+    document.getElementById('previewMonthlyGross').textContent = formatCurrency(breakdown.gross / 12, countryCode);
     document.getElementById('previewMonthlyDeductions').textContent =
-        formatCurrency(breakdown.total_deductions / 12 || 0);
-    document.getElementById('previewMonthlyNet').textContent = formatCurrency(breakdown.net / 12);
+        formatCurrency(breakdown.total_deductions / 12 || 0, countryCode);
+    document.getElementById('previewMonthlyNet').textContent = formatCurrency(breakdown.net / 12, countryCode);
+}
+
+/**
+ * Get country code from currency code (reverse lookup).
+ */
+function getCountryCodeForCurrency(currencyCode) {
+    if (!currencyCode) return null;
+    for (const [country, info] of Object.entries(currencyByCountry)) {
+        if (info.code === currencyCode) {
+            return country;
+        }
+    }
+    return null;
 }
 
 async function saveEmployeeSalary() {
@@ -1831,8 +1991,35 @@ async function saveEmployeeSalary() {
     }
 }
 
-function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '₹0';
+/**
+ * Format currency amount based on country code.
+ * @param {number} amount - The amount to format
+ * @param {string} countryCode - Optional country code (e.g., 'IN', 'ID', 'MV')
+ * @returns {string} Formatted currency string
+ */
+function formatCurrency(amount, countryCode = null) {
+    if (amount === null || amount === undefined) amount = 0;
+
+    // Lookup currency info from country
+    const currencyInfo = countryCode ? currencyByCountry[countryCode] : null;
+
+    if (currencyInfo && currencyInfo.code) {
+        try {
+            // Use Intl.NumberFormat with the country's currency
+            const locale = currencyInfo.locale || 'en-US';
+            return new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: currencyInfo.code,
+                maximumFractionDigits: 0
+            }).format(amount);
+        } catch (e) {
+            // Fallback if currency code is not supported
+            const symbol = currencyInfo.symbol || currencyInfo.code || '';
+            return `${symbol}${amount.toLocaleString()}`;
+        }
+    }
+
+    // Default to INR for backward compatibility
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR',

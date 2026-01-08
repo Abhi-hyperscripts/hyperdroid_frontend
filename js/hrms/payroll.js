@@ -14,7 +14,9 @@ let structures = [];
 let currentPayslipId = null;
 let drafts = [];
 let statutoryEmployeeDeductions = []; // Auto-attached to salary structures
-let statutoryEmployerContributions = []; // Employer-side statutory contributions (PF_ER, ESI_ER, etc.)
+let statutoryEmployerContributions = []; // Employer-side statutory contributions (e.g., retirement, social insurance)
+let costClassifications = {}; // CTC classifications from country config (charge_code -> {employee_portion, employer_portion})
+let selectableComponentsForCountry = []; // COUNTRY-FILTERED: Selectable components from backend for selected office's country
 
 // Store for searchable dropdown instances
 const payrollSearchableDropdowns = new Map();
@@ -1486,7 +1488,13 @@ async function viewDraftPayslip(payslipId) {
         let structureBreakdownHtml = '';
 
         // Calculate employer contributions for both single and multi-structure views
+        // v3.1.0: Use backend-provided contributor_type directly
         const isEmployerComponentMulti = (item) => {
+            // Primary: use backend-provided contributor_type
+            if (item.contributor_type) {
+                return item.contributor_type === 'employer';
+            }
+            // Fallback for legacy data
             return item.component_type === 'employer_contribution' ||
                    item.component_type === 'benefit' ||
                    (item.charge_category && item.charge_category.endsWith('_employer'));
@@ -1761,18 +1769,23 @@ async function viewDraftPayslip(payslipId) {
             const deductions = items.filter(i => i.component_type === 'deduction');
 
             // Separate employer contributions for cost classification display
-            // COUNTRY-AGNOSTIC: Only show employer-side components based on:
-            // 1. component_type === 'employer_contribution' OR 'benefit' (backend stores employer contributions as 'benefit')
-            // 2. charge_category ends with '_employer' (e.g., retirement_employer, social_insurance_employer)
-            // NEVER show employee deductions under employer cost
+            // v3.1.0: Use backend-provided contributor_type and ctc_classification directly
             const isEmployerComponent = (item) => {
+                // Primary: use backend-provided contributor_type
+                if (item.contributor_type) {
+                    return item.contributor_type === 'employer';
+                }
+                // Fallback for legacy data
                 return item.component_type === 'employer_contribution' ||
                        item.component_type === 'benefit' ||
                        (item.charge_category && item.charge_category.endsWith('_employer'));
             };
             const employerContributions = items.filter(i => isEmployerComponent(i));
-            const ctcIncludedItems = employerContributions.filter(i => i.cost_classification_employer === 'included_in_ctc');
-            const overheadItems = employerContributions.filter(i => i.cost_classification_employer === 'organizational_overhead');
+            // v3.1.0: Use backend-provided ctc_classification (fallback to cost_classification_employer for payslip items)
+            const ctcIncludedItems = employerContributions.filter(i =>
+                i.ctc_classification === 'included_in_ctc' || i.cost_classification_employer === 'included_in_ctc');
+            const overheadItems = employerContributions.filter(i =>
+                i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
                 earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
@@ -2385,6 +2398,13 @@ async function loadComponents() {
     try {
         const response = await api.request('/hrms/payroll/components');
         components = response || [];
+
+        // Load cost classifications for the selected country (for CTC badges on employer contributions)
+        const countryCode = getSelectedCountry();
+        if (countryCode) {
+            await loadCostClassifications(countryCode);
+        }
+
         updateComponentsTables();
     } catch (error) {
         console.error('Error loading components:', error);
@@ -2417,6 +2437,7 @@ async function loadStatutoryEmployeeDeductions(countryCode, stateCode) {
 /**
  * Render the statutory employee deductions section in the salary structure modal.
  * These components are auto-attached by the backend and are displayed as locked/non-editable.
+ * Uses card-based layout in the Auto-Attached tab.
  */
 function renderStatutoryDeductionsSection() {
     const container = document.getElementById('statutoryDeductionsContainer');
@@ -2430,65 +2451,43 @@ function renderStatutoryDeductionsSection() {
 
     if (!selectedOfficeId) {
         container.innerHTML = `
-            <div class="info-banner info-info compact">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>Select an office to see applicable statutory deductions for that location.</span>
+            <div class="statutory-compact-list">
+                <div class="statutory-compact-empty">Select an office to see applicable deductions</div>
             </div>
         `;
+        updateStatutoryCountBadge();
         return;
     }
 
     if (!statutoryEmployeeDeductions || statutoryEmployeeDeductions.length === 0) {
         container.innerHTML = `
-            <div class="info-banner info-warning compact">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>No statutory employee deductions configured for this location. Check country config.</span>
+            <div class="statutory-compact-list">
+                <div class="statutory-compact-empty">No deductions configured for this location</div>
             </div>
         `;
+        updateStatutoryCountBadge();
         return;
     }
 
     const html = `
-        <div class="statutory-collapsible">
-            <div class="statutory-collapse-header" onclick="toggleStatutorySection()">
-                <div class="statutory-collapse-title">
-                    <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    <span>${statutoryEmployeeDeductions.length} Statutory Deductions</span>
+        <div class="statutory-compact-list">
+            ${statutoryEmployeeDeductions.map(c => `
+                <div class="statutory-compact-item">
+                    <span class="statutory-compact-code">${escapeHtml(c.component_code || c.code)}</span>
+                    <span class="statutory-compact-name">${escapeHtml(c.component_name || c.name)}</span>
                 </div>
-                <span class="statutory-collapse-hint">Auto-attached • Click to expand</span>
-            </div>
-            <div class="statutory-collapse-content collapsed">
-                <div class="statutory-deductions-compact">
-                    ${statutoryEmployeeDeductions.map(c => `
-                        <div class="statutory-item-compact">
-                            <span class="statutory-name-compact">${escapeHtml(c.component_name || c.name)}</span>
-                            <span class="statutory-code-compact">${escapeHtml(c.component_code || c.code)}</span>
-                            <span class="badge badge-statutory-compact">${formatStatutoryType(c.statutory_type, c.component_name || c.name)}</span>
-                            <svg class="lock-icon-compact" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
+            `).join('')}
         </div>
     `;
     container.innerHTML = html;
+
+    // Update the deduction count in header
+    const countEl = document.getElementById('deductionCount');
+    if (countEl) {
+        countEl.textContent = statutoryEmployeeDeductions.length;
+    }
+
+    updateStatutoryCountBadge();
 }
 
 function toggleStatutorySection() {
@@ -2527,9 +2526,49 @@ function toggleEmployerContributionsSection() {
 }
 
 /**
+ * Switch between tabs in the salary structure modal
+ * @param {string} tabName - 'components' or 'statutory'
+ */
+function switchStructureTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.structure-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    document.querySelectorAll('.structure-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tabName}`);
+    });
+}
+
+/**
+ * Update the statutory count badge on the Auto-Attached tab
+ */
+function updateStatutoryCountBadge() {
+    const badge = document.getElementById('statutoryCountBadge');
+    if (badge) {
+        const totalCount = (statutoryEmployeeDeductions?.length || 0) + (statutoryEmployerContributions?.length || 0);
+        badge.textContent = totalCount;
+    }
+}
+
+/**
+ * Update the empty state visibility for components
+ */
+function updateComponentsEmptyState() {
+    const componentsList = document.getElementById('structureComponents');
+    const emptyState = document.getElementById('componentsEmptyState');
+
+    if (componentsList && emptyState) {
+        const hasComponents = componentsList.children.length > 0;
+        emptyState.classList.toggle('visible', !hasComponents);
+    }
+}
+
+/**
  * Load statutory employer contributions for a given country/state.
- * These are the employer-side statutory components (PF_ER, ESI_ER, GRATUITY, EDLI, etc.)
- * that are auto-attached to salary structures.
+ * These are the employer-side statutory components (e.g., retirement, social insurance, benefit accrual)
+ * that are auto-attached to salary structures based on country config.
  */
 async function loadStatutoryEmployerContributions(countryCode, stateCode) {
     try {
@@ -2548,8 +2587,83 @@ async function loadStatutoryEmployerContributions(countryCode, stateCode) {
 }
 
 /**
+ * Load CTC cost classifications from the country config.
+ * COUNTRY-AGNOSTIC: Returns classification for each charge_code based on the uploaded config.
+ * Used to show "Part of CTC" vs "Organizational Overhead" badges on employer contributions.
+ * @param {string} countryCode - Country code (e.g., "IN", "US")
+ */
+async function loadCostClassifications(countryCode) {
+    try {
+        if (!countryCode) {
+            console.log('No country code provided, skipping cost classifications load');
+            costClassifications = {};
+            return;
+        }
+        const response = await api.request(`/hrms/statutory/configs/${encodeURIComponent(countryCode)}/cost-classifications`);
+        if (response?.success && response?.classifications) {
+            // Build a lookup map by charge_code for quick access
+            costClassifications = {};
+            response.classifications.forEach(c => {
+                costClassifications[c.charge_code] = {
+                    employee_portion: c.employee_portion,
+                    employer_portion: c.employer_portion,
+                    charge_name: c.charge_name,
+                    comment: c.comment
+                };
+            });
+            console.log(`Loaded cost classifications for ${countryCode}: ${Object.keys(costClassifications).length} charges`);
+        } else {
+            costClassifications = {};
+        }
+    } catch (error) {
+        console.error('Error loading cost classifications:', error);
+        costClassifications = {};
+    }
+}
+
+/**
+ * Get CTC classification badge HTML for an employer contribution.
+ * COUNTRY-AGNOSTIC: Only uses data from backend - no hardcoded charge codes.
+ * Returns "Part of CTC" (green) or "Org Overhead" (blue) badge based on cost_classification.
+ *
+ * NOTE: Backend stores charge_code in the statutory_type field when components are
+ * auto-created from country config. See BusinessLayer_SalaryStructureVersions.cs:605-606.
+ *
+ * @param {Object} component - The component to check (statutory_type contains charge_code from backend)
+ * @returns {string} HTML string for the badge, or empty string if not applicable
+ */
+function getCTCClassificationBadge(component) {
+    // v3.1.0: Use backend-provided ctc_classification directly
+    // No need for separate lookup - backend enriches components with this field
+    const ctcClassification = component.ctc_classification;
+
+    if (!ctcClassification) {
+        // Fallback to legacy lookup if backend hasn't enriched this component
+        const chargeCode = component.statutory_type || '';
+        if (chargeCode && Object.keys(costClassifications).length > 0) {
+            const classification = costClassifications[chargeCode];
+            if (classification?.employer_portion === 'included_in_ctc') {
+                return '<span class="ctc-badge ctc-included" title="Included in CTC">Part of CTC</span>';
+            } else if (classification?.employer_portion === 'organizational_overhead') {
+                return '<span class="ctc-badge ctc-overhead" title="Organizational Overhead - Not part of CTC">Org Overhead</span>';
+            }
+        }
+        return '';
+    }
+
+    // v3.1.0: Use backend-provided ctc_classification directly
+    if (ctcClassification === 'included_in_ctc') {
+        return '<span class="ctc-badge ctc-included" title="Included in CTC">Part of CTC</span>';
+    } else if (ctcClassification === 'organizational_overhead') {
+        return '<span class="ctc-badge ctc-overhead" title="Organizational Overhead - Not part of CTC">Org Overhead</span>';
+    }
+    return '';
+}
+
+/**
  * Render the statutory employer contributions section in the salary structure modal.
  * These components are auto-attached by the backend and are displayed as locked/non-editable.
+ * Uses card-based layout in the Auto-Attached tab.
  */
 function renderStatutoryEmployerContributionsSection() {
     const container = document.getElementById('statutoryEmployerContributionsContainer');
@@ -2563,64 +2677,43 @@ function renderStatutoryEmployerContributionsSection() {
 
     if (!selectedOfficeId) {
         container.innerHTML = `
-            <div class="info-banner info-muted compact">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                <span>Select an office to see applicable employer contributions</span>
+            <div class="statutory-compact-list">
+                <div class="statutory-compact-empty">Select an office to see applicable contributions</div>
             </div>
         `;
+        updateStatutoryCountBadge();
         return;
     }
 
     if (!statutoryEmployerContributions || statutoryEmployerContributions.length === 0) {
         container.innerHTML = `
-            <div class="info-banner info-warning compact">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>No statutory employer contributions configured for this location. Check country config.</span>
+            <div class="statutory-compact-list">
+                <div class="statutory-compact-empty">No contributions configured for this location</div>
             </div>
         `;
+        updateStatutoryCountBadge();
         return;
     }
 
     const html = `
-        <div class="statutory-collapsible employer-collapsible">
-            <div class="employer-collapse-header" onclick="toggleEmployerContributionsSection()">
-                <div class="statutory-collapse-title">
-                    <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    <span>${statutoryEmployerContributions.length} Employer Contributions</span>
+        <div class="statutory-compact-list">
+            ${statutoryEmployerContributions.map(c => `
+                <div class="statutory-compact-item employer">
+                    <span class="statutory-compact-code">${escapeHtml(c.component_code || c.code)}</span>
+                    <span class="statutory-compact-name">${escapeHtml(c.component_name || c.name)}</span>
                 </div>
-                <span class="employer-collapse-hint">Auto-attached • Click to expand</span>
-            </div>
-            <div class="employer-collapse-content collapsed">
-                <div class="statutory-deductions-compact employer-contributions-compact">
-                    ${statutoryEmployerContributions.map(c => `
-                        <div class="statutory-item-compact employer-item-compact">
-                            <span class="statutory-name-compact">${escapeHtml(c.component_name || c.name)}</span>
-                            <span class="statutory-code-compact">${escapeHtml(c.component_code || c.code)}</span>
-                            <span class="badge badge-employer-compact">${formatStatutoryType(c.statutory_type, c.component_name || c.name)}</span>
-                            <svg class="lock-icon-compact" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
+            `).join('')}
         </div>
     `;
     container.innerHTML = html;
+
+    // Update the contribution count in header
+    const countEl = document.getElementById('contributionCount');
+    if (countEl) {
+        countEl.textContent = statutoryEmployerContributions.length;
+    }
+
+    updateStatutoryCountBadge();
 }
 
 function updateComponentsTables() {
@@ -2640,27 +2733,26 @@ function updateComponentsTables() {
         return matchesSearch && matchesType && matchesCountry;
     });
 
-    // NEW LOGIC: Use source and component_type instead of is_statutory
-    // Statutory Contributions: compliance-created deductions (paid to government)
+    // v3.1.0: Use source and component_type to filter components
+    // Statutory Contributions: compliance-created deductions AND employer contributions
+    const componentType = (c) => c.component_type || c.category || '';
+
     const statutory = filtered.filter(c =>
         c.source === 'compliance' &&
-        (c.component_type || c.category) === 'deduction'
+        (componentType(c) === 'deduction' || componentType(c) === 'employer_contribution' || componentType(c) === 'benefit')
     );
 
     // Earnings: ALL earnings including from compliance (like BASIC)
-    const earnings = filtered.filter(c => (c.component_type || c.category) === 'earning');
+    const earnings = filtered.filter(c => componentType(c) === 'earning');
 
     // Deductions: User-created deductions only (not from compliance)
     const deductions = filtered.filter(c =>
-        (c.component_type || c.category) === 'deduction' &&
+        componentType(c) === 'deduction' &&
         c.source !== 'compliance'
     );
 
-    // Benefits: compliance-created benefits (GRATUITY, EDLI) - shown with statutory
-    const benefits = filtered.filter(c =>
-        c.source === 'compliance' &&
-        (c.component_type || c.category) === 'benefit'
-    );
+    // Benefits: kept for backward compatibility but now included in statutory above
+    const benefits = [];
 
     updateEarningsTable(earnings);
     updateDeductionsTable(deductions);
@@ -2689,194 +2781,215 @@ function isStatutoryComponent(component) {
 
 /**
  * Update the Statutory Contributions section with grouped display.
- * COUNTRY-AGNOSTIC: Groups by charge_category from backend, uses component_name for labels.
- * No hardcoded country-specific names (PF, ESI, TDS are India-specific).
+ * v3.1.0: COUNTRY-AGNOSTIC - Uses backend-provided fields directly:
+ * - contributor_type: "employee" or "employer" (from backend)
+ * - ctc_classification: "included_in_ctc", "organizational_overhead", etc. (from backend)
+ * - display_group: "Retirement", "Health Insurance", etc. (from backend)
  *
- * Groups by backend charge_category values:
- * - retirement_employee, retirement_employer → Retirement
- * - health_insurance_*, social_insurance_* → Insurance
- * - welfare_fund_* → Welfare
- * - regional_tax, professional_tax, state_tax → Regional Tax
- * - income_tax, federal_tax → Income Tax
- * - gratuity, severance, benefit_accrual → Benefits
- * - Other → Other Statutory
+ * Frontend does NOT pattern-match - just displays what backend sends.
+ *
+ * IMPORTANT SEPARATION:
+ * - Statutory Contributions (Paid to Government): contribution, insurance, tax, levy
+ * - Statutory Provisions (Employer Accruals): benefit_accrual (e.g., Gratuity)
  */
 function updateStatutoryContributionsSection(statutoryComponents, benefitComponents = []) {
-    const container = document.getElementById('statutoryContributionsContainer');
+    const contributionsContainer = document.getElementById('statutoryContributionsContainer');
+    const provisionsContainer = document.getElementById('statutoryProvisionsContainer');
+    const provisionsSection = document.getElementById('statutoryProvisionsSection');
     const allComponents = [...(statutoryComponents || []), ...(benefitComponents || [])];
 
+    // Reset both containers
     if (!allComponents || allComponents.length === 0) {
-        container.innerHTML = `
+        contributionsContainer.innerHTML = `
             <div class="empty-state">
                 <p>No statutory contributions configured</p>
             </div>
         `;
+        if (provisionsSection) provisionsSection.style.display = 'none';
         return;
     }
 
-    // COUNTRY-AGNOSTIC grouping based on charge_category from backend
-    const groups = {};
+    // v3.1.0: Use backend-provided display_group for grouping (no pattern matching)
+    const contributionGroups = {}; // For government payments (contribution, insurance, tax, levy)
+    const provisionGroups = {};    // For employer accruals (benefit_accrual)
+    const groupLabels = {}; // Dynamically built from backend display_group
+
+    // Track CTC classification counts for summary
+    let ctcIncludedCount = 0;
+    let orgOverheadCount = 0;
+    let employeeDeductionCount = 0;
 
     allComponents.forEach(c => {
-        const chargeCategory = (c.charge_category || '').toLowerCase();
-        const componentType = (c.component_type || '').toLowerCase();
-        let groupKey = 'OTHER';
-        let contributorType = 'employee'; // Default
+        // v3.1.0: Use backend-provided fields directly (no pattern matching!)
+        const contributorType = c.contributor_type || 'employee';
+        const ctcClassification = c.ctc_classification || 'not_applicable';
+        const displayGroup = c.display_group || 'Other';
 
-        // Determine group based on charge_category (country-agnostic)
-        if (chargeCategory.includes('retirement')) {
-            groupKey = 'RETIREMENT';
-            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (chargeCategory.includes('insurance') || chargeCategory.includes('social')) {
-            groupKey = 'INSURANCE';
-            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (chargeCategory.includes('welfare')) {
-            groupKey = 'WELFARE';
-            contributorType = chargeCategory.includes('employer') ? 'employer' : 'employee';
-        } else if (chargeCategory.includes('regional') || chargeCategory.includes('state_tax') || chargeCategory.includes('local_tax')) {
-            groupKey = 'REGIONAL_TAX';
-            contributorType = 'employee';
-        } else if (chargeCategory.includes('income_tax') || chargeCategory.includes('federal_tax') || chargeCategory.includes('national_tax')) {
-            groupKey = 'INCOME_TAX';
-            contributorType = 'employee';
-        } else if (chargeCategory.includes('gratuity') || chargeCategory.includes('severance') || chargeCategory.includes('benefit_accrual')) {
-            groupKey = 'BENEFITS';
-            contributorType = 'employer';
-        } else if (componentType === 'benefit' || componentType === 'employer_contribution') {
-            groupKey = 'OTHER';
-            contributorType = 'employer';
+        // Use display_group as the grouping key (backend provides proper label)
+        let groupKey = displayGroup;
+
+        // Track CTC classification for summary using backend-provided ctc_classification
+        if (contributorType === 'employee') {
+            employeeDeductionCount++;
+        } else if (contributorType === 'employer') {
+            if (ctcClassification === 'included_in_ctc') {
+                ctcIncludedCount++;
+            } else if (ctcClassification === 'organizational_overhead') {
+                orgOverheadCount++;
+            }
         }
+
+        // Store the display_group as the label (backend provides proper label)
+        if (!groupLabels[groupKey]) {
+            groupLabels[groupKey] = displayGroup;
+        }
+
+        // v3.1.0: Use display_group to determine target (Gratuity → Provisions)
+        // Gratuity, Benefit Accrual → Provisions (paid to employees)
+        // Everything else → Contributions (paid to government)
+        const isProvision = displayGroup === 'Gratuity' || displayGroup === 'Benefit Accrual';
+        const targetGroups = isProvision ? provisionGroups : contributionGroups;
 
         // Use arrays to collect ALL components (no overwriting!)
-        if (!groups[groupKey]) {
-            groups[groupKey] = { employee: [], employer: [] };
+        if (!targetGroups[groupKey]) {
+            targetGroups[groupKey] = { employee: [], employer: [] };
         }
-        groups[groupKey][contributorType].push(c);
+        targetGroups[groupKey][contributorType].push(c);
     });
 
-    // Build the HTML for grouped display
-    let html = '<div class="statutory-contributions-grid">';
-
-    // COUNTRY-AGNOSTIC group info - generic names, no country-specific terms
-    const groupInfo = {
-        'RETIREMENT': {
-            name: 'Retirement Contributions',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-8h6v8"/></svg>',
-            description: 'Retirement savings contributions'
-        },
-        'INSURANCE': {
-            name: 'Insurance Contributions',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-            description: 'Health and social insurance'
-        },
-        'WELFARE': {
-            name: 'Welfare Fund',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>',
-            description: 'Welfare fund contributions'
-        },
-        'REGIONAL_TAX': {
-            name: 'Regional/State Tax',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
-            description: 'Regional, state, or local taxes'
-        },
-        'INCOME_TAX': {
-            name: 'Income Tax',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
-            description: 'Income tax deducted at source'
-        },
-        'BENEFITS': {
-            name: 'Employer Benefits',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-            description: 'Employer-funded benefits and provisions'
-        },
-        'OTHER': {
-            name: 'Other Statutory',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
-            description: 'Other statutory contributions'
+    // Helper function to render CTC summary banner
+    const renderCTCSummary = () => {
+        if (ctcIncludedCount === 0 && orgOverheadCount === 0 && employeeDeductionCount === 0) {
+            return '';
         }
-    };
-
-    // Define order of display (generic categories)
-    const groupOrder = ['RETIREMENT', 'INSURANCE', 'WELFARE', 'REGIONAL_TAX', 'INCOME_TAX', 'BENEFITS', 'OTHER'];
-
-    groupOrder.forEach(groupKey => {
-        if (!groups[groupKey]) return;
-
-        const group = groups[groupKey];
-        const info = groupInfo[groupKey];
-        const hasEmployee = group.employee && group.employee.length > 0;
-        const hasEmployer = group.employer && group.employer.length > 0;
-
-        if (!hasEmployee && !hasEmployer) return;
-
-        html += `
-            <div class="statutory-card">
-                <div class="statutory-card-header">
-                    <div class="statutory-icon">${info.icon}</div>
-                    <div class="statutory-title-area">
-                        <h4>${info.name}</h4>
-                    </div>
+        return `
+            <div class="ctc-summary-banner">
+                <div class="ctc-summary-item included-in-ctc">
+                    <span class="ctc-summary-label">Included in CTC</span>
+                    <span class="ctc-summary-value">${ctcIncludedCount} employer contribution${ctcIncludedCount !== 1 ? 's' : ''}</span>
+                    <span class="ctc-summary-hint">Communicated to employees as part of total compensation</span>
                 </div>
-                <p class="statutory-description">${info.description}</p>
-                <div class="statutory-breakdown">
-        `;
-
-        // Render ALL employee contributions - use component_name from backend
-        if (hasEmployee) {
-            group.employee.forEach(emp => {
-                const value = formatStatutoryValue(emp);
-                const status = emp.is_active !== false ? 'Active' : 'Inactive';
-                const statusClass = emp.is_active !== false ? 'active' : 'inactive';
-                // Use component_name from backend for display
-                const displayName = emp.component_name || emp.name || emp.component_code || emp.code;
-                html += `
-                    <div class="contribution-row employee-contribution">
-                        <div class="contribution-label">
-                            <span class="contributor-badge employee">Employee</span>
-                            <span class="component-name">${escapeHtml(displayName)}</span>
-                            <span class="component-code">${emp.component_code || emp.code}</span>
-                        </div>
-                        <div class="contribution-details">
-                            <span class="contribution-value">${value}</span>
-                            <span class="contribution-status ${statusClass}">${status}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Render ALL employer contributions - use component_name from backend
-        if (hasEmployer) {
-            group.employer.forEach(er => {
-                const value = formatStatutoryValue(er);
-                const status = er.is_active !== false ? 'Active' : 'Inactive';
-                const statusClass = er.is_active !== false ? 'active' : 'inactive';
-                // Use component_name from backend for display
-                const displayName = er.component_name || er.name || er.component_code || er.code;
-                html += `
-                    <div class="contribution-row employer-contribution">
-                        <div class="contribution-label">
-                            <span class="contributor-badge employer">Employer</span>
-                            <span class="component-name">${escapeHtml(displayName)}</span>
-                            <span class="component-code">${er.component_code || er.code}</span>
-                        </div>
-                        <div class="contribution-details">
-                            <span class="contribution-value">${value}</span>
-                            <span class="contribution-status ${statusClass}">${status}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        html += `
+                <div class="ctc-summary-item org-overhead">
+                    <span class="ctc-summary-label">Organizational Overhead</span>
+                    <span class="ctc-summary-value">${orgOverheadCount} employer contribution${orgOverheadCount !== 1 ? 's' : ''}</span>
+                    <span class="ctc-summary-hint">Business cost not shown in employee CTC</span>
+                </div>
+                <div class="ctc-summary-item employee-deductions">
+                    <span class="ctc-summary-label">Employee Deductions</span>
+                    <span class="ctc-summary-value">${employeeDeductionCount} deduction${employeeDeductionCount !== 1 ? 's' : ''}</span>
+                    <span class="ctc-summary-hint">Deducted from employee gross salary</span>
                 </div>
             </div>
         `;
-    });
+    };
 
-    html += '</div>';
-    container.innerHTML = html;
+    // Helper function to render a group of components
+    const renderGroups = (groups) => {
+        const defaultIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
+        let html = '<div class="statutory-contributions-grid">';
+
+        Object.keys(groups).forEach(groupKey => {
+            const group = groups[groupKey];
+            const groupName = groupLabels[groupKey] || groupKey;
+            const hasEmployee = group.employee && group.employee.length > 0;
+            const hasEmployer = group.employer && group.employer.length > 0;
+
+            if (!hasEmployee && !hasEmployer) return;
+
+            html += `
+                <div class="statutory-card">
+                    <div class="statutory-card-header">
+                        <div class="statutory-icon">${defaultIcon}</div>
+                        <div class="statutory-title-area">
+                            <h4>${escapeHtml(groupName)}</h4>
+                        </div>
+                    </div>
+                    <div class="statutory-breakdown">
+            `;
+
+            // Render ALL employee contributions
+            if (hasEmployee) {
+                group.employee.forEach(emp => {
+                    const value = formatStatutoryValue(emp);
+                    const status = emp.is_active !== false ? 'Active' : 'Inactive';
+                    const statusClass = emp.is_active !== false ? 'active' : 'inactive';
+                    const displayName = emp.component_name || emp.name || emp.component_code || emp.code;
+                    const code = emp.component_code || emp.code;
+                    html += `
+                        <div class="contribution-row employee-contribution">
+                            <span class="contributor-badge employee">Employee</span>
+                            <div class="component-info">
+                                <span class="component-name">${escapeHtml(displayName)}</span>
+                                <span class="component-code">${code}</span>
+                            </div>
+                            <div class="ctc-badge-cell"></div>
+                            <div class="contribution-details">
+                                <span class="contribution-value">${value}</span>
+                                <span class="contribution-status ${statusClass}">${status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Render ALL employer contributions with CTC classification badges
+            if (hasEmployer) {
+                group.employer.forEach(er => {
+                    const value = formatStatutoryValue(er);
+                    const status = er.is_active !== false ? 'Active' : 'Inactive';
+                    const statusClass = er.is_active !== false ? 'active' : 'inactive';
+                    const displayName = er.component_name || er.name || er.component_code || er.code;
+                    const code = er.component_code || er.code;
+                    const ctcBadge = getCTCClassificationBadge(er);
+                    html += `
+                        <div class="contribution-row employer-contribution">
+                            <span class="contributor-badge employer">Employer</span>
+                            <div class="component-info">
+                                <span class="component-name">${escapeHtml(displayName)}</span>
+                                <span class="component-code">${code}</span>
+                            </div>
+                            <div class="ctc-badge-cell">${ctcBadge}</div>
+                            <div class="contribution-details">
+                                <span class="contribution-value">${value}</span>
+                                <span class="contribution-status ${statusClass}">${status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    };
+
+    // Render Statutory Contributions (Paid to Government)
+    const hasContributions = Object.keys(contributionGroups).length > 0;
+    if (hasContributions) {
+        contributionsContainer.innerHTML = renderCTCSummary() + renderGroups(contributionGroups);
+    } else {
+        contributionsContainer.innerHTML = `
+            <div class="empty-state">
+                <p>No statutory contributions configured</p>
+            </div>
+        `;
+    }
+
+    // Render Statutory Provisions (Employer Accruals) - only show if there are provisions
+    const hasProvisions = Object.keys(provisionGroups).length > 0;
+    if (provisionsSection) {
+        if (hasProvisions) {
+            provisionsSection.style.display = 'block';
+            provisionsContainer.innerHTML = renderGroups(provisionGroups);
+        } else {
+            provisionsSection.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -3285,12 +3398,18 @@ async function showCreateStructureModal() {
     const isActiveCheckbox = document.getElementById('structureIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
 
+    // Reset to Components tab
+    switchStructureTab('components');
+
     // Don't load statutory deductions/contributions yet - wait for office selection
     // This will show "Select an office to see applicable statutory deductions/contributions"
     statutoryEmployeeDeductions = [];
     statutoryEmployerContributions = [];
     renderStatutoryDeductionsSection();
     renderStatutoryEmployerContributionsSection();
+
+    // Show empty state for components
+    updateComponentsEmptyState();
 
     document.getElementById('structureModal').classList.add('active');
 }
@@ -3299,6 +3418,7 @@ async function showCreateStructureModal() {
  * Handle office selection change in the salary structure modal.
  * When an office is selected, load the applicable statutory deductions and employer contributions
  * based on the office's country and state codes.
+ * Also refreshes component dropdowns to show only components for the selected country.
  */
 async function onStructureOfficeChange() {
     const officeId = document.getElementById('structureOffice')?.value;
@@ -3309,6 +3429,8 @@ async function onStructureOfficeChange() {
         statutoryEmployerContributions = [];
         renderStatutoryDeductionsSection();
         renderStatutoryEmployerContributionsSection();
+        // Refresh component dropdowns (will show empty since no office selected)
+        refreshAllComponentDropdowns();
         return;
     }
 
@@ -3320,6 +3442,7 @@ async function onStructureOfficeChange() {
         statutoryEmployerContributions = [];
         renderStatutoryDeductionsSection();
         renderStatutoryEmployerContributionsSection();
+        refreshAllComponentDropdowns();
         return;
     }
 
@@ -3335,6 +3458,89 @@ async function onStructureOfficeChange() {
     ]);
     renderStatutoryDeductionsSection();
     renderStatutoryEmployerContributionsSection();
+
+    // CRITICAL: Load selectable components from backend for this country
+    // This ensures BASIC and other components are filtered by country at the backend level
+    await loadSelectableComponentsForCountry(countryCode);
+
+    // Refresh component dropdowns with the newly loaded country-filtered components
+    refreshAllComponentDropdowns();
+}
+
+/**
+ * Load selectable components from backend filtered by country code.
+ * COUNTRY-AGNOSTIC: Backend returns only BASIC + user-created components for the specified country.
+ * @param {string} countryCode - Country code (e.g., "IN", "ID", "MV")
+ */
+async function loadSelectableComponentsForCountry(countryCode) {
+    try {
+        if (!countryCode) {
+            console.log('No country code provided, clearing selectable components');
+            selectableComponentsForCountry = [];
+            return;
+        }
+
+        const response = await api.request(`/hrms/payroll/components/selectable?countryCode=${encodeURIComponent(countryCode)}`);
+        selectableComponentsForCountry = response?.components || [];
+        console.log(`Loaded ${selectableComponentsForCountry.length} selectable components for country ${countryCode}`);
+    } catch (error) {
+        console.error('Error loading selectable components for country:', error);
+        selectableComponentsForCountry = [];
+    }
+}
+
+/**
+ * Refresh all component dropdowns in the salary structure modal.
+ * Called when office selection changes to update the component list for the new country.
+ * Uses the backend-loaded selectableComponentsForCountry array.
+ */
+function refreshAllComponentDropdowns() {
+    const dropdowns = document.querySelectorAll('.searchable-dropdown');
+    // Use backend-loaded components instead of client-side filtering
+    const selectableComponents = selectableComponentsForCountry;
+
+    dropdowns.forEach(dropdown => {
+        const optionsContainer = dropdown.querySelector('.dropdown-options');
+        if (!optionsContainer) return;
+
+        const componentId = optionsContainer.dataset.componentId;
+
+        // Regenerate options HTML with country-filtered components from backend
+        optionsContainer.innerHTML = selectableComponents.map(c => `
+            <div class="dropdown-option"
+                 data-value="${c.id}"
+                 data-type="${c.component_type || c.category}"
+                 data-calc-type="${c.calculation_type || 'fixed'}"
+                 data-calc-base="${c.calculation_base || 'basic'}"
+                 data-is-basic="${c.is_basic_component || false}"
+                 data-is-balance="${c.is_balance_component || false}"
+                 data-percentage="${c.percentage || ''}"
+                 data-fixed="${c.fixed_amount || ''}"
+                 data-name="${escapeHtml(c.component_name || c.name)}"
+                 data-code="${escapeHtml(c.component_code || c.code)}"
+                 onclick="selectDropdownOption('${dropdown.id}', this, '${componentId}')">
+                <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
+                <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
+                <span class="option-type badge badge-${(c.component_type || c.category) === 'earning' ? 'success' : 'warning'}">${c.component_type || c.category}</span>
+            </div>
+        `).join('');
+
+        // Clear any current selection if the selected component is no longer in the filtered list
+        const selectedText = dropdown.querySelector('.dropdown-selected-text');
+        if (selectedText && selectedText.textContent !== 'Select Component') {
+            const selectedCode = selectedText.dataset.selectedCode;
+            const stillExists = selectableComponents.some(c => c.component_code === selectedCode);
+            if (!stillExists) {
+                selectedText.textContent = 'Select Component';
+                selectedText.removeAttribute('data-selected-code');
+                // Clear hidden input if exists
+                const hiddenInput = dropdown.querySelector('input[type="hidden"]');
+                if (hiddenInput) hiddenInput.value = '';
+            }
+        }
+    });
+
+    console.log(`Refreshed ${dropdowns.length} component dropdowns with ${selectableComponents.length} backend-filtered components`);
 }
 
 async function editSalaryStructure(structureId) {
@@ -3410,6 +3616,12 @@ async function editSalaryStructure(structureId) {
         }
         renderStatutoryDeductionsSection();
         renderStatutoryEmployerContributionsSection();
+
+        // Reset to Components tab
+        switchStructureTab('components');
+
+        // Update empty state
+        updateComponentsEmptyState();
 
         document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
         document.getElementById('structureModal').classList.add('active');
@@ -3535,22 +3747,28 @@ async function saveSalaryStructure() {
 }
 
 // Load countries for global filter dropdown
+// COUNTRY-AGNOSTIC: Removes "All Countries" option - a specific country must be selected
 async function loadCountryFilter() {
     try {
         const response = await api.request('/hrms/countries');
         const countries = Array.isArray(response) ? response : (response.countries || []);
         const select = document.getElementById('countryFilter');
         if (select) {
-            select.innerHTML = '<option value="">All Countries</option>';
+            // No "All Countries" option - user MUST select a specific country
+            select.innerHTML = countries.length === 0
+                ? '<option value="" disabled>No countries configured</option>'
+                : '';
             countries.forEach(c => {
                 const option = document.createElement('option');
                 option.value = c.country_code;
                 option.textContent = `${c.country_name} (${c.country_code})`;
                 select.appendChild(option);
             });
-            // Auto-select if only one country (common case)
-            if (countries.length === 1) {
+            // Auto-select first country if any exist
+            if (countries.length > 0) {
                 select.value = countries[0].country_code;
+                // Trigger change event to load data for this country
+                onCountryFilterChange();
             }
         }
         return countries;
@@ -3566,8 +3784,15 @@ function getSelectedCountry() {
     return select ? select.value : '';
 }
 
-// Handle country filter change - refresh components display
-function onCountryFilterChange() {
+// Handle country filter change - refresh components display and load cost classifications
+async function onCountryFilterChange() {
+    const countryCode = getSelectedCountry();
+    // Load cost classifications for the selected country (for CTC badges)
+    if (countryCode) {
+        await loadCostClassifications(countryCode);
+    } else {
+        costClassifications = {};
+    }
     updateComponentsTables();
 }
 
@@ -4258,18 +4483,23 @@ async function viewPayslip(payslipId) {
             const deductions = items.filter(i => i.component_type === 'deduction');
 
             // Separate employer contributions for cost classification display
-            // COUNTRY-AGNOSTIC: Only show employer-side components based on:
-            // 1. component_type === 'employer_contribution' OR 'benefit' (backend stores employer contributions as 'benefit')
-            // 2. charge_category ends with '_employer' (e.g., retirement_employer, social_insurance_employer)
-            // NEVER show employee deductions under employer cost
+            // v3.1.0: Use backend-provided contributor_type and ctc_classification directly
             const isEmployerComponent = (item) => {
+                // Primary: use backend-provided contributor_type
+                if (item.contributor_type) {
+                    return item.contributor_type === 'employer';
+                }
+                // Fallback for legacy data
                 return item.component_type === 'employer_contribution' ||
                        item.component_type === 'benefit' ||
                        (item.charge_category && item.charge_category.endsWith('_employer'));
             };
             const employerContributions = items.filter(i => isEmployerComponent(i));
-            const ctcIncludedItems = employerContributions.filter(i => i.cost_classification_employer === 'included_in_ctc');
-            const overheadItems = employerContributions.filter(i => i.cost_classification_employer === 'organizational_overhead');
+            // v3.1.0: Use backend-provided ctc_classification (fallback to cost_classification_employer for payslip items)
+            const ctcIncludedItems = employerContributions.filter(i =>
+                i.ctc_classification === 'included_in_ctc' || i.cost_classification_employer === 'included_in_ctc');
+            const overheadItems = employerContributions.filter(i =>
+                i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
                 earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
@@ -5339,36 +5569,33 @@ async function deleteComponent(componentId) {
 let structureComponentCounter = 0;
 
 /**
+ * Get the currently selected office's country code from the structure modal.
+ * Returns null if no office is selected.
+ */
+function getSelectedOfficeCountryCode() {
+    const officeId = document.getElementById('structureOffice')?.value;
+    if (!officeId) return null;
+
+    const selectedOffice = offices.find(o => o.id === officeId);
+    return selectedOffice?.country_code || null;
+}
+
+/**
  * Get components available for manual selection in salary structures.
- * COUNTRY-AGNOSTIC: Uses backend flags only, no hardcoded component codes.
+ * BACKEND-DRIVEN: Returns the backend-loaded selectableComponentsForCountry array.
+ * COUNTRY-AGNOSTIC: Backend filters by country_code and returns only applicable components.
  *
- * Rules:
- * 1. Show user-created components (source !== 'compliance')
- * 2. Show BASIC component (is_basic_component = true) - required for salary calculation
- * 3. Exclude statutory components from compliance - these are auto-attached based on country config
+ * The backend /api/payroll/components/selectable?countryCode=XX returns:
+ * - BASIC component for that country (is_basic_component=true)
+ * - User-created earning components for that country
+ * - Excludes statutory deductions/contributions (they are auto-attached)
  *
- * Statutory components have: source='compliance', and are auto-calculated
- * BASIC has: source='compliance', is_basic_component=true, component_type='earning'
+ * This function is called by createSearchableDropdown() and refreshAllComponentDropdowns()
  */
 function getSelectableComponents() {
-    if (!components || components.length === 0) return [];
-
-    return components.filter(c => {
-        // Always include BASIC component (needed for salary calculation)
-        // Check both is_basic_component flag and component_code for safety
-        if (c.is_basic_component === true || c.component_code === 'BASIC') {
-            return true;
-        }
-
-        // Include user-created components (not from compliance)
-        if (c.source !== 'compliance') {
-            return true;
-        }
-
-        // Exclude compliance components that are NOT basic
-        // This filters out all statutory deductions/contributions (auto-attached based on country config)
-        return false;
-    });
+    // BACKEND-DRIVEN: Use the components loaded from /api/payroll/components/selectable
+    // This is populated by loadSelectableComponentsForCountry() when office is selected
+    return selectableComponentsForCountry || [];
 }
 
 /**
@@ -5719,6 +5946,9 @@ function addStructureComponent() {
     `;
 
     container.insertAdjacentHTML('beforeend', componentHtml);
+
+    // Hide empty state when component is added
+    updateComponentsEmptyState();
 }
 
 /**
@@ -5821,8 +6051,8 @@ function checkDuplicateComponent(componentId, currentRowId) {
  * Update the structure summary showing earnings and deductions totals
  * This calculates the EFFECTIVE total gross as % of CTC
  *
- * Example: If Basic = 40% of CTC, and HRA = 50% of Basic
- *   - HRA effective = 50% * 40% / 100 = 20% of CTC
+ * Example: If Basic = 40% of CTC, and Allowance = 50% of Basic
+ *   - Allowance effective = 50% * 40% / 100 = 20% of CTC
  *   - Total Gross = 40% + 20% = 60% of CTC
  *   - Remaining = 100% - 60% = 40% unallocated
  */
@@ -5837,7 +6067,7 @@ function updateStructureSummary() {
     }
 
     let earningsCtcTotal = 0;      // Direct % of CTC earnings (includes Basic)
-    let earningsBasicTotal = 0;    // % of Basic earnings (HRA, etc.)
+    let earningsBasicTotal = 0;    // % of Basic earnings (allowances, etc.)
     let earningsGrossTotal = 0;    // % of Gross earnings
     let deductionsBasicTotal = 0;  // Deductions as % of Basic
     let fixedAmountsCount = 0;     // Count of fixed amount components
@@ -5896,7 +6126,7 @@ function updateStructureSummary() {
                     // % of Gross
                     earningsGrossTotal += percentage;
                 } else {
-                    // % of Basic (HRA, etc.)
+                    // % of Basic (allowances, etc.)
                     earningsBasicTotal += percentage;
                 }
             } else if (componentType === 'deduction') {
@@ -5916,7 +6146,7 @@ function updateStructureSummary() {
     }
 
     // Calculate effective CTC percentages
-    // HRA 50% of Basic → if Basic is 40% of CTC → HRA is effectively 20% of CTC
+    // Allowance 50% of Basic → if Basic is 40% of CTC → Allowance is effectively 20% of CTC
     const earningsBasicEffective = (earningsBasicTotal * earningsCtcTotal) / 100;
 
     // For gross-based components, we need to estimate gross first
@@ -6018,6 +6248,8 @@ function removeStructureComponent(componentId) {
     if (element) {
         element.remove();
         updateStructureSummary();
+        // Show empty state if no components remain
+        updateComponentsEmptyState();
     }
 }
 

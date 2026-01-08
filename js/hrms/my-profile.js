@@ -21,11 +21,13 @@ const fieldMappings = {
         { value: 'bank_name', label: 'Bank Name', dataKey: 'bank_name' },
         { value: 'branch_name', label: 'Branch Name', dataKey: 'branch_name' }
     ],
+    // Country-agnostic statutory fields - labels use generic terms
+    // Backend dataKey unchanged for compatibility
     statutory_info: [
-        { value: 'pan_number', label: 'PAN Number', dataKey: 'pan_number' },
-        { value: 'pf_number', label: 'PF Number', dataKey: 'pf_number' },
-        { value: 'uan', label: 'UAN', dataKey: 'uan' },
-        { value: 'esi_number', label: 'ESI Number', dataKey: 'esi_number' }
+        { value: 'pan_number', label: 'Tax ID Number', dataKey: 'pan_number' },
+        { value: 'pf_number', label: 'Retirement Fund ID', dataKey: 'pf_number' },
+        { value: 'uan', label: 'Universal Account Number', dataKey: 'uan' },
+        { value: 'esi_number', label: 'Social Insurance ID', dataKey: 'esi_number' }
     ],
     contact: [
         { value: 'work_phone', label: 'Work Phone', dataKey: 'work_phone' }

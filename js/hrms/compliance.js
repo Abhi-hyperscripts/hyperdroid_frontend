@@ -705,17 +705,36 @@ function showConfigPreview(data) {
             <div class="section-tags">
     `;
 
-    // Check for various sections
+    // Country-agnostic section detection using charge_type from globalSchemaV3
+    // charge_type enum: income_tax, regional_tax, local_tax, retirement,
+    //                   social_insurance, health_insurance, levy, benefit_accrual
     const sections = [];
-    if (data.pf || data.pf_rules) sections.push('Provident Fund');
-    if (data.esi || data.esi_rules) sections.push('ESI');
-    if (data.pt || data.pt_rules || data.professional_tax) sections.push('Professional Tax');
-    if (data.lwf || data.lwf_rules) sections.push('Labour Welfare Fund');
-    if (data.tax || data.tax_slabs || data.income_tax) sections.push('Income Tax');
-    if (data.social_security) sections.push('Social Security');
-    if (data.pension) sections.push('Pension');
+
+    // globalSchemaV3 compliant configs use statutory_charges
+    if (data.statutory_charges) {
+        const chargeTypes = new Set();
+        Object.values(data.statutory_charges).forEach(charge => {
+            if (charge.charge_type) chargeTypes.add(charge.charge_type);
+        });
+        // Map charge_type to generic display labels
+        if (chargeTypes.has('retirement')) sections.push('Retirement Fund');
+        if (chargeTypes.has('health_insurance') || chargeTypes.has('social_insurance')) sections.push('Social Insurance');
+        if (chargeTypes.has('regional_tax') || chargeTypes.has('local_tax')) sections.push('Regional Tax');
+        if (chargeTypes.has('income_tax')) sections.push('Income Tax');
+        if (chargeTypes.has('levy')) sections.push('Welfare Fund');
+        if (chargeTypes.has('benefit_accrual')) sections.push('Benefit Accrual');
+    } else {
+        // Legacy config support (deprecated)
+        if (data.pf || data.pf_rules) sections.push('Retirement Fund');
+        if (data.esi || data.esi_rules) sections.push('Social Insurance');
+        if (data.pt || data.pt_rules || data.professional_tax) sections.push('Regional Tax');
+        if (data.lwf || data.lwf_rules) sections.push('Welfare Fund');
+        if (data.tax || data.tax_slabs || data.income_tax) sections.push('Income Tax');
+        if (data.social_security) sections.push('Social Insurance');
+        if (data.pension) sections.push('Pension');
+    }
     if (data.deduction_order) sections.push('Deduction Order');
-    if (data.states) sections.push(`States (${data.states.length})`);
+    if (data.states) sections.push(`Jurisdictions (${data.states.length})`);
 
     previewHtml += sections.map(s => `<span class="section-tag">${escapeHtml(s)}</span>`).join('');
     previewHtml += '</div></div>';
@@ -859,16 +878,25 @@ function renderConfigContent(config) {
     if (configData.ytd_tracking) sections.push({ id: 'ytd_tracking', name: 'YTD', icon: '📈' });
     if (configData.compliance_calendar) sections.push({ id: 'compliance_calendar', name: 'Calendar', icon: '🗓️' });
 
-    // Legacy India-specific sections (backward compatibility)
-    if (configData.pf || configData.pf_rules) sections.push({ id: 'pf', name: 'PF', icon: '🏦' });
-    if (configData.esi || configData.esi_rules) sections.push({ id: 'esi', name: 'ESI', icon: '🏥' });
-    if (configData.income_tax && !configData.tax_system) sections.push({ id: 'income_tax', name: 'Tax', icon: '💵' });
-    if (configData.states) sections.push({ id: 'states', name: 'States', icon: '🏢' });
+    // Country-agnostic: Build tabs from statutory_charges using charge_type enum
+    if (configData.statutory_charges) {
+        Object.entries(configData.statutory_charges).forEach(([code, charge]) => {
+            const displayName = charge.display_name || code;
+            sections.push({ id: `charge_${code}`, name: displayName, chargeData: charge });
+        });
+    } else {
+        // Legacy section support (deprecated) - use generic labels
+        if (configData.pf || configData.pf_rules) sections.push({ id: 'pf', name: 'Retirement' });
+        if (configData.esi || configData.esi_rules) sections.push({ id: 'esi', name: 'Insurance' });
+        if (configData.income_tax && !configData.tax_system) sections.push({ id: 'income_tax', name: 'Tax' });
+    }
+    if (configData.states) sections.push({ id: 'states', name: 'Jurisdictions' });
 
     // Render tabs - compact horizontal scrollable
+    // Handle missing icons gracefully (country-agnostic: not all sections have icons)
     tabsEl.innerHTML = `<div class="config-tabs-scroll">${sections.map((s, i) => `
         <button type="button" class="config-tab ${i === 0 ? 'active' : ''}" data-section="${s.id}" title="${escapeHtml(s.name)}">
-            <span class="tab-icon">${s.icon}</span>
+            ${s.icon ? `<span class="tab-icon">${s.icon}</span>` : ''}
             <span class="tab-name">${escapeHtml(s.name)}</span>
         </button>
     `).join('')}</div>`;
@@ -923,12 +951,12 @@ function renderConfigSection(sectionId, config, configData) {
         case 'compliance_calendar':
             html = renderComplianceCalendarSection(configData.compliance_calendar);
             break;
-        // Legacy India-specific sections
+        // Legacy sections with generic labels (deprecated - use statutory_charges)
         case 'pf':
-            html = renderCompactDataSection('Provident Fund', configData.pf || configData.pf_rules);
+            html = renderCompactDataSection('Retirement Fund', configData.pf || configData.pf_rules);
             break;
         case 'esi':
-            html = renderCompactDataSection('ESI Insurance', configData.esi || configData.esi_rules);
+            html = renderCompactDataSection('Social Insurance', configData.esi || configData.esi_rules);
             break;
         case 'income_tax':
             html = renderCompactDataSection('Income Tax', configData.income_tax);
@@ -937,6 +965,16 @@ function renderConfigSection(sectionId, config, configData) {
             html = renderStatesSection(configData.states);
             break;
         default:
+            // Handle dynamically created statutory_charges sections
+            if (sectionId.startsWith('charge_') && configData.statutory_charges) {
+                const chargeCode = sectionId.replace('charge_', '');
+                const charge = configData.statutory_charges[chargeCode];
+                if (charge) {
+                    const displayName = charge.display_name || chargeCode;
+                    html = renderCompactDataSection(displayName, charge);
+                    break;
+                }
+            }
             html = '<div class="cfg-empty">Section not available</div>';
     }
 
