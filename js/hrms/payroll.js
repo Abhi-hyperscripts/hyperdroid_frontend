@@ -4987,23 +4987,27 @@ function updateAllPayslipsTable() {
         const employeeName = p.employee_name || p.employeeName || 'N/A';
         const employeeCode = p.employee_code || p.employeeCode || 'N/A';
         const departmentName = p.department_name || p.departmentName || 'N/A';
-        const month = p.payroll_month || p.month || p.payrollMonth || '-';
-        const year = p.payroll_year || p.year || p.payrollYear || '-';
+        const month = p.payroll_month || p.month || p.payrollMonth || 0;
+        const year = p.payroll_year || p.year || p.payrollYear || 0;
         const grossSalary = p.gross_earnings || p.grossSalary || p.gross || 0;
         const deductions = p.total_deductions || p.totalDeductions || p.deductions || 0;
         const netSalary = p.net_pay || p.netSalary || p.net || 0;
         const status = p.status || 'generated';
         const statusClass = getPayslipStatusBadgeClass(status);
+        // Use currency_symbol from backend (country-agnostic)
+        const currencyCode = p.currency_code || null;
+        const currencySymbol = p.currency_symbol || null;
+        const monthYearDisplay = (month && year) ? `${getMonthName(month)} ${year}` : '-';
 
         return `
             <tr>
                 <td>${employeeName}</td>
                 <td>${employeeCode}</td>
                 <td>${departmentName}</td>
-                <td>${getMonthName(month)} ${year}</td>
-                <td>${formatCurrency(grossSalary)}</td>
-                <td>${formatCurrency(deductions)}</td>
-                <td>${formatCurrency(netSalary)}</td>
+                <td>${monthYearDisplay}</td>
+                <td>${formatCurrency(grossSalary, currencyCode, currencySymbol)}</td>
+                <td>${formatCurrency(deductions, currencyCode, currencySymbol)}</td>
+                <td>${formatCurrency(netSalary, currencyCode, currencySymbol)}</td>
                 <td><span class="status-badge ${statusClass}">${formatPayslipStatus(status)}</span></td>
                 <td>
                     <button class="action-btn" onclick="viewPayslip('${p.id}')" title="View Payslip">
@@ -5022,6 +5026,10 @@ function updateAllPayslipsStats() {
     const totalGross = allPayslips.reduce((sum, p) => sum + (p.gross_earnings || p.grossSalary || p.gross || 0), 0);
     const totalNet = allPayslips.reduce((sum, p) => sum + (p.net_pay || p.netSalary || p.net || 0), 0);
     const avgNet = totalCount > 0 ? totalNet / totalCount : 0;
+    // Get currency from first payslip (country-agnostic)
+    const firstPayslip = allPayslips[0] || {};
+    const currencyCode = firstPayslip.currency_code || null;
+    const currencySymbol = firstPayslip.currency_symbol || null;
 
     const totalCountEl = document.getElementById('totalPayslipsCount');
     const totalGrossEl = document.getElementById('totalGrossAmount');
@@ -5029,9 +5037,9 @@ function updateAllPayslipsStats() {
     const avgNetEl = document.getElementById('avgNetSalary');
 
     if (totalCountEl) totalCountEl.textContent = totalCount;
-    if (totalGrossEl) totalGrossEl.textContent = formatCurrency(totalGross);
-    if (totalNetEl) totalNetEl.textContent = formatCurrency(totalNet);
-    if (avgNetEl) avgNetEl.textContent = formatCurrency(avgNet);
+    if (totalGrossEl) totalGrossEl.textContent = formatCurrency(totalGross, currencyCode, currencySymbol);
+    if (totalNetEl) totalNetEl.textContent = formatCurrency(totalNet, currencyCode, currencySymbol);
+    if (avgNetEl) avgNetEl.textContent = formatCurrency(avgNet, currencyCode, currencySymbol);
 }
 
 async function downloadPayslip() {
