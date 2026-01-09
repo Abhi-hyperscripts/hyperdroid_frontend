@@ -3,6 +3,21 @@
  * Shared styles for all HRMS pages
  */
 
+/* =============================================================
+   GLOBAL MONETARY/CURRENCY VALUE STYLING
+   Professional tabular numbers for consistent alignment
+   ============================================================= */
+.monetary-value,
+.currency-display,
+[data-type="currency"],
+td.text-right strong,
+.amount strong {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
 /* Override Bootstrap primary button */
 .btn-primary {
     background-color: var(--brand-primary);
@@ -3016,6 +3031,9 @@
     font-size: 18px;
     font-weight: 700;
     color: var(--color-success-text);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
 }
 
 .salary-effective-from {
@@ -3120,6 +3138,8 @@
 .salary-total-row span:last-child {
     font-weight: 500;
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
 }
 
 .salary-total-row.net {
@@ -3138,6 +3158,9 @@
     font-size: 20px;
     font-weight: 700;
     color: var(--color-success);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
 }
 
 /* Salary History Table */

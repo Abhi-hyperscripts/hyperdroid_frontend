@@ -1320,6 +1320,9 @@
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.02em;
 }
 
 .summary-label {
@@ -1431,6 +1434,8 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
 }
 
 /* Empty Breakdown */
@@ -1457,10 +1462,30 @@
     font-size: 13px;
 }
 
-/* Amount Cell Styling */
+/* Amount Cell Styling - Professional Tabular Numbers */
 .amount-cell {
     text-align: right;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.amount-cell strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Currency Value Styling - Used throughout payroll */
+.currency-value,
+.salary-amount,
+.ctc-amount,
+.gross-amount,
+.net-amount {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
 /* Employee Code in Table */
