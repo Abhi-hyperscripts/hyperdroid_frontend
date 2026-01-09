@@ -11953,7 +11953,9 @@ document.addEventListener('DOMContentLoaded', setupSidebar);
 
 let salaryReportData = {
     employees: [],
-    summary: {}
+    summary: {},
+    currency_code: null,
+    currency_symbol: null
 };
 
 /**
@@ -11961,10 +11963,14 @@ let salaryReportData = {
  */
 async function loadSalaryReports() {
     try {
+        // Populate filter dropdowns first (if not already populated)
+        await populateSalaryReportFilters();
+
+        // Now get the selected values (first office will be selected by default)
         const officeId = document.getElementById('salaryReportOffice')?.value || '';
         const departmentId = document.getElementById('salaryReportDepartment')?.value || '';
 
-        // Build query params
+        // Build query params - office_id is required
         let queryParams = [];
         if (officeId) queryParams.push(`office_id=${officeId}`);
         if (departmentId) queryParams.push(`department_id=${departmentId}`);
@@ -11985,9 +11991,8 @@ async function loadSalaryReports() {
         const data = await response.json();
         salaryReportData.summary = data;
         salaryReportData.employees = data.employees || [];
-
-        // Populate filter dropdowns if not already populated
-        await populateSalaryReportFilters();
+        salaryReportData.currency_code = data.currency_code || null;
+        salaryReportData.currency_symbol = data.currency_symbol || null;
 
         // Update UI
         updateSalaryReportSummary(data);
@@ -12001,14 +12006,46 @@ async function loadSalaryReports() {
 }
 
 /**
+ * Load departments filtered by office ID
+ */
+async function loadDepartmentsForOffice(officeId) {
+    const departmentSelect = document.getElementById('salaryReportDepartment');
+    if (!departmentSelect) return;
+
+    // Clear existing options except "All Departments"
+    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+
+    if (!officeId) return;
+
+    try {
+        const deptsResp = await fetch(`${CONFIG.hrmsApiBaseUrl}/departments?office_id=${officeId}`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        if (deptsResp.ok) {
+            const deptsData = await deptsResp.json();
+            deptsData.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.department_name;
+                departmentSelect.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading departments for office:', e);
+    }
+}
+
+/**
  * Populate salary report filter dropdowns
  */
 async function populateSalaryReportFilters() {
     const officeSelect = document.getElementById('salaryReportOffice');
     const departmentSelect = document.getElementById('salaryReportDepartment');
 
-    // Only populate if empty
-    if (officeSelect && officeSelect.options.length <= 1) {
+    // Only populate offices if empty (no options yet)
+    if (officeSelect && officeSelect.options.length === 0) {
         try {
             const officesResp = await fetch(`${CONFIG.hrmsApiBaseUrl}/offices`, {
                 headers: {
@@ -12023,35 +12060,25 @@ async function populateSalaryReportFilters() {
                     option.textContent = office.office_name;
                     officeSelect.appendChild(option);
                 });
+                // Select first office by default
+                if (officeSelect.options.length > 0) {
+                    officeSelect.selectedIndex = 0;
+                    // Load departments for the first office
+                    await loadDepartmentsForOffice(officeSelect.value);
+                }
             }
         } catch (e) {
             console.error('Error loading offices for salary report filter:', e);
         }
+
+        // Add change listener for office - reload departments when office changes
+        officeSelect?.addEventListener('change', async () => {
+            await loadDepartmentsForOffice(officeSelect.value);
+            loadSalaryReports();
+        });
     }
 
-    if (departmentSelect && departmentSelect.options.length <= 1) {
-        try {
-            const deptsResp = await fetch(`${CONFIG.hrmsApiBaseUrl}/departments`, {
-                headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`
-                }
-            });
-            if (deptsResp.ok) {
-                const deptsData = await deptsResp.json();
-                deptsData.forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.id;
-                    option.textContent = dept.department_name;
-                    departmentSelect.appendChild(option);
-                });
-            }
-        } catch (e) {
-            console.error('Error loading departments for salary report filter:', e);
-        }
-    }
-
-    // Add change listeners
-    officeSelect?.addEventListener('change', loadSalaryReports);
+    // Add change listener for department
     departmentSelect?.addEventListener('change', loadSalaryReports);
 }
 
@@ -12059,11 +12086,14 @@ async function populateSalaryReportFilters() {
  * Update the summary cards with report data
  */
 function updateSalaryReportSummary(data) {
+    const currencyCode = salaryReportData.currency_code;
+    const currencySymbol = salaryReportData.currency_symbol;
+
     document.getElementById('totalEmployeesWithSalary').textContent = data.employees_with_salary || 0;
     document.getElementById('employeesWithoutSalary').textContent = data.employees_without_salary || 0;
-    document.getElementById('totalAnnualCtc').textContent = formatCurrency(data.total_annual_ctc || 0);
-    document.getElementById('totalMonthlyGross').textContent = formatCurrency(data.total_monthly_gross || 0);
-    document.getElementById('averageCtc').textContent = formatCurrency(data.average_ctc || 0);
+    document.getElementById('totalAnnualCtc').textContent = formatCurrency(data.total_annual_ctc || 0, currencyCode, currencySymbol);
+    document.getElementById('totalMonthlyGross').textContent = formatCurrency(data.total_monthly_gross || 0, currencyCode, currencySymbol);
+    document.getElementById('averageCtc').textContent = formatCurrency(data.average_ctc || 0, currencyCode, currencySymbol);
 }
 
 /**
@@ -12072,6 +12102,9 @@ function updateSalaryReportSummary(data) {
 function updateDepartmentBreakdown(employees) {
     const container = document.getElementById('departmentBreakdown');
     if (!container) return;
+
+    const currencyCode = salaryReportData.currency_code;
+    const currencySymbol = salaryReportData.currency_symbol;
 
     // Group by department
     const deptMap = new Map();
@@ -12122,11 +12155,11 @@ function updateDepartmentBreakdown(employees) {
             <div class="dept-stats">
                 <div class="dept-stat">
                     <span class="dept-stat-label">Total CTC</span>
-                    <span class="dept-stat-value">${formatCurrency(dept.totalCtc)}</span>
+                    <span class="dept-stat-value">${formatCurrency(dept.totalCtc, currencyCode, currencySymbol)}</span>
                 </div>
                 <div class="dept-stat">
                     <span class="dept-stat-label">Avg CTC</span>
-                    <span class="dept-stat-value">${formatCurrency(dept.count > 0 ? dept.totalCtc / dept.count : 0)}</span>
+                    <span class="dept-stat-value">${formatCurrency(dept.count > 0 ? dept.totalCtc / dept.count : 0, currencyCode, currencySymbol)}</span>
                 </div>
             </div>
         </div>
@@ -12140,6 +12173,8 @@ function updateSalaryReportTable() {
     const tbody = document.getElementById('salaryReportTable');
     if (!tbody) return;
 
+    const currencyCode = salaryReportData.currency_code;
+    const currencySymbol = salaryReportData.currency_symbol;
     const searchTerm = (document.getElementById('salaryReportSearch')?.value || '').toLowerCase();
 
     // Filter employees
@@ -12183,9 +12218,9 @@ function updateSalaryReportTable() {
             <td><code class="emp-code">${escapeHtml(emp.employee_code || 'N/A')}</code></td>
             <td>${escapeHtml(emp.department || 'N/A')}</td>
             <td>${escapeHtml(emp.designation || 'N/A')}</td>
-            <td class="amount-cell"><strong>${formatCurrency(emp.ctc || 0)}</strong></td>
-            <td class="amount-cell">${formatCurrency(emp.monthly_gross || 0)}</td>
-            <td class="amount-cell">${formatCurrency(emp.monthly_net || 0)}</td>
+            <td class="amount-cell"><strong>${formatCurrency(emp.ctc || 0, currencyCode, currencySymbol)}</strong></td>
+            <td class="amount-cell">${formatCurrency(emp.monthly_gross || 0, currencyCode, currencySymbol)}</td>
+            <td class="amount-cell">${formatCurrency(emp.monthly_net || 0, currencyCode, currencySymbol)}</td>
             <td>${emp.effective_from ? new Date(emp.effective_from).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
         </tr>
     `).join('');
