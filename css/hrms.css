@@ -2100,9 +2100,37 @@ td.text-right strong,
     background: var(--color-success-light);
 }
 
+/* Ensure good text contrast on success background in light mode */
+.office-status-card.complete .office-name {
+    color: var(--color-success-text);
+}
+
+.office-status-card.complete .structure-count {
+    color: var(--color-success-dark);
+    opacity: 0.8;
+}
+
+.office-status-card.complete .has-default {
+    color: var(--color-success-dark);
+}
+
 .office-status-card.incomplete {
     border-color: var(--danger-transparent);
     background: var(--color-danger-light);
+}
+
+/* Ensure good text contrast on danger background in light mode */
+.office-status-card.incomplete .office-name {
+    color: var(--color-danger-text);
+}
+
+.office-status-card.incomplete .structure-count {
+    color: var(--color-danger-dark);
+    opacity: 0.8;
+}
+
+.office-status-card.incomplete .no-default {
+    color: var(--color-danger-dark);
 }
 
 .office-status-header {
@@ -9583,9 +9611,35 @@ input:checked + .slider:before {
     border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
+[data-theme="dark"] .office-status-card.complete .office-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .office-status-card.complete .structure-count {
+    color: rgba(255, 255, 255, 0.7) !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .office-status-card.complete .has-default {
+    color: #4ade80 !important;
+}
+
 [data-theme="dark"] .office-status-card.incomplete {
     background: rgba(239, 68, 68, 0.15) !important;
     border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .office-status-card.incomplete .office-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .office-status-card.incomplete .structure-count {
+    color: rgba(255, 255, 255, 0.7) !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .office-status-card.incomplete .no-default {
+    color: #f87171 !important;
 }
 
 /* Document Status Badges */
