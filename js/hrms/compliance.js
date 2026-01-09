@@ -862,41 +862,57 @@ function renderConfigContent(config) {
     // Get the inner config data (JSONB content) - support both camelCase and snake_case
     const configData = config.configData || config.ConfigData || config.config_data || config;
 
-    // Schema-aware section detection - ALL sections from GlobalStatutorySchema.json
+    // Schema-aware section detection - ALL sections from GlobalStatutorySchema v3.1.0
+    // This modal is designed for viewing by Lawyers, CAs, and Government Agencies
+    // NO ICONS - professional compliance document presentation
     const sections = [
-        { id: 'overview', name: 'Overview', icon: '📋' }
+        { id: 'overview', name: 'Overview' }
     ];
 
-    // Required schema sections (must show all for audit)
-    if (configData.country) sections.push({ id: 'country', name: 'Country', icon: '🌍' });
-    if (configData.effective_period) sections.push({ id: 'effective_period', name: 'Period', icon: '📅' });
-    if (configData.tax_system) sections.push({ id: 'tax_system', name: 'Tax System', icon: '💰' });
-    if (configData.social_contributions) sections.push({ id: 'social_contributions', name: 'Social', icon: '🏛️' });
-    if (configData.regional_taxes) sections.push({ id: 'regional_taxes', name: 'Regional', icon: '🗺️' });
-    if (configData.jurisdiction_resolution) sections.push({ id: 'jurisdiction', name: 'Rules', icon: '⚖️' });
-    if (configData.deduction_order) sections.push({ id: 'deduction_order', name: 'Order', icon: '📊' });
-    if (configData.ytd_tracking) sections.push({ id: 'ytd_tracking', name: 'YTD', icon: '📈' });
-    if (configData.compliance_calendar) sections.push({ id: 'compliance_calendar', name: 'Calendar', icon: '🗓️' });
+    // PUBLIC sections - shown to Lawyers, CAs, Government Agencies
+    // INTERNAL sections (engine_semantics, precedence, roles, bindings, accumulation) are HIDDEN
+    // to prevent exposing competitive/internal implementation details
 
-    // Country-agnostic: Build tabs from statutory_charges using charge_type enum
+    if (configData.country) sections.push({ id: 'country', name: 'Country' });
+    if (configData.effective_period) sections.push({ id: 'effective_period', name: 'Effective Period' });
+    if (configData.establishments) sections.push({ id: 'establishments', name: 'Establishment Types' });
+    if (configData.jurisdictions) sections.push({ id: 'jurisdictions', name: 'Jurisdictions' });
+    if (configData.eligibility_constraints) sections.push({ id: 'eligibility_constraints', name: 'Eligibility Criteria' });
+
+    // Statutory Charges - ONE tab showing ALL charges (rates, caps, thresholds)
     if (configData.statutory_charges) {
-        Object.entries(configData.statutory_charges).forEach(([code, charge]) => {
-            const displayName = charge.display_name || code;
-            sections.push({ id: `charge_${code}`, name: displayName, chargeData: charge });
-        });
-    } else {
-        // Legacy section support (deprecated) - use generic labels
-        if (configData.pf || configData.pf_rules) sections.push({ id: 'pf', name: 'Retirement' });
-        if (configData.esi || configData.esi_rules) sections.push({ id: 'esi', name: 'Insurance' });
-        if (configData.income_tax && !configData.tax_system) sections.push({ id: 'income_tax', name: 'Tax' });
+        sections.push({ id: 'statutory_charges', name: 'Statutory Contributions' });
     }
-    if (configData.states) sections.push({ id: 'states', name: 'Jurisdictions' });
 
-    // Render tabs - compact horizontal scrollable
-    // Handle missing icons gracefully (country-agnostic: not all sections have icons)
+    // Jurisdiction Data - shows all state/regional tax slabs (PT, LWF rates)
+    if (configData.jurisdiction_data) sections.push({ id: 'jurisdiction_data', name: 'Regional Tax Slabs' });
+
+    // Income Tax Regimes - shows tax slabs, rebates, deductions, surcharges, cess
+    if (configData.tax_regimes) sections.push({ id: 'tax_regimes', name: 'Income Tax' });
+
+    // Deduction Order - employees should know the order
+    if (configData.deduction_order) sections.push({ id: 'deduction_order', name: 'Deduction Priority' });
+
+    // Reporting requirements
+    if (configData.reporting) sections.push({ id: 'reporting', name: 'Compliance Reporting' });
+
+    // Legal References ONLY (not formulas/expressions which are internal)
+    if (configData.engine_semantics?.formula_governance?.builtin_formulas) {
+        sections.push({ id: 'legal_references', name: 'Legal References' });
+    }
+
+    // Legacy schema support
+    if (configData.tax_system) sections.push({ id: 'tax_system', name: 'Tax System' });
+    if (configData.social_contributions) sections.push({ id: 'social_contributions', name: 'Social' });
+    if (configData.regional_taxes) sections.push({ id: 'regional_taxes', name: 'Regional' });
+    if (configData.ytd_tracking) sections.push({ id: 'ytd_tracking', name: 'YTD' });
+    if (configData.compliance_calendar) sections.push({ id: 'compliance_calendar', name: 'Calendar' });
+    if (configData.jurisdiction_resolution) sections.push({ id: 'jurisdiction', name: 'Resolution' });
+    if (configData.states) sections.push({ id: 'states', name: 'States' });
+
+    // Render tabs - compact horizontal scrollable (no icons for professional presentation)
     tabsEl.innerHTML = `<div class="config-tabs-scroll">${sections.map((s, i) => `
         <button type="button" class="config-tab ${i === 0 ? 'active' : ''}" data-section="${s.id}" title="${escapeHtml(s.name)}">
-            ${s.icon ? `<span class="tab-icon">${s.icon}</span>` : ''}
             <span class="tab-name">${escapeHtml(s.name)}</span>
         </button>
     `).join('')}</div>`;
@@ -924,12 +940,64 @@ function renderConfigSection(sectionId, config, configData) {
         case 'overview':
             html = renderOverviewSection(config, configData);
             break;
+        case 'engine_semantics':
+            html = renderEngineSemanticsSection(configData.engine_semantics);
+            break;
         case 'country':
             html = renderCountrySection(configData.country);
             break;
         case 'effective_period':
             html = renderEffectivePeriodSection(configData.effective_period);
             break;
+        case 'establishments':
+            html = renderEstablishmentsSection(configData.establishments);
+            break;
+        case 'jurisdictions':
+            html = renderJurisdictionsListSection(configData.jurisdictions);
+            break;
+        case 'jurisdiction_precedence':
+            html = renderJurisdictionPrecedenceSection(configData.jurisdiction_precedence);
+            break;
+        case 'eligibility_constraints':
+            html = renderEligibilityConstraintsSection(configData.eligibility_constraints);
+            break;
+        case 'component_categories':
+            html = renderComponentCategoriesSection(configData.component_categories);
+            break;
+        case 'statutory_roles':
+            html = renderStatutoryRolesSection(configData.statutory_roles);
+            break;
+        case 'required_roles':
+            html = renderRequiredRolesSection(configData.required_roles);
+            break;
+        case 'statutory_charges':
+            html = renderStatutoryChargesSection(configData.statutory_charges, configData);
+            break;
+        case 'jurisdiction_data':
+            html = renderJurisdictionDataSection(configData.jurisdiction_data);
+            break;
+        case 'tax_regimes':
+            html = renderTaxRegimesSection(configData);
+            break;
+        case 'jurisdiction_bindings':
+            html = renderJurisdictionBindingsSection(configData.jurisdiction_bindings);
+            break;
+        case 'deduction_order':
+            html = renderDeductionOrderSection(configData.deduction_order);
+            break;
+        case 'accumulation_models':
+            html = renderAccumulationModelsSection(configData.accumulation_models);
+            break;
+        case 'reporting':
+            html = renderReportingSection(configData.reporting);
+            break;
+        case 'builtin_formulas':
+            html = renderBuiltinFormulasSection(configData.engine_semantics?.formula_governance?.builtin_formulas);
+            break;
+        case 'legal_references':
+            html = renderLegalReferencesOnlySection(configData.engine_semantics?.formula_governance?.builtin_formulas);
+            break;
+        // Legacy schema support
         case 'tax_system':
             html = renderTaxSystemSection(configData.tax_system);
             break;
@@ -942,39 +1010,16 @@ function renderConfigSection(sectionId, config, configData) {
         case 'jurisdiction':
             html = renderJurisdictionSection(configData.jurisdiction_resolution);
             break;
-        case 'deduction_order':
-            html = renderDeductionOrderSection(configData.deduction_order);
-            break;
         case 'ytd_tracking':
             html = renderYtdTrackingSection(configData.ytd_tracking);
             break;
         case 'compliance_calendar':
             html = renderComplianceCalendarSection(configData.compliance_calendar);
             break;
-        // Legacy sections with generic labels (deprecated - use statutory_charges)
-        case 'pf':
-            html = renderCompactDataSection('Retirement Fund', configData.pf || configData.pf_rules);
-            break;
-        case 'esi':
-            html = renderCompactDataSection('Social Insurance', configData.esi || configData.esi_rules);
-            break;
-        case 'income_tax':
-            html = renderCompactDataSection('Income Tax', configData.income_tax);
-            break;
         case 'states':
             html = renderStatesSection(configData.states);
             break;
         default:
-            // Handle dynamically created statutory_charges sections
-            if (sectionId.startsWith('charge_') && configData.statutory_charges) {
-                const chargeCode = sectionId.replace('charge_', '');
-                const charge = configData.statutory_charges[chargeCode];
-                if (charge) {
-                    const displayName = charge.display_name || chargeCode;
-                    html = renderCompactDataSection(displayName, charge);
-                    break;
-                }
-            }
             html = '<div class="cfg-empty">Section not available</div>';
     }
 
@@ -1378,10 +1423,1175 @@ function formatCurrency(amount) {
     return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount);
 }
 
-// Format label: convert snake_case to Title Case for display
+// Format label: convert snake_case/SCREAMING_SNAKE to Title Case for display
 function formatLabel(str) {
     if (!str) return '-';
-    return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return str
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ==================== Comprehensive Section Renderers (v3.1.0) ====================
+// These render EVERY detail from GlobalStatutorySchema for Lawyer/CA/Government viewing
+
+function renderEngineSemanticsSection(engineSemantics) {
+    if (!engineSemantics) return '<div class="cfg-empty">No engine semantics configured</div>';
+
+    let html = '<div class="cfg-section">';
+
+    // Engine Version
+    html += `<div class="cfg-version-banner">Engine Version: ${escapeHtml(engineSemantics.engine_version || '1.0.0')}</div>`;
+
+    // Condition Logic
+    if (engineSemantics.condition_logic) {
+        const cl = engineSemantics.condition_logic;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Condition Logic</h4>
+            <div class="cfg-engine-grid">
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Default Combinator</div>
+                    <div class="cfg-engine-value">${escapeHtml(cl.default_combinator || 'AND')}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Group Evaluation Order</div>
+                    <div class="cfg-engine-value">${formatLabel(cl.group_evaluation_order)}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Unknown Dimension Behavior</div>
+                    <div class="cfg-engine-value">${formatLabel(cl.unknown_dimension_behavior)}</div>
+                </div>
+            </div>
+            ${cl.evaluation_order ? `<div class="cfg-field"><label>Evaluation Order</label><span>${cl.evaluation_order.map(escapeHtml).join(' → ')}</span></div>` : ''}
+        </div>`;
+    }
+
+    // Rounding Rules
+    if (engineSemantics.rounding_rules) {
+        const rr = engineSemantics.rounding_rules;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Rounding Rules</h4>
+            <div class="cfg-engine-grid">
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Default Method</div>
+                    <div class="cfg-engine-value">${formatLabel(rr.default_method)}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Currency Precision</div>
+                    <div class="cfg-engine-value">${rr.currency_precision ?? 2} decimals</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Intermediate Precision</div>
+                    <div class="cfg-engine-value">${rr.intermediate_precision ?? 4} decimals</div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // Null Handling
+    if (engineSemantics.null_handling) {
+        const nh = engineSemantics.null_handling;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Null Handling Behavior</h4>
+            <div class="cfg-engine-grid">
+                ${Object.entries(nh).map(([key, value]) => `
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">${formatLabel(key)}</div>
+                        <div class="cfg-engine-value cfg-engine-${value === 'error' ? 'error' : 'ok'}">${formatLabel(value)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Conflict Resolution
+    if (engineSemantics.conflict_resolution) {
+        const cr = engineSemantics.conflict_resolution;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Conflict Resolution</h4>
+            <div class="cfg-engine-grid">
+                ${Object.entries(cr).map(([key, value]) => `
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">${formatLabel(key)}</div>
+                        <div class="cfg-engine-value">${formatLabel(value)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Negative Value Handling
+    if (engineSemantics.negative_value_handling) {
+        const nvh = engineSemantics.negative_value_handling;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Negative Value Handling</h4>
+            <div class="cfg-engine-grid">
+                ${Object.entries(nvh).map(([key, value]) => `
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">${formatLabel(key)}</div>
+                        <div class="cfg-engine-value">${typeof value === 'boolean' ? (value ? 'Yes' : 'No') : formatLabel(String(value))}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Formula Governance
+    if (engineSemantics.formula_governance) {
+        const fg = engineSemantics.formula_governance;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Formula Governance</h4>
+            <div class="cfg-field"><label>Validation Mode</label><span class="cfg-badge">${formatLabel(fg.validation_mode)}</span></div>
+            <div class="cfg-field"><label>Custom Formula Policy</label><span class="cfg-badge cfg-badge-${fg.custom_formula_policy === 'forbidden' ? 'warn' : 'ok'}">${formatLabel(fg.custom_formula_policy)}</span></div>
+            ${fg.registry_behavior ? `
+            <div class="cfg-nested-section">
+                <h5>Registry Behavior</h5>
+                <div class="cfg-engine-grid">
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">Require Country Prefix</div>
+                        <div class="cfg-engine-value">${fg.registry_behavior.require_country_prefix ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">Version Pinning</div>
+                        <div class="cfg-engine-value">${formatLabel(fg.registry_behavior.version_pinning)}</div>
+                    </div>
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">Allow Deprecated</div>
+                        <div class="cfg-engine-value">${fg.registry_behavior.allow_deprecated_formulas ? 'Yes' : 'No'}</div>
+                    </div>
+                </div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderEffectivePeriodSection(effectivePeriod) {
+    if (!effectivePeriod) return '<div class="cfg-empty">No effective period defined</div>';
+
+    return `
+        <div class="cfg-section">
+            <div class="cfg-period-banner">
+                <div class="cfg-period-dates">
+                    <div class="cfg-period-item">
+                        <span class="cfg-period-label">Effective From</span>
+                        <span class="cfg-period-value">${formatDate(effectivePeriod.from) || 'Not specified'}</span>
+                    </div>
+                    <div class="cfg-period-arrow">→</div>
+                    <div class="cfg-period-item">
+                        <span class="cfg-period-label">Effective To</span>
+                        <span class="cfg-period-value">${effectivePeriod.to ? formatDate(effectivePeriod.to) : 'Current / Ongoing'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderEstablishmentsSection(establishments) {
+    if (!establishments?.length) return '<div class="cfg-empty">No establishments configured</div>';
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${establishments.length} Establishment${establishments.length > 1 ? 's' : ''} Defined</div>`;
+
+    establishments.forEach((est, idx) => {
+        html += `
+        <div class="cfg-establishment-card">
+            <div class="cfg-establishment-header">
+                <span class="cfg-establishment-code">${escapeHtml(est.establishment_code)}</span>
+                <span class="cfg-establishment-name">${escapeHtml(est.establishment_name)}</span>
+            </div>
+            <div class="cfg-establishment-body">
+                <div class="cfg-row-grid">
+                    <div class="cfg-field"><label>ID</label><span class="cfg-code">${escapeHtml(est.establishment_id)}</span></div>
+                    <div class="cfg-field"><label>Jurisdiction</label><span>${escapeHtml(est.jurisdiction_code)} (${formatLabel(est.jurisdiction_level)})</span></div>
+                    <div class="cfg-field"><label>Effective From</label><span>${formatDate(est.effective_from) || '-'}</span></div>
+                </div>
+                ${est.headcount_scope ? `
+                <div class="cfg-nested-section">
+                    <h5>Headcount Scope</h5>
+                    <div class="cfg-row-grid">
+                        <div class="cfg-field"><label>Counting Method</label><span>${formatLabel(est.headcount_scope.counting_method)}</span></div>
+                        <div class="cfg-field"><label>Include Contractors</label><span>${est.headcount_scope.include_contractors ? 'Yes' : 'No'}</span></div>
+                        <div class="cfg-field"><label>Include Interns</label><span>${est.headcount_scope.include_interns ? 'Yes' : 'No'}</span></div>
+                        <div class="cfg-field"><label>As-Of Logic</label><span>${formatLabel(est.headcount_scope.as_of_logic)}</span></div>
+                    </div>
+                </div>` : ''}
+                ${est.registration_ids && Object.keys(est.registration_ids).length > 0 ? `
+                <div class="cfg-nested-section">
+                    <h5>Registration IDs</h5>
+                    ${Object.entries(est.registration_ids).map(([k, v]) => `<div class="cfg-field"><label>${formatLabel(k)}</label><span class="cfg-code">${escapeHtml(v)}</span></div>`).join('')}
+                </div>` : ''}
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderJurisdictionsListSection(jurisdictions) {
+    if (!jurisdictions?.length) return '<div class="cfg-empty">No jurisdictions defined</div>';
+
+    // Group by level
+    const byLevel = {};
+    jurisdictions.forEach(j => {
+        const level = j.level || 'other';
+        if (!byLevel[level]) byLevel[level] = [];
+        byLevel[level].push(j);
+    });
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${jurisdictions.length} Jurisdiction${jurisdictions.length > 1 ? 's' : ''}</div>`;
+
+    Object.entries(byLevel).forEach(([level, items]) => {
+        html += `
+        <div class="cfg-subsection">
+            <h4>${formatLabel(level)} Level (${items.length})</h4>
+            <div class="cfg-jurisdiction-cards">
+                ${items.map(j => `
+                    <div class="cfg-jurisdiction-chip">
+                        <span class="cfg-jurisdiction-code">${escapeHtml(j.code)}</span>
+                        <span class="cfg-jurisdiction-name">${escapeHtml(j.name)}</span>
+                        ${j.parent_code ? `<span class="cfg-jurisdiction-parent">Parent: ${escapeHtml(j.parent_code)}</span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderJurisdictionPrecedenceSection(precedence) {
+    if (!precedence) return '<div class="cfg-empty">No jurisdiction precedence rules</div>';
+
+    let html = '<div class="cfg-section">';
+
+    // Hierarchies by Country
+    if (precedence.hierarchies_by_country) {
+        html += '<div class="cfg-subsection"><h4>Hierarchies by Country</h4>';
+        Object.entries(precedence.hierarchies_by_country).forEach(([country, data]) => {
+            html += `
+            <div class="cfg-precedence-card">
+                <div class="cfg-precedence-header">${escapeHtml(country)}</div>
+                <div class="cfg-field"><label>Hierarchy</label><span>${data.hierarchy?.map(escapeHtml).join(' → ') || '-'}</span></div>
+                <div class="cfg-field"><label>Default Lookup Depth</label><span>${data.default_lookup_depth ?? '-'}</span></div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // Override Rules
+    if (precedence.override_rules) {
+        html += `
+        <div class="cfg-subsection">
+            <h4>Override Rules</h4>
+            <div class="cfg-engine-grid">
+                ${Object.entries(precedence.override_rules).map(([key, value]) => `
+                    <div class="cfg-engine-card">
+                        <div class="cfg-engine-label">${formatLabel(key)}</div>
+                        <div class="cfg-engine-value">${formatLabel(value)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Conflict Resolution
+    if (precedence.conflict_resolution) {
+        html += `
+        <div class="cfg-subsection">
+            <h4>Conflict Resolution</h4>
+            <div class="cfg-engine-grid">
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Same Level Conflict</div>
+                    <div class="cfg-engine-value">${formatLabel(precedence.conflict_resolution.same_level_conflict)}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Missing Parent</div>
+                    <div class="cfg-engine-value">${formatLabel(precedence.conflict_resolution.missing_parent)}</div>
+                </div>
+            </div>
+            ${precedence.conflict_resolution.legality_constraints ? `
+            <div class="cfg-nested-section">
+                <h5>Legality Constraints</h5>
+                <div class="cfg-engine-grid">
+                    ${Object.entries(precedence.conflict_resolution.legality_constraints).map(([key, value]) => `
+                        <div class="cfg-engine-card">
+                            <div class="cfg-engine-label">${formatLabel(key)}</div>
+                            <div class="cfg-engine-value">${Array.isArray(value) ? value.join(', ') : formatLabel(value)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderEligibilityConstraintsSection(constraints) {
+    if (!constraints) return '<div class="cfg-empty">No eligibility constraints defined</div>';
+
+    let html = '<div class="cfg-section">';
+
+    // Global settings
+    html += `
+    <div class="cfg-subsection">
+        <h4>Global Constraint Settings</h4>
+        <div class="cfg-engine-grid">
+            <div class="cfg-engine-card">
+                <div class="cfg-engine-label">Forbid Root OR</div>
+                <div class="cfg-engine-value">${constraints.forbid_root_or ? 'Yes' : 'No'}</div>
+            </div>
+            <div class="cfg-engine-card">
+                <div class="cfg-engine-label">Max Nesting Depth</div>
+                <div class="cfg-engine-value">${constraints.max_nesting_depth ?? 'Unlimited'}</div>
+            </div>
+            <div class="cfg-engine-card">
+                <div class="cfg-engine-label">Validate at Load</div>
+                <div class="cfg-engine-value">${constraints.validate_at_load ? 'Yes' : 'No'}</div>
+            </div>
+            <div class="cfg-engine-card">
+                <div class="cfg-engine-label">Violation Behavior</div>
+                <div class="cfg-engine-value cfg-engine-${constraints.violation_behavior === 'error' ? 'error' : 'ok'}">${formatLabel(constraints.violation_behavior)}</div>
+            </div>
+        </div>
+    </div>`;
+
+    // Disallowed Dimension Combinations
+    if (constraints.disallow_dimension_combinations?.length) {
+        html += `
+        <div class="cfg-subsection">
+            <h4>Disallowed Dimension Combinations</h4>
+            <table class="cfg-table">
+                <thead><tr><th>Dimension A</th><th>Dimension B</th><th>Reason</th></tr></thead>
+                <tbody>
+                    ${constraints.disallow_dimension_combinations.map(c => `
+                        <tr>
+                            <td><span class="cfg-code">${escapeHtml(c.dimension_a)}</span></td>
+                            <td><span class="cfg-code">${escapeHtml(c.dimension_b)}</span></td>
+                            <td>${escapeHtml(c.reason || '-')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderComponentCategoriesSection(categories) {
+    if (!categories) return '<div class="cfg-empty">No component categories defined</div>';
+
+    let html = '<div class="cfg-section">';
+
+    // Render each category type
+    ['earnings', 'deductions', 'employer_contributions'].forEach(catType => {
+        const items = categories[catType];
+        if (!items || Object.keys(items).length === 0) return;
+
+        html += `
+        <div class="cfg-subsection">
+            <h4>${formatLabel(catType)} (${Object.keys(items).length})</h4>
+            <div class="cfg-categories-grid">`;
+
+        Object.entries(items).forEach(([code, data]) => {
+            html += `
+            <div class="cfg-category-card">
+                <div class="cfg-category-header">
+                    <span class="cfg-category-code">${escapeHtml(code)}</span>
+                    ${data.is_system_managed ? '<span class="cfg-badge cfg-badge-system">System Managed</span>' : ''}
+                </div>
+                <div class="cfg-category-name">${escapeHtml(data.display_name || formatLabel(code))}</div>
+                ${data.description ? `<div class="cfg-category-desc">${escapeHtml(data.description)}</div>` : ''}
+                ${data.statutory_scheme ? `<div class="cfg-field"><label>Statutory Scheme</label><span class="cfg-badge">${escapeHtml(data.statutory_scheme)}</span></div>` : ''}
+                ${data.constraints ? `
+                <div class="cfg-category-constraints">
+                    ${data.constraints.requires_flag ? `<span class="cfg-constraint">Requires: ${formatLabel(data.constraints.requires_flag)}</span>` : ''}
+                    ${data.constraints.max_count ? `<span class="cfg-constraint">Max Count: ${data.constraints.max_count}</span>` : ''}
+                </div>` : ''}
+                ${data.auto_create ? `
+                <details class="cfg-auto-create">
+                    <summary>Auto-Create Component</summary>
+                    <div class="cfg-auto-create-body">
+                        <div class="cfg-field"><label>Code</label><span class="cfg-code">${escapeHtml(data.auto_create.component_code)}</span></div>
+                        <div class="cfg-field"><label>Name</label><span>${escapeHtml(data.auto_create.component_name)}</span></div>
+                        <div class="cfg-field"><label>Type</label><span>${formatLabel(data.auto_create.component_type)}</span></div>
+                        <div class="cfg-field"><label>Calculation</label><span>${formatLabel(data.auto_create.calculation_type)}</span></div>
+                        ${data.auto_create.calculation_base ? `<div class="cfg-field"><label>Calc Base</label><span>${formatLabel(data.auto_create.calculation_base)}</span></div>` : ''}
+                        ${data.auto_create.default_percentage !== undefined ? `<div class="cfg-field"><label>Default %</label><span>${data.auto_create.default_percentage}%</span></div>` : ''}
+                        ${data.auto_create.max_amount !== undefined ? `<div class="cfg-field"><label>Max Amount</label><span>${formatCurrency(data.auto_create.max_amount)}</span></div>` : ''}
+                        <div class="cfg-field"><label>Taxable</label><span>${data.auto_create.is_taxable ? 'Yes' : 'No'}</span></div>
+                        <div class="cfg-field"><label>Part of CTC</label><span>${data.auto_create.is_part_of_ctc ? 'Yes' : 'No'}</span></div>
+                        <div class="cfg-field"><label>Part of Gross</label><span>${data.auto_create.is_part_of_gross ? 'Yes' : 'No'}</span></div>
+                    </div>
+                </details>` : ''}
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderStatutoryRolesSection(roles) {
+    if (!roles || Object.keys(roles).length === 0) return '<div class="cfg-empty">No statutory roles defined</div>';
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${Object.keys(roles).length} Statutory Role${Object.keys(roles).length > 1 ? 's' : ''}</div>`;
+    html += '<div class="cfg-roles-grid">';
+
+    Object.entries(roles).forEach(([roleCode, roleData]) => {
+        html += `
+        <div class="cfg-role-card">
+            <div class="cfg-role-header">
+                <span class="cfg-role-code">${escapeHtml(roleCode)}</span>
+                <span class="cfg-role-type">${formatLabel(roleData.role_type)}</span>
+            </div>
+            <div class="cfg-role-desc">${escapeHtml(roleData.description || '')}</div>
+            ${roleData.legal_reference ? `<div class="cfg-legal-ref-inline">Legal: ${escapeHtml(roleData.legal_reference)}</div>` : ''}
+            ${roleData.component_mapping ? `
+            <div class="cfg-role-mapping">
+                <span class="cfg-mapping-method">Method: ${formatLabel(roleData.component_mapping.method)}</span>
+                ${roleData.component_mapping.includes ? `<div class="cfg-mapping-list">Includes: ${roleData.component_mapping.includes.map(escapeHtml).join(', ')}</div>` : ''}
+                ${roleData.component_mapping.excludes ? `<div class="cfg-mapping-list">Excludes: ${roleData.component_mapping.excludes.map(escapeHtml).join(', ')}</div>` : ''}
+                ${roleData.component_mapping.charge_categories ? `<div class="cfg-mapping-list">Categories: ${roleData.component_mapping.charge_categories.map(escapeHtml).join(', ')}</div>` : ''}
+            </div>` : ''}
+        </div>`;
+    });
+
+    html += '</div></div>';
+    return html;
+}
+
+function renderRequiredRolesSection(requiredRoles) {
+    if (!requiredRoles) return '<div class="cfg-empty">No required roles configuration</div>';
+
+    let html = '<div class="cfg-section">';
+
+    // Mandatory Mappings
+    if (requiredRoles.mandatory_mappings?.length) {
+        html += `
+        <div class="cfg-subsection">
+            <h4>Mandatory Role Mappings (${requiredRoles.mandatory_mappings.length})</h4>
+            <table class="cfg-table">
+                <thead><tr><th>Role Code</th><th>Severity</th><th>Min % of Gross</th><th>Max % of Gross</th><th>Enforcement</th></tr></thead>
+                <tbody>
+                    ${requiredRoles.mandatory_mappings.map(m => `
+                        <tr>
+                            <td><span class="cfg-code">${escapeHtml(m.role_code)}</span></td>
+                            <td><span class="cfg-badge cfg-badge-${m.severity}">${formatLabel(m.severity)}</span></td>
+                            <td>${m.role_ratio_constraints?.min_percent_of_gross ?? '-'}%</td>
+                            <td>${m.role_ratio_constraints?.max_percent_of_gross ?? '-'}%</td>
+                            <td>${formatLabel(m.role_ratio_constraints?.enforcement_mode) || '-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    // Validation Behavior
+    if (requiredRoles.validation_behavior) {
+        const vb = requiredRoles.validation_behavior;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Validation Behavior</h4>
+            <div class="cfg-engine-grid">
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">When to Validate</div>
+                    <div class="cfg-engine-value">${formatLabel(vb.when_to_validate)}</div>
+                </div>
+            </div>
+            ${vb.failure_mode_config ? `
+            <div class="cfg-nested-section">
+                <h5>Failure Mode Configuration</h5>
+                <div class="cfg-engine-grid">
+                    ${Object.entries(vb.failure_mode_config).map(([key, value]) => `
+                        <div class="cfg-engine-card">
+                            <div class="cfg-engine-label">${formatLabel(key)}</div>
+                            <div class="cfg-engine-value">${formatLabel(value)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    // Global Config
+    if (requiredRoles.role_ratio_global_config) {
+        const gc = requiredRoles.role_ratio_global_config;
+        html += `
+        <div class="cfg-subsection">
+            <h4>Role Ratio Global Configuration</h4>
+            <div class="cfg-engine-grid">
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Enable Ratio Validation</div>
+                    <div class="cfg-engine-value">${gc.enable_ratio_validation ? 'Yes' : 'No'}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Default Enforcement</div>
+                    <div class="cfg-engine-value">${formatLabel(gc.default_enforcement_mode)}</div>
+                </div>
+                <div class="cfg-engine-card">
+                    <div class="cfg-engine-label">Gross Definition</div>
+                    <div class="cfg-engine-value">${formatLabel(gc.gross_definition)}</div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+// PUBLIC LEGAL VIEW: Shows statutory contributions with legally required info only
+// Hides internal enum codes (charge_type, payer, base_type, method) to protect competitive info
+// Uses display_name from component_categories for user-friendly labels
+function renderStatutoryChargesSection(charges, configData) {
+    if (!charges || Object.keys(charges).length === 0) return '<div class="cfg-empty">No statutory charges defined</div>';
+
+    // Build lookup: charge_code -> display_name from component_categories
+    const displayNameLookup = buildChargeDisplayNameLookup(configData?.component_categories);
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${Object.keys(charges).length} Statutory Contribution${Object.keys(charges).length > 1 ? 's' : ''}</div>`;
+    html += '<div class="cfg-charges-grid cfg-legal-view">';
+
+    Object.entries(charges).forEach(([chargeCode, charge]) => {
+        // Get display name from component_categories or fallback to formatted charge code
+        const displayName = displayNameLookup[chargeCode] || formatLabel(chargeCode.replace(/_/g, ' '));
+
+        html += `
+        <div class="cfg-charge-card cfg-legal-card">
+            <div class="cfg-charge-header">
+                <span class="cfg-charge-name">${escapeHtml(displayName)}</span>
+            </div>
+
+            <div class="cfg-charge-body">
+                <!-- Wage Ceiling / Cap (legally required disclosure) -->
+                ${charge.calculation?.cap ? `
+                <div class="cfg-legal-field">
+                    <label>Wage Ceiling</label>
+                    <span class="cfg-legal-value">${formatCurrency(charge.calculation.cap.amount)}/month</span>
+                </div>` : ''}
+
+                <!-- Eligibility Thresholds (legally required) -->
+                ${charge.eligibility?.conditions?.length ? `
+                <div class="cfg-legal-section">
+                    <label class="cfg-legal-section-label">Applicability</label>
+                    <ul class="cfg-legal-list">
+                        ${charge.eligibility.conditions.map(c => {
+                            const dimensionLabel = getEligibilityDimensionLabel(c.dimension);
+                            const valueLabel = Array.isArray(c.value) ? c.value.join(', ') : c.value;
+                            const operatorLabel = getOperatorLabel(c.operator);
+                            return `<li>${dimensionLabel} ${operatorLabel} ${valueLabel}</li>`;
+                        }).join('')}
+                    </ul>
+                </div>` : ''}
+
+                <!-- Proration Rule (important for employees) -->
+                ${charge.period_behavior ? `
+                <div class="cfg-legal-field">
+                    <label>Partial Month</label>
+                    <span class="cfg-legal-value">${charge.period_behavior.proration_allowed ? 'Prorated' : 'Full charge applies'}</span>
+                </div>` : ''}
+
+                <!-- Cost Allocation (who pays what - employees need to know) -->
+                ${charge.cost_classification ? `
+                <div class="cfg-legal-field">
+                    <label>Cost Allocation</label>
+                    <span class="cfg-legal-value">${getCostAllocationLabel(charge.cost_classification)}</span>
+                </div>` : ''}
+
+                <!-- Legal Notes (if available) -->
+                ${charge.cost_classification?._comment ? `
+                <div class="cfg-legal-note">${escapeHtml(charge.cost_classification._comment)}</div>` : ''}
+            </div>
+        </div>`;
+    });
+
+    html += '</div></div>';
+    return html;
+}
+
+// Builds charge_code -> display_name lookup from component_categories
+function buildChargeDisplayNameLookup(componentCategories) {
+    const lookup = {};
+    if (!componentCategories) return lookup;
+
+    // Scan all category groups (earnings, deductions, employer_contributions, etc.)
+    Object.values(componentCategories).forEach(categoryGroup => {
+        if (typeof categoryGroup !== 'object') return;
+        Object.values(categoryGroup).forEach(component => {
+            if (component.auto_create?.charge_code && component.display_name) {
+                lookup[component.auto_create.charge_code] = component.display_name;
+            }
+        });
+    });
+    return lookup;
+}
+
+// User-friendly labels for eligibility dimensions (no internal codes)
+function getEligibilityDimensionLabel(dimension) {
+    const labels = {
+        'establishment_size': 'Establishment employees',
+        'employment_type': 'Employment type',
+        'monthly_gross': 'Monthly gross salary',
+        'annual_income': 'Annual income',
+        'years_of_service': 'Years of service',
+        'age': 'Age',
+        'is_covered_under_esic': 'ESI coverage',
+        'employee_category': 'Employee category'
+    };
+    return labels[dimension] || formatLabel(dimension);
+}
+
+// User-friendly labels for operators
+function getOperatorLabel(operator) {
+    const labels = {
+        '>=': 'at least',
+        '<=': 'up to',
+        '>': 'more than',
+        '<': 'less than',
+        '==': 'equals',
+        '=': 'equals',
+        'in': 'includes',
+        'not_in': 'excludes'
+    };
+    return labels[operator] || operator;
+}
+
+// User-friendly cost allocation label
+function getCostAllocationLabel(costClass) {
+    const empPortion = costClass.employee_portion;
+    const empPays = empPortion === 'deduction_from_gross';
+
+    const erPortion = costClass.employer_portion;
+    const erPays = erPortion === 'included_in_ctc' || erPortion === 'organizational_overhead';
+
+    if (empPays && erPays) return 'Employee + Employer';
+    if (empPays) return 'Employee only';
+    if (erPays) return 'Employer only';
+    return '-';
+}
+
+function getChargeTypeClass(type) {
+    const classMap = {
+        'retirement': 'retirement',
+        'health_insurance': 'health',
+        'social_insurance': 'health',
+        'regional_tax': 'regional',
+        'income_tax': 'income',
+        'levy': 'levy',
+        'benefit_accrual': 'benefit'
+    };
+    return classMap[type] || 'other';
+}
+
+function getChargeTypeInitial(type) {
+    const initialMap = {
+        'retirement': 'R',
+        'health_insurance': 'H',
+        'social_insurance': 'S',
+        'regional_tax': 'T',
+        'income_tax': 'I',
+        'levy': 'L',
+        'benefit_accrual': 'B'
+    };
+    return initialMap[type] || '?';
+}
+
+// ==================== Income Tax Regimes Section ====================
+// Displays tax regimes (Old/New), slabs, rebates, deductions, surcharges, cess
+
+function renderTaxRegimesSection(configData) {
+    const taxRegimes = configData.tax_regimes;
+    const deductions = configData.deductions;
+    const surcharges = configData.surcharges;
+    const cess = configData.cess;
+
+    if (!taxRegimes || Object.keys(taxRegimes).length === 0) {
+        return '<div class="cfg-empty">No income tax regime data available</div>';
+    }
+
+    let html = '<div class="cfg-section cfg-tax-regimes">';
+
+    // Count total items
+    const regimeCount = Object.keys(taxRegimes).length;
+    html += `<div class="cfg-count-badge">${regimeCount} Tax Regime${regimeCount > 1 ? 's' : ''}</div>`;
+
+    // Render each tax regime
+    html += '<div class="cfg-regimes-grid">';
+    for (const [regimeKey, regime] of Object.entries(taxRegimes)) {
+        const isDefault = regime.is_default;
+        html += `
+            <div class="cfg-regime-card ${isDefault ? 'cfg-regime-default' : ''}">
+                <div class="cfg-regime-header">
+                    <h4>${escapeHtml(regime.regime_name || formatLabel(regimeKey))}</h4>
+                    ${isDefault ? '<span class="cfg-badge-default">Default</span>' : ''}
+                </div>
+                ${regime.description ? `<p class="cfg-regime-desc">${escapeHtml(regime.description)}</p>` : ''}
+
+                <div class="cfg-regime-details">
+                    ${regime.standard_deduction ? `
+                        <div class="cfg-detail-item">
+                            <span class="cfg-detail-label">Standard Deduction</span>
+                            <span class="cfg-detail-value">${formatCurrency(regime.standard_deduction)}</span>
+                        </div>
+                    ` : ''}
+
+                    ${regime.rebate ? renderRebateSection(regime.rebate) : ''}
+
+                    ${regime.slabs && regime.slabs.length > 0 ? renderTaxSlabs(regime.slabs, regime.regime_name) : ''}
+
+                    ${regime.allowed_deductions && regime.allowed_deductions.length > 0 ? `
+                        <div class="cfg-detail-section">
+                            <h6>Allowed Deductions</h6>
+                            <div class="cfg-deduction-tags">
+                                ${regime.allowed_deductions.map(d => `<span class="cfg-deduction-tag">${escapeHtml(d)}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    html += '</div>';
+
+    // Render Chapter VI-A Deductions if available
+    if (deductions && Object.keys(deductions).length > 0) {
+        html += renderDeductionsSummary(deductions);
+    }
+
+    // Render Surcharges if available
+    if (surcharges && Object.keys(surcharges).length > 0) {
+        html += renderSurchargesSection(surcharges);
+    }
+
+    // Render Cess if available
+    if (cess) {
+        html += renderCessSection(cess);
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderRebateSection(rebate) {
+    if (!rebate) return '';
+
+    const eligibility = rebate.eligibility || {};
+    const calculation = rebate.rebate_calculation || {};
+
+    return `
+        <div class="cfg-detail-section cfg-rebate-section">
+            <h6>Tax Rebate ${rebate.legal_section ? `(${escapeHtml(rebate.legal_section)})` : ''}</h6>
+            <div class="cfg-rebate-grid">
+                ${eligibility.max_taxable_income ? `
+                    <div class="cfg-rebate-item">
+                        <span class="cfg-label">Eligibility</span>
+                        <span class="cfg-value">Income ≤ ${formatCurrency(eligibility.max_taxable_income)}</span>
+                    </div>
+                ` : ''}
+                ${calculation.max_rebate_amount ? `
+                    <div class="cfg-rebate-item">
+                        <span class="cfg-label">Max Rebate</span>
+                        <span class="cfg-value">${formatCurrency(calculation.max_rebate_amount)}</span>
+                    </div>
+                ` : ''}
+                ${eligibility.resident_required ? `
+                    <div class="cfg-rebate-item">
+                        <span class="cfg-label">Resident Only</span>
+                        <span class="cfg-value">Yes</span>
+                    </div>
+                ` : ''}
+            </div>
+            ${rebate._comment ? `<p class="cfg-rebate-note">${escapeHtml(rebate._comment)}</p>` : ''}
+        </div>
+    `;
+}
+
+function renderTaxSlabs(slabs, regimeName) {
+    if (!slabs || slabs.length === 0) return '';
+
+    return `
+        <div class="cfg-detail-section cfg-slabs-section">
+            <h6>Tax Slabs</h6>
+            <table class="cfg-slabs-table">
+                <thead>
+                    <tr>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${slabs.map(slab => `
+                        <tr>
+                            <td>${formatCurrency(slab.income_from || slab.from || 0)}</td>
+                            <td>${slab.income_to === null || slab.to === null ? 'No Limit' : formatCurrency(slab.income_to || slab.to)}</td>
+                            <td>${slab.rate_percent || slab.rate || 0}%</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderDeductionsSummary(deductions) {
+    if (!deductions || Object.keys(deductions).length === 0) return '';
+
+    let html = `
+        <div class="cfg-deductions-summary">
+            <h5>Chapter VI-A Deductions</h5>
+            <div class="cfg-deductions-grid">
+    `;
+
+    for (const [sectionCode, section] of Object.entries(deductions)) {
+        const applicableRegimes = section.applicable_regimes || [];
+        html += `
+            <div class="cfg-deduction-card">
+                <div class="cfg-deduction-header">
+                    <span class="cfg-section-code">${escapeHtml(sectionCode)}</span>
+                    <span class="cfg-section-name">${escapeHtml(section.section_name || section.section_code || sectionCode)}</span>
+                </div>
+                ${section.description ? `<p class="cfg-deduction-desc">${escapeHtml(section.description)}</p>` : ''}
+                ${section.max_limit ? `<div class="cfg-max-limit">Max: ${formatCurrency(section.max_limit)}</div>` : ''}
+                <div class="cfg-regime-tags">
+                    ${applicableRegimes.map(r => `<span class="cfg-regime-tag cfg-regime-${r.replace('_regime', '')}">${formatLabel(r.replace('_regime', ''))}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+function renderSurchargesSection(surcharges) {
+    if (!surcharges || Object.keys(surcharges).length === 0) return '';
+
+    let html = '<div class="cfg-surcharges-section"><h5>Surcharges</h5>';
+
+    for (const [key, surcharge] of Object.entries(surcharges)) {
+        if (surcharge.slabs && surcharge.slabs.length > 0) {
+            html += `
+                <div class="cfg-surcharge-card">
+                    <h6>${formatLabel(key)}</h6>
+                    <table class="cfg-slabs-table">
+                        <thead>
+                            <tr>
+                                <th>Income From</th>
+                                <th>Income To</th>
+                                <th>Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${surcharge.slabs.map(slab => `
+                                <tr>
+                                    <td>${formatCurrency(slab.income_from || 0)}</td>
+                                    <td>${slab.income_to === null ? 'No Limit' : formatCurrency(slab.income_to)}</td>
+                                    <td>${slab.rate_percent || 0}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderCessSection(cess) {
+    if (!cess) return '';
+
+    // Format applies_to list
+    const appliesTo = cess.applies_to
+        ? (Array.isArray(cess.applies_to) ? cess.applies_to.map(formatLabel).join(', ') : formatLabel(cess.applies_to))
+        : null;
+
+    return `
+        <div class="cfg-cess-section">
+            <h5>Cess</h5>
+            <div class="cfg-cess-card">
+                ${cess.name ? `<div class="cfg-cess-name">${escapeHtml(cess.name)}</div>` : ''}
+                ${cess.rate_percent !== undefined ? `<div class="cfg-cess-rate">${cess.rate_percent}% on Tax + Surcharge</div>` : ''}
+                ${appliesTo ? `<div class="cfg-cess-applies">Applies to: ${appliesTo}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderJurisdictionDataSection(jurisdictionData) {
+    if (!jurisdictionData || Object.keys(jurisdictionData).length === 0) {
+        return '<div class="cfg-empty">No jurisdiction-specific data</div>';
+    }
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${Object.keys(jurisdictionData).length} Jurisdiction Data Entries</div>`;
+
+    // Group by charge_code
+    const byCharge = {};
+    Object.entries(jurisdictionData).forEach(([key, data]) => {
+        const charge = data.charge_code || 'Unknown';
+        if (!byCharge[charge]) byCharge[charge] = [];
+        byCharge[charge].push({ key, ...data });
+    });
+
+    Object.entries(byCharge).forEach(([chargeCode, items]) => {
+        html += `
+        <div class="cfg-subsection">
+            <h4>${formatLabel(chargeCode)} (${items.length} entries)</h4>
+            <div class="cfg-jurisdiction-data-grid">`;
+
+        items.forEach(jd => {
+            html += `
+            <div class="cfg-jurisdiction-data-card">
+                <div class="cfg-jd-header">
+                    <span class="cfg-jd-key">${escapeHtml(jd.jurisdiction_code)} (${formatLabel(jd.jurisdiction_level)})</span>
+                </div>
+                <div class="cfg-jd-body">
+                    <div class="cfg-field"><label>Country</label><span>${escapeHtml(jd.country_code)}</span></div>
+                    <div class="cfg-field"><label>Effective From</label><span>${formatDate(jd.effective_from) || '-'}</span></div>
+                    ${jd.employee_rate_percent !== undefined ? `<div class="cfg-field"><label>Employee Rate</label><span class="cfg-rate">${jd.employee_rate_percent}%</span></div>` : ''}
+                    ${jd.employer_rate_percent !== undefined ? `<div class="cfg-field"><label>Employer Rate</label><span class="cfg-rate">${jd.employer_rate_percent}%</span></div>` : ''}
+                    ${jd.rate_percent !== undefined ? `<div class="cfg-field"><label>Rate</label><span class="cfg-rate">${jd.rate_percent}%</span></div>` : ''}
+
+                    <!-- Slabs (for PT, TDS, etc.) -->
+                    ${jd.slabs?.length ? `
+                    <div class="cfg-slabs-section">
+                        <h6>Slabs (${jd.slabs.length})</h6>
+                        <table class="cfg-mini-table">
+                            <thead><tr><th>From</th><th>To</th><th>Fixed Amount</th><th>Rate %</th></tr></thead>
+                            <tbody>
+                                ${jd.slabs.map(s => `
+                                    <tr>
+                                        <td>${formatCurrency(s.from)}</td>
+                                        <td>${s.to !== null ? formatCurrency(s.to) : 'No Limit'}</td>
+                                        <td>${s.fixed_amount !== undefined ? formatCurrency(s.fixed_amount) : '-'}</td>
+                                        <td>${s.rate_percent !== undefined ? s.rate_percent + '%' : '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>` : ''}
+
+                    <!-- Period Overrides -->
+                    ${jd.period_overrides ? `
+                    <div class="cfg-override-section">
+                        <h6>Period Overrides</h6>
+                        ${jd.period_overrides.applicable_months ? `<div class="cfg-field"><label>Applicable Months</label><span>${jd.period_overrides.applicable_months.map(m => getMonthName(m)).join(', ')}</span></div>` : ''}
+                        ${jd.period_overrides.special_month_amount !== undefined ? `<div class="cfg-field"><label>Special Month Amount</label><span>${formatCurrency(jd.period_overrides.special_month_amount)}</span></div>` : ''}
+                    </div>` : ''}
+
+                    <!-- Eligibility Overrides -->
+                    ${jd.eligibility_overrides ? `
+                    <div class="cfg-override-section">
+                        <h6>Eligibility Overrides</h6>
+                        ${Object.entries(jd.eligibility_overrides).map(([k, v]) => `<div class="cfg-field"><label>${formatLabel(k)}</label><span>${v}</span></div>`).join('')}
+                    </div>` : ''}
+
+                    <!-- Period Behavior Override -->
+                    ${jd.period_behavior_override ? `
+                    <div class="cfg-override-section">
+                        <h6>Period Behavior Override</h6>
+                        <div class="cfg-row-grid">
+                            <div class="cfg-field"><label>Period Basis</label><span>${formatLabel(jd.period_behavior_override.period_basis)}</span></div>
+                            <div class="cfg-field"><label>Proration</label><span>${jd.period_behavior_override.proration_allowed ? 'Yes' : 'No'}</span></div>
+                            <div class="cfg-field"><label>Application Rule</label><span>${formatLabel(jd.period_behavior_override.application_rule)}</span></div>
+                        </div>
+                        ${jd.period_behavior_override.override_reason ? `<div class="cfg-comment">${escapeHtml(jd.period_behavior_override.override_reason)}</div>` : ''}
+                    </div>` : ''}
+                </div>
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderJurisdictionBindingsSection(bindings) {
+    if (!bindings || Object.keys(bindings).length === 0) {
+        return '<div class="cfg-empty">No jurisdiction bindings configured</div>';
+    }
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${Object.keys(bindings).length} Jurisdiction Binding${Object.keys(bindings).length > 1 ? 's' : ''}</div>`;
+
+    html += '<div class="cfg-bindings-grid">';
+    Object.entries(bindings).forEach(([key, data]) => {
+        html += `
+        <div class="cfg-binding-card">
+            <div class="cfg-binding-header">${escapeHtml(key)}</div>
+            <div class="cfg-binding-body">
+                ${renderObjectAsFields(data, 0)}
+            </div>
+        </div>`;
+    });
+    html += '</div></div>';
+
+    return html;
+}
+
+function renderDeductionOrderSection(deductionOrder) {
+    if (!deductionOrder?.length) return '<div class="cfg-empty">No deduction order defined</div>';
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${deductionOrder.length} Deduction${deductionOrder.length > 1 ? 's' : ''} in Order</div>`;
+
+    html += '<div class="cfg-deduction-order">';
+    deductionOrder.forEach((item, idx) => {
+        const code = typeof item === 'string' ? item : (item.charge_code || item.code || 'Unknown');
+        html += `
+        <div class="cfg-deduction-item">
+            <span class="cfg-deduction-order-num">${idx + 1}</span>
+            <span class="cfg-deduction-code">${escapeHtml(code)}</span>
+        </div>
+        ${idx < deductionOrder.length - 1 ? '<div class="cfg-deduction-arrow">↓</div>' : ''}`;
+    });
+    html += '</div></div>';
+
+    return html;
+}
+
+function renderAccumulationModelsSection(models) {
+    if (!models || Object.keys(models).length === 0) {
+        return '<div class="cfg-empty">No accumulation models defined</div>';
+    }
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${Object.keys(models).length} Accumulation Model${Object.keys(models).length > 1 ? 's' : ''}</div>`;
+
+    html += '<div class="cfg-accumulation-grid">';
+    Object.entries(models).forEach(([key, data]) => {
+        html += `
+        <div class="cfg-accumulation-card">
+            <div class="cfg-accumulation-header">${escapeHtml(key)}</div>
+            <div class="cfg-accumulation-body">
+                ${renderObjectAsFields(data, 0)}
+            </div>
+        </div>`;
+    });
+    html += '</div></div>';
+
+    return html;
+}
+
+function renderReportingSection(reporting) {
+    if (!reporting) return '<div class="cfg-empty">No reporting configuration</div>';
+
+    let html = '<div class="cfg-section">';
+    html += renderObjectAsFields(reporting, 0);
+    html += '</div>';
+    return html;
+}
+
+function renderBuiltinFormulasSection(formulas) {
+    if (!formulas?.length) return '<div class="cfg-empty">No built-in formulas defined</div>';
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${formulas.length} Built-in Formula${formulas.length > 1 ? 's' : ''}</div>`;
+    html += '<div class="cfg-formulas-grid">';
+
+    formulas.forEach(formula => {
+        html += `
+        <div class="cfg-formula-card">
+            <div class="cfg-formula-header">
+                <span class="cfg-formula-id">${escapeHtml(formula.formula_id)}</span>
+                <span class="cfg-formula-type">${formatLabel(formula.formula_type)}</span>
+            </div>
+            <div class="cfg-formula-desc">${escapeHtml(formula.description || '')}</div>
+
+            ${formula.expression ? `<div class="cfg-formula-expression"><code>${escapeHtml(formula.expression)}</code></div>` : ''}
+
+            ${formula.required_params?.length ? `
+            <div class="cfg-formula-params">
+                <h6>Required Parameters</h6>
+                <div class="cfg-params-list">
+                    ${formula.required_params.map(p => `<span class="cfg-param">${escapeHtml(p)}</span>`).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- Legal Reference - CRITICAL for audit -->
+            ${formula.legal_reference ? `
+            <div class="cfg-legal-reference">
+                <h6>Legal Reference</h6>
+                <div class="cfg-legal-body">
+                    <div class="cfg-field"><label>Primary Act</label><span class="cfg-legal-act">${escapeHtml(formula.legal_reference.primary_act)}</span></div>
+                    ${formula.legal_reference.section ? `<div class="cfg-field"><label>Section</label><span>${escapeHtml(formula.legal_reference.section)}</span></div>` : ''}
+                    ${formula.legal_reference.amendment ? `<div class="cfg-field"><label>Amendment</label><span>${escapeHtml(formula.legal_reference.amendment)}</span></div>` : ''}
+                    ${formula.legal_reference.circular ? `<div class="cfg-field"><label>Circular</label><span class="cfg-legal-circular">${escapeHtml(formula.legal_reference.circular)}</span></div>` : ''}
+                    ${formula.legal_reference.effective_from ? `<div class="cfg-field"><label>Effective From</label><span>${formatDate(formula.legal_reference.effective_from)}</span></div>` : ''}
+                    ${formula.legal_reference.notes ? `<div class="cfg-legal-notes">${escapeHtml(formula.legal_reference.notes)}</div>` : ''}
+                </div>
+            </div>` : ''}
+        </div>`;
+    });
+
+    html += '</div></div>';
+    return html;
+}
+
+// Legal References Only - PUBLIC view (hides formula IDs, expressions, internal codes)
+// COUNTRY-AGNOSTIC: Uses description from config, never hardcodes country-specific values
+function renderLegalReferencesOnlySection(formulas) {
+    if (!formulas?.length) return '<div class="cfg-empty">No legal references available</div>';
+
+    // Filter to only formulas with legal references
+    const formulasWithLegalRefs = formulas.filter(f => f.legal_reference);
+    if (!formulasWithLegalRefs.length) return '<div class="cfg-empty">No legal references available</div>';
+
+    let html = '<div class="cfg-section">';
+    html += `<div class="cfg-count-badge">${formulasWithLegalRefs.length} Legal Reference${formulasWithLegalRefs.length > 1 ? 's' : ''}</div>`;
+    html += '<div class="cfg-legal-refs-grid">';
+
+    formulasWithLegalRefs.forEach(formula => {
+        const ref = formula.legal_reference;
+        // Use description from config - NO hardcoded country-specific mappings
+        const displayName = formula.description || formatLabel(formula.formula_type || 'Statutory Contribution');
+
+        html += `
+        <div class="cfg-legal-ref-card">
+            <div class="cfg-legal-ref-header">
+                <span class="cfg-legal-ref-name">${escapeHtml(displayName)}</span>
+            </div>
+            <div class="cfg-legal-body">
+                <div class="cfg-field"><label>Primary Act</label><span class="cfg-legal-act">${escapeHtml(ref.primary_act)}</span></div>
+                ${ref.section ? `<div class="cfg-field"><label>Section</label><span>${escapeHtml(ref.section)}</span></div>` : ''}
+                ${ref.amendment ? `<div class="cfg-field"><label>Amendment</label><span>${escapeHtml(ref.amendment)}</span></div>` : ''}
+                ${ref.circular ? `<div class="cfg-field"><label>Circular/Notification</label><span class="cfg-legal-circular">${escapeHtml(ref.circular)}</span></div>` : ''}
+                ${ref.effective_from ? `<div class="cfg-field"><label>Effective From</label><span>${formatDate(ref.effective_from)}</span></div>` : ''}
+                ${ref.notes ? `<div class="cfg-legal-notes">${escapeHtml(ref.notes)}</div>` : ''}
+            </div>
+        </div>`;
+    });
+
+    html += '</div></div>';
+    return html;
 }
 
 function closeConfigViewModal() {

@@ -861,6 +861,24 @@ td.text-right strong,
     transform: scale(1.05);
 }
 
+/* Modal title row - for headers with title + badge */
+.modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-title-row h2,
+.modal-title-row h3,
+.modal-title-row h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
 .modal-body {
     padding: 12px 16px;
     overflow-y: auto !important;
@@ -14471,11 +14489,20 @@ tr.immutable-row:hover {
     margin-bottom: 12px;
 }
 
-.cfg-subsection-title {
+.cfg-subsection h4 {
     font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 10px;
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-subsection-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -14544,6 +14571,316 @@ tr.immutable-row:hover {
     font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
+}
+
+/* Tax Regimes Section */
+.cfg-tax-regimes {
+    padding: 0;
+}
+
+.cfg-regimes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.cfg-regime-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 0;
+}
+
+.cfg-regime-card.cfg-regime-default {
+    border-color: var(--color-success);
+    background: linear-gradient(to bottom, var(--color-success-light), var(--bg-card));
+}
+
+.cfg-regime-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.cfg-regime-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin: 6px 0 12px 0;
+    line-height: 1.4;
+}
+
+.cfg-regime-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfg-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+}
+
+.cfg-detail-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.cfg-detail-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-detail-section {
+    padding: 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+}
+
+.cfg-detail-section h6 {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Rebate Section */
+.cfg-rebate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.cfg-rebate-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-rebate-item .cfg-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.cfg-rebate-item .cfg-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-rebate-note {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin: 8px 0 0 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color-light);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Tax Slabs Table */
+.cfg-slabs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    margin-top: 6px;
+}
+
+.cfg-slabs-table th,
+.cfg-slabs-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-slabs-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 9px;
+    text-transform: uppercase;
+    background: var(--bg-card);
+}
+
+.cfg-slabs-table td {
+    color: var(--text-primary);
+}
+
+/* Deduction Tags */
+.cfg-deduction-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cfg-deduction-tag {
+    padding: 2px 6px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 500;
+}
+
+/* Deductions Summary */
+.cfg-deductions-summary {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-deductions-summary h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.cfg-deductions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.cfg-deduction-card {
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.cfg-deduction-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.cfg-section-code {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-inverse);
+    padding: 2px 6px;
+    background: var(--brand-primary);
+    border-radius: 4px;
+}
+
+.cfg-section-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cfg-deduction-desc {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+}
+
+.cfg-max-limit {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.cfg-regime-tags {
+    display: flex;
+    gap: 4px;
+}
+
+.cfg-regime-tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.cfg-regime-tag.cfg-regime-old {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.cfg-regime-tag.cfg-regime-new {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+/* Surcharges Section */
+.cfg-surcharges-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-surcharges-section h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.cfg-surcharge-card {
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.cfg-surcharge-card h6 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+/* Cess Section */
+.cfg-cess-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-cess-section h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.cfg-cess-card {
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.cfg-cess-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.cfg-cess-rate {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.cfg-cess-applies {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 4px;
 }
 
 /* Contribution Cards (Social) */
@@ -15209,6 +15546,1106 @@ tr.immutable-row:hover {
 
 [data-theme="dark"] .cfg-table-mini td {
     border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   COMPREHENSIVE COMPLIANCE MODAL SECTIONS
+   For Lawyer, CA, Government Agency viewing
+   ============================================ */
+
+/* Engine Semantics Section */
+.cfg-engine-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.cfg-engine-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s;
+}
+
+.cfg-engine-card:hover {
+    border-color: var(--brand-primary);
+}
+
+.cfg-engine-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-engine-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.cfg-engine-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-engine-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfg-engine-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    font-size: 11px;
+}
+
+.cfg-engine-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cfg-engine-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: monospace;
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Statutory Charges Section */
+.cfg-charges-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.cfg-charge-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-charge-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-charge-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cfg-charge-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: white;
+    border-radius: 10px;
+    font-size: 18px;
+}
+
+.cfg-charge-icon.retirement { background: var(--brand-primary); }
+.cfg-charge-icon.health { background: var(--color-success); }
+.cfg-charge-icon.regional { background: var(--color-warning); }
+.cfg-charge-icon.income { background: var(--color-error); }
+.cfg-charge-icon.levy { background: var(--brand-accent); }
+.cfg-charge-icon.benefit { background: var(--color-info); }
+
+.cfg-charge-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-charge-code-badge {
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+.cfg-charge-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.cfg-payer-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.cfg-payer-badge.employee { background: var(--color-info-light); color: var(--color-info); }
+.cfg-payer-badge.employer { background: var(--color-success-light); color: var(--color-success); }
+.cfg-payer-badge.both { background: var(--color-warning-light); color: var(--color-warning); }
+
+.cfg-charge-body {
+    padding: 16px;
+}
+
+.cfg-charge-section {
+    margin-bottom: 16px;
+}
+
+.cfg-charge-section:last-child {
+    margin-bottom: 0;
+}
+
+.cfg-charge-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfg-charge-section-title::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--brand-primary);
+    border-radius: 2px;
+}
+
+.cfg-calc-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.cfg-calc-item {
+    background: var(--bg-elevated);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--brand-primary);
+}
+
+.cfg-calc-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.cfg-calc-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Eligibility Conditions */
+.cfg-eligibility-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfg-eligibility-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.cfg-eligibility-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-info-light);
+    color: var(--color-info);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.cfg-eligibility-text {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.cfg-eligibility-operator {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+/* Period Behavior */
+.cfg-period-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.cfg-period-item {
+    text-align: center;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+}
+
+.cfg-period-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.cfg-period-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Cost Classification */
+.cfg-cost-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.cfg-cost-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+}
+
+.cfg-cost-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.cfg-cost-icon.employee-portion {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.cfg-cost-icon.employer-portion {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.cfg-cost-details {
+    flex: 1;
+}
+
+.cfg-cost-type {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.cfg-cost-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Jurisdiction Data Section */
+.cfg-jurisdiction-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.cfg-jur-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cfg-jur-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-jur-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cfg-jur-level-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.cfg-jur-level-badge.state { background: var(--color-info-light); color: var(--color-info); }
+.cfg-jur-level-badge.country { background: var(--color-success-light); color: var(--color-success); }
+.cfg-jur-level-badge.district { background: var(--color-warning-light); color: var(--color-warning); }
+
+.cfg-jur-card-body {
+    padding: 16px;
+}
+
+.cfg-slabs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.cfg-slabs-table th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-slabs-table td {
+    padding: 10px;
+    font-size: 12px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-slabs-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cfg-slabs-table .amount {
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+/* Establishment Section */
+.cfg-establishment-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.cfg-establishment-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-establishment-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    color: white;
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.cfg-establishment-info h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.cfg-establishment-info .code {
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--text-muted);
+}
+
+.cfg-establishment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+/* Required Roles Section */
+.cfg-roles-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.cfg-role-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cfg-role-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+}
+
+.cfg-role-code {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+.cfg-role-mandatory {
+    padding: 4px 10px;
+    background: var(--color-error-light);
+    color: var(--color-error);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.cfg-role-body {
+    padding: 14px 16px;
+}
+
+.cfg-role-constraints {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.cfg-constraint-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+}
+
+.cfg-constraint-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.cfg-constraint-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Builtin Formulas Section */
+.cfg-formulas-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.cfg-formula-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-formula-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-formula-id {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.cfg-formula-type {
+    padding: 4px 10px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.cfg-formula-body {
+    padding: 16px;
+}
+
+.cfg-formula-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.cfg-formula-params {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.cfg-formula-param {
+    padding: 4px 10px;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+.cfg-legal-reference {
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    padding: 14px;
+    border-left: 4px solid var(--color-warning);
+}
+
+.cfg-legal-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-warning);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfg-legal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.cfg-legal-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.cfg-legal-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.cfg-legal-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cfg-legal-notes {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color-light);
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* Legal View - Public Statutory Charges (hides internal codes) */
+.cfg-charges-grid.cfg-legal-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.cfg-charge-card.cfg-legal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-legal-card .cfg-charge-header {
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--brand-primary-light) 0%, var(--bg-card) 100%);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-legal-card .cfg-charge-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-legal-card .cfg-charge-body {
+    padding: 14px 16px;
+}
+
+.cfg-legal-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color-extralight);
+}
+
+.cfg-legal-field:last-of-type {
+    border-bottom: none;
+}
+
+.cfg-legal-field label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cfg-legal-field .cfg-legal-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.cfg-legal-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-legal-section-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.cfg-legal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cfg-legal-list li {
+    font-size: 12px;
+    color: var(--text-primary);
+    padding: 6px 0 6px 20px;
+    position: relative;
+}
+
+.cfg-legal-list li::before {
+    content: '•';
+    position: absolute;
+    left: 6px;
+    color: var(--brand-primary);
+    font-weight: bold;
+}
+
+.cfg-legal-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-style: italic;
+    border-left: 3px solid var(--color-info);
+}
+
+/* Legal References Section (Public) */
+.cfg-legal-refs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.cfg-legal-ref-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-legal-ref-header {
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--color-warning-light) 0%, var(--bg-card) 100%);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-legal-ref-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-legal-body {
+    padding: 14px 16px;
+}
+
+.cfg-legal-body .cfg-field {
+    margin-bottom: 10px;
+}
+
+.cfg-legal-body .cfg-field:last-child {
+    margin-bottom: 0;
+}
+
+.cfg-legal-act {
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+.cfg-legal-circular {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--bg-elevated);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.cfg-legal-notes {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color-light);
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* Component Categories Section */
+.cfg-categories-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.cfg-category-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-category-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.cfg-category-icon.earnings { background: var(--color-success-light); color: var(--color-success); }
+.cfg-category-icon.deductions { background: var(--color-error-light); color: var(--color-error); }
+.cfg-category-icon.employer { background: var(--color-info-light); color: var(--color-info); }
+.cfg-category-icon.reimbursements { background: var(--color-warning-light); color: var(--color-warning); }
+
+.cfg-category-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-category-count {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.cfg-category-body {
+    padding: 16px;
+}
+
+.cfg-component-list {
+    display: grid;
+    gap: 10px;
+}
+
+.cfg-component-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+}
+
+.cfg-component-item.system-managed {
+    border-left-color: var(--brand-primary);
+}
+
+.cfg-component-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-component-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-component-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.cfg-component-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.cfg-system-badge {
+    padding: 3px 8px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Jurisdiction Precedence Section */
+.cfg-precedence-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.cfg-hierarchy-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.cfg-hierarchy-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cfg-hierarchy-levels {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cfg-level-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cfg-level-arrow {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.cfg-override-rules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.cfg-override-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+}
+
+.cfg-override-key {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.cfg-override-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brand-primary);
+    font-family: monospace;
+}
+
+/* Dark Mode for New Sections */
+[data-theme="dark"] .cfg-engine-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-engine-value {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-charge-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-charge-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+}
+
+[data-theme="dark"] .cfg-calc-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-eligibility-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-period-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-cost-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-jur-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-jur-card-header {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-slabs-table th {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-establishment-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-role-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-role-header {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-formula-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-formula-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+}
+
+[data-theme="dark"] .cfg-legal-reference {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-category-section {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-category-header {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-component-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-hierarchy-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Dark mode - Legal View */
+[data-theme="dark"] .cfg-charge-card.cfg-legal-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-legal-card .cfg-charge-header {
+    background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 100%);
+}
+
+[data-theme="dark"] .cfg-legal-field {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .cfg-legal-section {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cfg-legal-note {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cfg-legal-ref-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .cfg-legal-ref-header {
+    background: linear-gradient(135deg, rgba(var(--color-warning-rgb), 0.15) 0%, transparent 100%);
 }
 
 /* ============================================
