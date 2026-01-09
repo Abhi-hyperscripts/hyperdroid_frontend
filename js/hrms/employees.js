@@ -13,6 +13,11 @@ let displayedUserCount = 0;
 // Currency lookup by country code (populated from statutory configs)
 let currencyByCountry = {};
 
+// SearchableDropdown instances for filter bar
+let officeFilterDropdown = null;
+let departmentFilterDropdown = null;
+let statusFilterDropdown = null;
+
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
     if (text == null) return '';
@@ -73,9 +78,17 @@ async function loadFormData() {
         offices = offs || [];
         shifts = shiftsData || [];
 
-        // Populate filter dropdowns (all items)
-        populateSelect('departmentFilter', departments, 'department_name', true);
-        populateSelect('officeFilter', offices, 'office_name', true);
+        // Use HrmsOfficeSelection to get persisted or first office
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+
+        // Initialize SearchableDropdown filter dropdowns
+        initializeFilterDropdowns(selectedOfficeId);
+
+        // Populate office filter (NO "All" option - office is atomic unit)
+        populateOfficeFilterDropdown(selectedOfficeId);
+
+        // Populate department filter based on selected office
+        updateDepartmentFilterForOffice(selectedOfficeId);
 
         // Only populate Office dropdown in the form - others are cascading
         populateSelect('officeId', offices, 'office_name');
@@ -90,6 +103,131 @@ async function loadFormData() {
 
     } catch (error) {
         console.error('Error loading form data:', error);
+    }
+}
+
+/**
+ * Initialize SearchableDropdown instances for filter bar
+ */
+function initializeFilterDropdowns(selectedOfficeId) {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available');
+        return;
+    }
+
+    // Office filter dropdown
+    if (document.getElementById('officeFilter') && !officeFilterDropdown) {
+        officeFilterDropdown = convertSelectToSearchable('officeFilter', {
+            compact: true,
+            placeholder: 'Select Office',
+            searchPlaceholder: 'Search offices...',
+            onChange: (value) => {
+                HrmsOfficeSelection.setSelectedOfficeId(value);
+                updateDepartmentFilterForOffice(value);
+                filterEmployees();
+            }
+        });
+    }
+
+    // Department filter dropdown
+    if (document.getElementById('departmentFilter') && !departmentFilterDropdown) {
+        departmentFilterDropdown = convertSelectToSearchable('departmentFilter', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: (value) => {
+                filterEmployees();
+            }
+        });
+    }
+
+    // Status filter dropdown
+    if (document.getElementById('statusFilter') && !statusFilterDropdown) {
+        statusFilterDropdown = convertSelectToSearchable('statusFilter', {
+            compact: true,
+            placeholder: 'All Status',
+            searchPlaceholder: 'Search status...',
+            onChange: (value) => {
+                filterEmployees();
+            }
+        });
+    }
+}
+
+/**
+ * Populate office filter dropdown using HrmsOfficeSelection utility
+ * NO "All Offices" option - office is the atomic unit
+ */
+function populateOfficeFilterDropdown(selectedOfficeId) {
+    // Build options using HrmsOfficeSelection (no "All" for filters)
+    const options = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+    const searchableOptions = options.map(opt => ({
+        value: opt.value,
+        label: opt.label
+    }));
+
+    // Update SearchableDropdown if available
+    if (officeFilterDropdown) {
+        officeFilterDropdown.setOptions(searchableOptions);
+        officeFilterDropdown.setValue(selectedOfficeId);
+    } else {
+        // Fallback to native select
+        const select = document.getElementById('officeFilter');
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = options.map(opt =>
+                `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+            ).join('');
+        }
+    }
+}
+
+/**
+ * Update department filter based on selected office
+ * Shows "All Departments" within the selected office
+ */
+function updateDepartmentFilterForOffice(officeId) {
+    // Filter departments by selected office
+    const filteredDepts = officeId
+        ? departments.filter(d => d.is_active !== false && d.office_id === officeId)
+        : departments.filter(d => d.is_active !== false);
+
+    // Build options with "All Departments" at the top
+    const deptOptions = [
+        { value: '', label: 'All Departments' },
+        ...filteredDepts.map(d => ({ value: d.id, label: d.department_name }))
+    ];
+
+    // Update SearchableDropdown if available
+    if (departmentFilterDropdown) {
+        departmentFilterDropdown.setOptions(deptOptions);
+        departmentFilterDropdown.setValue(''); // Reset to "All Departments"
+    } else {
+        // Fallback to native select
+        const select = document.getElementById('departmentFilter');
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = '<option value="">All Departments</option>' +
+                filteredDepts.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+        }
+    }
+}
+
+/**
+ * Setup change handlers for filter dropdowns
+ * NOTE: Handlers are now set up in initializeFilterDropdowns() via SearchableDropdown onChange
+ * This function is kept for backwards compatibility if SearchableDropdown is not available
+ */
+function setupFilterChangeHandlers() {
+    // Only add native event listeners if SearchableDropdown is not available
+    if (officeFilterDropdown) return;
+
+    const officeFilter = document.getElementById('officeFilter');
+    if (officeFilter) {
+        officeFilter.addEventListener('change', function() {
+            const selectedOfficeId = this.value;
+            HrmsOfficeSelection.setSelectedOfficeId(selectedOfficeId);
+            updateDepartmentFilterForOffice(selectedOfficeId);
+            filterEmployees();
+        });
     }
 }
 
@@ -241,9 +379,11 @@ function filterEmployees() {
 function renderEmployees() {
     const tbody = document.getElementById('employeesTableBody');
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const deptFilter = document.getElementById('departmentFilter').value;
-    const officeFilter = document.getElementById('officeFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
+
+    // Get filter values from SearchableDropdown instances or fallback to native select
+    const deptFilter = departmentFilterDropdown ? departmentFilterDropdown.getValue() : document.getElementById('departmentFilter')?.value || '';
+    const officeFilter = officeFilterDropdown ? officeFilterDropdown.getValue() : document.getElementById('officeFilter')?.value || '';
+    const statusFilter = statusFilterDropdown ? statusFilterDropdown.getValue() : document.getElementById('statusFilter')?.value || '';
 
     let filtered = employees.filter(emp => {
         const matchesSearch = !searchTerm ||

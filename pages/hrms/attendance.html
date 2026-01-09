@@ -11,6 +11,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-attendance.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -113,8 +114,11 @@
             <main class="organization-content">
                 <!-- Daily View Tab -->
                 <div class="tab-content active" id="daily">
-                    <div class="filters-bar">
-                        <input type="date" id="dateFilter" class="filter-select" onchange="loadAttendance()">
+                    <div class="filters-bar inline-filters">
+                        <select id="officeFilter" class="filter-select">
+                            <option value="">All Offices</option>
+                        </select>
+                        <input type="date" id="dateFilter" class="filter-select">
                     </div>
 
                     <div class="stats-row">
@@ -167,7 +171,7 @@
                         <div class="filter-info">
                             <span class="filter-label">Team Regularization Requests</span>
                         </div>
-                        <select class="filter-select" id="regStatusFilter" onchange="loadTeamRegularizations()">
+                        <select class="filter-select" id="regStatusFilter">
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
@@ -207,7 +211,7 @@
                         <div class="filter-info">
                             <span class="filter-label">Team Overtime Requests</span>
                         </div>
-                        <select class="filter-select" id="otStatusFilter" onchange="loadTeamOvertime()">
+                        <select class="filter-select" id="otStatusFilter">
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
                             <option value="completed">Completed</option>
@@ -352,6 +356,8 @@
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

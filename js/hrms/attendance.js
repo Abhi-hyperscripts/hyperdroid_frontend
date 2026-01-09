@@ -1,6 +1,14 @@
 let currentUser = null;
 let pendingRejectionId = null;
 
+// SearchableDropdown instances
+let officeDropdown = null;
+let regStatusDropdown = null;
+let otStatusDropdown = null;
+
+// Data arrays
+let offices = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
         window.location.href = '/index.html';
@@ -22,6 +30,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set default date for daily attendance view
     document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
 
+    // Add date filter change event
+    document.getElementById('dateFilter').addEventListener('change', loadAttendance);
+
+    // Load offices first, then initialize dropdowns
+    await loadOffices();
+
+    // Initialize SearchableDropdowns for status filters
+    initializeStatusDropdowns();
+
     await loadAttendance();
 });
 
@@ -33,6 +50,71 @@ function applyAttendanceRBAC() {
         // Redirect regular employees to ESS page
         window.location.href = 'self-service.html';
         return;
+    }
+}
+
+// Load offices and initialize office dropdown
+async function loadOffices() {
+    try {
+        const response = await api.request('/hrms/offices');
+        offices = Array.isArray(response) ? response : (response?.data || []);
+
+        // Use HrmsOfficeSelection for localStorage persistence
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+        const dropdownOptions = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+
+        // Convert options to SearchableDropdown format
+        const searchableOptions = dropdownOptions.map(opt => ({
+            value: opt.value,
+            label: opt.label
+        }));
+
+        // Initialize or update office dropdown
+        if (!officeDropdown && typeof convertSelectToSearchable === 'function') {
+            officeDropdown = convertSelectToSearchable('officeFilter', {
+                compact: true,
+                placeholder: 'Select Office',
+                searchPlaceholder: 'Search offices...',
+                onChange: (value) => {
+                    HrmsOfficeSelection.setSelectedOfficeId(value);
+                    loadAttendance();
+                }
+            });
+        }
+
+        if (officeDropdown) {
+            officeDropdown.setOptions(searchableOptions);
+            officeDropdown.setValue(selectedOfficeId);
+        }
+    } catch (error) {
+        console.error('Error loading offices:', error);
+    }
+}
+
+// Initialize status filter dropdowns with SearchableDropdown
+function initializeStatusDropdowns() {
+    // Regularization status filter
+    if (document.getElementById('regStatusFilter') && typeof convertSelectToSearchable === 'function') {
+        regStatusDropdown = convertSelectToSearchable('regStatusFilter', {
+            compact: true,
+            placeholder: 'Select Status',
+            searchPlaceholder: 'Search...',
+            onChange: (value) => {
+                loadTeamRegularizations();
+            }
+        });
+    }
+
+    // Overtime status filter
+    if (document.getElementById('otStatusFilter') && typeof convertSelectToSearchable === 'function') {
+        otStatusDropdown = convertSelectToSearchable('otStatusFilter', {
+            compact: true,
+            placeholder: 'Select Status',
+            searchPlaceholder: 'Search...',
+            onChange: (value) => {
+                loadTeamOvertime();
+            }
+        });
     }
 }
 
@@ -77,8 +159,21 @@ async function loadAttendance() {
 
     try {
         const date = document.getElementById('dateFilter').value;
+        const selectedOfficeId = officeDropdown ? officeDropdown.getValue() : '';
+
+        // Build query string with optional office filter
+        let url = `/hrms/attendance/team?date=${date}`;
+        if (selectedOfficeId) {
+            url += `&officeId=${selectedOfficeId}`;
+        }
+
         // Use team attendance endpoint which returns array of attendance records
-        const attendance = await api.request(`/hrms/attendance/team?date=${date}`) || [];
+        let attendance = await api.request(url) || [];
+
+        // Client-side filter by office if API doesn't support it
+        if (selectedOfficeId && attendance.length > 0 && attendance[0].office_id) {
+            attendance = attendance.filter(a => a.office_id === selectedOfficeId);
+        }
 
         let present = 0, absent = 0, late = 0, onLeave = 0;
 
@@ -133,7 +228,7 @@ async function loadTeamRegularizations() {
     tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        const statusFilter = document.getElementById('regStatusFilter')?.value || 'pending';
+        const statusFilter = regStatusDropdown ? regStatusDropdown.getValue() : (document.getElementById('regStatusFilter')?.value || 'pending');
         // Use pending regularizations endpoint for team requests
         const reqs = await api.getPendingRegularizations(hrmsRoles.isHRAdmin()) || [];
 
@@ -199,7 +294,7 @@ async function loadTeamOvertime() {
     tbody.innerHTML = '<tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        const statusFilter = document.getElementById('otStatusFilter')?.value || 'pending';
+        const statusFilter = otStatusDropdown ? otStatusDropdown.getValue() : (document.getElementById('otStatusFilter')?.value || 'pending');
         // Use pending overtime endpoint for team requests
         const reqs = await api.getPendingOvertimeRequests(hrmsRoles.isHRAdmin()) || [];
 

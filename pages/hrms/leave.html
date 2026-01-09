@@ -10,6 +10,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -117,6 +118,9 @@
                             <input type="text" id="requestSearch" placeholder="Search employee...">
                         </div>
                         <div class="filter-group">
+                            <select id="requestOffice" class="form-select">
+                                <option value="">All Offices</option>
+                            </select>
                             <select id="requestStatus" class="form-select">
                                 <option value="pending">Pending</option>
                                 <option value="">All Status</option>
@@ -173,9 +177,11 @@
                             <input type="text" id="balanceSearch" placeholder="Search employee...">
                         </div>
                         <div class="filter-group">
+                            <select id="balanceOffice" class="form-select">
+                                <option value="">All Offices</option>
+                            </select>
                             <select id="balanceYear" class="form-select">
-                                <option value="2025">2025</option>
-                                <option value="2024">2024</option>
+                                <!-- Years populated dynamically by JS -->
                             </select>
                             <select id="balanceDepartment" class="form-select">
                                 <option value="">All Departments</option>
@@ -234,6 +240,9 @@
                 <div class="tab-content" id="team-calendar">
                     <div class="filters-bar">
                         <div class="filter-group">
+                            <select id="calendarOffice" class="form-select">
+                                <option value="">All Offices</option>
+                            </select>
                             <input type="month" id="calendarMonth" class="form-control">
                             <select id="calendarDepartment" class="form-select">
                                 <option value="">All Departments</option>
@@ -494,8 +503,7 @@
                                 <div class="form-group">
                                     <label for="allocYear">Year *</label>
                                     <select id="allocYear" name="year" class="form-control" required>
-                                        <option value="2025">2025</option>
-                                        <option value="2024">2024</option>
+                                        <!-- Years populated dynamically by JS -->
                                     </select>
                                 </div>
                             </div>
@@ -711,6 +719,8 @@
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/leave.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

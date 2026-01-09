@@ -10,6 +10,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -303,7 +304,7 @@
             <div class="filters-bar">
                 <div class="filter-group">
                     <select id="structureOfficeFilter" class="form-select">
-                        <option value="">All Offices</option>
+                        <!-- Populated dynamically - NO "All Offices" -->
                     </select>
                 </div>
                 <div class="search-box-modern">
@@ -362,7 +363,7 @@
                 <div class="filter-group">
                     <div class="month-picker-container" id="draftMonthPicker"></div>
                     <select id="draftOffice" class="form-select" onchange="loadPayrollDrafts()">
-                        <option value="">All Offices</option>
+                        <!-- Populated dynamically - NO "All Offices" -->
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="openCreateDraftModal()">
@@ -415,7 +416,7 @@
                 <div class="filter-group">
                     <div class="month-picker-container" id="runMonthPicker"></div>
                     <select id="runOffice" class="form-select" onchange="loadPayrollRuns()">
-                        <option value="">All Offices</option>
+                        <!-- Populated dynamically - NO "All Offices" -->
                     </select>
                 </div>
             </div>
@@ -661,7 +662,7 @@
                 <div class="filter-group">
                     <div class="month-picker-container" id="allPayslipsMonthPicker"></div>
                     <select id="allPayslipsOffice" class="form-select">
-                        <option value="">All Offices</option>
+                        <!-- Populated dynamically - NO "All Offices" -->
                     </select>
                     <select id="allPayslipsDepartment" class="form-select">
                         <option value="">All Departments</option>
@@ -3218,7 +3219,9 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payroll.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

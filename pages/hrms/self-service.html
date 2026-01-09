@@ -10,6 +10,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-ess.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -669,20 +670,9 @@
                 </div>
                 <div class="ess-filters-bar">
                     <div class="ess-filter-group">
-                        <div class="ess-year-picker-container" id="myLeaveYearPicker" data-callback="loadMyLeaves">
-                            <div class="ess-year-picker-trigger">
-                                <span class="ess-year-picker-value">2025</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"/>
-                                </svg>
-                            </div>
-                            <div class="ess-year-picker-dropdown">
-                                <div class="ess-year-picker-search">
-                                    <input type="text" placeholder="Search year...">
-                                </div>
-                                <div class="ess-year-picker-list"></div>
-                            </div>
-                        </div>
+                        <select id="myLeaveYear" class="form-select">
+                            <!-- Options populated by JS -->
+                        </select>
                         <select id="myLeaveStatus" class="form-select">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
@@ -771,20 +761,9 @@
                 <div class="ess-panel-header">
                     <h2>Company Holidays</h2>
                     <div class="ess-filter-group">
-                        <div class="ess-year-picker-container" id="holidayYearPicker">
-                            <div class="ess-year-picker-trigger">
-                                <span class="ess-year-picker-value">2025</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"/>
-                                </svg>
-                            </div>
-                            <div class="ess-year-picker-dropdown">
-                                <div class="ess-year-picker-search">
-                                    <input type="text" placeholder="Search year...">
-                                </div>
-                                <div class="ess-year-picker-list"></div>
-                            </div>
-                        </div>
+                        <select id="holidayYear" class="form-select">
+                            <!-- Options populated by JS -->
+                        </select>
                     </div>
                 </div>
                 <div class="ess-holidays-list" id="holidaysList">
@@ -802,20 +781,9 @@
                 <div class="ess-panel-header">
                     <h2>My Payslips</h2>
                     <div class="ess-filter-group">
-                        <div class="ess-year-picker-container" id="payslipYearPicker">
-                            <div class="ess-year-picker-trigger">
-                                <span class="ess-year-picker-value">2025</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"/>
-                                </svg>
-                            </div>
-                            <div class="ess-year-picker-dropdown">
-                                <div class="ess-year-picker-search">
-                                    <input type="text" placeholder="Search year...">
-                                </div>
-                                <div class="ess-year-picker-list"></div>
-                            </div>
-                        </div>
+                        <select id="payslipYear" class="form-select">
+                            <!-- Options populated by JS -->
+                        </select>
                     </div>
                 </div>
 
@@ -1328,6 +1296,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script src="../../js/searchable-dropdown.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');

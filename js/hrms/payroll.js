@@ -596,6 +596,108 @@ function closeModal(id) {
 
 // Modal should only be closed via the close button, not by clicking on backdrop
 
+// Store for converted searchable dropdowns
+const searchableDropdownInstances = new Map();
+
+/**
+ * Initialize all searchable dropdowns on the payroll page
+ * Converts native select elements to SearchableDropdown components
+ */
+function initSearchableDropdowns() {
+    // Only proceed if SearchableDropdown component is available
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown component not loaded');
+        return;
+    }
+
+    // Filter dropdowns configuration (17 dropdowns)
+    const filterDropdowns = [
+        { id: 'countryFilter', placeholder: 'Select Country', searchPlaceholder: 'Search country...', compact: true },
+        { id: 'componentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
+        { id: 'structureOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'draftOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'runOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'loanStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'vdEnrollmentStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'vdEnrollmentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
+        { id: 'allPayslipsOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'allPayslipsDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
+        { id: 'salaryReportOffice', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'salaryReportDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
+        { id: 'adjustmentStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'adjustmentTypeFilter', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
+        { id: 'arrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'arrearsStructure', placeholder: 'All Structures', searchPlaceholder: 'Search structure...', compact: true },
+        { id: 'ctcArrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true }
+    ];
+
+    // Form dropdowns configuration (16 dropdowns)
+    const formDropdowns = [
+        { id: 'draftPayrollOffice', placeholder: 'Select Office', searchPlaceholder: 'Search office...' },
+        { id: 'structureOffice', placeholder: 'Select Office (Required)', searchPlaceholder: 'Search office...' },
+        { id: 'structureIsDefault', placeholder: 'Select', searchPlaceholder: 'Search...' },
+        { id: 'componentCategory', placeholder: 'Select Category', searchPlaceholder: 'Search...' },
+        { id: 'calculationType', placeholder: 'Select Type', searchPlaceholder: 'Search...' },
+        { id: 'calculationBase', placeholder: 'Select Base', searchPlaceholder: 'Search...' },
+        { id: 'isTaxable', placeholder: 'Select', searchPlaceholder: 'Search...' },
+        { id: 'loanEmployee', placeholder: 'Select Employee', searchPlaceholder: 'Search employee...', virtualScroll: true },
+        { id: 'loanType', placeholder: 'Select Loan Type', searchPlaceholder: 'Search...' },
+        { id: 'interestCalculationType', placeholder: 'Select Calculation', searchPlaceholder: 'Search...' },
+        { id: 'disbursementMode', placeholder: 'Select Mode', searchPlaceholder: 'Search...' },
+        { id: 'bulkOfficeId', placeholder: 'All Offices', searchPlaceholder: 'Search office...' },
+        { id: 'bulkDepartmentId', placeholder: 'All Departments', searchPlaceholder: 'Search department...' },
+        { id: 'bulkDesignationId', placeholder: 'All Designations', searchPlaceholder: 'Search designation...' },
+        { id: 'vdTypeIsActive', placeholder: 'Select Status', searchPlaceholder: 'Search...' },
+        { id: 'vdEnrollmentDeductionType', placeholder: 'Select VD Type', searchPlaceholder: 'Search type...' }
+    ];
+
+    // Convert all dropdowns
+    [...filterDropdowns, ...formDropdowns].forEach(config => {
+        const select = document.getElementById(config.id);
+        if (select && select.tagName === 'SELECT') {
+            const dropdown = convertSelectToSearchable(config.id, {
+                placeholder: config.placeholder,
+                searchPlaceholder: config.searchPlaceholder,
+                compact: config.compact || false,
+                virtualScroll: config.virtualScroll || false
+            });
+            if (dropdown) {
+                searchableDropdownInstances.set(config.id, dropdown);
+            }
+        }
+    });
+
+    console.log(`[Payroll] Initialized ${searchableDropdownInstances.size} searchable dropdowns`);
+}
+
+/**
+ * Get a searchable dropdown instance by its original select ID
+ * @param {string} id - The original select element ID
+ * @returns {SearchableDropdown|null}
+ */
+function getSearchableDropdown(id) {
+    return searchableDropdownInstances.get(id) || null;
+}
+
+/**
+ * Update options for a searchable dropdown
+ * @param {string} id - The original select element ID
+ * @param {Array} options - New options array [{value, label, description?}]
+ */
+function updateSearchableDropdownOptions(id, options) {
+    const dropdown = searchableDropdownInstances.get(id);
+    if (dropdown) {
+        dropdown.setOptions(options);
+    }
+    // Also update the hidden select for form compatibility
+    const select = document.getElementById(id);
+    if (select) {
+        select.innerHTML = options.map(opt =>
+            `<option value="${escapeHtml(String(opt.value))}">${escapeHtml(opt.label)}</option>`
+        ).join('');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
     await initializePage();
@@ -645,6 +747,9 @@ async function initializePage() {
 
         // Set default dates for payroll run
         setDefaultPayrollDates();
+
+        // Initialize searchable dropdowns (after data is loaded)
+        initSearchableDropdowns();
 
         hideLoading();
     } catch (error) {
@@ -3347,27 +3452,69 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = response || [];
 
-        const selects = ['payrollOffice', 'runOffice', 'structureOfficeFilter', 'structureOffice', 'draftOffice', 'draftPayrollOffice'];
-        selects.forEach(id => {
+        // Use HrmsOfficeSelection to get persisted or first office
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+
+        // Filter dropdowns - NO "All Offices", auto-select first office
+        const filterSelects = ['runOffice', 'structureOfficeFilter', 'draftOffice', 'allPayslipsOffice'];
+        filterSelects.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
-                let firstOption;
-                if (id === 'runOffice' || id === 'structureOfficeFilter' || id === 'draftOffice' || id === 'draftPayrollOffice') {
-                    firstOption = '<option value="">All Offices</option>';
-                } else if (id === 'structureOffice') {
-                    firstOption = '<option value="">Select Office (Required)</option>';
-                } else {
-                    firstOption = '<option value="">Select Office</option>';
+                const options = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+                select.innerHTML = options.map(opt =>
+                    `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+                ).join('');
+
+                // Update SearchableDropdown instance if exists
+                const dropdown = searchableDropdownInstances.get(id);
+                if (dropdown) {
+                    dropdown.setOptions(options);
+                    dropdown.setValue(selectedOfficeId);
                 }
-                select.innerHTML = firstOption;
-                offices.forEach(office => {
-                    select.innerHTML += `<option value="${office.id}">${office.office_name}</option>`;
-                });
             }
         });
+
+        // Form dropdowns - Keep "Select Office" placeholder
+        const formSelects = [
+            { id: 'payrollOffice', placeholder: 'Select Office' },
+            { id: 'structureOffice', placeholder: 'Select Office (Required)' },
+            { id: 'draftPayrollOffice', placeholder: 'Select Office' }
+        ];
+        formSelects.forEach(config => {
+            const select = document.getElementById(config.id);
+            if (select) {
+                const options = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: true });
+                // Replace first option label with custom placeholder
+                if (options.length > 0 && options[0].value === '') {
+                    options[0].label = config.placeholder;
+                }
+                select.innerHTML = options.map(opt =>
+                    `<option value="${opt.value}">${opt.label}</option>`
+                ).join('');
+            }
+        });
+
+        // Setup change handlers for filter dropdowns to persist selection
+        setupPayrollOfficeChangeHandlers();
     } catch (error) {
         console.error('Error loading offices:', error);
     }
+}
+
+/**
+ * Setup change handlers for office filter dropdowns in payroll
+ */
+function setupPayrollOfficeChangeHandlers() {
+    const filterSelects = ['runOffice', 'structureOfficeFilter', 'draftOffice', 'allPayslipsOffice'];
+    filterSelects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select && !select.dataset.hrmsOfficeHandler) {
+            select.dataset.hrmsOfficeHandler = 'true'; // Mark to avoid duplicate handlers
+            select.addEventListener('change', function() {
+                HrmsOfficeSelection.setSelectedOfficeId(this.value);
+            });
+        }
+    });
 }
 
 async function loadEmployees() {
@@ -12054,17 +12201,26 @@ async function populateSalaryReportFilters() {
             });
             if (officesResp.ok) {
                 const officesData = await officesResp.json();
-                officesData.forEach(office => {
-                    const option = document.createElement('option');
-                    option.value = office.id;
-                    option.textContent = office.office_name;
-                    officeSelect.appendChild(option);
-                });
-                // Select first office by default
-                if (officeSelect.options.length > 0) {
-                    officeSelect.selectedIndex = 0;
-                    // Load departments for the first office
-                    await loadDepartmentsForOffice(officeSelect.value);
+
+                // Use HrmsOfficeSelection for auto-selection
+                const selectedOfficeId = HrmsOfficeSelection.initializeSelection(officesData);
+
+                // Build options using HrmsOfficeSelection (no "All" for filters)
+                const options = HrmsOfficeSelection.buildOfficeOptions(officesData, { isFormDropdown: false });
+                officeSelect.innerHTML = options.map(opt =>
+                    `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+                ).join('');
+
+                // Update SearchableDropdown instance if exists
+                const dropdown = searchableDropdownInstances.get('salaryReportOffice');
+                if (dropdown) {
+                    dropdown.setOptions(options);
+                    dropdown.setValue(selectedOfficeId);
+                }
+
+                // Load departments for the selected office
+                if (selectedOfficeId) {
+                    await loadDepartmentsForOffice(selectedOfficeId);
                 }
             }
         } catch (e) {
@@ -12073,6 +12229,7 @@ async function populateSalaryReportFilters() {
 
         // Add change listener for office - reload departments when office changes
         officeSelect?.addEventListener('change', async () => {
+            HrmsOfficeSelection.setSelectedOfficeId(officeSelect.value);
             await loadDepartmentsForOffice(officeSelect.value);
             loadSalaryReports();
         });

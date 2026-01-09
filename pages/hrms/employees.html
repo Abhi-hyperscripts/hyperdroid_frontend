@@ -10,6 +10,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -101,13 +102,13 @@
                             </svg>
                             <input type="text" id="searchInput" placeholder="Search employees..." oninput="filterEmployees()">
                         </div>
-                        <select class="filter-select" id="departmentFilter" onchange="filterEmployees()">
-                            <option value="">All</option>
+                        <select class="filter-select" id="officeFilter">
+                            <!-- Populated dynamically by loadFormData() -->
                         </select>
-                        <select class="filter-select" id="officeFilter" onchange="filterEmployees()">
-                            <option value="">All</option>
+                        <select class="filter-select" id="departmentFilter">
+                            <!-- Populated dynamically by loadFormData() -->
                         </select>
-                        <select class="filter-select" id="statusFilter" onchange="filterEmployees()">
+                        <select class="filter-select" id="statusFilter">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="on_notice">On Notice</option>
@@ -124,48 +125,50 @@
 
                     <!-- Employee Stats -->
                     <div class="stats-row">
-                        <div class="stat-mini">
-                            <span class="stat-mini-value" id="totalCount">-</span>
-                            <span class="stat-mini-label">Total</span>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalCount">-</div>
+                            <div class="stat-label">Total</div>
                         </div>
-                        <div class="stat-mini active">
-                            <span class="stat-mini-value" id="activeCount">-</span>
-                            <span class="stat-mini-label">Active</span>
+                        <div class="stat-card success">
+                            <div class="stat-value" id="activeCount">-</div>
+                            <div class="stat-label">Active</div>
                         </div>
-                        <div class="stat-mini warning">
-                            <span class="stat-mini-value" id="probationCount">-</span>
-                            <span class="stat-mini-label">On Probation</span>
+                        <div class="stat-card warning">
+                            <div class="stat-value" id="probationCount">-</div>
+                            <div class="stat-label">On Probation</div>
                         </div>
-                        <div class="stat-mini danger">
-                            <span class="stat-mini-value" id="exitCount">-</span>
-                            <span class="stat-mini-label">Exits This Month</span>
+                        <div class="stat-card danger">
+                            <div class="stat-value" id="exitCount">-</div>
+                            <div class="stat-label">Exits This Month</div>
                         </div>
                     </div>
 
                     <!-- Employees Table -->
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Department</th>
-                                <th>Designation</th>
-                                <th>Office</th>
-                                <th>Joining Date</th>
-                                <th>CTC</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="employeesTableBody">
-                            <tr>
-                                <td colspan="8">
-                                    <div class="loading-spinner">
-                                        <div class="spinner"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Department</th>
+                                    <th>Designation</th>
+                                    <th>Office</th>
+                                    <th>Joining Date</th>
+                                    <th>CTC</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesTableBody">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
@@ -1331,6 +1334,8 @@
         document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

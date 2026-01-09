@@ -2,6 +2,17 @@ let currentUser = null;
 let leaveTypes = [];
 let employees = [];
 let departments = [];
+let offices = [];
+
+// SearchableDropdown instances
+let requestOfficeDropdown = null;
+let requestStatusDropdown = null;
+let requestDepartmentDropdown = null;
+let balanceOfficeDropdown = null;
+let balanceYearDropdown = null;
+let balanceDepartmentDropdown = null;
+let calendarOfficeDropdown = null;
+let calendarDepartmentDropdown = null;
 
 // Employee search dropdown state (virtual scrolling)
 let filteredEmployees = [];
@@ -37,6 +48,15 @@ async function initializePage() {
 
         // Setup tabs
         setupTabs();
+
+        // Load offices first for filter dropdowns
+        await loadOffices();
+
+        // Populate year dropdowns with dynamic values (before SearchableDropdown conversion)
+        populateYearDropdowns();
+
+        // Initialize SearchableDropdowns for filters
+        initializeFilterDropdowns();
 
         // Load initial data for admin/manager view
         await Promise.all([
@@ -74,6 +94,214 @@ function applyLeaveRBAC() {
     const allocateBtn = document.getElementById('allocateBtn');
     if (allocateBtn) {
         allocateBtn.style.display = hrmsRoles.isHRAdmin() ? 'inline-flex' : 'none';
+    }
+}
+
+// Load offices for filter dropdowns
+async function loadOffices() {
+    try {
+        const response = await api.request('/hrms/offices');
+        offices = Array.isArray(response) ? response : (response?.data || []);
+
+        // Get selected office from HrmsOfficeSelection
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+
+        // Build office options
+        const officeOptions = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+        const searchableOptions = officeOptions.map(opt => ({
+            value: opt.value,
+            label: opt.label
+        }));
+
+        // Populate all office filter dropdowns (native selects first, then SearchableDropdown will use them)
+        populateOfficeDropdown('requestOffice', searchableOptions, selectedOfficeId);
+        populateOfficeDropdown('balanceOffice', searchableOptions, selectedOfficeId);
+        populateOfficeDropdown('calendarOffice', searchableOptions, selectedOfficeId);
+
+        // Update SearchableDropdown instances if already initialized
+        if (requestOfficeDropdown) {
+            requestOfficeDropdown.setOptions(searchableOptions);
+            requestOfficeDropdown.setValue(selectedOfficeId);
+        }
+        if (balanceOfficeDropdown) {
+            balanceOfficeDropdown.setOptions(searchableOptions);
+            balanceOfficeDropdown.setValue(selectedOfficeId);
+        }
+        if (calendarOfficeDropdown) {
+            calendarOfficeDropdown.setOptions(searchableOptions);
+            calendarOfficeDropdown.setValue(selectedOfficeId);
+        }
+
+    } catch (error) {
+        console.error('Error loading offices:', error);
+    }
+}
+
+// Populate office dropdown
+function populateOfficeDropdown(selectId, options, selectedValue) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    // Clear existing options except first
+    select.innerHTML = '<option value="">All Offices</option>';
+
+    // Add office options
+    options.forEach(opt => {
+        if (opt.value) { // Skip "All Offices" since we added it
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === selectedValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
+    });
+}
+
+// Generate year options dynamically
+function generateYearOptions(yearsBack = 5, yearsForward = 1) {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+
+    // Add future years first (descending)
+    for (let y = currentYear + yearsForward; y > currentYear; y--) {
+        years.push({ value: String(y), label: String(y) });
+    }
+
+    // Add current year and past years (descending)
+    for (let y = currentYear; y >= currentYear - yearsBack; y--) {
+        years.push({ value: String(y), label: String(y) });
+    }
+
+    return years;
+}
+
+// Populate year dropdowns with dynamic options
+function populateYearDropdowns() {
+    const currentYear = new Date().getFullYear();
+    const yearOptions = generateYearOptions(5, 1); // 5 years back, 1 year forward
+
+    // Populate balanceYear dropdown
+    const balanceYearSelect = document.getElementById('balanceYear');
+    if (balanceYearSelect) {
+        balanceYearSelect.innerHTML = '';
+        yearOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === String(currentYear)) {
+                option.selected = true;
+            }
+            balanceYearSelect.appendChild(option);
+        });
+    }
+
+    // Populate allocYear dropdown (in allocation modal)
+    const allocYearSelect = document.getElementById('allocYear');
+    if (allocYearSelect) {
+        allocYearSelect.innerHTML = '';
+        yearOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === String(currentYear)) {
+                option.selected = true;
+            }
+            allocYearSelect.appendChild(option);
+        });
+    }
+}
+
+// Initialize SearchableDropdowns for all filter selects
+function initializeFilterDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available');
+        return;
+    }
+
+    // Leave Requests tab filters
+    if (document.getElementById('requestOffice') && !requestOfficeDropdown) {
+        requestOfficeDropdown = convertSelectToSearchable('requestOffice', {
+            compact: true,
+            placeholder: 'All Offices',
+            searchPlaceholder: 'Search offices...',
+            onChange: (value) => {
+                HrmsOfficeSelection.setSelectedOfficeId(value);
+                loadPendingRequests();
+            }
+        });
+    }
+
+    if (document.getElementById('requestStatus') && !requestStatusDropdown) {
+        requestStatusDropdown = convertSelectToSearchable('requestStatus', {
+            compact: true,
+            placeholder: 'Select Status',
+            searchPlaceholder: 'Search...',
+            onChange: () => loadPendingRequests()
+        });
+    }
+
+    if (document.getElementById('requestDepartment') && !requestDepartmentDropdown) {
+        requestDepartmentDropdown = convertSelectToSearchable('requestDepartment', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: () => loadPendingRequests()
+        });
+    }
+
+    // Leave Balances tab filters
+    if (document.getElementById('balanceOffice') && !balanceOfficeDropdown) {
+        balanceOfficeDropdown = convertSelectToSearchable('balanceOffice', {
+            compact: true,
+            placeholder: 'All Offices',
+            searchPlaceholder: 'Search offices...',
+            onChange: (value) => {
+                HrmsOfficeSelection.setSelectedOfficeId(value);
+                loadLeaveBalances();
+            }
+        });
+    }
+
+    if (document.getElementById('balanceYear') && !balanceYearDropdown) {
+        balanceYearDropdown = convertSelectToSearchable('balanceYear', {
+            compact: true,
+            placeholder: 'Select Year',
+            searchPlaceholder: 'Search...',
+            onChange: () => loadLeaveBalances()
+        });
+    }
+
+    if (document.getElementById('balanceDepartment') && !balanceDepartmentDropdown) {
+        balanceDepartmentDropdown = convertSelectToSearchable('balanceDepartment', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: () => loadLeaveBalances()
+        });
+    }
+
+    // Team Calendar tab filters
+    if (document.getElementById('calendarOffice') && !calendarOfficeDropdown) {
+        calendarOfficeDropdown = convertSelectToSearchable('calendarOffice', {
+            compact: true,
+            placeholder: 'All Offices',
+            searchPlaceholder: 'Search offices...',
+            onChange: (value) => {
+                HrmsOfficeSelection.setSelectedOfficeId(value);
+                loadTeamCalendar();
+            }
+        });
+    }
+
+    if (document.getElementById('calendarDepartment') && !calendarDepartmentDropdown) {
+        calendarDepartmentDropdown = convertSelectToSearchable('calendarDepartment', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: () => loadTeamCalendar()
+        });
     }
 }
 
@@ -552,15 +780,35 @@ async function loadDepartments() {
         const response = await api.request('/hrms/departments');
         departments = response || [];
 
-        const selects = ['requestDepartment', 'balanceDepartment'];
+        // Build department options for SearchableDropdown
+        const deptOptions = [{ value: '', label: 'All Departments' }];
+        departments.forEach(dept => {
+            const deptName = dept.department_name || dept.name || 'Unknown';
+            deptOptions.push({ value: dept.id, label: deptName });
+        });
+
+        // Update SearchableDropdown instances if available
+        if (requestDepartmentDropdown) {
+            requestDepartmentDropdown.setOptions(deptOptions);
+        }
+        if (balanceDepartmentDropdown) {
+            balanceDepartmentDropdown.setOptions(deptOptions);
+        }
+        if (calendarDepartmentDropdown) {
+            calendarDepartmentDropdown.setOptions(deptOptions);
+        }
+
+        // Populate native selects ONLY if they haven't been converted to SearchableDropdown
+        // (check if the element is still a SELECT tag, not a DIV from SearchableDropdown)
+        const selects = ['requestDepartment', 'balanceDepartment', 'calendarDepartment'];
         selects.forEach(id => {
-            const select = document.getElementById(id);
-            if (select) {
-                select.innerHTML = '<option value="">All Departments</option>';
+            const element = document.getElementById(id);
+            // Only update if it's still a native SELECT element (not converted)
+            if (element && element.tagName === 'SELECT') {
+                element.innerHTML = '<option value="">All Departments</option>';
                 departments.forEach(dept => {
-                    // Support both snake_case (backend) and camelCase property names
                     const deptName = dept.department_name || dept.name || 'Unknown';
-                    select.innerHTML += `<option value="${dept.id}">${deptName}</option>`;
+                    element.innerHTML += `<option value="${dept.id}">${deptName}</option>`;
                 });
             }
         });
@@ -1599,13 +1847,16 @@ function initializeTeamCalendar() {
             monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         }
 
-        // Populate department filter
-        const deptSelect = document.getElementById('calendarDepartment');
-        if (deptSelect && departments.length > 0) {
-            deptSelect.innerHTML = '<option value="">All Departments</option>';
-            departments.forEach(d => {
-                deptSelect.innerHTML += `<option value="${d.id}">${d.department_name || d.name}</option>`;
-            });
+        // Populate department filter using SearchableDropdown if available
+        if (calendarDepartmentDropdown && departments.length > 0) {
+            const deptOptions = [
+                { value: '', label: 'All Departments' },
+                ...departments.map(d => ({
+                    value: d.id,
+                    label: d.department_name || d.name
+                }))
+            ];
+            calendarDepartmentDropdown.setOptions(deptOptions);
         }
 
         calendarInitialized = true;
@@ -1616,7 +1867,6 @@ function initializeTeamCalendar() {
 
 async function loadTeamCalendar() {
     const monthInput = document.getElementById('calendarMonth');
-    const deptSelect = document.getElementById('calendarDepartment');
 
     if (!monthInput || !monthInput.value) {
         return;
@@ -1626,7 +1876,11 @@ async function loadTeamCalendar() {
     const startDate = `${year}-${month}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${month}-${lastDay}`;
-    const departmentId = deptSelect?.value || null;
+
+    // Get department value from SearchableDropdown if available, otherwise from native select
+    const departmentId = calendarDepartmentDropdown
+        ? calendarDepartmentDropdown.getValue()
+        : document.getElementById('calendarDepartment')?.value || null;
 
     try {
         showLoading();

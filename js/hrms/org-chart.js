@@ -12,6 +12,10 @@ let selectedId = null;
 let departments = [];
 let offices = [];
 
+// SearchableDropdown instances
+let departmentDropdown = null;
+let officeDropdown = null;
+
 // Virtual scrolling config
 const ROW_HEIGHT = 52; // Height of each row in pixels
 const BUFFER_SIZE = 10; // Extra rows to render above/below viewport
@@ -43,8 +47,36 @@ async function loadFilterOptions() {
         departments = deptResponse.departments || deptResponse || [];
         offices = officeResponse.offices || officeResponse || [];
         populateFilters();
+        initializeDropdowns();
     } catch (error) {
         console.error('Error loading filters:', error);
+    }
+}
+
+function initializeDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available');
+        return;
+    }
+
+    // Convert department filter
+    if (document.getElementById('departmentFilter') && !departmentDropdown) {
+        departmentDropdown = convertSelectToSearchable('departmentFilter', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: () => applyFilters()
+        });
+    }
+
+    // Convert office filter
+    if (document.getElementById('officeFilter') && !officeDropdown) {
+        officeDropdown = convertSelectToSearchable('officeFilter', {
+            compact: true,
+            placeholder: 'All Offices',
+            searchPlaceholder: 'Search offices...',
+            onChange: () => applyFilters()
+        });
     }
 }
 
@@ -128,8 +160,14 @@ function flattenOrgData(nodes, parentId = null, level = 0, path = []) {
 // Build list of visible nodes based on expanded state
 function buildVisibleData() {
     const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-    const deptFilter = document.getElementById('departmentFilter')?.value || '';
-    const officeFilter = document.getElementById('officeFilter')?.value || '';
+
+    // Get values from SearchableDropdown if available, otherwise from native select
+    const deptFilter = departmentDropdown
+        ? departmentDropdown.getValue()
+        : document.getElementById('departmentFilter')?.value || '';
+    const officeFilter = officeDropdown
+        ? officeDropdown.getValue()
+        : document.getElementById('officeFilter')?.value || '';
 
     visibleData = [];
 

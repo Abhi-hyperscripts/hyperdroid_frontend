@@ -275,6 +275,32 @@ td.text-right strong,
     align-items: center;
 }
 
+/* Inline filters - side by side without wrapping container */
+.filters-bar.inline-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    align-items: center;
+    background: transparent;
+    justify-content: flex-start;
+}
+
+/* Constrain SearchableDropdown width in filters-bar */
+.filters-bar .searchable-dropdown,
+.filters-bar .searchable-dropdown-wrapper {
+    width: auto !important;
+    min-width: 180px;
+    max-width: 280px;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+/* Keep filter elements side by side */
+.filters-bar .filter-select,
+.filters-bar input[type="date"] {
+    flex-shrink: 0;
+}
+
 .filter-group {
     display: flex;
     gap: 12px;
@@ -335,12 +361,14 @@ td.text-right strong,
 
 .search-input {
     width: 100%;
-    padding: 10px 12px 10px 40px;
+    height: 34px;
+    padding: 0 12px 0 40px;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.85rem;
     background: var(--bg-input-alt);
     transition: all 0.2s;
+    box-sizing: border-box;
 }
 
 .search-input:focus {
@@ -390,16 +418,16 @@ td.text-right strong,
 }
 
 .stat-mini-value {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
 .stat-mini-label {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-top: 2px;
+    margin-top: 4px;
     text-align: center;
 }
 
@@ -428,14 +456,14 @@ td.text-right strong,
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
     margin-top: 4px;
     text-align: center;
@@ -1917,10 +1945,13 @@ td.text-right strong,
     width: auto;
     min-width: 220px;
     max-width: 280px;
-    border-radius: 8px;
+    height: 34px;
+    border-radius: 6px;
     border: 1px solid var(--border-color-light);
-    border-bottom: 1px solid var(--border-color-light);
-    padding: 8px 12px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
 }
 
 .filters-bar .search-box-modern .search-icon {
@@ -2097,40 +2128,40 @@ td.text-right strong,
 
 .office-status-card.complete {
     border-color: var(--success-transparent);
-    background: var(--color-success-light);
+    background: var(--status-card-success-bg);
 }
 
-/* Ensure good text contrast on success background in light mode */
+/* Ensure good text contrast on success background - use theme variables for colored backgrounds */
 .office-status-card.complete .office-name {
-    color: var(--color-success-text);
+    color: var(--text-on-success-bg) !important;
 }
 
 .office-status-card.complete .structure-count {
-    color: var(--color-success-dark);
-    opacity: 0.8;
+    color: var(--text-on-success-bg-secondary) !important;
 }
 
 .office-status-card.complete .has-default {
-    color: var(--color-success-dark);
+    color: var(--color-success-text) !important;
+    font-weight: 600;
 }
 
 .office-status-card.incomplete {
     border-color: var(--danger-transparent);
-    background: var(--color-danger-light);
+    background: var(--status-card-danger-bg);
 }
 
-/* Ensure good text contrast on danger background in light mode */
+/* Ensure good text contrast on danger background - use theme variables for colored backgrounds */
 .office-status-card.incomplete .office-name {
-    color: var(--color-danger-text);
+    color: var(--text-on-danger-bg) !important;
 }
 
 .office-status-card.incomplete .structure-count {
-    color: var(--color-danger-dark);
-    opacity: 0.8;
+    color: var(--text-on-danger-bg-secondary) !important;
 }
 
 .office-status-card.incomplete .no-default {
-    color: var(--color-danger-dark);
+    color: var(--color-danger-text) !important;
+    font-weight: 600;
 }
 
 .office-status-header {
@@ -2143,7 +2174,17 @@ td.text-right strong,
 .office-status-header .office-name {
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--text-primary);
+    /* Color set by .office-status-card.complete/.incomplete rules */
+}
+
+/* Override text colors for complete status cards - use theme variable for colored backgrounds */
+.office-status-card.complete .office-status-header .office-name {
+    color: var(--text-on-success-bg) !important;
+}
+
+/* Override text colors for incomplete status cards - use theme variable for colored backgrounds */
+.office-status-card.incomplete .office-status-header .office-name {
+    color: var(--text-on-danger-bg) !important;
 }
 
 .office-status-header .status-icon {
@@ -9605,42 +9646,19 @@ input:checked + .slider:before {
     color: var(--color-success-text) !important;
 }
 
-/* Office Status Cards */
+/* Office Status Cards - Dark Mode Background Overrides */
+/* Note: --status-card-success-bg and --status-card-danger-bg automatically switch in dark mode */
 [data-theme="dark"] .office-status-card.complete {
-    background: rgba(16, 185, 129, 0.15) !important;
-    border-color: rgba(16, 185, 129, 0.4) !important;
-}
-
-[data-theme="dark"] .office-status-card.complete .office-name {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .office-status-card.complete .structure-count {
-    color: rgba(255, 255, 255, 0.7) !important;
-    opacity: 1 !important;
-}
-
-[data-theme="dark"] .office-status-card.complete .has-default {
-    color: #4ade80 !important;
+    background: var(--status-card-success-bg) !important;
+    border-color: var(--success-transparent) !important;
 }
 
 [data-theme="dark"] .office-status-card.incomplete {
-    background: rgba(239, 68, 68, 0.15) !important;
-    border-color: rgba(239, 68, 68, 0.4) !important;
+    background: var(--status-card-danger-bg) !important;
+    border-color: var(--danger-transparent) !important;
 }
 
-[data-theme="dark"] .office-status-card.incomplete .office-name {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .office-status-card.incomplete .structure-count {
-    color: rgba(255, 255, 255, 0.7) !important;
-    opacity: 1 !important;
-}
-
-[data-theme="dark"] .office-status-card.incomplete .no-default {
-    color: #f87171 !important;
-}
+/* Text colors use theme variables - automatically adapt to light/dark mode */
 
 /* Document Status Badges */
 [data-theme="dark"] .doc-status.pending {
@@ -12864,18 +12882,18 @@ tr.immutable-row:hover {
     align-items: center;
 }
 
-.stat-label {
+.overview-stat .stat-label {
     font-size: 9px;
     color: var(--text-secondary);
 }
 
-.stat-value {
+.overview-stat .stat-value {
     font-size: 10px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.stat-value.highlight {
+.overview-stat .stat-value.highlight {
     color: var(--brand-primary);
 }
 
@@ -15765,4 +15783,198 @@ tr.immutable-row:hover {
     .statutory-compact-sections {
         grid-template-columns: 1fr;
     }
+}
+
+/* ============================================
+   DATE & TIME INPUT CONSISTENCY
+   Match height with SearchableDropdown (32px)
+   ============================================ */
+
+/* Filter bar date inputs - match SearchableDropdown compact height (34px) */
+.filters-bar input[type="date"],
+.inline-filters input[type="date"],
+.filter-group input[type="date"],
+.filter-group input[type="date"].form-control,
+.generator-filters input[type="date"],
+.generator-filters input[type="date"].form-control,
+input[type="date"].filter-select {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border: 1px solid var(--border-primary, var(--gray-300, #d1d5db)) !important;
+    border-radius: 4px !important;
+    background: var(--bg-input, var(--bg-secondary, #f8fafc)) !important;
+    color: var(--text-primary, #1e293b) !important;
+    box-sizing: border-box !important;
+    line-height: 1.5 !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Filter bar month inputs - match SearchableDropdown compact height (34px) */
+.filters-bar input[type="month"],
+.inline-filters input[type="month"],
+.filter-group input[type="month"],
+.filter-group input[type="month"].form-control,
+input[type="month"].filter-select {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    width: auto !important;
+    min-width: 140px !important;
+    max-width: 180px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border: 1px solid var(--border-primary, var(--gray-300, #d1d5db)) !important;
+    border-radius: 4px !important;
+    background: var(--bg-input, var(--bg-secondary, #f8fafc)) !important;
+    color: var(--text-primary, #1e293b) !important;
+    box-sizing: border-box !important;
+    line-height: 1.5 !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0 !important;
+}
+
+/* Filter bar time inputs - match SearchableDropdown compact height (34px) */
+.filters-bar input[type="time"],
+.inline-filters input[type="time"],
+.filter-group input[type="time"],
+.filter-group input[type="time"].form-control,
+.generator-filters input[type="time"],
+.generator-filters input[type="time"].form-control,
+input[type="time"].filter-select {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border: 1px solid var(--border-primary, var(--gray-300, #d1d5db)) !important;
+    border-radius: 4px !important;
+    background: var(--bg-input, var(--bg-secondary, #f8fafc)) !important;
+    color: var(--text-primary, #1e293b) !important;
+    box-sizing: border-box !important;
+    line-height: 1.5 !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Focus state for date/time/month inputs */
+.filters-bar input[type="date"]:focus,
+.inline-filters input[type="date"]:focus,
+.filter-group input[type="date"]:focus,
+.generator-filters input[type="date"]:focus,
+input[type="date"].filter-select:focus,
+.filters-bar input[type="time"]:focus,
+.inline-filters input[type="time"]:focus,
+.filter-group input[type="time"]:focus,
+input[type="time"].filter-select:focus,
+.filters-bar input[type="month"]:focus,
+.inline-filters input[type="month"]:focus,
+.filter-group input[type="month"]:focus,
+input[type="month"].filter-select:focus {
+    outline: none;
+    border-color: var(--brand-primary, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Hover state for date/time/month inputs */
+.filters-bar input[type="date"]:hover,
+.inline-filters input[type="date"]:hover,
+.filter-group input[type="date"]:hover,
+.generator-filters input[type="date"]:hover,
+input[type="date"].filter-select:hover,
+.filters-bar input[type="time"]:hover,
+.inline-filters input[type="time"]:hover,
+.filter-group input[type="time"]:hover,
+input[type="time"].filter-select:hover,
+.filters-bar input[type="month"]:hover,
+.inline-filters input[type="month"]:hover,
+.filter-group input[type="month"]:hover,
+input[type="month"].filter-select:hover {
+    border-color: var(--border-secondary, var(--gray-400, #9ca3af));
+}
+
+/* Modal form date/time inputs - match modal input height (30px) */
+.modal-body .form-group input[type="date"],
+.modal-body .form-group input[type="time"],
+.modal-content .form-group input[type="date"],
+.modal-content .form-group input[type="time"] {
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+    border: 1px solid var(--border-primary, var(--gray-300, #d1d5db));
+    border-radius: 4px;
+    background: var(--bg-input, var(--bg-secondary, #f8fafc));
+    color: var(--text-primary, #1e293b);
+    box-sizing: border-box;
+}
+
+/* Ensure consistent appearance across browsers */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Dark mode date/time/month inputs */
+[data-theme="dark"] .filters-bar input[type="date"],
+[data-theme="dark"] .inline-filters input[type="date"],
+[data-theme="dark"] .filter-group input[type="date"],
+[data-theme="dark"] .generator-filters input[type="date"],
+[data-theme="dark"] input[type="date"].filter-select,
+[data-theme="dark"] .filters-bar input[type="time"],
+[data-theme="dark"] .inline-filters input[type="time"],
+[data-theme="dark"] .filter-group input[type="time"],
+[data-theme="dark"] input[type="time"].filter-select,
+[data-theme="dark"] .filters-bar input[type="month"],
+[data-theme="dark"] .inline-filters input[type="month"],
+[data-theme="dark"] .filter-group input[type="month"],
+[data-theme="dark"] input[type="month"].filter-select {
+    background: var(--bg-input, #1e293b);
+    border-color: var(--border-primary, #475569);
+    color: var(--text-primary, #e2e8f0);
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .filters-bar input[type="date"]:hover,
+[data-theme="dark"] .inline-filters input[type="date"]:hover,
+[data-theme="dark"] .filter-group input[type="date"]:hover,
+[data-theme="dark"] .generator-filters input[type="date"]:hover,
+[data-theme="dark"] input[type="date"].filter-select:hover,
+[data-theme="dark"] .filters-bar input[type="time"]:hover,
+[data-theme="dark"] .inline-filters input[type="time"]:hover,
+[data-theme="dark"] .filter-group input[type="time"]:hover,
+[data-theme="dark"] input[type="time"].filter-select:hover,
+[data-theme="dark"] .filters-bar input[type="month"]:hover,
+[data-theme="dark"] .inline-filters input[type="month"]:hover,
+[data-theme="dark"] .filter-group input[type="month"]:hover,
+[data-theme="dark"] input[type="month"].filter-select:hover {
+    border-color: var(--border-secondary, #64748b);
+}
+
+[data-theme="dark"] .modal-body .form-group input[type="date"],
+[data-theme="dark"] .modal-body .form-group input[type="time"],
+[data-theme="dark"] .modal-content .form-group input[type="date"],
+[data-theme="dark"] .modal-content .form-group input[type="time"] {
+    background: var(--bg-input, #1e293b);
+    border-color: var(--border-primary, #475569);
+    color: var(--text-primary, #e2e8f0);
+    color-scheme: dark;
+}
+
+/* Ensure date/time/month picker icons are visible in dark mode */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
 }

@@ -11,6 +11,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-reports.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -206,7 +207,7 @@
                                 <div class="filter-group">
                                     <label for="officeFilter">Office</label>
                                     <select id="officeFilter" class="form-select">
-                                        <option value="">All Offices</option>
+                                        <!-- Populated dynamically - NO "All Offices" -->
                                     </select>
                                 </div>
                                 <div class="filter-group">
@@ -275,8 +276,10 @@
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <script>document.write('<script src="../../js/hrms/hrms-roles.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/reports.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

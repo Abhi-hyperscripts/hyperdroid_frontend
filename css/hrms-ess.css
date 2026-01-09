@@ -1950,13 +1950,15 @@
 
 .directory-search input {
     width: 100%;
-    padding: 10px 16px;
+    height: 34px;
+    padding: 0 12px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
 }
 
 .directory-search input:focus {
@@ -2147,13 +2149,15 @@
 
 .org-chart-search input {
     width: 100%;
-    padding: 10px 16px;
+    height: 34px;
+    padding: 0 12px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
 }
 
 .org-chart-search input:focus {
@@ -2204,17 +2208,20 @@
 .org-chart-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 8px 14px;
+    height: 34px;
+    padding: 0 14px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .org-chart-btn:hover {

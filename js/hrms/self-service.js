@@ -35,220 +35,18 @@ const panelTitles = {
     'panel-policies': 'Policies'
 };
 
-// Store for year picker instances
-const yearPickerInstances = new Map();
+// SearchableDropdown instances
+let myLeaveStatusDropdown = null;
+let leaveTypeDropdown = null;
+let halfDayDropdown = null;
+let encashLeaveTypeDropdown = null;
+let loanTypeDropdown = null;
+let expenseTypeDropdown = null;
 
-/**
- * SearchableYearPicker - A reusable searchable year picker component
- * Matches the existing SearchableDropdown pattern from organization.js
- */
-class SearchableYearPicker {
-    constructor(containerId, options = {}) {
-        this.container = document.getElementById(containerId);
-        if (!this.container) return;
-
-        this.yearsBack = options.yearsBack ?? 20;
-        this.yearsForward = options.yearsForward ?? 1;  // Use ?? to allow 0
-        this.onChange = options.onChange || (() => {});
-        this.selectedValue = options.value ?? new Date().getFullYear();
-        this.id = containerId;
-
-        // Generate year options
-        this.years = this.generateYears();
-        this.filteredYears = [...this.years];
-        this.highlightedIndex = -1;
-        this.isOpen = false;
-
-        this.cacheElements();
-        this.bindEvents();
-        this.render();
-
-        // Store reference
-        yearPickerInstances.set(this.id, this);
-    }
-
-    generateYears() {
-        const currentYear = new Date().getFullYear();
-        const years = [];
-
-        // Future years first
-        for (let y = currentYear + this.yearsForward; y > currentYear; y--) {
-            years.push({ value: y, label: String(y) });
-        }
-
-        // Current year and past years
-        for (let y = currentYear; y >= currentYear - this.yearsBack; y--) {
-            years.push({ value: y, label: String(y) });
-        }
-
-        return years;
-    }
-
-    cacheElements() {
-        this.triggerEl = this.container.querySelector('.ess-year-picker-trigger');
-        this.dropdownEl = this.container.querySelector('.ess-year-picker-dropdown');
-        this.searchInput = this.container.querySelector('.ess-year-picker-search input');
-        this.listEl = this.container.querySelector('.ess-year-picker-list');
-        this.valueEl = this.container.querySelector('.ess-year-picker-value');
-    }
-
-    render() {
-        // Set initial value
-        this.valueEl.textContent = this.selectedValue;
-
-        // Render year options
-        this.renderOptions();
-    }
-
-    renderOptions() {
-        if (this.filteredYears.length === 0) {
-            this.listEl.innerHTML = '<div class="ess-year-picker-empty">No matching years</div>';
-            return;
-        }
-
-        this.listEl.innerHTML = this.filteredYears.map((year, index) => `
-            <div class="ess-year-picker-option ${year.value === this.selectedValue ? 'selected' : ''} ${index === this.highlightedIndex ? 'highlighted' : ''}"
-                 data-value="${year.value}"
-                 data-index="${index}">
-                ${year.label}
-            </div>
-        `).join('');
-    }
-
-    bindEvents() {
-        // Toggle dropdown on trigger click
-        this.triggerEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggle();
-        });
-
-        // Search input
-        this.searchInput.addEventListener('input', (e) => this.filter(e.target.value));
-        this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
-        this.searchInput.addEventListener('click', (e) => e.stopPropagation());
-
-        // Option click
-        this.listEl.addEventListener('click', (e) => {
-            const optionEl = e.target.closest('.ess-year-picker-option');
-            if (optionEl) {
-                this.select(parseInt(optionEl.dataset.value));
-            }
-        });
-
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (!this.container.contains(e.target)) {
-                this.close();
-            }
-        });
-    }
-
-    handleKeydown(e) {
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                this.highlightNext();
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                this.highlightPrev();
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (this.highlightedIndex >= 0 && this.filteredYears[this.highlightedIndex]) {
-                    this.select(this.filteredYears[this.highlightedIndex].value);
-                }
-                break;
-            case 'Escape':
-                this.close();
-                break;
-        }
-    }
-
-    highlightNext() {
-        if (this.highlightedIndex < this.filteredYears.length - 1) {
-            this.highlightedIndex++;
-            this.updateHighlight();
-        }
-    }
-
-    highlightPrev() {
-        if (this.highlightedIndex > 0) {
-            this.highlightedIndex--;
-            this.updateHighlight();
-        }
-    }
-
-    updateHighlight() {
-        const options = this.listEl.querySelectorAll('.ess-year-picker-option');
-        options.forEach((el, i) => {
-            el.classList.toggle('highlighted', i === this.highlightedIndex);
-        });
-
-        // Scroll into view
-        const highlighted = options[this.highlightedIndex];
-        if (highlighted) {
-            highlighted.scrollIntoView({ block: 'nearest' });
-        }
-    }
-
-    filter(query) {
-        const q = query.trim();
-        this.filteredYears = this.years.filter(year =>
-            String(year.value).includes(q)
-        );
-        this.highlightedIndex = this.filteredYears.length > 0 ? 0 : -1;
-        this.renderOptions();
-    }
-
-    toggle() {
-        if (this.isOpen) {
-            this.close();
-        } else {
-            this.open();
-        }
-    }
-
-    open() {
-        this.isOpen = true;
-        this.triggerEl.classList.add('active');
-        this.dropdownEl.classList.add('open');
-        this.searchInput.value = '';
-        this.filteredYears = [...this.years];
-        this.highlightedIndex = -1;
-        this.renderOptions();
-        setTimeout(() => this.searchInput.focus(), 50);
-    }
-
-    close() {
-        this.isOpen = false;
-        this.triggerEl.classList.remove('active');
-        this.dropdownEl.classList.remove('open');
-        this.highlightedIndex = -1;
-    }
-
-    select(value) {
-        const year = this.years.find(y => y.value === value);
-        if (year) {
-            this.selectedValue = year.value;
-            this.valueEl.textContent = year.label;
-            this.close();
-            this.onChange(year.value);
-        }
-    }
-
-    getValue() {
-        return this.selectedValue;
-    }
-
-    setValue(value) {
-        const year = this.years.find(y => y.value === value);
-        if (year) {
-            this.selectedValue = year.value;
-            this.valueEl.textContent = year.label;
-        }
-    }
-}
+// Year dropdown instances
+let myLeaveYearDropdown = null;
+let holidayYearDropdown = null;
+let payslipYearDropdown = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1234,44 +1032,115 @@ function checkAdminAccess() {
 // ==========================================
 
 /**
- * Setup all searchable year picker dropdowns
+ * Generate year options for dropdowns
+ * @param {number} yearsBack - Number of years to go back
+ * @param {number} yearsForward - Number of years to go forward
+ * @returns {Array} - Array of {value, label} options
  */
-function setupYearDropdowns() {
+function generateYearOptions(yearsBack = 20, yearsForward = 1) {
     const currentYear = new Date().getFullYear();
+    const options = [];
 
-    // My Leaves year picker (20 years back, 1 year forward)
-    new SearchableYearPicker('myLeaveYearPicker', {
-        yearsBack: 20,
-        yearsForward: 1,
-        value: currentYear,
-        onChange: loadMyLeaves
-    });
+    // Future years first (descending)
+    for (let y = currentYear + yearsForward; y > currentYear; y--) {
+        options.push({ value: String(y), label: String(y) });
+    }
 
-    // Holidays year picker (20 years back, 1 year forward)
-    new SearchableYearPicker('holidayYearPicker', {
-        yearsBack: 20,
-        yearsForward: 1,
-        value: currentYear,
-        onChange: loadHolidays
-    });
+    // Current year and past years
+    for (let y = currentYear; y >= currentYear - yearsBack; y--) {
+        options.push({ value: String(y), label: String(y) });
+    }
 
-    // Payslips year picker (20 years back, no future years)
-    new SearchableYearPicker('payslipYearPicker', {
-        yearsBack: 20,
-        yearsForward: 0,
-        value: currentYear,
-        onChange: loadMyPayslips
-    });
+    return options;
 }
 
 /**
- * Get the selected year from a year picker
- * @param {string} pickerId - The year picker container ID
+ * Setup all searchable year dropdowns using SearchableDropdown
+ */
+function setupYearDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available for year dropdowns');
+        return;
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    // My Leaves year dropdown (20 years back, 1 year forward)
+    const myLeaveYearSelect = document.getElementById('myLeaveYear');
+    if (myLeaveYearSelect && !myLeaveYearDropdown) {
+        const options = generateYearOptions(20, 1);
+        myLeaveYearSelect.innerHTML = options.map(o =>
+            `<option value="${o.value}" ${o.value === String(currentYear) ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+
+        myLeaveYearDropdown = convertSelectToSearchable('myLeaveYear', {
+            compact: true,
+            placeholder: String(currentYear),
+            searchPlaceholder: 'Search year...',
+            onChange: () => loadMyLeaves()
+        });
+    }
+
+    // Holidays year dropdown (20 years back, 1 year forward)
+    const holidayYearSelect = document.getElementById('holidayYear');
+    if (holidayYearSelect && !holidayYearDropdown) {
+        const options = generateYearOptions(20, 1);
+        holidayYearSelect.innerHTML = options.map(o =>
+            `<option value="${o.value}" ${o.value === String(currentYear) ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+
+        holidayYearDropdown = convertSelectToSearchable('holidayYear', {
+            compact: true,
+            placeholder: String(currentYear),
+            searchPlaceholder: 'Search year...',
+            onChange: () => loadHolidays()
+        });
+    }
+
+    // Payslips year dropdown (20 years back, no future years)
+    const payslipYearSelect = document.getElementById('payslipYear');
+    if (payslipYearSelect && !payslipYearDropdown) {
+        const options = generateYearOptions(20, 0);
+        payslipYearSelect.innerHTML = options.map(o =>
+            `<option value="${o.value}" ${o.value === String(currentYear) ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+
+        payslipYearDropdown = convertSelectToSearchable('payslipYear', {
+            compact: true,
+            placeholder: String(currentYear),
+            searchPlaceholder: 'Search year...',
+            onChange: () => loadMyPayslips()
+        });
+    }
+}
+
+/**
+ * Get the selected year from a year dropdown
+ * @param {string} dropdownId - The dropdown ID (myLeaveYear, holidayYear, payslipYear)
  * @returns {number} - The selected year
  */
-function getYearPickerValue(pickerId) {
-    const picker = yearPickerInstances.get(pickerId);
-    return picker ? picker.getValue() : new Date().getFullYear();
+function getYearPickerValue(dropdownId) {
+    const currentYear = new Date().getFullYear();
+
+    // Map old picker IDs to new dropdown instances
+    const dropdownMap = {
+        'myLeaveYearPicker': myLeaveYearDropdown,
+        'myLeaveYear': myLeaveYearDropdown,
+        'holidayYearPicker': holidayYearDropdown,
+        'holidayYear': holidayYearDropdown,
+        'payslipYearPicker': payslipYearDropdown,
+        'payslipYear': payslipYearDropdown
+    };
+
+    const dropdown = dropdownMap[dropdownId];
+    if (dropdown) {
+        const value = dropdown.getValue();
+        return value ? parseInt(value) : currentYear;
+    }
+
+    // Fallback to native select
+    const select = document.getElementById(dropdownId);
+    return select?.value ? parseInt(select.value) : currentYear;
 }
 
 /**
@@ -1294,8 +1163,21 @@ function setupAttendanceFilters() {
  * Setup leave filter listeners (status only - year is handled in setupYearDropdowns)
  */
 function setupLeaveFilters() {
-    const statusFilter = document.getElementById('myLeaveStatus');
-    if (statusFilter) statusFilter.addEventListener('change', loadMyLeaves);
+    // Convert myLeaveStatus to SearchableDropdown
+    if (typeof convertSelectToSearchable === 'function') {
+        if (document.getElementById('myLeaveStatus') && !myLeaveStatusDropdown) {
+            myLeaveStatusDropdown = convertSelectToSearchable('myLeaveStatus', {
+                compact: true,
+                placeholder: 'All Status',
+                searchPlaceholder: 'Search status...',
+                onChange: () => loadMyLeaves()
+            });
+        }
+    } else {
+        // Fallback to native select
+        const statusFilter = document.getElementById('myLeaveStatus');
+        if (statusFilter) statusFilter.addEventListener('change', loadMyLeaves);
+    }
 }
 
 /**
@@ -1461,7 +1343,10 @@ async function loadMyLeaves() {
     if (!tbody) return;
 
     const year = getYearPickerValue('myLeaveYearPicker');
-    const status = document.getElementById('myLeaveStatus')?.value || '';
+    // Get value from SearchableDropdown if available, otherwise from native select
+    const status = myLeaveStatusDropdown
+        ? myLeaveStatusDropdown.getValue()
+        : document.getElementById('myLeaveStatus')?.value || '';
 
     try {
         tbody.innerHTML = `<tr><td colspan="7" class="loading-cell"><div class="spinner"></div> Loading...</td></tr>`;
@@ -2295,21 +2180,70 @@ async function submitOvertime() {
  * Show apply leave modal
  */
 async function showApplyLeaveModal() {
+    // Reset form first
+    document.getElementById('applyLeaveForm')?.reset();
+
+    // Initialize SearchableDropdowns for modal if not already done
+    initializeLeaveModalDropdowns();
+
     // Load leave types
     try {
         const response = await api.request('/hrms/leave/types');
         const types = response?.types || response || [];
-        const select = document.getElementById('leaveType');
-        if (select) {
-            select.innerHTML = '<option value="">Select Leave Type</option>' +
-                types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_type_name || t.name)}</option>`).join('');
+
+        // Prepare options for SearchableDropdown
+        const options = [
+            { value: '', label: 'Select Leave Type' },
+            ...types.map(t => ({
+                value: t.id,
+                label: t.leave_type_name || t.name
+            }))
+        ];
+
+        if (leaveTypeDropdown) {
+            leaveTypeDropdown.setOptions(options);
+            leaveTypeDropdown.setValue('');
+        } else {
+            // Fallback to native select
+            const select = document.getElementById('leaveType');
+            if (select) {
+                select.innerHTML = '<option value="">Select Leave Type</option>' +
+                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_type_name || t.name)}</option>`).join('');
+            }
         }
     } catch (e) {
         console.error('Error loading leave types:', e);
     }
 
-    document.getElementById('applyLeaveForm')?.reset();
+    // Reset halfDay dropdown
+    if (halfDayDropdown) {
+        halfDayDropdown.setValue('');
+    }
+
     openModal('applyLeaveModal');
+}
+
+/**
+ * Initialize SearchableDropdowns for Apply Leave modal
+ */
+function initializeLeaveModalDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    // Convert leaveType dropdown
+    if (document.getElementById('leaveType') && !leaveTypeDropdown) {
+        leaveTypeDropdown = convertSelectToSearchable('leaveType', {
+            placeholder: 'Select Leave Type',
+            searchPlaceholder: 'Search leave types...'
+        });
+    }
+
+    // Convert halfDay dropdown
+    if (document.getElementById('halfDay') && !halfDayDropdown) {
+        halfDayDropdown = convertSelectToSearchable('halfDay', {
+            placeholder: 'No',
+            searchPlaceholder: 'Select...'
+        });
+    }
 }
 
 /**
@@ -2317,11 +2251,16 @@ async function showApplyLeaveModal() {
  */
 async function submitLeaveApplication() {
     try {
-        const leaveType = document.getElementById('leaveType').value;
+        // Get values from SearchableDropdown if available, otherwise from native select
+        const leaveType = leaveTypeDropdown
+            ? leaveTypeDropdown.getValue()
+            : document.getElementById('leaveType').value;
         const fromDate = document.getElementById('fromDate').value;
         const toDate = document.getElementById('toDate').value;
         const reason = document.getElementById('leaveReason').value;
-        const halfDay = document.getElementById('halfDay').value;
+        const halfDay = halfDayDropdown
+            ? halfDayDropdown.getValue()
+            : document.getElementById('halfDay').value;
         const emergencyContact = document.getElementById('emergencyContact').value;
 
         if (!leaveType || !fromDate || !toDate || !reason) {
@@ -2350,7 +2289,48 @@ async function submitLeaveApplication() {
 /**
  * Show encash leave modal
  */
-function showEncashLeaveModal() {
+async function showEncashLeaveModal() {
+    // Reset form
+    document.getElementById('encashLeaveForm')?.reset();
+
+    // Initialize SearchableDropdown for encashLeaveType if not already done
+    if (typeof convertSelectToSearchable === 'function') {
+        if (document.getElementById('encashLeaveType') && !encashLeaveTypeDropdown) {
+            encashLeaveTypeDropdown = convertSelectToSearchable('encashLeaveType', {
+                placeholder: 'Select Leave Type',
+                searchPlaceholder: 'Search leave types...',
+                onChange: updateEncashPreview
+            });
+        }
+    }
+
+    // Load leave types with encashment enabled
+    try {
+        const response = await api.request('/hrms/leave/types');
+        const types = (response?.types || response || []).filter(t => t.allow_encashment);
+
+        const options = [
+            { value: '', label: 'Select Leave Type' },
+            ...types.map(t => ({
+                value: t.id,
+                label: t.leave_type_name || t.name
+            }))
+        ];
+
+        if (encashLeaveTypeDropdown) {
+            encashLeaveTypeDropdown.setOptions(options);
+            encashLeaveTypeDropdown.setValue('');
+        } else {
+            const select = document.getElementById('encashLeaveType');
+            if (select) {
+                select.innerHTML = '<option value="">Select Leave Type</option>' +
+                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_type_name || t.name)}</option>`).join('');
+            }
+        }
+    } catch (e) {
+        console.error('Error loading leave types:', e);
+    }
+
     openModal('encashLeaveModal');
 }
 
@@ -2359,6 +2339,22 @@ function showEncashLeaveModal() {
  */
 function openLoanModal() {
     document.getElementById('loanForm')?.reset();
+
+    // Initialize SearchableDropdown for loanType if not already done
+    if (typeof convertSelectToSearchable === 'function') {
+        if (document.getElementById('loanType') && !loanTypeDropdown) {
+            loanTypeDropdown = convertSelectToSearchable('loanType', {
+                placeholder: 'Select Type',
+                searchPlaceholder: 'Search loan types...'
+            });
+        }
+    }
+
+    // Reset dropdown
+    if (loanTypeDropdown) {
+        loanTypeDropdown.setValue('');
+    }
+
     openModal('loanModal');
 }
 
@@ -2367,7 +2363,131 @@ function openLoanModal() {
  */
 function openReimbursementModal() {
     document.getElementById('reimbursementForm')?.reset();
+
+    // Initialize SearchableDropdown for expenseType if not already done
+    if (typeof convertSelectToSearchable === 'function') {
+        if (document.getElementById('expenseType') && !expenseTypeDropdown) {
+            expenseTypeDropdown = convertSelectToSearchable('expenseType', {
+                placeholder: 'Select Type',
+                searchPlaceholder: 'Search expense types...'
+            });
+        }
+    }
+
+    // Reset dropdown
+    if (expenseTypeDropdown) {
+        expenseTypeDropdown.setValue('');
+    }
+
     openModal('reimbursementModal');
+}
+
+/**
+ * Update encashment preview
+ */
+function updateEncashPreview() {
+    const leaveTypeId = encashLeaveTypeDropdown
+        ? encashLeaveTypeDropdown.getValue()
+        : document.getElementById('encashLeaveType')?.value;
+    const days = parseFloat(document.getElementById('encashDays')?.value) || 0;
+
+    // Update available days display
+    const availableEl = document.getElementById('encashAvailableDays');
+    const previewEl = document.getElementById('encashAmountPreview');
+
+    if (!leaveTypeId) {
+        if (availableEl) availableEl.textContent = 'Available: 0 days';
+        if (previewEl) previewEl.textContent = '--';
+        return;
+    }
+
+    // TODO: Calculate based on actual leave balance and daily rate
+    // For now show placeholder
+    if (previewEl) previewEl.textContent = days > 0 ? 'Calculating...' : '--';
+}
+
+/**
+ * Submit loan application
+ */
+async function submitLoanApplication() {
+    try {
+        const loanType = loanTypeDropdown
+            ? loanTypeDropdown.getValue()
+            : document.getElementById('loanType')?.value;
+        const amount = document.getElementById('loanAmount')?.value;
+        const emi = document.getElementById('loanEmi')?.value;
+        const reason = document.getElementById('loanReason')?.value;
+
+        if (!loanType || !amount || !emi || !reason) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+
+        await api.request('/hrms/payroll-processing/loans', 'POST', {
+            loan_type: loanType,
+            amount: parseFloat(amount),
+            emi_months: parseInt(emi),
+            reason
+        });
+
+        showToast('Loan application submitted', 'success');
+        closeModal('loanModal');
+        loadLoans();
+    } catch (error) {
+        console.error('Error submitting loan:', error);
+        showToast(error.message || 'Failed to submit loan application', 'error');
+    }
+}
+
+/**
+ * Submit reimbursement claim
+ */
+async function submitReimbursement() {
+    try {
+        const expenseType = expenseTypeDropdown
+            ? expenseTypeDropdown.getValue()
+            : document.getElementById('expenseType')?.value;
+        const date = document.getElementById('expenseDate')?.value;
+        const amount = document.getElementById('expenseAmount')?.value;
+        const description = document.getElementById('expenseDescription')?.value;
+
+        if (!expenseType || !date || !amount || !description) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+
+        // TODO: Implement when backend supports reimbursements
+        showToast('Reimbursement feature coming soon', 'info');
+        closeModal('reimbursementModal');
+    } catch (error) {
+        console.error('Error submitting reimbursement:', error);
+        showToast(error.message || 'Failed to submit claim', 'error');
+    }
+}
+
+/**
+ * Submit leave encashment
+ */
+async function submitLeaveEncashment() {
+    try {
+        const leaveTypeId = encashLeaveTypeDropdown
+            ? encashLeaveTypeDropdown.getValue()
+            : document.getElementById('encashLeaveType')?.value;
+        const days = document.getElementById('encashDays')?.value;
+        const reason = document.getElementById('encashReason')?.value;
+
+        if (!leaveTypeId || !days) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+
+        // TODO: Implement when backend supports leave encashment
+        showToast('Leave encashment feature coming soon', 'info');
+        closeModal('encashLeaveModal');
+    } catch (error) {
+        console.error('Error submitting encashment:', error);
+        showToast(error.message || 'Failed to submit encashment', 'error');
+    }
 }
 
 // ==========================================

@@ -5,6 +5,10 @@
 let employees = [];
 let searchTimeout = null;
 
+// SearchableDropdown instances
+let departmentDropdown = null;
+let officeDropdown = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
         window.location.href = '../login.html';
@@ -13,10 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (typeof Navigation !== 'undefined') Navigation.init();
 
-    await Promise.all([
-        loadFilters(),
-        loadDirectory()
-    ]);
+    await loadFilters();
+    initializeDropdowns();
+    await loadDirectory();
 });
 
 async function loadFilters() {
@@ -26,6 +29,7 @@ async function loadFilters() {
             api.getHrmsOffices()
         ]);
 
+        // Populate native selects first (for SearchableDropdown conversion)
         const deptSelect = document.getElementById('departmentFilter');
         deptSelect.innerHTML = '<option value="">All Departments</option>' +
             (departments || []).map(d => `<option value="${d.id}">${escapeHtml(d.department_name)}</option>`).join('');
@@ -38,11 +42,44 @@ async function loadFilters() {
     }
 }
 
+function initializeDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available');
+        return;
+    }
+
+    // Convert department filter
+    if (document.getElementById('departmentFilter') && !departmentDropdown) {
+        departmentDropdown = convertSelectToSearchable('departmentFilter', {
+            compact: true,
+            placeholder: 'All Departments',
+            searchPlaceholder: 'Search departments...',
+            onChange: () => applyFilters()
+        });
+    }
+
+    // Convert office filter
+    if (document.getElementById('officeFilter') && !officeDropdown) {
+        officeDropdown = convertSelectToSearchable('officeFilter', {
+            compact: true,
+            placeholder: 'All Offices',
+            searchPlaceholder: 'Search offices...',
+            onChange: () => applyFilters()
+        });
+    }
+}
+
 async function loadDirectory() {
     const container = document.getElementById('directoryGrid');
     const search = document.getElementById('searchInput').value.trim();
-    const departmentId = document.getElementById('departmentFilter').value;
-    const officeId = document.getElementById('officeFilter').value;
+
+    // Get values from SearchableDropdown if available, otherwise from native select
+    const departmentId = departmentDropdown
+        ? departmentDropdown.getValue()
+        : document.getElementById('departmentFilter')?.value;
+    const officeId = officeDropdown
+        ? officeDropdown.getValue()
+        : document.getElementById('officeFilter')?.value;
 
     try {
         employees = await api.getTeamDirectory(departmentId || null, officeId || null, search || null) || [];

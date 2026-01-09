@@ -21,315 +21,8 @@ let employees = [];
 let complianceCountries = [];
 let complianceStates = [];  // States with PT configured
 
-// Store for searchable dropdown instances
-const searchableDropdowns = new Map();
-
-/**
- * SearchableDropdown - A reusable searchable dropdown component with virtual scroll
- * Usage:
- *   const dropdown = new SearchableDropdown(container, {
- *     options: [{ value: 'val1', label: 'Label 1', description: 'Optional desc' }, ...],
- *     placeholder: 'Select an option',
- *     searchPlaceholder: 'Search...',
- *     onChange: (value, option) => {},
- *     virtualScroll: true,  // Enable for large lists (100+ items)
- *     itemHeight: 40        // Height of each item for virtual scroll
- *   });
- */
-class SearchableDropdown {
-    constructor(container, options = {}) {
-        this.container = typeof container === 'string' ? document.getElementById(container) : container;
-        if (!this.container) return;
-
-        this.options = options.options || [];
-        this.placeholder = options.placeholder || 'Select an option';
-        this.searchPlaceholder = options.searchPlaceholder || 'Search...';
-        this.onChange = options.onChange || (() => {});
-        this.virtualScroll = options.virtualScroll || false;
-        this.itemHeight = options.itemHeight || 40;
-        this.selectedValue = options.value || null;
-        this.filteredOptions = [...this.options];
-        this.highlightedIndex = -1;
-        this.isOpen = false;
-        this.id = options.id || `sd-${Date.now()}`;
-
-        this.render();
-        this.bindEvents();
-
-        // Store reference
-        searchableDropdowns.set(this.id, this);
-    }
-
-    render() {
-        const selectedOption = this.options.find(o => o.value === this.selectedValue);
-        const displayText = selectedOption ? selectedOption.label : '';
-
-        this.container.innerHTML = `
-            <div class="searchable-dropdown" id="${this.id}">
-                <div class="searchable-dropdown-trigger" tabindex="0">
-                    <span class="selected-text ${!displayText ? 'placeholder' : ''}">${displayText || this.placeholder}</span>
-                    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </div>
-                <div class="searchable-dropdown-menu">
-                    <div class="searchable-dropdown-search">
-                        <input type="text" placeholder="${this.searchPlaceholder}" autocomplete="off">
-                    </div>
-                    <div class="searchable-dropdown-options">
-                        ${this.renderOptions()}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        this.dropdownEl = this.container.querySelector('.searchable-dropdown');
-        this.triggerEl = this.container.querySelector('.searchable-dropdown-trigger');
-        this.menuEl = this.container.querySelector('.searchable-dropdown-menu');
-        this.searchInput = this.container.querySelector('.searchable-dropdown-search input');
-        this.optionsEl = this.container.querySelector('.searchable-dropdown-options');
-        this.selectedTextEl = this.container.querySelector('.selected-text');
-    }
-
-    renderOptions() {
-        if (this.filteredOptions.length === 0) {
-            return '<div class="searchable-dropdown-no-results">No results found</div>';
-        }
-
-        if (this.virtualScroll && this.filteredOptions.length > 50) {
-            return this.renderVirtualOptions();
-        }
-
-        return this.filteredOptions.map((option, index) => `
-            <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''} ${index === this.highlightedIndex ? 'highlighted' : ''}"
-                 data-value="${escapeHtml(String(option.value))}"
-                 data-index="${index}">
-                <span class="option-label">${escapeHtml(option.label)}</span>
-                ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
-                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-        `).join('');
-    }
-
-    renderVirtualOptions() {
-        const totalHeight = this.filteredOptions.length * this.itemHeight;
-        const visibleCount = Math.ceil(220 / this.itemHeight) + 2;
-
-        return `
-            <div class="searchable-dropdown-virtual" style="height: ${totalHeight}px;">
-                <div class="searchable-dropdown-virtual-viewport">
-                    ${this.filteredOptions.slice(0, visibleCount).map((option, index) => `
-                        <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''}"
-                             data-value="${escapeHtml(String(option.value))}"
-                             data-index="${index}"
-                             style="height: ${this.itemHeight}px;">
-                            <span class="option-label">${escapeHtml(option.label)}</span>
-                            ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
-                            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    bindEvents() {
-        // Toggle dropdown
-        this.triggerEl.addEventListener('click', () => this.toggle());
-        this.triggerEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.toggle();
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                this.open();
-            }
-        });
-
-        // Search input
-        this.searchInput.addEventListener('input', (e) => this.filter(e.target.value));
-        this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
-
-        // Option click
-        this.optionsEl.addEventListener('click', (e) => {
-            const optionEl = e.target.closest('.searchable-dropdown-option');
-            if (optionEl) {
-                this.select(optionEl.dataset.value);
-            }
-        });
-
-        // Virtual scroll
-        if (this.virtualScroll) {
-            this.optionsEl.addEventListener('scroll', () => this.handleVirtualScroll());
-        }
-
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (!this.container.contains(e.target)) {
-                this.close();
-            }
-        });
-    }
-
-    handleKeydown(e) {
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                this.highlightNext();
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                this.highlightPrev();
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (this.highlightedIndex >= 0 && this.filteredOptions[this.highlightedIndex]) {
-                    this.select(this.filteredOptions[this.highlightedIndex].value);
-                }
-                break;
-            case 'Escape':
-                this.close();
-                break;
-        }
-    }
-
-    handleVirtualScroll() {
-        if (!this.virtualScroll) return;
-
-        const scrollTop = this.optionsEl.scrollTop;
-        const startIndex = Math.floor(scrollTop / this.itemHeight);
-        const visibleCount = Math.ceil(220 / this.itemHeight) + 2;
-        const endIndex = Math.min(startIndex + visibleCount, this.filteredOptions.length);
-
-        const viewport = this.optionsEl.querySelector('.searchable-dropdown-virtual-viewport');
-        if (viewport) {
-            viewport.style.top = `${startIndex * this.itemHeight}px`;
-            viewport.innerHTML = this.filteredOptions.slice(startIndex, endIndex).map((option, i) => `
-                <div class="searchable-dropdown-option ${option.value === this.selectedValue ? 'selected' : ''}"
-                     data-value="${escapeHtml(String(option.value))}"
-                     data-index="${startIndex + i}"
-                     style="height: ${this.itemHeight}px;">
-                    <span class="option-label">${escapeHtml(option.label)}</span>
-                    ${option.description ? `<span class="option-description">${escapeHtml(option.description)}</span>` : ''}
-                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-            `).join('');
-        }
-    }
-
-    highlightNext() {
-        if (this.highlightedIndex < this.filteredOptions.length - 1) {
-            this.highlightedIndex++;
-            this.updateHighlight();
-        }
-    }
-
-    highlightPrev() {
-        if (this.highlightedIndex > 0) {
-            this.highlightedIndex--;
-            this.updateHighlight();
-        }
-    }
-
-    updateHighlight() {
-        const options = this.optionsEl.querySelectorAll('.searchable-dropdown-option');
-        options.forEach((el, i) => {
-            el.classList.toggle('highlighted', i === this.highlightedIndex);
-        });
-
-        // Scroll into view
-        const highlighted = options[this.highlightedIndex];
-        if (highlighted) {
-            highlighted.scrollIntoView({ block: 'nearest' });
-        }
-    }
-
-    filter(query) {
-        const q = query.toLowerCase().trim();
-        this.filteredOptions = this.options.filter(option => {
-            const label = (option.label || '').toLowerCase();
-            const desc = (option.description || '').toLowerCase();
-            return label.includes(q) || desc.includes(q);
-        });
-        this.highlightedIndex = this.filteredOptions.length > 0 ? 0 : -1;
-        this.optionsEl.innerHTML = this.renderOptions();
-    }
-
-    toggle() {
-        if (this.isOpen) {
-            this.close();
-        } else {
-            this.open();
-        }
-    }
-
-    open() {
-        this.isOpen = true;
-        this.dropdownEl.classList.add('open');
-        this.searchInput.value = '';
-        this.filteredOptions = [...this.options];
-        this.optionsEl.innerHTML = this.renderOptions();
-        setTimeout(() => this.searchInput.focus(), 50);
-    }
-
-    close() {
-        this.isOpen = false;
-        this.dropdownEl.classList.remove('open');
-        this.highlightedIndex = -1;
-    }
-
-    select(value) {
-        const option = this.options.find(o => String(o.value) === String(value));
-        if (option) {
-            this.selectedValue = option.value;
-            this.selectedTextEl.textContent = option.label;
-            this.selectedTextEl.classList.remove('placeholder');
-            this.close();
-            this.onChange(option.value, option);
-        }
-    }
-
-    getValue() {
-        return this.selectedValue;
-    }
-
-    setValue(value) {
-        const option = this.options.find(o => String(o.value) === String(value));
-        if (option) {
-            this.selectedValue = option.value;
-            this.selectedTextEl.textContent = option.label;
-            this.selectedTextEl.classList.remove('placeholder');
-        } else {
-            this.selectedValue = null;
-            this.selectedTextEl.textContent = this.placeholder;
-            this.selectedTextEl.classList.add('placeholder');
-        }
-    }
-
-    setOptions(options) {
-        this.options = options;
-        this.filteredOptions = [...options];
-        if (this.selectedValue && !options.find(o => o.value === this.selectedValue)) {
-            this.selectedValue = null;
-            this.selectedTextEl.textContent = this.placeholder;
-            this.selectedTextEl.classList.add('placeholder');
-        }
-        if (this.isOpen) {
-            this.optionsEl.innerHTML = this.renderOptions();
-        }
-    }
-
-    destroy() {
-        searchableDropdowns.delete(this.id);
-        this.container.innerHTML = '';
-    }
-}
+// Store for searchable dropdown instances (local to organization page)
+const searchableDropdownInstances = new Map();
 
 /**
  * Generate year options for a searchable dropdown
@@ -364,6 +57,12 @@ function initHolidayYearPicker() {
     const container = document.getElementById('holidayYearPicker');
     if (!container) return;
 
+    // Check if SearchableDropdown class is available
+    if (typeof SearchableDropdown !== 'function') {
+        console.warn('SearchableDropdown class not available for holidayYearPicker');
+        return;
+    }
+
     const currentYear = new Date().getFullYear();
     const yearOptions = generateYearOptions(20, 5);
 
@@ -390,40 +89,298 @@ function getHolidayYear() {
     return new Date().getFullYear();
 }
 
-// Helper function to create searchable dropdown from existing select element
-function convertToSearchableDropdown(selectId, options = {}) {
-    const select = document.getElementById(selectId);
-    if (!select) return null;
+/**
+ * Initialize searchable dropdowns with retry mechanism for script loading timing
+ * Retries up to 5 times with 100ms delay if SearchableDropdown isn't available yet
+ */
+function initSearchableDropdownsWithRetry(retryCount = 0, maxRetries = 20) {
+    const searchableAvailable = typeof SearchableDropdown === 'function' && typeof convertSelectToSearchable === 'function';
+    const officeSelectionAvailable = typeof HrmsOfficeSelection !== 'undefined';
 
-    // Extract options from select
-    const selectOptions = Array.from(select.options).map(opt => ({
-        value: opt.value,
-        label: opt.textContent,
-        description: opt.dataset.description || ''
-    }));
+    if (searchableAvailable && officeSelectionAvailable) {
+        initHolidayYearPicker();
+        initOrganizationSearchableDropdowns();
+        console.log('[Organization] Searchable dropdowns initialized on retry', retryCount);
+    } else if (retryCount < maxRetries) {
+        setTimeout(() => initSearchableDropdownsWithRetry(retryCount + 1, maxRetries), 50);
+    } else {
+        console.warn('[Organization] Dependencies not available after retries, using native selects');
+        console.warn('SearchableDropdown:', typeof SearchableDropdown, 'convertSelectToSearchable:', typeof convertSelectToSearchable, 'HrmsOfficeSelection:', typeof HrmsOfficeSelection);
+    }
+}
 
-    // Create container
-    const container = document.createElement('div');
-    container.id = `${selectId}-searchable`;
-    select.parentNode.insertBefore(container, select);
-    select.style.display = 'none';
+/**
+ * Initialize all searchable dropdowns on the organization page
+ * This converts standard <select> elements to searchable dropdowns
+ */
+function initOrganizationSearchableDropdowns() {
+    // Check if convertSelectToSearchable function is available
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('convertSelectToSearchable function not available, dropdowns will remain native');
+        return;
+    }
 
-    // Create dropdown
-    const dropdown = new SearchableDropdown(container, {
-        id: selectId,
-        options: selectOptions,
-        value: select.value,
-        placeholder: options.placeholder || 'Select...',
-        searchPlaceholder: options.searchPlaceholder || 'Search...',
-        virtualScroll: options.virtualScroll || selectOptions.length > 50,
+    // Helper function to convert and store dropdown instance
+    function convertAndStore(id, options) {
+        const dropdown = convertSelectToSearchable(id, options);
+        if (dropdown) {
+            searchableDropdownInstances.set(id, dropdown);
+        }
+        return dropdown;
+    }
+
+    // ========================================
+    // FILTER DROPDOWNS (compact variant)
+    // ========================================
+
+    // Department filters - auto-selects first office, persists selection
+    convertAndStore('departmentOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        compact: true,
         onChange: (value) => {
-            select.value = value;
-            select.dispatchEvent(new Event('change'));
-            if (options.onChange) options.onChange(value);
+            HrmsOfficeSelection.setSelectedOfficeId(value);
+            updateDepartmentsTable();
         }
     });
 
-    return dropdown;
+    // Designation filters - auto-selects first office, persists selection
+    convertAndStore('designationOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        compact: true,
+        onChange: (value) => {
+            HrmsOfficeSelection.setSelectedOfficeId(value);
+            // When office changes, update department filter options
+            updateDesignationDepartmentFilter();
+            updateDesignationsTable();
+        }
+    });
+
+    convertAndStore('designationDepartment', {
+        placeholder: 'All Departments',
+        searchPlaceholder: 'Search departments...',
+        compact: true,
+        onChange: () => updateDesignationsTable()
+    });
+
+    // Shift filters - auto-selects first office, persists selection
+    convertAndStore('shiftOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        compact: true,
+        onChange: (value) => {
+            HrmsOfficeSelection.setSelectedOfficeId(value);
+            updateShiftsTable();
+        }
+    });
+
+    // Roster filters - auto-selects first office, persists selection, cascades shifts
+    convertAndStore('rosterOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        compact: true,
+        onChange: (value) => {
+            HrmsOfficeSelection.setSelectedOfficeId(value);
+            // Re-populate shifts filtered by the new office
+            updateRosterShiftFilter(value);
+            updateRostersTable();
+        }
+    });
+
+    convertAndStore('rosterShift', {
+        placeholder: 'Select Shift',
+        searchPlaceholder: 'Search shifts...',
+        compact: true,
+        onChange: () => updateRostersTable()
+    });
+
+    // Holiday filters - auto-selects first office, persists selection
+    convertAndStore('holidayOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        compact: true,
+        onChange: (value) => {
+            HrmsOfficeSelection.setSelectedOfficeId(value);
+            updateHolidaysTable();
+        }
+    });
+
+    convertAndStore('holidayType', {
+        placeholder: 'All Types',
+        searchPlaceholder: 'Search types...',
+        compact: true,
+        onChange: () => updateHolidaysTable()
+    });
+
+    // ========================================
+    // FORM MODAL DROPDOWNS
+    // ========================================
+
+    // Office Modal
+    convertAndStore('officeType', {
+        placeholder: 'Select Type',
+        searchPlaceholder: 'Search types...'
+    });
+
+    // Department Modal
+    convertAndStore('deptOffice', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...'
+    });
+
+    convertAndStore('deptHead', {
+        placeholder: 'Select Employee',
+        searchPlaceholder: 'Search employees...',
+        virtualScroll: true
+    });
+
+    // Shift Modal
+    convertAndStore('shiftOfficeId', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...'
+    });
+
+    // Holiday Modal
+    convertAndStore('holidayTypeSelect', {
+        placeholder: 'Select Type',
+        searchPlaceholder: 'Search types...'
+    });
+
+    convertAndStore('holidayOffices', {
+        placeholder: 'All Offices (National)',
+        searchPlaceholder: 'Search offices...'
+    });
+
+    // Roster Modal
+    convertAndStore('rosterEmployee', {
+        placeholder: 'Select Employee',
+        searchPlaceholder: 'Search employees...',
+        virtualScroll: true
+    });
+
+    convertAndStore('rosterShiftId', {
+        placeholder: 'Select Shift',
+        searchPlaceholder: 'Search shifts...'
+    });
+
+    convertAndStore('rosterType', {
+        placeholder: 'Select Type',
+        searchPlaceholder: 'Search types...'
+    });
+
+    // Bulk Holiday Modal
+    convertAndStore('bulkHolidayYear', {
+        placeholder: 'Select Year',
+        searchPlaceholder: 'Search year...'
+    });
+
+    convertAndStore('bulkHolidayOffice', {
+        placeholder: 'All Offices',
+        searchPlaceholder: 'Search offices...'
+    });
+
+    // Bulk Roster Modal
+    convertAndStore('bulkRosterShift', {
+        placeholder: 'Select Shift',
+        searchPlaceholder: 'Search shifts...'
+    });
+
+    convertAndStore('bulkRosterType', {
+        placeholder: 'Select Type',
+        searchPlaceholder: 'Search types...'
+    });
+
+    convertAndStore('bulkRosterDepartmentFilter', {
+        placeholder: 'All Departments',
+        searchPlaceholder: 'Search departments...',
+        onChange: () => {
+            filterBulkRosterEmployees();
+            updateBulkRosterCount();
+        }
+    });
+
+    // Bulk Assignment Modal (if present)
+    convertAndStore('bulkOfficeId', {
+        placeholder: 'Select Office',
+        searchPlaceholder: 'Search offices...',
+        onChange: () => previewBulkAssignment()
+    });
+
+    convertAndStore('bulkDepartmentId', {
+        placeholder: 'Select Department',
+        searchPlaceholder: 'Search departments...',
+        onChange: () => previewBulkAssignment()
+    });
+
+    convertAndStore('bulkDesignationId', {
+        placeholder: 'Select Designation',
+        searchPlaceholder: 'Search designations...',
+        onChange: () => previewBulkAssignment()
+    });
+
+    console.log('Organization searchable dropdowns initialized');
+}
+
+/**
+ * Update designation department filter based on selected office
+ */
+function updateDesignationDepartmentFilter() {
+    const officeId = getSearchableDropdownValue('designationOffice');
+    const deptDropdown = searchableDropdownInstances.get('designationDepartment');
+
+    if (!deptDropdown) return;
+
+    let filteredDepts;
+    if (officeId) {
+        filteredDepts = departments.filter(d => d.is_active && d.office_id === officeId);
+    } else {
+        filteredDepts = departments.filter(d => d.is_active);
+    }
+
+    const options = [
+        { value: '', label: 'All Departments' },
+        ...filteredDepts.map(d => ({ value: d.id, label: d.department_name }))
+    ];
+
+    deptDropdown.setOptions(options);
+    deptDropdown.setValue(''); // Reset selection
+}
+
+/**
+ * Helper to get value from searchable dropdown or fall back to standard select
+ */
+function getSearchableDropdownValue(id) {
+    const dropdown = searchableDropdownInstances.get(id);
+    if (dropdown) {
+        return dropdown.getValue();
+    }
+    // Fallback to standard select
+    const select = document.getElementById(id);
+    return select ? select.value : '';
+}
+
+/**
+ * Helper to set value on searchable dropdown
+ */
+function setSearchableDropdownValue(id, value) {
+    const dropdown = searchableDropdownInstances.get(id);
+    if (dropdown) {
+        dropdown.setValue(value);
+    } else {
+        const select = document.getElementById(id);
+        if (select) select.value = value;
+    }
+}
+
+/**
+ * Helper to update options on searchable dropdown
+ */
+function updateSearchableDropdownOptions(id, options) {
+    const dropdown = searchableDropdownInstances.get(id);
+    if (dropdown) {
+        dropdown.setOptions(options);
+    }
 }
 
 // Timezone data (comprehensive list of IANA timezones)
@@ -1053,8 +1010,8 @@ async function initializePage() {
         // Setup tabs
         setupTabs();
 
-        // Initialize holiday year picker (searchable dropdown)
-        initHolidayYearPicker();
+        // Initialize searchable dropdowns with retry for script loading timing
+        initSearchableDropdownsWithRetry();
 
         // Load all data
         await loadAllData();
@@ -1282,25 +1239,81 @@ function updateOfficesTable() {
 }
 
 function populateOfficeSelects() {
-    const selects = ['departmentOffice', 'deptOffice', 'desigOffice', 'shiftOffice', 'shiftOfficeId', 'holidayOffice', 'holidayOffices', 'structureOffice', 'structureOfficeFilter'];
-    selects.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            // Special handling for filter dropdowns - show "All Offices" as first option
-            let firstOption;
-            if (id === 'holidayOffices') {
-                firstOption = '<option value="">All Offices (National Holiday)</option>';
-            } else if (id === 'structureOfficeFilter') {
-                firstOption = '<option value="">All Offices</option>';
-            } else {
-                firstOption = '<option value="">Select Office</option>';
+    const activeOffices = offices.filter(o => o.is_active);
+
+    // Initialize office selection - auto-select first or use persisted
+    const selectedOfficeId = HrmsOfficeSelection.initializeSelection(activeOffices);
+
+    // FILTER dropdowns - NO "All Offices", auto-select first office
+    const filterDropdowns = ['departmentOffice', 'designationOffice', 'shiftOffice', 'holidayOffice', 'structureOfficeFilter'];
+
+    // FORM/MODAL dropdowns - Keep "Select Office" placeholder (user must explicitly choose)
+    const formDropdowns = ['deptOffice', 'desigOffice', 'shiftOfficeId', 'structureOffice'];
+
+    // SPECIAL: holidayOffices keeps "All Offices (National Holiday)" for national holidays
+    const nationalHolidayDropdowns = ['holidayOffices'];
+
+    // Populate FILTER dropdowns - auto-select first office
+    filterDropdowns.forEach(id => {
+        const options = HrmsOfficeSelection.buildOfficeOptions(activeOffices, { isFormDropdown: false });
+
+        const dropdown = searchableDropdownInstances.get(id);
+        if (dropdown) {
+            dropdown.setOptions(options);
+            if (selectedOfficeId) {
+                dropdown.setValue(selectedOfficeId);
             }
-            select.innerHTML = firstOption;
-            offices.filter(o => o.is_active).forEach(office => {
-                select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
-            });
+        } else {
+            const select = document.getElementById(id);
+            if (select && select.tagName === 'SELECT') {
+                select.innerHTML = HrmsOfficeSelection.buildOfficeOptionsHtml(activeOffices, selectedOfficeId, { isFormDropdown: false });
+            }
         }
     });
+
+    // Populate FORM dropdowns - keep "Select Office" placeholder
+    formDropdowns.forEach(id => {
+        const options = HrmsOfficeSelection.buildOfficeOptions(activeOffices, { isFormDropdown: true });
+
+        const dropdown = searchableDropdownInstances.get(id);
+        if (dropdown) {
+            dropdown.setOptions(options);
+        } else {
+            const select = document.getElementById(id);
+            if (select && select.tagName === 'SELECT') {
+                select.innerHTML = HrmsOfficeSelection.buildOfficeOptionsHtml(activeOffices, null, { isFormDropdown: true });
+            }
+        }
+    });
+
+    // Populate NATIONAL HOLIDAY dropdown - keeps "All Offices (National Holiday)"
+    nationalHolidayDropdowns.forEach(id => {
+        const options = [
+            { value: '', label: 'All Offices (National Holiday)' },
+            ...activeOffices.map(o => ({ value: o.id, label: HrmsOfficeSelection.formatOfficeLabel(o) }))
+        ];
+
+        const dropdown = searchableDropdownInstances.get(id);
+        if (dropdown) {
+            dropdown.setOptions(options);
+        } else {
+            const select = document.getElementById(id);
+            if (select && select.tagName === 'SELECT') {
+                select.innerHTML = '<option value="">All Offices (National Holiday)</option>';
+                activeOffices.forEach(office => {
+                    select.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(HrmsOfficeSelection.formatOfficeLabel(office))}</option>`;
+                });
+            }
+        }
+    });
+
+    // Trigger initial filter updates with selected office
+    if (selectedOfficeId) {
+        // Update tables to show only selected office data
+        updateDepartmentsTable();
+        updateShiftsTable();
+        updateHolidaysTable();
+    }
 }
 
 async function loadDepartments() {
@@ -1317,7 +1330,7 @@ async function loadDepartments() {
 function updateDepartmentsTable() {
     const tbody = document.getElementById('departmentsTable');
     const searchTerm = document.getElementById('departmentSearch')?.value?.toLowerCase() || '';
-    const officeFilter = document.getElementById('departmentOffice')?.value || '';
+    const officeFilter = getSearchableDropdownValue('departmentOffice');
 
     let filtered = departments.filter(d =>
         d.department_name?.toLowerCase().includes(searchTerm) ||
@@ -1377,12 +1390,20 @@ function populateDepartmentSelects() {
     const activeOffices = offices.filter(o => o.is_active);
 
     // Office filter dropdown - with "All Offices" option
-    const officeFilterSelect = document.getElementById('designationOffice');
-    if (officeFilterSelect) {
-        if (activeOffices.length === 0) {
-            officeFilterSelect.innerHTML = '<option value="">No Offices</option>';
-        } else {
-            officeFilterSelect.innerHTML = '<option value="">All Offices</option>';
+    const officeFirstLabel = activeOffices.length === 0 ? 'No Offices' : 'All Offices';
+    const officeOptions = [
+        { value: '', label: officeFirstLabel },
+        ...activeOffices.map(o => ({ value: o.id, label: o.office_name }))
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const officeDropdown = searchableDropdownInstances.get('designationOffice');
+    if (officeDropdown) {
+        officeDropdown.setOptions(officeOptions);
+    } else {
+        const officeFilterSelect = document.getElementById('designationOffice');
+        if (officeFilterSelect && officeFilterSelect.tagName === 'SELECT') {
+            officeFilterSelect.innerHTML = `<option value="">${officeFirstLabel}</option>`;
             activeOffices.forEach(office => {
                 officeFilterSelect.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
             });
@@ -1390,23 +1411,32 @@ function populateDepartmentSelects() {
     }
 
     // Department filter dropdown - with "All Departments" option
-    const filterSelect = document.getElementById('designationDepartment');
-    if (filterSelect) {
-        if (activeDepts.length === 0) {
-            filterSelect.innerHTML = '<option value="">No Departments</option>';
-        } else {
-            filterSelect.innerHTML = '<option value="">All Departments</option>';
+    const deptFirstLabel = activeDepts.length === 0 ? 'No Departments' : 'All Departments';
+    const deptOptions = [
+        { value: '', label: deptFirstLabel },
+        ...activeDepts.map(d => ({ value: d.id, label: d.department_name }))
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const deptDropdown = searchableDropdownInstances.get('designationDepartment');
+    if (deptDropdown) {
+        deptDropdown.setOptions(deptOptions);
+    } else {
+        const filterSelect = document.getElementById('designationDepartment');
+        if (filterSelect && filterSelect.tagName === 'SELECT') {
+            filterSelect.innerHTML = `<option value="">${deptFirstLabel}</option>`;
             activeDepts.forEach(dept => {
                 filterSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
             });
         }
-        // Trigger filter update after dropdown is populated
-        updateDesignationsTable();
     }
 
-    // Modal dropdown - requires specific department selection
+    // Trigger filter update after dropdown is populated
+    updateDesignationsTable();
+
+    // Modal dropdown - requires specific department selection (not converted to searchable)
     const modalSelect = document.getElementById('desigDepartment');
-    if (modalSelect) {
+    if (modalSelect && modalSelect.tagName === 'SELECT') {
         modalSelect.innerHTML = '<option value="">Select Department *</option>';
         activeDepts.forEach(dept => {
             modalSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
@@ -1443,7 +1473,7 @@ function switchDepartmentView(view) {
 
 function renderDepartmentHierarchy() {
     const container = document.getElementById('hierarchyTree');
-    const officeFilter = document.getElementById('departmentOffice')?.value || '';
+    const officeFilter = getSearchableDropdownValue('departmentOffice');
 
     let filteredDepts = [...departments];
     if (officeFilter) {
@@ -1578,8 +1608,8 @@ async function loadDesignations() {
 function updateDesignationsTable() {
     const tbody = document.getElementById('designationsTable');
     const searchTerm = document.getElementById('designationSearch')?.value?.toLowerCase() || '';
-    const officeFilter = document.getElementById('designationOffice')?.value || '';
-    const deptFilter = document.getElementById('designationDepartment')?.value || '';
+    const officeFilter = getSearchableDropdownValue('designationOffice');
+    const deptFilter = getSearchableDropdownValue('designationDepartment');
 
     let filtered = allDesignations.filter(d =>
         d.designation_name?.toLowerCase().includes(searchTerm) ||
@@ -1650,7 +1680,7 @@ async function loadShifts() {
 function updateShiftsTable() {
     const tbody = document.getElementById('shiftsTable');
     const searchTerm = document.getElementById('shiftSearch')?.value?.toLowerCase() || '';
-    const officeFilter = document.getElementById('shiftOffice')?.value || '';
+    const officeFilter = getSearchableDropdownValue('shiftOffice');
 
     let filtered = shifts.filter(s =>
         s.shift_name?.toLowerCase().includes(searchTerm) ||
@@ -1714,13 +1744,49 @@ async function loadShiftRosters() {
     }
 }
 
+/**
+ * Update the roster shift filter dropdown based on selected office
+ * Shifts are office-specific, so when office changes, shift options must be filtered
+ */
+function updateRosterShiftFilter(officeId) {
+    // Filter shifts by the selected office
+    const filteredShifts = shifts.filter(s => s.is_active && (!s.office_id || s.office_id === officeId));
+
+    let shiftOptions;
+    let selectedShiftId = null;
+
+    if (filteredShifts.length > 0) {
+        shiftOptions = filteredShifts.map(s => ({ value: s.id, label: s.shift_name }));
+        selectedShiftId = filteredShifts[0].id;
+    } else {
+        shiftOptions = [{ value: '', label: 'No shifts for this office' }];
+    }
+
+    // Update the shift dropdown
+    const shiftDropdown = searchableDropdownInstances.get('rosterShift');
+    if (shiftDropdown) {
+        shiftDropdown.setOptions(shiftOptions);
+        if (selectedShiftId) {
+            shiftDropdown.setValue(selectedShiftId);
+        }
+    } else {
+        const shiftSelect = document.getElementById('rosterShift');
+        if (shiftSelect && shiftSelect.tagName === 'SELECT') {
+            shiftSelect.innerHTML = filteredShifts.map(shift => {
+                const selected = shift.id === selectedShiftId ? ' selected' : '';
+                return `<option value="${escapeHtml(shift.id)}"${selected}>${escapeHtml(shift.shift_name)}</option>`;
+            }).join('') || '<option value="">No shifts for this office</option>';
+        }
+    }
+}
+
 function updateRostersTable() {
     const tbody = document.getElementById('rostersTable');
     if (!tbody) return;
 
     const searchTerm = document.getElementById('rosterSearch')?.value?.toLowerCase() || '';
-    const officeFilter = document.getElementById('rosterOffice')?.value || '';
-    const shiftFilter = document.getElementById('rosterShift')?.value || '';
+    const officeFilter = getSearchableDropdownValue('rosterOffice');
+    const shiftFilter = getSearchableDropdownValue('rosterShift');
 
     let filtered = shiftRosters.filter(r =>
         r.employee_name?.toLowerCase().includes(searchTerm) ||
@@ -1791,23 +1857,60 @@ function updateRostersTable() {
 }
 
 function populateRosterFilters() {
-    // Populate office filter
-    const officeSelect = document.getElementById('rosterOffice');
-    if (officeSelect) {
-        officeSelect.innerHTML = '<option value="">All Offices</option>';
-        offices.filter(o => o.is_active).forEach(office => {
-            officeSelect.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name)}</option>`;
-        });
+    const activeOffices = offices.filter(o => o.is_active);
+
+    // Initialize office selection - auto-select first or use persisted
+    const selectedOfficeId = HrmsOfficeSelection.initializeSelection(activeOffices);
+
+    // Office filter options - NO "All Offices"
+    const officeOptions = HrmsOfficeSelection.buildOfficeOptions(activeOffices, { isFormDropdown: false });
+
+    // Update office dropdown
+    const officeDropdown = searchableDropdownInstances.get('rosterOffice');
+    if (officeDropdown) {
+        officeDropdown.setOptions(officeOptions);
+        if (selectedOfficeId) {
+            officeDropdown.setValue(selectedOfficeId);
+        }
+    } else {
+        const officeSelect = document.getElementById('rosterOffice');
+        if (officeSelect && officeSelect.tagName === 'SELECT') {
+            officeSelect.innerHTML = HrmsOfficeSelection.buildOfficeOptionsHtml(activeOffices, selectedOfficeId, { isFormDropdown: false });
+        }
     }
 
-    // Populate shift filter
-    const shiftSelect = document.getElementById('rosterShift');
-    if (shiftSelect) {
-        shiftSelect.innerHTML = '<option value="">All Shifts</option>';
-        shifts.filter(s => s.is_active).forEach(shift => {
-            shiftSelect.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name)}</option>`;
-        });
+    // Filter shifts by selected office - shifts belong to specific offices
+    const filteredShifts = shifts.filter(s => s.is_active && (!s.office_id || s.office_id === selectedOfficeId));
+
+    // Shift filter options - NO "All Shifts", auto-select first shift for this office
+    let shiftOptions;
+    let selectedShiftId = null;
+    if (filteredShifts.length > 0) {
+        shiftOptions = filteredShifts.map(s => ({ value: s.id, label: s.shift_name }));
+        selectedShiftId = filteredShifts[0].id;
+    } else {
+        shiftOptions = [{ value: '', label: 'No shifts for this office' }];
     }
+
+    // Update shift dropdown
+    const shiftDropdown = searchableDropdownInstances.get('rosterShift');
+    if (shiftDropdown) {
+        shiftDropdown.setOptions(shiftOptions);
+        if (selectedShiftId) {
+            shiftDropdown.setValue(selectedShiftId);
+        }
+    } else {
+        const shiftSelect = document.getElementById('rosterShift');
+        if (shiftSelect && shiftSelect.tagName === 'SELECT') {
+            shiftSelect.innerHTML = filteredShifts.map(shift => {
+                const selected = shift.id === selectedShiftId ? ' selected' : '';
+                return `<option value="${escapeHtml(shift.id)}"${selected}>${escapeHtml(shift.shift_name)}</option>`;
+            }).join('') || '<option value="">No shifts for this office</option>';
+        }
+    }
+
+    // Update roster table with selected office/shift
+    updateRostersTable();
 }
 
 function getRosterTypeBadgeClass(type) {
@@ -1843,8 +1946,8 @@ async function loadHolidays() {
 
 function updateHolidaysTable() {
     const tbody = document.getElementById('holidaysTable');
-    const officeFilter = document.getElementById('holidayOffice')?.value || '';
-    const typeFilter = document.getElementById('holidayType')?.value || '';
+    const officeFilter = getSearchableDropdownValue('holidayOffice');
+    const typeFilter = getSearchableDropdownValue('holidayType');
 
     let filtered = holidays;
 
@@ -1902,13 +2005,32 @@ async function loadEmployees() {
         const response = await api.request('/hrms/employees');
         employees = Array.isArray(response) ? response : (response?.data || []);
 
-        const select = document.getElementById('deptHead');
-        if (select) {
-            select.innerHTML = '<option value="">Select Employee</option>';
-            employees.forEach(emp => {
-                select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</option>`;
-            });
+        // Build employee options
+        const employeeOptions = [
+            { value: '', label: 'Select Employee' },
+            ...employees.map(emp => {
+                const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+                return { value: emp.id, label: empName };
+            })
+        ];
+
+        // Update searchable dropdown if exists, otherwise fallback to select
+        const dropdown = searchableDropdownInstances.get('deptHead');
+        if (dropdown) {
+            dropdown.setOptions(employeeOptions);
+        } else {
+            const select = document.getElementById('deptHead');
+            if (select && select.tagName === 'SELECT') {
+                select.innerHTML = '<option value="">Select Employee</option>';
+                employees.forEach(emp => {
+                    const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+                    select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(empName)}</option>`;
+                });
+            }
         }
+
+        // Also update rosterEmployee dropdown
+        populateRosterEmployeeSelect();
     } catch (error) {
         console.error('Error loading employees:', error);
     }
@@ -2592,23 +2714,52 @@ function editRoster(id) {
 }
 
 function populateRosterEmployeeSelect() {
-    const select = document.getElementById('rosterEmployee');
-    if (select) {
-        select.innerHTML = '<option value="">Select Employee</option>';
-        employees.forEach(emp => {
+    // Build employee options
+    const employeeOptions = [
+        { value: '', label: 'Select Employee' },
+        ...employees.map(emp => {
             const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
-            select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(name)} (${escapeHtml(emp.employee_code || '')})</option>`;
-        });
+            return { value: emp.id, label: `${name} (${emp.employee_code || ''})` };
+        })
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const dropdown = searchableDropdownInstances.get('rosterEmployee');
+    if (dropdown) {
+        dropdown.setOptions(employeeOptions);
+    } else {
+        const select = document.getElementById('rosterEmployee');
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = '<option value="">Select Employee</option>';
+            employees.forEach(emp => {
+                const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+                select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(name)} (${escapeHtml(emp.employee_code || '')})</option>`;
+            });
+        }
     }
 }
 
 function populateRosterShiftSelect() {
-    const select = document.getElementById('rosterShiftId');
-    if (select) {
-        select.innerHTML = '<option value="">Select Shift</option>';
-        shifts.filter(s => s.is_active).forEach(shift => {
-            select.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name)} (${escapeHtml(shift.shift_code)})</option>`;
-        });
+    const activeShifts = shifts.filter(s => s.is_active);
+
+    // Build shift options
+    const shiftOptions = [
+        { value: '', label: 'Select Shift' },
+        ...activeShifts.map(s => ({ value: s.id, label: `${s.shift_name} (${s.shift_code})` }))
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const dropdown = searchableDropdownInstances.get('rosterShiftId');
+    if (dropdown) {
+        dropdown.setOptions(shiftOptions);
+    } else {
+        const select = document.getElementById('rosterShiftId');
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = '<option value="">Select Shift</option>';
+            activeShifts.forEach(shift => {
+                select.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name)} (${escapeHtml(shift.shift_code)})</option>`;
+            });
+        }
     }
 }
 
@@ -3019,12 +3170,49 @@ let bulkHolidayRowCount = 0;
 let allEmployeesForBulkRoster = [];
 
 function showBulkHolidayModal() {
-    // Populate office dropdown
-    const officeSelect = document.getElementById('bulkHolidayOffice');
-    officeSelect.innerHTML = '<option value="">All Offices</option>';
-    offices.forEach(office => {
-        officeSelect.innerHTML += `<option value="${office.id}">${office.office_name || office.name}</option>`;
-    });
+    const currentYear = new Date().getFullYear();
+
+    // Year dropdown options
+    const yearOptions = [];
+    for (let y = currentYear - 1; y <= currentYear + 2; y++) {
+        yearOptions.push({ value: y.toString(), label: y.toString() });
+    }
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const yearDropdown = searchableDropdownInstances.get('bulkHolidayYear');
+    if (yearDropdown) {
+        yearDropdown.setOptions(yearOptions);
+        yearDropdown.setValue(currentYear.toString());
+    } else {
+        const yearSelect = document.getElementById('bulkHolidayYear');
+        if (yearSelect && yearSelect.tagName === 'SELECT') {
+            yearSelect.innerHTML = '';
+            for (let y = currentYear - 1; y <= currentYear + 2; y++) {
+                yearSelect.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+            }
+        }
+    }
+
+    // Office dropdown options
+    const officeOptions = [
+        { value: '', label: 'All Offices' },
+        ...offices.map(o => ({ value: o.id, label: o.office_name || o.name }))
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const officeDropdown = searchableDropdownInstances.get('bulkHolidayOffice');
+    if (officeDropdown) {
+        officeDropdown.setOptions(officeOptions);
+        officeDropdown.setValue('');
+    } else {
+        const officeSelect = document.getElementById('bulkHolidayOffice');
+        if (officeSelect && officeSelect.tagName === 'SELECT') {
+            officeSelect.innerHTML = '<option value="">All Offices</option>';
+            offices.forEach(office => {
+                officeSelect.innerHTML += `<option value="${office.id}">${office.office_name || office.name}</option>`;
+            });
+        }
+    }
 
     // Clear and add initial rows
     document.getElementById('bulkHolidayEntries').innerHTML = '';
@@ -3173,19 +3361,58 @@ async function saveBulkHolidays() {
 }
 
 async function showBulkRosterModal() {
-    // Populate shift dropdown
-    const shiftSelect = document.getElementById('bulkRosterShift');
-    shiftSelect.innerHTML = '<option value="">Select Shift</option>';
-    shifts.forEach(shift => {
-        shiftSelect.innerHTML += `<option value="${shift.id}">${shift.shift_name || shift.name}</option>`;
-    });
+    // Shift dropdown options
+    const shiftOptions = [
+        { value: '', label: 'Select Shift' },
+        ...shifts.map(s => ({ value: s.id, label: s.shift_name || s.name }))
+    ];
 
-    // Populate department filter
-    const deptFilter = document.getElementById('bulkRosterDepartmentFilter');
-    deptFilter.innerHTML = '<option value="">All Departments</option>';
-    departments.forEach(dept => {
-        deptFilter.innerHTML += `<option value="${dept.id}">${dept.department_name || dept.name}</option>`;
-    });
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const shiftDropdown = searchableDropdownInstances.get('bulkRosterShift');
+    if (shiftDropdown) {
+        shiftDropdown.setOptions(shiftOptions);
+        shiftDropdown.setValue('');
+    } else {
+        const shiftSelect = document.getElementById('bulkRosterShift');
+        if (shiftSelect && shiftSelect.tagName === 'SELECT') {
+            shiftSelect.innerHTML = '<option value="">Select Shift</option>';
+            shifts.forEach(shift => {
+                shiftSelect.innerHTML += `<option value="${shift.id}">${shift.shift_name || shift.name}</option>`;
+            });
+        }
+    }
+
+    // Roster type dropdown - reset value
+    const typeDropdown = searchableDropdownInstances.get('bulkRosterType');
+    if (typeDropdown) {
+        typeDropdown.setValue('scheduled');
+    } else {
+        const typeSelect = document.getElementById('bulkRosterType');
+        if (typeSelect && typeSelect.tagName === 'SELECT') {
+            typeSelect.value = 'scheduled';
+        }
+    }
+
+    // Department filter options
+    const deptOptions = [
+        { value: '', label: 'All Departments' },
+        ...departments.map(d => ({ value: d.id, label: d.department_name || d.name }))
+    ];
+
+    // Update searchable dropdown if exists, otherwise fallback to select
+    const deptDropdown = searchableDropdownInstances.get('bulkRosterDepartmentFilter');
+    if (deptDropdown) {
+        deptDropdown.setOptions(deptOptions);
+        deptDropdown.setValue('');
+    } else {
+        const deptFilter = document.getElementById('bulkRosterDepartmentFilter');
+        if (deptFilter && deptFilter.tagName === 'SELECT') {
+            deptFilter.innerHTML = '<option value="">All Departments</option>';
+            departments.forEach(dept => {
+                deptFilter.innerHTML += `<option value="${dept.id}">${dept.department_name || dept.name}</option>`;
+            });
+        }
+    }
 
     // Set default start date to today
     document.getElementById('bulkRosterStartDate').value = new Date().toISOString().split('T')[0];
@@ -3212,7 +3439,7 @@ async function loadBulkRosterEmployees() {
 
 function renderBulkRosterEmployees() {
     const container = document.getElementById('bulkRosterEmployees');
-    const deptFilter = document.getElementById('bulkRosterDepartmentFilter').value;
+    const deptFilter = getSearchableDropdownValue('bulkRosterDepartmentFilter');
 
     container.innerHTML = '';
     allEmployeesForBulkRoster.forEach(emp => {
@@ -3255,8 +3482,8 @@ function updateBulkRosterCount() {
 }
 
 async function saveBulkRosters() {
-    const shiftId = document.getElementById('bulkRosterShift').value;
-    const rosterType = document.getElementById('bulkRosterType').value;
+    const shiftId = getSearchableDropdownValue('bulkRosterShift');
+    const rosterType = getSearchableDropdownValue('bulkRosterType') || 'scheduled';
     const startDate = document.getElementById('bulkRosterStartDate').value;
     const endDate = document.getElementById('bulkRosterEndDate').value || null;
 

@@ -56,6 +56,19 @@
   --color-purple-dark: #7c3aed;
   --color-purple-text: #5b21b6;
 
+  /* Text colors for use on colored status backgrounds (consistent across themes) */
+  --text-on-success-bg: #1e293b;           /* Dark slate for text on success-light backgrounds */
+  --text-on-success-bg-secondary: #475569; /* Medium slate for secondary text */
+  --text-on-danger-bg: #1e293b;            /* Dark slate for text on danger-light backgrounds */
+  --text-on-danger-bg-secondary: #475569;  /* Medium slate for secondary text */
+  --text-on-warning-bg: #1e293b;           /* Dark slate for text on warning-light backgrounds */
+  --text-on-warning-bg-secondary: #475569; /* Medium slate for secondary text */
+
+  /* Solid status card backgrounds (for cards that need predictable backgrounds) */
+  --status-card-success-bg: #dcfce7;       /* Light green for success cards */
+  --status-card-danger-bg: #fee2e2;        /* Light red for danger cards */
+  --status-card-warning-bg: #fef3c7;       /* Light amber for warning cards */
+
   /* Accent variants for gradients */
   --color-success-light-accent: #34d399;
   --color-danger-light-accent: #f87171;
@@ -597,6 +610,19 @@
   --color-danger-text: #f87171;   /* Brighter red for dark mode */
   --color-warning-text: #fbbf24;  /* Brighter amber for dark mode */
   --color-info-text: #60a5fa;     /* Bright blue for dark mode visibility */
+
+  /* Text on colored status backgrounds (light text for dark mode) */
+  --text-on-success-bg: #f1f5f9;           /* Light text for semi-transparent success backgrounds */
+  --text-on-success-bg-secondary: #cbd5e1; /* Light secondary text */
+  --text-on-danger-bg: #f1f5f9;            /* Light text for semi-transparent danger backgrounds */
+  --text-on-danger-bg-secondary: #cbd5e1;  /* Light secondary text */
+  --text-on-warning-bg: #f1f5f9;           /* Light text for semi-transparent warning backgrounds */
+  --text-on-warning-bg-secondary: #cbd5e1; /* Light secondary text */
+
+  /* Solid status card backgrounds (darker solid colors for dark mode) */
+  --status-card-success-bg: #065f46;       /* Dark green for success cards - contrasts with light text */
+  --status-card-danger-bg: #991b1b;        /* Dark red for danger cards - contrasts with light text */
+  --status-card-warning-bg: #92400e;       /* Dark amber for warning cards - contrasts with light text */
 
   /* Alpha variants for dark mode */
   --success-alpha-10: rgba(16, 185, 129, 0.15);

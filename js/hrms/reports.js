@@ -5,6 +5,10 @@ let reportData = [];
 let offices = [];
 let departments = [];
 
+// SearchableDropdown instances
+let officeDropdown = null;
+let departmentDropdown = null;
+
 const reportConfig = {
     'employee-headcount': {
         title: 'Employee Headcount Report',
@@ -162,8 +166,8 @@ async function initializePage() {
         // Set default dates
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        document.getElementById('reportDateFrom').value = firstDay.toISOString().split('T')[0];
-        document.getElementById('reportDateTo').value = today.toISOString().split('T')[0];
+        document.getElementById('fromDate').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('toDate').value = today.toISOString().split('T')[0];
 
         await Promise.all([
             loadOffices(),
@@ -254,29 +258,90 @@ async function loadOffices() {
         const response = await api.request('/hrms/offices');
         offices = Array.isArray(response) ? response : (response?.data || []);
 
-        const select = document.getElementById('reportOffice');
-        select.innerHTML = '<option value="">All Offices</option>';
-        offices.forEach(office => {
-            select.innerHTML += `<option value="${office.id}">${office.office_name || office.name}</option>`;
-        });
+        // Use HrmsOfficeSelection to get persisted or first office
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+
+        // Build options using HrmsOfficeSelection (no "All Offices" for filters)
+        const dropdownOptions = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+
+        // Convert to SearchableDropdown format
+        const searchableOptions = dropdownOptions.map(opt => ({
+            value: opt.value,
+            label: opt.label
+        }));
+
+        // Initialize or update office dropdown
+        if (!officeDropdown) {
+            officeDropdown = convertSelectToSearchable('officeFilter', {
+                compact: true,
+                placeholder: 'Select Office',
+                searchPlaceholder: 'Search offices...',
+                onChange: (value) => {
+                    HrmsOfficeSelection.setSelectedOfficeId(value);
+                    updateDepartmentsForOffice(value);
+                }
+            });
+        }
+
+        if (officeDropdown) {
+            officeDropdown.setOptions(searchableOptions);
+            officeDropdown.setValue(selectedOfficeId);
+        }
+
+        // Load departments filtered by selected office
+        await loadDepartments(selectedOfficeId);
     } catch (error) {
         console.error('Error loading offices:', error);
     }
 }
 
-async function loadDepartments() {
+async function loadDepartments(selectedOfficeId = null) {
     try {
         const response = await api.request('/hrms/departments');
         departments = Array.isArray(response) ? response : (response?.data || []);
 
-        const select = document.getElementById('reportDepartment');
-        select.innerHTML = '<option value="">All Departments</option>';
-        departments.forEach(dept => {
-            select.innerHTML += `<option value="${dept.id}">${dept.department_name || dept.name}</option>`;
-        });
+        // Initialize department dropdown if not yet created
+        if (!departmentDropdown) {
+            departmentDropdown = convertSelectToSearchable('departmentFilter', {
+                compact: true,
+                placeholder: 'All Departments',
+                searchPlaceholder: 'Search departments...',
+                onChange: (value) => {
+                    // Department filter change - no cascade needed
+                }
+            });
+        }
+
+        // Update departments based on selected office
+        const officeIdToUse = selectedOfficeId || (officeDropdown ? officeDropdown.getValue() : null);
+        updateDepartmentsForOffice(officeIdToUse);
     } catch (error) {
         console.error('Error loading departments:', error);
     }
+}
+
+/**
+ * Update department dropdown based on selected office
+ */
+function updateDepartmentsForOffice(officeId) {
+    if (!departmentDropdown) return;
+
+    // Filter departments by selected office
+    const filteredDepts = officeId
+        ? departments.filter(d => d.is_active !== false && d.office_id === officeId)
+        : departments.filter(d => d.is_active !== false);
+
+    // Build options with "All Departments" first
+    const deptOptions = [
+        { value: '', label: 'All Departments' },
+        ...filteredDepts.map(d => ({
+            value: d.id,
+            label: d.department_name || d.name
+        }))
+    ];
+
+    departmentDropdown.setOptions(deptOptions);
+    departmentDropdown.setValue(''); // Default to "All Departments"
 }
 
 // Legacy functions removed - sidebar-based navigation replaces category cards
@@ -284,10 +349,20 @@ async function loadDepartments() {
 function resetFilters() {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    document.getElementById('reportDateFrom').value = firstDay.toISOString().split('T')[0];
-    document.getElementById('reportDateTo').value = today.toISOString().split('T')[0];
-    document.getElementById('reportOffice').value = '';
-    document.getElementById('reportDepartment').value = '';
+    document.getElementById('fromDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('toDate').value = today.toISOString().split('T')[0];
+
+    // Reset office to persisted or first office (NOT "All")
+    if (officeDropdown && offices.length > 0) {
+        const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
+        officeDropdown.setValue(selectedOfficeId);
+        updateDepartmentsForOffice(selectedOfficeId);
+    }
+
+    // Reset department to "All Departments" within selected office
+    if (departmentDropdown) {
+        departmentDropdown.setValue('');
+    }
 }
 
 async function runReport() {
@@ -302,10 +377,10 @@ async function runReport() {
         showLoading();
 
         const params = new URLSearchParams();
-        const fromDate = document.getElementById('reportDateFrom').value;
-        const toDate = document.getElementById('reportDateTo').value;
-        const officeId = document.getElementById('reportOffice').value;
-        const departmentId = document.getElementById('reportDepartment').value;
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const officeId = officeDropdown ? officeDropdown.getValue() : '';
+        const departmentId = departmentDropdown ? departmentDropdown.getValue() : '';
 
         // Extract year and month from dates for reports that need them
         const fromDateObj = fromDate ? new Date(fromDate) : new Date();
@@ -592,10 +667,16 @@ function exportToPDF(columns, data, title) {
     // Add date and filters info
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    const fromDate = document.getElementById('reportDateFrom').value;
-    const toDate = document.getElementById('reportDateTo').value;
-    const officeName = document.getElementById('reportOffice').options[document.getElementById('reportOffice').selectedIndex].text;
-    const deptName = document.getElementById('reportDepartment').options[document.getElementById('reportDepartment').selectedIndex].text;
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+
+    // Get office and department names from SearchableDropdown
+    const officeValue = officeDropdown ? officeDropdown.getValue() : '';
+    const deptValue = departmentDropdown ? departmentDropdown.getValue() : '';
+    const selectedOffice = offices.find(o => o.id === officeValue);
+    const selectedDept = departments.find(d => d.id === deptValue);
+    const officeName = selectedOffice ? selectedOffice.office_name : 'All Offices';
+    const deptName = selectedDept ? (selectedDept.department_name || selectedDept.name) : 'All Departments';
 
     let filterText = `Period: ${fromDate || 'All'} to ${toDate || 'All'}`;
     if (officeName !== 'All Offices') filterText += ` | Office: ${officeName}`;
@@ -711,11 +792,13 @@ function formatCurrency(amount) {
 }
 
 function showLoading() {
-    document.getElementById('loadingOverlay').classList.add('active');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
 // Local showToast removed - using unified toast.js instead
