@@ -1478,6 +1478,19 @@ async function viewDraftPayslip(payslipId) {
             return;
         }
 
+        // v3.0.18: COUNTRY-AGNOSTIC - Use currency from backend response
+        const currencySymbol = payslip.currency_symbol || '₹';
+        const currencyCode = payslip.currency_code || 'INR';
+        const localeMap = { 'INR': 'en-IN', 'USD': 'en-US', 'GBP': 'en-GB', 'AED': 'ar-AE', 'IDR': 'id-ID', 'MVR': 'dv-MV' };
+        const locale = localeMap[currencyCode] || 'en-IN';
+
+        // Local currency formatter using backend-provided currency
+        // v3.0.20: Added space between symbol and number for readability
+        const fmtCurrency = (amt) => {
+            if (amt === null || amt === undefined) return `${currencySymbol} 0`;
+            return `${currencySymbol} ${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        };
+
         const items = payslip.items || [];
 
         // Group items by structure for compliance display
@@ -1548,8 +1561,8 @@ async function viewDraftPayslip(payslipId) {
                                             ? groupEarnings.map(i => `
                                                 <tr>
                                                     <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
-                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
-                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                                                    <td class="text-right">${fmtCurrency(i.amount)}</td>
+                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
                                             `).join('')
                                             : '<tr><td colspan="3" class="text-muted">No earnings</td></tr>'
@@ -1558,7 +1571,7 @@ async function viewDraftPayslip(payslipId) {
                                     <tfoot>
                                         <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
                                             <td>Subtotal</td>
-                                            <td class="text-right">${formatCurrency(groupEarningsTotal)}</td>
+                                            <td class="text-right">${fmtCurrency(groupEarningsTotal)}</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
@@ -1579,8 +1592,8 @@ async function viewDraftPayslip(payslipId) {
                                             ? groupDeductions.map(i => `
                                                 <tr>
                                                     <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
-                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
-                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                                                    <td class="text-right">${fmtCurrency(i.amount)}</td>
+                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
                                             `).join('')
                                             : '<tr><td colspan="3" class="text-muted">No deductions</td></tr>'
@@ -1589,7 +1602,7 @@ async function viewDraftPayslip(payslipId) {
                                     <tfoot>
                                         <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
                                             <td>Subtotal</td>
-                                            <td class="text-right">${formatCurrency(groupDeductionsTotal)}</td>
+                                            <td class="text-right">${fmtCurrency(groupDeductionsTotal)}</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
@@ -1608,12 +1621,12 @@ async function viewDraftPayslip(payslipId) {
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Gross Earnings</span>
-                                <span style="font-weight: 600; color: var(--color-success);">${formatCurrency(payslip.gross_earnings)}</span>
+                                <span style="font-weight: 600; color: var(--color-success);">${fmtCurrency(payslip.gross_earnings)}</span>
                             </div>
                             ${payslip.arrears > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Arrears Total</span>
-                                <span style="font-weight: 600; color: var(--color-warning);">${formatCurrency(payslip.arrears)}</span>
+                                <span style="font-weight: 600; color: var(--color-warning);">${fmtCurrency(payslip.arrears)}</span>
                             </div>
                             ${payslip.arrears_breakdown && payslip.arrears_breakdown.length > 0 ? `
                             <div class="arrears-breakdown-section" style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.08); border-radius: 6px; border-left: 3px solid var(--color-warning);">
@@ -1644,12 +1657,12 @@ async function viewDraftPayslip(payslipId) {
                                                     ` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
-                                                    ${arr.source_type === 'ctc_revision' && arr.old_ctc ? formatCurrency(arr.old_ctc) + '/yr' : formatCurrency(arr.old_gross)}
+                                                    ${arr.source_type === 'ctc_revision' && arr.old_ctc ? fmtCurrency(arr.old_ctc) + '/yr' : fmtCurrency(arr.old_gross)}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--color-success);">
-                                                    ${arr.source_type === 'ctc_revision' && arr.new_ctc ? formatCurrency(arr.new_ctc) + '/yr' : formatCurrency(arr.new_gross)}
+                                                    ${arr.source_type === 'ctc_revision' && arr.new_ctc ? fmtCurrency(arr.new_ctc) + '/yr' : fmtCurrency(arr.new_gross)}
                                                 </td>
-                                                <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${formatCurrency(arr.arrears_amount)}</td>
+                                                <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${fmtCurrency(arr.arrears_amount)}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -1661,24 +1674,24 @@ async function viewDraftPayslip(payslipId) {
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.total_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.total_deductions)}</span>
                             </div>
                             ${payslip.loan_deductions > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Loan Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.loan_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.loan_deductions)}</span>
                             </div>
                             ` : ''}
                             ${payslip.voluntary_deductions > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Voluntary Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.voluntary_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.voluntary_deductions)}</span>
                             </div>
                             ${payslip.voluntary_deduction_items && payslip.voluntary_deduction_items.length > 0 ? `
-                            <div class="vd-breakdown-section" style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(59, 130, 246, 0.08); border-radius: 6px; border-left: 3px solid #3b82f6;">
+                            <div class="vd-breakdown-section" style="margin: 0.5rem 0; padding: 0.5rem; background: color-mix(in srgb, var(--color-info) 8%, transparent); border-radius: 6px; border-left: 3px solid var(--color-info);">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <svg width="14" height="14" fill="currentColor" style="color: #3b82f6;"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
-                                    <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6;">Voluntary Deduction Details</span>
+                                    <svg width="14" height="14" fill="currentColor" style="color: var(--color-info);"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-info);">Voluntary Deduction Details</span>
                                 </div>
                                 <table class="data-table" style="width: 100%; font-size: 0.75rem;">
                                     <thead>
@@ -1697,10 +1710,10 @@ async function viewDraftPayslip(payslipId) {
                                                     <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${vd.deduction_type_code}</span>
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
-                                                    ${formatCurrency(vd.full_amount)}
+                                                    ${fmtCurrency(vd.full_amount)}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-danger);">
-                                                    ${formatCurrency(vd.deducted_amount)}
+                                                    ${fmtCurrency(vd.deducted_amount)}
                                                     ${vd.is_prorated ? `<span style="font-size: 0.6rem; color: var(--text-muted); display: block;">(${(vd.proration_factor * 100).toFixed(0)}%)</span>` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; font-size: 0.7rem; color: var(--text-muted);">
@@ -1715,7 +1728,7 @@ async function viewDraftPayslip(payslipId) {
                             ` : ''}
                             <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
                                 <span style="font-weight: 700;">Net Pay</span>
-                                <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${formatCurrency(payslip.net_pay)}</span>
+                                <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${fmtCurrency(payslip.net_pay)}</span>
                             </div>
                         </div>
                     </div>
@@ -1735,12 +1748,12 @@ async function viewDraftPayslip(payslipId) {
                             ${ctcIncludedItemsAll.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(ctcIncludedItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(ctcIncludedItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -1750,12 +1763,12 @@ async function viewDraftPayslip(payslipId) {
                             ${overheadItemsAll.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(overheadItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(overheadItemsAll.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -1788,7 +1801,7 @@ async function viewDraftPayslip(payslipId) {
                 i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
-                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
@@ -1803,8 +1816,8 @@ async function viewDraftPayslip(payslipId) {
                             ${eligibilityIcon}${i.component_name}${proratedTag}
                             ${eligibilityReason}
                         </td>
-                        <td class="text-right">${formatCurrency(i.amount)}</td>
-                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                        <td class="text-right">${fmtCurrency(i.amount)}</td>
+                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                     </tr>`;
                 }).join('') :
                 '<tr><td colspan="3" class="text-muted">No deductions</td></tr>';
@@ -1825,12 +1838,12 @@ async function viewDraftPayslip(payslipId) {
                             ${ctcIncludedItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -1840,12 +1853,12 @@ async function viewDraftPayslip(payslipId) {
                             ${overheadItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -1869,7 +1882,7 @@ async function viewDraftPayslip(payslipId) {
                             <tfoot>
                                 <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
                                     <td>Total Gross</td>
-                                    <td class="text-right">${formatCurrency(payslip.gross_earnings)}</td>
+                                    <td class="text-right">${fmtCurrency(payslip.gross_earnings)}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -1887,7 +1900,7 @@ async function viewDraftPayslip(payslipId) {
                             </thead>
                             <tbody>
                                 ${deductionsHtml}
-                                ${payslip.loan_deductions > 0 ? `<tr><td>Loan EMI</td><td class="text-right">${formatCurrency(payslip.loan_deductions)}</td><td></td></tr>` : ''}
+                                ${payslip.loan_deductions > 0 ? `<tr><td>Loan EMI</td><td class="text-right">${fmtCurrency(payslip.loan_deductions)}</td><td></td></tr>` : ''}
                                 ${payslip.voluntary_deductions > 0 && payslip.voluntary_deduction_items && payslip.voluntary_deduction_items.length > 0 ?
                                     payslip.voluntary_deduction_items.map(vd => `
                                         <tr>
@@ -1895,7 +1908,7 @@ async function viewDraftPayslip(payslipId) {
                                                 ${vd.deduction_type_name}
                                                 ${vd.is_prorated ? `<span style="font-size:0.7rem;color:var(--text-muted);"> (${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}
                                             </td>
-                                            <td class="text-right">${formatCurrency(vd.deducted_amount)}</td>
+                                            <td class="text-right">${fmtCurrency(vd.deducted_amount)}</td>
                                             <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">
                                                 ${vd.is_prorated ? `${(vd.proration_factor * 100).toFixed(0)}%` : ''}
                                             </td>
@@ -1906,7 +1919,7 @@ async function viewDraftPayslip(payslipId) {
                             <tfoot>
                                 <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
                                     <td>Total Deductions</td>
-                                    <td class="text-right">${formatCurrency(payslip.total_deductions + (payslip.loan_deductions || 0) + (payslip.voluntary_deductions || 0))}</td>
+                                    <td class="text-right">${fmtCurrency(payslip.total_deductions + (payslip.loan_deductions || 0) + (payslip.voluntary_deductions || 0))}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -1925,7 +1938,7 @@ async function viewDraftPayslip(payslipId) {
                 </div>
                 <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
                     <div style="font-size: 0.65rem; opacity: 0.9;">Net Pay</div>
-                    <div style="font-size: 1.1rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</div>
+                    <div style="font-size: 1.1rem; font-weight: 700;">${fmtCurrency(payslip.net_pay)}</div>
                 </div>
             </div>
 
@@ -1947,7 +1960,7 @@ async function viewDraftPayslip(payslipId) {
             ${structureBreakdownHtml}
 
             ${(payslip.reimbursements > 0 || payslip.other_earnings > 0 || payslip.other_deductions > 0 || payslip.arrears > 0) ? `
-            <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, transparent) 0%, color-mix(in srgb, var(--color-info) 8%, transparent) 100%); border-radius: 8px; border: 1px solid var(--border-color);">
                 <h5 style="margin: 0 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="16" height="16" fill="currentColor" style="color: var(--color-success);"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>
                     Adjustments & Additions
@@ -1961,30 +1974,30 @@ async function viewDraftPayslip(payslipId) {
                                 <tr>
                                     <td style="padding: 0.4rem 0;">
                                         <span style="display: flex; align-items: center; gap: 0.4rem;">
-                                            <span class="badge" style="background: #10b981; color: white; font-size: 0.65rem; padding: 0.15rem 0.4rem;">Reimbursement</span>
+                                            <span class="badge" style="background: var(--color-success); color: var(--text-inverse); font-size: 0.65rem; padding: 0.15rem 0.4rem;">Reimbursement</span>
                                         </span>
                                     </td>
-                                    <td class="text-right" style="font-weight: 600; color: var(--color-success);">+${formatCurrency(payslip.reimbursements)}</td>
+                                    <td class="text-right" style="font-weight: 600; color: var(--color-success);">+${fmtCurrency(payslip.reimbursements)}</td>
                                 </tr>
                                 ` : ''}
                                 ${payslip.other_earnings > 0 ? `
                                 <tr>
                                     <td style="padding: 0.4rem 0;">
                                         <span style="display: flex; align-items: center; gap: 0.4rem;">
-                                            <span class="badge" style="background: #8b5cf6; color: white; font-size: 0.65rem; padding: 0.15rem 0.4rem;">Bonus/Incentive</span>
+                                            <span class="badge" style="background: var(--brand-accent); color: var(--text-inverse); font-size: 0.65rem; padding: 0.15rem 0.4rem;">Bonus/Incentive</span>
                                         </span>
                                     </td>
-                                    <td class="text-right" style="font-weight: 600; color: var(--color-success);">+${formatCurrency(payslip.other_earnings)}</td>
+                                    <td class="text-right" style="font-weight: 600; color: var(--color-success);">+${fmtCurrency(payslip.other_earnings)}</td>
                                 </tr>
                                 ` : ''}
                                 ${payslip.arrears > 0 ? `
                                 <tr>
                                     <td style="padding: 0.4rem 0;">
                                         <span style="display: flex; align-items: center; gap: 0.4rem;">
-                                            <span class="badge" style="background: #f59e0b; color: white; font-size: 0.65rem; padding: 0.15rem 0.4rem;">Arrears</span>
+                                            <span class="badge" style="background: var(--color-warning); color: var(--text-inverse); font-size: 0.65rem; padding: 0.15rem 0.4rem;">Arrears</span>
                                         </span>
                                     </td>
-                                    <td class="text-right" style="font-weight: 600; color: var(--color-warning);">+${formatCurrency(payslip.arrears)}</td>
+                                    <td class="text-right" style="font-weight: 600; color: var(--color-warning);">+${fmtCurrency(payslip.arrears)}</td>
                                 </tr>
                                 ` : ''}
                                 ${(payslip.reimbursements <= 0 && payslip.other_earnings <= 0 && payslip.arrears <= 0) ? `
@@ -1994,7 +2007,7 @@ async function viewDraftPayslip(payslipId) {
                             <tfoot style="border-top: 1px solid var(--border-color);">
                                 <tr style="font-weight: 600;">
                                     <td style="padding: 0.5rem 0;">Total Additional</td>
-                                    <td class="text-right" style="color: var(--color-success);">+${formatCurrency((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0))}</td>
+                                    <td class="text-right" style="color: var(--color-success);">+${fmtCurrency((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0))}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2007,10 +2020,10 @@ async function viewDraftPayslip(payslipId) {
                                 <tr>
                                     <td style="padding: 0.4rem 0;">
                                         <span style="display: flex; align-items: center; gap: 0.4rem;">
-                                            <span class="badge" style="background: #ef4444; color: white; font-size: 0.65rem; padding: 0.15rem 0.4rem;">Recovery</span>
+                                            <span class="badge" style="background: var(--color-danger); color: var(--text-inverse); font-size: 0.65rem; padding: 0.15rem 0.4rem;">Recovery</span>
                                         </span>
                                     </td>
-                                    <td class="text-right" style="font-weight: 600; color: var(--color-danger);">-${formatCurrency(payslip.other_deductions)}</td>
+                                    <td class="text-right" style="font-weight: 600; color: var(--color-danger);">-${fmtCurrency(payslip.other_deductions)}</td>
                                 </tr>
                                 ` : `
                                 <tr><td colspan="2" class="text-muted" style="font-size: 0.8rem;">No additional deductions</td></tr>
@@ -2020,7 +2033,7 @@ async function viewDraftPayslip(payslipId) {
                             <tfoot style="border-top: 1px solid var(--border-color);">
                                 <tr style="font-weight: 600;">
                                     <td style="padding: 0.5rem 0;">Total Deducted</td>
-                                    <td class="text-right" style="color: var(--color-danger);">-${formatCurrency(payslip.other_deductions || 0)}</td>
+                                    <td class="text-right" style="color: var(--color-danger);">-${fmtCurrency(payslip.other_deductions || 0)}</td>
                                 </tr>
                             </tfoot>
                             ` : ''}
@@ -2030,7 +2043,7 @@ async function viewDraftPayslip(payslipId) {
                 <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.8rem; color: var(--text-muted);">Net Impact from Adjustments</span>
                     <span style="font-weight: 700; font-size: 1rem; color: ${((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0) - (payslip.other_deductions || 0)) >= 0 ? 'var(--color-success)' : 'var(--color-danger)'};">
-                        ${((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0) - (payslip.other_deductions || 0)) >= 0 ? '+' : ''}${formatCurrency((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0) - (payslip.other_deductions || 0))}
+                        ${((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0) - (payslip.other_deductions || 0)) >= 0 ? '+' : ''}${fmtCurrency((payslip.reimbursements || 0) + (payslip.other_earnings || 0) + (payslip.arrears || 0) - (payslip.other_deductions || 0))}
                     </span>
                 </div>
             </div>
@@ -2244,14 +2257,15 @@ function updatePayrollRunsTable(runs) {
         return;
     }
 
+    // v3.0.20: Use currency from run (enriched by backend from country config)
     tbody.innerHTML = runs.map(run => `
         <tr>
             <td><code>${run.run_number || run.id.substring(0, 8)}</code></td>
             <td>${getMonthName(run.payroll_month)} ${run.payroll_year}</td>
             <td>${run.office_name || 'All Offices'}</td>
             <td>${run.total_employees || 0}</td>
-            <td>${formatCurrency(run.total_gross)}</td>
-            <td>${formatCurrency(run.total_net)}</td>
+            <td>${formatCurrency(run.total_gross, run.currency_code, run.currency_symbol)}</td>
+            <td>${formatCurrency(run.total_net, run.currency_code, run.currency_symbol)}</td>
             <td><span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span></td>
             <td>
                 <div class="action-buttons">
@@ -3388,9 +3402,20 @@ async function showCreateStructureModal() {
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
     document.getElementById('structureComponents').innerHTML = '';
     structureComponentCounter = 0; // Reset counter
-    // Reset office dropdown
+    // Reset office dropdown and RE-ENABLE it (disabled during edit mode)
     const officeSelect = document.getElementById('structureOffice');
-    if (officeSelect) officeSelect.value = '';
+    if (officeSelect) {
+        officeSelect.value = '';
+        officeSelect.disabled = false; // Re-enable for new structure creation
+    }
+    // Set default effective date to 1st of current month (avoids proration issues)
+    const effectiveFromInput = document.getElementById('structureEffectiveFrom');
+    if (effectiveFromInput) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        effectiveFromInput.value = `${year}-${month}-01`;
+    }
     // Reset is_default select
     const isDefaultSelect = document.getElementById('structureIsDefault');
     if (isDefaultSelect) isDefaultSelect.value = 'false';
@@ -3559,10 +3584,18 @@ async function editSalaryStructure(structureId) {
         document.getElementById('structureCode').value = structure.structure_code || '';
         document.getElementById('structureDescription').value = structure.description || '';
 
-        // Set office dropdown
+        // Set office dropdown and DISABLE it when editing (office cannot be changed after creation)
         const officeSelect = document.getElementById('structureOffice');
         if (officeSelect && structure.office_id) {
             officeSelect.value = structure.office_id;
+            officeSelect.disabled = true; // Cannot change office when editing
+        }
+
+        // Load selectable components for this office's country BEFORE populating components
+        // This ensures the dropdown options are available when we populate
+        const officeForComponents = offices.find(o => o.id === structure.office_id);
+        if (officeForComponents && officeForComponents.country_code) {
+            await loadSelectableComponentsForCountry(officeForComponents.country_code);
         }
 
         // Set is_default select
@@ -3729,6 +3762,11 @@ async function saveSalaryStructure() {
                 body: JSON.stringify(data)
             });
         } else {
+            // Include effective_from date for new structures
+            const effectiveFromInput = document.getElementById('structureEffectiveFrom');
+            if (effectiveFromInput && effectiveFromInput.value) {
+                data.effective_from = effectiveFromInput.value;
+            }
             await api.request('/hrms/payroll/structures', {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -4246,6 +4284,19 @@ async function viewPayslip(payslipId) {
             return;
         }
 
+        // v3.0.18: COUNTRY-AGNOSTIC - Use currency from backend response
+        const currencySymbol = payslip.currency_symbol || '₹';
+        const currencyCode = payslip.currency_code || 'INR';
+        const localeMap = { 'INR': 'en-IN', 'USD': 'en-US', 'GBP': 'en-GB', 'AED': 'ar-AE', 'IDR': 'id-ID', 'MVR': 'dv-MV' };
+        const locale = localeMap[currencyCode] || 'en-IN';
+
+        // Local currency formatter using backend-provided currency
+        // v3.0.20: Added space between symbol and number for readability
+        const fmtCurrency = (amt) => {
+            if (amt === null || amt === undefined) return `${currencySymbol} 0`;
+            return `${currencySymbol} ${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        };
+
         const items = payslip.items || [];
 
         // Group items by structure for compliance display
@@ -4304,8 +4355,8 @@ async function viewPayslip(payslipId) {
                                             ? groupEarnings.map(i => `
                                                 <tr>
                                                     <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
-                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
-                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                                                    <td class="text-right">${fmtCurrency(i.amount)}</td>
+                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
                                             `).join('')
                                             : '<tr><td colspan="3" class="text-muted">No earnings</td></tr>'
@@ -4314,7 +4365,7 @@ async function viewPayslip(payslipId) {
                                     <tfoot>
                                         <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
                                             <td>Subtotal</td>
-                                            <td class="text-right">${formatCurrency(groupEarningsTotal)}</td>
+                                            <td class="text-right">${fmtCurrency(groupEarningsTotal)}</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
@@ -4335,8 +4386,8 @@ async function viewPayslip(payslipId) {
                                             ? groupDeductions.map(i => `
                                                 <tr>
                                                     <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
-                                                    <td class="text-right">${formatCurrency(i.amount)}</td>
-                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                                                    <td class="text-right">${fmtCurrency(i.amount)}</td>
+                                                    <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
                                             `).join('')
                                             : '<tr><td colspan="3" class="text-muted">No deductions</td></tr>'
@@ -4345,7 +4396,7 @@ async function viewPayslip(payslipId) {
                                     <tfoot>
                                         <tr style="font-weight: 600; border-top: 1px solid var(--border-color);">
                                             <td>Subtotal</td>
-                                            <td class="text-right">${formatCurrency(groupDeductionsTotal)}</td>
+                                            <td class="text-right">${fmtCurrency(groupDeductionsTotal)}</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
@@ -4364,12 +4415,12 @@ async function viewPayslip(payslipId) {
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Gross Earnings</span>
-                                <span style="font-weight: 600; color: var(--color-success);">${formatCurrency(payslip.gross_earnings)}</span>
+                                <span style="font-weight: 600; color: var(--color-success);">${fmtCurrency(payslip.gross_earnings)}</span>
                             </div>
                             ${payslip.arrears > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Arrears Total</span>
-                                <span style="font-weight: 600; color: var(--color-warning);">${formatCurrency(payslip.arrears)}</span>
+                                <span style="font-weight: 600; color: var(--color-warning);">${fmtCurrency(payslip.arrears)}</span>
                             </div>
                             ${payslip.arrears_breakdown && payslip.arrears_breakdown.length > 0 ? `
                             <div class="arrears-breakdown-section" style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.08); border-radius: 6px; border-left: 3px solid var(--color-warning);">
@@ -4400,12 +4451,12 @@ async function viewPayslip(payslipId) {
                                                     ` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
-                                                    ${arr.source_type === 'ctc_revision' && arr.old_ctc ? formatCurrency(arr.old_ctc) + '/yr' : formatCurrency(arr.old_gross)}
+                                                    ${arr.source_type === 'ctc_revision' && arr.old_ctc ? fmtCurrency(arr.old_ctc) + '/yr' : fmtCurrency(arr.old_gross)}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--color-success);">
-                                                    ${arr.source_type === 'ctc_revision' && arr.new_ctc ? formatCurrency(arr.new_ctc) + '/yr' : formatCurrency(arr.new_gross)}
+                                                    ${arr.source_type === 'ctc_revision' && arr.new_ctc ? fmtCurrency(arr.new_ctc) + '/yr' : fmtCurrency(arr.new_gross)}
                                                 </td>
-                                                <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${formatCurrency(arr.arrears_amount)}</td>
+                                                <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${fmtCurrency(arr.arrears_amount)}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -4417,24 +4468,24 @@ async function viewPayslip(payslipId) {
                         <div>
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Total Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.total_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.total_deductions)}</span>
                             </div>
                             ${payslip.loan_deductions > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Loan Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.loan_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.loan_deductions)}</span>
                             </div>
                             ` : ''}
                             ${payslip.voluntary_deductions > 0 ? `
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                                 <span>Voluntary Deductions</span>
-                                <span style="font-weight: 600; color: var(--color-danger);">${formatCurrency(payslip.voluntary_deductions)}</span>
+                                <span style="font-weight: 600; color: var(--color-danger);">${fmtCurrency(payslip.voluntary_deductions)}</span>
                             </div>
                             ${payslip.voluntary_deduction_items && payslip.voluntary_deduction_items.length > 0 ? `
-                            <div class="vd-breakdown-section" style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(59, 130, 246, 0.08); border-radius: 6px; border-left: 3px solid #3b82f6;">
+                            <div class="vd-breakdown-section" style="margin: 0.5rem 0; padding: 0.5rem; background: color-mix(in srgb, var(--color-info) 8%, transparent); border-radius: 6px; border-left: 3px solid var(--color-info);">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <svg width="14" height="14" fill="currentColor" style="color: #3b82f6;"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
-                                    <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6;">Voluntary Deduction Details</span>
+                                    <svg width="14" height="14" fill="currentColor" style="color: var(--color-info);"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-info);">Voluntary Deduction Details</span>
                                 </div>
                                 <table class="data-table" style="width: 100%; font-size: 0.75rem;">
                                     <thead>
@@ -4453,10 +4504,10 @@ async function viewPayslip(payslipId) {
                                                     <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${vd.deduction_type_code}</span>
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
-                                                    ${formatCurrency(vd.full_amount)}
+                                                    ${fmtCurrency(vd.full_amount)}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-danger);">
-                                                    ${formatCurrency(vd.deducted_amount)}
+                                                    ${fmtCurrency(vd.deducted_amount)}
                                                     ${vd.is_prorated ? `<span style="font-size: 0.6rem; color: var(--text-muted); display: block;">(${(vd.proration_factor * 100).toFixed(0)}%)</span>` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; font-size: 0.7rem; color: var(--text-muted);">
@@ -4471,7 +4522,7 @@ async function viewPayslip(payslipId) {
                             ` : ''}
                             <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
                                 <span style="font-weight: 700;">Net Pay</span>
-                                <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${formatCurrency(payslip.net_pay)}</span>
+                                <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${fmtCurrency(payslip.net_pay)}</span>
                             </div>
                         </div>
                     </div>
@@ -4502,7 +4553,7 @@ async function viewPayslip(payslipId) {
                 i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
-                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${formatCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
@@ -4517,8 +4568,8 @@ async function viewPayslip(payslipId) {
                             ${eligibilityIcon}${i.component_name}${proratedTag}
                             ${eligibilityReason}
                         </td>
-                        <td class="text-right">${formatCurrency(i.amount)}</td>
-                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${formatCurrency(i.ytd_amount || 0)}</td>
+                        <td class="text-right">${fmtCurrency(i.amount)}</td>
+                        <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                     </tr>`;
                 }).join('') :
                 '<tr><td colspan="3" class="text-muted">No deductions</td></tr>';
@@ -4528,7 +4579,7 @@ async function viewPayslip(payslipId) {
                 <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.08); border-radius: 8px; border-left: 3px solid var(--color-warning);">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                         <svg width="14" height="14" fill="currentColor" style="color: var(--color-warning);"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1-.5-.5v-3.5A.5.5 0 0 1 8 4z"/></svg>
-                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--color-warning);">Arrears Breakdown (₹${formatCurrency(payslip.arrears)} total)</span>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--color-warning);">Arrears Breakdown (${fmtCurrency(payslip.arrears)} total)</span>
                     </div>
                     <table class="data-table" style="width: 100%; font-size: 0.8rem;">
                         <thead>
@@ -4550,12 +4601,12 @@ async function viewPayslip(payslipId) {
                                         </span>
                                     </td>
                                     <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
-                                        ${arr.source_type === 'ctc_revision' && arr.old_ctc ? formatCurrency(arr.old_ctc) + '/yr' : formatCurrency(arr.old_gross)}
+                                        ${arr.source_type === 'ctc_revision' && arr.old_ctc ? fmtCurrency(arr.old_ctc) + '/yr' : fmtCurrency(arr.old_gross)}
                                     </td>
                                     <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--color-success);">
-                                        ${arr.source_type === 'ctc_revision' && arr.new_ctc ? formatCurrency(arr.new_ctc) + '/yr' : formatCurrency(arr.new_gross)}
+                                        ${arr.source_type === 'ctc_revision' && arr.new_ctc ? fmtCurrency(arr.new_ctc) + '/yr' : fmtCurrency(arr.new_gross)}
                                     </td>
-                                    <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${formatCurrency(arr.arrears_amount)}</td>
+                                    <td style="padding: 0.25rem 0.5rem; text-align: right; font-weight: 600; color: var(--color-warning);">${fmtCurrency(arr.arrears_amount)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -4579,7 +4630,7 @@ async function viewPayslip(payslipId) {
                             <tfoot>
                                 <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
                                     <td>Total Gross</td>
-                                    <td class="text-right">${formatCurrency(payslip.gross_earnings)}</td>
+                                    <td class="text-right">${fmtCurrency(payslip.gross_earnings)}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -4597,7 +4648,7 @@ async function viewPayslip(payslipId) {
                             </thead>
                             <tbody>
                                 ${deductionsHtml}
-                                ${payslip.loan_deductions > 0 ? `<tr><td>Loan EMI</td><td class="text-right">${formatCurrency(payslip.loan_deductions)}</td><td></td></tr>` : ''}
+                                ${payslip.loan_deductions > 0 ? `<tr><td>Loan EMI</td><td class="text-right">${fmtCurrency(payslip.loan_deductions)}</td><td></td></tr>` : ''}
                                 ${payslip.voluntary_deductions > 0 && payslip.voluntary_deduction_items && payslip.voluntary_deduction_items.length > 0 ?
                                     payslip.voluntary_deduction_items.map(vd => `
                                         <tr>
@@ -4605,7 +4656,7 @@ async function viewPayslip(payslipId) {
                                                 ${vd.deduction_type_name}
                                                 ${vd.is_prorated ? `<span style="font-size:0.7rem;color:var(--text-muted);"> (${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}
                                             </td>
-                                            <td class="text-right">${formatCurrency(vd.deducted_amount)}</td>
+                                            <td class="text-right">${fmtCurrency(vd.deducted_amount)}</td>
                                             <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">
                                                 ${vd.is_prorated ? `${(vd.proration_factor * 100).toFixed(0)}%` : ''}
                                             </td>
@@ -4616,7 +4667,7 @@ async function viewPayslip(payslipId) {
                             <tfoot>
                                 <tr style="font-weight: 600; border-top: 2px solid var(--border-color);">
                                     <td>Total Deductions</td>
-                                    <td class="text-right">${formatCurrency(payslip.total_deductions + (payslip.loan_deductions || 0) + (payslip.voluntary_deductions || 0))}</td>
+                                    <td class="text-right">${fmtCurrency(payslip.total_deductions + (payslip.loan_deductions || 0) + (payslip.voluntary_deductions || 0))}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -4639,12 +4690,12 @@ async function viewPayslip(payslipId) {
                             ${ctcIncludedItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(ctcIncludedItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -4654,12 +4705,12 @@ async function viewPayslip(payslipId) {
                             ${overheadItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
                                     <span>${i.component_name}</span>
-                                    <span style="font-weight: 500;">${formatCurrency(i.amount)}</span>
+                                    <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
                             <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-top: 1px solid var(--border-color); margin-top: 0.3rem; font-weight: 600;">
                                 <span>Total</span>
-                                <span>${formatCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
+                                <span>${fmtCurrency(overheadItems.reduce((sum, i) => sum + (i.amount || 0), 0))}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -4688,7 +4739,7 @@ async function viewPayslip(payslipId) {
                 </div>
                 <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
                     <div style="font-size: 0.65rem; opacity: 0.9;">Net Pay</div>
-                    <div style="font-size: 1.1rem; font-weight: 700;">${formatCurrency(payslip.net_pay)}</div>
+                    <div style="font-size: 1.1rem; font-weight: 700;">${fmtCurrency(payslip.net_pay)}</div>
                 </div>
             </div>
 
@@ -4758,23 +4809,23 @@ async function viewPayslip(payslipId) {
                                 <span class="loc-label">Proration</span>
                             </div>
                             <div class="loc-stat">
-                                <span class="loc-value">${formatCurrency(grossEarnings)}</span>
+                                <span class="loc-value">${fmtCurrency(grossEarnings)}</span>
                                 <span class="loc-label">Gross</span>
                             </div>
                         </div>
                         ${taxItems.length > 0 ? `
                             <div class="location-taxes">
-                                <div class="tax-label">Location Taxes: ${formatCurrency(locationTaxes)}</div>
+                                <div class="tax-label">Location Taxes: ${fmtCurrency(locationTaxes)}</div>
                                 ${taxItems.map(tax => `
                                     <div class="tax-item">
                                         <span>${tax.tax_name || tax.taxName} ${tax.jurisdiction_code ? `(${tax.jurisdiction_code})` : ''}</span>
-                                        <span>${formatCurrency(tax.tax_amount || tax.taxAmount)}</span>
+                                        <span>${fmtCurrency(tax.tax_amount || tax.taxAmount)}</span>
                                     </div>
                                 `).join('')}
                             </div>
                         ` : ''}
                         <div class="location-net">
-                            Net: ${formatCurrency(netPay)}
+                            Net: ${fmtCurrency(netPay)}
                         </div>
                     </div>
                 `;
@@ -6382,14 +6433,47 @@ function populateStructureComponents(structureComponents) {
 }
 
 // Utility functions
-function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '₹0';
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
+/**
+ * v3.0.20: Country-agnostic currency formatting.
+ * Accepts optional currencyCode and currencySymbol for country-specific display.
+ * Adds space between symbol and number for readability.
+ * @param {number} amount - The amount to format
+ * @param {string} currencyCode - Optional currency code (e.g., 'INR', 'IDR', 'MVR')
+ * @param {string} currencySymbol - Optional currency symbol (e.g., '₹', 'Rp', 'Rf')
+ */
+function formatCurrency(amount, currencyCode = null, currencySymbol = null) {
+    if (amount === null || amount === undefined) {
+        const symbol = currencySymbol || '₹';
+        return `${symbol} 0`;
+    }
+
+    // Determine locale based on currency code for proper number formatting
+    const localeMap = {
+        'INR': 'en-IN',
+        'IDR': 'id-ID',
+        'MVR': 'en-MV',
+        'USD': 'en-US',
+        'GBP': 'en-GB',
+        'EUR': 'de-DE',
+        'AED': 'ar-AE',
+        'SGD': 'en-SG',
+        'MYR': 'ms-MY',
+        'AUD': 'en-AU',
+        'JPY': 'ja-JP',
+        'CNY': 'zh-CN'
+    };
+
+    const code = currencyCode || 'INR';
+    const symbol = currencySymbol || '₹';
+    const locale = localeMap[code] || 'en-IN';
+
+    // Format the number without currency symbol, then prepend symbol with space
+    const formattedNumber = new Intl.NumberFormat(locale, {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount);
+
+    return `${symbol} ${formattedNumber}`;
 }
 
 function formatDate(dateString) {
@@ -6645,6 +6729,14 @@ async function viewPayrollRun(runId) {
         payrollModalState.filteredPayslips = payslips;
         payrollModalState.searchTerm = '';
 
+        // v3.0.20: Get currency from first payslip (enriched by backend)
+        const firstPayslip = payslips.length > 0 ? payslips[0] : null;
+        const currencyCode = firstPayslip?.currency_code || run.currency_code || null;
+        const currencySymbol = firstPayslip?.currency_symbol || run.currency_symbol || null;
+        // Store currency in modal state for use in payslip rows
+        payrollModalState.currencyCode = currencyCode;
+        payrollModalState.currencySymbol = currencySymbol;
+
         // Extract dynamic columns from payslip items
         payrollModalState.dynamicColumns = extractDynamicColumns(payslips);
 
@@ -6652,14 +6744,14 @@ async function viewPayrollRun(runId) {
         document.getElementById('payrollRunDetailsTitle').textContent =
             `${getMonthName(run.payroll_month)} ${run.payroll_year} Payroll`;
 
-        // Build compact content
+        // Build compact content with country-specific currency
         let contentHtml = `
             <div class="pr-compact-header">
                 <div class="pr-stats-row">
                     <div class="pr-stat"><span class="pr-stat-val">${summary.total_employees || 0}</span><span class="pr-stat-lbl">Employees</span></div>
-                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_gross)}</span><span class="pr-stat-lbl">Gross</span></div>
-                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_deductions)}</span><span class="pr-stat-lbl">Deductions</span></div>
-                    <div class="pr-stat pr-stat-highlight"><span class="pr-stat-val">${formatCurrency(summary.total_net)}</span><span class="pr-stat-lbl">Net Pay</span></div>
+                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_gross, currencyCode, currencySymbol)}</span><span class="pr-stat-lbl">Gross</span></div>
+                    <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_deductions, currencyCode, currencySymbol)}</span><span class="pr-stat-lbl">Deductions</span></div>
+                    <div class="pr-stat pr-stat-highlight"><span class="pr-stat-val">${formatCurrency(summary.total_net, currencyCode, currencySymbol)}</span><span class="pr-stat-lbl">Net Pay</span></div>
                     <div class="pr-stat-badge">
                         <span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span>
                     </div>
@@ -6812,14 +6904,25 @@ function buildDynamicCells(slip) {
 
     return payrollModalState.dynamicColumns.map(col => {
         const amount = itemMap.get(col.code) || 0;
-        return `<td class="pr-col-num text-right">${formatCurrencyCompact(amount)}</td>`;
+        return `<td class="pr-col-num text-right">${formatCurrencyCompact(amount, payrollModalState.currencyCode)}</td>`;
     }).join('');
 }
 
-// Format currency compactly (no decimals, with commas)
-function formatCurrencyCompact(amount) {
+// Format currency compactly (no decimals, with commas) - just number, no symbol
+// v3.0.20: Uses locale based on currency code for proper thousand separators
+function formatCurrencyCompact(amount, currencyCode = null) {
     if (amount === null || amount === undefined || amount === 0) return '0';
-    return Math.round(amount).toLocaleString('en-IN');
+
+    const localeMap = {
+        'INR': 'en-IN',
+        'IDR': 'id-ID',
+        'MVR': 'en-MV',
+        'USD': 'en-US',
+        'GBP': 'en-GB',
+        'EUR': 'de-DE'
+    };
+    const locale = localeMap[currencyCode] || 'en-IN';
+    return Math.round(amount).toLocaleString(locale);
 }
 
 // Initialize virtual scroll for payslips
@@ -6880,9 +6983,9 @@ function renderVisiblePayslips() {
                 </td>
                 <td class="pr-col-dept pr-cell-muted">${(slip.department_name || '-').substring(0, 12)}</td>
                 ${buildDynamicCells(slip)}
-                <td class="pr-col-num text-right pr-cell-bold">${formatCurrencyCompact(slip.gross_earnings)}</td>
-                <td class="pr-col-num text-right pr-cell-muted">${formatCurrencyCompact(slip.total_deductions)}</td>
-                <td class="pr-col-num text-right pr-cell-net">${formatCurrencyCompact(slip.net_pay)}</td>
+                <td class="pr-col-num text-right pr-cell-bold">${formatCurrencyCompact(slip.gross_earnings, payrollModalState.currencyCode)}</td>
+                <td class="pr-col-num text-right pr-cell-muted">${formatCurrencyCompact(slip.total_deductions, payrollModalState.currencyCode)}</td>
+                <td class="pr-col-num text-right pr-cell-net">${formatCurrencyCompact(slip.net_pay, payrollModalState.currencyCode)}</td>
                 <td class="pr-col-days text-center">${Math.round(slip.days_worked || 0)}/${slip.total_working_days || 0}</td>
                 <td class="pr-col-actions text-center">
                     <button class="action-btn action-btn-sm" onclick="event.stopPropagation(); viewPayslip('${slip.id}')" title="View Payslip">
@@ -7198,6 +7301,7 @@ document.getElementById('loanStatus')?.addEventListener('change', loadLoans);
 
 let currentVersionStructureId = null;
 let currentVersionStructureName = '';
+let currentVersionStructureOffice = null; // Office info for the current structure (for country filtering)
 let structureVersions = [];
 
 /**
@@ -7217,9 +7321,10 @@ async function viewStructureVersions(structureId) {
         const versions = await api.request(`/hrms/payroll/structures/${structureId}/versions`);
         structureVersions = versions || [];
 
-        // Get structure name
+        // Get structure name and office info for country filtering
         const structure = structures.find(s => s.id === structureId);
         currentVersionStructureName = structure?.structure_name || 'Structure';
+        currentVersionStructureOffice = structure?.office_id ? offices.find(o => o.id === structure.office_id) : null;
 
         // Update modal
         document.getElementById('versionHistoryTitle').textContent = `Version History - ${currentVersionStructureName}`;
@@ -7259,8 +7364,10 @@ function updateVersionHistoryTable(versions) {
         return `
         <tr class="${isCurrent ? 'current-version' : ''}">
             <td>
-                <strong>v${v.version_number}</strong>
-                ${isCurrent ? '<span class="badge-current">Current</span>' : ''}
+                <div class="version-cell">
+                    <strong>V${v.version_number}</strong>
+                    ${isCurrent ? '<span class="badge-current">CURRENT</span>' : ''}
+                </div>
             </td>
             <td>${formatDate(v.effective_from)}</td>
             <td>${v.effective_to ? formatDate(v.effective_to) : '<span class="text-muted">Ongoing</span>'}</td>
@@ -7476,10 +7583,13 @@ async function compareVersions(structureId, fromVersion, toVersion) {
     }
 }
 
+// Counter for version components (for unique IDs)
+let versionComponentCounter = 0;
+
 /**
  * Show create new version modal
  */
-function showCreateVersionModal() {
+async function showCreateVersionModal() {
     if (!currentVersionStructureId) {
         showToast('No structure selected', 'error');
         return;
@@ -7487,66 +7597,502 @@ function showCreateVersionModal() {
 
     // Reset form
     document.getElementById('newVersionForm').reset();
+    versionComponentCounter = 0;
 
     // Set default effective date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     document.getElementById('versionEffectiveDate').value = tomorrow.toISOString().split('T')[0];
 
-    // Populate components from latest version
+    // Reset to Components tab
+    switchVersionTab('version-components');
+
+    // Load country-specific components and statutory deductions for this structure's office
+    if (currentVersionStructureOffice) {
+        const countryCode = currentVersionStructureOffice.country_code;
+        const stateCode = currentVersionStructureOffice.state_code || 'ALL';
+
+        // Load selectable components and statutory deductions for this country
+        await Promise.all([
+            loadSelectableComponentsForCountry(countryCode),
+            loadStatutoryEmployeeDeductions(countryCode, stateCode)
+        ]);
+    }
+
+    // Populate components from latest version using searchable dropdowns
     populateNewVersionComponents();
+
+    // Populate statutory sections in Auto-Attached tab
+    populateVersionStatutorySections();
 
     document.getElementById('createVersionModalTitle').textContent = `Create New Version - ${currentVersionStructureName}`;
     openModal('createVersionModal');
 }
 
 /**
+ * Switch between version modal tabs
+ */
+function switchVersionTab(tabName) {
+    // Update tab buttons (only within version modal)
+    const modal = document.getElementById('createVersionModal');
+    if (!modal) return;
+
+    modal.querySelectorAll('.structure-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    modal.querySelectorAll('.structure-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tabName}`);
+    });
+}
+
+/**
  * Populate components for new version based on current version
+ * COUNTRY-AGNOSTIC: Uses selectableComponentsForCountry (filtered by backend)
+ * Uses searchable dropdowns like the structure modal
  */
 function populateNewVersionComponents() {
-    const container = document.getElementById('newVersionComponents');
+    const container = document.getElementById('versionComponents');
+    const emptyState = document.getElementById('versionComponentsEmptyState');
     if (!container) return;
+
+    // Clear the container
+    container.innerHTML = '';
 
     // Get latest version's components
     const latestVersion = structureVersions[0];
     const existingComponents = latestVersion?.components || [];
 
-    // Build component checkboxes with values
-    container.innerHTML = components.map(c => {
-        const existingComp = existingComponents.find(ec => ec.component_id === c.id);
-        const isSelected = !!existingComp;
-        const value = existingComp?.percentage || existingComp?.fixed_amount || '';
-        const calcType = existingComp?.calculation_type || 'percentage';
+    // If there are existing components, populate them
+    if (existingComponents.length > 0) {
+        existingComponents.forEach(comp => {
+            addVersionComponentWithData(comp);
+        });
+        if (emptyState) emptyState.style.display = 'none';
+    } else {
+        // Show empty state
+        if (emptyState) emptyState.style.display = 'flex';
+    }
 
-        // Determine the percentage label based on component's calculation base
-        const calcBase = c.calculation_base || 'basic';
-        const isBasic = c.is_basic_component || false;
-        let percentageLabel = '% of Basic';
-        if (calcBase === 'ctc' || isBasic) {
-            percentageLabel = '% of CTC';
-        } else if (calcBase === 'gross') {
-            percentageLabel = '% of Gross';
-        }
+    // Update summary
+    updateVersionSummary();
+}
 
-        return `
-        <div class="version-component-row">
-            <label class="checkbox-label">
-                <input type="checkbox" name="versionComponent" value="${c.id}" ${isSelected ? 'checked' : ''}
-                       data-name="${c.component_name || c.name}" data-code="${c.component_code || c.code}"
-                       data-type="${c.component_type || c.category}">
-                <span>${c.component_name || c.name} (${c.component_code || c.code})</span>
-                <span class="component-badge component-${c.component_type || c.category}">${c.component_type || c.category}</span>
-            </label>
-            <div class="component-value-inputs">
-                <select class="form-control form-control-sm version-calc-type" data-component-id="${c.id}">
-                    <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>${percentageLabel}</option>
-                    <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
-                </select>
-                <input type="number" class="form-control form-control-sm version-value" data-component-id="${c.id}"
-                       value="${value}" placeholder="${calcType === 'percentage' ? '%' : '₹'}" step="0.01" min="0">
+/**
+ * Add a new component row to version modal (with searchable dropdown)
+ */
+function addVersionComponent() {
+    const container = document.getElementById('versionComponents');
+    const emptyState = document.getElementById('versionComponentsEmptyState');
+    const componentId = `vc_${versionComponentCounter++}`;
+
+    const componentHtml = `
+        <div class="structure-component-row" id="${componentId}">
+            <div class="form-row component-row">
+                <div class="form-group" style="flex: 2;">
+                    ${createVersionSearchableDropdown(componentId)}
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select class="form-control calc-type-select" onchange="toggleVersionComponentValueFields(this, '${componentId}')">
+                        <option value="percentage">% of Basic</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                </div>
+                <div class="form-group value-field" style="flex: 1;">
+                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100" oninput="updateVersionSummary()">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0" style="display: none;" disabled oninput="updateVersionSummary()">
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeVersionComponent('${componentId}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
-        </div>`;
-    }).join('');
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', componentHtml);
+
+    // Hide empty state
+    if (emptyState) emptyState.style.display = 'none';
+}
+
+/**
+ * Add a version component row with pre-populated data
+ */
+function addVersionComponentWithData(comp) {
+    const container = document.getElementById('versionComponents');
+    const componentId = `vc_${versionComponentCounter++}`;
+
+    // Find the component details from selectable components
+    const selectableComponents = selectableComponentsForCountry || [];
+    const componentData = selectableComponents.find(c => c.id === comp.component_id);
+
+    if (!componentData) {
+        console.warn(`Component ${comp.component_id} not found in selectable components`);
+        return;
+    }
+
+    const calcType = comp.calculation_type || 'percentage';
+    const value = calcType === 'percentage' ? (comp.percentage_of_basic || comp.percentage || '') : (comp.fixed_amount || '');
+
+    // Determine the percentage label
+    const calcBase = componentData.calculation_base || 'basic';
+    const isBasic = componentData.is_basic_component || false;
+    let percentageLabel = '% of Basic';
+    if (calcBase === 'ctc' || isBasic) {
+        percentageLabel = '% of CTC';
+    } else if (calcBase === 'gross') {
+        percentageLabel = '% of Gross';
+    }
+
+    const componentHtml = `
+        <div class="structure-component-row" id="${componentId}">
+            <div class="form-row component-row">
+                <div class="form-group" style="flex: 2;">
+                    ${createVersionSearchableDropdown(componentId, comp.component_id)}
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select class="form-control calc-type-select" onchange="toggleVersionComponentValueFields(this, '${componentId}')">
+                        <option value="percentage" ${calcType === 'percentage' ? 'selected' : ''}>${percentageLabel}</option>
+                        <option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+                    </select>
+                </div>
+                <div class="form-group value-field" style="flex: 1;">
+                    <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100"
+                           value="${calcType === 'percentage' ? value : ''}"
+                           style="${calcType === 'fixed' ? 'display: none;' : ''}"
+                           ${calcType === 'fixed' ? 'disabled' : ''}
+                           oninput="updateVersionSummary()">
+                    <input type="number" class="form-control fixed-value" placeholder="Amount" step="0.01" min="0"
+                           value="${calcType === 'fixed' ? value : ''}"
+                           style="${calcType === 'percentage' ? 'display: none;' : ''}"
+                           ${calcType === 'percentage' ? 'disabled' : ''}
+                           oninput="updateVersionSummary()">
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeVersionComponent('${componentId}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', componentHtml);
+}
+
+/**
+ * Create a searchable dropdown for version components
+ */
+function createVersionSearchableDropdown(componentId, selectedComponentId = null) {
+    const selectableComponents = selectableComponentsForCountry || [];
+    const dropdownId = `vdropdown_${componentId}`;
+
+    // Find selected component data if provided
+    let selectedText = 'Select Component';
+    let selectedValue = '';
+    if (selectedComponentId) {
+        const selected = selectableComponents.find(c => c.id === selectedComponentId);
+        if (selected) {
+            selectedText = `${selected.component_name || selected.name} (${selected.component_code || selected.code})`;
+            selectedValue = selectedComponentId;
+        }
+    }
+
+    return `
+        <div class="searchable-dropdown${selectedValue ? ' has-value' : ''}" id="${dropdownId}">
+            <div class="dropdown-trigger" onclick="toggleSearchDropdown('${dropdownId}')">
+                <span class="dropdown-selected-text">${escapeHtml(selectedText)}</span>
+                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+            <div class="dropdown-menu">
+                <div class="dropdown-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" class="dropdown-search-input" placeholder="Search components..."
+                           oninput="filterDropdownOptions('${dropdownId}', this.value)"
+                           onclick="event.stopPropagation()">
+                </div>
+                <div class="dropdown-options" data-component-id="${componentId}">
+                    ${selectableComponents.map(c => `
+                        <div class="dropdown-option${c.id === selectedValue ? ' selected' : ''}"
+                             data-value="${c.id}"
+                             data-type="${c.component_type || c.category}"
+                             data-calc-type="${c.calculation_type || 'fixed'}"
+                             data-calc-base="${c.calculation_base || 'basic'}"
+                             data-is-basic="${c.is_basic_component || false}"
+                             data-is-balance="${c.is_balance_component || false}"
+                             data-percentage="${c.percentage || ''}"
+                             data-fixed="${c.fixed_amount || ''}"
+                             data-name="${escapeHtml(c.component_name || c.name)}"
+                             data-code="${escapeHtml(c.component_code || c.code)}"
+                             onclick="selectVersionDropdownOption('${dropdownId}', this, '${componentId}')">
+                            <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
+                            <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
+                            <span class="option-type badge badge-${(c.component_type || c.category) === 'earning' ? 'success' : 'warning'}">${c.component_type || c.category}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <input type="hidden" class="component-select-value" name="vcomponent_${componentId}" value="${selectedValue}" required>
+        </div>
+    `;
+}
+
+/**
+ * Handle version dropdown option selection
+ */
+function selectVersionDropdownOption(dropdownId, option, componentId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const value = option.dataset.value;
+    const name = option.dataset.name;
+    const code = option.dataset.code;
+
+    // Update hidden input
+    const hiddenInput = dropdown.querySelector('.component-select-value');
+    if (hiddenInput) hiddenInput.value = value;
+
+    // Update display text
+    const selectedText = dropdown.querySelector('.dropdown-selected-text');
+    if (selectedText) selectedText.textContent = `${name} (${code})`;
+
+    // Add has-value class
+    dropdown.classList.add('has-value');
+
+    // Mark option as selected
+    dropdown.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+
+    // Close dropdown
+    closeSearchDropdown(dropdown);
+
+    // Update calc type based on component configuration
+    updateVersionCalcType(option, componentId);
+}
+
+/**
+ * Update the calculation type dropdown based on selected component
+ */
+function updateVersionCalcType(selectedOption, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const calcTypeSelect = row.querySelector('.calc-type-select');
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    const calcType = selectedOption.dataset.calcType || 'fixed';
+    const calcBase = selectedOption.dataset.calcBase || 'basic';
+    const isBasic = selectedOption.dataset.isBasic === 'true';
+    const defaultPercentage = selectedOption.dataset.percentage;
+    const defaultFixed = selectedOption.dataset.fixed;
+
+    // Build label based on calculation base
+    let percentageLabel = '% of Basic';
+    if (calcBase === 'ctc') {
+        percentageLabel = '% of CTC';
+    } else if (calcBase === 'gross') {
+        percentageLabel = '% of Gross';
+    } else if (isBasic) {
+        percentageLabel = '% of CTC';
+    }
+
+    // Update dropdown options
+    calcTypeSelect.innerHTML = `
+        <option value="percentage">${percentageLabel}</option>
+        <option value="fixed">Fixed Amount</option>
+    `;
+
+    // Set the default calculation type
+    if (calcType === 'fixed') {
+        calcTypeSelect.value = 'fixed';
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+        if (defaultFixed) fixedInput.value = defaultFixed;
+    } else {
+        calcTypeSelect.value = 'percentage';
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+        if (defaultPercentage) percentageInput.value = defaultPercentage;
+    }
+
+    updateVersionSummary();
+}
+
+/**
+ * Toggle between percentage and fixed value fields for version components
+ */
+function toggleVersionComponentValueFields(select, componentId) {
+    const row = document.getElementById(componentId);
+    if (!row) return;
+
+    const percentageInput = row.querySelector('.percentage-value');
+    const fixedInput = row.querySelector('.fixed-value');
+
+    if (select.value === 'fixed') {
+        percentageInput.style.display = 'none';
+        percentageInput.disabled = true;
+        fixedInput.style.display = 'block';
+        fixedInput.disabled = false;
+    } else {
+        percentageInput.style.display = 'block';
+        percentageInput.disabled = false;
+        fixedInput.style.display = 'none';
+        fixedInput.disabled = true;
+    }
+
+    updateVersionSummary();
+}
+
+/**
+ * Remove a component from version modal
+ */
+function removeVersionComponent(componentId) {
+    const row = document.getElementById(componentId);
+    if (row) {
+        row.remove();
+        updateVersionComponentsEmptyState();
+        updateVersionSummary();
+    }
+}
+
+/**
+ * Update empty state visibility for version components
+ */
+function updateVersionComponentsEmptyState() {
+    const container = document.getElementById('versionComponents');
+    const emptyState = document.getElementById('versionComponentsEmptyState');
+    if (!container || !emptyState) return;
+
+    const rows = container.querySelectorAll('.structure-component-row');
+    emptyState.style.display = rows.length === 0 ? 'flex' : 'none';
+}
+
+/**
+ * Update the version summary (similar to structure summary)
+ */
+function updateVersionSummary() {
+    const container = document.getElementById('versionComponents');
+    const summaryDiv = document.getElementById('versionSummary');
+    if (!container || !summaryDiv) return;
+
+    const rows = container.querySelectorAll('.structure-component-row');
+
+    if (rows.length === 0) {
+        summaryDiv.style.display = 'none';
+        return;
+    }
+
+    summaryDiv.style.display = 'flex';
+
+    // Calculate totals (simplified version)
+    let totalCtc = 0;
+    let totalDeductions = 0;
+
+    rows.forEach(row => {
+        const hiddenInput = row.querySelector('.component-select-value');
+        const calcTypeSelect = row.querySelector('.calc-type-select');
+        const percentageInput = row.querySelector('.percentage-value');
+        const fixedInput = row.querySelector('.fixed-value');
+
+        if (!hiddenInput?.value) return;
+
+        const calcType = calcTypeSelect?.value || 'percentage';
+        const value = calcType === 'percentage' ? parseFloat(percentageInput?.value) || 0 : 0;
+
+        // Check component type from the dropdown option
+        const dropdown = row.querySelector('.searchable-dropdown');
+        const selectedOption = dropdown?.querySelector('.dropdown-option.selected');
+        const componentType = selectedOption?.dataset.type || 'earning';
+
+        if (componentType === 'earning') {
+            totalCtc += value;
+        } else {
+            totalDeductions += value;
+        }
+    });
+
+    // Update display
+    const grossEl = document.getElementById('versionTotalGrossCtc');
+    const deductionsEl = document.getElementById('versionDeductionsTotal');
+    const balanceEl = document.getElementById('versionBalanceWillFill');
+
+    if (grossEl) grossEl.textContent = `${totalCtc.toFixed(1)}%`;
+    if (deductionsEl) deductionsEl.textContent = `${totalDeductions.toFixed(1)}%`;
+    if (balanceEl) balanceEl.textContent = `${Math.max(0, 100 - totalCtc).toFixed(1)}%`;
+}
+
+/**
+ * Populate statutory sections in the Version modal's Auto-Attached tab
+ */
+function populateVersionStatutorySections() {
+    // Employee Deductions
+    const deductionsContainer = document.getElementById('versionStatutoryDeductionsContainer');
+    const deductionCountEl = document.getElementById('versionDeductionCount');
+
+    if (deductionsContainer) {
+        if (statutoryEmployeeDeductions && statutoryEmployeeDeductions.length > 0) {
+            deductionsContainer.innerHTML = statutoryEmployeeDeductions.map(c => `
+                <div class="statutory-compact-item">
+                    <span class="statutory-item-code">${escapeHtml(c.component_code || c.code)}</span>
+                    <span class="statutory-item-name">${escapeHtml(c.component_name || c.name)}</span>
+                </div>
+            `).join('');
+        } else {
+            deductionsContainer.innerHTML = '<div class="statutory-empty">No employee deductions configured</div>';
+        }
+    }
+    if (deductionCountEl) {
+        deductionCountEl.textContent = statutoryEmployeeDeductions?.length || 0;
+    }
+
+    // Employer Contributions
+    const contributionsContainer = document.getElementById('versionStatutoryContributionsContainer');
+    const contributionCountEl = document.getElementById('versionContributionCount');
+
+    if (contributionsContainer) {
+        if (statutoryEmployerContributions && statutoryEmployerContributions.length > 0) {
+            contributionsContainer.innerHTML = statutoryEmployerContributions.map(c => `
+                <div class="statutory-compact-item">
+                    <span class="statutory-item-code">${escapeHtml(c.component_code || c.code)}</span>
+                    <span class="statutory-item-name">${escapeHtml(c.component_name || c.name)}</span>
+                </div>
+            `).join('');
+        } else {
+            contributionsContainer.innerHTML = '<div class="statutory-empty">No employer contributions configured</div>';
+        }
+    }
+    if (contributionCountEl) {
+        contributionCountEl.textContent = statutoryEmployerContributions?.length || 0;
+    }
+
+    // Update badge count
+    updateVersionStatutoryCountBadge();
+}
+
+/**
+ * Update the statutory count badge for version modal
+ */
+function updateVersionStatutoryCountBadge() {
+    const badge = document.getElementById('versionStatutoryCountBadge');
+    if (badge) {
+        const totalCount = (statutoryEmployeeDeductions?.length || 0) + (statutoryEmployerContributions?.length || 0);
+        badge.textContent = totalCount;
+    }
 }
 
 /**
@@ -7567,15 +8113,24 @@ async function saveNewVersion() {
         return;
     }
 
-    // Collect selected components with values
+    // Collect components from searchable dropdowns
+    const container = document.getElementById('versionComponents');
+    const rows = container.querySelectorAll('.structure-component-row');
     const selectedComponents = [];
-    document.querySelectorAll('input[name="versionComponent"]:checked').forEach((checkbox, index) => {
-        const componentId = checkbox.value;
-        const calcTypeSelect = document.querySelector(`.version-calc-type[data-component-id="${componentId}"]`);
-        const valueInput = document.querySelector(`.version-value[data-component-id="${componentId}"]`);
+
+    rows.forEach((row, index) => {
+        const hiddenInput = row.querySelector('.component-select-value');
+        const calcTypeSelect = row.querySelector('.calc-type-select');
+        const percentageInput = row.querySelector('.percentage-value');
+        const fixedInput = row.querySelector('.fixed-value');
+
+        const componentId = hiddenInput?.value;
+        if (!componentId) return; // Skip if no component selected
 
         const calcType = calcTypeSelect?.value || 'percentage';
-        const value = parseFloat(valueInput?.value) || 0;
+        const value = calcType === 'percentage'
+            ? parseFloat(percentageInput?.value) || 0
+            : parseFloat(fixedInput?.value) || 0;
 
         if (value > 0) {
             selectedComponents.push({
@@ -7590,7 +8145,7 @@ async function saveNewVersion() {
     });
 
     if (selectedComponents.length === 0) {
-        showToast('Please select at least one component with a value', 'error');
+        showToast('Please add at least one component with a value', 'error');
         return;
     }
 
@@ -7651,9 +8206,9 @@ async function previewVersionedSalary() {
 
     const periodStart = await Prompt.show({
         title: 'Period Start Date',
-        message: 'Enter period start date (YYYY-MM-DD):',
+        message: 'Select the period start date:',
         defaultValue: new Date().toISOString().slice(0, 8) + '01',
-        placeholder: 'YYYY-MM-DD',
+        placeholder: 'DD-MM-YYYY',
         type: 'date'
     });
 
@@ -7663,9 +8218,9 @@ async function previewVersionedSalary() {
 
     const periodEnd = await Prompt.show({
         title: 'Period End Date',
-        message: 'Enter period end date (YYYY-MM-DD):',
+        message: 'Select the period end date:',
         defaultValue: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
-        placeholder: 'YYYY-MM-DD',
+        placeholder: 'DD-MM-YYYY',
         type: 'date'
     });
 
@@ -7684,106 +8239,148 @@ async function previewVersionedSalary() {
             })
         });
 
-        // Build styled HTML breakdown
+        // Build compact styled HTML breakdown
+        // Component breakdown - Backend sends aggregated_earnings/aggregated_deductions
+        const earnings = breakdown.aggregated_earnings || breakdown.component_breakdowns?.filter(c => c.component_type === 'earning') || [];
+        const deductions = breakdown.aggregated_deductions || breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
+        const employerContributions = breakdown.aggregated_employer_contributions || [];
+
+        // Filter to show only non-zero amounts for cleaner display (keep zero statutory for transparency)
+        const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+        const activeDeductions = deductions; // Show all deductions including zero for statutory transparency
+
+        // v3.0.18: COUNTRY-AGNOSTIC - Use currency symbol from backend response, not hardcoded
+        const currencySymbol = breakdown.currency_symbol || '₹'; // Fallback to ₹ only if not provided
+        const currencyCode = breakdown.currency_code || 'INR';
+
+        // Use locale based on currency code for proper number formatting
+        const localeMap = { 'INR': 'en-IN', 'USD': 'en-US', 'GBP': 'en-GB', 'AED': 'ar-AE', 'IDR': 'id-ID', 'MVR': 'dv-MV' };
+        const locale = localeMap[currencyCode] || 'en-IN';
+        const formatAmt = (amt) => amt.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+        const totalGross = breakdown.total_gross || 0;
+        const totalDeductions = breakdown.total_deductions || 0;
+        const netPay = breakdown.total_net || breakdown.net_pay || 0;
+
         let htmlContent = `
-            <div class="detail-grid">
-                <span class="detail-label">CTC:</span>
-                <span class="detail-value amount">₹${ctc.toLocaleString('en-IN')}</span>
-                <span class="detail-label">Period:</span>
-                <span class="detail-value">${formatDate(periodStart)} to ${formatDate(periodEnd)}</span>
-                <span class="detail-label">Working Days:</span>
-                <span class="detail-value">${breakdown.total_working_days || 'N/A'}</span>
-            </div>
-        `;
-
-        // Version periods if any
-        if (breakdown.version_periods?.length > 0) {
-            htmlContent += `<div class="section-title">Version Periods</div>`;
-            breakdown.version_periods.forEach(vp => {
-                htmlContent += `
-                    <div style="background: var(--gray-50); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px;">
-                        <strong>Version ${vp.version_number}</strong> (${formatDate(vp.period_start)} to ${formatDate(vp.period_end)})
-                        <br>
-                        <span style="color: var(--text-tertiary);">${vp.days_in_period} days • ${(vp.proration_factor * 100).toFixed(1)}% proration</span>
+            <style>
+                .sp-container { font-size: 13px; }
+                .sp-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 12px; }
+                .sp-header-item { text-align: center; }
+                .sp-header-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+                .sp-header-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+                .sp-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+                .sp-column { background: var(--bg-secondary); border-radius: 6px; overflow: hidden; }
+                .sp-column-header { padding: 6px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+                .sp-earn-header { background: color-mix(in srgb, var(--color-success) 12%, transparent); color: var(--color-success); }
+                .sp-ded-header { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+                .sp-column-body { padding: 6px 0; max-height: 150px; overflow-y: auto; }
+                .sp-row { display: flex; justify-content: space-between; padding: 3px 10px; font-size: 12px; }
+                .sp-row:hover { background: var(--bg-hover); }
+                .sp-row-name { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+                .sp-row-amt { font-weight: 500; font-variant-numeric: tabular-nums; margin-left: 8px; flex-shrink: 0; }
+                .sp-row-amt.earn { color: var(--color-success); }
+                .sp-row-amt.ded { color: var(--color-danger); }
+                .sp-row-zero { opacity: 0.5; }
+                .sp-total-row { border-top: 1px solid var(--border-secondary); padding-top: 6px; margin-top: 4px; font-weight: 600; }
+                .sp-summary { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 8px; }
+                .sp-summary-item { text-align: center; padding: 10px 8px; border-radius: 6px; }
+                .sp-summary-label { font-size: 10px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; }
+                .sp-summary-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
+                .sp-summary-gross { background: var(--color-success); color: var(--text-inverse); }
+                .sp-summary-ded { background: var(--color-danger); color: var(--text-inverse); }
+                .sp-summary-net { background: var(--color-info); color: var(--text-inverse); }
+                .sp-summary-net .sp-summary-value { font-size: 18px; }
+                .sp-employer { margin-top: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 11px; }
+                .sp-employer-title { font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+                .sp-employer-row { display: flex; justify-content: space-between; color: var(--text-tertiary); }
+            </style>
+            <div class="sp-container">
+                <div class="sp-header">
+                    <div class="sp-header-item">
+                        <div class="sp-header-label">CTC (Annual)</div>
+                        <div class="sp-header-value">${currencySymbol} ${formatAmt(ctc)}</div>
                     </div>
-                `;
-            });
-        }
-
-        // Component breakdown table
-        const earnings = breakdown.component_breakdowns?.filter(c => c.component_type === 'earning') || [];
-        const deductions = breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
-
-        if (breakdown.component_breakdowns?.length > 0) {
-            htmlContent += `
-                <div class="section-title">Component Breakdown</div>
-                <table class="component-table">
-                    <thead>
-                        <tr>
-                            <th>Component</th>
-                            <th style="text-align: right;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            // Earnings
-            earnings.forEach(cb => {
-                const partialBadge = cb.is_partial ? '<span class="badge badge-modified" style="margin-left: 8px;">Partial</span>' : '';
-                htmlContent += `
-                    <tr>
-                        <td>
-                            <span class="badge badge-earning" style="margin-right: 8px;">E</span>
-                            ${cb.component_name}${partialBadge}
-                        </td>
-                        <td class="amount" style="text-align: right; color: var(--color-success);">+₹${(cb.prorated_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                `;
-            });
-
-            // Deductions
-            deductions.forEach(cb => {
-                const partialBadge = cb.is_partial ? '<span class="badge badge-modified" style="margin-left: 8px;">Partial</span>' : '';
-                htmlContent += `
-                    <tr>
-                        <td>
-                            <span class="badge badge-deduction" style="margin-right: 8px;">D</span>
-                            ${cb.component_name}${partialBadge}
-                        </td>
-                        <td class="amount" style="text-align: right; color: var(--color-danger);">−₹${(cb.prorated_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                `;
-            });
-
-            htmlContent += `
-                    </tbody>
-                </table>
-            `;
-        }
-
-        // Summary box
-        htmlContent += `
-            <div class="summary-box">
-                <div class="summary-row">
-                    <span>Total Gross</span>
-                    <span class="amount positive">₹${(breakdown.total_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <div class="sp-header-item">
+                        <div class="sp-header-label">Period</div>
+                        <div class="sp-header-value">${formatDate(periodStart).split(' ').slice(0,2).join(' ')} - ${formatDate(periodEnd).split(' ').slice(0,2).join(' ')}</div>
+                    </div>
+                    <div class="sp-header-item">
+                        <div class="sp-header-label">Days</div>
+                        <div class="sp-header-value">${breakdown.total_working_days || 'N/A'}</div>
+                    </div>
                 </div>
-                <div class="summary-row">
-                    <span>Total Deductions</span>
-                    <span class="amount negative">−₹${(breakdown.total_deductions || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div class="summary-row total">
-                    <span>Net Pay</span>
-                    <span class="amount" style="font-size: 16px;">₹${(breakdown.net_pay || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-            </div>
+
+                <div class="sp-columns">
+                    <div class="sp-column">
+                        <div class="sp-column-header sp-earn-header">Earnings</div>
+                        <div class="sp-column-body">
         `;
+
+        // Earnings column
+        activeEarnings.forEach(cb => {
+            const amount = cb.total_amount || cb.prorated_amount || 0;
+            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt earn">+${currencySymbol} ${formatAmt(amount)}</span></div>`;
+        });
+        htmlContent += `
+                            <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
+                        </div>
+                    </div>
+                    <div class="sp-column">
+                        <div class="sp-column-header sp-ded-header">Deductions</div>
+                        <div class="sp-column-body">
+        `;
+
+        // Deductions column
+        activeDeductions.forEach(cb => {
+            const amount = cb.total_amount || cb.prorated_amount || 0;
+            const zeroClass = amount === 0 ? ' sp-row-zero' : '';
+            htmlContent += `<div class="sp-row${zeroClass}"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol} ${formatAmt(amount)}</span></div>`;
+        });
+        htmlContent += `
+                            <div class="sp-row sp-total-row"><span>Total</span><span class="sp-row-amt ded">−${currencySymbol} ${formatAmt(totalDeductions)}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sp-summary">
+                    <div class="sp-summary-item sp-summary-gross">
+                        <div class="sp-summary-label">Gross</div>
+                        <div class="sp-summary-value">${currencySymbol} ${formatAmt(totalGross)}</div>
+                    </div>
+                    <div class="sp-summary-item sp-summary-ded">
+                        <div class="sp-summary-label">Deductions</div>
+                        <div class="sp-summary-value">−${currencySymbol} ${formatAmt(totalDeductions)}</div>
+                    </div>
+                    <div class="sp-summary-item sp-summary-net">
+                        <div class="sp-summary-label">Net Pay</div>
+                        <div class="sp-summary-value">${currencySymbol} ${formatAmt(netPay)}</div>
+                    </div>
+                </div>
+        `;
+
+        // Employer contributions (collapsed section)
+        if (employerContributions.length > 0) {
+            const activeEmployer = employerContributions.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+            if (activeEmployer.length > 0) {
+                const totalEmployer = activeEmployer.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
+                htmlContent += `<div class="sp-employer"><div class="sp-employer-title">Employer Contributions (${currencySymbol} ${formatAmt(totalEmployer)})</div>`;
+                activeEmployer.forEach(cb => {
+                    const amount = cb.total_amount || cb.prorated_amount || 0;
+                    htmlContent += `<div class="sp-employer-row"><span>${cb.component_name}</span><span>${currencySymbol} ${formatAmt(amount)}</span></div>`;
+                });
+                htmlContent += `</div>`;
+            }
+        }
+
+        htmlContent += `</div>`;
 
         await InfoModal.show({
             title: 'Salary Preview',
             message: htmlContent,
             type: 'success',
-            html: true
+            html: true,
+            maxWidth: '720px'
         });
         hideLoading();
     } catch (error) {

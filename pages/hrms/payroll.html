@@ -1437,10 +1437,14 @@
                                 <input type="text" id="structureCode" name="code" class="form-control" required placeholder="e.g., STD">
                             </div>
                         </div>
-                        <div class="form-row two-col">
+                        <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="structureDescription">Description</label>
                                 <textarea id="structureDescription" name="description" class="form-control" rows="1"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="structureEffectiveFrom">Effective From *</label>
+                                <input type="date" id="structureEffectiveFrom" name="effective_from" class="form-control" required>
                             </div>
                             <div class="form-group">
                                 <label for="structureIsDefault">Default for Office</label>
@@ -2110,6 +2114,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="newVersionForm">
+                        <!-- Version Meta Fields -->
                         <div class="form-section">
                             <div class="form-row two-col">
                                 <div class="form-group">
@@ -2119,15 +2124,115 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="versionChangeReason">Change Reason</label>
-                                    <input type="text" id="versionChangeReason" name="changeReason" class="form-control" placeholder="e.g., Added Professional Tax">
+                                    <input type="text" id="versionChangeReason" name="changeReason" class="form-control" placeholder="e.g., Annual Increment, Promotion">
                                 </div>
                             </div>
                         </div>
-                        <div class="form-section">
-                            <h3>Components</h3>
-                            <p class="text-muted">Select components and set their values for this version</p>
-                            <div class="version-components-list" id="newVersionComponents">
-                                <!-- Dynamically populated -->
+
+                        <!-- Tab Navigation for Version Components -->
+                        <div class="structure-tabs">
+                            <button type="button" class="structure-tab active" data-tab="version-components" onclick="switchVersionTab('version-components')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                Components
+                            </button>
+                            <button type="button" class="structure-tab" data-tab="version-statutory" onclick="switchVersionTab('version-statutory')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                Auto-Attached
+                                <span class="statutory-count-badge" id="versionStatutoryCountBadge">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Tab Content: Components -->
+                        <div class="structure-tab-content active" id="tab-version-components">
+                            <!-- Version Summary (like structure summary) -->
+                            <div class="structure-summary-compact" id="versionSummary" style="display: none;">
+                                <div class="summary-metrics">
+                                    <div class="metric gross">
+                                        <span class="metric-value" id="versionTotalGrossCtc">0%</span>
+                                        <span class="metric-label">Gross</span>
+                                    </div>
+                                    <div class="metric-divider">+</div>
+                                    <div class="metric balance" id="versionBalanceMetric">
+                                        <span class="metric-value" id="versionBalanceWillFill">0%</span>
+                                        <span class="metric-label" id="versionBalanceComponentName">Auto-Balance</span>
+                                    </div>
+                                    <div class="metric-divider">=</div>
+                                    <div class="metric total">
+                                        <span class="metric-value">100%</span>
+                                        <span class="metric-label">CTC</span>
+                                    </div>
+                                    <div class="metric-separator"></div>
+                                    <div class="metric deductions">
+                                        <span class="metric-value" id="versionDeductionsTotal">0%</span>
+                                        <span class="metric-label">Deductions</span>
+                                    </div>
+                                </div>
+                                <div class="summary-note" id="versionBalanceNote"></div>
+                            </div>
+
+                            <!-- User-configurable Components -->
+                            <div class="components-header">
+                                <span class="components-title">Salary Components</span>
+                                <button type="button" class="btn-add-component" onclick="addVersionComponent()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Component
+                                </button>
+                            </div>
+                            <div class="components-list" id="versionComponents">
+                                <!-- Dynamically populated with searchable dropdowns -->
+                            </div>
+                            <div class="components-empty-state" id="versionComponentsEmptyState">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                <p>No components added yet</p>
+                                <span>Click "Add Component" to add earnings and deductions to this version</span>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content: Auto-Attached (Statutory) -->
+                        <div class="structure-tab-content" id="tab-version-statutory">
+                            <div class="statutory-info-note compact">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>Auto-attached based on office location. Cannot be modified.</span>
+                            </div>
+
+                            <div class="statutory-compact-sections">
+                                <!-- Employee Deductions -->
+                                <div class="statutory-compact-section">
+                                    <div class="statutory-compact-header deduction">
+                                        <span class="statutory-compact-label">Employee Deductions</span>
+                                        <span class="statutory-compact-count" id="versionDeductionCount">0</span>
+                                    </div>
+                                    <div id="versionStatutoryDeductionsContainer"></div>
+                                </div>
+
+                                <!-- Employer Contributions -->
+                                <div class="statutory-compact-section">
+                                    <div class="statutory-compact-header employer">
+                                        <span class="statutory-compact-label">Employer Contributions</span>
+                                        <span class="statutory-compact-count" id="versionContributionCount">0</span>
+                                    </div>
+                                    <div id="versionStatutoryContributionsContainer"></div>
+                                </div>
                             </div>
                         </div>
                     </form>

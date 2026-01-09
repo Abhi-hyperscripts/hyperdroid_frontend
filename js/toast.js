@@ -897,7 +897,7 @@ const InfoModal = (() => {
         danger: '<svg class="info-modal-icon danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
     };
 
-    function show({ title = 'Information', message = '', type = 'info', buttonText = 'OK', html = false } = {}) {
+    function show({ title = 'Information', message = '', type = 'info', buttonText = 'OK', html = false, maxWidth = null } = {}) {
         return new Promise((resolve) => {
             injectStyles();
 
@@ -911,11 +911,13 @@ const InfoModal = (() => {
             const bodyContent = html ? message : escapeHtml(message);
             // When using HTML content, don't use the monospace font class
             const contentClass = html ? 'info-modal-content info-modal-html-content' : 'info-modal-content';
+            // Custom max-width if provided
+            const modalStyle = maxWidth ? `style="max-width: ${maxWidth};"` : '';
 
             const overlay = document.createElement('div');
             overlay.className = 'info-modal-overlay';
             overlay.innerHTML = `
-                <div class="info-modal">
+                <div class="info-modal" ${modalStyle}>
                     <div class="info-modal-header">
                         ${icons[type] || icons.info}
                         <h3 class="info-modal-title">${title}</h3>

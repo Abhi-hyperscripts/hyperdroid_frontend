@@ -189,16 +189,29 @@
     background: var(--info-alpha-10);
 }
 
+.version-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.version-cell strong {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
 .badge-current {
-    display: inline-block;
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
     background: var(--color-success);
     color: var(--text-inverse);
     border-radius: 12px;
     font-size: 10px;
     font-weight: 600;
-    margin-left: 8px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* =============================================================
@@ -284,6 +297,72 @@
 .form-control-sm {
     padding: 6px 10px;
     font-size: 13px;
+}
+
+/* =============================================================
+   VERSION MODAL - STATUTORY SECTION (Read-Only)
+   ============================================================= */
+.version-statutory-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-primary);
+}
+
+.version-statutory-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.version-statutory-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.version-statutory-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+.version-statutory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.version-statutory-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border: 1px solid var(--border-secondary);
+    opacity: 0.8;
+}
+
+.version-statutory-code {
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.version-statutory-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.version-no-components {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-style: italic;
 }
 
 /* =============================================================
@@ -1704,4 +1783,71 @@
         flex-direction: column;
         gap: 8px;
     }
+}
+
+/* =============================================================
+   SEARCHABLE DROPDOWN HEIGHT FIX - COMPONENT ROW CONSISTENCY
+   Ensures dropdown matches adjacent select/input heights in modals
+   ============================================================= */
+
+/* Fix dropdown trigger height to match form controls in structure/version modals */
+.modal-body .structure-component-row .searchable-dropdown .dropdown-trigger,
+.modal .structure-component-row .searchable-dropdown .dropdown-trigger,
+#structureComponents .searchable-dropdown .dropdown-trigger,
+#versionComponents .searchable-dropdown .dropdown-trigger {
+    min-height: 28px !important;
+    height: 28px !important;
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    border-radius: 4px !important;
+}
+
+/* Ensure dropdown selected text matches */
+.modal-body .structure-component-row .searchable-dropdown .dropdown-selected-text,
+.modal .structure-component-row .searchable-dropdown .dropdown-selected-text,
+#structureComponents .searchable-dropdown .dropdown-selected-text,
+#versionComponents .searchable-dropdown .dropdown-selected-text {
+    font-size: 0.75rem !important;
+    line-height: 1.4 !important;
+}
+
+/* Fix dropdown arrow size */
+.modal-body .structure-component-row .searchable-dropdown .dropdown-arrow,
+.modal .structure-component-row .searchable-dropdown .dropdown-arrow,
+#structureComponents .searchable-dropdown .dropdown-arrow,
+#versionComponents .searchable-dropdown .dropdown-arrow {
+    width: 10px !important;
+    height: 10px !important;
+}
+
+/* Ensure consistent vertical alignment in component rows */
+.modal-body .structure-component-row .component-row,
+.modal .structure-component-row .component-row {
+    align-items: center !important;
+}
+
+/* Fix calc-type select height to match (should already be 28px but reinforce) */
+.modal-body .structure-component-row .calc-type-select,
+.modal .structure-component-row .calc-type-select {
+    height: 28px !important;
+    min-height: 28px !important;
+}
+
+/* Fix value input height to match */
+.modal-body .structure-component-row .percentage-value,
+.modal-body .structure-component-row .fixed-value,
+.modal .structure-component-row .percentage-value,
+.modal .structure-component-row .fixed-value {
+    height: 28px !important;
+    min-height: 28px !important;
+}
+
+/* Fix delete button height to align */
+.modal-body .structure-component-row .btn-danger.btn-sm,
+.modal .structure-component-row .btn-danger.btn-sm {
+    height: 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    padding: 4px !important;
 }

@@ -11401,10 +11401,11 @@ tr.immutable-row:hover {
     flex-wrap: wrap;
     gap: 16px;
     padding: 16px 20px;
-    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
-    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     margin-bottom: 20px;
+    box-shadow: var(--shadow-md);
 }
 
 .ctc-summary-item {
@@ -11412,11 +11413,18 @@ tr.immutable-row:hover {
     flex-direction: column;
     gap: 4px;
     padding: 12px 16px;
-    background: var(--bg-secondary);
+    background: var(--bg-card);
     border-radius: 8px;
-    border: 1px solid var(--border-secondary);
+    border: 1px solid var(--border-color);
     min-width: 180px;
     flex: 1;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ctc-summary-item:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .ctc-summary-item.included-in-ctc {
@@ -11466,17 +11474,18 @@ tr.immutable-row:hover {
 
 /* Individual Statutory Card - Cleaner design */
 .statutory-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 5%, transparent);
+    box-shadow: var(--shadow-md);
 }
 
 .statutory-card:hover {
     border-color: var(--brand-primary);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 10%, transparent);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
 }
 
 /* Card Header - Simplified */
@@ -11703,13 +11712,32 @@ tr.immutable-row:hover {
 
 /* Dark Theme - CTC Summary */
 [data-theme="dark"] .ctc-summary-banner {
-    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
-    border-color: var(--border-primary);
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .ctc-summary-item {
-    background: var(--bg-primary);
-    border-color: var(--border-primary);
+    background: var(--bg-elevated);
+    border-color: var(--border-color-light);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .ctc-summary-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Dark mode - brighter left border colors for visibility */
+[data-theme="dark"] .ctc-summary-item.included-in-ctc {
+    border-left: 4px solid #4ade80;  /* Brighter green */
+}
+
+[data-theme="dark"] .ctc-summary-item.org-overhead {
+    border-left: 4px solid #60a5fa;  /* Brighter blue */
+}
+
+[data-theme="dark"] .ctc-summary-item.employee-deductions {
+    border-left: 4px solid #fbbf24;  /* Brighter amber */
 }
 
 [data-theme="dark"] .ctc-summary-label {
@@ -11741,13 +11769,14 @@ tr.immutable-row:hover {
 }
 
 [data-theme="dark"] .statutory-card {
-    background: var(--bg-secondary);
-    border-color: var(--border-primary);
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .statutory-card:hover {
     border-color: var(--brand-primary);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .statutory-card-header {
@@ -15148,9 +15177,11 @@ tr.immutable-row:hover {
     display: flex;
     gap: 4px;
     padding: 4px;
-    background: var(--bg-tertiary);
+    background: var(--bg-input-disabled);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
 }
 
 .structure-tab {
@@ -15176,9 +15207,10 @@ tr.immutable-row:hover {
 }
 
 .structure-tab.active {
-    background: var(--bg-primary);
+    background: var(--bg-card);
     color: var(--brand-primary);
-    box-shadow: 0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.1));
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
 }
 
 .structure-tab svg {
@@ -15199,8 +15231,8 @@ tr.immutable-row:hover {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: var(--bg-hover);
-    color: var(--text-secondary);
+    background: var(--brand-primary-subtle, rgba(99, 102, 241, 0.15));
+    color: var(--brand-primary);
     font-size: 11px;
     font-weight: 600;
     border-radius: 10px;
@@ -15434,19 +15466,22 @@ tr.immutable-row:hover {
 
 /* Dark theme adjustments */
 [data-theme="dark"] .structure-tabs {
-    background: var(--bg-secondary);
+    background: var(--bg-sunken);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .structure-tab.active {
-    background: var(--bg-tertiary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .statutory-section-tabbed {
-    background: var(--bg-tertiary);
+    background: var(--bg-sunken);
 }
 
 [data-theme="dark"] .statutory-item-card {
-    background: var(--bg-secondary);
+    background: var(--bg-card-hover);
 }
 
 /* =========================================
