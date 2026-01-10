@@ -18971,14 +18971,17 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .cfg-tax-non-levy-notice {
-    padding: 12px 16px;
-    margin: 12px;
+    padding: 14px 16px;
+    margin: 10px 12px;
     background: var(--bg-tertiary);
     border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    border-left: 4px solid var(--text-tertiary);
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
     font-style: italic;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cfg-tax-row-arrow {
@@ -19079,28 +19082,32 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 /* Override Boxes */
 .cfg-tax-override-box {
-    padding: 12px;
-    margin: 8px 12px;
-    background: var(--bg-card);
-    border-radius: 6px;
-    border-left: 3px solid var(--color-warning, #f59e0b);
+    padding: 14px 16px;
+    margin: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-primary);
+    border-left: 4px solid var(--color-warning, #f59e0b);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cfg-tax-override-header {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--color-warning, #f59e0b);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border-secondary);
 }
 
 .cfg-tax-override-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
-    font-size: 12px;
+    padding: 6px 0;
+    font-size: 13px;
 }
 
 .cfg-tax-override-row span {
@@ -19109,6 +19116,7 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 .cfg-tax-override-row strong {
     color: var(--text-primary);
+    font-weight: 600;
 }
 
 /* Row Meta */
