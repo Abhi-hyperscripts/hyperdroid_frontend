@@ -1921,8 +1921,10 @@ function renderJurisdictionsListSection(jurisdictions) {
                 ${items.map(j => `
                     <div class="cfg-jurisdiction-card-v2">
                         <span class="cfg-jurisdiction-code">${escapeHtml(j.code)}</span>
-                        <span class="cfg-jurisdiction-name">${escapeHtml(j.name)}</span>
-                        ${j.parent_code ? `<span class="cfg-jurisdiction-parent">Parent: ${escapeHtml(j.parent_code)}</span>` : ''}
+                        <div class="cfg-jurisdiction-info">
+                            <span class="cfg-jurisdiction-name">${escapeHtml(j.name)}</span>
+                            ${j.parent_code ? `<span class="cfg-jurisdiction-parent">Parent: ${escapeHtml(j.parent_code)}</span>` : ''}
+                        </div>
                     </div>
                 `).join('')}
             </div>
