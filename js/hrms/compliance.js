@@ -1037,48 +1037,152 @@ function renderOverviewSection(config, configData) {
     const effectiveFrom = config.effectiveFrom || config.effective_from || configData.effective_period?.from;
     const effectiveTo = config.effectiveTo || config.effective_to || configData.effective_period?.to;
     const currency = configData.country?.currency;
+    const fiscalYear = configData.country?.fiscal_year;
 
-    // Count sections for summary
-    const sectionCount = [
-        configData.tax_system, configData.social_contributions, configData.regional_taxes,
-        configData.jurisdiction_resolution, configData.deduction_order, configData.ytd_tracking
-    ].filter(Boolean).length;
+    // Count various items for statistics
+    const jurisdictionCount = configData.jurisdiction_data ? Object.values(configData.jurisdiction_data).flat().length : 0;
+    const stateCount = configData.states ? configData.states.length : 0;
+    const componentCount = configData.component_categories ? Object.keys(configData.component_categories).length : 0;
+    const taxRegimeCount = configData.tax_regimes ? Object.keys(configData.tax_regimes).length : 0;
+
+    // Get compliance categories
+    const complianceCategories = [];
+    if (configData.component_categories) {
+        Object.entries(configData.component_categories).forEach(([key, cat]) => {
+            if (cat.display_name) complianceCategories.push(cat.display_name);
+        });
+    }
+
+    // Build configuration highlights
+    const highlights = [];
+    if (configData.tax_regimes) highlights.push({ icon: '📊', label: 'Income Tax', desc: `${taxRegimeCount} tax regime${taxRegimeCount !== 1 ? 's' : ''}` });
+    if (configData.component_categories) highlights.push({ icon: '📋', label: 'Statutory Components', desc: `${componentCount} categor${componentCount !== 1 ? 'ies' : 'y'}` });
+    if (configData.jurisdiction_data) highlights.push({ icon: '🗺️', label: 'Regional Rules', desc: `${jurisdictionCount} jurisdiction${jurisdictionCount !== 1 ? 's' : ''}` });
+    if (configData.states && stateCount > 0) highlights.push({ icon: '🏛️', label: 'States/Regions', desc: `${stateCount} state${stateCount !== 1 ? 's' : ''}` });
+    if (configData.eligibility_constraints) highlights.push({ icon: '✓', label: 'Eligibility Rules', desc: 'Configured' });
+    if (configData.deduction_order) highlights.push({ icon: '📑', label: 'Deduction Priority', desc: 'Configured' });
+    if (configData.compliance_calendar) highlights.push({ icon: '📅', label: 'Compliance Calendar', desc: 'Configured' });
+    if (configData.legal_references) highlights.push({ icon: '⚖️', label: 'Legal References', desc: 'Documented' });
 
     return `
-        <div class="cfg-overview">
-            <div class="cfg-header-card">
-                <div class="cfg-country-badge">${countryCode}</div>
-                <div class="cfg-header-info">
-                    <h3 class="cfg-title">${escapeHtml(countryName)}</h3>
-                    <span class="cfg-version">v${escapeHtml(version)}</span>
+        <div class="cfg-overview-v2">
+            <!-- Hero Section -->
+            <div class="cfg-hero">
+                <div class="cfg-hero-left">
+                    <div class="cfg-hero-badge">${getCountryFlag(countryCode)}</div>
+                    <div class="cfg-hero-info">
+                        <h2 class="cfg-hero-title">${escapeHtml(countryName)}</h2>
+                        <div class="cfg-hero-meta">
+                            <span class="cfg-hero-code">${escapeHtml(countryCode)}</span>
+                            <span class="cfg-hero-version">v${escapeHtml(version)}</span>
+                            <span class="cfg-hero-status">Active</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cfg-hero-right">
+                    ${currency ? `
+                    <div class="cfg-hero-currency">
+                        <span class="cfg-currency-symbol">${escapeHtml(currency.symbol || '')}</span>
+                        <span class="cfg-currency-code">${escapeHtml(currency.code || '')}</span>
+                    </div>` : ''}
                 </div>
             </div>
-            <div class="cfg-stats-grid">
-                <div class="cfg-stat">
-                    <span class="cfg-stat-value">${formatDate(effectiveFrom) || '-'}</span>
-                    <span class="cfg-stat-label">Effective From</span>
+
+            <!-- Key Info Cards -->
+            <div class="cfg-info-cards">
+                <div class="cfg-info-card">
+                    <div class="cfg-info-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="cfg-info-content">
+                        <span class="cfg-info-label">Effective Period</span>
+                        <span class="cfg-info-value">${formatDate(effectiveFrom) || '-'}</span>
+                        <span class="cfg-info-sub">${effectiveTo ? `to ${formatDate(effectiveTo)}` : 'Currently Active'}</span>
+                    </div>
                 </div>
-                <div class="cfg-stat">
-                    <span class="cfg-stat-value">${effectiveTo ? formatDate(effectiveTo) : 'Current'}</span>
-                    <span class="cfg-stat-label">Effective To</span>
+
+                <div class="cfg-info-card">
+                    <div class="cfg-info-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div class="cfg-info-content">
+                        <span class="cfg-info-label">Fiscal Year</span>
+                        <span class="cfg-info-value">${fiscalYear ? getMonthName(fiscalYear.start_month) : '-'}</span>
+                        <span class="cfg-info-sub">${fiscalYear ? `Starts ${fiscalYear.start_day || 1}` : 'Not configured'}</span>
+                    </div>
                 </div>
-                ${currency ? `
-                <div class="cfg-stat">
-                    <span class="cfg-stat-value">${escapeHtml(currency.symbol || '')} ${escapeHtml(currency.code || '')}</span>
-                    <span class="cfg-stat-label">Currency</span>
-                </div>` : ''}
-                <div class="cfg-stat">
-                    <span class="cfg-stat-value">${sectionCount}</span>
-                    <span class="cfg-stat-label">Config Sections</span>
+
+                <div class="cfg-info-card">
+                    <div class="cfg-info-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div class="cfg-info-content">
+                        <span class="cfg-info-label">Configuration</span>
+                        <span class="cfg-info-value">${highlights.length} Sections</span>
+                        <span class="cfg-info-sub">Fully configured</span>
+                    </div>
                 </div>
             </div>
-            ${configData.country?.fiscal_year ? `
-            <div class="cfg-fiscal">
-                <span class="cfg-fiscal-label">Fiscal Year:</span>
-                <span class="cfg-fiscal-value">Starts ${getMonthName(configData.country.fiscal_year.start_month)} ${configData.country.fiscal_year.start_day || 1}</span>
+
+            <!-- Configuration Highlights -->
+            ${highlights.length > 0 ? `
+            <div class="cfg-highlights-section">
+                <h4 class="cfg-section-title">Configuration Highlights</h4>
+                <div class="cfg-highlights-grid">
+                    ${highlights.map(h => `
+                        <div class="cfg-highlight-card">
+                            <span class="cfg-highlight-icon">${h.icon}</span>
+                            <div class="cfg-highlight-content">
+                                <span class="cfg-highlight-label">${h.label}</span>
+                                <span class="cfg-highlight-desc">${h.desc}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>` : ''}
+
+            <!-- Compliance Categories -->
+            ${complianceCategories.length > 0 ? `
+            <div class="cfg-categories-section">
+                <h4 class="cfg-section-title">Statutory Compliance Categories</h4>
+                <div class="cfg-categories-list">
+                    ${complianceCategories.map(cat => `<span class="cfg-category-tag">${escapeHtml(cat)}</span>`).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- Quick Summary -->
+            <div class="cfg-summary-section">
+                <h4 class="cfg-section-title">Quick Summary</h4>
+                <p class="cfg-summary-text">
+                    This configuration contains statutory compliance rules for <strong>${escapeHtml(countryName)}</strong>,
+                    effective from <strong>${formatDate(effectiveFrom) || 'N/A'}</strong>.
+                    ${jurisdictionCount > 0 ? ` It includes <strong>${jurisdictionCount}</strong> jurisdiction-specific rules` : ''}
+                    ${stateCount > 0 ? ` across <strong>${stateCount}</strong> states/regions` : ''}.
+                    ${taxRegimeCount > 0 ? ` <strong>${taxRegimeCount}</strong> tax regime${taxRegimeCount !== 1 ? 's are' : ' is'} configured for income tax calculations.` : ''}
+                </p>
+            </div>
         </div>
     `;
+}
+
+// Helper to get country flag emoji
+function getCountryFlag(countryCode) {
+    if (!countryCode || countryCode.length !== 2) return '🌐';
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
 }
 
 function renderCountrySection(country) {

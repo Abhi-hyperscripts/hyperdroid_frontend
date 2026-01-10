@@ -14356,7 +14356,288 @@ tr.immutable-row:hover {
     font-size: 11px;
 }
 
-/* Overview Section */
+/* Overview Section V2 - Enhanced Design */
+.cfg-overview-v2 {
+    padding: 0;
+}
+
+.cfg-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.cfg-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.cfg-hero-badge {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    font-size: 36px;
+    backdrop-filter: blur(10px);
+}
+
+.cfg-hero-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cfg-hero-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+.cfg-hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cfg-hero-code {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    font-family: monospace;
+}
+
+.cfg-hero-version {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.cfg-hero-status {
+    padding: 2px 10px;
+    background: rgba(34, 197, 94, 0.9);
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-hero-right {
+    display: flex;
+    align-items: center;
+}
+
+.cfg-hero-currency {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.cfg-currency-symbol {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+}
+
+.cfg-currency-code {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* Info Cards */
+.cfg-info-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cfg-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.cfg-info-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cfg-info-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cfg-info-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-inverse);
+}
+
+.cfg-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.cfg-info-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-info-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.cfg-info-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Configuration Highlights */
+.cfg-highlights-section {
+    margin-bottom: 24px;
+}
+
+.cfg-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.cfg-highlight-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.cfg-highlight-card:hover {
+    background: var(--bg-hover);
+}
+
+.cfg-highlight-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.cfg-highlight-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.cfg-highlight-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-highlight-desc {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+/* Categories Section */
+.cfg-categories-section {
+    margin-bottom: 24px;
+}
+
+.cfg-categories-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cfg-category-tag {
+    padding: 6px 12px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Summary Section */
+.cfg-summary-section {
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    border-left: 4px solid var(--brand-primary);
+}
+
+.cfg-summary-section .cfg-section-title {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 8px;
+}
+
+.cfg-summary-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.cfg-summary-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Legacy Overview Section (keep for backward compat) */
 .cfg-overview {
     padding: 16px;
 }
