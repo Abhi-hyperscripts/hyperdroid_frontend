@@ -974,7 +974,7 @@ function renderConfigSection(sectionId, config, configData) {
             html = renderStatutoryChargesSection(configData.statutory_charges, configData);
             break;
         case 'jurisdiction_data':
-            html = renderJurisdictionDataSection(configData.jurisdiction_data);
+            html = renderJurisdictionDataSection(configData.jurisdiction_data, configData.jurisdictions);
             break;
         case 'tax_regimes':
             html = renderTaxRegimesSection(configData);
@@ -2620,9 +2620,19 @@ function renderCessSection(cess) {
     `;
 }
 
-function renderJurisdictionDataSection(jurisdictionData) {
+function renderJurisdictionDataSection(jurisdictionData, jurisdictions) {
     if (!jurisdictionData || Object.keys(jurisdictionData).length === 0) {
         return '<div class="cfg-empty">No jurisdiction-specific data</div>';
+    }
+
+    // Build jurisdiction name lookup map (code -> name)
+    const jurisdictionNameMap = {};
+    if (Array.isArray(jurisdictions)) {
+        jurisdictions.forEach(j => {
+            if (j.code && j.name) {
+                jurisdictionNameMap[j.code] = j.name;
+            }
+        });
     }
 
     // Group by charge_code (tax type from config)
@@ -2630,7 +2640,9 @@ function renderJurisdictionDataSection(jurisdictionData) {
     Object.entries(jurisdictionData).forEach(([key, data]) => {
         const charge = data.charge_code || 'Unknown';
         if (!byCharge[charge]) byCharge[charge] = [];
-        byCharge[charge].push({ key, ...data });
+        // Add jurisdiction name to each item
+        const jurisdictionName = jurisdictionNameMap[data.jurisdiction_code] || '';
+        byCharge[charge].push({ key, ...data, _jurisdictionName: jurisdictionName });
     });
 
     // Calculate stats
@@ -2809,12 +2821,14 @@ function renderRegionalTaxCard(jd) {
     const isNonLevy = jd.levy_status === 'non_levy';
     const cardId = `tax-card-${jd.key.replace(/[^a-zA-Z0-9]/g, '-')}`;
     const rateSummary = getRateSummary(jd);
+    const jurisdictionName = jd._jurisdictionName || '';
 
     return `
     <div class="cfg-tax-row" id="${cardId}">
         <div class="cfg-tax-row-header" onclick="toggleRegionalRow('${cardId}')">
             <div class="cfg-tax-row-left">
                 <span class="cfg-tax-row-code">${escapeHtml(jd.jurisdiction_code)}</span>
+                ${jurisdictionName ? `<span class="cfg-tax-row-name">${escapeHtml(jurisdictionName)}</span>` : ''}
                 <span class="cfg-tax-row-summary">${rateSummary}</span>
             </div>
             <div class="cfg-tax-row-right">
