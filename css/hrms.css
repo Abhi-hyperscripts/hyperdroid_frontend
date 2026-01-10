@@ -17696,3 +17696,537 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 [data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
 }
+
+/* ============================================
+   Country Tab V2 - Enhanced Design
+   ============================================ */
+.cfg-country-v2 {
+    padding: 0;
+}
+
+.cfg-country-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.cfg-country-flag {
+    font-size: 56px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.cfg-country-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfg-country-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cfg-country-code-badge {
+    display: inline-flex;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    font-family: monospace;
+    letter-spacing: 1px;
+    width: fit-content;
+}
+
+.cfg-country-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.cfg-country-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.cfg-country-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.cfg-country-card-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cfg-country-card-icon svg {
+    width: 22px;
+    height: 22px;
+    color: var(--text-inverse);
+}
+
+.cfg-country-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cfg-country-card-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-country-card-value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.cfg-currency-large {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.cfg-currency-code {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cfg-fiscal-month {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.cfg-region-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-country-card-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   Effective Period Tab V2 - Timeline Design
+   ============================================ */
+.cfg-period-v2 {
+    padding: 0;
+}
+
+.cfg-period-timeline {
+    display: flex;
+    align-items: center;
+    padding: 30px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.cfg-period-point {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.cfg-period-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.cfg-period-dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+.cfg-period-pulse {
+    animation: periodPulse 2s ease-in-out infinite;
+}
+
+@keyframes periodPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--brand-primary-rgb, 79, 70, 229), 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(var(--brand-primary-rgb, 79, 70, 229), 0); }
+}
+
+.cfg-period-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cfg-period-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-period-date {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.cfg-period-status {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.cfg-period-line {
+    flex: 0 0 100px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    border-radius: 2px;
+    margin: 0 10px;
+}
+
+.cfg-period-ongoing {
+    background: linear-gradient(90deg, var(--brand-primary) 0%, var(--color-success) 100%);
+}
+
+.cfg-period-current .cfg-period-dot {
+    background: var(--color-success);
+}
+
+.cfg-period-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 10px;
+}
+
+.cfg-period-active {
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.cfg-period-ended {
+    background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 20%, transparent);
+}
+
+.cfg-period-status-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
+.cfg-period-active .cfg-period-status-icon {
+    background: var(--color-success);
+}
+
+.cfg-period-active .cfg-period-status-icon svg {
+    color: white;
+    width: 20px;
+    height: 20px;
+}
+
+.cfg-period-ended .cfg-period-status-icon {
+    background: var(--text-secondary);
+}
+
+.cfg-period-ended .cfg-period-status-icon svg {
+    color: white;
+    width: 20px;
+    height: 20px;
+}
+
+.cfg-period-status-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-period-status-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-period-status-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   Establishments Tab V2 - Card Design
+   ============================================ */
+.cfg-establishments-v2 {
+    padding: 0;
+}
+
+.cfg-section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.cfg-section-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+}
+
+.cfg-section-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.cfg-section-info h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 4px 0;
+}
+
+.cfg-section-info p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.cfg-establishments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.cfg-est-card-v2 {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.cfg-est-card-v2:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.cfg-est-header-v2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-est-badge {
+    padding: 4px 10px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.cfg-est-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.cfg-est-body-v2 {
+    padding: 16px;
+}
+
+.cfg-est-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfg-est-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.cfg-est-meta-item svg {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+.cfg-est-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-est-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 10px 0;
+}
+
+.cfg-est-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cfg-est-tag {
+    padding: 4px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.cfg-tag-yes {
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success);
+}
+
+.cfg-tag-no {
+    background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   Jurisdictions Tab V2 - Grid Design
+   ============================================ */
+.cfg-jurisdictions-v2 {
+    padding: 0;
+}
+
+.cfg-jurisdiction-group {
+    margin-bottom: 20px;
+}
+
+.cfg-jurisdiction-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.cfg-jurisdiction-level-icon {
+    font-size: 20px;
+}
+
+.cfg-jurisdiction-group-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    flex: 1;
+}
+
+.cfg-jurisdiction-count {
+    padding: 2px 10px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cfg-jurisdiction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.cfg-jurisdiction-card-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.cfg-jurisdiction-card-v2:hover {
+    border-color: var(--brand-primary);
+    background: var(--bg-hover);
+}
+
+.cfg-jurisdiction-card-v2 .cfg-jurisdiction-code {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-primary);
+    font-family: monospace;
+}
+
+.cfg-jurisdiction-card-v2 .cfg-jurisdiction-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cfg-jurisdiction-card-v2 .cfg-jurisdiction-parent {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
