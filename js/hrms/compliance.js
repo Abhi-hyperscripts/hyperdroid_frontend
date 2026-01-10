@@ -1605,6 +1605,20 @@ function formatLabel(str) {
         .replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// Generic tax type icons - no country-specific logic, uses category from config or generic icons
+function getTaxTypeIcon(category) {
+    // Generic icons based on broad categories that work for any country
+    const icons = {
+        'retirement': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>`,
+        'insurance': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+        'tax': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+        'benefit': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z"/></svg>`,
+        'welfare': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+        'default': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`
+    };
+    return icons[category] || icons.default;
+}
+
 // ==================== Comprehensive Section Renderers (v3.1.0) ====================
 // These render EVERY detail from GlobalStatutorySchema for Lawyer/CA/Government viewing
 
@@ -2611,10 +2625,7 @@ function renderJurisdictionDataSection(jurisdictionData) {
         return '<div class="cfg-empty">No jurisdiction-specific data</div>';
     }
 
-    let html = '<div class="cfg-section">';
-    html += `<div class="cfg-count-badge">${Object.keys(jurisdictionData).length} Jurisdiction Data Entries</div>`;
-
-    // Group by charge_code
+    // Group by charge_code (tax type from config)
     const byCharge = {};
     Object.entries(jurisdictionData).forEach(([key, data]) => {
         const charge = data.charge_code || 'Unknown';
@@ -2622,79 +2633,334 @@ function renderJurisdictionDataSection(jurisdictionData) {
         byCharge[charge].push({ key, ...data });
     });
 
-    Object.entries(byCharge).forEach(([chargeCode, items]) => {
+    // Calculate stats
+    const totalEntries = Object.keys(jurisdictionData).length;
+    const taxTypes = Object.keys(byCharge).length;
+    const countryLevel = Object.values(jurisdictionData).filter(d => d.jurisdiction_level === 'country').length;
+    const regionalLevel = totalEntries - countryLevel;
+
+    let html = `
+    <div class="cfg-regional-tax-v3">
+        <!-- Compact Stats -->
+        <div class="cfg-tax-stats-bar">
+            <div class="cfg-tax-stat-chip">
+                <span class="cfg-tax-stat-num">${taxTypes}</span>
+                <span class="cfg-tax-stat-text">Tax Types</span>
+            </div>
+            <div class="cfg-tax-stat-chip">
+                <span class="cfg-tax-stat-num">${countryLevel}</span>
+                <span class="cfg-tax-stat-text">Country</span>
+            </div>
+            <div class="cfg-tax-stat-chip">
+                <span class="cfg-tax-stat-num">${regionalLevel}</span>
+                <span class="cfg-tax-stat-text">Regional</span>
+            </div>
+        </div>
+
+        <!-- Tax Type Sections -->
+        <div class="cfg-tax-sections">`;
+
+    Object.entries(byCharge).forEach(([chargeCode, items], index) => {
+        // Separate country-level from regional entries
+        const countryItems = items.filter(i => i.jurisdiction_level === 'country');
+        const regionalItems = items.filter(i => i.jurisdiction_level !== 'country');
+        const hasSlabs = items.some(i => i.slabs?.length > 0);
+        const hasOverrides = items.some(i => i.period_overrides || i.eligibility_overrides || i.period_behavior_override);
+
         html += `
-        <div class="cfg-subsection">
-            <h4>${formatLabel(chargeCode)} (${items.length} entries)</h4>
-            <div class="cfg-jurisdiction-data-grid">`;
-
-        items.forEach(jd => {
-            html += `
-            <div class="cfg-jurisdiction-data-card">
-                <div class="cfg-jd-header">
-                    <span class="cfg-jd-key">${escapeHtml(jd.jurisdiction_code)} (${formatLabel(jd.jurisdiction_level)})</span>
+        <div class="cfg-tax-accordion" data-expanded="${index === 0 ? 'true' : 'false'}">
+            <div class="cfg-tax-accordion-header" onclick="toggleTaxAccordion(this)">
+                <div class="cfg-tax-accordion-left">
+                    <div class="cfg-tax-accordion-icon">${getTaxTypeIcon('default')}</div>
+                    <div class="cfg-tax-accordion-title">
+                        <span class="cfg-tax-name">${escapeHtml(formatLabel(chargeCode))}</span>
+                        <span class="cfg-tax-count">${items.length} ${items.length === 1 ? 'entry' : 'entries'}</span>
+                    </div>
                 </div>
-                <div class="cfg-jd-body">
-                    <div class="cfg-field"><label>Country</label><span>${escapeHtml(jd.country_code)}</span></div>
-                    <div class="cfg-field"><label>Effective From</label><span>${formatDate(jd.effective_from) || '-'}</span></div>
-                    ${jd.employee_rate_percent !== undefined ? `<div class="cfg-field"><label>Employee Rate</label><span class="cfg-rate">${jd.employee_rate_percent}%</span></div>` : ''}
-                    ${jd.employer_rate_percent !== undefined ? `<div class="cfg-field"><label>Employer Rate</label><span class="cfg-rate">${jd.employer_rate_percent}%</span></div>` : ''}
-                    ${jd.rate_percent !== undefined ? `<div class="cfg-field"><label>Rate</label><span class="cfg-rate">${jd.rate_percent}%</span></div>` : ''}
-
-                    <!-- Slabs (for PT, TDS, etc.) -->
-                    ${jd.slabs?.length ? `
-                    <div class="cfg-slabs-section">
-                        <h6>Slabs (${jd.slabs.length})</h6>
-                        <table class="cfg-mini-table">
-                            <thead><tr><th>From</th><th>To</th><th>Fixed Amount</th><th>Rate %</th></tr></thead>
-                            <tbody>
-                                ${jd.slabs.map(s => `
-                                    <tr>
-                                        <td>${formatCurrency(s.from)}</td>
-                                        <td>${s.to !== null ? formatCurrency(s.to) : 'No Limit'}</td>
-                                        <td>${s.fixed_amount !== undefined ? formatCurrency(s.fixed_amount) : '-'}</td>
-                                        <td>${s.rate_percent !== undefined ? s.rate_percent + '%' : '-'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>` : ''}
-
-                    <!-- Period Overrides -->
-                    ${jd.period_overrides ? `
-                    <div class="cfg-override-section">
-                        <h6>Period Overrides</h6>
-                        ${jd.period_overrides.applicable_months ? `<div class="cfg-field"><label>Applicable Months</label><span>${jd.period_overrides.applicable_months.map(m => getMonthName(m)).join(', ')}</span></div>` : ''}
-                        ${jd.period_overrides.special_month_amount !== undefined ? `<div class="cfg-field"><label>Special Month Amount</label><span>${formatCurrency(jd.period_overrides.special_month_amount)}</span></div>` : ''}
-                    </div>` : ''}
-
-                    <!-- Eligibility Overrides -->
-                    ${jd.eligibility_overrides ? `
-                    <div class="cfg-override-section">
-                        <h6>Eligibility Overrides</h6>
-                        ${Object.entries(jd.eligibility_overrides).map(([k, v]) => `<div class="cfg-field"><label>${formatLabel(k)}</label><span>${v}</span></div>`).join('')}
-                    </div>` : ''}
-
-                    <!-- Period Behavior Override -->
-                    ${jd.period_behavior_override ? `
-                    <div class="cfg-override-section">
-                        <h6>Period Behavior Override</h6>
-                        <div class="cfg-row-grid">
-                            <div class="cfg-field"><label>Period Basis</label><span>${formatLabel(jd.period_behavior_override.period_basis)}</span></div>
-                            <div class="cfg-field"><label>Proration</label><span>${jd.period_behavior_override.proration_allowed ? 'Yes' : 'No'}</span></div>
-                            <div class="cfg-field"><label>Application Rule</label><span>${formatLabel(jd.period_behavior_override.application_rule)}</span></div>
-                        </div>
-                        ${jd.period_behavior_override.override_reason ? `<div class="cfg-comment">${escapeHtml(jd.period_behavior_override.override_reason)}</div>` : ''}
-                    </div>` : ''}
+                <div class="cfg-tax-accordion-right">
+                    ${hasSlabs ? '<span class="cfg-tax-badge cfg-tax-badge-slabs">Has Slabs</span>' : ''}
+                    ${hasOverrides ? '<span class="cfg-tax-badge cfg-tax-badge-overrides">Has Overrides</span>' : ''}
+                    <svg class="cfg-tax-accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                 </div>
-            </div>`;
-        });
+            </div>
+            <div class="cfg-tax-accordion-content">`;
 
-        html += '</div></div>';
+        // Render country-level items first (usually simpler, flat rates)
+        if (countryItems.length > 0) {
+            html += `<div class="cfg-tax-level-section">
+                <div class="cfg-tax-level-header">
+                    <span class="cfg-tax-level-icon">🌐</span>
+                    <span class="cfg-tax-level-title">Country Level</span>
+                    <span class="cfg-tax-level-count">${countryItems.length}</span>
+                </div>
+                <div class="cfg-tax-country-cards">`;
+
+            countryItems.forEach(jd => {
+                html += renderCountryLevelTaxCard(jd);
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Render regional items (states, provinces, etc. - usually have slabs)
+        if (regionalItems.length > 0) {
+            const withSlabs = regionalItems.filter(i => i.slabs?.length > 0).length;
+
+            html += `<div class="cfg-tax-level-section">
+                <div class="cfg-tax-level-header">
+                    <span class="cfg-tax-level-icon">📍</span>
+                    <span class="cfg-tax-level-title">Regional Level</span>
+                    <span class="cfg-tax-level-count">${regionalItems.length}</span>
+                    ${withSlabs > 0 ? `<span class="cfg-tax-level-info">${withSlabs} with slabs</span>` : ''}
+                </div>
+                <div class="cfg-tax-list">`;
+
+            regionalItems.forEach(jd => {
+                html += renderRegionalTaxCard(jd);
+            });
+
+            html += `</div></div>`;
+        }
+
+        html += `</div></div>`;
     });
 
-    html += '</div>';
+    html += `</div></div>`;
     return html;
+}
+
+// Render country-level tax card (simpler, usually flat rates)
+function renderCountryLevelTaxCard(jd) {
+    const hasRates = jd.employee_rate_percent !== undefined || jd.employer_rate_percent !== undefined || jd.rate_percent !== undefined;
+
+    return `
+    <div class="cfg-tax-country-card">
+        <div class="cfg-tax-country-card-header">
+            <span class="cfg-tax-country-code">${escapeHtml(jd.jurisdiction_code)}</span>
+            <span class="cfg-tax-country-level">${escapeHtml(formatLabel(jd.jurisdiction_level))}</span>
+        </div>
+        <div class="cfg-tax-country-card-body">
+            <div class="cfg-tax-meta">
+                <span>Effective: ${formatDate(jd.effective_from) || '-'}</span>
+            </div>
+            ${hasRates ? `
+            <div class="cfg-tax-rates">
+                ${jd.employee_rate_percent !== undefined ? `
+                <div class="cfg-tax-rate-item">
+                    <span class="cfg-tax-rate-label">Employee</span>
+                    <span class="cfg-tax-rate-value">${jd.employee_rate_percent}%</span>
+                </div>` : ''}
+                ${jd.employer_rate_percent !== undefined ? `
+                <div class="cfg-tax-rate-item">
+                    <span class="cfg-tax-rate-label">Employer</span>
+                    <span class="cfg-tax-rate-value">${jd.employer_rate_percent}%</span>
+                </div>` : ''}
+                ${jd.rate_percent !== undefined ? `
+                <div class="cfg-tax-rate-item">
+                    <span class="cfg-tax-rate-label">Rate</span>
+                    <span class="cfg-tax-rate-value">${jd.rate_percent}%</span>
+                </div>` : ''}
+            </div>` : ''}
+            ${jd.eligibility_overrides ? `
+            <div class="cfg-tax-overrides-mini">
+                ${Object.entries(jd.eligibility_overrides).map(([k, v]) => `
+                <span class="cfg-tax-override-tag">${formatLabel(k)}: ${v}</span>
+                `).join('')}
+            </div>` : ''}
+        </div>
+    </div>`;
+}
+
+// Get rate summary for display in header
+function getRateSummary(jd) {
+    const parts = [];
+    // Percentage rates
+    if (jd.employee_rate_percent !== undefined) parts.push(`Emp: ${jd.employee_rate_percent}%`);
+    if (jd.employer_rate_percent !== undefined) parts.push(`Empr: ${jd.employer_rate_percent}%`);
+    if (jd.rate_percent !== undefined && jd.employee_rate_percent === undefined) parts.push(`${jd.rate_percent}%`);
+    // Fixed amounts at top level (no currency symbol - country agnostic)
+    if (jd.employee_amount !== undefined) parts.push(`Emp: ${jd.employee_amount}`);
+    if (jd.employer_amount !== undefined) parts.push(`Empr: ${jd.employer_amount}`);
+    // Nested contribution_amounts (used by various regional taxes)
+    if (jd.contribution_amounts) {
+        if (jd.contribution_amounts.employee_amount !== undefined) parts.push(`Emp: ${jd.contribution_amounts.employee_amount}`);
+        if (jd.contribution_amounts.employer_amount !== undefined) parts.push(`Empr: ${jd.contribution_amounts.employer_amount}`);
+    }
+    if (jd.fixed_amount !== undefined) parts.push(`Fixed: ${jd.fixed_amount}`);
+    // Levy status
+    if (jd.levy_status === 'non_levy') parts.push('Non-Levy');
+    // Slabs
+    if (jd.slabs?.length > 0) parts.push(`${jd.slabs.length} slabs`);
+    return parts.join(' | ') || 'View details';
+}
+
+// Render regional tax card (states/provinces - may have slabs and overrides)
+function renderRegionalTaxCard(jd) {
+    const hasSlabs = jd.slabs?.length > 0;
+    const hasContributionAmounts = jd.contribution_amounts &&
+        (jd.contribution_amounts.employee_amount !== undefined || jd.contribution_amounts.employer_amount !== undefined);
+    const hasRates = jd.employee_rate_percent !== undefined || jd.employer_rate_percent !== undefined ||
+                     jd.rate_percent !== undefined || jd.fixed_amount !== undefined ||
+                     jd.employee_amount !== undefined || jd.employer_amount !== undefined ||
+                     hasContributionAmounts;
+    const hasOverrides = jd.period_overrides || jd.eligibility_overrides || jd.period_behavior_override;
+    const isNonLevy = jd.levy_status === 'non_levy';
+    const cardId = `tax-card-${jd.key.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    const rateSummary = getRateSummary(jd);
+
+    return `
+    <div class="cfg-tax-row" id="${cardId}">
+        <div class="cfg-tax-row-header" onclick="toggleRegionalRow('${cardId}')">
+            <div class="cfg-tax-row-left">
+                <span class="cfg-tax-row-code">${escapeHtml(jd.jurisdiction_code)}</span>
+                <span class="cfg-tax-row-summary">${rateSummary}</span>
+            </div>
+            <div class="cfg-tax-row-right">
+                ${hasOverrides ? '<span class="cfg-tax-row-badge override">⚙</span>' : ''}
+                ${isNonLevy ? '<span class="cfg-tax-row-badge non-levy">N/A</span>' : ''}
+                <svg class="cfg-tax-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </div>
+        </div>
+        <div class="cfg-tax-row-content">
+            <!-- Non-Levy Status -->
+            ${isNonLevy ? `
+            <div class="cfg-tax-non-levy-notice">
+                This jurisdiction does not levy this tax type.
+            </div>` : ''}
+
+            <!-- Rates Section (always show if has rates) -->
+            ${hasRates && !isNonLevy ? `
+            <div class="cfg-tax-rates-grid">
+                ${jd.employee_rate_percent !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employee Rate</span>
+                    <span class="cfg-tax-rate-value">${jd.employee_rate_percent}%</span>
+                </div>` : ''}
+                ${jd.employer_rate_percent !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employer Rate</span>
+                    <span class="cfg-tax-rate-value">${jd.employer_rate_percent}%</span>
+                </div>` : ''}
+                ${jd.rate_percent !== undefined && jd.employee_rate_percent === undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Rate</span>
+                    <span class="cfg-tax-rate-value">${jd.rate_percent}%</span>
+                </div>` : ''}
+                ${jd.employee_amount !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employee Amount</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.employee_amount)}</span>
+                </div>` : ''}
+                ${jd.employer_amount !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employer Amount</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.employer_amount)}</span>
+                </div>` : ''}
+                ${hasContributionAmounts && jd.contribution_amounts.employee_amount !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employee Contribution</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.contribution_amounts.employee_amount)}</span>
+                </div>` : ''}
+                ${hasContributionAmounts && jd.contribution_amounts.employer_amount !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Employer Contribution</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.contribution_amounts.employer_amount)}</span>
+                </div>` : ''}
+                ${jd.fixed_amount !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Fixed Amount</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.fixed_amount)}</span>
+                </div>` : ''}
+                ${jd.wage_ceiling !== undefined ? `
+                <div class="cfg-tax-rate-box">
+                    <span class="cfg-tax-rate-label">Wage Ceiling</span>
+                    <span class="cfg-tax-rate-value">${formatCurrency(jd.wage_ceiling)}</span>
+                </div>` : ''}
+            </div>` : ''}
+
+            <!-- Slabs Section -->
+            ${hasSlabs ? `
+            <div class="cfg-tax-slabs-section">
+                <div class="cfg-tax-slabs-title">Tax Slabs (${jd.slabs.length})</div>
+                <table class="cfg-tax-slabs-tbl">
+                    <thead>
+                        <tr><th>From</th><th>To</th><th>Amount</th><th>Rate</th></tr>
+                    </thead>
+                    <tbody>
+                        ${jd.slabs.map(s => `
+                        <tr>
+                            <td>${s.from?.toLocaleString() || '0'}</td>
+                            <td>${s.to !== null && s.to !== undefined ? s.to.toLocaleString() : '∞'}</td>
+                            <td>${s.fixed_amount !== undefined ? formatCurrency(s.fixed_amount) : '-'}</td>
+                            <td>${s.rate_percent !== undefined ? s.rate_percent + '%' : '-'}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>` : ''}
+
+            <!-- Overrides Section -->
+            ${jd.period_overrides ? `
+            <div class="cfg-tax-override-box">
+                <div class="cfg-tax-override-header">Period Overrides</div>
+                ${jd.period_overrides.applicable_months ? `
+                <div class="cfg-tax-override-row">
+                    <span>Applicable Months:</span>
+                    <strong>${jd.period_overrides.applicable_months.map(m => getMonthName(m)).join(', ')}</strong>
+                </div>` : ''}
+                ${jd.period_overrides.special_month_amount !== undefined ? `
+                <div class="cfg-tax-override-row">
+                    <span>Special Month Amount:</span>
+                    <strong>${formatCurrency(jd.period_overrides.special_month_amount)}</strong>
+                </div>` : ''}
+            </div>` : ''}
+
+            ${jd.eligibility_overrides ? `
+            <div class="cfg-tax-override-box">
+                <div class="cfg-tax-override-header">Eligibility</div>
+                ${Object.entries(jd.eligibility_overrides).map(([k, v]) => `
+                <div class="cfg-tax-override-row">
+                    <span>${formatLabel(k)}:</span>
+                    <strong>${typeof v === 'boolean' ? (v ? 'Yes' : 'No') : v}</strong>
+                </div>`).join('')}
+            </div>` : ''}
+
+            <!-- Meta info -->
+            <div class="cfg-tax-row-meta">
+                <span>Country: ${escapeHtml(jd.country_code)}</span>
+                <span>Effective: ${formatDate(jd.effective_from) || '-'}</span>
+            </div>
+        </div>
+    </div>`;
+}
+
+// Toggle tax type accordion
+function toggleTaxAccordion(header) {
+    const accordion = header.closest('.cfg-tax-accordion');
+    const isExpanded = accordion.dataset.expanded === 'true';
+    accordion.dataset.expanded = isExpanded ? 'false' : 'true';
+}
+
+// Toggle regional row - only one can be open at a time within its section
+function toggleRegionalRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const isExpanded = row.classList.contains('expanded');
+
+    // Close all other rows in the same section
+    const section = row.closest('.cfg-tax-list');
+    if (section) {
+        section.querySelectorAll('.cfg-tax-row.expanded').forEach(r => {
+            if (r.id !== rowId) r.classList.remove('expanded');
+        });
+    }
+
+    // Toggle current row
+    row.classList.toggle('expanded', !isExpanded);
 }
 
 function renderJurisdictionBindingsSection(bindings) {

@@ -18250,3 +18250,885 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     font-size: 10px;
     color: var(--text-tertiary);
 }
+
+/* ==================== Regional Tax Slabs v2 Design ==================== */
+
+.cfg-regional-tax-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Section Header */
+.cfg-regional-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+    border-radius: 12px;
+    color: var(--text-inverse);
+}
+
+.cfg-regional-header-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+}
+
+.cfg-regional-header-icon svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-inverse);
+}
+
+.cfg-regional-header-content h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-inverse);
+}
+
+.cfg-regional-header-content p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+    color: var(--text-inverse);
+}
+
+/* Stats Bar */
+.cfg-regional-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.cfg-regional-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.cfg-regional-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.cfg-regional-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Tax Type Accordions */
+.cfg-tax-accordions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cfg-tax-accordion {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cfg-tax-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.cfg-tax-accordion-header:hover {
+    background: var(--bg-hover);
+}
+
+.cfg-tax-accordion-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cfg-tax-accordion-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    border-radius: 10px;
+}
+
+.cfg-tax-accordion-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-inverse);
+}
+
+.cfg-tax-accordion-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-tax-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-tax-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.cfg-tax-accordion-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cfg-tax-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.cfg-tax-badge-slabs {
+    background: var(--color-info-bg, rgba(59, 130, 246, 0.1));
+    color: var(--color-info, #3b82f6);
+}
+
+.cfg-tax-badge-overrides {
+    background: var(--color-warning-bg, rgba(245, 158, 11, 0.1));
+    color: var(--color-warning, #f59e0b);
+}
+
+.cfg-tax-accordion-arrow {
+    width: 20px;
+    height: 20px;
+    color: var(--text-tertiary);
+    transition: transform 0.3s ease;
+}
+
+.cfg-tax-accordion[data-expanded="true"] .cfg-tax-accordion-arrow {
+    transform: rotate(180deg);
+}
+
+.cfg-tax-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.cfg-tax-accordion[data-expanded="true"] .cfg-tax-accordion-content {
+    max-height: 5000px;
+}
+
+/* Tax Level Sections */
+.cfg-tax-level-section {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-level-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.cfg-tax-level-icon {
+    font-size: 16px;
+}
+
+.cfg-tax-level-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-tax-level-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.cfg-tax-level-info {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-left: auto;
+}
+
+/* Country Level Tax Cards */
+.cfg-tax-country-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.cfg-tax-country-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cfg-tax-country-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--brand-primary);
+}
+
+.cfg-tax-country-code {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-inverse);
+    font-family: monospace;
+}
+
+.cfg-tax-country-level {
+    font-size: 11px;
+    color: var(--text-inverse);
+    opacity: 0.8;
+    text-transform: capitalize;
+}
+
+.cfg-tax-country-card-body {
+    padding: 14px;
+}
+
+.cfg-tax-meta {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+}
+
+.cfg-tax-rates {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cfg-tax-rate-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-tax-rate-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-tax-rate-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.cfg-tax-overrides-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color-light);
+}
+
+.cfg-tax-override-tag {
+    padding: 3px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+/* Regional Tax Cards Grid */
+.cfg-tax-regional-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.cfg-tax-regional-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.cfg-tax-regional-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.cfg-tax-regional-card.has-slabs {
+    border-left: 3px solid var(--color-info, #3b82f6);
+}
+
+.cfg-tax-regional-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    cursor: pointer;
+    background: var(--bg-card);
+}
+
+.cfg-tax-regional-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cfg-tax-regional-code {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.cfg-tax-regional-level {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.cfg-tax-regional-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfg-tax-slab-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    background: var(--color-info, #3b82f6);
+    color: var(--text-inverse);
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.cfg-tax-override-indicator {
+    font-size: 14px;
+    color: var(--color-warning, #f59e0b);
+}
+
+.cfg-tax-regional-arrow {
+    width: 16px;
+    height: 16px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+}
+
+.cfg-tax-regional-card.expanded .cfg-tax-regional-arrow {
+    transform: rotate(180deg);
+}
+
+/* Regional Card Body (expandable) */
+.cfg-tax-regional-card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.cfg-tax-regional-card.expanded .cfg-tax-regional-card-body {
+    max-height: 2000px;
+}
+
+.cfg-tax-regional-meta {
+    display: flex;
+    gap: 16px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Tax Slabs Container */
+.cfg-tax-slabs-container {
+    padding: 12px;
+}
+
+.cfg-tax-slabs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cfg-tax-slabs-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 9px;
+    font-size: 10px;
+}
+
+.cfg-tax-slabs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.cfg-tax-slabs-table th {
+    padding: 8px 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-slabs-table td {
+    padding: 8px 6px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-slabs-table tr.odd td {
+    background: var(--bg-tertiary);
+}
+
+.cfg-tax-slabs-table .no-limit {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* Override Sections */
+.cfg-tax-override-section {
+    padding: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-override-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.cfg-tax-override-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cfg-tax-override-content.cfg-tax-override-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.cfg-tax-override-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cfg-tax-override-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+.cfg-tax-override-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cfg-tax-override-reason {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cfg-regional-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cfg-tax-country-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .cfg-tax-regional-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cfg-tax-override-content.cfg-tax-override-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .cfg-tax-regional-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================
+   Regional Tax v3 - List-based Design with Better UX
+   ===================================================== */
+
+.cfg-regional-tax-v3 {
+    padding: 16px;
+}
+
+/* Compact Stats Bar */
+.cfg-tax-stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.cfg-tax-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.cfg-tax-stat-num {
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.cfg-tax-stat-text {
+    color: var(--text-secondary);
+}
+
+/* Tax Sections Container */
+.cfg-tax-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Regional Tax List */
+.cfg-tax-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+/* Tax Row Item */
+.cfg-tax-row {
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.cfg-tax-row:hover {
+    border-color: var(--border-color-light);
+}
+
+.cfg-tax-row.expanded {
+    border-color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Row Header */
+.cfg-tax-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.cfg-tax-row-header:hover {
+    background: var(--bg-hover);
+}
+
+.cfg-tax-row-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cfg-tax-row-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.cfg-tax-row-summary {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cfg-tax-row-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cfg-tax-row-badge {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.cfg-tax-row-badge.override {
+    color: var(--color-warning, #f59e0b);
+}
+
+.cfg-tax-row-badge.non-levy {
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.cfg-tax-non-levy-notice {
+    padding: 12px 16px;
+    margin: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-style: italic;
+    text-align: center;
+}
+
+.cfg-tax-row-arrow {
+    width: 16px;
+    height: 16px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+}
+
+.cfg-tax-row.expanded .cfg-tax-row-arrow {
+    transform: rotate(180deg);
+}
+
+/* Row Content (expandable) */
+.cfg-tax-row-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: var(--bg-secondary);
+    border-top: 1px solid transparent;
+}
+
+.cfg-tax-row.expanded .cfg-tax-row-content {
+    max-height: 800px;
+    border-top-color: var(--border-color-light);
+}
+
+/* Rates Grid */
+.cfg-tax-rates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    padding: 12px;
+}
+
+.cfg-tax-rate-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.cfg-tax-rate-box .cfg-tax-rate-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.cfg-tax-rate-box .cfg-tax-rate-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+/* Slabs Section */
+.cfg-tax-slabs-section {
+    padding: 12px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-slabs-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cfg-tax-slabs-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.cfg-tax-slabs-tbl th {
+    padding: 6px 8px;
+    text-align: left;
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.cfg-tax-slabs-tbl td {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.cfg-tax-slabs-tbl tr:last-child td {
+    border-bottom: none;
+}
+
+/* Override Boxes */
+.cfg-tax-override-box {
+    padding: 12px;
+    margin: 8px 12px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    border-left: 3px solid var(--color-warning, #f59e0b);
+}
+
+.cfg-tax-override-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.cfg-tax-override-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+.cfg-tax-override-row span {
+    color: var(--text-secondary);
+}
+
+.cfg-tax-override-row strong {
+    color: var(--text-primary);
+}
+
+/* Row Meta */
+.cfg-tax-row-meta {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .cfg-tax-stats-bar {
+        gap: 8px;
+    }
+
+    .cfg-tax-stat-chip {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .cfg-tax-rates-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cfg-tax-row-summary {
+        display: none;
+    }
+}
