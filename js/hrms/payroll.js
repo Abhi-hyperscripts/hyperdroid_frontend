@@ -610,24 +610,29 @@ function initSearchableDropdowns() {
         return;
     }
 
-    // Filter dropdowns configuration (17 dropdowns)
+    // Filter dropdowns configuration (21 dropdowns)
     const filterDropdowns = [
         { id: 'countryFilter', placeholder: 'Select Country', searchPlaceholder: 'Search country...', compact: true },
         { id: 'componentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
         { id: 'structureOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'draftOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'runOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        // v3.0.31: Office filters for Employee section tabs
+        { id: 'loanOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'loanStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'vdOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'vdEnrollmentStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
         { id: 'vdEnrollmentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
+        { id: 'adjustmentOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'adjustmentStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'adjustmentTypeFilter', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
+        { id: 'arrearsOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'arrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true },
+        { id: 'arrearsStructure', placeholder: 'All Structures', searchPlaceholder: 'Search structure...', compact: true },
         { id: 'allPayslipsOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'allPayslipsDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
         { id: 'salaryReportOffice', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'salaryReportDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
-        { id: 'adjustmentStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
-        { id: 'adjustmentTypeFilter', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
-        { id: 'arrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true },
-        { id: 'arrearsStructure', placeholder: 'All Structures', searchPlaceholder: 'Search structure...', compact: true },
         { id: 'ctcArrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true }
     ];
 
@@ -2153,6 +2158,16 @@ async function viewDraftPayslip(payslipId) {
                 </div>
             </div>
             ` : ''}
+
+            <!-- Calculation Proof Button - v3.0.16 -->
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
+                <button class="btn btn-secondary" onclick="viewCalculationProof('${payslipId}')" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    View Calculation Proof
+                </button>
+            </div>
         `;
 
         openModal('payslipModal');
@@ -2162,6 +2177,1728 @@ async function viewDraftPayslip(payslipId) {
         showToast('Failed to load payslip details', 'error');
         hideLoading();
     }
+}
+
+/**
+ * View calculation proof for a draft payslip.
+ * v3.0.16: Added for audit and compliance purposes.
+ * v3.0.24: Updated to request markdown format from JSON-based proof storage.
+ * v3.0.28: Complete UI rewrite - now uses JSON data to render a beautiful card-based UI.
+ */
+async function viewCalculationProof(payslipId) {
+    try {
+        showLoading();
+
+        // v3.0.28: Request JSON format for beautiful UI rendering
+        const response = await api.request(`/hrms/payroll-drafts/payslips/${payslipId}/calculation-proof?format=json`);
+
+        if (!response || !response.calculation_proof_data) {
+            hideLoading();
+            showToast('Calculation proof not available. Please reprocess the draft to generate the proof.', 'warning');
+            return;
+        }
+
+        // Close the payslip modal first
+        closeModal('payslipModal');
+
+        const proof = response.calculation_proof_data;
+
+        // Store data for download/print (fetch markdown when needed)
+        window.currentCalculationProof = {
+            payslipId: payslipId,
+            proof: proof,
+            employeeName: response.employee_name,
+            employeeCode: response.employee_code,
+            payPeriod: `${formatDate(response.pay_period_start)} - ${formatDate(response.pay_period_end)}`
+        };
+
+        // Create or get the calculation proof modal
+        let modal = document.getElementById('calculationProofModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'calculationProofModal';
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+            injectCalculationProofStyles();
+        }
+
+        // Build the beautiful UI
+        modal.innerHTML = buildCalculationProofUI(proof, response);
+
+        // Open the modal
+        modal.classList.add('active');
+        hideLoading();
+
+    } catch (error) {
+        console.error('Error loading calculation proof:', error);
+        hideLoading();
+        showToast(error.message || 'Failed to load calculation proof', 'error');
+    }
+}
+
+/**
+ * Build the calculation proof UI from JSON data.
+ * v3.0.28: New card-based UI design.
+ */
+function buildCalculationProofUI(proof, response) {
+    const currencySymbol = proof.currencySymbol || '₹';
+    const fmt = (amount) => `${currencySymbol} ${(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const pct = (value) => `${(value || 0).toFixed(2)}%`;
+
+    // Store JSON for the JSON tab
+    const jsonString = JSON.stringify(proof, null, 2);
+
+    return `
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Calculation Proof - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                    </h5>
+                    <button class="close-btn" onclick="closeModal('calculationProofModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body proof-modal-body">
+                    <!-- Tabs Navigation -->
+                    <div class="proof-tabs">
+                        <button class="proof-tab active" onclick="switchProofTab('formatted')">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Formatted View
+                        </button>
+                        <button class="proof-tab" onclick="switchProofTab('json')">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                            </svg>
+                            JSON Data
+                        </button>
+                        <div class="proof-tab-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="downloadCalculationProof()">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="printCalculationProof()">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                Print
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: Formatted View -->
+                    <div class="proof-tab-content" id="proofTabFormatted">
+                        <!-- Summary Cards Row -->
+                        <div class="proof-summary-row">
+                            <div class="proof-summary-card earnings">
+                                <div class="summary-label">Gross Earnings</div>
+                                <div class="summary-value">${fmt(proof.grossEarnings)}</div>
+                            </div>
+                            <div class="proof-summary-card deductions">
+                                <div class="summary-label">Total Deductions</div>
+                                <div class="summary-value">${fmt(proof.totalDeductions)}</div>
+                            </div>
+                            <div class="proof-summary-card net-pay">
+                                <div class="summary-label">Net Pay</div>
+                                <div class="summary-value">${fmt(proof.netPay)}</div>
+                            </div>
+                        </div>
+
+                        <!-- Employee & Pay Period Info -->
+                        <div class="proof-section-grid">
+                            <div class="proof-card">
+                                <div class="proof-card-header">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <span>Employee Information</span>
+                                </div>
+                                <div class="proof-card-body">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">Name</span>
+                                            <span class="info-value">${proof.employeeName || '-'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Employee Code</span>
+                                            <span class="info-value">${proof.employeeCode || '-'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Department</span>
+                                            <span class="info-value">${proof.departmentName || '-'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Designation</span>
+                                            <span class="info-value">${proof.designationName || '-'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Office</span>
+                                            <span class="info-value">${proof.officeName || '-'} (${proof.officeCode || '-'})</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Location</span>
+                                            <span class="info-value">${proof.stateName || '-'}, ${proof.countryName || proof.countryCode || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="proof-card">
+                                <div class="proof-card-header">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>Pay Period Details</span>
+                                </div>
+                                <div class="proof-card-body">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">Pay Period</span>
+                                            <span class="info-value">${formatDate(proof.payPeriodStart)} - ${formatDate(proof.payPeriodEnd)}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Financial Year</span>
+                                            <span class="info-value">${proof.financialYear || '-'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Total Working Days</span>
+                                            <span class="info-value">${proof.totalWorkingDays || 0}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Days Worked</span>
+                                            <span class="info-value">${proof.daysWorked || 0}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Proration Factor</span>
+                                            <span class="info-value">${((proof.proratedFactor || 1) * 100).toFixed(2)}%</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">LOP Days</span>
+                                            <span class="info-value ${(proof.lopDays || 0) > 0 ? 'text-warning' : ''}">${proof.lopDays || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compensation Card -->
+                        <div class="proof-card">
+                            <div class="proof-card-header">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Compensation Details</span>
+                            </div>
+                            <div class="proof-card-body">
+                                <div class="compensation-grid">
+                                    <div class="comp-item">
+                                        <span class="comp-label">Annual CTC</span>
+                                        <span class="comp-value">${fmt(proof.annualCTC)}</span>
+                                    </div>
+                                    <div class="comp-item">
+                                        <span class="comp-label">Monthly CTC</span>
+                                        <span class="comp-value">${fmt(proof.monthlyCTC)}</span>
+                                    </div>
+                                    <div class="comp-item">
+                                        <span class="comp-label">Salary Structure</span>
+                                        <span class="comp-value">${proof.salaryStructureName || '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Earnings Table -->
+                        ${buildEarningsSection(proof, fmt)}
+
+                        <!-- Deductions Table -->
+                        ${buildDeductionsSection(proof, fmt)}
+
+                        <!-- Voluntary Deductions Section (v3.0.25) -->
+                        ${buildVoluntaryDeductionsSection(proof, fmt)}
+
+                        <!-- Tax Calculation Section -->
+                        ${buildTaxCalculationSection(proof, fmt, pct)}
+
+                        <!-- Employer Contributions -->
+                        ${buildEmployerContributionsSection(proof, fmt)}
+
+                        <!-- Verification & Footer -->
+                        <div class="proof-card verification-card">
+                            <div class="proof-card-header">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Verification Summary</span>
+                            </div>
+                            <div class="proof-card-body">
+                                <div class="verification-grid">
+                                    <div class="verification-item">
+                                        <span class="verification-label">Gross Earnings</span>
+                                        <span class="verification-value">${fmt(proof.grossEarnings)}</span>
+                                        <span class="verification-check">✓</span>
+                                    </div>
+                                    <div class="verification-item">
+                                        <span class="verification-label">Total Deductions</span>
+                                        <span class="verification-value">${fmt(proof.totalDeductions)}</span>
+                                        <span class="verification-check">✓</span>
+                                    </div>
+                                    <div class="verification-item highlight">
+                                        <span class="verification-label">Net Pay (Gross - Deductions)</span>
+                                        <span class="verification-value">${fmt(proof.netPay)}</span>
+                                        <span class="verification-check">✓</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="proof-footer">
+                            <div class="footer-info">
+                                <span>Generated: ${new Date(proof.generatedAt || Date.now()).toLocaleString()}</span>
+                                <span>•</span>
+                                <span>HyperDroid HRMS ${proof.taxCalculation?.engineVersion || 'v3.0.28'}</span>
+                                ${proof.countryConfigVersion ? `<span>•</span><span>Config: ${proof.countryConfigVersion}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: JSON Data -->
+                    <div class="proof-tab-content" id="proofTabJson" style="display: none;">
+                        <div class="json-toolbar">
+                            <button class="btn btn-secondary btn-sm" onclick="copyProofJson()">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                                </svg>
+                                Copy JSON
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadProofJson()">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download JSON
+                            </button>
+                        </div>
+                        <pre class="json-viewer" id="proofJsonViewer">${escapeHtml(jsonString)}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Build earnings section HTML
+ */
+function buildEarningsSection(proof, fmt) {
+    const items = proof.earningsItems || [];
+    if (items.length === 0) return '';
+
+    let rows = items.map(item => `
+        <tr>
+            <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+            <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
+            <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
+            <td class="text-right amount-cell">${fmt(item.amount)}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header earnings-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                </svg>
+                <span>Earnings Breakdown</span>
+                <span class="header-badge earnings-badge">${fmt(proof.grossEarnings)}</span>
+            </div>
+            <div class="proof-card-body">
+                <table class="proof-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-right">Base Amount</th>
+                            <th class="text-center">Proration</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Total Gross Earnings</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.grossEarnings)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Build deductions section HTML
+ */
+function buildDeductionsSection(proof, fmt) {
+    const items = proof.deductionItems || [];
+    if (items.length === 0) return '';
+
+    let rows = items.map(item => {
+        const isEligible = item.isEligible !== false;
+        const eligibilityClass = isEligible ? '' : 'not-eligible';
+        const eligibilityIcon = isEligible ? '✓' : '✗';
+        const eligibilityReason = item.eligibilityReason || '';
+
+        return `
+            <tr class="${eligibilityClass}">
+                <td class="component-name">
+                    ${item.componentName || item.componentCode || '-'}
+                    ${eligibilityReason ? `<span class="eligibility-reason" title="${eligibilityReason}">ℹ</span>` : ''}
+                </td>
+                <td class="text-center">
+                    <span class="eligibility-badge ${isEligible ? 'eligible' : 'not-eligible'}">${eligibilityIcon}</span>
+                </td>
+                <td class="text-right amount-cell">${fmt(item.amount)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header deductions-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Deductions Breakdown</span>
+                <span class="header-badge deductions-badge">${fmt(proof.totalDeductions)}</span>
+            </div>
+            <div class="proof-card-body">
+                <table class="proof-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-center">Eligible</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="2"><strong>Total Deductions</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.totalDeductions)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * v3.0.25: Build voluntary deductions section HTML
+ * Shows employee-elected deductions like health insurance, VPF, NPS, etc.
+ */
+function buildVoluntaryDeductionsSection(proof, fmt) {
+    const items = proof.voluntaryDeductionItems || [];
+    if (items.length === 0) return '';
+
+    let rows = items.map(item => {
+        const isProrated = item.isProrated === true;
+        const proratedBadge = isProrated
+            ? `<span class="proration-badge" title="${formatProratedReason(item.proratedReason)}">${(item.proratedFactor * 100).toFixed(0)}%</span>`
+            : '';
+
+        return `
+            <tr>
+                <td class="component-name">
+                    ${item.deductionTypeName || '-'}
+                    ${proratedBadge}
+                </td>
+                <td class="text-center">${formatVoluntaryCategory(item.category)}</td>
+                <td class="text-right amount-cell">${fmt(item.fullAmount)}</td>
+                <td class="text-right amount-cell ${isProrated ? 'prorated' : ''}">${fmt(item.deductedAmount)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Add proration details if any
+    const proratedItems = items.filter(i => i.isProrated);
+    let proratedDetails = '';
+    if (proratedItems.length > 0) {
+        proratedDetails = `
+            <div class="proration-note">
+                <strong>Proration Details:</strong>
+                <ul class="proration-list">
+                    ${proratedItems.map(item => {
+                        const periodStr = item.effectiveFrom && item.effectiveTo
+                            ? ` (${formatDate(item.effectiveFrom)} - ${formatDate(item.effectiveTo)})`
+                            : '';
+                        const daysStr = item.daysApplicable && item.totalDaysInPeriod
+                            ? ` — ${item.daysApplicable}/${item.totalDaysInPeriod} days`
+                            : '';
+                        return `<li>${item.deductionTypeName}: ${formatProratedReason(item.proratedReason)}${periodStr}${daysStr}</li>`;
+                    }).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header voluntary-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span>Voluntary Deductions</span>
+                <span class="header-badge voluntary-badge">${fmt(proof.totalVoluntaryDeductions)}</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">Employee-elected deductions (insurance, savings, etc.)</p>
+                <table class="proof-table">
+                    <thead>
+                        <tr>
+                            <th>Deduction Type</th>
+                            <th class="text-center">Category</th>
+                            <th class="text-right">Full Amount</th>
+                            <th class="text-right">Deducted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Total Voluntary Deductions</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.totalVoluntaryDeductions)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                ${proratedDetails}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Format voluntary deduction category for display
+ */
+function formatVoluntaryCategory(category) {
+    if (!category) return 'Other';
+    const categoryMap = {
+        'benefits': 'Benefits',
+        'insurance': 'Insurance',
+        'savings': 'Savings',
+        'lease': 'Lease',
+        'other': 'Other'
+    };
+    return categoryMap[category.toLowerCase()] || category;
+}
+
+/**
+ * Format proration reason for display
+ */
+function formatProratedReason(reason) {
+    if (!reason) return 'Prorated';
+    const reasonMap = {
+        'mid_month_enrollment': 'Mid-month enrollment',
+        'mid_month_opt_out': 'Mid-month opt-out',
+        'amount_change': 'Amount change mid-period'
+    };
+    return reasonMap[reason.toLowerCase()] || reason.replace(/_/g, ' ');
+}
+
+/**
+ * Build tax calculation section HTML
+ */
+function buildTaxCalculationSection(proof, fmt, pct) {
+    const tax = proof.taxCalculation;
+    if (!tax) return '';
+
+    // Build slab breakdown rows
+    let slabRows = '';
+    if (tax.slabBreakdown?.slabs) {
+        slabRows = tax.slabBreakdown.slabs.map(slab => `
+            <tr>
+                <td>${fmt(slab.fromAmount)} - ${slab.toAmount == null || slab.toAmount >= 99999999 ? '∞' : fmt(slab.toAmount)}</td>
+                <td class="text-center">${pct(slab.rate)}</td>
+                <td class="text-right">${fmt(slab.taxableAmountInSlab)}</td>
+                <td class="text-right">${fmt(slab.taxAmount)}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Build pre-tax deductions section
+    let preTaxSection = '';
+    if (tax.preTaxDeductionItems && tax.preTaxDeductionItems.length > 0) {
+        const preTaxRows = tax.preTaxDeductionItems.map(item => `
+            <div class="pretax-item">
+                <span class="pretax-name">${item.chargeName || item.chargeCode}</span>
+                <span class="pretax-amount">${fmt(item.annualAmount)}</span>
+            </div>
+        `).join('');
+        preTaxSection = `
+            <div class="pretax-section">
+                <div class="pretax-title">Pre-Tax Deductions (Annual)</div>
+                ${preTaxRows}
+                <div class="pretax-item pretax-total">
+                    <span class="pretax-name">Total Pre-Tax Deductions</span>
+                    <span class="pretax-amount">${fmt(tax.preTaxDeductions)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="proof-card tax-card">
+            <div class="proof-card-header tax-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <span>Income Tax Calculation</span>
+                <span class="header-badge tax-badge">${fmt(tax.monthlyTDS || tax.proratedTDS)}/mo</span>
+            </div>
+            <div class="proof-card-body">
+                <!-- Tax Regime -->
+                <div class="tax-regime-banner">
+                    <span class="regime-label">Tax Regime:</span>
+                    <span class="regime-value">${tax.taxRegime || 'New'} Regime</span>
+                    ${tax.taxRegimeLegalSection ? `<span class="regime-section">(${tax.taxRegimeLegalSection})</span>` : ''}
+                </div>
+
+                <!-- Tax Calculation Flow -->
+                <div class="tax-flow">
+                    <div class="tax-flow-item">
+                        <span class="flow-label">Annual Gross</span>
+                        <span class="flow-value">${fmt(tax.annualGross)}</span>
+                    </div>
+                    <div class="tax-flow-operator">−</div>
+                    <div class="tax-flow-item">
+                        <span class="flow-label">Standard Deduction</span>
+                        <span class="flow-value">${fmt(tax.standardDeduction)}</span>
+                    </div>
+                    ${tax.preTaxDeductions > 0 ? `
+                        <div class="tax-flow-operator">−</div>
+                        <div class="tax-flow-item">
+                            <span class="flow-label">Pre-Tax Deductions</span>
+                            <span class="flow-value">${fmt(tax.preTaxDeductions)}</span>
+                        </div>
+                    ` : ''}
+                    <div class="tax-flow-operator">=</div>
+                    <div class="tax-flow-item result">
+                        <span class="flow-label">Taxable Income</span>
+                        <span class="flow-value">${fmt(tax.taxableIncome)}</span>
+                    </div>
+                </div>
+
+                ${preTaxSection}
+
+                <!-- Slab Breakdown -->
+                ${slabRows ? `
+                    <div class="slab-section">
+                        <h4 class="slab-title">Tax Slab Breakdown</h4>
+                        <table class="proof-table slab-table">
+                            <thead>
+                                <tr>
+                                    <th>Slab Range</th>
+                                    <th class="text-center">Rate</th>
+                                    <th class="text-right">Taxable</th>
+                                    <th class="text-right">Tax</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${slabRows}
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3"><strong>Tax from Slabs</strong></td>
+                                    <td class="text-right"><strong>${fmt(tax.slabBreakdown?.totalTaxFromSlabs || tax.taxBeforeRebate)}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                ` : ''}
+
+                <!-- Rebate Section -->
+                ${tax.rebate ? `
+                    <div class="rebate-section ${tax.rebate.isApplicable ? 'applicable' : 'not-applicable'}">
+                        <div class="rebate-header">
+                            <span class="rebate-icon">${tax.rebate.isApplicable ? '✓' : '✗'}</span>
+                            <span class="rebate-title">${tax.rebate.section || 'Tax Rebate'}</span>
+                        </div>
+                        <div class="rebate-details">
+                            <span>Threshold: ${fmt(tax.rebate.incomeThreshold)} | Max Rebate: ${fmt(tax.rebate.maxRebate)}</span>
+                            ${tax.rebate.isApplicable ? `<span class="rebate-amount">Applied: ${fmt(tax.rebate.actualRebate)}</span>` : ''}
+                        </div>
+                        ${tax.rebate.reason ? `<div class="rebate-reason">${tax.rebate.reason}</div>` : ''}
+                    </div>
+                ` : ''}
+
+                <!-- Final Tax Calculation -->
+                <div class="tax-final">
+                    <div class="tax-line">
+                        <span>Tax After Rebate</span>
+                        <span>${fmt(tax.taxAfterRebate)}</span>
+                    </div>
+                    ${tax.surchargeAmount > 0 ? `
+                        <div class="tax-line">
+                            <span>${tax.surchargeName || 'Surcharge'} (${pct(tax.surchargePercentage)})</span>
+                            <span>+ ${fmt(tax.surchargeAmount)}</span>
+                        </div>
+                    ` : ''}
+                    ${tax.cessAmount > 0 ? `
+                        <div class="tax-line">
+                            <span>${tax.cessName || 'Cess'} (${pct(tax.cessPercentage)})</span>
+                            <span>+ ${fmt(tax.cessAmount)}</span>
+                        </div>
+                    ` : ''}
+                    <div class="tax-line total">
+                        <span>Total Annual Tax</span>
+                        <span>${fmt(tax.totalAnnualTax)}</span>
+                    </div>
+                    <div class="tax-line monthly">
+                        <span>Monthly TDS (${tax.monthsRemaining || 12} months remaining)</span>
+                        <span class="monthly-tds">${fmt(tax.monthlyTDS || tax.proratedTDS)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Build employer contributions section HTML
+ */
+function buildEmployerContributionsSection(proof, fmt) {
+    const items = proof.employerContributionItems || [];
+    if (items.length === 0) return '';
+
+    let rows = items.map(item => `
+        <tr>
+            <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+            <td class="text-right amount-cell">${fmt(item.amount)}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div class="proof-card employer-card">
+            <div class="proof-card-header employer-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <span>Employer Contributions</span>
+                <span class="header-badge employer-badge">${fmt(proof.totalEmployerContributions)}</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="employer-note">These contributions are paid by the employer and are not deducted from employee salary.</p>
+                <table class="proof-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td><strong>Total Employer Contributions</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.totalEmployerContributions)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Inject CSS styles for the calculation proof modal.
+ * v3.0.28: New beautiful card-based design with theme-aware colors.
+ */
+function injectCalculationProofStyles() {
+    const existingStyle = document.getElementById('calculation-proof-styles');
+    if (existingStyle) return;
+
+    const style = document.createElement('style');
+    style.id = 'calculation-proof-styles';
+    style.textContent = `
+        /* v3.0.29: Modal body for proof - uses standard modal structure */
+        .proof-modal-body {
+            padding: 0 !important;
+            max-height: calc(90vh - 60px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Tabs Navigation */
+        .proof-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .proof-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .proof-tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .proof-tab.active {
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            border-color: var(--brand-primary);
+        }
+
+        .proof-tab svg {
+            flex-shrink: 0;
+        }
+
+        .proof-tab-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Tab Content */
+        .proof-tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: var(--bg-primary);
+        }
+
+        #proofTabFormatted {
+            max-height: calc(90vh - 140px);
+        }
+
+        #proofTabJson {
+            max-height: calc(90vh - 140px);
+        }
+
+        /* JSON Viewer */
+        .json-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-secondary);
+        }
+
+        .json-viewer {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            overflow: auto;
+            max-height: calc(90vh - 250px);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: var(--text-primary);
+        }
+
+        /* Summary Row */
+        .proof-summary-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .proof-summary-card {
+            padding: 1.25rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.2s;
+            color: var(--text-inverse);
+        }
+
+        .proof-summary-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .proof-summary-card.earnings {
+            background: linear-gradient(135deg, var(--color-success), var(--status-approved));
+        }
+
+        .proof-summary-card.deductions {
+            background: linear-gradient(135deg, var(--color-warning), var(--status-pending));
+        }
+
+        .proof-summary-card.net-pay {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Section Grid */
+        .proof-section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .proof-section-grid {
+                grid-template-columns: 1fr;
+            }
+            .proof-summary-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .proof-card {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border-primary);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .proof-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--text-primary);
+        }
+
+        .header-badge {
+            margin-left: auto;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-inverse);
+        }
+
+        .earnings-badge { background: var(--color-success); }
+        .deductions-badge { background: var(--color-warning); }
+        .tax-badge { background: var(--brand-accent, var(--brand-primary)); }
+        .employer-badge { background: var(--color-info); }
+
+        .proof-card-body {
+            padding: 1rem;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Compensation Grid */
+        .compensation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .comp-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comp-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .comp-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Tables */
+        .proof-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .proof-table th {
+            background: var(--bg-tertiary);
+            padding: 0.625rem 0.75rem;
+            font-weight: 600;
+            text-align: left;
+            border-bottom: 2px solid var(--border-primary);
+            color: var(--text-primary);
+        }
+
+        .proof-table td {
+            padding: 0.625rem 0.75rem;
+            border-bottom: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+        }
+
+        .proof-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .proof-table .text-right { text-align: right; }
+        .proof-table .text-center { text-align: center; }
+
+        .proof-table tfoot td {
+            background: var(--bg-tertiary);
+            border-top: 2px solid var(--border-primary);
+            border-bottom: none;
+        }
+
+        .total-row td {
+            font-weight: 600;
+        }
+
+        .component-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .eligibility-reason {
+            color: var(--text-secondary);
+            cursor: help;
+        }
+
+        .eligibility-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            color: var(--text-inverse);
+        }
+
+        .eligibility-badge.eligible {
+            background: var(--color-success);
+        }
+
+        .eligibility-badge.not-eligible {
+            background: var(--color-error);
+        }
+
+        tr.not-eligible {
+            opacity: 0.6;
+        }
+
+        /* Tax Card Specific */
+        .tax-regime-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, var(--brand-accent, var(--brand-primary)), var(--brand-primary-hover));
+            color: var(--text-inverse);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .regime-label { opacity: 0.9; }
+        .regime-value { font-weight: 600; }
+        .regime-section { opacity: 0.8; font-size: 0.85rem; }
+
+        .tax-flow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .tax-flow-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-secondary);
+            color: var(--text-primary);
+        }
+
+        .tax-flow-item.result {
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            border: none;
+        }
+
+        .flow-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .flow-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .tax-flow-operator {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        .pretax-section {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .pretax-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .pretax-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .pretax-item.pretax-total {
+            border-top: 1px dashed var(--border-primary);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        .slab-section {
+            margin-bottom: 1rem;
+        }
+
+        .slab-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .rebate-section {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .rebate-section.applicable {
+            background: var(--status-approved-bg, rgba(16, 185, 129, 0.1));
+            border: 1px solid var(--color-success);
+        }
+
+        .rebate-section.not-applicable {
+            background: var(--status-rejected-bg, rgba(239, 68, 68, 0.1));
+            border: 1px solid var(--color-error);
+        }
+
+        .rebate-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .rebate-icon {
+            font-size: 1.1rem;
+        }
+
+        .rebate-section.applicable .rebate-icon { color: var(--color-success); }
+        .rebate-section.not-applicable .rebate-icon { color: var(--color-error); }
+
+        .rebate-details {
+            font-size: 0.85rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            color: var(--text-primary);
+        }
+
+        .rebate-amount {
+            font-weight: 600;
+            color: var(--color-success);
+        }
+
+        .rebate-reason {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .tax-final {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .tax-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.375rem 0;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .tax-line.total {
+            border-top: 1px solid var(--border-primary);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        .tax-line.monthly {
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            margin: 0.5rem -1rem -1rem -1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .monthly-tds {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Employer Card */
+        .employer-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        /* Verification Card */
+        .verification-card {
+            border: 2px solid var(--brand-primary);
+        }
+
+        .verification-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .verification-item {
+            display: flex;
+            align-items: center;
+            padding: 0.625rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        .verification-item.highlight {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+            color: var(--text-inverse);
+        }
+
+        .verification-label {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .verification-value {
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        .verification-check {
+            color: var(--color-success);
+            font-size: 1.25rem;
+        }
+
+        .verification-item.highlight .verification-check {
+            color: var(--text-inverse);
+        }
+
+        /* Footer */
+        .proof-footer {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-primary);
+            text-align: center;
+        }
+
+        .footer-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .text-warning {
+            color: var(--color-warning);
+            font-weight: 600;
+        }
+
+        /* v3.0.25: Voluntary Deductions Section */
+        .voluntary-badge {
+            background: var(--color-info);
+        }
+
+        .voluntary-header svg {
+            color: var(--color-info);
+        }
+
+        .section-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-style: italic;
+        }
+
+        .proration-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            background: var(--status-pending);
+            color: var(--text-inverse);
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .proration-note {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .proration-note strong {
+            color: var(--text-primary);
+        }
+
+        .proration-list {
+            margin: 0.5rem 0 0 1.25rem;
+            padding: 0;
+        }
+
+        .proration-list li {
+            margin-bottom: 0.25rem;
+        }
+
+        .proration-factor {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
+ * Download the calculation proof as a markdown file.
+ * v3.0.28: Now fetches markdown format from API (since we display JSON in UI).
+ */
+async function downloadCalculationProof() {
+    if (!window.currentCalculationProof) {
+        showToast('No calculation proof available to download', 'error');
+        return;
+    }
+
+    const { payslipId, employeeCode, payPeriod } = window.currentCalculationProof;
+
+    try {
+        showLoading();
+        // Fetch markdown format for download
+        const response = await api.request(`/hrms/payroll-drafts/payslips/${payslipId}/calculation-proof?format=markdown`);
+
+        if (!response || !response.calculation_proof) {
+            hideLoading();
+            showToast('Failed to generate downloadable proof', 'error');
+            return;
+        }
+
+        const markdown = response.calculation_proof;
+        const fileName = `Calculation_Proof_${employeeCode || 'Employee'}_${payPeriod.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+
+        const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        hideLoading();
+        showToast('Calculation proof downloaded', 'success');
+    } catch (error) {
+        hideLoading();
+        console.error('Error downloading calculation proof:', error);
+        showToast('Failed to download calculation proof', 'error');
+    }
+}
+
+/**
+ * Switch between calculation proof tabs
+ * v3.0.29: Added tab functionality for Formatted View and JSON Data
+ */
+function switchProofTab(tabName) {
+    // Update tab buttons
+    const tabs = document.querySelectorAll('.proof-tab');
+    tabs.forEach(tab => {
+        const isActive = (tabName === 'formatted' && tab.textContent.includes('Formatted')) ||
+                        (tabName === 'json' && tab.textContent.includes('JSON'));
+        tab.classList.toggle('active', isActive);
+    });
+
+    // Show/hide tab content
+    const formattedContent = document.getElementById('proofTabFormatted');
+    const jsonContent = document.getElementById('proofTabJson');
+
+    if (tabName === 'formatted') {
+        formattedContent.style.display = 'block';
+        jsonContent.style.display = 'none';
+    } else {
+        formattedContent.style.display = 'none';
+        jsonContent.style.display = 'block';
+    }
+}
+
+/**
+ * Copy proof JSON to clipboard
+ * v3.0.29: Added for JSON tab functionality
+ */
+function copyProofJson() {
+    if (!window.currentCalculationProof || !window.currentCalculationProof.proof) {
+        showToast('No calculation proof data available', 'error');
+        return;
+    }
+
+    const jsonString = JSON.stringify(window.currentCalculationProof.proof, null, 2);
+
+    navigator.clipboard.writeText(jsonString).then(() => {
+        showToast('JSON copied to clipboard', 'success');
+    }).catch(err => {
+        console.error('Failed to copy JSON:', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = jsonString;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('JSON copied to clipboard', 'success');
+    });
+}
+
+/**
+ * Download proof JSON as a file
+ * v3.0.29: Added for JSON tab functionality
+ */
+function downloadProofJson() {
+    if (!window.currentCalculationProof || !window.currentCalculationProof.proof) {
+        showToast('No calculation proof data available', 'error');
+        return;
+    }
+
+    const { proof, employeeCode, payPeriod } = window.currentCalculationProof;
+    const jsonString = JSON.stringify(proof, null, 2);
+    const fileName = `Calculation_Proof_${employeeCode || 'Employee'}_${payPeriod.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+
+    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast('JSON downloaded', 'success');
+}
+
+/**
+ * Escape HTML characters for safe display in JSON viewer
+ * v3.0.29: Added for JSON tab functionality
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Print the calculation proof.
+ * v3.0.28: Updated to work with new card-based UI.
+ * v3.0.29: Updated selector for tabbed layout.
+ */
+function printCalculationProof() {
+    if (!window.currentCalculationProof) {
+        showToast('No calculation proof available to print', 'error');
+        return;
+    }
+
+    // Use the formatted tab content for printing
+    const contentDiv = document.querySelector('#proofTabFormatted');
+    if (!contentDiv) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Calculation Proof - ${window.currentCalculationProof.employeeCode || 'Employee'}</title>
+            <style>
+                * { box-sizing: border-box; }
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.5;
+                    padding: 1rem;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    color: #1f2937;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                /* Summary Cards */
+                .proof-summary-row {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+                .proof-summary-card {
+                    flex: 1;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    text-align: center;
+                    color: white;
+                }
+                .proof-summary-card.earnings { background: #10b981; }
+                .proof-summary-card.deductions { background: #f59e0b; }
+                .proof-summary-card.net-pay { background: #6366f1; }
+                .summary-label { font-size: 0.7rem; text-transform: uppercase; opacity: 0.9; }
+                .summary-value { font-size: 1.25rem; font-weight: 700; }
+
+                /* Cards */
+                .proof-card {
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    margin-bottom: 1rem;
+                    overflow: hidden;
+                }
+                .proof-card-header {
+                    background: #f3f4f6;
+                    padding: 0.75rem 1rem;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    border-bottom: 1px solid #e5e7eb;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                .header-badge {
+                    margin-left: auto;
+                    padding: 0.2rem 0.5rem;
+                    border-radius: 12px;
+                    font-size: 0.75rem;
+                    color: white;
+                }
+                .earnings-badge { background: #10b981; }
+                .deductions-badge { background: #f59e0b; }
+                .tax-badge { background: #8b5cf6; }
+                .employer-badge { background: #06b6d4; }
+                .proof-card-body { padding: 1rem; }
+
+                /* Grids */
+                .proof-section-grid { display: flex; gap: 1rem; margin-bottom: 1rem; }
+                .proof-section-grid > * { flex: 1; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+                .info-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
+                .info-value { font-size: 0.85rem; font-weight: 500; }
+                .compensation-grid { display: flex; justify-content: space-around; text-align: center; }
+                .comp-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
+                .comp-value { font-size: 1rem; font-weight: 600; }
+
+                /* Tables */
+                .proof-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 0.8rem;
+                }
+                .proof-table th {
+                    background: #f3f4f6;
+                    padding: 0.5rem;
+                    font-weight: 600;
+                    text-align: left;
+                    border-bottom: 2px solid #e5e7eb;
+                }
+                .proof-table td {
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                .proof-table .text-right { text-align: right; }
+                .proof-table .text-center { text-align: center; }
+                .proof-table tfoot td {
+                    background: #f3f4f6;
+                    font-weight: 600;
+                    border-top: 2px solid #e5e7eb;
+                }
+
+                /* Tax */
+                .tax-regime-banner {
+                    background: #8b5cf6;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    margin-bottom: 1rem;
+                }
+                .tax-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem; background: #f3f4f6; border-radius: 6px; margin-bottom: 1rem; align-items: center; }
+                .tax-flow-item { padding: 0.4rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 4px; text-align: center; }
+                .tax-flow-item.result { background: #6366f1; color: white; border: none; }
+                .flow-label { font-size: 0.65rem; text-transform: uppercase; opacity: 0.7; }
+                .flow-value { font-weight: 600; font-size: 0.85rem; }
+                .tax-flow-operator { font-weight: bold; color: #6b7280; }
+                .tax-final { background: #f3f4f6; padding: 0.75rem; border-radius: 6px; }
+                .tax-line { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; }
+                .tax-line.total { border-top: 1px solid #e5e7eb; margin-top: 0.5rem; padding-top: 0.5rem; font-weight: 600; }
+                .tax-line.monthly { background: #6366f1; color: white; margin: 0.5rem -0.75rem -0.75rem; padding: 0.5rem 0.75rem; border-radius: 0 0 6px 6px; }
+
+                /* Rebate */
+                .rebate-section { padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; }
+                .rebate-section.applicable { background: #d1fae5; border: 1px solid #10b981; }
+                .rebate-section.not-applicable { background: #fee2e2; border: 1px solid #ef4444; }
+                .rebate-header { font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+                .rebate-section.applicable .rebate-icon { color: #10b981; }
+                .rebate-section.not-applicable .rebate-icon { color: #ef4444; }
+
+                /* Eligibility */
+                .eligibility-badge { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: white; }
+                .eligibility-badge.eligible { background: #10b981; }
+                .eligibility-badge.not-eligible { background: #ef4444; }
+                tr.not-eligible { opacity: 0.6; }
+
+                /* Verification */
+                .verification-card { border: 2px solid #6366f1; }
+                .verification-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+                .verification-item { display: flex; align-items: center; padding: 0.5rem; background: #f3f4f6; border-radius: 4px; }
+                .verification-item.highlight { background: #6366f1; color: white; }
+                .verification-label { flex: 1; font-size: 0.85rem; }
+                .verification-value { font-weight: 600; margin-right: 0.75rem; }
+                .verification-check { color: #10b981; font-size: 1rem; }
+                .verification-item.highlight .verification-check { color: white; }
+
+                /* Footer */
+                .proof-footer { padding: 0.75rem; background: #f3f4f6; text-align: center; font-size: 0.7rem; color: #6b7280; border-top: 1px solid #e5e7eb; }
+                .footer-info { display: flex; justify-content: center; gap: 0.5rem; }
+
+                /* Hide header actions in print */
+                .proof-header-actions, .proof-icon svg { display: none !important; }
+
+                @media print {
+                    body { padding: 0; }
+                    @page { margin: 0.75cm; }
+                }
+            </style>
+        </head>
+        <body>
+            ${contentDiv.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
 }
 
 // Helper function to group payslip items by structure
@@ -3359,7 +5096,15 @@ async function loadLoans() {
         }
 
         const response = await api.request(url);
-        updateLoansTable(response || []);
+        let loans = response || [];
+
+        // v3.0.31: Filter by office if selected
+        const officeFilter = document.getElementById('loanOfficeFilter')?.value;
+        if (officeFilter) {
+            loans = loans.filter(loan => loan.office_id === officeFilter);
+        }
+
+        updateLoansTable(loans);
     } catch (error) {
         console.error('Error loading loans:', error);
     }
@@ -3398,6 +5143,9 @@ function updateLoansTable(loans) {
             </button>
         `;
 
+        // v3.0.30: Determine if loan is editable (no EMIs deducted yet)
+        const isEditable = loan.emis_paid === 0 && ['pending', 'approved', 'active'].includes(status);
+
         if (isAdmin && status === 'pending') {
             actionButtons += `
                 <button class="action-btn success" onclick="approveLoan('${loan.id}')" title="Approve">
@@ -3423,6 +5171,24 @@ function updateLoansTable(loans) {
             `;
         }
 
+        // v3.0.30: Add Edit/Cancel buttons for editable loans
+        if (isAdmin && isEditable) {
+            actionButtons += `
+                <button class="action-btn" onclick="showEditLoanModal('${loan.id}')" title="Edit Loan">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="action-btn danger" onclick="confirmCancelLoan('${loan.id}')" title="Cancel Loan">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            `;
+        }
+
         return `
             <tr>
                 <td class="employee-cell">
@@ -3434,11 +5200,14 @@ function updateLoansTable(loans) {
                     </div>
                 </td>
                 <td>${formatLoanType(loan.loan_type)}</td>
-                <td>${formatCurrency(loan.principal_amount)}</td>
-                <td>${formatCurrency(loan.emi_amount)}</td>
-                <td>${formatCurrency(loan.outstanding_amount)}</td>
+                <td>${formatCurrency(loan.principal_amount, null, loan.currency_symbol)}</td>
+                <td>${formatCurrency(loan.emi_amount, null, loan.currency_symbol)}</td>
+                <td>${formatCurrency(loan.outstanding_amount, null, loan.currency_symbol)}</td>
                 <td>${formatDate(loan.start_date)}</td>
-                <td><span class="status-badge status-${status}">${loan.status}</span></td>
+                <td>
+                    <span class="status-badge status-${status}">${loan.status}</span>
+                    ${loan.emis_paid > 0 ? '<span class="status-badge status-secondary" style="margin-left:4px;" title="Loan is locked after EMI deduction">Locked</span>' : ''}
+                </td>
                 <td>
                     <div class="action-buttons">${actionButtons}</div>
                 </td>
@@ -3470,6 +5239,29 @@ async function loadOffices() {
                 if (dropdown) {
                     dropdown.setOptions(options);
                     dropdown.setValue(selectedOfficeId);
+                }
+            }
+        });
+
+        // v3.0.31: Filter dropdowns WITH "All Offices" option - for filtering lists
+        const allOfficesFilters = ['loanOfficeFilter', 'vdOfficeFilter', 'adjustmentOfficeFilter', 'arrearsOfficeFilter'];
+        allOfficesFilters.forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                // Build options with "All Offices" as first option
+                const allOfficesOptions = [
+                    { value: '', label: 'All Offices' },
+                    ...offices.map(o => ({ value: o.id, label: `${o.office_name} (${o.office_code || o.country_code || ''})` }))
+                ];
+                select.innerHTML = allOfficesOptions.map(opt =>
+                    `<option value="${opt.value}">${opt.label}</option>`
+                ).join('');
+
+                // Update SearchableDropdown instance if exists
+                const dropdown = searchableDropdownInstances.get(id);
+                if (dropdown) {
+                    dropdown.setOptions(allOfficesOptions);
+                    dropdown.setValue('');
                 }
             }
         });
@@ -3949,6 +5741,11 @@ async function loadCountryFilter() {
                 option.textContent = `${c.country_name} (${c.country_code})`;
                 select.appendChild(option);
             });
+            // Add change event listener for country filter
+            select.addEventListener('change', () => {
+                onCountryFilterChange();
+            });
+
             // Auto-select first country if any exist
             if (countries.length > 0) {
                 select.value = countries[0].country_code;
@@ -4213,7 +6010,7 @@ async function viewLoan(loanId) {
                     </div>
                     <div class="info-row">
                         <span class="label">Principal Amount:</span>
-                        <span class="value">${formatCurrency(loan.principal_amount)}</span>
+                        <span class="value">${formatCurrency(loan.principal_amount, null, loan.currency_symbol)}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Interest Rate:</span>
@@ -4225,7 +6022,7 @@ async function viewLoan(loanId) {
                     </div>
                     <div class="info-row">
                         <span class="label">EMI Amount:</span>
-                        <span class="value">${formatCurrency(loan.emi_amount)}</span>
+                        <span class="value">${formatCurrency(loan.emi_amount, null, loan.currency_symbol)}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Tenure:</span>
@@ -4233,7 +6030,7 @@ async function viewLoan(loanId) {
                     </div>
                     <div class="info-row">
                         <span class="label">Outstanding Amount:</span>
-                        <span class="value">${formatCurrency(loan.outstanding_amount)}</span>
+                        <span class="value">${formatCurrency(loan.outstanding_amount, null, loan.currency_symbol)}</span>
                     </div>
                 </div>
 
@@ -4412,6 +6209,124 @@ async function confirmDisburseLoan() {
     } catch (error) {
         console.error('Error disbursing loan:', error);
         showToast(error.message || 'Failed to disburse loan', 'error');
+        hideLoading();
+    }
+}
+
+// v3.0.30: Edit Loan functionality
+let currentEditLoanData = null;
+
+async function showEditLoanModal(loanId) {
+    try {
+        showLoading();
+        // Fetch full loan details
+        const loan = await api.request(`/hrms/payroll-processing/loans/${loanId}`);
+        currentEditLoanData = loan;
+
+        // Populate the edit form
+        document.getElementById('editLoanId').value = loan.id;
+        document.getElementById('editLoanNumber').value = loan.loan_number || 'N/A';
+        document.getElementById('editLoanEmployee').value = loan.employee_name || loan.employee_code || 'N/A';
+        document.getElementById('editLoanType').value = loan.loan_type || 'personal_loan';
+        document.getElementById('editPrincipalAmount').value = loan.principal_amount || 0;
+        document.getElementById('editInterestRate').value = loan.interest_rate || 0;
+        document.getElementById('editInterestType').value = loan.interest_calculation_type || 'simple';
+        document.getElementById('editTenureMonths').value = loan.tenure_months || 6;
+        document.getElementById('editLoanStartDate').value = loan.start_date ? loan.start_date.split('T')[0] : '';
+        document.getElementById('editLoanPriority').value = loan.priority || 100;
+        document.getElementById('editLoanPurpose').value = loan.purpose || '';
+
+        // Show current EMI (will be recalculated on save)
+        document.getElementById('editCurrentEmi').value = formatCurrency(loan.emi_amount, null, loan.currency_symbol);
+
+        closeModal('viewLoanModal');
+        document.getElementById('editLoanModal').classList.add('active');
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading loan for edit:', error);
+        showToast(error.message || 'Failed to load loan details', 'error');
+        hideLoading();
+    }
+}
+
+async function submitEditLoan() {
+    const loanId = document.getElementById('editLoanId').value;
+    if (!loanId) {
+        showToast('No loan selected for editing', 'error');
+        return;
+    }
+
+    const request = {
+        loan_type: document.getElementById('editLoanType').value,
+        principal_amount: parseFloat(document.getElementById('editPrincipalAmount').value) || 0,
+        interest_rate: parseFloat(document.getElementById('editInterestRate').value) || 0,
+        interest_calculation_type: document.getElementById('editInterestType').value,
+        tenure_months: parseInt(document.getElementById('editTenureMonths').value) || 6,
+        start_date: document.getElementById('editLoanStartDate').value || null,
+        priority: parseInt(document.getElementById('editLoanPriority').value) || 100,
+        purpose: document.getElementById('editLoanPurpose').value?.trim() || null
+    };
+
+    // Validation
+    if (request.principal_amount <= 0) {
+        showToast('Principal amount must be greater than 0', 'error');
+        return;
+    }
+    if (request.tenure_months < 1 || request.tenure_months > 360) {
+        showToast('Tenure must be between 1 and 360 months', 'error');
+        return;
+    }
+    if (request.interest_rate < 0 || request.interest_rate > 100) {
+        showToast('Interest rate must be between 0 and 100%', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-processing/loans/${loanId}`, {
+            method: 'PUT',
+            body: JSON.stringify(request)
+        });
+
+        closeModal('editLoanModal');
+        showToast(result.message || 'Loan updated successfully', 'success');
+        await loadLoans();
+        hideLoading();
+    } catch (error) {
+        console.error('Error updating loan:', error);
+        showToast(error.message || error.error || 'Failed to update loan', 'error');
+        hideLoading();
+    }
+}
+
+// v3.0.30: Cancel/Delete loan functionality
+async function confirmCancelLoan(loanId) {
+    // Show confirmation dialog using toast.js Confirm
+    const confirmed = await Confirm.show({
+        title: 'Cancel Loan',
+        message: 'Are you sure you want to cancel this loan? This will set the status to "cancelled" and delete all pending repayments. This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Cancel Loan',
+        cancelText: 'Keep Loan'
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const result = await api.request(`/hrms/payroll-processing/loans/${loanId}`, {
+            method: 'DELETE'
+        });
+
+        showToast(result.message || 'Loan cancelled successfully', 'success');
+        closeModal('viewLoanModal');
+        await loadLoans();
+        hideLoading();
+    } catch (error) {
+        console.error('Error cancelling loan:', error);
+        showToast(error.message || error.error || 'Failed to cancel loan', 'error');
         hideLoading();
     }
 }
@@ -6690,6 +8605,8 @@ function generateRepaymentScheduleHtml(loan) {
     const startDate = loan.start_date ? new Date(loan.start_date) : new Date();
     const interestType = loan.interest_calculation_type || 'simple';
     const repayments = loan.repayments || [];
+    // v3.0.29: Use currency symbol from country config (enriched by backend)
+    const currencySymbol = loan.currency_symbol || null;
 
     let html = '';
 
@@ -6714,15 +8631,18 @@ function generateRepaymentScheduleHtml(loan) {
                         <tbody>
         `;
         repayments.forEach(r => {
+            // v3.0.28: Fixed field mappings to match backend LoanRepayment model
+            const statusClass = r.status === 'paid' ? 'paid' : (r.status === 'pending' ? 'pending' : r.status?.toLowerCase() || 'pending');
+            const statusLabel = r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Pending';
             html += `
-                <tr class="paid-row">
+                <tr class="${r.status === 'paid' ? 'paid-row' : ''}">
                     <td>${r.emi_number}</td>
                     <td>${formatDate(r.repayment_date)}</td>
-                    <td>${formatCurrency(r.principal_amount)}</td>
-                    <td>${formatCurrency(r.interest_amount)}</td>
-                    <td>${formatCurrency(r.total_amount)}</td>
-                    <td>${formatCurrency(r.outstanding_after)}</td>
-                    <td><span class="status-badge status-paid">Paid</span></td>
+                    <td>${formatCurrency(r.principal_component, null, currencySymbol)}</td>
+                    <td>${formatCurrency(r.interest_component, null, currencySymbol)}</td>
+                    <td>${formatCurrency(r.total_amount, null, currencySymbol)}</td>
+                    <td>${formatCurrency(r.balance_after, null, currencySymbol)}</td>
+                    <td><span class="status-badge status-${statusClass}">${statusLabel}</span></td>
                 </tr>
             `;
         });
@@ -6741,7 +8661,7 @@ function generateRepaymentScheduleHtml(loan) {
             <div class="schedule-summary">
                 <div class="summary-item">
                     <span class="summary-label">Principal:</span>
-                    <span class="summary-value">${formatCurrency(principal)}</span>
+                    <span class="summary-value">${formatCurrency(principal, null, currencySymbol)}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">Interest Rate:</span>
@@ -6753,7 +8673,7 @@ function generateRepaymentScheduleHtml(loan) {
                 </div>
                 <div class="summary-item">
                     <span class="summary-label">EMI:</span>
-                    <span class="summary-value">${formatCurrency(emi)}</span>
+                    <span class="summary-value">${formatCurrency(emi, null, currencySymbol)}</span>
                 </div>
             </div>
             <div class="schedule-table-wrapper">
@@ -6810,10 +8730,10 @@ function generateRepaymentScheduleHtml(loan) {
             <tr class="${rowClass}">
                 <td>${i}</td>
                 <td>${formatShortMonth(dueDate)}</td>
-                <td>${formatCurrency(principalPortion)}</td>
-                <td>${formatCurrency(interestPortion)}</td>
-                <td>${formatCurrency(emiAmount)}</td>
-                <td>${formatCurrency(balance)}</td>
+                <td>${formatCurrency(principalPortion, null, currencySymbol)}</td>
+                <td>${formatCurrency(interestPortion, null, currencySymbol)}</td>
+                <td>${formatCurrency(emiAmount, null, currencySymbol)}</td>
+                <td>${formatCurrency(balance, null, currencySymbol)}</td>
             </tr>
         `;
     }
@@ -7449,6 +9369,11 @@ document.getElementById('structureOffice')?.addEventListener('change', onStructu
 document.getElementById('componentSearch')?.addEventListener('input', updateComponentsTables);
 document.getElementById('componentType')?.addEventListener('change', updateComponentsTables);
 document.getElementById('loanStatus')?.addEventListener('change', loadLoans);
+document.getElementById('loanOfficeFilter')?.addEventListener('change', loadLoans);
+// v3.0.31: Office filters for Employee section tabs
+document.getElementById('vdOfficeFilter')?.addEventListener('change', loadVDEnrollments);
+document.getElementById('adjustmentOfficeFilter')?.addEventListener('change', filterAdjustments);
+document.getElementById('arrearsOfficeFilter')?.addEventListener('change', loadPendingArrears);
 
 // =====================================================
 // SALARY STRUCTURE VERSIONING FUNCTIONS
@@ -9603,7 +11528,14 @@ async function loadPendingArrears() {
 
         const response = await api.request(url);
         arrearsData = response || [];
-        filteredArrearsData = [...arrearsData];
+
+        // v3.0.31: Filter by office if selected
+        const officeFilter = document.getElementById('arrearsOfficeFilter')?.value || '';
+        if (officeFilter) {
+            filteredArrearsData = arrearsData.filter(arr => arr.office_id === officeFilter);
+        } else {
+            filteredArrearsData = [...arrearsData];
+        }
 
         // Populate structure filter dropdown
         populateArrearsStructureFilter();
@@ -10797,7 +12729,14 @@ async function loadVDEnrollments() {
 
         const response = await api.request(url);
         allVDEnrollments = response || [];
-        vdEnrollments = [...allVDEnrollments];
+
+        // v3.0.31: Filter by office if selected
+        const officeFilter = document.getElementById('vdOfficeFilter')?.value;
+        if (officeFilter) {
+            vdEnrollments = allVDEnrollments.filter(e => e.office_id === officeFilter);
+        } else {
+            vdEnrollments = [...allVDEnrollments];
+        }
 
         updateVDEnrollmentsTable();
         updateVDStats();
@@ -11387,8 +13326,13 @@ function renderAdjustmentsTable() {
     const search = (document.getElementById('adjustmentSearch')?.value || '').toLowerCase();
     const statusFilter = document.getElementById('adjustmentStatusFilter')?.value || '';
     const typeFilter = document.getElementById('adjustmentTypeFilter')?.value || '';
+    // v3.0.31: Office filter
+    const officeFilter = document.getElementById('adjustmentOfficeFilter')?.value || '';
 
     let filtered = adjustments.filter(adj => {
+        // v3.0.31: Office filter
+        if (officeFilter && adj.office_id !== officeFilter) return false;
+
         // Search filter
         const employeeName = (adj.employee_name || '').toLowerCase();
         const employeeCode = (adj.employee_code || '').toLowerCase();

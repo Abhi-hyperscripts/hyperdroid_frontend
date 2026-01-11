@@ -74,7 +74,7 @@ const SearchableDropdown = (function() {
             const disabledClass = this.disabled ? 'searchable-dropdown--disabled' : '';
 
             this.container.innerHTML = `
-                <div class="searchable-dropdown ${compactClass} ${disabledClass}" id="${this.id}" data-value="${escapeHtml(String(this.selectedValue || ''))}">
+                <div class="searchable-dropdown ${compactClass} ${disabledClass}" id="${this.id}-dropdown" data-value="${escapeHtml(String(this.selectedValue || ''))}">
                     <div class="searchable-dropdown-trigger" tabindex="${this.disabled ? -1 : 0}" role="combobox" aria-haspopup="listbox" aria-expanded="false">
                         <span class="searchable-dropdown-text ${!displayText ? 'placeholder' : ''}">${escapeHtml(displayText) || escapeHtml(this.placeholder)}</span>
                         <svg class="searchable-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -411,6 +411,17 @@ const SearchableDropdown = (function() {
                     this.textEl.textContent = this.placeholder;
                     this.textEl.classList.add('placeholder');
                     this.dropdownEl.dataset.value = '';
+                }
+            }
+
+            // Sync options to linked native select for form validation
+            if (this.linkedSelect) {
+                this.linkedSelect.innerHTML = options.map(opt =>
+                    `<option value="${opt.value}">${opt.label}</option>`
+                ).join('');
+                // Sync the current value
+                if (this.selectedValue !== null) {
+                    this.linkedSelect.value = this.selectedValue;
                 }
             }
 

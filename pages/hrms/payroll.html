@@ -463,6 +463,11 @@
                     <input type="text" id="loanSearch" placeholder="Search loans...">
                 </div>
                 <div class="filter-group">
+                    <select id="loanOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices">
+                        <option value="">All Offices</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <select id="loanStatus" class="form-select">
                         <option value="">All Status</option>
                         <option value="active">Active</option>
@@ -527,6 +532,11 @@
                             <path d="m21 21-4.35-4.35"/>
                         </svg>
                         <input type="text" id="vdEnrollmentSearch" placeholder="Search by employee name or code..." oninput="filterVDEnrollments()">
+                    </div>
+                    <div class="filter-group">
+                        <select id="vdOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices">
+                            <option value="">All Offices</option>
+                        </select>
                     </div>
                     <div class="filter-group">
                         <select id="vdEnrollmentStatus" class="form-select" onchange="loadVDEnrollments()">
@@ -906,6 +916,11 @@
                     <input type="text" id="adjustmentSearch" placeholder="Search by employee name or code..." onkeyup="filterAdjustments()">
                 </div>
                 <div class="filter-group">
+                    <select id="adjustmentOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices">
+                        <option value="">All Offices</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <select id="adjustmentStatusFilter" class="form-select" onchange="filterAdjustments()">
                         <option value="">All Status</option>
                         <option value="pending">Pending Approval</option>
@@ -986,6 +1001,11 @@
             <!-- Version Arrears Section -->
             <div class="arrears-subtab-content active" id="version-arrears-content">
                 <div class="filters-bar">
+                    <div class="filter-group">
+                        <select id="arrearsOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices">
+                            <option value="">All Offices</option>
+                        </select>
+                    </div>
                     <div class="filter-group">
                         <select id="arrearsStatus" class="form-select" onchange="loadPendingArrears()">
                             <option value="pending">Pending</option>
@@ -1888,6 +1908,110 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="confirmDisburseLoan()">Confirm Disbursement</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Loan Modal -->
+    <div class="modal" id="editLoanModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Loan</h5>
+                    <button class="close-btn" onclick="closeModal('editLoanModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editLoanId">
+
+                    <!-- Read-only loan info -->
+                    <div class="form-section">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>Loan Number</label>
+                                <input type="text" id="editLoanNumber" class="form-control" readonly disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Employee</label>
+                                <input type="text" id="editLoanEmployee" class="form-control" readonly disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Editable fields -->
+                    <div class="form-section">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="editLoanType">Loan Type *</label>
+                                <select id="editLoanType" class="form-control" required>
+                                    <option value="salary_advance">Salary Advance</option>
+                                    <option value="personal_loan">Personal Loan</option>
+                                    <option value="emergency_loan">Emergency Loan</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editPrincipalAmount">Principal Amount *</label>
+                                <input type="number" id="editPrincipalAmount" class="form-control" required min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="editInterestRate">Interest Rate (%)</label>
+                                <input type="number" id="editInterestRate" class="form-control" min="0" max="100" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="editInterestType">Interest Calculation Type</label>
+                                <select id="editInterestType" class="form-control">
+                                    <option value="simple">Simple Interest</option>
+                                    <option value="reducing_balance">Reducing Balance (EMI)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="editTenureMonths">Tenure (Months) *</label>
+                                <input type="number" id="editTenureMonths" class="form-control" required min="1" max="360">
+                            </div>
+                            <div class="form-group">
+                                <label for="editLoanStartDate">Start Date *</label>
+                                <input type="date" id="editLoanStartDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="editLoanPriority">Priority Order</label>
+                                <input type="number" id="editLoanPriority" class="form-control" min="1" max="99" placeholder="1-99">
+                            </div>
+                            <div class="form-group">
+                                <label>Current EMI</label>
+                                <input type="text" id="editCurrentEmi" class="form-control" readonly disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editLoanPurpose">Purpose/Reason</label>
+                                <textarea id="editLoanPurpose" class="form-control" rows="2" placeholder="Purpose of the loan"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-top: 1rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>EMI will be recalculated if principal, interest rate, or tenure is changed. Pending repayments will be regenerated.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editLoanModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEditLoan()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -3213,6 +3337,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
