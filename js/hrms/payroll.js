@@ -1053,8 +1053,8 @@ function updatePayrollDraftsTable(draftsList) {
             <td>${getMonthName(draft.payroll_month)} ${draft.payroll_year}</td>
             <td>${draft.office_name || 'All Offices'}</td>
             <td>${draft.total_employees || 0}</td>
-            <td>${formatCurrency(draft.total_gross)}</td>
-            <td>${formatCurrency(draft.total_net)}</td>
+            <td>${formatCurrency(draft.total_gross, draft.currency_code, draft.currency_symbol)}</td>
+            <td>${formatCurrency(draft.total_net, draft.currency_code, draft.currency_symbol)}</td>
             <td><span class="status-badge status-${draft.status?.toLowerCase()}">${formatDraftStatus(draft.status)}</span></td>
             <td>${formatDate(draft.created_at)}</td>
             <td>
@@ -1522,11 +1522,11 @@ async function viewDraftDetails(draftId) {
 
         document.getElementById('draftDetailTitle').textContent = `${draft.draft_name} - ${getMonthName(draft.payroll_month)} ${draft.payroll_year}`;
 
-        // Update summary cards
+        // Update summary cards - v3.0.25: Use currency from draft
         document.getElementById('draftTotalEmployees').textContent = summary.total_employees || 0;
-        document.getElementById('draftTotalGross').textContent = formatCurrency(summary.total_gross || 0);
-        document.getElementById('draftTotalDeductions').textContent = formatCurrency(summary.total_deductions || 0);
-        document.getElementById('draftTotalNet').textContent = formatCurrency(summary.total_net || 0);
+        document.getElementById('draftTotalGross').textContent = formatCurrency(summary.total_gross || 0, draft.currency_code, draft.currency_symbol);
+        document.getElementById('draftTotalDeductions').textContent = formatCurrency(summary.total_deductions || 0, draft.currency_code, draft.currency_symbol);
+        document.getElementById('draftTotalNet').textContent = formatCurrency(summary.total_net || 0, draft.currency_code, draft.currency_symbol);
 
         // Update payslips table
         const tbody = document.getElementById('draftPayslipsTable');
@@ -1541,9 +1541,9 @@ async function viewDraftDetails(draftId) {
                     <td><code>${p.employee_code || '-'}</code></td>
                     <td>${p.employee_name || 'Unknown'}</td>
                     <td>${p.department_name || '-'}</td>
-                    <td>${formatCurrency(p.gross_earnings)}</td>
-                    <td>${formatCurrency(p.total_deductions)}</td>
-                    <td><strong>${formatCurrency(p.net_pay)}</strong></td>
+                    <td>${formatCurrency(p.gross_earnings, p.currency_code, p.currency_symbol)}</td>
+                    <td>${formatCurrency(p.total_deductions, p.currency_code, p.currency_symbol)}</td>
+                    <td><strong>${formatCurrency(p.net_pay, p.currency_code, p.currency_symbol)}</strong></td>
                     <td>
                         <button class="action-btn" onclick="viewDraftPayslip('${p.id}')" title="View Details">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2426,6 +2426,9 @@ function buildCalculationProofUI(proof, response) {
                         <!-- Voluntary Deductions Section (v3.0.25) -->
                         ${buildVoluntaryDeductionsSection(proof, fmt)}
 
+                        <!-- Adjustments Section (v3.0.30) -->
+                        ${buildAdjustmentsSection(proof, fmt)}
+
                         <!-- Tax Calculation Section -->
                         ${buildTaxCalculationSection(proof, fmt, pct)}
 
@@ -2717,6 +2720,159 @@ function formatProratedReason(reason) {
         'amount_change': 'Amount change mid-period'
     };
     return reasonMap[reason.toLowerCase()] || reason.replace(/_/g, ' ');
+}
+
+/**
+ * v3.0.30: Build adjustments section HTML
+ * Shows one-time adjustments: bonus, reimbursement, incentive, recovery
+ */
+function buildAdjustmentsSection(proof, fmt) {
+    const items = proof.adjustmentItems || [];
+    if (items.length === 0) return '';
+
+    // Separate additions and deductions
+    const additions = items.filter(item => item.isAddition !== false);
+    const deductions = items.filter(item => item.isAddition === false);
+
+    const formatAdjType = (type) => {
+        const typeMap = {
+            'bonus': 'Bonus',
+            'reimbursement': 'Reimbursement',
+            'incentive': 'Incentive',
+            'recovery': 'Recovery',
+            'deduction': 'Deduction',
+            'arrears': 'Arrears'
+        };
+        return type ? (typeMap[type.toLowerCase()] || type.replace(/_/g, ' ')) : 'Adjustment';
+    };
+
+    let additionRows = '';
+    if (additions.length > 0) {
+        additionRows = additions.map(item => `
+            <tr>
+                <td class="component-name">
+                    <span class="adjustment-type addition">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M12 4v16m8-8H4"/>
+                        </svg>
+                        ${item.displayType || formatAdjType(item.adjustmentType)}
+                    </span>
+                </td>
+                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                <td class="text-right amount-cell addition-amount">+${fmt(item.amount)}</td>
+            </tr>
+        `).join('');
+    } else {
+        additionRows = '<tr><td colspan="3" class="text-center text-muted">No additional earnings</td></tr>';
+    }
+
+    let deductionRows = '';
+    if (deductions.length > 0) {
+        deductionRows = deductions.map(item => `
+            <tr>
+                <td class="component-name">
+                    <span class="adjustment-type deduction">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M20 12H4"/>
+                        </svg>
+                        ${item.displayType || formatAdjType(item.adjustmentType)}
+                    </span>
+                </td>
+                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                <td class="text-right amount-cell deduction-amount">-${fmt(item.amount)}</td>
+            </tr>
+        `).join('');
+    } else {
+        deductionRows = '<tr><td colspan="3" class="text-center text-muted">No additional deductions</td></tr>';
+    }
+
+    const totalAdditions = proof.totalAdjustmentsAddition || 0;
+    const totalDeductions = proof.totalAdjustmentsDeduction || 0;
+    const netAdjustment = totalAdditions - totalDeductions;
+    const netClass = netAdjustment >= 0 ? 'addition-amount' : 'deduction-amount';
+    const netSign = netAdjustment >= 0 ? '+' : '';
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header adjustments-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                    <path d="M9 12h6"/>
+                </svg>
+                <span>Adjustments</span>
+                <span class="header-badge ${netAdjustment >= 0 ? 'earnings-badge' : 'deduction-badge'}">${netSign}${fmt(Math.abs(netAdjustment))}</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">One-time adjustments for this pay period (bonus, reimbursement, incentive, recovery)</p>
+
+                <!-- Additions -->
+                <div class="adjustments-subsection">
+                    <h6 class="subsection-title additions-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Additional Earnings
+                    </h6>
+                    <table class="proof-table adjustments-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${additionRows}
+                        </tbody>
+                        ${additions.length > 0 ? `
+                        <tfoot>
+                            <tr class="subtotal-row">
+                                <td colspan="2"><strong>Total Additions</strong></td>
+                                <td class="text-right addition-amount"><strong>+${fmt(totalAdditions)}</strong></td>
+                            </tr>
+                        </tfoot>
+                        ` : ''}
+                    </table>
+                </div>
+
+                <!-- Deductions -->
+                <div class="adjustments-subsection" style="margin-top: 1rem;">
+                    <h6 class="subsection-title deductions-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M20 12H4"/>
+                        </svg>
+                        Additional Deductions
+                    </h6>
+                    <table class="proof-table adjustments-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${deductionRows}
+                        </tbody>
+                        ${deductions.length > 0 ? `
+                        <tfoot>
+                            <tr class="subtotal-row">
+                                <td colspan="2"><strong>Total Deductions</strong></td>
+                                <td class="text-right deduction-amount"><strong>-${fmt(totalDeductions)}</strong></td>
+                            </tr>
+                        </tfoot>
+                        ` : ''}
+                    </table>
+                </div>
+
+                <!-- Net Impact -->
+                <div class="adjustment-net-impact" style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 500;">Net Impact from Adjustments</span>
+                    <span class="${netClass}" style="font-size: 1.1rem; font-weight: 600;">${netSign}${fmt(Math.abs(netAdjustment))}</span>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 /**
@@ -3574,6 +3730,71 @@ function injectCalculationProofStyles() {
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
             font-size: 0.8rem;
             color: var(--text-secondary);
+        }
+
+        /* v3.0.30: Adjustments Section */
+        .adjustments-header svg {
+            color: var(--brand-accent, var(--brand-primary));
+        }
+
+        .adjustments-subsection {
+            margin-bottom: 0.75rem;
+        }
+
+        .subsection-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .subsection-title.additions-title svg {
+            color: var(--color-success);
+        }
+
+        .subsection-title.deductions-title svg {
+            color: var(--color-error);
+        }
+
+        .adjustment-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .adjustment-type.addition svg {
+            color: var(--color-success);
+        }
+
+        .adjustment-type.deduction svg {
+            color: var(--color-error);
+        }
+
+        .addition-amount {
+            color: var(--color-success);
+            font-weight: 600;
+        }
+
+        .deduction-amount {
+            color: var(--color-error);
+            font-weight: 600;
+        }
+
+        .subtotal-row td {
+            background: var(--bg-tertiary);
+            font-size: 0.9rem;
+        }
+
+        .adjustments-table {
+            margin-bottom: 0;
+        }
+
+        .text-muted {
+            color: var(--text-secondary);
+            font-style: italic;
         }
     `;
     document.head.appendChild(style);
@@ -4850,6 +5071,7 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
 
 /**
  * Format statutory component value for display
+ * v3.0.26: Country-agnostic - uses getSelectedCurrency() for symbol
  */
 function formatStatutoryValue(component) {
     const calcType = (component.calculation_type || 'fixed').toLowerCase();
@@ -4863,7 +5085,8 @@ function formatStatutoryValue(component) {
     } else if (calcType === 'fixed') {
         const amt = component.fixed_amount || component.default_value || 0;
         if (amt) {
-            return `₹${Number(amt).toLocaleString('en-IN')}`;
+            const { symbol } = getSelectedCurrency();
+            return `${symbol}${Number(amt).toLocaleString('en-IN')}`;
         }
         return 'Per structure';
     }
@@ -4872,6 +5095,7 @@ function formatStatutoryValue(component) {
 
 /**
  * Format component value based on calculation type
+ * v3.0.26: Country-agnostic - uses getSelectedCurrency() for symbol
  */
 function formatComponentValue(component) {
     const calcType = (component.calculation_type || component.calculationType || 'fixed').toLowerCase();
@@ -4887,7 +5111,8 @@ function formatComponentValue(component) {
     } else if (calcType === 'fixed') {
         const value = component.fixed_amount || component.default_value || 0;
         if (value) {
-            return `₹${Number(value).toLocaleString('en-IN')}`;
+            const { symbol } = getSelectedCurrency();
+            return `${symbol}${Number(value).toLocaleString('en-IN')}`;
         }
         // For fixed type without a value, show descriptive text
         if (component.is_basic_component) {
@@ -7128,6 +7353,9 @@ async function downloadPayslipById(payslipId) {
 
         const payslip = await response.json();
 
+        // v3.0.25: Get currency symbol from payslip (country-agnostic)
+        const currSymbol = payslip.currency_symbol || '₹';
+
         // Generate PDF using jsPDF directly
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
@@ -7278,7 +7506,7 @@ async function downloadPayslipById(payslipId) {
             doc.text(e.component_name, margin + 3, earningsY + 5.5);
             doc.setTextColor(...[5, 150, 105]);
             doc.setFont('helvetica', 'bold');
-            doc.text(`₹${formatNumber(e.amount)}`, margin + tableWidth - 5, earningsY + 5.5, { align: 'right' });
+            doc.text(`${currSymbol}${formatNumber(e.amount)}`, margin + tableWidth - 5, earningsY + 5.5, { align: 'right' });
             earningsY += 8;
         });
 
@@ -7291,7 +7519,7 @@ async function downloadPayslipById(payslipId) {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('Total Earnings', margin + 3, earningsY + 7);
-        doc.text(`₹${formatNumber(payslip.gross_earnings || 0)}`, margin + tableWidth - 5, earningsY + 7, { align: 'right' });
+        doc.text(`${currSymbol}${formatNumber(payslip.gross_earnings || 0)}`, margin + tableWidth - 5, earningsY + 7, { align: 'right' });
 
         // Deductions Table
         let deductionsY = y;
@@ -7312,7 +7540,7 @@ async function downloadPayslipById(payslipId) {
             doc.text(d.component_name, dedX + 3, deductionsY + 5.5);
             doc.setTextColor(220, 38, 38);
             doc.setFont('helvetica', 'bold');
-            doc.text(`₹${formatNumber(d.amount)}`, dedX + tableWidth - 5, deductionsY + 5.5, { align: 'right' });
+            doc.text(`${currSymbol}${formatNumber(d.amount)}`, dedX + tableWidth - 5, deductionsY + 5.5, { align: 'right' });
             deductionsY += 8;
         });
 
@@ -7325,7 +7553,7 @@ async function downloadPayslipById(payslipId) {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('Total Deductions', dedX + 3, deductionsY + 7);
-        doc.text(`₹${formatNumber(payslip.total_deductions || 0)}`, dedX + tableWidth - 5, deductionsY + 7, { align: 'right' });
+        doc.text(`${currSymbol}${formatNumber(payslip.total_deductions || 0)}`, dedX + tableWidth - 5, deductionsY + 7, { align: 'right' });
 
         y = Math.max(earningsY, deductionsY) + 20;
 
@@ -7337,7 +7565,7 @@ async function downloadPayslipById(payslipId) {
         doc.text('NET PAY', pageWidth / 2, y + 10, { align: 'center' });
         doc.setFontSize(28);
         doc.setFont('helvetica', 'bold');
-        doc.text(`₹${formatNumber(payslip.net_pay || 0)}`, pageWidth / 2, y + 24, { align: 'center' });
+        doc.text(`${currSymbol}${formatNumber(payslip.net_pay || 0)}`, pageWidth / 2, y + 24, { align: 'center' });
 
         const netPayInWords = numberToWords(payslip.net_pay || 0);
         doc.setFontSize(9);
@@ -7387,12 +7615,14 @@ function formatNumber(num) {
 function generatePayslipPdfContent(payslip) {
     const earnings = (payslip.items || []).filter(i => i.component_type === 'earning');
     const deductions = (payslip.items || []).filter(i => i.component_type === 'deduction');
+    // v3.0.25: Country-agnostic currency symbol from backend
+    const currSymbol = payslip.currency_symbol || '₹';
 
     // Format earnings rows
     const earningsRows = earnings.map((e, i) => `
         <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
             <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${e.component_name}</td>
-            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #059669; font-weight: 600; border-bottom: 1px solid #e5e7eb;">₹${formatNumber(e.amount)}</td>
+            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #059669; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${currSymbol}${formatNumber(e.amount)}</td>
         </tr>
     `).join('');
 
@@ -7400,7 +7630,7 @@ function generatePayslipPdfContent(payslip) {
     const deductionsRows = deductions.map((d, i) => `
         <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#fef2f2'};">
             <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${d.component_name}</td>
-            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #dc2626; font-weight: 600; border-bottom: 1px solid #e5e7eb;">₹${formatNumber(d.amount)}</td>
+            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #dc2626; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${currSymbol}${formatNumber(d.amount)}</td>
         </tr>
     `).join('');
 
@@ -7522,7 +7752,7 @@ function generatePayslipPdfContent(payslip) {
                             ${earningsRows}
                             <tr style="background: #dcfce7;">
                                 <td style="padding: 12px; font-size: 13px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">Total Earnings</td>
-                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">₹${formatNumber(payslip.gross_earnings || 0)}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">${currSymbol}${formatNumber(payslip.gross_earnings || 0)}</td>
                             </tr>
                         </table>
                     </td>
@@ -7537,7 +7767,7 @@ function generatePayslipPdfContent(payslip) {
                             ${deductionsRows}
                             <tr style="background: #fee2e2;">
                                 <td style="padding: 12px; font-size: 13px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">Total Deductions</td>
-                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">₹${formatNumber(payslip.total_deductions || 0)}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">${currSymbol}${formatNumber(payslip.total_deductions || 0)}</td>
                             </tr>
                         </table>
                     </td>
@@ -7549,7 +7779,7 @@ function generatePayslipPdfContent(payslip) {
                 <tr>
                     <td style="background: #1a73e8; border-radius: 10px; padding: 25px; text-align: center;">
                         <div style="color: rgba(255,255,255,0.85); font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Net Pay</div>
-                        <div style="color: white; font-size: 36px; font-weight: bold; margin: 8px 0;">₹${formatNumber(payslip.net_pay || 0)}</div>
+                        <div style="color: white; font-size: 36px; font-weight: bold; margin: 8px 0;">${currSymbol}${formatNumber(payslip.net_pay || 0)}</div>
                         <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-style: italic;">${netPayInWords} Only</div>
                     </td>
                 </tr>
@@ -8546,6 +8776,21 @@ function formatCurrency(amount, currencyCode = null, currencySymbol = null) {
     return `${symbol} ${formattedNumber}`;
 }
 
+/**
+ * v3.0.26: Get currency info from global country filter.
+ * Used for displays where backend doesn't provide currency (component config, arrears, bulk preview).
+ * Falls back to INR if country not found.
+ */
+function getSelectedCurrency() {
+    const countryCode = document.getElementById('globalCountryFilter')?.value || 'IN';
+    // Look up from loaded countries data (loaded at page init)
+    const country = window.loadedCountries?.find(c => c.country_code === countryCode);
+    return {
+        code: country?.currency_code || 'INR',
+        symbol: country?.currency_symbol || '₹'
+    };
+}
+
 function formatDate(dateString) {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -9520,6 +9765,8 @@ async function viewVersionDetails(versionId) {
                     <tbody>
             `;
 
+            // v3.0.26: Get currency for fixed amount display
+            const { symbol: currSymbol } = getSelectedCurrency();
             components.forEach(c => {
                 let valueStr;
                 const calcType = (c.calculation_type || 'fixed').toLowerCase();
@@ -9530,7 +9777,7 @@ async function viewVersionDetails(versionId) {
                 } else if (calcType === 'balance') {
                     valueStr = '<span style="color: var(--text-secondary);">Balance amount</span>';
                 } else {
-                    valueStr = `₹${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                    valueStr = `${currSymbol}${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                 }
                 const badgeClass = c.component_type === 'earning' ? 'badge-earning' : 'badge-deduction';
 
@@ -10530,6 +10777,7 @@ async function refreshArrears() {
 
 /**
  * Update arrears summary section
+ * v3.0.26: Country-agnostic currency symbol
  */
 function updateArrearsSummary() {
     const summary = document.getElementById('arrearsSummary');
@@ -10544,13 +10792,16 @@ function updateArrearsSummary() {
     const totalAmount = currentArrearsList.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
     const pendingCount = currentArrearsList.filter(a => a.status === 'pending').length;
 
+    // v3.0.26: Country-agnostic currency symbol
+    const { symbol: currSymbol } = getSelectedCurrency();
     document.getElementById('arrearsEmployeeCount').textContent = uniqueEmployees.size;
-    document.getElementById('arrearsTotalAmount').textContent = `₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('arrearsTotalAmount').textContent = `${currSymbol}${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     document.getElementById('arrearsPendingCount').textContent = pendingCount;
 }
 
 /**
  * Update modal arrears table (Version History modal)
+ * v3.0.26: Country-agnostic currency symbol
  */
 function updateModalArrearsTable() {
     const tbody = document.getElementById('modalArrearsTable');
@@ -10569,6 +10820,8 @@ function updateModalArrearsTable() {
         return;
     }
 
+    // v3.0.26: Country-agnostic currency symbol
+    const { symbol: currSymbol } = getSelectedCurrency();
     tbody.innerHTML = currentArrearsList.map(a => {
         const isPending = a.status === 'pending';
         const statusBadge = getArrearsStatusBadge(a.status);
@@ -10585,10 +10838,10 @@ function updateModalArrearsTable() {
                 <br><small class="text-muted">${a.employee_code || ''}</small>
             </td>
             <td>${getMonthName(a.payroll_month)} ${a.payroll_year}</td>
-            <td>₹${(a.old_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td>₹${(a.new_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>${currSymbol}${(a.old_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>${currSymbol}${(a.new_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
             <td class="${a.arrears_amount > 0 ? 'text-success' : 'text-danger'}">
-                <strong>₹${(a.arrears_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                <strong>${currSymbol}${(a.arrears_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
             </td>
             <td>${statusBadge}</td>
             <td>
@@ -11007,12 +11260,15 @@ async function previewBulkAssignment() {
 
         bulkPreviewResult = await api.bulkAssignVersion(bulkAssignStructureId, bulkAssignVersionNumber, request);
 
+        // v3.0.26: Country-agnostic currency symbol
+        const { symbol: currSymbol } = getSelectedCurrency();
+
         // Update preview UI
         document.getElementById('bulkPreviewSection').style.display = 'block';
         document.getElementById('bulkMatchedCount').textContent = bulkPreviewResult.total_employees_matched || 0;
         document.getElementById('bulkToAssignCount').textContent = bulkPreviewResult.employees_to_assign || 0;
         document.getElementById('bulkEstArrears').textContent =
-            `₹${(bulkPreviewResult.estimated_arrears_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            `${currSymbol}${(bulkPreviewResult.estimated_arrears_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
         // Update preview table
         const tbody = document.getElementById('bulkPreviewTable');
@@ -11028,9 +11284,9 @@ async function previewBulkAssignment() {
                         <br><small class="text-muted">${e.employee_code || ''}</small>
                     </td>
                     <td>${e.current_structure_name || e.current_structure || '-'}</td>
-                    <td>₹${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
+                    <td>${currSymbol}${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
                     <td>${e.status !== 'skipped' ?
-                        `₹${(e.arrears_amount || e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
+                        `${currSymbol}${(e.arrears_amount || e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
                         `<span class="text-muted">${e.error_message || 'Skipped'}</span>`}</td>
                 </tr>
             `).join('');
@@ -11189,6 +11445,9 @@ async function showVersionComparison(fromVersionId, toVersionId) {
         document.getElementById('modifiedCount').textContent = `~ ${summary.components_modified || 0} Modified`;
         document.getElementById('unchangedCount').textContent = `= ${summary.components_unchanged || 0} Unchanged`;
 
+        // v3.0.26: Country-agnostic currency symbol for version comparison
+        const { symbol: currSymbol } = getSelectedCurrency();
+
         // Render added components
         const addedSection = document.getElementById('addedSection');
         const addedList = document.getElementById('addedList');
@@ -11199,7 +11458,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
                     <strong>${c.component_name}</strong> (${c.component_code})
                     <br><small class="text-muted">
                         ${c.new_values?.percentage_of_basic ? `${c.new_values.percentage_of_basic}% of Basic` : ''}
-                        ${c.new_values?.fixed_amount ? `₹${c.new_values.fixed_amount}` : ''}
+                        ${c.new_values?.fixed_amount ? `${currSymbol}${c.new_values.fixed_amount}` : ''}
                     </small>
                 </div>
             `).join('');
@@ -13356,11 +13615,11 @@ async function loadAdjustments() {
     try {
         showLoading();
 
-        // Load pending adjustments (main endpoint available)
-        const pendingResponse = await api.request('/hrms/payroll-processing/adjustments/pending');
+        // Load ALL adjustments (pending, approved, applied, rejected)
+        const allAdjustmentsResponse = await api.request('/hrms/payroll-processing/adjustments');
 
-        // Get pending adjustments
-        adjustments = Array.isArray(pendingResponse) ? pendingResponse : [];
+        // Get all adjustments
+        adjustments = Array.isArray(allAdjustmentsResponse) ? allAdjustmentsResponse : [];
 
         // Update stats
         updateAdjustmentStats();
