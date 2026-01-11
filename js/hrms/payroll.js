@@ -617,16 +617,16 @@ function initSearchableDropdowns() {
         { id: 'structureOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'draftOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'runOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
-        // v3.0.31: Office filters for Employee section tabs
-        { id: 'loanOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        // v3.0.32: Office filters for Employee section tabs - NO "All Offices", default to first
+        { id: 'loanOfficeFilter', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'loanStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
-        { id: 'vdOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'vdOfficeFilter', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'vdEnrollmentStatus', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
         { id: 'vdEnrollmentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
-        { id: 'adjustmentOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'adjustmentOfficeFilter', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'adjustmentStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true },
         { id: 'adjustmentTypeFilter', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
-        { id: 'arrearsOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'arrearsOfficeFilter', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'arrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true },
         { id: 'arrearsStructure', placeholder: 'All Structures', searchPlaceholder: 'Search structure...', compact: true },
         { id: 'allPayslipsOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
@@ -5468,25 +5468,30 @@ async function loadOffices() {
             }
         });
 
-        // v3.0.31: Filter dropdowns WITH "All Offices" option - for filtering lists
-        const allOfficesFilters = ['loanOfficeFilter', 'vdOfficeFilter', 'adjustmentOfficeFilter', 'arrearsOfficeFilter'];
-        allOfficesFilters.forEach(id => {
+        // v3.0.32: Filter dropdowns WITHOUT "All Offices" - default to first office
+        const officeFilterIds = ['loanOfficeFilter', 'vdOfficeFilter', 'adjustmentOfficeFilter', 'arrearsOfficeFilter'];
+        officeFilterIds.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
-                // Build options with "All Offices" as first option
-                const allOfficesOptions = [
-                    { value: '', label: 'All Offices' },
-                    ...offices.map(o => ({ value: o.id, label: `${o.office_name} (${o.office_code || o.country_code || ''})` }))
-                ];
-                select.innerHTML = allOfficesOptions.map(opt =>
+                // Build options WITHOUT "All Offices" - just offices
+                const officeOptions = offices.map(o => ({
+                    value: o.id,
+                    label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                }));
+                select.innerHTML = officeOptions.map(opt =>
                     `<option value="${opt.value}">${opt.label}</option>`
                 ).join('');
+
+                // Default to first office if available
+                const defaultOfficeId = offices.length > 0 ? offices[0].id : '';
 
                 // Update SearchableDropdown instance if exists
                 const dropdown = searchableDropdownInstances.get(id);
                 if (dropdown) {
-                    dropdown.setOptions(allOfficesOptions);
-                    dropdown.setValue('');
+                    dropdown.setOptions(officeOptions);
+                    dropdown.setValue(defaultOfficeId);
+                } else if (select) {
+                    select.value = defaultOfficeId;
                 }
             }
         });
@@ -5954,6 +5959,10 @@ async function loadCountryFilter() {
     try {
         const response = await api.request('/hrms/countries');
         const countries = Array.isArray(response) ? response : (response.countries || []);
+
+        // v3.0.32: Store countries globally for currency lookups across all tabs
+        window.loadedCountries = countries;
+
         const select = document.getElementById('countryFilter');
         if (select) {
             // No "All Countries" option - user MUST select a specific country
@@ -8782,8 +8791,38 @@ function formatCurrency(amount, currencyCode = null, currencySymbol = null) {
  * Falls back to INR if country not found.
  */
 function getSelectedCurrency() {
-    const countryCode = document.getElementById('globalCountryFilter')?.value || 'IN';
+    // v3.0.32: Fixed to use correct dropdown ID (countryFilter, not globalCountryFilter)
+    const countryCode = document.getElementById('countryFilter')?.value || 'IN';
     // Look up from loaded countries data (loaded at page init)
+    const country = window.loadedCountries?.find(c => c.country_code === countryCode);
+    return {
+        code: country?.currency_code || 'INR',
+        symbol: country?.currency_symbol || '₹'
+    };
+}
+
+/**
+ * v3.0.32: Get currency info from an office ID.
+ * Used for tabs that don't have a global country filter (Loans, Adjustments, Arrears).
+ * Falls back to INR if office/country not found.
+ * @param {string} officeId - The office UUID
+ * @returns {{ code: string, symbol: string }}
+ */
+function getCurrencyFromOfficeId(officeId) {
+    if (!officeId) {
+        return { code: 'INR', symbol: '₹' };
+    }
+    // Find office in global offices array
+    const office = offices.find(o => o.id === officeId);
+    if (!office) {
+        return { code: 'INR', symbol: '₹' };
+    }
+    // Try to get country from office's country_code
+    const countryCode = office.country_code;
+    if (!countryCode) {
+        return { code: 'INR', symbol: '₹' };
+    }
+    // Look up country to get currency
     const country = window.loadedCountries?.find(c => c.country_code === countryCode);
     return {
         code: country?.currency_code || 'INR',
@@ -10777,7 +10816,7 @@ async function refreshArrears() {
 
 /**
  * Update arrears summary section
- * v3.0.26: Country-agnostic currency symbol
+ * v3.0.33: Country-agnostic currency using currency from arrears data
  */
 function updateArrearsSummary() {
     const summary = document.getElementById('arrearsSummary');
@@ -10792,16 +10831,19 @@ function updateArrearsSummary() {
     const totalAmount = currentArrearsList.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
     const pendingCount = currentArrearsList.filter(a => a.status === 'pending').length;
 
-    // v3.0.26: Country-agnostic currency symbol
-    const { symbol: currSymbol } = getSelectedCurrency();
+    // v3.0.33: Use currency from first arrears record (backend enriches with currency from country config)
+    const firstArrears = currentArrearsList[0];
+    const currCode = firstArrears?.currency_code || null;
+    const currSymbol = firstArrears?.currency_symbol || null;
+
     document.getElementById('arrearsEmployeeCount').textContent = uniqueEmployees.size;
-    document.getElementById('arrearsTotalAmount').textContent = `${currSymbol}${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('arrearsTotalAmount').textContent = formatCurrency(totalAmount, currCode, currSymbol);
     document.getElementById('arrearsPendingCount').textContent = pendingCount;
 }
 
 /**
  * Update modal arrears table (Version History modal)
- * v3.0.26: Country-agnostic currency symbol
+ * v3.0.33: Country-agnostic currency using currency from arrears data
  */
 function updateModalArrearsTable() {
     const tbody = document.getElementById('modalArrearsTable');
@@ -10820,11 +10862,14 @@ function updateModalArrearsTable() {
         return;
     }
 
-    // v3.0.26: Country-agnostic currency symbol
-    const { symbol: currSymbol } = getSelectedCurrency();
+    // v3.0.33: Country-agnostic currency using currency from arrears data
     tbody.innerHTML = currentArrearsList.map(a => {
         const isPending = a.status === 'pending';
         const statusBadge = getArrearsStatusBadge(a.status);
+        // v3.0.33: Use currency from individual arrears object
+        const currCode = a.currency_code || null;
+        const currSymbol = a.currency_symbol || null;
+        const fmtCurr = (amt) => formatCurrency(amt, currCode, currSymbol);
         return `
         <tr class="${isPending ? '' : 'text-muted'}">
             <td>
@@ -10838,10 +10883,10 @@ function updateModalArrearsTable() {
                 <br><small class="text-muted">${a.employee_code || ''}</small>
             </td>
             <td>${getMonthName(a.payroll_month)} ${a.payroll_year}</td>
-            <td>${currSymbol}${(a.old_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td>${currSymbol}${(a.new_gross || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>${fmtCurr(a.old_gross || 0)}</td>
+            <td>${fmtCurr(a.new_gross || 0)}</td>
             <td class="${a.arrears_amount > 0 ? 'text-success' : 'text-danger'}">
-                <strong>${currSymbol}${(a.arrears_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                <strong>${fmtCurr(a.arrears_amount || 0)}</strong>
             </td>
             <td>${statusBadge}</td>
             <td>
@@ -11844,6 +11889,7 @@ function populateArrearsStructureFilter() {
 
 /**
  * Update arrears summary statistics
+ * v3.0.33: Country-agnostic currency using currency from arrears data
  */
 function updateArrearsStats() {
     const totalCount = arrearsData.length;
@@ -11851,9 +11897,22 @@ function updateArrearsStats() {
     const totalAmount = arrearsData.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
     const uniqueEmployees = new Set(arrearsData.map(a => a.employee_id)).size;
 
+    // v3.0.33: Use currency from first arrears record, fallback to selected office's currency
+    const firstArrears = arrearsData[0];
+    let currCode = firstArrears?.currency_code;
+    let currSymbol = firstArrears?.currency_symbol;
+
+    // Fallback to selected office currency when no arrears data
+    if (!currCode || !currSymbol) {
+        const selectedOfficeId = document.getElementById('arrearsOfficeFilter')?.value || null;
+        const officeCurrency = getCurrencyFromOfficeId(selectedOfficeId);
+        currCode = currCode || officeCurrency.code;
+        currSymbol = currSymbol || officeCurrency.symbol;
+    }
+
     document.getElementById('totalArrearsCount').textContent = totalCount;
     document.getElementById('pendingArrearsCount').textContent = pendingCount;
-    document.getElementById('totalArrearsAmount').textContent = formatCurrency(totalAmount);
+    document.getElementById('totalArrearsAmount').textContent = formatCurrency(totalAmount, currCode, currSymbol);
     document.getElementById('affectedEmployeesCount').textContent = uniqueEmployees;
 }
 
@@ -11899,7 +11958,11 @@ function updateArrearsTable() {
         return;
     }
 
-    tbody.innerHTML = filteredArrearsData.map(arr => `
+    // v3.0.33: Use currency from arrears object (enriched by backend)
+    tbody.innerHTML = filteredArrearsData.map(arr => {
+        const currCode = arr.currency_code || null;
+        const currSymbol = arr.currency_symbol || null;
+        return `
         <tr>
             <td>
                 <div class="employee-info">
@@ -11910,9 +11973,9 @@ function updateArrearsTable() {
             <td>${arr.structure_name || 'N/A'}</td>
             <td>v${arr.version_number || '?'}</td>
             <td>${getMonthName(arr.payroll_month)} ${arr.payroll_year}</td>
-            <td class="text-right">${formatCurrency(arr.old_gross)}</td>
-            <td class="text-right">${formatCurrency(arr.new_gross)}</td>
-            <td class="text-right text-success-dark"><strong>${formatCurrency(arr.arrears_amount)}</strong></td>
+            <td class="text-right">${formatCurrency(arr.old_gross, currCode, currSymbol)}</td>
+            <td class="text-right">${formatCurrency(arr.new_gross, currCode, currSymbol)}</td>
+            <td class="text-right text-success-dark"><strong>${formatCurrency(arr.arrears_amount, currCode, currSymbol)}</strong></td>
             <td><span class="status-badge status-${arr.status}">${arr.status}</span></td>
             <td>
                 <div class="action-buttons">
@@ -11937,12 +12000,13 @@ function updateArrearsTable() {
                     ` : ''}
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 /**
  * View arrears details in modal
+ * v3.0.33: Country-agnostic currency using currency from arrears data
  */
 async function viewArrearsDetails(arrearsId) {
     try {
@@ -11956,6 +12020,11 @@ async function viewArrearsDetails(arrearsId) {
             hideLoading();
             return;
         }
+
+        // v3.0.33: Use currency from arrears object
+        const currCode = arrears.currency_code || null;
+        const currSymbol = arrears.currency_symbol || null;
+        const fmtCurr = (amt) => formatCurrency(amt, currCode, currSymbol);
 
         // Build the details content
         const content = `
@@ -11989,24 +12058,24 @@ async function viewArrearsDetails(arrearsId) {
                     <h5 style="margin: 0 0 10px 0; font-size: 13px;">Calculation Breakdown</h5>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
                         <span>Old Gross Salary</span>
-                        <span>${formatCurrency(arrears.old_gross)}</span>
+                        <span>${fmtCurr(arrears.old_gross)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
                         <span>New Gross Salary</span>
-                        <span>${formatCurrency(arrears.new_gross)}</span>
+                        <span>${fmtCurr(arrears.new_gross)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
                         <span>Old Deductions</span>
-                        <span>${formatCurrency(arrears.old_deductions || 0)}</span>
+                        <span>${fmtCurr(arrears.old_deductions || 0)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
                         <span>New Deductions</span>
-                        <span>${formatCurrency(arrears.new_deductions || 0)}</span>
+                        <span>${fmtCurr(arrears.new_deductions || 0)}</span>
                     </div>
                     <hr style="border: none; border-top: 1px solid var(--gray-300); margin: 10px 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; color: var(--color-success);">
                         <span>Arrears Amount</span>
-                        <span>${formatCurrency(arrears.arrears_amount)}</span>
+                        <span>${fmtCurr(arrears.arrears_amount)}</span>
                     </div>
                 </div>
 
@@ -12283,16 +12352,30 @@ async function loadCtcRevisionArrears() {
 
 /**
  * Update CTC arrears summary statistics
+ * v3.0.33: Country-agnostic currency using currency from arrears data
  */
 function updateCtcArrearsStats() {
     const totalCount = ctcArrearsData.length;
     const pendingCount = ctcArrearsData.filter(a => a.status === 'pending').length;
-    const totalAmount = ctcArrearsData.reduce((sum, a) => sum + (a.total_arrears_amount || 0), 0);
+    const totalAmount = ctcArrearsData.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
     const uniqueEmployees = new Set(ctcArrearsData.map(a => a.employee_id)).size;
+
+    // v3.0.33: Use currency from first arrears record, fallback to selected office's currency
+    const firstArrears = ctcArrearsData[0];
+    let currCode = firstArrears?.currency_code;
+    let currSymbol = firstArrears?.currency_symbol;
+
+    // Fallback to selected office currency when no arrears data
+    if (!currCode || !currSymbol) {
+        const selectedOfficeId = document.getElementById('ctcArrearsOfficeFilter')?.value || null;
+        const officeCurrency = getCurrencyFromOfficeId(selectedOfficeId);
+        currCode = currCode || officeCurrency.code;
+        currSymbol = currSymbol || officeCurrency.symbol;
+    }
 
     document.getElementById('totalCtcArrearsCount').textContent = totalCount;
     document.getElementById('pendingCtcArrearsCount').textContent = pendingCount;
-    document.getElementById('totalCtcArrearsAmount').textContent = formatCurrency(totalAmount);
+    document.getElementById('totalCtcArrearsAmount').textContent = formatCurrency(totalAmount, currCode, currSymbol);
     document.getElementById('affectedCtcEmployeesCount').textContent = uniqueEmployees;
 }
 
@@ -12338,9 +12421,14 @@ function updateCtcArrearsTable() {
         return;
     }
 
+    // v3.0.33: Country-agnostic currency using currency from arrears data
     tbody.innerHTML = filteredCtcArrearsData.map(arr => {
         const isPending = arr.status === 'pending';
         const revisionType = arr.revision_type || 'adjustment';
+        // v3.0.33: Use currency from arrears object
+        const currCode = arr.currency_code || null;
+        const currSymbol = arr.currency_symbol || null;
+        const fmtCurr = (amt) => formatCurrency(amt, currCode, currSymbol);
 
         return `
         <tr class="${isPending ? 'pending' : ''}" data-id="${arr.id}">
@@ -12360,10 +12448,10 @@ function updateCtcArrearsTable() {
                 <span class="revision-type-badge ${revisionType}">${formatRevisionType(revisionType)}</span>
             </td>
             <td>${getMonthName(arr.payroll_month)} ${arr.payroll_year}</td>
-            <td class="text-right">${formatCurrency(arr.old_ctc)}</td>
-            <td class="text-right">${formatCurrency(arr.new_ctc)}</td>
-            <td class="text-right ${arr.total_arrears_amount > 0 ? 'arrears-positive' : 'arrears-negative'}">
-                ${formatCurrency(arr.total_arrears_amount)}
+            <td class="text-right">${fmtCurr(arr.old_ctc)}</td>
+            <td class="text-right">${fmtCurr(arr.new_ctc)}</td>
+            <td class="text-right ${arr.arrears_amount > 0 ? 'arrears-positive' : 'arrears-negative'}">
+                ${fmtCurr(arr.arrears_amount)}
             </td>
             <td><span class="status-badge status-${arr.status}">${arr.status}</span></td>
             <td>
@@ -12461,6 +12549,11 @@ async function viewCtcArrearsDetails(arrearsId) {
             return;
         }
 
+        // v3.0.33: Use currency from arrears object (enriched by backend)
+        const currCode = arrears.currency_code || null;
+        const currSymbol = arrears.currency_symbol || null;
+        const fmtCurr = (amt) => formatCurrency(amt, currCode, currSymbol);
+
         // Build the details modal content
         const content = `
             <div class="ctc-arrears-details">
@@ -12473,19 +12566,19 @@ async function viewCtcArrearsDetails(arrearsId) {
 
                 <div class="ctc-arrears-summary">
                     <div class="ctc-summary-card">
-                        <div class="value">${formatCurrency(arrears.old_ctc)}</div>
+                        <div class="value">${fmtCurr(arrears.old_ctc)}</div>
                         <div class="label">Old CTC</div>
                     </div>
                     <div class="ctc-summary-card">
-                        <div class="value">${formatCurrency(arrears.new_ctc)}</div>
+                        <div class="value">${fmtCurr(arrears.new_ctc)}</div>
                         <div class="label">New CTC</div>
                     </div>
                     <div class="ctc-summary-card">
-                        <div class="value">${arrears.arrears_months || 1} month(s)</div>
-                        <div class="label">Period</div>
+                        <div class="value">${getMonthName(arrears.payroll_month)} ${arrears.payroll_year}</div>
+                        <div class="label">Payroll Period</div>
                     </div>
                     <div class="ctc-summary-card highlight">
-                        <div class="value">${formatCurrency(arrears.total_arrears_amount)}</div>
+                        <div class="value">${fmtCurr(arrears.arrears_amount)}</div>
                         <div class="label">Total Arrears</div>
                     </div>
                 </div>
@@ -12502,12 +12595,12 @@ async function viewCtcArrearsDetails(arrearsId) {
                             <strong style="font-size: 14px;">${escapeHtml(arrears.revision_reason || 'N/A')}</strong>
                         </div>
                         <div>
-                            <span style="font-size: 12px; color: var(--text-secondary); display: block;">Arrears From</span>
-                            <strong style="font-size: 14px;">${getMonthName(arrears.arrears_from_month)} ${arrears.arrears_from_year}</strong>
+                            <span style="font-size: 12px; color: var(--text-secondary); display: block;">Proration Factor</span>
+                            <strong style="font-size: 14px;">${(arrears.proration_factor * 100).toFixed(0)}%</strong>
                         </div>
                         <div>
-                            <span style="font-size: 12px; color: var(--text-secondary); display: block;">Arrears To</span>
-                            <strong style="font-size: 14px;">${getMonthName(arrears.arrears_to_month)} ${arrears.arrears_to_year}</strong>
+                            <span style="font-size: 12px; color: var(--text-secondary); display: block;">Days Affected</span>
+                            <strong style="font-size: 14px;">${arrears.days_affected || arrears.days_in_period || '-'} / ${arrears.days_in_period || '-'}</strong>
                         </div>
                     </div>
                 </div>
@@ -12530,14 +12623,14 @@ async function viewCtcArrearsDetails(arrearsId) {
                                     <tr>
                                         <td>${getMonthName(item.month)} ${item.year}</td>
                                         <td class="text-right">${item.days_count || '-'}</td>
-                                        <td class="text-right">${formatCurrency(item.old_amount)}</td>
-                                        <td class="text-right">${formatCurrency(item.new_amount)}</td>
-                                        <td class="text-right ${item.arrears_amount > 0 ? 'arrears-positive' : 'arrears-negative'}">${formatCurrency(item.arrears_amount)}</td>
+                                        <td class="text-right">${fmtCurr(item.old_amount)}</td>
+                                        <td class="text-right">${fmtCurr(item.new_amount)}</td>
+                                        <td class="text-right ${item.arrears_amount > 0 ? 'arrears-positive' : 'arrears-negative'}">${fmtCurr(item.arrears_amount)}</td>
                                     </tr>
                                 `).join('')}
                                 <tr class="total-row">
                                     <td colspan="4"><strong>Total Arrears</strong></td>
-                                    <td class="text-right arrears-positive"><strong>${formatCurrency(arrears.total_arrears_amount)}</strong></td>
+                                    <td class="text-right arrears-positive"><strong>${fmtCurr(arrears.arrears_amount)}</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -12731,7 +12824,7 @@ async function showBulkApplyCtcArrearsModal() {
     }
 
     const selectedArrears = ctcArrearsData.filter(a => selectedCtcArrearsIds.includes(a.id));
-    const totalAmount = selectedArrears.reduce((sum, a) => sum + (a.total_arrears_amount || 0), 0);
+    const totalAmount = selectedArrears.reduce((sum, a) => sum + (a.arrears_amount || 0), 0);
     const employeeCount = new Set(selectedArrears.map(a => a.employee_id)).size;
 
     const confirmed = await Confirm.show({
@@ -13659,10 +13752,14 @@ function updateAdjustmentStats() {
         .filter(a => a.adjustment_type === 'bonus' && (a.status === 'approved' || a.status === 'applied'))
         .reduce((sum, a) => sum + (a.amount || 0), 0);
 
+    // v3.0.32: Use currency from selected office filter (not global country filter)
+    const selectedOfficeId = document.getElementById('adjustmentOfficeFilter')?.value || '';
+    const { code: currCode, symbol: currSymbol } = getCurrencyFromOfficeId(selectedOfficeId);
+
     document.getElementById('pendingAdjustmentsCount').textContent = pendingCount;
     document.getElementById('approvedAdjustmentsCount').textContent = approvedThisMonth;
-    document.getElementById('totalReimbursements').textContent = formatCurrency(totalReimbursements);
-    document.getElementById('totalBonuses').textContent = formatCurrency(totalBonuses);
+    document.getElementById('totalReimbursements').textContent = formatCurrency(totalReimbursements, currCode, currSymbol);
+    document.getElementById('totalBonuses').textContent = formatCurrency(totalBonuses, currCode, currSymbol);
 }
 
 // Render adjustments table
@@ -13719,6 +13816,10 @@ function renderAdjustmentsTable() {
         return;
     }
 
+    // v3.0.32: Get currency from selected office filter
+    const selectedOfficeId = document.getElementById('adjustmentOfficeFilter')?.value || '';
+    const { code: currCode, symbol: currSymbol } = getCurrencyFromOfficeId(selectedOfficeId);
+
     tbody.innerHTML = filtered.map(adj => {
         const statusBadge = getAdjustmentStatusBadge(adj.status);
         const typeBadge = getAdjustmentTypeBadge(adj.adjustment_type);
@@ -13734,7 +13835,7 @@ function renderAdjustmentsTable() {
                 </td>
                 <td>${typeBadge}</td>
                 <td class="amount-cell ${isDeductionType(adj.adjustment_type) ? 'negative' : 'positive'}">
-                    ${isDeductionType(adj.adjustment_type) ? '-' : '+'}${formatCurrency(adj.amount)}
+                    ${isDeductionType(adj.adjustment_type) ? '-' : '+'}${formatCurrency(adj.amount, currCode, currSymbol)}
                 </td>
                 <td>${period}</td>
                 <td class="reason-cell" title="${escapeHtml(adj.reason || '')}">${escapeHtml(truncateText(adj.reason, 30))}</td>
@@ -13763,6 +13864,8 @@ function renderAdjustmentsTable() {
 
 // Filter adjustments table
 function filterAdjustments() {
+    // v3.0.32: Also update stats when filter changes (for currency symbol update)
+    updateAdjustmentStats();
     renderAdjustmentsTable();
 }
 
