@@ -12826,6 +12826,21 @@ function getVDEnrollmentActions(enrollment) {
             </svg>
         </button>`;
 
+    // Show Edit button for editable enrollments
+    // - pending, approved, or active enrollments can be edited
+    // - opted_out and rejected cannot be edited
+    // - Backend validates if already processed in finalized payroll
+    const canEdit = ['pending', 'approved', 'active'].includes(enrollment.status);
+    if (canEdit) {
+        actions += `
+            <button class="btn btn-icon btn-ghost text-primary" onclick="showEditVDModal('${enrollment.id}')" title="Edit Amount">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>`;
+    }
+
     if (enrollment.status === 'pending') {
         actions += `
             <button class="btn btn-icon btn-ghost text-success" onclick="approveVDEnrollment('${enrollment.id}')" title="Approve">
@@ -13138,6 +13153,80 @@ async function confirmVDReject() {
     } catch (error) {
         console.error('Error rejecting VD enrollment:', error);
         showToast(error.message || 'Failed to reject enrollment', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Show edit modal for VD amount update
+function showEditVDModal(enrollmentId) {
+    const enrollment = allVDEnrollments.find(e => e.id === enrollmentId);
+    if (!enrollment) {
+        showToast('Enrollment not found', 'error');
+        return;
+    }
+
+    const employeeName = `${enrollment.employee_first_name || ''} ${enrollment.employee_last_name || ''}`.trim();
+
+    document.getElementById('vdEditId').value = enrollmentId;
+    document.getElementById('vdEditTypeName').textContent = enrollment.deduction_type_name || '-';
+    document.getElementById('vdEditEmployeeName').textContent = employeeName || '-';
+    document.getElementById('vdEditCurrentAmount').textContent = formatCurrency(enrollment.amount || 0);
+    document.getElementById('vdEditNewAmount').value = enrollment.amount || '';
+    document.getElementById('vdEditEffectiveDate').value = '';
+    document.getElementById('vdEditReason').value = '';
+    document.getElementById('vdEditModal').classList.add('active');
+}
+
+// Close edit modal
+function closeVDEditModal() {
+    document.getElementById('vdEditModal').classList.remove('active');
+}
+
+// Save VD amount update
+async function saveVDAmountUpdate() {
+    const enrollmentId = document.getElementById('vdEditId').value;
+    const newAmount = parseFloat(document.getElementById('vdEditNewAmount').value);
+    const effectiveDate = document.getElementById('vdEditEffectiveDate').value;
+    const reason = document.getElementById('vdEditReason').value.trim();
+
+    if (!enrollmentId) {
+        showToast('Invalid enrollment', 'error');
+        return;
+    }
+
+    if (isNaN(newAmount) || newAmount < 0) {
+        showToast('Please enter a valid amount', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+
+        const requestBody = {
+            new_amount: newAmount
+        };
+
+        if (effectiveDate) {
+            requestBody.effective_date = effectiveDate;
+        }
+
+        if (reason) {
+            requestBody.reason = reason;
+        }
+
+        const response = await api.request(`/hrms/voluntary-deductions/${enrollmentId}/amount`, {
+            method: 'PUT',
+            body: JSON.stringify(requestBody),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        showToast(response.message || 'Deduction amount updated successfully', 'success');
+        closeVDEditModal();
+        await loadVDEnrollments();
+    } catch (error) {
+        console.error('Error updating VD amount:', error);
+        showToast(error.message || 'Failed to update deduction amount', 'error');
     } finally {
         hideLoading();
     }
