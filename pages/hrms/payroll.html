@@ -11,6 +11,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -1172,6 +1174,31 @@
 
             <!-- CTC Revision Arrears Section -->
             <div class="arrears-subtab-content" id="ctc-arrears-content">
+                <!-- v3.0.45: Pending Calculations Section -->
+                <div class="pending-calculations-section" id="pendingCalculationsSection" style="display: none;">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--status-pending)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Pending Arrears Calculations</span>
+                            <span class="badge badge-warning" id="pendingCalcCount">0</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="togglePendingCalculations()">
+                            <svg id="pendingCalcToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="pending-calculations-content" id="pendingCalculationsContent">
+                        <p class="section-description">These salary revisions have processed payslips but no arrears calculated yet. Click "Calculate" to compute arrears for each revision.</p>
+                        <div class="pending-calculations-list" id="pendingCalculationsList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
                 <div class="filters-bar">
                     <div class="filter-group">
                         <select id="ctcArrearsStatus" class="form-select" onchange="loadCtcRevisionArrears()">
@@ -3578,9 +3605,21 @@
                                         <label for="empSalaryEffectiveFrom">Effective From *</label>
                                         <input type="date" id="empSalaryEffectiveFrom" class="form-control" required>
                                     </div>
-                                    <div class="form-group" id="empRevisionReasonGroup" style="display: none;">
+                                    <div class="form-group" id="empRevisionTypeGroup" style="display: none;">
+                                        <label for="empRevisionType">Revision Type *</label>
+                                        <select id="empRevisionType" class="form-select searchable-dropdown" data-placeholder="Select Revision Type">
+                                            <option value="annual_increment">Annual Increment</option>
+                                            <option value="promotion">Promotion</option>
+                                            <option value="adjustment">Adjustment</option>
+                                            <option value="correction">Correction</option>
+                                            <option value="demotion">Demotion</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row" id="empRevisionReasonGroup" style="display: none;">
+                                    <div class="form-group" style="width: 100%;">
                                         <label for="empRevisionReason">Revision Reason</label>
-                                        <input type="text" id="empRevisionReason" class="form-control" placeholder="e.g., Annual increment, Promotion">
+                                        <input type="text" id="empRevisionReason" class="form-control" placeholder="e.g., Performance review, Role change">
                                     </div>
                                 </div>
                             </div>
@@ -3655,6 +3694,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');

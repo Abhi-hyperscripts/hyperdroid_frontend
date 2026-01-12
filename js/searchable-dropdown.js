@@ -304,7 +304,9 @@ const SearchableDropdown = (function() {
 
         toggle() {
             if (this.disabled) return;
-            if (this.isOpen) {
+            // Check actual class state instead of property (in case another dropdown forcibly closed us)
+            const isCurrentlyOpen = this.dropdownEl.classList.contains('open');
+            if (isCurrentlyOpen) {
                 this.close();
             } else {
                 this.open();
@@ -313,6 +315,19 @@ const SearchableDropdown = (function() {
 
         open() {
             if (this.disabled) return;
+
+            // Close all other open dropdowns first
+            instances.forEach((instance, id) => {
+                if (id !== this.id && instance.isOpen) {
+                    instance.close();
+                }
+            });
+
+            // Also close any open MonthPickers
+            document.querySelectorAll('.month-picker.open').forEach(picker => {
+                picker.classList.remove('open');
+            });
+
             this.isOpen = true;
             this.dropdownEl.classList.add('open');
             this.triggerEl.setAttribute('aria-expanded', 'true');

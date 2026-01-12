@@ -261,7 +261,9 @@ class PayrollSearchableDropdown {
     }
 
     toggle() {
-        if (this.isOpen) {
+        // Check actual class state instead of property (in case another dropdown forcibly closed us)
+        const isCurrentlyOpen = this.dropdownEl.classList.contains('open');
+        if (isCurrentlyOpen) {
             this.close();
         } else {
             this.open();
@@ -269,6 +271,25 @@ class PayrollSearchableDropdown {
     }
 
     open() {
+        // Close all other open PayrollSearchableDropdowns first
+        payrollSearchableDropdowns.forEach((instance, id) => {
+            if (id !== this.id && instance.isOpen) {
+                instance.close();
+            }
+        });
+
+        // Close all open SearchableDropdowns (from searchable-dropdown.js)
+        document.querySelectorAll('.searchable-dropdown.open').forEach(dropdown => {
+            if (dropdown !== this.dropdownEl) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // Close all open MonthPickers
+        document.querySelectorAll('.month-picker.open').forEach(picker => {
+            picker.classList.remove('open');
+        });
+
         this.isOpen = true;
         this.dropdownEl.classList.add('open');
         this.searchInput.value = '';
@@ -531,7 +552,9 @@ class MonthPicker {
     }
 
     toggle() {
-        if (this.isOpen) {
+        // Check actual class state instead of property (in case another dropdown forcibly closed us)
+        const isCurrentlyOpen = this.pickerEl.classList.contains('open');
+        if (isCurrentlyOpen) {
             this.close();
         } else {
             this.open();
@@ -539,6 +562,18 @@ class MonthPicker {
     }
 
     open() {
+        // Close all other open MonthPickers first
+        document.querySelectorAll('.month-picker.open').forEach(picker => {
+            if (picker !== this.pickerEl) {
+                picker.classList.remove('open');
+            }
+        });
+
+        // Close all open SearchableDropdowns
+        document.querySelectorAll('.searchable-dropdown.open').forEach(dropdown => {
+            dropdown.classList.remove('open');
+        });
+
         this.isOpen = true;
         this.viewYear = this.selectedYear;
         this.pickerEl.classList.add('open');
@@ -8485,7 +8520,7 @@ function addStructureComponent() {
                     ${createSearchableDropdown(componentId)}
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <select class="form-control calc-type-select" onchange="toggleComponentValueFields(this, '${componentId}')">
+                    <select id="${componentId}-calc-type" class="form-control calc-type-select">
                         <option value="percentage">% of Basic</option>
                         <option value="fixed">Fixed Amount</option>
                     </select>
@@ -8505,6 +8540,20 @@ function addStructureComponent() {
     `;
 
     container.insertAdjacentHTML('beforeend', componentHtml);
+
+    // Convert calc type select to searchable dropdown
+    convertSelectToSearchable(`${componentId}-calc-type`, {
+        placeholder: '% of Basic',
+        searchPlaceholder: 'Search...',
+        compact: true,
+        onChange: (value) => {
+            const row = document.getElementById(componentId);
+            if (row) {
+                const select = row.querySelector('.calc-type-select');
+                toggleComponentValueFields(select, componentId);
+            }
+        }
+    });
 
     // Hide empty state when component is added
     updateComponentsEmptyState();
@@ -8943,17 +8992,34 @@ function populateStructureComponents(structureComponents) {
                         percentageLabel = '% of Gross';
                     }
 
-                    // Update dropdown options with correct label
-                    calcTypeSelect.innerHTML = `
-                        <option value="percentage">${percentageLabel}</option>
-                        <option value="fixed">Fixed Amount</option>
-                    `;
+                    // Get the SearchableDropdown instance for the calc type
+                    const calcTypeId = `${lastRow.id}-calc-type`;
+                    const calcTypeDropdown = SearchableDropdown.getInstance(calcTypeId);
+
+                    if (calcTypeDropdown) {
+                        // Update options with correct label
+                        calcTypeDropdown.setOptions([
+                            { value: 'percentage', label: percentageLabel },
+                            { value: 'fixed', label: 'Fixed Amount' }
+                        ]);
+
+                        // Set the correct calculation type value (default to 'fixed' if not specified)
+                        const calcType = sc.calculation_type || 'fixed';
+                        calcTypeDropdown.setValue(calcType);
+                    } else {
+                        // Fallback for regular select (shouldn't normally happen)
+                        calcTypeSelect.innerHTML = `
+                            <option value="percentage">${percentageLabel}</option>
+                            <option value="fixed">Fixed Amount</option>
+                        `;
+                        calcTypeSelect.value = sc.calculation_type || 'fixed';
+                    }
                 }
 
-                // Set the calculation type and value
-                calcTypeSelect.value = sc.calculation_type || 'percentage';
+                // Get the actual calculation type to use
+                const calcType = sc.calculation_type || 'fixed';
 
-                if (sc.calculation_type === 'fixed') {
+                if (calcType === 'fixed') {
                     percentageInput.style.display = 'none';
                     percentageInput.disabled = true;
                     fixedInput.style.display = 'block';
@@ -9914,8 +9980,8 @@ async function viewStructureVersions(structureId) {
             method: 'POST'
         });
 
-        // Load versions
-        const versions = await api.request(`/hrms/payroll/structures/${structureId}/versions`);
+        // Load versions (v3.0.44: include inactive/superseded versions for audit trail)
+        const versions = await api.request(`/hrms/payroll/structures/${structureId}/versions?includeInactive=true`);
         structureVersions = versions || [];
 
         // Get structure name and office info for country filtering
@@ -9957,13 +10023,17 @@ function updateVersionHistoryTable(versions) {
     }
 
     tbody.innerHTML = versions.map((v, index) => {
-        const isCurrent = index === 0; // First version is most recent
+        // v3.0.44: Use is_active field to determine version status
+        // A version can be superseded (is_active=false) when a newer version with same effective_from is created
+        const isCurrent = v.is_active === true && v.effective_to === null;
+        const isSuperseded = v.is_active === false;
         return `
-        <tr class="${isCurrent ? 'current-version' : ''}">
+        <tr class="${isCurrent ? 'current-version' : ''} ${isSuperseded ? 'superseded-version' : ''}">
             <td>
                 <div class="version-cell">
                     <strong>V${v.version_number}</strong>
                     ${isCurrent ? '<span class="badge-current">CURRENT</span>' : ''}
+                    ${isSuperseded ? '<span class="badge-superseded">SUPERSEDED</span>' : ''}
                 </div>
             </td>
             <td>${formatDate(v.effective_from)}</td>
@@ -9994,7 +10064,7 @@ function updateVersionHistoryTable(versions) {
 }
 
 /**
- * View detailed version information
+ * View detailed version information with tabs for visual and JSON views
  */
 async function viewVersionDetails(versionId) {
     try {
@@ -10007,25 +10077,24 @@ async function viewVersionDetails(versionId) {
             return;
         }
 
-        // Build styled HTML content
+        // Build visual HTML content
         const components = version.components || [];
-        const earnings = components.filter(c => c.component_type === 'earning');
-        const deductions = components.filter(c => c.component_type === 'deduction');
+        const { symbol: currSymbol } = getSelectedCurrency();
 
-        let htmlContent = `
+        let visualContent = `
             <div class="detail-grid">
-                <span class="detail-label">Effective From:</span>
+                <span class="detail-label">EFFECTIVE FROM:</span>
                 <span class="detail-value">${formatDate(version.effective_from)}</span>
-                <span class="detail-label">Effective To:</span>
+                <span class="detail-label">EFFECTIVE TO:</span>
                 <span class="detail-value">${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}</span>
-                <span class="detail-label">Change Reason:</span>
-                <span class="detail-value">${version.change_reason || 'Initial version'}</span>
+                <span class="detail-label">CHANGE REASON:</span>
+                <span class="detail-value">${version.change_reason || 'Initial version created with salary structure'}</span>
             </div>
         `;
 
         if (components.length > 0) {
-            htmlContent += `
-                <div class="section-title">Components</div>
+            visualContent += `
+                <div class="section-title">COMPONENTS</div>
                 <table class="component-table">
                     <thead>
                         <tr>
@@ -10037,13 +10106,11 @@ async function viewVersionDetails(versionId) {
                     <tbody>
             `;
 
-            // v3.0.26: Get currency for fixed amount display
-            const { symbol: currSymbol } = getSelectedCurrency();
             components.forEach(c => {
                 let valueStr;
                 const calcType = (c.calculation_type || 'fixed').toLowerCase();
                 if (calcType === 'compliance_linked') {
-                    valueStr = '<span class="compliance-tag" style="color: var(--brand-primary); font-style: italic;">From Compliance Rules</span>';
+                    valueStr = '<span class="compliance-tag">From Compliance Rules</span>';
                 } else if (calcType === 'percentage') {
                     valueStr = `${c.percentage || c.percentage_of_basic || 0}% of ${c.calculation_base || 'basic'}`;
                 } else if (calcType === 'balance') {
@@ -10051,28 +10118,74 @@ async function viewVersionDetails(versionId) {
                 } else {
                     valueStr = `${currSymbol}${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                 }
-                const badgeClass = c.component_type === 'earning' ? 'badge-earning' : 'badge-deduction';
+                const badgeClass = c.component_type === 'earning' ? 'badge-earning' :
+                                   c.component_type === 'employer_contribution' ? 'badge-employer_contribution' : 'badge-deduction';
+                const badgeLabel = (c.component_type || '').replace(/_/g, ' ');
 
-                htmlContent += `
+                visualContent += `
                     <tr>
                         <td><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></td>
-                        <td><span class="badge ${badgeClass}">${c.component_type}</span></td>
+                        <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
                         <td class="amount">${valueStr}</td>
                     </tr>
                 `;
             });
 
-            htmlContent += `
+            visualContent += `
                     </tbody>
                 </table>
             `;
         }
 
+        // Format JSON for display
+        const jsonContent = JSON.stringify(version, null, 2);
+
+        // Build tabbed content
+        const htmlContent = `
+            <div class="version-details-tabs">
+                <div class="version-tab-buttons">
+                    <button class="version-tab-btn active" data-tab="visual" onclick="switchVersionDetailsTab(this, 'visual')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Visual
+                    </button>
+                    <button class="version-tab-btn" data-tab="json" onclick="switchVersionDetailsTab(this, 'json')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        JSON
+                    </button>
+                </div>
+                <div class="version-tab-content">
+                    <div class="version-tab-panel active" data-panel="visual">
+                        ${visualContent}
+                    </div>
+                    <div class="version-tab-panel" data-panel="json">
+                        <div class="json-toolbar">
+                            <button class="json-copy-btn" onclick="copyVersionJson(this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy JSON
+                            </button>
+                        </div>
+                        <pre class="json-display"><code>${escapeHtml(jsonContent)}</code></pre>
+                    </div>
+                </div>
+            </div>
+        `;
+
         await InfoModal.show({
             title: `Version ${version.version_number} Details`,
             message: htmlContent,
             type: 'info',
-            html: true
+            html: true,
+            maxWidth: '800px'
         });
 
         hideLoading();
@@ -10081,6 +10194,58 @@ async function viewVersionDetails(versionId) {
         showToast(error.message || 'Failed to load version details', 'error');
         hideLoading();
     }
+}
+
+/**
+ * Switch between Visual and JSON tabs in version details modal
+ */
+function switchVersionDetailsTab(btn, targetTab) {
+    const container = btn.closest('.version-details-tabs');
+    if (!container) return;
+
+    // Update button states
+    container.querySelectorAll('.version-tab-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+    });
+
+    // Update panel visibility
+    container.querySelectorAll('.version-tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.panel === targetTab);
+    });
+}
+
+/**
+ * Copy version JSON to clipboard
+ */
+function copyVersionJson(btn) {
+    const jsonCode = btn.closest('.version-tab-panel').querySelector('.json-display code');
+    if (jsonCode) {
+        navigator.clipboard.writeText(jsonCode.textContent).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Copied!
+            `;
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(() => {
+            showToast('Failed to copy to clipboard', 'error');
+        });
+    }
+}
+
+/**
+ * Escape HTML entities for safe display
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**
@@ -10308,7 +10473,7 @@ function addVersionComponent() {
                     ${createVersionSearchableDropdown(componentId)}
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <select class="form-control calc-type-select" onchange="toggleVersionComponentValueFields(this, '${componentId}')">
+                    <select id="${componentId}-calc-type" class="form-control calc-type-select">
                         <option value="percentage">% of Basic</option>
                         <option value="fixed">Fixed Amount</option>
                     </select>
@@ -10328,6 +10493,20 @@ function addVersionComponent() {
     `;
 
     container.insertAdjacentHTML('beforeend', componentHtml);
+
+    // Convert calc type select to searchable dropdown
+    convertSelectToSearchable(`${componentId}-calc-type`, {
+        placeholder: '% of Basic',
+        searchPlaceholder: 'Search...',
+        compact: true,
+        onChange: (value) => {
+            const row = document.getElementById(componentId);
+            if (row) {
+                const select = row.querySelector('.calc-type-select');
+                toggleVersionComponentValueFields(select, componentId);
+            }
+        }
+    });
 
     // Hide empty state
     if (emptyState) emptyState.style.display = 'none';
@@ -12683,6 +12862,9 @@ async function loadCtcRevisionArrears() {
         // Render table
         updateCtcArrearsTable();
 
+        // v3.0.45: Also load pending calculations section
+        loadPendingCtcRevisions();
+
         hideLoading();
     } catch (error) {
         console.error('Error loading CTC revision arrears:', error);
@@ -12692,6 +12874,181 @@ async function loadCtcRevisionArrears() {
         updateCtcArrearsStats();
         updateCtcArrearsTable();
         hideLoading();
+    }
+}
+
+/**
+ * v3.0.45: Load salary revisions that need arrears calculation
+ * Shows a section at the top of CTC Arrears tab for revisions that have processed payslips
+ * but no arrears calculated yet
+ */
+let pendingCtcRevisions = [];
+let pendingCalcExpanded = true;
+
+async function loadPendingCtcRevisions() {
+    try {
+        const response = await api.request('/hrms/payroll/salary-revisions/pending-arrears');
+        pendingCtcRevisions = response?.revisions || [];
+        renderPendingCalculations();
+    } catch (error) {
+        console.error('Error loading pending CTC revisions:', error);
+        pendingCtcRevisions = [];
+        renderPendingCalculations();
+    }
+}
+
+/**
+ * v3.0.45: Render the pending calculations section
+ */
+function renderPendingCalculations() {
+    const section = document.getElementById('pendingCalculationsSection');
+    const countBadge = document.getElementById('pendingCalcCount');
+    const listContainer = document.getElementById('pendingCalculationsList');
+
+    if (!section || !listContainer) return;
+
+    const count = pendingCtcRevisions.length;
+    countBadge.textContent = count;
+
+    if (count === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+
+    // Render each pending revision
+    listContainer.innerHTML = pendingCtcRevisions.map(rev => {
+        const currencySymbol = rev.currency_symbol || '₹';
+        const oldCtc = rev.old_ctc ? formatCurrency(rev.old_ctc, rev.currency_code, currencySymbol) : 'N/A';
+        const newCtc = formatCurrency(rev.new_ctc, rev.currency_code, currencySymbol);
+        const affectedCount = rev.affected_periods?.length || 0;
+        const effectiveDate = rev.effective_date ? new Date(rev.effective_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+
+        return `
+        <div class="pending-calc-card" data-revision-id="${rev.revision_id}">
+            <div class="pending-calc-info">
+                <div class="pending-calc-employee">
+                    ${escapeHtml(rev.employee_name || 'Unknown')}
+                    <span class="employee-code">${escapeHtml(rev.employee_code || '')}</span>
+                </div>
+                <div class="pending-calc-details">
+                    <span class="revision-type-badge ${rev.revision_type}">${formatRevisionType(rev.revision_type)}</span>
+                    <span class="ctc-change">
+                        ${oldCtc}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                        ${newCtc}
+                    </span>
+                    <span class="effective-date">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        ${effectiveDate}
+                    </span>
+                    <span class="affected-periods">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        ${affectedCount} payslip${affectedCount !== 1 ? 's' : ''} affected
+                    </span>
+                </div>
+            </div>
+            <div class="pending-calc-actions">
+                <button class="btn-calculate" onclick="calculateCtcArrearsForRevision('${rev.revision_id}', '${rev.employee_id}', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="8" y1="10" x2="16" y2="10"></line>
+                        <line x1="8" y1="14" x2="12" y2="14"></line>
+                    </svg>
+                    Calculate Arrears
+                </button>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+/**
+ * v3.0.45: Toggle visibility of pending calculations content
+ */
+function togglePendingCalculations() {
+    const content = document.getElementById('pendingCalculationsContent');
+    const icon = document.getElementById('pendingCalcToggleIcon');
+
+    if (!content || !icon) return;
+
+    pendingCalcExpanded = !pendingCalcExpanded;
+    content.style.display = pendingCalcExpanded ? 'block' : 'none';
+    icon.innerHTML = pendingCalcExpanded
+        ? '<polyline points="6 9 12 15 18 9"></polyline>'
+        : '<polyline points="6 15 12 9 18 15"></polyline>';
+}
+
+/**
+ * v3.0.45: Calculate arrears for a specific CTC revision
+ * @param {string} revisionId - The salary revision history ID
+ * @param {string} employeeId - The employee ID
+ * @param {HTMLElement} button - The button element for loading state
+ */
+async function calculateCtcArrearsForRevision(revisionId, employeeId, button) {
+    try {
+        // Show loading state
+        const originalContent = button.innerHTML;
+        button.classList.add('loading');
+        button.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+            </svg>
+            Calculating...
+        `;
+        button.disabled = true;
+
+        // Call the API to calculate arrears (uses revisionId, not employeeId)
+        const response = await api.request(`/hrms/payroll/salary-revisions/${revisionId}/recalculate-arrears`, {
+            method: 'POST'
+        });
+
+        if (response?.success || response?.arrears_count !== undefined) {
+            showToast(`Arrears calculated successfully: ${response.arrears_count || 0} payslip(s) processed`, 'success');
+
+            // Refresh both pending and calculated arrears
+            await loadPendingCtcRevisions();
+            await loadCtcRevisionArrears();
+        } else {
+            throw new Error(response?.message || 'Failed to calculate arrears');
+        }
+
+    } catch (error) {
+        console.error('Error calculating arrears:', error);
+        showToast(error.message || 'Failed to calculate arrears', 'error');
+
+        // Reset button state
+        button.classList.remove('loading');
+        button.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="12" y2="14"></line>
+            </svg>
+            Calculate Arrears
+        `;
+        button.disabled = false;
     }
 }
 
@@ -15542,6 +15899,7 @@ async function openEmployeeSalaryModal(employeeId) {
     document.getElementById('empSalaryEffectiveFrom').value = new Date().toISOString().split('T')[0];
     document.getElementById('empCurrentSalarySection').style.display = 'none';
     document.getElementById('empSalaryBreakdownSection').style.display = 'none';
+    document.getElementById('empRevisionTypeGroup').style.display = 'none';
     document.getElementById('empRevisionReasonGroup').style.display = 'none';
     document.getElementById('employeeSalaryFormTitle').textContent = 'Configure Salary';
     document.getElementById('empSaveSalaryBtnText').textContent = 'Save Salary';
@@ -15612,6 +15970,7 @@ async function openEmployeeSalaryModal(employeeId) {
             document.getElementById('empSalaryStructureId').value = salary.structure_id || '';
             document.getElementById('empSalaryCTC').value = salary.ctc || '';
             document.getElementById('employeeSalaryFormTitle').textContent = 'Revise Salary';
+            document.getElementById('empRevisionTypeGroup').style.display = 'block';
             document.getElementById('empRevisionReasonGroup').style.display = 'block';
             document.getElementById('empSaveSalaryBtnText').textContent = 'Revise Salary';
 
@@ -15972,7 +16331,8 @@ async function saveEmployeeSalaryFromPayroll(event) {
                 new_structure_id: structureId,
                 new_ctc: ctc,
                 effective_from: effectiveFrom,
-                revision_type: document.getElementById('empRevisionReason')?.value || 'adjustment'
+                revision_type: document.getElementById('empRevisionType')?.value || 'adjustment',
+                revision_reason: document.getElementById('empRevisionReason')?.value || ''
             };
             await api.updateEmployeeSalary(employeeId, salaryData);
             showToast('Salary revised successfully', 'success');

@@ -214,6 +214,25 @@
     letter-spacing: 0.5px;
 }
 
+/* v3.0.44: Superseded version styling for retroactive revisions */
+.superseded-version {
+    background: var(--gray-50);
+    opacity: 0.8;
+}
+
+.badge-superseded {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    background: var(--color-warning);
+    color: var(--text-primary);
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* =============================================================
    VERSION COMPONENT SELECTOR
    ============================================================= */

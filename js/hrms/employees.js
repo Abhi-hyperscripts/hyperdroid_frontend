@@ -506,8 +506,8 @@ async function openCreateEmployeeModal() {
     // Reset documents and banking
     resetDocumentsAndBanking();
 
-    // Reset gender dropdown
-    resetGenderDropdown();
+    // Initialize/reset gender dropdown (using SearchableDropdown component)
+    initGenderDropdown();
 
     // Load available users
     try {
@@ -723,15 +723,13 @@ async function editEmployee(id) {
     document.getElementById('workPhone').value = emp.work_phone || '';
     document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
 
-    // Set gender dropdown
-    if (emp.gender) {
-        const genderLabels = { male: 'Male', female: 'Female', other: 'Other' };
-        selectGender(emp.gender, genderLabels[emp.gender] || emp.gender);
-    } else {
-        resetGenderDropdown();
-    }
+    // Initialize and set gender dropdown (using SearchableDropdown component)
+    initGenderDropdown();
+    setGenderValue(emp.gender || '');
 
-    document.getElementById('employmentType').value = emp.employment_type || 'full_time';
+    // Initialize and set employment type dropdown (using SearchableDropdown component)
+    initEmploymentTypeDropdown();
+    setEmploymentTypeValue(emp.employment_type || 'full_time');
     document.getElementById('dateOfJoining').value = emp.hire_date?.split('T')[0] || '';
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
     document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
@@ -3291,59 +3289,102 @@ const searchableDropdownData = {
 
 const DROPDOWN_BATCH_SIZE = 50;
 
-/**
- * Toggle gender dropdown open/close
- */
-function toggleGenderDropdown() {
-    const dropdown = document.getElementById('genderDropdown');
+// Gender dropdown instance (using SearchableDropdown component)
+let genderDropdown = null;
 
-    // Close all other dropdowns first
-    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
-        if (d.id !== 'genderDropdown') {
-            d.classList.remove('open');
+/**
+ * Initialize gender dropdown using SearchableDropdown component
+ */
+function initGenderDropdown() {
+    // Check if already converted
+    const existingContainer = document.getElementById('gender-searchable-container');
+    if (existingContainer) {
+        // Already converted, just reset
+        if (genderDropdown) {
+            genderDropdown.setValue(null);
         }
-    });
-
-    dropdown.classList.toggle('open');
-}
-
-/**
- * Select gender value
- */
-function selectGender(value, label) {
-    const dropdown = document.getElementById('genderDropdown');
-    const hiddenInput = document.getElementById('gender');
-    const selectedText = dropdown.querySelector('.selected-text');
-
-    hiddenInput.value = value;
-    selectedText.textContent = label;
-    selectedText.classList.remove('placeholder');
-
-    // Update selected state
-    dropdown.querySelectorAll('.searchable-dropdown-item').forEach(item => {
-        item.classList.toggle('selected', item.dataset.value === value);
-    });
-
-    dropdown.classList.remove('open');
-}
-
-/**
- * Reset gender dropdown
- */
-function resetGenderDropdown() {
-    const dropdown = document.getElementById('genderDropdown');
-    const hiddenInput = document.getElementById('gender');
-    const selectedText = dropdown.querySelector('.selected-text');
-
-    if (hiddenInput) hiddenInput.value = '';
-    if (selectedText) {
-        selectedText.textContent = 'Select gender...';
-        selectedText.classList.add('placeholder');
+        return;
     }
 
-    dropdown?.querySelectorAll('.searchable-dropdown-item').forEach(item => {
-        item.classList.remove('selected');
+    // Convert native select to searchable dropdown
+    genderDropdown = convertSelectToSearchable('gender', {
+        placeholder: 'Select gender...',
+        searchPlaceholder: 'Search...',
+        compact: true
     });
+}
+
+/**
+ * Reset gender dropdown to default state
+ */
+function resetGenderDropdown() {
+    if (genderDropdown) {
+        genderDropdown.setValue(null);
+    } else {
+        const select = document.getElementById('gender');
+        if (select) select.value = '';
+    }
+}
+
+/**
+ * Set gender dropdown value
+ */
+function setGenderValue(value) {
+    if (genderDropdown) {
+        genderDropdown.setValue(value);
+    } else {
+        const select = document.getElementById('gender');
+        if (select) select.value = value || '';
+    }
+}
+
+// Employment Type dropdown instance (using SearchableDropdown component)
+let employmentTypeDropdown = null;
+
+/**
+ * Initialize employment type dropdown using SearchableDropdown component
+ */
+function initEmploymentTypeDropdown() {
+    // Check if already converted
+    const existingContainer = document.getElementById('employmentType-searchable-container');
+    if (existingContainer) {
+        // Already converted, just reset
+        if (employmentTypeDropdown) {
+            employmentTypeDropdown.setValue(null);
+        }
+        return;
+    }
+
+    // Convert native select to searchable dropdown
+    employmentTypeDropdown = convertSelectToSearchable('employmentType', {
+        placeholder: 'Select employment type...',
+        searchPlaceholder: 'Search...',
+        compact: true
+    });
+}
+
+/**
+ * Reset employment type dropdown to default state
+ */
+function resetEmploymentTypeDropdown() {
+    if (employmentTypeDropdown) {
+        employmentTypeDropdown.setValue(null);
+    } else {
+        const select = document.getElementById('employmentType');
+        if (select) select.value = '';
+    }
+}
+
+/**
+ * Set employment type dropdown value
+ */
+function setEmploymentTypeValue(value) {
+    if (employmentTypeDropdown) {
+        employmentTypeDropdown.setValue(value);
+    } else {
+        const select = document.getElementById('employmentType');
+        if (select) select.value = value || '';
+    }
 }
 
 /**
@@ -3855,6 +3896,9 @@ function populateSearchableManagerDropdown(excludeEmployeeId = null) {
  * Initialize searchable dropdowns for employment step
  */
 function initializeEmploymentDropdowns() {
+    // Initialize employment type dropdown
+    initEmploymentTypeDropdown();
+
     // Populate offices dropdown
     const officeItems = offices.map(o => ({
         id: o.id,
