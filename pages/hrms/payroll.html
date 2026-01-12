@@ -1284,29 +1284,10 @@
                                     <small class="form-text text-muted">Give this draft a name to distinguish it from others</small>
                                 </div>
                             </div>
-                            <div class="form-row two-col">
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="draftPayrollMonth">Payroll Period *</label>
-                                    <select id="draftPayrollMonth" name="month" class="form-control" required onchange="updateDraftPeriodDates()">
-                                        <option value="1">January</option>
-                                        <option value="2">February</option>
-                                        <option value="3">March</option>
-                                        <option value="4">April</option>
-                                        <option value="5">May</option>
-                                        <option value="6">June</option>
-                                        <option value="7">July</option>
-                                        <option value="8">August</option>
-                                        <option value="9">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="draftPayrollYear">Year *</label>
-                                    <select id="draftPayrollYear" name="year" class="form-control" required onchange="updateDraftPeriodDates()">
-                                        <!-- Populated by JS -->
-                                    </select>
+                                    <label>Payroll Period *</label>
+                                    <div class="month-picker-container" id="createDraftMonthPicker"></div>
                                 </div>
                             </div>
                             <div class="form-row">

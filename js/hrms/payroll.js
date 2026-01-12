@@ -25,6 +25,7 @@ const payrollSearchableDropdowns = new Map();
 let draftMonthPicker = null;
 let runMonthPicker = null;
 let allPayslipsMonthPicker = null;
+let createDraftMonthPicker = null;
 
 // VD employee dropdown instance
 let vdEmployeeDropdown = null;
@@ -1168,13 +1169,19 @@ async function createPayrollDraft() {
         return;
     }
 
+    // Validate month picker selection
+    if (!createDraftMonthPicker || !createDraftMonthPicker.getMonth()) {
+        showToast('Please select a payroll period', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const officeId = document.getElementById('draftPayrollOffice').value;
 
-        // Get month and year from dropdowns
-        const month = parseInt(document.getElementById('draftPayrollMonth').value);
-        const year = parseInt(document.getElementById('draftPayrollYear').value);
+        // Get month and year from month picker
+        const month = createDraftMonthPicker.getMonth();
+        const year = createDraftMonthPicker.getYear();
 
         const data = {
             payroll_month: month,
@@ -4362,25 +4369,15 @@ function openCreateDraftModal() {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    // Populate year dropdown (current year - 1 to current year + 1)
-    const yearSelect = document.getElementById('draftPayrollYear');
-    const monthSelect = document.getElementById('draftPayrollMonth');
-
-    if (yearSelect) {
-        yearSelect.innerHTML = '';
-        for (let y = currentYear - 1; y <= currentYear + 1; y++) {
-            const option = document.createElement('option');
-            option.value = y;
-            option.textContent = y;
-            if (y === currentYear) option.selected = true;
-            yearSelect.appendChild(option);
-        }
-    }
-
-    // Set month dropdown to current month
-    if (monthSelect) {
-        monthSelect.value = currentMonth;
-    }
+    // Initialize or re-initialize the month picker for the create draft modal
+    createDraftMonthPicker = new MonthPicker('createDraftMonthPicker', {
+        yearsBack: 1,
+        yearsForward: 1,
+        year: currentYear,
+        month: currentMonth,
+        allowAllMonths: false,
+        onChange: () => updateDraftPeriodDates()
+    });
 
     const draftNameField = document.getElementById('draftName');
     if (draftNameField) draftNameField.value = 'Draft';
@@ -4412,10 +4409,12 @@ function formatDateLocal(year, month, day) {
     return `${year}-${m}-${d}`;
 }
 
-// Update period dates when month/year dropdowns change
+// Update period dates when month picker changes
 function updateDraftPeriodDates() {
-    const month = parseInt(document.getElementById('draftPayrollMonth').value);
-    const year = parseInt(document.getElementById('draftPayrollYear').value);
+    if (!createDraftMonthPicker) return;
+
+    const month = createDraftMonthPicker.getMonth();
+    const year = createDraftMonthPicker.getYear();
     if (!month || !year) return;
 
     // Set period start to 1st of month
