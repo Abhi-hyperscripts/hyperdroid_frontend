@@ -1172,9 +1172,9 @@ async function createPayrollDraft() {
         showLoading();
         const officeId = document.getElementById('draftPayrollOffice').value;
 
-        // Parse month picker value (format: YYYY-MM)
-        const periodValue = document.getElementById('draftPayrollPeriod').value;
-        const [year, month] = periodValue.split('-').map(Number);
+        // Get month and year from dropdowns
+        const month = parseInt(document.getElementById('draftPayrollMonth').value);
+        const year = parseInt(document.getElementById('draftPayrollYear').value);
 
         const data = {
             payroll_month: month,
@@ -4362,10 +4362,28 @@ function openCreateDraftModal() {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    // Set month picker value (format: YYYY-MM)
-    const monthStr = currentMonth.toString().padStart(2, '0');
-    document.getElementById('draftPayrollPeriod').value = `${currentYear}-${monthStr}`;
-    document.getElementById('draftName').value = 'Draft';
+    // Populate year dropdown (current year - 1 to current year + 1)
+    const yearSelect = document.getElementById('draftPayrollYear');
+    const monthSelect = document.getElementById('draftPayrollMonth');
+
+    if (yearSelect) {
+        yearSelect.innerHTML = '';
+        for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = y;
+            if (y === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+        }
+    }
+
+    // Set month dropdown to current month
+    if (monthSelect) {
+        monthSelect.value = currentMonth;
+    }
+
+    const draftNameField = document.getElementById('draftName');
+    if (draftNameField) draftNameField.value = 'Draft';
 
     // Set period start to 1st of month
     document.getElementById('draftPeriodStart').value = formatDateLocal(currentYear, currentMonth, 1);
@@ -4394,13 +4412,11 @@ function formatDateLocal(year, month, day) {
     return `${year}-${m}-${d}`;
 }
 
-// Update period dates when month picker changes
+// Update period dates when month/year dropdowns change
 function updateDraftPeriodDates() {
-    const periodValue = document.getElementById('draftPayrollPeriod').value;
-    if (!periodValue) return;
-
-    // Parse YYYY-MM format
-    const [year, month] = periodValue.split('-').map(Number);
+    const month = parseInt(document.getElementById('draftPayrollMonth').value);
+    const year = parseInt(document.getElementById('draftPayrollYear').value);
+    if (!month || !year) return;
 
     // Set period start to 1st of month
     document.getElementById('draftPeriodStart').value = formatDateLocal(year, month, 1);
