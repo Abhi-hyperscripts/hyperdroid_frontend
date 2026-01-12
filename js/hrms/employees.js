@@ -430,7 +430,6 @@ function renderEmployees() {
                 <td>${desig?.designation_name || '-'}</td>
                 <td>${office?.office_name || '-'}</td>
                 <td>${formatDate(emp.hire_date)}</td>
-                <td>${formatCurrency(emp.current_ctc || 0, office?.country_code)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
                 <td>
                     <div class="action-buttons">
@@ -465,12 +464,6 @@ function renderEmployees() {
                                     <circle cx="9" cy="7" r="4"></circle>
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                            </button>
-                            <button class="action-btn" onclick="openSalaryModal('${emp.id}')" data-tooltip="Salary">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                                 </svg>
                             </button>
                             ${emp.employment_status === 'active' ? `
@@ -767,6 +760,153 @@ async function saveEmployee() {
         return;
     }
 
+    // Disable save button to prevent double-click
+    const saveBtn = document.getElementById('empWizardSaveBtn');
+    const originalBtnHtml = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="btn-spinner"></span> Saving...';
+
+    try {
+        if (isEdit) {
+            // For editing, use the existing approach (update employee, then handle documents separately)
+            await saveEmployeeEdit(id);
+        } else {
+            // For new employees, use atomic creation (everything in one request)
+            await saveEmployeeAtomic();
+        }
+    } catch (error) {
+        console.error('Error saving employee:', error);
+        showToast(error.message || 'Error saving employee', 'error');
+    } finally {
+        // Re-enable save button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnHtml;
+    }
+}
+
+/**
+ * Create a new employee atomically - all data and documents in a single request.
+ * If any part fails, the backend rolls back everything.
+ */
+async function saveEmployeeAtomic() {
+    const userId = document.getElementById('userSelect').value;
+    if (!userId) {
+        showToast('Please select a user account', 'error');
+        return;
+    }
+
+    // Build FormData with all employee info, documents, and bank details
+    const formData = new FormData();
+
+    // Employee basic info
+    formData.append('user_id', userId);
+
+    const employeeCode = document.getElementById('employeeCode').value;
+    if (employeeCode) formData.append('employee_code', employeeCode);
+
+    const workPhone = document.getElementById('workPhone').value;
+    if (workPhone) formData.append('work_phone', workPhone);
+
+    const dateOfBirth = document.getElementById('dateOfBirth').value;
+    if (dateOfBirth) formData.append('date_of_birth', dateOfBirth);
+
+    const gender = document.getElementById('gender').value;
+    if (gender) formData.append('gender', gender);
+
+    const departmentId = document.getElementById('departmentId').value;
+    if (departmentId) formData.append('department_id', departmentId);
+
+    const designationId = document.getElementById('designationId').value;
+    if (designationId) formData.append('designation_id', designationId);
+
+    const officeId = document.getElementById('officeId').value;
+    if (officeId) formData.append('office_id', officeId);
+
+    const shiftId = document.getElementById('shiftId').value;
+    if (shiftId) formData.append('shift_id', shiftId);
+
+    const managerId = document.getElementById('reportingManagerId').value;
+    if (managerId) formData.append('manager_user_id', managerId);
+
+    const employmentType = document.getElementById('employmentType').value;
+    if (employmentType) formData.append('employment_type', employmentType);
+
+    const hireDate = document.getElementById('dateOfJoining').value;
+    if (hireDate) formData.append('hire_date', hireDate);
+
+    const probationEndDate = document.getElementById('probationEndDate').value;
+    if (probationEndDate) formData.append('probation_end_date', probationEndDate);
+
+    formData.append('enable_geofence_attendance', document.getElementById('enableGeofenceAttendance').checked);
+
+    // Document numbers
+    const panNumber = document.getElementById('pan-number')?.value;
+    if (panNumber) formData.append('pan_number', panNumber);
+
+    const aadharNumber = document.getElementById('aadhar-number')?.value;
+    if (aadharNumber) formData.append('aadhar_number', aadharNumber);
+
+    const passportNumber = document.getElementById('passport-number')?.value;
+    if (passportNumber) formData.append('passport_number', passportNumber);
+
+    const passportExpiry = document.getElementById('passport-expiry')?.value;
+    if (passportExpiry) formData.append('passport_expiry', passportExpiry);
+
+    // Document files
+    if (pendingDocuments.photo) {
+        formData.append('profile_photo', pendingDocuments.photo);
+    }
+    if (pendingDocuments.pan_front) {
+        formData.append('pan_front', pendingDocuments.pan_front);
+    }
+    if (pendingDocuments.pan_back) {
+        formData.append('pan_back', pendingDocuments.pan_back);
+    }
+    if (pendingDocuments.aadhar_front) {
+        formData.append('aadhar_front', pendingDocuments.aadhar_front);
+    }
+    if (pendingDocuments.aadhar_back) {
+        formData.append('aadhar_back', pendingDocuments.aadhar_back);
+    }
+    if (pendingDocuments.passport) {
+        formData.append('passport', pendingDocuments.passport);
+    }
+
+    // Bank account info
+    const bankName = document.getElementById('bankName').value;
+    const accountNumber = document.getElementById('accountNumber').value;
+    if (bankName && accountNumber) {
+        formData.append('bank_name', bankName);
+        formData.append('account_number', accountNumber);
+
+        const accountHolderName = document.getElementById('accountHolderName').value;
+        if (accountHolderName) formData.append('account_holder_name', accountHolderName);
+
+        const ifscCode = document.getElementById('ifscCode').value;
+        if (ifscCode) formData.append('ifsc_code', ifscCode.toUpperCase());
+
+        const branchName = document.getElementById('branchName').value;
+        if (branchName) formData.append('branch_name', branchName);
+
+        formData.append('account_type', 'savings');
+    }
+
+    // Make the atomic request
+    const result = await api.createHrmsEmployeeAtomic(formData);
+
+    // Remove the user from availableUsers to prevent re-selection
+    availableUsers = availableUsers.filter(u => u.user_id !== userId);
+    filteredUsers = filteredUsers.filter(u => u.user_id !== userId);
+
+    showToast('Employee created successfully', 'success');
+    closeModal('employeeModal');
+    await loadEmployees();
+}
+
+/**
+ * Update an existing employee - uses separate calls for employee data and documents.
+ */
+async function saveEmployeeEdit(id) {
     // Note: first_name, last_name, and work_email are NOT sent to the backend
     // These fields are managed by the Auth service and sourced from there
     const data = {
@@ -785,81 +925,55 @@ async function saveEmployee() {
         enable_geofence_attendance: document.getElementById('enableGeofenceAttendance').checked
     };
 
-    if (!isEdit) {
-        data.user_id = document.getElementById('userSelect').value;
-        if (!data.user_id) {
-            showToast('Please select a user account', 'error');
-            return;
-        }
-    }
+    // Update employee record
+    await api.updateHrmsEmployee(id, data);
 
-    // Disable save button to prevent double-click
-    const saveBtn = document.getElementById('empWizardSaveBtn');
-    const originalBtnHtml = saveBtn.innerHTML;
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="btn-spinner"></span> Saving...';
-
+    // Save bank account (non-blocking - continue even if fails)
     try {
-        let employeeId = id;
-
-        if (isEdit) {
-            await api.updateHrmsEmployee(id, data);
-        } else {
-            const result = await api.createHrmsEmployee(data);
-            employeeId = result.id || result.employee_id || result;
-
-            // Remove the user from availableUsers to prevent re-selection
-            availableUsers = availableUsers.filter(u => u.id !== data.user_id);
-            filteredUsers = filteredUsers.filter(u => u.id !== data.user_id);
-        }
-
-        // Save bank account
-        try {
-            await saveBankAccount(employeeId);
-        } catch (bankError) {
-            console.error('Error saving bank account:', bankError);
-            showToast('Employee saved but bank account failed: ' + bankError.message, 'error');
-        }
-
-        // Upload pending documents (all types including front/back)
-        const docTypes = ['pan_front', 'pan_back', 'aadhar_front', 'aadhar_back', 'passport', 'photo'];
-        for (const docType of docTypes) {
-            if (pendingDocuments[docType]) {
-                try {
-                    // Delete existing document if replacing
-                    if (existingDocuments[docType] && !existingDocuments[docType].markedForDeletion) {
-                        await api.deleteEmployeeDocument(employeeId, existingDocuments[docType].id);
-                    }
-                    await uploadDocument(employeeId, docType, pendingDocuments[docType]);
-                } catch (docError) {
-                    console.error(`Error uploading ${docType}:`, docError);
-                    showToast(`Failed to upload ${docType}: ${docError.message}`, 'error');
-                }
-            }
-        }
-
-        // Delete documents marked for deletion
-        for (const [docType, doc] of Object.entries(existingDocuments)) {
-            if (doc && doc.markedForDeletion) {
-                try {
-                    await api.deleteEmployeeDocument(employeeId, doc.id);
-                } catch (delError) {
-                    console.error(`Error deleting ${docType}:`, delError);
-                }
-            }
-        }
-
-        showToast(isEdit ? 'Employee updated successfully' : 'Employee created successfully', 'success');
-        closeModal('employeeModal');
-        await loadEmployees();
-
-    } catch (error) {
-        showToast(error.message || 'Error saving employee', 'error');
-    } finally {
-        // Re-enable save button
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalBtnHtml;
+        await saveBankAccount(id);
+    } catch (bankError) {
+        console.error('Error saving bank account:', bankError);
+        showToast('Employee saved but bank account failed: ' + bankError.message, 'warning');
     }
+
+    // Upload pending documents (all types including front/back)
+    // Each upload is independent - if one fails, continue with others
+    const docTypes = ['pan_front', 'pan_back', 'aadhar_front', 'aadhar_back', 'passport', 'photo'];
+    let docUploadErrors = 0;
+    for (const docType of docTypes) {
+        if (pendingDocuments[docType]) {
+            try {
+                // Delete existing document if replacing
+                if (existingDocuments[docType] && !existingDocuments[docType].markedForDeletion) {
+                    await api.deleteEmployeeDocument(id, existingDocuments[docType].id);
+                }
+                await uploadDocument(id, docType, pendingDocuments[docType]);
+            } catch (docError) {
+                docUploadErrors++;
+                console.error(`Error uploading ${docType}:`, docError);
+            }
+        }
+    }
+
+    // Delete documents marked for deletion
+    for (const [docType, doc] of Object.entries(existingDocuments)) {
+        if (doc && doc.markedForDeletion) {
+            try {
+                await api.deleteEmployeeDocument(id, doc.id);
+            } catch (delError) {
+                console.error(`Error deleting ${docType}:`, delError);
+            }
+        }
+    }
+
+    // Show success message (with note about document errors if any)
+    if (docUploadErrors > 0) {
+        showToast('Employee updated. Some documents failed to upload.', 'warning');
+    } else {
+        showToast('Employee updated successfully', 'success');
+    }
+    closeModal('employeeModal');
+    await loadEmployees();
 }
 
 async function viewEmployee(id) {
@@ -1623,551 +1737,6 @@ function resetDocumentsAndBanking() {
 }
 
 // ============================================
-// Salary Management Functions
-// ============================================
-
-let salaryStructures = [];
-let currentEmployeeSalary = null;
-
-async function openSalaryModal(employeeId) {
-    const employee = employees.find(e => e.id === employeeId);
-    if (!employee) {
-        showToast('Employee not found', 'error');
-        return;
-    }
-
-    // Reset form
-    document.getElementById('salaryEmployeeId').value = employeeId;
-    document.getElementById('existingSalaryId').value = '';
-    document.getElementById('salaryCTC').value = '';
-    document.getElementById('salaryEffectiveFrom').value = new Date().toISOString().split('T')[0];
-    document.getElementById('currentSalarySection').style.display = 'none';
-    document.getElementById('salaryBreakdownSection').style.display = 'none';
-    document.getElementById('revisionReasonGroup').style.display = 'none';
-    document.getElementById('salaryFormTitle').textContent = 'Configure Salary';
-    document.getElementById('saveSalaryBtnText').textContent = 'Save Salary';
-    currentEmployeeSalary = null;
-
-    // Set employee info in header (with photo if available)
-    const initials = getInitials(employee.first_name, employee.last_name);
-    const photoUrl = employeePhotoCache[employeeId];
-    const avatarEl = document.getElementById('salaryEmployeeAvatar');
-    if (photoUrl) {
-        avatarEl.innerHTML = `<img src="${photoUrl}" alt="${employee.first_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${initials}'">`;
-    } else {
-        avatarEl.textContent = initials || '-';
-    }
-    document.getElementById('salaryEmployeeName').textContent =
-        `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
-    document.getElementById('salaryEmployeeDesignation').textContent =
-        employee.designation_name || 'No Designation';
-
-    // Load salary structures for employee's office
-    try {
-        salaryStructures = await api.getHrmsSalaryStructures(employee.office_id);
-        const structureSelect = document.getElementById('salaryStructureId');
-        structureSelect.innerHTML = '<option value="">Select Salary Structure...</option>';
-        salaryStructures.forEach(s => {
-            // Include currency info as data attributes for dynamic currency display
-            const currencySymbol = s.currency_symbol || '';
-            const currencyCode = s.currency_code || '';
-            structureSelect.innerHTML += `<option value="${s.id}" data-currency-symbol="${escapeHtml(currencySymbol)}" data-currency-code="${escapeHtml(currencyCode)}">${s.structure_name}</option>`;
-        });
-        // Reset currency prefix to default
-        updateCurrencyPrefix();
-    } catch (error) {
-        console.error('Error loading salary structures:', error);
-        showToast('Failed to load salary structures', 'error');
-    }
-
-    // Load existing salary if any
-    try {
-        const salary = await api.getEmployeeSalary(employeeId);
-        if (salary && salary.id) {
-            currentEmployeeSalary = salary;
-            document.getElementById('existingSalaryId').value = salary.id;
-
-            // Show current salary section
-            // Get the employee's country code for proper currency formatting
-            const empOffice = offices.find(o => o.id === employee.office_id);
-            const empCountryCode = empOffice?.country_code;
-
-            document.getElementById('currentSalarySection').style.display = 'block';
-            document.getElementById('currentCTC').textContent = formatCurrency(salary.ctc, empCountryCode);
-            document.getElementById('currentMonthlyGross').textContent = formatCurrency(salary.gross / 12, empCountryCode);
-            document.getElementById('currentMonthlyNet').textContent = formatCurrency(salary.net / 12, empCountryCode);
-            document.getElementById('currentEffectiveFrom').textContent =
-                salary.effective_from ? new Date(salary.effective_from).toLocaleDateString() : '-';
-
-            // Update status badge
-            document.getElementById('salaryStatusBadge').innerHTML =
-                '<span class="badge badge-success">Active</span>';
-
-            // Pre-fill form for revision
-            document.getElementById('salaryStructureId').value = salary.structure_id || '';
-            document.getElementById('salaryCTC').value = salary.ctc || '';
-            document.getElementById('salaryFormTitle').textContent = 'Revise Salary';
-            document.getElementById('revisionReasonGroup').style.display = 'block';
-            document.getElementById('saveSalaryBtnText').textContent = 'Revise Salary';
-
-            // Trigger breakdown preview
-            await previewSalaryBreakdown();
-
-            // Load salary history
-            await loadSalaryHistory(employeeId);
-        } else {
-            document.getElementById('salaryStatusBadge').innerHTML =
-                '<span class="badge badge-warning">Not Configured</span>';
-            document.getElementById('salaryHistorySection').style.display = 'none';
-        }
-    } catch (error) {
-        // No existing salary - that's OK for new employees
-        document.getElementById('salaryStatusBadge').innerHTML =
-            '<span class="badge badge-warning">Not Configured</span>';
-        document.getElementById('salaryHistorySection').style.display = 'none';
-    }
-
-    openModal('salaryModal');
-}
-
-async function loadSalaryHistory(employeeId) {
-    try {
-        // Get employee's country code for currency formatting
-        const emp = employees.find(e => e.id === employeeId);
-        const empOffice = emp ? offices.find(o => o.id === emp.office_id) : null;
-        const empCountryCode = empOffice?.country_code;
-
-        // Use revisions endpoint which tracks all salary changes including same-day updates
-        const revisions = await api.getEmployeeSalaryRevisions(employeeId);
-        const tbody = document.getElementById('salaryHistoryTableBody');
-
-        if (!revisions || revisions.length === 0) {
-            document.getElementById('salaryHistorySection').style.display = 'none';
-            return;
-        }
-
-        document.getElementById('salaryHistorySection').style.display = 'block';
-
-        // Sort by created_at descending (most recent first)
-        const sortedRevisions = revisions.sort((a, b) =>
-            new Date(b.created_at) - new Date(a.created_at)
-        );
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Build rows - we need to check can_delete status for scheduled entries
-        const rows = await Promise.all(sortedRevisions.map(async (item, index) => {
-            const effectiveDate = item.effective_date ? new Date(item.effective_date).toLocaleDateString() : '-';
-            const effectiveDateObj = item.effective_date ? new Date(item.effective_date) : null;
-
-            // A salary is "current" if its effective_from <= today AND no newer salary has started yet
-            // Find the most recent salary that has actually started (effective_from <= today)
-            const startedRevisions = sortedRevisions.filter(r => {
-                const effDate = r.effective_date ? new Date(r.effective_date) : null;
-                return effDate && effDate <= today;
-            });
-            const currentRevision = startedRevisions.length > 0 ? startedRevisions[0] : null;
-            const isCurrent = currentRevision && item.id === currentRevision.id;
-
-            // Check if this is a future revision (not yet effective)
-            const isFuture = effectiveDateObj && effectiveDateObj > today;
-
-            const revisionType = item.revision_type || '-';
-            const changeInfo = item.old_ctc && item.new_ctc
-                ? `${formatCurrency(item.old_ctc, empCountryCode)} → ${formatCurrency(item.new_ctc, empCountryCode)}`
-                : formatCurrency(item.new_ctc, empCountryCode);
-            const percentChange = item.increment_percentage
-                ? `(${item.increment_percentage > 0 ? '+' : ''}${item.increment_percentage.toFixed(1)}%)`
-                : '';
-
-            // Determine which badge to show
-            let badgeHtml = '';
-            if (isCurrent) {
-                badgeHtml = '<span class="current-badge">Current</span>';
-            } else if (isFuture) {
-                badgeHtml = '<span class="scheduled-badge">Scheduled</span>';
-            }
-
-            // Check if this entry can be edited/deleted (only for scheduled entries)
-            // Note: new_salary_id is the ID of the employee_salary record from this revision
-            let actionsHtml = '<span class="text-muted">-</span>';
-            const salaryId = item.new_salary_id;
-            if (isFuture && salaryId) {
-                try {
-                    const canDeleteCheck = await api.canDeleteSalaryEntry(salaryId);
-                    if (canDeleteCheck.can_edit || canDeleteCheck.can_delete) {
-                        actionsHtml = '<div class="salary-actions">';
-                        if (canDeleteCheck.can_edit) {
-                            actionsHtml += `<button class="btn btn-sm btn-icon" onclick="editScheduledSalary('${salaryId}', ${item.new_ctc}, '${item.effective_date}', '${item.revision_type || ''}')" title="Edit">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                            </button>`;
-                        }
-                        if (canDeleteCheck.can_delete) {
-                            actionsHtml += `<button class="btn btn-sm btn-icon btn-danger" onclick="deleteScheduledSalary('${salaryId}', '${employeeId}')" title="Delete">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"/>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                    <line x1="10" y1="11" x2="10" y2="17"/>
-                                    <line x1="14" y1="11" x2="14" y2="17"/>
-                                </svg>
-                            </button>`;
-                        }
-                        actionsHtml += '</div>';
-                    } else {
-                        actionsHtml = `<span class="text-muted" title="${canDeleteCheck.reason || 'Cannot modify'}">Locked</span>`;
-                    }
-                } catch (err) {
-                    console.warn('Could not check delete status for salary:', salaryId, err);
-                    actionsHtml = '<span class="text-muted">-</span>';
-                }
-            }
-
-            return `
-                <tr class="${isCurrent ? 'current-salary' : ''} ${isFuture ? 'future-salary' : ''}">
-                    <td class="period-cell">
-                        <div class="period-dates">${effectiveDate}</div>
-                        ${badgeHtml}
-                    </td>
-                    <td>${changeInfo}</td>
-                    <td class="change-percent ${item.increment_percentage > 0 ? 'positive' : item.increment_percentage < 0 ? 'negative' : ''}">${percentChange}</td>
-                    <td class="revision-type">${revisionType.replace(/_/g, ' ')}</td>
-                    <td class="actions-cell">${actionsHtml}</td>
-                </tr>
-            `;
-        }));
-
-        tbody.innerHTML = rows.join('');
-    } catch (error) {
-        console.error('Error loading salary history:', error);
-        document.getElementById('salaryHistorySection').style.display = 'none';
-    }
-}
-
-// Edit scheduled salary entry
-async function editScheduledSalary(salaryId, currentCTC, effectiveDate, revisionReason) {
-    // Store the salary ID for later use
-    window.editingSalaryId = salaryId;
-
-    // Populate the edit modal
-    document.getElementById('editSalaryCTC').value = currentCTC;
-    document.getElementById('editSalaryEffectiveFrom').value = effectiveDate.split('T')[0];
-    document.getElementById('editSalaryRevisionReason').value = revisionReason || '';
-
-    openModal('editScheduledSalaryModal');
-}
-
-// Save edited scheduled salary
-async function saveScheduledSalaryEdit() {
-    const salaryId = window.editingSalaryId;
-    if (!salaryId) {
-        showToast('No salary entry selected for editing', 'error');
-        return;
-    }
-
-    const ctc = parseFloat(document.getElementById('editSalaryCTC').value);
-    const effectiveFrom = document.getElementById('editSalaryEffectiveFrom').value;
-    const revisionReason = document.getElementById('editSalaryRevisionReason').value;
-
-    if (!ctc || ctc <= 0) {
-        showToast('Please enter a valid CTC amount', 'error');
-        return;
-    }
-
-    if (!effectiveFrom) {
-        showToast('Please enter an effective date', 'error');
-        return;
-    }
-
-    try {
-        await api.updateScheduledSalaryEntry(salaryId, {
-            ctc: ctc,
-            effective_from: effectiveFrom,
-            revision_reason: revisionReason
-        });
-
-        showToast('Scheduled salary updated successfully', 'success');
-        closeModal('editScheduledSalaryModal');
-
-        // Reload salary history
-        const employeeId = document.getElementById('salaryEmployeeId').value;
-        if (employeeId) {
-            await loadSalaryHistory(employeeId);
-        }
-    } catch (error) {
-        console.error('Error updating scheduled salary:', error);
-        showToast(error.message || 'Failed to update scheduled salary', 'error');
-    }
-}
-
-// Delete scheduled salary entry
-async function deleteScheduledSalary(salaryId, employeeId) {
-    const confirmed = await showConfirm(
-        'Are you sure you want to delete this scheduled salary entry? This action cannot be undone.',
-        'Delete Scheduled Salary',
-        'warning'
-    );
-    if (!confirmed) {
-        return;
-    }
-
-    try {
-        await api.deleteSalaryEntry(salaryId);
-        showToast('Scheduled salary entry deleted successfully', 'success');
-
-        // Reload salary history
-        if (employeeId) {
-            await loadSalaryHistory(employeeId);
-        }
-    } catch (error) {
-        console.error('Error deleting scheduled salary:', error);
-        showToast(error.message || 'Failed to delete scheduled salary entry', 'error');
-    }
-}
-
-/**
- * Updates the currency prefix display based on the selected salary structure.
- * Prefers currency symbol (₹, $, Rp) if available, falls back to currency code (INR, USD, IDR).
- */
-function updateCurrencyPrefix() {
-    const structureSelect = document.getElementById('salaryStructureId');
-    const currencyPrefix = document.getElementById('salaryCurrencyPrefix');
-
-    if (!currencyPrefix) return;
-
-    const selectedOption = structureSelect.options[structureSelect.selectedIndex];
-    if (!selectedOption || !selectedOption.value) {
-        // No structure selected - show nothing
-        currencyPrefix.textContent = '';
-        return;
-    }
-
-    const currencySymbol = selectedOption.getAttribute('data-currency-symbol');
-    const currencyCode = selectedOption.getAttribute('data-currency-code');
-
-    // Prefer symbol (₹, $, Rp), fallback to code (INR, USD, IDR)
-    if (currencySymbol && currencySymbol.trim()) {
-        currencyPrefix.textContent = currencySymbol;
-    } else if (currencyCode && currencyCode.trim()) {
-        currencyPrefix.textContent = currencyCode;
-    } else {
-        currencyPrefix.textContent = '';
-    }
-}
-
-async function previewSalaryBreakdown() {
-    // Update currency symbol when structure changes
-    updateCurrencyPrefix();
-    const structureId = document.getElementById('salaryStructureId').value;
-    const ctc = parseFloat(document.getElementById('salaryCTC').value);
-
-    if (!structureId || !ctc || ctc <= 0) {
-        document.getElementById('salaryBreakdownSection').style.display = 'none';
-        return;
-    }
-
-    try {
-        const breakdown = await api.calculateSalaryBreakdown({
-            structure_id: structureId,
-            ctc: ctc
-        });
-
-        if (breakdown) {
-            // Get currency code from selected structure for proper formatting
-            const structureSelect = document.getElementById('salaryStructureId');
-            const selectedOption = structureSelect.options[structureSelect.selectedIndex];
-            const currencyCode = selectedOption?.getAttribute('data-currency-code');
-
-            renderSalaryBreakdown(breakdown, currencyCode);
-            document.getElementById('salaryBreakdownSection').style.display = 'block';
-        }
-    } catch (error) {
-        console.error('Error calculating breakdown:', error);
-        document.getElementById('salaryBreakdownSection').style.display = 'none';
-    }
-}
-
-// Track if salary breakdown has validation errors
-let salaryBreakdownHasErrors = false;
-
-function renderSalaryBreakdown(breakdown, currencyCode = null) {
-    const grid = document.getElementById('salaryBreakdownGrid');
-    let html = '';
-    salaryBreakdownHasErrors = false;
-
-    // Get country code from currency code for formatting
-    const countryCode = getCountryCodeForCurrency(currencyCode);
-
-    // Earnings
-    if (breakdown.earnings && breakdown.earnings.length > 0) {
-        html += '<div class="salary-breakdown-column earnings">';
-        html += '<h5>Earnings</h5>';
-        breakdown.earnings.forEach(e => {
-            const isNegative = e.monthly_amount < 0;
-            if (isNegative) salaryBreakdownHasErrors = true;
-            html += `
-                <div class="breakdown-item ${isNegative ? 'error' : ''}">
-                    <span class="item-name">${e.component_name}${e.is_balance_component ? ' (Balance)' : ''}</span>
-                    <span class="item-value ${isNegative ? 'negative' : ''}">${formatCurrency(e.monthly_amount, countryCode)}</span>
-                </div>
-            `;
-        });
-        html += '</div>';
-    }
-
-    // Deductions
-    if (breakdown.deductions && breakdown.deductions.length > 0) {
-        html += '<div class="salary-breakdown-column deductions">';
-        html += '<h5>Deductions</h5>';
-        breakdown.deductions.forEach(d => {
-            html += `
-                <div class="breakdown-item">
-                    <span class="item-name">${d.component_name}</span>
-                    <span class="item-value">-${formatCurrency(d.monthly_amount, countryCode)}</span>
-                </div>
-            `;
-        });
-        html += '</div>';
-    }
-
-    grid.innerHTML = html;
-
-    // Show/hide error message
-    let errorDiv = document.getElementById('salaryBreakdownError');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.id = 'salaryBreakdownError';
-        errorDiv.className = 'salary-breakdown-error';
-        grid.parentElement.insertBefore(errorDiv, grid);
-    }
-
-    if (salaryBreakdownHasErrors) {
-        const ctcValue = parseFloat(document.getElementById('salaryCTC').value) || 0;
-        errorDiv.innerHTML = `
-            <div class="info-alert">
-                <strong>Note:</strong> The balance component (Special Allowance) is negative because the CTC
-                (${formatCurrency(ctcValue, countryCode)})
-                is less than the sum of fixed components. This is allowed but may need review.
-            </div>
-        `;
-        errorDiv.style.display = 'block';
-    } else {
-        errorDiv.style.display = 'none';
-    }
-
-    // Update totals (backend returns annual amounts, convert to monthly)
-    document.getElementById('previewMonthlyGross').textContent = formatCurrency(breakdown.gross / 12, countryCode);
-    document.getElementById('previewMonthlyDeductions').textContent =
-        formatCurrency(breakdown.total_deductions / 12 || 0, countryCode);
-    document.getElementById('previewMonthlyNet').textContent = formatCurrency(breakdown.net / 12, countryCode);
-}
-
-/**
- * Get country code from currency code (reverse lookup).
- */
-function getCountryCodeForCurrency(currencyCode) {
-    if (!currencyCode) return null;
-    for (const [country, info] of Object.entries(currencyByCountry)) {
-        if (info.code === currencyCode) {
-            return country;
-        }
-    }
-    return null;
-}
-
-async function saveEmployeeSalary() {
-    const employeeId = document.getElementById('salaryEmployeeId').value;
-    const existingSalaryId = document.getElementById('existingSalaryId').value;
-    const structureId = document.getElementById('salaryStructureId').value;
-    const ctc = parseFloat(document.getElementById('salaryCTC').value);
-    const effectiveFrom = document.getElementById('salaryEffectiveFrom').value;
-
-    if (!structureId || !ctc || !effectiveFrom) {
-        showToast('Please fill all required fields', 'error');
-        return;
-    }
-
-    const saveBtn = document.getElementById('saveSalaryBtn');
-    const originalText = document.getElementById('saveSalaryBtnText').textContent;
-    saveBtn.disabled = true;
-    document.getElementById('saveSalaryBtnText').textContent = 'Saving...';
-
-    try {
-        let salaryData;
-
-        if (existingSalaryId) {
-            // Revise existing salary - backend expects new_ctc, new_structure_id
-            salaryData = {
-                employee_id: employeeId,
-                new_structure_id: structureId,
-                new_ctc: ctc,
-                effective_from: effectiveFrom,
-                revision_type: document.getElementById('salaryRevisionType').value || 'adjustment'
-            };
-            await api.updateEmployeeSalary(employeeId, salaryData);
-            showToast('Salary revised successfully', 'success');
-        } else {
-            // Create new salary - backend expects ctc, structure_id
-            salaryData = {
-                employee_id: employeeId,
-                structure_id: structureId,
-                ctc: ctc,
-                effective_from: effectiveFrom
-            };
-            await api.assignEmployeeSalary(salaryData);
-            showToast('Salary assigned successfully', 'success');
-        }
-
-        closeModal('salaryModal');
-    } catch (error) {
-        console.error('Error saving salary:', error);
-        showToast(error.message || 'Failed to save salary', 'error');
-    } finally {
-        saveBtn.disabled = false;
-        document.getElementById('saveSalaryBtnText').textContent = originalText;
-    }
-}
-
-/**
- * Format currency amount based on country code.
- * @param {number} amount - The amount to format
- * @param {string} countryCode - Optional country code (e.g., 'IN', 'ID', 'MV')
- * @returns {string} Formatted currency string
- */
-function formatCurrency(amount, countryCode = null) {
-    if (amount === null || amount === undefined) amount = 0;
-
-    // Lookup currency info from country
-    const currencyInfo = countryCode ? currencyByCountry[countryCode] : null;
-
-    if (currencyInfo && currencyInfo.code) {
-        try {
-            // Use Intl.NumberFormat with the country's currency
-            const locale = currencyInfo.locale || 'en-US';
-            return new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: currencyInfo.code,
-                maximumFractionDigits: 0
-            }).format(amount);
-        } catch (e) {
-            // Fallback if currency code is not supported
-            const symbol = currencyInfo.symbol || currencyInfo.code || '';
-            return `${symbol}${amount.toLocaleString()}`;
-        }
-    }
-
-    // Default to INR for backward compatibility
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 0
-    }).format(amount);
-}
-
-// ============================================
 // Employee Transfer Functions
 // ============================================
 
@@ -2220,13 +1789,11 @@ async function openTransferModal(employeeId) {
     document.getElementById('officeChangeSection').style.display = 'none';
     document.getElementById('departmentChangeSection').style.display = 'none';
     document.getElementById('managerChangeSection').style.display = 'none';
-    document.getElementById('salaryRevisionSection').style.display = 'none';
 
     // Uncheck all checkboxes
     document.getElementById('changeOffice').checked = false;
     document.getElementById('changeDepartment').checked = false;
     document.getElementById('changeManager').checked = false;
-    document.getElementById('reviseSalary').checked = false;
 
     openModal('transferModal');
 }
@@ -2291,9 +1858,8 @@ async function submitTransfer() {
     const changeOffice = document.getElementById('changeOffice').checked;
     const changeDepartment = document.getElementById('changeDepartment').checked;
     const changeManager = document.getElementById('changeManager').checked;
-    const reviseSalary = document.getElementById('reviseSalary').checked;
 
-    if (!changeOffice && !changeDepartment && !changeManager && !reviseSalary) {
+    if (!changeOffice && !changeDepartment && !changeManager) {
         showToast('Please select at least one change to make', 'error');
         return;
     }
@@ -2341,13 +1907,6 @@ async function submitTransfer() {
             request.change_manager = true;
             const newManagerId = document.getElementById('newManagerUserId').value;
             request.new_manager_user_id = newManagerId || null;
-        }
-
-        if (reviseSalary) {
-            const newCTC = parseFloat(document.getElementById('newCTC').value);
-            if (newCTC && newCTC > 0) {
-                request.new_ctc = newCTC;
-            }
         }
 
         // Call comprehensive transfer API
@@ -4355,14 +3914,5 @@ function onEmployeeUpdated(data) {
 function onEmployeeCreated(data) {
     console.log('[Employees] Employee created:', data);
     showToast(`New employee ${data.EmployeeName || ''} added`, 'success');
-    loadEmployees();
-}
-
-/**
- * Called when salary is updated (from hrms-signalr.js)
- */
-function onSalaryUpdated(data) {
-    console.log('[Employees] Salary updated:', data);
-    // Reload to show updated CTC in employee list
     loadEmployees();
 }

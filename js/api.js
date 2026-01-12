@@ -1476,6 +1476,43 @@ class API {
         });
     }
 
+    /**
+     * Create employee atomically with all documents in a single request.
+     * This sends all employee data + document files in one FormData request.
+     * If any part fails, the backend rolls back everything.
+     * @param {FormData} formData - FormData containing all employee info and files
+     * @returns {Promise<Object>} Created employee data
+     */
+    async createHrmsEmployeeAtomic(formData) {
+        const token = getAuthToken();
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        const response = await fetch(`${this._getBaseUrl('/hrms/')}/employees/create-atomic`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+                // Note: Do NOT set Content-Type for FormData - browser sets it automatically with boundary
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.error || errorText;
+            } catch {
+                errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
+        }
+
+        return response.json();
+    }
+
     async updateHrmsEmployee(id, employee) {
         return this.request(`/hrms/employees/${id}`, {
             method: 'PUT',
@@ -1547,27 +1584,43 @@ class API {
     async uploadEmployeeDocument(employeeId, formData) {
         // Special handling for multipart form data - don't set Content-Type header
         const token = getAuthToken();
-        const response = await fetch(`${this._getBaseUrl('/hrms/')}/employees/${employeeId}/documents`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
-        });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            let errorMessage;
-            try {
-                const errorJson = JSON.parse(errorText);
-                errorMessage = errorJson.message || errorJson.error || errorText;
-            } catch {
-                errorMessage = errorText;
+        // Use AbortController to add a 60-second timeout for document uploads
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+        try {
+            const response = await fetch(`${this._getBaseUrl('/hrms/')}/employees/${employeeId}/documents`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorJson.error || errorText;
+                } catch {
+                    errorMessage = errorText;
+                }
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
-        }
 
-        return response.json();
+            return response.json();
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Document upload timed out. Please try again.');
+            }
+            throw error;
+        }
     }
 
     async getEmployeeDocumentDownloadUrl(employeeId, documentId) {

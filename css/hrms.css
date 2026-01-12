@@ -12312,6 +12312,12 @@ tr.immutable-row:hover {
     overflow: visible !important;
 }
 
+/* Modal dialog must also allow overflow for dropdowns */
+.modal-dialog:has(.searchable-dropdown.open),
+.modal-overlay .modal-dialog:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
 .modal-content:has(.searchable-dropdown.open),
 .modal-overlay .modal-content:has(.searchable-dropdown.open) {
     overflow: visible !important;
@@ -12356,8 +12362,14 @@ tr.immutable-row:hover {
     overflow: visible !important;
 }
 
+/* Show dropdown menu when open - but NOT in modals where portal is used */
 .searchable-dropdown.open .dropdown-menu {
     display: block;
+}
+
+/* Keep modal dropdown hidden - portal handles it */
+.modal .searchable-dropdown.open .dropdown-menu {
+    display: none !important;
 }
 
 .dropdown-search {
@@ -19148,4 +19160,615 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     .cfg-tax-row-summary {
         display: none;
     }
+}
+
+/* ============================================
+   Employee Salaries Tab - Payroll Page
+   ============================================ */
+
+/* Employee cell with avatar */
+.employee-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.emp-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.emp-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.emp-info .emp-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.emp-info .emp-code {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Compact Employee Cell for dense tables */
+.emp-cell-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.emp-avatar-xs {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.emp-avatar-xs-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.emp-name-inline {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.emp-code-badge {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+}
+
+/* Input Group - Currency prefix styling */
+.input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.input-group .input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    white-space: nowrap;
+}
+
+.input-group .form-control {
+    border-radius: 0 6px 6px 0;
+    flex: 1;
+}
+
+.input-group .form-control:focus {
+    z-index: 1;
+}
+
+/* Employee Salary Modal */
+.employee-salary-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.employee-salary-header .employee-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.employee-salary-header .employee-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-salary-header .employee-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.employee-salary-header .employee-info p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.employee-salary-header .employee-info p.text-muted {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.employee-salary-header .salary-status {
+    flex-shrink: 0;
+}
+
+/* Current Salary Section */
+.current-salary-section {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.current-salary-section h5 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.salary-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.salary-summary-grid .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.salary-summary-grid .summary-item .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.salary-summary-grid .summary-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Salary Breakdown Section in Modal */
+.salary-breakdown-section {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 20px;
+}
+
+.salary-breakdown-section h5 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.breakdown-column h6 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.breakdown-column.earnings h6 {
+    color: var(--color-success);
+}
+
+.breakdown-column.deductions h6 {
+    color: var(--color-error);
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+}
+
+.breakdown-item .item-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.breakdown-item .item-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.breakdown-item .item-value.negative {
+    color: var(--color-error);
+}
+
+.breakdown-item.error {
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin: 2px -8px;
+}
+
+.breakdown-summary {
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+}
+
+.breakdown-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.breakdown-summary .summary-row.total {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Salary History Section */
+.salary-history-section {
+    margin-top: 20px;
+}
+
+.salary-history-section h5 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.salary-history-section .data-table.compact {
+    font-size: 12px;
+}
+
+.salary-history-section .data-table.compact th,
+.salary-history-section .data-table.compact td {
+    padding: 8px 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .salary-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-salary-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .employee-salary-header .employee-info {
+        align-items: center;
+    }
+}
+
+/* =============================================================
+   EMPLOYEE SALARY MODAL - COMPACT LAYOUT
+   Optimized for minimal vertical scrolling
+   ============================================================= */
+
+#employeeSalaryModal .modal-body {
+    padding: 16px;
+}
+
+/* Compact Employee Header - Single Line */
+#employeeSalaryModal .employee-salary-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+#employeeSalaryModal .employee-salary-header .employee-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+}
+
+#employeeSalaryModal .employee-salary-header .employee-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#employeeSalaryModal .employee-salary-header .employee-info h4 {
+    margin: 0;
+    font-size: 14px;
+}
+
+#employeeSalaryModal .employee-salary-header .employee-info p {
+    margin: 0;
+    font-size: 12px;
+}
+
+#employeeSalaryModal .employee-salary-header .employee-info p:first-of-type::before {
+    content: "•";
+    margin-right: 6px;
+    color: var(--text-muted);
+}
+
+#employeeSalaryModal .employee-salary-header .employee-info p.text-muted::before {
+    content: "•";
+    margin-right: 6px;
+}
+
+/* Compact Current Salary Section - Inline Grid */
+#employeeSalaryModal .current-salary-section {
+    padding: 0;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background: transparent;
+}
+
+#employeeSalaryModal .current-salary-section h5 {
+    display: none; /* Hide the title, info is self-explanatory */
+}
+
+#employeeSalaryModal .salary-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+#employeeSalaryModal .salary-summary-grid .summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-primary);
+}
+
+#employeeSalaryModal .salary-summary-grid .summary-item .label {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+#employeeSalaryModal .salary-summary-grid .summary-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Compact Form Section */
+#employeeSalaryModal .form-section {
+    margin-bottom: 0;
+}
+
+#employeeSalaryModal .form-row.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+    align-items: end; /* Fix vertical alignment */
+}
+
+#employeeSalaryModal .form-group {
+    margin-bottom: 0;
+}
+
+#employeeSalaryModal .form-group label {
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+#employeeSalaryModal .form-control,
+#employeeSalaryModal .form-select {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+#employeeSalaryModal .input-group .input-group-text {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+/* Compact Salary Breakdown Section */
+#employeeSalaryModal .salary-breakdown-section {
+    padding: 0;
+    margin-top: 12px;
+    background: transparent;
+}
+
+#employeeSalaryModal .salary-breakdown-section h5 {
+    font-size: 12px;
+    margin-bottom: 8px;
+    padding: 0;
+}
+
+/* Compact Salary History Section */
+#employeeSalaryModal .salary-history-section {
+    margin-top: 12px;
+    border-top: 1px solid var(--border-primary);
+    padding-top: 12px;
+}
+
+#employeeSalaryModal .salary-history-section h5 {
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+#employeeSalaryModal .salary-history-section .data-table-container {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+#employeeSalaryModal .salary-history-section .data-table {
+    font-size: 11px;
+}
+
+#employeeSalaryModal .salary-history-section .data-table th,
+#employeeSalaryModal .salary-history-section .data-table td {
+    padding: 6px 8px;
+}
+
+/* Modal Footer */
+#employeeSalaryModal .modal-footer {
+    padding: 12px 16px;
+}
+
+/* Tab Navigation */
+#employeeSalaryModal .emp-salary-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary);
+    padding-bottom: 0;
+}
+
+#employeeSalaryModal .emp-salary-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+}
+
+#employeeSalaryModal .emp-salary-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+#employeeSalaryModal .emp-salary-tab.active {
+    color: var(--brand-primary);
+    border-bottom-color: var(--brand-primary);
+}
+
+#employeeSalaryModal .emp-salary-tab svg {
+    opacity: 0.7;
+}
+
+#employeeSalaryModal .emp-salary-tab.active svg {
+    opacity: 1;
+}
+
+#employeeSalaryModal .emp-salary-tab .history-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-inverse);
+    background: var(--brand-primary);
+    border-radius: 9px;
+}
+
+/* Tab Content */
+#employeeSalaryModal .emp-salary-tab-content {
+    display: none;
+}
+
+#employeeSalaryModal .emp-salary-tab-content.active {
+    display: block;
+}
+
+/* History Tab - Full height table */
+#employeeSalaryModal #empSalaryTabHistory .salary-history-section {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
+#employeeSalaryModal #empSalaryTabHistory .data-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#employeeSalaryModal #empSalaryTabHistory .data-table {
+    font-size: 12px;
+}
+
+#employeeSalaryModal #empSalaryTabHistory .data-table th,
+#employeeSalaryModal #empSalaryTabHistory .data-table td {
+    padding: 10px 12px;
 }

@@ -300,6 +300,13 @@ class PayrollSearchableDropdown {
     }
 
     setValue(value) {
+        // If empty/null value passed, reset to placeholder
+        if (value === '' || value === null || value === undefined) {
+            this.selectedValue = null;
+            this.selectedTextEl.textContent = this.placeholder;
+            this.selectedTextEl.classList.add('placeholder');
+            return;
+        }
         const option = this.options.find(o => String(o.value) === String(value));
         if (option) {
             this.selectedValue = option.value;
@@ -333,6 +340,29 @@ class PayrollSearchableDropdown {
         this.filteredOptions = [...this.options];
         this.highlightedIndex = -1;
         this.scrollTop = 0;
+    }
+
+    /**
+     * Enable or disable the dropdown
+     * @param {boolean} disabled - true to disable, false to enable
+     */
+    setDisabled(disabled) {
+        this.disabled = disabled;
+        if (this.dropdownEl) {
+            if (disabled) {
+                this.dropdownEl.classList.add('disabled');
+                this.triggerEl.setAttribute('tabindex', '-1');
+                this.triggerEl.style.pointerEvents = 'none';
+                this.triggerEl.style.opacity = '0.6';
+                this.triggerEl.style.cursor = 'not-allowed';
+            } else {
+                this.dropdownEl.classList.remove('disabled');
+                this.triggerEl.setAttribute('tabindex', '0');
+                this.triggerEl.style.pointerEvents = '';
+                this.triggerEl.style.opacity = '';
+                this.triggerEl.style.cursor = '';
+            }
+        }
     }
 
     destroy() {
@@ -610,7 +640,7 @@ function initSearchableDropdowns() {
         return;
     }
 
-    // Filter dropdowns configuration (21 dropdowns)
+    // Filter dropdowns configuration (24 dropdowns)
     const filterDropdowns = [
         { id: 'countryFilter', placeholder: 'Select Country', searchPlaceholder: 'Search country...', compact: true },
         { id: 'componentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
@@ -633,7 +663,11 @@ function initSearchableDropdowns() {
         { id: 'allPayslipsDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
         { id: 'salaryReportOffice', placeholder: 'Select Office', searchPlaceholder: 'Search office...', compact: true },
         { id: 'salaryReportDepartment', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
-        { id: 'ctcArrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true }
+        { id: 'ctcArrearsStatus', placeholder: 'Select Status', searchPlaceholder: 'Search status...', compact: true },
+        // Employee Salaries tab filters
+        { id: 'empSalaryOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
+        { id: 'empSalaryDeptFilter', placeholder: 'All Departments', searchPlaceholder: 'Search department...', compact: true },
+        { id: 'empSalaryStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true }
     ];
 
     // Form dropdowns configuration (16 dropdowns)
@@ -734,6 +768,12 @@ async function initializePage() {
         // Load initial data - including year dropdowns
         await loadOffices();
         await populateYearDropdowns();
+
+        // Populate employee salary filters
+        await populateEmpSalaryFilters();
+
+        // Initialize Employee Salaries tab event listeners
+        initEmployeeSalariesTab();
 
         // Load country filter first (needed for components)
         await loadCountryFilter();
@@ -962,6 +1002,8 @@ function setupTabs() {
                 await loadAdjustments();
             } else if (tabId === 'salary-reports') {
                 await loadSalaryReports();
+            } else if (tabId === 'employee-salaries') {
+                await loadEmployeeSalaries();
             }
         });
     });
@@ -2210,6 +2252,62 @@ async function viewCalculationProof(payslipId) {
             employeeName: response.employee_name,
             employeeCode: response.employee_code,
             payPeriod: `${formatDate(response.pay_period_start)} - ${formatDate(response.pay_period_end)}`
+        };
+
+        // Create or get the calculation proof modal
+        let modal = document.getElementById('calculationProofModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'calculationProofModal';
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+            injectCalculationProofStyles();
+        }
+
+        // Build the beautiful UI
+        modal.innerHTML = buildCalculationProofUI(proof, response);
+
+        // Open the modal
+        modal.classList.add('active');
+        hideLoading();
+
+    } catch (error) {
+        console.error('Error loading calculation proof:', error);
+        hideLoading();
+        showToast(error.message || 'Failed to load calculation proof', 'error');
+    }
+}
+
+/**
+ * v3.0.26: View calculation proof for a PROCESSED payslip.
+ * Similar to viewCalculationProof but calls the processed payslip endpoint.
+ */
+async function viewCalculationProofProcessed(payslipId) {
+    try {
+        showLoading();
+
+        // v3.0.26: Request JSON format from processed payslip endpoint
+        const response = await api.request(`/hrms/payroll-processing/payslips/${payslipId}/calculation-proof?format=json`);
+
+        if (!response || !response.calculation_proof_data) {
+            hideLoading();
+            showToast('Calculation proof not available for this payslip. This may be an older payslip processed before calculation proof was enabled.', 'warning');
+            return;
+        }
+
+        // Close the payslip modal first
+        closeModal('payslipModal');
+
+        const proof = response.calculation_proof_data;
+
+        // Store data for download/print (fetch markdown when needed)
+        window.currentCalculationProof = {
+            payslipId: payslipId,
+            proof: proof,
+            employeeName: response.employee_name,
+            employeeCode: response.employee_code,
+            payPeriod: `${formatDate(response.pay_period_start)} - ${formatDate(response.pay_period_end)}`,
+            isProcessed: true  // v3.0.26: Mark as processed payslip for download
         };
 
         // Create or get the calculation proof modal
@@ -3803,6 +3901,7 @@ function injectCalculationProofStyles() {
 /**
  * Download the calculation proof as a markdown file.
  * v3.0.28: Now fetches markdown format from API (since we display JSON in UI).
+ * v3.0.26: Updated to support both draft and processed payslips.
  */
 async function downloadCalculationProof() {
     if (!window.currentCalculationProof) {
@@ -3810,12 +3909,16 @@ async function downloadCalculationProof() {
         return;
     }
 
-    const { payslipId, employeeCode, payPeriod } = window.currentCalculationProof;
+    const { payslipId, employeeCode, payPeriod, isProcessed } = window.currentCalculationProof;
 
     try {
         showLoading();
-        // Fetch markdown format for download
-        const response = await api.request(`/hrms/payroll-drafts/payslips/${payslipId}/calculation-proof?format=markdown`);
+        // v3.0.26: Use correct endpoint based on payslip type
+        const endpoint = isProcessed
+            ? `/hrms/payroll-processing/payslips/${payslipId}/calculation-proof?format=markdown`
+            : `/hrms/payroll-drafts/payslips/${payslipId}/calculation-proof?format=markdown`;
+
+        const response = await api.request(endpoint);
 
         if (!response || !response.calculation_proof) {
             hideLoading();
@@ -4271,6 +4374,16 @@ function openCreateDraftModal() {
     const lastDay = new Date(currentYear, currentMonth, 0).getDate();
     document.getElementById('draftPeriodEnd').value = formatDateLocal(currentYear, currentMonth, lastDay);
 
+    // Reset office dropdown (searchable dropdown doesn't reset with form.reset())
+    const officeDropdown = getSearchableDropdown('draftPayrollOffice');
+    if (officeDropdown && typeof officeDropdown.setValue === 'function') {
+        officeDropdown.setValue(''); // Reset to "Select Office" placeholder
+    }
+
+    // Also reset notes textarea
+    const notesField = document.getElementById('draftNotes');
+    if (notesField) notesField.value = '';
+
     openModal('createDraftModal');
 }
 
@@ -4459,12 +4572,21 @@ function updateSalaryStructuresTable() {
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </button>
+                    ${!s.has_processed_payroll ? `
                     <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
+                    ` : `
+                    <span class="action-btn action-btn-disabled" title="Cannot edit: Payroll has been processed with this structure">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </span>
+                    `}
                 </div>
             </td>
         </tr>
@@ -5577,6 +5699,24 @@ async function showCreateStructureModal() {
         officeSelect.value = '';
         officeSelect.disabled = false; // Re-enable for new structure creation
     }
+    // Also reset the searchable dropdown display text (it's a custom component on top of the native select)
+    const officeDropdown = getSearchableDropdown('structureOffice');
+    if (officeDropdown) {
+        // Use setValue('') to select the placeholder option (first option with value '')
+        // The SearchableDropdown class doesn't have a reset() method, so use setValue instead
+        if (typeof officeDropdown.setValue === 'function') {
+            officeDropdown.setValue(''); // Selects "Select Office (Required)" placeholder
+        }
+        // Re-enable the dropdown (it may have been disabled during edit mode)
+        if (typeof officeDropdown.setDisabled === 'function') {
+            officeDropdown.setDisabled(false);
+        }
+    }
+    // Reset is_default dropdown to "No"
+    const isDefaultDropdown = getSearchableDropdown('structureIsDefault');
+    if (isDefaultDropdown && typeof isDefaultDropdown.setValue === 'function') {
+        isDefaultDropdown.setValue('false');
+    }
     // Set default effective date to 1st of current month (avoids proration issues)
     const effectiveFromInput = document.getElementById('structureEffectiveFrom');
     if (effectiveFromInput) {
@@ -5599,8 +5739,16 @@ async function showCreateStructureModal() {
     // This will show "Select an office to see applicable statutory deductions/contributions"
     statutoryEmployeeDeductions = [];
     statutoryEmployerContributions = [];
+    selectableComponentsForCountry = []; // Clear components from previous office's country
     renderStatutoryDeductionsSection();
     renderStatutoryEmployerContributionsSection();
+
+    // Disable Add Component button until office is selected (country-agnostic validation)
+    const addComponentBtn = document.getElementById('btnAddStructureComponent');
+    if (addComponentBtn) {
+        addComponentBtn.disabled = true;
+        addComponentBtn.title = 'Select an office first to add components';
+    }
 
     // Show empty state for components
     updateComponentsEmptyState();
@@ -5616,9 +5764,14 @@ async function showCreateStructureModal() {
  */
 async function onStructureOfficeChange() {
     const officeId = document.getElementById('structureOffice')?.value;
+    const addComponentBtn = document.getElementById('btnAddStructureComponent');
 
     if (!officeId) {
-        // No office selected, clear statutory deductions and employer contributions
+        // No office selected - disable Add Component button and clear statutory data
+        if (addComponentBtn) {
+            addComponentBtn.disabled = true;
+            addComponentBtn.title = 'Select an office first to add components';
+        }
         statutoryEmployeeDeductions = [];
         statutoryEmployerContributions = [];
         renderStatutoryDeductionsSection();
@@ -5626,6 +5779,12 @@ async function onStructureOfficeChange() {
         // Refresh component dropdowns (will show empty since no office selected)
         refreshAllComponentDropdowns();
         return;
+    }
+
+    // Office selected - enable Add Component button
+    if (addComponentBtn) {
+        addComponentBtn.disabled = false;
+        addComponentBtn.title = 'Add a salary component';
     }
 
     // Find the office in the offices array
@@ -5708,7 +5867,7 @@ function refreshAllComponentDropdowns() {
                  data-calc-base="${c.calculation_base || 'basic'}"
                  data-is-basic="${c.is_basic_component || false}"
                  data-is-balance="${c.is_balance_component || false}"
-                 data-percentage="${c.percentage || ''}"
+                 data-percentage="${c.percentage || c.default_percentage || ''}"
                  data-fixed="${c.fixed_amount || ''}"
                  data-name="${escapeHtml(c.component_name || c.name)}"
                  data-code="${escapeHtml(c.component_code || c.code)}"
@@ -5760,6 +5919,20 @@ async function editSalaryStructure(structureId) {
             officeSelect.disabled = true; // Cannot change office when editing
         }
 
+        // Also disable the searchable dropdown visual wrapper
+        const officeDropdown = getSearchableDropdown('structureOffice');
+        if (officeDropdown) {
+            officeDropdown.setValue(structure.office_id); // Update visual display
+            officeDropdown.setDisabled(true); // Disable the dropdown
+        }
+
+        // Enable Add Component button since office is already selected when editing
+        const addComponentBtn = document.getElementById('btnAddStructureComponent');
+        if (addComponentBtn) {
+            addComponentBtn.disabled = false;
+            addComponentBtn.title = 'Add a salary component';
+        }
+
         // Load selectable components for this office's country BEFORE populating components
         // This ensures the dropdown options are available when we populate
         const officeForComponents = offices.find(o => o.id === structure.office_id);
@@ -5779,25 +5952,19 @@ async function editSalaryStructure(structureId) {
             isActiveCheckbox.checked = structure.is_active !== false; // Default to true if not set
         }
 
-        // Load and populate structure components (excluding statutory - those are auto-attached)
+        // Load and populate structure components (excluding statutory/auto-attached)
         if (structure.components && structure.components.length > 0) {
-            // Filter out statutory employee deductions from display - they're auto-managed
-            // COUNTRY-AGNOSTIC: Use backend flags instead of hardcoded statutory_type values
-            const nonStatutoryComponents = structure.components.filter(c => {
-                // Check if it's a statutory employee deduction using backend flags
-                const isStatutoryComponent = c.source === 'compliance' ||
-                    c.is_immutable === true ||
-                    c.calculation_type === 'compliance_linked';
+            // Filter to show only EDITABLE components
+            // An editable component is one that exists in selectableComponentsForCountry
+            // Statutory deductions/contributions and balance components are NOT in the selectable list
+            const selectableIds = new Set((selectableComponentsForCountry || []).map(c => c.id));
 
-                // Check if it's an employee deduction (not employer contribution)
-                const isEmployeeDeduction = c.component_type === 'deduction' ||
-                    (c.charge_category && c.charge_category.includes('employee')) ||
-                    (c.charge_category && !c.charge_category.includes('employer'));
-
-                const isStatutoryEmployeeDeduction = isStatutoryComponent && isEmployeeDeduction;
-                return !isStatutoryEmployeeDeduction;
+            const editableComponents = structure.components.filter(c => {
+                // Only show components that are in the selectable list
+                // This automatically excludes statutory deductions, employer contributions, and balance components
+                return selectableIds.has(c.component_id);
             });
-            populateStructureComponents(nonStatutoryComponents);
+            populateStructureComponents(editableComponents);
         } else {
             document.getElementById('structureComponents').innerHTML = '';
             structureComponentCounter = 0;
@@ -7059,6 +7226,16 @@ async function viewPayslip(payslipId) {
             </div>
 
             ${structureBreakdownHtml}
+
+            <!-- v3.0.26: Calculation Proof Button for processed payslips -->
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
+                <button class="btn btn-secondary" onclick="viewCalculationProofProcessed('${payslipId}')" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    View Calculation Proof
+                </button>
+            </div>
         `;
 
         // Handle multi-location breakdown display
@@ -7992,7 +8169,7 @@ function createSearchableDropdown(componentId, containerId) {
                              data-calc-base="${c.calculation_base || 'basic'}"
                              data-is-basic="${c.is_basic_component || false}"
                              data-is-balance="${c.is_balance_component || false}"
-                             data-percentage="${c.percentage || ''}"
+                             data-percentage="${c.percentage || c.default_percentage || ''}"
                              data-fixed="${c.fixed_amount || ''}"
                              data-name="${escapeHtml(c.component_name || c.name)}"
                              data-code="${escapeHtml(c.component_code || c.code)}"
@@ -8276,6 +8453,13 @@ document.addEventListener('click', function(e) {
 });
 
 function addStructureComponent() {
+    // VALIDATION: Require office selection first (country-agnostic - ensures components match office's country)
+    const officeId = document.getElementById('structureOffice')?.value;
+    if (!officeId) {
+        showToast('Please select an office first before adding components', 'warning');
+        return;
+    }
+
     const container = document.getElementById('structureComponents');
     const componentId = `sc_${structureComponentCounter++}`;
 
@@ -8681,8 +8865,42 @@ function populateStructureComponents(structureComponents) {
                 const percentageInput = lastRow.querySelector('.percentage-value');
                 const fixedInput = lastRow.querySelector('.fixed-value');
 
-                // Find and select the dropdown option
-                const option = dropdown?.querySelector(`.dropdown-option[data-value="${sc.component_id}"]`);
+                // Find the dropdown option - first try in the existing options
+                let option = dropdown?.querySelector(`.dropdown-option[data-value="${sc.component_id}"]`);
+
+                // If option not found, dynamically add it to the dropdown
+                if (!option && dropdown) {
+                    const optionsContainer = dropdown.querySelector('.dropdown-options');
+                    if (optionsContainer) {
+                        const componentName = sc.component_name || sc.name || 'Unknown';
+                        const componentCode = sc.component_code || sc.code || '';
+                        const componentType = sc.component_type || 'earning';
+                        const calcBase = sc.calculation_base || 'basic';
+                        const isBasic = sc.is_basic_component || false;
+
+                        const newOptionHtml = `
+                            <div class="dropdown-option"
+                                 data-value="${sc.component_id}"
+                                 data-type="${componentType}"
+                                 data-calc-type="${sc.calculation_type || 'fixed'}"
+                                 data-calc-base="${calcBase}"
+                                 data-is-basic="${isBasic}"
+                                 data-is-balance="${sc.is_balance_component || false}"
+                                 data-percentage="${sc.percentage || sc.default_percentage || ''}"
+                                 data-fixed="${sc.fixed_amount || ''}"
+                                 data-name="${escapeHtml(componentName)}"
+                                 data-code="${escapeHtml(componentCode)}"
+                                 onclick="selectDropdownOption('${dropdown.id}', this, '${lastRow.id}')">
+                                <span class="option-name">${escapeHtml(componentName)}</span>
+                                <span class="option-code">${escapeHtml(componentCode)}</span>
+                                <span class="option-type badge badge-${componentType === 'earning' ? 'success' : 'warning'}">${componentType}</span>
+                            </div>
+                        `;
+                        optionsContainer.insertAdjacentHTML('afterbegin', newOptionHtml);
+                        option = optionsContainer.querySelector(`.dropdown-option[data-value="${sc.component_id}"]`);
+                    }
+                }
+
                 if (option && dropdown) {
                     // Set hidden input value and component type
                     hiddenInput.value = sc.component_id;
@@ -9973,15 +10191,16 @@ async function showCreateVersionModal() {
     // Reset to Components tab
     switchVersionTab('version-components');
 
-    // Load country-specific components and statutory deductions for this structure's office
+    // Load country-specific components and statutory deductions/contributions for this structure's office
     if (currentVersionStructureOffice) {
         const countryCode = currentVersionStructureOffice.country_code;
         const stateCode = currentVersionStructureOffice.state_code || 'ALL';
 
-        // Load selectable components and statutory deductions for this country
+        // Load selectable components, statutory deductions AND employer contributions for this country
         await Promise.all([
             loadSelectableComponentsForCountry(countryCode),
-            loadStatutoryEmployeeDeductions(countryCode, stateCode)
+            loadStatutoryEmployeeDeductions(countryCode, stateCode),
+            loadStatutoryEmployerContributions(countryCode, stateCode)
         ]);
     }
 
@@ -10017,6 +10236,9 @@ function switchVersionTab(tabName) {
  * Populate components for new version based on current version
  * COUNTRY-AGNOSTIC: Uses selectableComponentsForCountry (filtered by backend)
  * Uses searchable dropdowns like the structure modal
+ *
+ * IMPORTANT: Only user-created components are shown as editable rows.
+ * Statutory components (source === 'compliance') are auto-attached and shown in the "Auto-Attached" tab.
  */
 function populateNewVersionComponents() {
     const container = document.getElementById('versionComponents');
@@ -10030,9 +10252,20 @@ function populateNewVersionComponents() {
     const latestVersion = structureVersions[0];
     const existingComponents = latestVersion?.components || [];
 
-    // If there are existing components, populate them
-    if (existingComponents.length > 0) {
-        existingComponents.forEach(comp => {
+    // Filter to show only EDITABLE components
+    // An editable component is one that exists in selectableComponentsForCountry
+    // Statutory deductions/contributions and balance components are NOT in the selectable list
+    const selectableIds = new Set((selectableComponentsForCountry || []).map(c => c.id));
+
+    const editableComponents = existingComponents.filter(comp => {
+        // Only show components that are in the selectable list
+        // This automatically excludes statutory deductions, employer contributions, and balance components
+        return selectableIds.has(comp.component_id);
+    });
+
+    // If there are editable components, populate them
+    if (editableComponents.length > 0) {
+        editableComponents.forEach(comp => {
             addVersionComponentWithData(comp);
         });
         if (emptyState) emptyState.style.display = 'none';
@@ -10087,26 +10320,23 @@ function addVersionComponent() {
 
 /**
  * Add a version component row with pre-populated data
+ * Uses searchable dropdown with the component auto-selected
  */
 function addVersionComponentWithData(comp) {
     const container = document.getElementById('versionComponents');
     const componentId = `vc_${versionComponentCounter++}`;
 
-    // Find the component details from selectable components
+    // Get component data from selectable list or use comp itself
     const selectableComponents = selectableComponentsForCountry || [];
     const componentData = selectableComponents.find(c => c.id === comp.component_id);
-
-    if (!componentData) {
-        console.warn(`Component ${comp.component_id} not found in selectable components`);
-        return;
-    }
+    const effectiveData = componentData || comp;
 
     const calcType = comp.calculation_type || 'percentage';
     const value = calcType === 'percentage' ? (comp.percentage_of_basic || comp.percentage || '') : (comp.fixed_amount || '');
 
     // Determine the percentage label
-    const calcBase = componentData.calculation_base || 'basic';
-    const isBasic = componentData.is_basic_component || false;
+    const calcBase = effectiveData.calculation_base || comp.calculation_base || 'basic';
+    const isBasic = effectiveData.is_basic_component || comp.is_basic_component || false;
     let percentageLabel = '% of Basic';
     if (calcBase === 'ctc' || isBasic) {
         percentageLabel = '% of CTC';
@@ -10114,11 +10344,24 @@ function addVersionComponentWithData(comp) {
         percentageLabel = '% of Gross';
     }
 
+    // Create component info object for the searchable dropdown
+    const componentInfo = {
+        component_id: comp.component_id,
+        component_name: effectiveData.component_name || comp.component_name,
+        component_code: effectiveData.component_code || comp.component_code,
+        component_type: effectiveData.component_type || comp.component_type,
+        calculation_type: calcType,
+        calculation_base: calcBase,
+        is_basic_component: isBasic,
+        is_balance_component: effectiveData.is_balance_component || comp.is_balance_component || false,
+        source: effectiveData.source || comp.source
+    };
+
     const componentHtml = `
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
                 <div class="form-group" style="flex: 2;">
-                    ${createVersionSearchableDropdown(componentId, comp.component_id)}
+                    ${createVersionSearchableDropdown(componentId, comp.component_id, componentInfo)}
                 </div>
                 <div class="form-group" style="flex: 1;">
                     <select class="form-control calc-type-select" onchange="toggleVersionComponentValueFields(this, '${componentId}')">
@@ -10153,20 +10396,52 @@ function addVersionComponentWithData(comp) {
 
 /**
  * Create a searchable dropdown for version components
+ * @param componentId - unique ID for this row
+ * @param selectedComponentId - ID of the pre-selected component (if any)
+ * @param componentInfo - optional component data for pre-selected component (used when component isn't in selectable list)
  */
-function createVersionSearchableDropdown(componentId, selectedComponentId = null) {
+function createVersionSearchableDropdown(componentId, selectedComponentId = null, componentInfo = null) {
     const selectableComponents = selectableComponentsForCountry || [];
     const dropdownId = `vdropdown_${componentId}`;
 
     // Find selected component data if provided
     let selectedText = 'Select Component';
     let selectedValue = '';
+    let selectedData = null;
+
     if (selectedComponentId) {
-        const selected = selectableComponents.find(c => c.id === selectedComponentId);
-        if (selected) {
-            selectedText = `${selected.component_name || selected.name} (${selected.component_code || selected.code})`;
+        // First try to find in selectable components
+        selectedData = selectableComponents.find(c => c.id === selectedComponentId);
+
+        // If not found in selectable list, use the provided componentInfo (from existing version data)
+        if (!selectedData && componentInfo) {
+            selectedData = componentInfo;
+        }
+
+        if (selectedData) {
+            const name = selectedData.component_name || selectedData.name || 'Unknown';
+            const code = selectedData.component_code || selectedData.code || '';
+            selectedText = `${name} (${code})`;
             selectedValue = selectedComponentId;
         }
+    }
+
+    // Build options list - include the selected component if it's not in selectable list
+    const optionsToShow = [...selectableComponents];
+    const selectedInList = selectableComponents.some(c => c.id === selectedComponentId);
+    if (selectedComponentId && !selectedInList && selectedData) {
+        // Add the existing component at the top of the list (it may be a statutory component)
+        optionsToShow.unshift({
+            id: selectedComponentId,
+            component_name: selectedData.component_name || selectedData.name,
+            component_code: selectedData.component_code || selectedData.code,
+            component_type: selectedData.component_type,
+            calculation_type: selectedData.calculation_type || 'fixed',
+            calculation_base: selectedData.calculation_base || 'basic',
+            is_basic_component: selectedData.is_basic_component || false,
+            is_balance_component: selectedData.is_balance_component || false,
+            source: selectedData.source || 'compliance'
+        });
     }
 
     return `
@@ -10188,7 +10463,7 @@ function createVersionSearchableDropdown(componentId, selectedComponentId = null
                            onclick="event.stopPropagation()">
                 </div>
                 <div class="dropdown-options" data-component-id="${componentId}">
-                    ${selectableComponents.map(c => `
+                    ${optionsToShow.map(c => `
                         <div class="dropdown-option${c.id === selectedValue ? ' selected' : ''}"
                              data-value="${c.id}"
                              data-type="${c.component_type || c.category}"
@@ -10196,7 +10471,7 @@ function createVersionSearchableDropdown(componentId, selectedComponentId = null
                              data-calc-base="${c.calculation_base || 'basic'}"
                              data-is-basic="${c.is_basic_component || false}"
                              data-is-balance="${c.is_balance_component || false}"
-                             data-percentage="${c.percentage || ''}"
+                             data-percentage="${c.percentage || c.default_percentage || ''}"
                              data-fixed="${c.fixed_amount || ''}"
                              data-name="${escapeHtml(c.component_name || c.name)}"
                              data-code="${escapeHtml(c.component_code || c.code)}"
@@ -10370,20 +10645,30 @@ function updateVersionSummary() {
     let totalDeductions = 0;
 
     rows.forEach(row => {
+        // Support both native select and searchable dropdown
+        const nativeSelect = row.querySelector('.component-select');
         const hiddenInput = row.querySelector('.component-select-value');
         const calcTypeSelect = row.querySelector('.calc-type-select');
         const percentageInput = row.querySelector('.percentage-value');
         const fixedInput = row.querySelector('.fixed-value');
 
-        if (!hiddenInput?.value) return;
+        // Get component ID from native select or hidden input
+        const componentId = nativeSelect?.value || hiddenInput?.value;
+        if (!componentId) return;
 
         const calcType = calcTypeSelect?.value || 'percentage';
         const value = calcType === 'percentage' ? parseFloat(percentageInput?.value) || 0 : 0;
 
-        // Check component type from the dropdown option
-        const dropdown = row.querySelector('.searchable-dropdown');
-        const selectedOption = dropdown?.querySelector('.dropdown-option.selected');
-        const componentType = selectedOption?.dataset.type || 'earning';
+        // Check component type - from native select option or searchable dropdown
+        let componentType = 'earning';
+        if (nativeSelect) {
+            const selectedOption = nativeSelect.options[nativeSelect.selectedIndex];
+            componentType = selectedOption?.dataset?.type || 'earning';
+        } else {
+            const dropdown = row.querySelector('.searchable-dropdown');
+            const selectedOption = dropdown?.querySelector('.dropdown-option.selected');
+            componentType = selectedOption?.dataset.type || 'earning';
+        }
 
         if (componentType === 'earning') {
             totalCtc += value;
@@ -10501,11 +10786,11 @@ async function saveNewVersion() {
         if (value > 0) {
             selectedComponents.push({
                 component_id: componentId,
-                calculation_order: index + 1,
                 calculation_type: calcType,
-                percentage_of_basic: calcType === 'percentage' ? value : null,
+                calculation_base: 'ctc',  // v3.0.42: Ensure calculation_base is set for percentage type
+                percentage: calcType === 'percentage' ? value : null,  // v3.0.42: Fixed field name from percentage_of_basic to percentage
                 fixed_amount: calcType === 'fixed' ? value : null,
-                is_active: true
+                display_order: index + 1
             });
         }
     });
@@ -10776,6 +11061,51 @@ async function openArrearsModal() {
         console.error('Error opening arrears modal:', error);
         showToast(error.message || 'Failed to load arrears', 'error');
         hideLoading();
+    }
+}
+
+/**
+ * v3.0.43: Calculate structure version arrears
+ * This triggers backend calculation of arrears for the current version
+ */
+async function calculateVersionArrears() {
+    try {
+        // Get current version ID - use the most recent version (V2, V3, etc.)
+        const versionId = structureVersions && structureVersions.length > 0
+            ? structureVersions[0]?.id
+            : null;
+
+        if (!versionId) {
+            showToast('No version available to calculate arrears', 'warning');
+            return;
+        }
+
+        if (!isValidGuid(versionId)) {
+            showToast('Invalid version ID format', 'error');
+            return;
+        }
+
+        showLoading();
+
+        // Call the calculate arrears API
+        const result = await api.calculateVersionArrears(versionId);
+
+        hideLoading();
+
+        if (result.arrears_records && result.arrears_records.length > 0) {
+            showToast(`Calculated ${result.arrears_records.length} arrears record(s) totaling ${formatCurrency(result.total_arrears)}`, 'success');
+            // Refresh the arrears table to show newly calculated arrears
+            await refreshArrears();
+        } else if (result.warnings && result.warnings.length > 0) {
+            showToast(result.warnings[0], 'info');
+        } else {
+            showToast('No arrears to calculate. Ensure there are processed payslips affected by this version change.', 'info');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error calculating arrears:', error);
+        const errorMessage = error.error || error.message || 'Failed to calculate arrears';
+        showToast(errorMessage, 'error');
     }
 }
 
@@ -14913,4 +15243,782 @@ function onPayrollRunUpdated(data) {
     }
 
     showNotification(message, toastType);
+}
+
+// =====================================================
+// EMPLOYEE SALARIES TAB FUNCTIONS
+// =====================================================
+
+let empSalaryEmployees = [];
+let empSalarySalaryStructures = [];
+let empSalaryCurrentEmployee = null;
+let empSalaryCurrentData = null;
+
+/**
+ * Initialize employee salaries tab event listeners
+ */
+function initEmployeeSalariesTab() {
+    // Add event listeners for filter dropdowns (searchable dropdowns fire change on underlying select)
+    document.getElementById('empSalaryOfficeFilter')?.addEventListener('change', loadEmployeeSalaries);
+    document.getElementById('empSalaryDeptFilter')?.addEventListener('change', loadEmployeeSalaries);
+    document.getElementById('empSalaryStatusFilter')?.addEventListener('change', filterEmployeeSalaries);
+}
+
+/**
+ * Get currency info for an employee based on their office
+ */
+function getEmployeeCurrencyInfo(employee) {
+    if (!employee || !employee.office_id) {
+        return { code: null, symbol: null };
+    }
+    const office = offices.find(o => o.id === employee.office_id);
+    return {
+        code: office?.currency_code || null,
+        symbol: office?.currency_symbol || null
+    };
+}
+
+/**
+ * Load employees with their salary status for the Employee Salaries tab
+ */
+async function loadEmployeeSalaries() {
+    try {
+        const officeFilter = document.getElementById('empSalaryOfficeFilter')?.value || '';
+        const deptFilter = document.getElementById('empSalaryDeptFilter')?.value || '';
+
+        // Load employees - use office-specific endpoint if office selected
+        let url;
+        if (officeFilter) {
+            url = `/hrms/employees/office/${officeFilter}`;
+        } else {
+            url = '/hrms/employees';
+        }
+
+        let empList = await api.request(url) || [];
+
+        // Apply department filter client-side (backend doesn't support combined office+dept filter)
+        if (deptFilter) {
+            empList = empList.filter(e => e.department_id === deptFilter);
+        }
+
+        empSalaryEmployees = empList;
+
+        // Load salary info for each employee
+        const employeesWithSalary = await Promise.all(empSalaryEmployees.map(async (emp) => {
+            try {
+                const salary = await api.getEmployeeSalary(emp.id);
+                return { ...emp, salary: salary || null };
+            } catch (e) {
+                return { ...emp, salary: null };
+            }
+        }));
+
+        empSalaryEmployees = employeesWithSalary;
+
+        // Update stats
+        updateEmployeeSalaryStats();
+
+        // Render table
+        filterEmployeeSalaries();
+    } catch (error) {
+        console.error('Error loading employee salaries:', error);
+        showToast('Failed to load employee salaries', 'error');
+    }
+}
+
+/**
+ * Update the stats row for employee salaries
+ */
+function updateEmployeeSalaryStats() {
+    const totalCount = empSalaryEmployees.length;
+    const assignedCount = empSalaryEmployees.filter(e => e.salary && e.salary.id).length;
+    const pendingCount = totalCount - assignedCount;
+
+    // Group employees by currency for proper total display
+    const currencyTotals = {};
+    empSalaryEmployees.forEach(e => {
+        if (e.salary?.ctc) {
+            const currency = getEmployeeCurrencyInfo(e);
+            const key = currency.code || 'DEFAULT';
+            if (!currencyTotals[key]) {
+                currencyTotals[key] = { total: 0, symbol: currency.symbol, code: currency.code };
+            }
+            currencyTotals[key].total += e.salary.ctc / 12;
+        }
+    });
+
+    document.getElementById('totalEmployeesCount').textContent = totalCount;
+    document.getElementById('salaryAssignedCount').textContent = assignedCount;
+    document.getElementById('salaryPendingCount').textContent = pendingCount;
+
+    // Display total - if single currency show formatted, otherwise show "Mixed"
+    const currencyKeys = Object.keys(currencyTotals);
+    if (currencyKeys.length === 1) {
+        const curr = currencyTotals[currencyKeys[0]];
+        document.getElementById('totalPayrollCost').textContent = formatCurrency(curr.total, curr.code, curr.symbol);
+    } else if (currencyKeys.length > 1) {
+        document.getElementById('totalPayrollCost').textContent = 'Mixed Currencies';
+    } else {
+        document.getElementById('totalPayrollCost').textContent = formatCurrency(0, null, null);
+    }
+}
+
+/**
+ * Filter employees based on search and status
+ */
+function filterEmployeeSalaries() {
+    const searchTerm = document.getElementById('empSalarySearch')?.value?.toLowerCase() || '';
+    const statusFilter = document.getElementById('empSalaryStatusFilter')?.value || '';
+
+    let filtered = empSalaryEmployees;
+
+    // Apply search filter
+    if (searchTerm) {
+        filtered = filtered.filter(emp => {
+            const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
+            const empCode = (emp.employee_code || '').toLowerCase();
+            return fullName.includes(searchTerm) || empCode.includes(searchTerm);
+        });
+    }
+
+    // Apply status filter
+    if (statusFilter === 'assigned') {
+        filtered = filtered.filter(emp => emp.salary && emp.salary.id);
+    } else if (statusFilter === 'pending') {
+        filtered = filtered.filter(emp => !emp.salary || !emp.salary.id);
+    }
+
+    renderEmployeeSalariesTable(filtered);
+}
+
+/**
+ * Render the employee salaries table
+ */
+function renderEmployeeSalariesTable(employees) {
+    const tbody = document.getElementById('employeeSalariesTable');
+
+    if (!employees || employees.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <line x1="19" y1="8" x2="19" y2="14"></line>
+                            <line x1="22" y1="11" x2="16" y2="11"></line>
+                        </svg>
+                        <p>No employees found</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const rows = employees.map(emp => {
+        const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown';
+        const initials = getEmployeeInitials(emp.first_name, emp.last_name);
+        const hasSalary = emp.salary && emp.salary.id;
+
+        // Get currency info from employee's office
+        const currency = getEmployeeCurrencyInfo(emp);
+        const ctcDisplay = hasSalary ? formatCurrency(emp.salary.ctc, currency.code, currency.symbol) : '-';
+        const effectiveFrom = hasSalary && emp.salary.effective_from
+            ? new Date(emp.salary.effective_from).toLocaleDateString()
+            : '-';
+        const structureName = hasSalary ? (emp.salary.structure_name || '-') : '-';
+
+        const statusBadge = hasSalary
+            ? '<span class="badge badge-success">Assigned</span>'
+            : '<span class="badge badge-warning">Pending</span>';
+
+        const actionBtn = hasSalary
+            ? `<button class="btn btn-sm btn-outline" onclick="openEmployeeSalaryModal('${emp.id}')" title="Revise Salary">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                   </svg>
+                   Revise
+               </button>`
+            : `<button class="btn btn-sm btn-primary" onclick="openEmployeeSalaryModal('${emp.id}')" title="Assign Salary">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <line x1="12" y1="5" x2="12" y2="19"></line>
+                       <line x1="5" y1="12" x2="19" y2="12"></line>
+                   </svg>
+                   Assign
+               </button>`;
+
+        // Avatar: show profile photo if available, otherwise show initials
+        const avatarHtml = emp.profile_photo_url
+            ? `<img src="${escapeHtml(emp.profile_photo_url)}" alt="${escapeHtml(fullName)}" class="emp-avatar-xs-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+               <div class="emp-avatar-xs" style="display:none;">${initials}</div>`
+            : `<div class="emp-avatar-xs">${initials}</div>`;
+
+        return `
+            <tr>
+                <td>
+                    <div class="emp-cell-compact">
+                        ${avatarHtml}
+                        <span class="emp-name-inline">${escapeHtml(fullName)}</span>
+                        <span class="emp-code-badge">${escapeHtml(emp.employee_code || '-')}</span>
+                    </div>
+                </td>
+                <td>${escapeHtml(emp.department_name || '-')}</td>
+                <td>${escapeHtml(emp.designation_name || '-')}</td>
+                <td>${escapeHtml(structureName)}</td>
+                <td class="text-right">${ctcDisplay}</td>
+                <td>${effectiveFrom}</td>
+                <td>${statusBadge}</td>
+                <td>${actionBtn}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = rows.join('');
+}
+
+/**
+ * Get employee initials
+ */
+function getEmployeeInitials(firstName, lastName) {
+    const f = (firstName || '').charAt(0).toUpperCase();
+    const l = (lastName || '').charAt(0).toUpperCase();
+    return f + l || '--';
+}
+
+/**
+ * Switch between tabs in the Employee Salary modal
+ */
+function switchEmpSalaryTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('#employeeSalaryModal .emp-salary-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    document.querySelectorAll('#employeeSalaryModal .emp-salary-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    if (tabName === 'details') {
+        document.getElementById('empSalaryTabDetails').classList.add('active');
+    } else if (tabName === 'history') {
+        document.getElementById('empSalaryTabHistory').classList.add('active');
+    }
+}
+
+/**
+ * Open the employee salary modal for assigning or revising salary
+ */
+async function openEmployeeSalaryModal(employeeId) {
+    const employee = empSalaryEmployees.find(e => e.id === employeeId);
+    if (!employee) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    empSalaryCurrentEmployee = employee;
+
+    // Reset form
+    document.getElementById('empSalaryEmployeeId').value = employeeId;
+    document.getElementById('empSalaryExistingId').value = '';
+    document.getElementById('empSalaryCTC').value = '';
+    document.getElementById('empSalaryEffectiveFrom').value = new Date().toISOString().split('T')[0];
+    document.getElementById('empCurrentSalarySection').style.display = 'none';
+    document.getElementById('empSalaryBreakdownSection').style.display = 'none';
+    document.getElementById('empRevisionReasonGroup').style.display = 'none';
+    document.getElementById('employeeSalaryFormTitle').textContent = 'Configure Salary';
+    document.getElementById('empSaveSalaryBtnText').textContent = 'Save Salary';
+    empSalaryCurrentData = null;
+
+    // Reset to first tab and hide history count
+    switchEmpSalaryTab('details');
+    document.getElementById('empSalaryHistoryCount').style.display = 'none';
+    document.getElementById('empSalaryHistoryTableBody').innerHTML = `
+        <tr class="empty-state">
+            <td colspan="5">
+                <div class="empty-message">
+                    <p>No salary history available</p>
+                </div>
+            </td>
+        </tr>
+    `;
+
+    // Set employee info in header
+    const initials = getEmployeeInitials(employee.first_name, employee.last_name);
+    document.getElementById('empSalaryAvatar').textContent = initials;
+    document.getElementById('empSalaryName').textContent =
+        `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Unknown';
+    document.getElementById('empSalaryDesignation').textContent =
+        employee.designation_name || 'No Designation';
+    document.getElementById('empSalaryDepartment').textContent =
+        employee.department_name || 'No Department';
+
+    // Load salary structures for employee's office
+    try {
+        empSalarySalaryStructures = await api.getHrmsSalaryStructures(employee.office_id);
+        const structureSelect = document.getElementById('empSalaryStructureId');
+        structureSelect.innerHTML = '<option value="">Select Salary Structure...</option>';
+        empSalarySalaryStructures.forEach(s => {
+            const currencySymbol = s.currency_symbol || '';
+            const currencyCode = s.currency_code || '';
+            structureSelect.innerHTML += `<option value="${s.id}" data-currency-symbol="${escapeHtml(currencySymbol)}" data-currency-code="${escapeHtml(currencyCode)}">${escapeHtml(s.structure_name)}</option>`;
+        });
+        // Reset currency prefix to default
+        updateEmpSalaryCurrencyPrefix();
+    } catch (error) {
+        console.error('Error loading salary structures:', error);
+        showToast('Failed to load salary structures', 'error');
+    }
+
+    // Load existing salary if any
+    try {
+        const salary = await api.getEmployeeSalary(employeeId);
+        if (salary && salary.id) {
+            empSalaryCurrentData = salary;
+            document.getElementById('empSalaryExistingId').value = salary.id;
+
+            // Show current salary section
+            document.getElementById('empCurrentSalarySection').style.display = 'block';
+            // Use currency from employee's office
+            const empCurrency = getEmployeeCurrencyInfo(employee);
+            document.getElementById('empCurrentCTC').textContent = formatCurrency(salary.ctc, empCurrency.code, empCurrency.symbol);
+            document.getElementById('empCurrentMonthlyGross').textContent = formatCurrency(salary.gross / 12, empCurrency.code, empCurrency.symbol);
+            document.getElementById('empCurrentMonthlyNet').textContent = formatCurrency(salary.net / 12, empCurrency.code, empCurrency.symbol);
+            document.getElementById('empCurrentEffectiveFrom').textContent =
+                salary.effective_from ? new Date(salary.effective_from).toLocaleDateString() : '-';
+
+            // Update status badge
+            document.getElementById('empSalaryStatusBadge').innerHTML =
+                '<span class="badge badge-success">Active</span>';
+
+            // Pre-fill form for revision
+            document.getElementById('empSalaryStructureId').value = salary.structure_id || '';
+            document.getElementById('empSalaryCTC').value = salary.ctc || '';
+            document.getElementById('employeeSalaryFormTitle').textContent = 'Revise Salary';
+            document.getElementById('empRevisionReasonGroup').style.display = 'block';
+            document.getElementById('empSaveSalaryBtnText').textContent = 'Revise Salary';
+
+            // Update currency prefix after setting structure
+            updateEmpSalaryCurrencyPrefix();
+
+            // Trigger breakdown preview
+            await previewEmpSalaryBreakdown();
+
+            // Load salary history
+            await loadEmpSalaryHistory(employeeId);
+        } else {
+            document.getElementById('empSalaryStatusBadge').innerHTML =
+                '<span class="badge badge-warning">Not Configured</span>';
+        }
+    } catch (error) {
+        // No existing salary - that's OK for new employees
+        document.getElementById('empSalaryStatusBadge').innerHTML =
+            '<span class="badge badge-warning">Not Configured</span>';
+    }
+
+    openModal('employeeSalaryModal');
+}
+
+/**
+ * Update currency prefix when salary structure changes
+ */
+function updateEmpSalaryCurrencyPrefix() {
+    const structureSelect = document.getElementById('empSalaryStructureId');
+    const selectedOption = structureSelect.options[structureSelect.selectedIndex];
+    let currencySymbol = selectedOption?.getAttribute('data-currency-symbol');
+
+    // If no structure selected, use employee's office currency as fallback
+    if (!currencySymbol && empSalaryCurrentEmployee) {
+        const empCurrency = getEmployeeCurrencyInfo(empSalaryCurrentEmployee);
+        currencySymbol = empCurrency.symbol || '';
+    }
+
+    document.getElementById('empSalaryCurrencyPrefix').textContent = currencySymbol || '';
+}
+
+/**
+ * Handle salary structure change
+ */
+async function onEmpSalaryStructureChange() {
+    updateEmpSalaryCurrencyPrefix();
+    await previewEmpSalaryBreakdown();
+}
+
+/**
+ * Preview salary breakdown with full statutory calculations
+ * Uses the versioned calculate endpoint to include PF, ESI, PT, TDS, etc.
+ */
+async function previewEmpSalaryBreakdown() {
+    const structureId = document.getElementById('empSalaryStructureId').value;
+    const ctc = parseFloat(document.getElementById('empSalaryCTC').value);
+
+    if (!structureId || !ctc || ctc <= 0) {
+        document.getElementById('empSalaryBreakdownSection').style.display = 'none';
+        return;
+    }
+
+    try {
+        // Use the versioned calculate endpoint which includes statutory deductions
+        // Calculate for current month as preview
+        const now = new Date();
+        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+        const breakdown = await api.request(`/hrms/payroll/structures/${structureId}/versions/calculate`, {
+            method: 'POST',
+            body: JSON.stringify({
+                ctc: ctc,
+                period_start: periodStart,
+                period_end: periodEnd
+            })
+        });
+
+        if (breakdown) {
+            renderEmpSalaryBreakdown(breakdown, ctc);
+            document.getElementById('empSalaryBreakdownSection').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error calculating breakdown:', error);
+        document.getElementById('empSalaryBreakdownSection').style.display = 'none';
+    }
+}
+
+/**
+ * Render salary breakdown in the modal with enhanced design
+ * Shows two-column layout (Earnings | Deductions) with statutory components and summary cards
+ */
+function renderEmpSalaryBreakdown(breakdown, annualCtc) {
+    const container = document.getElementById('empSalaryBreakdownSection');
+
+    // Get currency from backend response or fallback to structure
+    const currencySymbol = breakdown.currency_symbol || '₹';
+    const currencyCode = breakdown.currency_code || 'INR';
+
+    // Use locale based on currency code for proper number formatting
+    const localeMap = { 'INR': 'en-IN', 'USD': 'en-US', 'GBP': 'en-GB', 'AED': 'ar-AE', 'IDR': 'id-ID', 'MVR': 'dv-MV' };
+    const locale = localeMap[currencyCode] || 'en-IN';
+    const formatAmt = (amt) => amt.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    // Extract data from breakdown
+    const earnings = breakdown.aggregated_earnings || breakdown.component_breakdowns?.filter(c => c.component_type === 'earning') || [];
+    const deductions = breakdown.aggregated_deductions || breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
+    const employerContributions = breakdown.aggregated_employer_contributions || [];
+
+    // Filter to show non-zero earnings, but show all deductions (including zero for transparency)
+    const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+    const activeDeductions = deductions; // Show all deductions including zero for statutory transparency
+
+    const totalGross = breakdown.total_gross || 0;
+    const totalDeductions = breakdown.total_deductions || 0;
+    const netPay = breakdown.total_net || breakdown.net_pay || 0;
+    const totalWorkingDays = breakdown.total_working_days || 'N/A';
+
+    // Get period info for header
+    const now = new Date();
+    const periodStartDisplay = `01 ${now.toLocaleDateString('en-US', { month: 'short' })}`;
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const periodEndDisplay = `${lastDay} ${now.toLocaleDateString('en-US', { month: 'short' })}`;
+
+    let htmlContent = `
+        <style>
+            .esp-container { font-size: 12px; }
+            .esp-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 8px; }
+            .esp-header-item { text-align: center; }
+            .esp-header-label { font-size: 9px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; }
+            .esp-header-value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+            .esp-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+            .esp-column { background: var(--bg-secondary); border-radius: 6px; overflow: hidden; border: 1px solid var(--border-primary); }
+            .esp-column-header { padding: 5px 10px; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+            .esp-earn-header { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); }
+            .esp-ded-header { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
+            .esp-column-body { padding: 4px 0; max-height: 130px; overflow-y: auto; }
+            .esp-row { display: flex; justify-content: space-between; padding: 2px 10px; font-size: 11px; }
+            .esp-row:hover { background: var(--bg-hover); }
+            .esp-row-name { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+            .esp-row-amt { font-weight: 500; font-variant-numeric: tabular-nums; margin-left: 8px; flex-shrink: 0; }
+            .esp-row-amt.earn { color: var(--color-success); }
+            .esp-row-amt.ded { color: var(--color-danger); }
+            .esp-row-zero { opacity: 0.5; }
+            .esp-total-row { border-top: 1px solid var(--border-secondary); padding-top: 4px; margin-top: 4px; font-weight: 600; }
+            .esp-summary { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 6px; padding: 6px; background: var(--bg-tertiary); border-radius: 6px; }
+            .esp-summary-item { text-align: center; padding: 8px 6px; border-radius: 6px; }
+            .esp-summary-label { font-size: 9px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.3px; }
+            .esp-summary-value { font-size: 13px; font-weight: 700; margin-top: 2px; }
+            .esp-summary-gross { background: var(--color-success); color: var(--text-inverse); }
+            .esp-summary-ded { background: var(--color-danger); color: var(--text-inverse); }
+            .esp-summary-net { background: var(--color-info); color: var(--text-inverse); }
+            .esp-summary-net .esp-summary-value { font-size: 14px; }
+            .esp-employer { margin-top: 6px; padding: 6px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 10px; }
+            .esp-employer-title { font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+            .esp-employer-title:hover { color: var(--text-primary); }
+            .esp-employer-body { display: none; }
+            .esp-employer-body.show { display: block; }
+            .esp-employer-row { display: flex; justify-content: space-between; color: var(--text-tertiary); padding: 1px 0; }
+        </style>
+        <div class="esp-container">
+            <div class="esp-header">
+                <div class="esp-header-item">
+                    <div class="esp-header-label">CTC (Annual)</div>
+                    <div class="esp-header-value">${currencySymbol} ${formatAmt(annualCtc || 0)}</div>
+                </div>
+                <div class="esp-header-item">
+                    <div class="esp-header-label">Period</div>
+                    <div class="esp-header-value">${periodStartDisplay} - ${periodEndDisplay}</div>
+                </div>
+                <div class="esp-header-item">
+                    <div class="esp-header-label">Days</div>
+                    <div class="esp-header-value">${totalWorkingDays}</div>
+                </div>
+            </div>
+
+            <div class="esp-columns">
+                <div class="esp-column">
+                    <div class="esp-column-header esp-earn-header">Earnings</div>
+                    <div class="esp-column-body">
+    `;
+
+    // Earnings column
+    activeEarnings.forEach(cb => {
+        const amount = cb.total_amount || cb.prorated_amount || 0;
+        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt earn">+${currencySymbol} ${formatAmt(amount)}</span></div>`;
+    });
+    htmlContent += `
+                        <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
+                    </div>
+                </div>
+                <div class="esp-column">
+                    <div class="esp-column-header esp-ded-header">Deductions</div>
+                    <div class="esp-column-body">
+    `;
+
+    // Deductions column (including statutory like PF, ESI, PT, TDS)
+    activeDeductions.forEach(cb => {
+        const amount = cb.total_amount || cb.prorated_amount || 0;
+        const zeroClass = amount === 0 ? ' esp-row-zero' : '';
+        htmlContent += `<div class="esp-row${zeroClass}"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol} ${formatAmt(amount)}</span></div>`;
+    });
+    htmlContent += `
+                        <div class="esp-row esp-total-row"><span>Total</span><span class="esp-row-amt ded">−${currencySymbol} ${formatAmt(totalDeductions)}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="esp-summary">
+                <div class="esp-summary-item esp-summary-gross">
+                    <div class="esp-summary-label">Gross</div>
+                    <div class="esp-summary-value">${currencySymbol} ${formatAmt(totalGross)}</div>
+                </div>
+                <div class="esp-summary-item esp-summary-ded">
+                    <div class="esp-summary-label">Deductions</div>
+                    <div class="esp-summary-value">−${currencySymbol} ${formatAmt(totalDeductions)}</div>
+                </div>
+                <div class="esp-summary-item esp-summary-net">
+                    <div class="esp-summary-label">Net Pay</div>
+                    <div class="esp-summary-value">${currencySymbol} ${formatAmt(netPay)}</div>
+                </div>
+            </div>
+    `;
+
+    // Employer contributions section (collapsible)
+    if (employerContributions.length > 0) {
+        const activeEmployer = employerContributions.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+        if (activeEmployer.length > 0) {
+            const totalEmployer = activeEmployer.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
+            htmlContent += `
+                <div class="esp-employer">
+                    <div class="esp-employer-title" onclick="this.nextElementSibling.classList.toggle('show')">
+                        <span>▶</span> Employer Contributions (${currencySymbol} ${formatAmt(totalEmployer)})
+                    </div>
+                    <div class="esp-employer-body">
+            `;
+            activeEmployer.forEach(cb => {
+                const amount = cb.total_amount || cb.prorated_amount || 0;
+                htmlContent += `<div class="esp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${currencySymbol} ${formatAmt(amount)}</span></div>`;
+            });
+            htmlContent += `</div></div>`;
+        }
+    }
+
+    htmlContent += `</div>`;
+
+    // Replace entire section content
+    container.innerHTML = `<h5>Salary Breakdown (Monthly)</h5>${htmlContent}`;
+}
+
+/**
+ * Load salary history for an employee
+ */
+async function loadEmpSalaryHistory(employeeId) {
+    const tbody = document.getElementById('empSalaryHistoryTableBody');
+    const countBadge = document.getElementById('empSalaryHistoryCount');
+
+    try {
+        const revisions = await api.getEmployeeSalaryRevisions(employeeId);
+
+        if (!revisions || revisions.length === 0) {
+            countBadge.style.display = 'none';
+            tbody.innerHTML = `
+                <tr class="empty-state">
+                    <td colspan="5">
+                        <div class="empty-message">
+                            <p>No salary history available</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Show count badge
+        countBadge.textContent = revisions.length;
+        countBadge.style.display = 'inline-flex';
+
+        // Get currency from employee's office
+        const empCurrency = getEmployeeCurrencyInfo(empSalaryCurrentEmployee);
+
+        // Sort by created_at descending
+        const sortedRevisions = revisions.sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        const rows = sortedRevisions.map(item => {
+            const effectiveDate = item.effective_date
+                ? new Date(item.effective_date).toLocaleDateString()
+                : '-';
+            const ctcDisplay = formatCurrency(item.new_ctc, empCurrency.code, empCurrency.symbol);
+            // Structure name: try structure_name first, then look up from current salary data
+            let structureName = item.structure_name;
+            if (!structureName && empSalaryCurrentData && empSalaryCurrentData.structure_name) {
+                structureName = empSalaryCurrentData.structure_name;
+            }
+            structureName = structureName || '-';
+            const revisionType = (item.revision_type || '-').replace(/_/g, ' ');
+            // Updated by: check both field names (revised_by_name and created_by_name)
+            const updatedBy = item.revised_by_name || item.created_by_name || '-';
+
+            return `
+                <tr>
+                    <td>${effectiveDate}</td>
+                    <td>${ctcDisplay}</td>
+                    <td>${escapeHtml(structureName)}</td>
+                    <td>${escapeHtml(revisionType)}</td>
+                    <td>${escapeHtml(updatedBy)}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = rows.join('');
+    } catch (error) {
+        console.error('Error loading salary history:', error);
+        countBadge.style.display = 'none';
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="5">
+                    <div class="empty-message">
+                        <p>Failed to load salary history</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+/**
+ * Save employee salary from payroll page
+ */
+async function saveEmployeeSalaryFromPayroll(event) {
+    event.preventDefault();
+
+    const employeeId = document.getElementById('empSalaryEmployeeId').value;
+    const existingSalaryId = document.getElementById('empSalaryExistingId').value;
+    const structureId = document.getElementById('empSalaryStructureId').value;
+    const ctc = parseFloat(document.getElementById('empSalaryCTC').value);
+    const effectiveFrom = document.getElementById('empSalaryEffectiveFrom').value;
+
+    if (!structureId || !ctc || !effectiveFrom) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('empSaveSalaryBtn');
+    const originalText = document.getElementById('empSaveSalaryBtnText').textContent;
+    saveBtn.disabled = true;
+    document.getElementById('empSaveSalaryBtnText').textContent = 'Saving...';
+
+    try {
+        let salaryData;
+
+        if (existingSalaryId) {
+            // Revise existing salary
+            salaryData = {
+                employee_id: employeeId,
+                new_structure_id: structureId,
+                new_ctc: ctc,
+                effective_from: effectiveFrom,
+                revision_type: document.getElementById('empRevisionReason')?.value || 'adjustment'
+            };
+            await api.updateEmployeeSalary(employeeId, salaryData);
+            showToast('Salary revised successfully', 'success');
+        } else {
+            // Create new salary
+            salaryData = {
+                employee_id: employeeId,
+                structure_id: structureId,
+                ctc: ctc,
+                effective_from: effectiveFrom
+            };
+            await api.assignEmployeeSalary(salaryData);
+            showToast('Salary assigned successfully', 'success');
+        }
+
+        closeModal('employeeSalaryModal');
+
+        // Reload employee salaries table
+        await loadEmployeeSalaries();
+    } catch (error) {
+        console.error('Error saving salary:', error);
+        showToast(error.message || 'Failed to save salary', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        document.getElementById('empSaveSalaryBtnText').textContent = originalText;
+    }
+}
+
+/**
+ * Populate employee salary filter dropdowns
+ */
+async function populateEmpSalaryFilters() {
+    try {
+        // Populate offices filter
+        const offices = await api.getHrmsOffices();
+        if (offices) {
+            const officeOptions = [
+                { value: '', label: 'All Offices' },
+                ...offices.map(o => ({ value: o.id, label: o.office_name }))
+            ];
+            updateSearchableDropdownOptions('empSalaryOfficeFilter', officeOptions);
+        }
+
+        // Populate departments filter
+        const departments = await api.getHrmsDepartments();
+        if (departments) {
+            const deptOptions = [
+                { value: '', label: 'All Departments' },
+                ...departments.map(d => ({ value: d.id, label: d.department_name }))
+            ];
+            updateSearchableDropdownOptions('empSalaryDeptFilter', deptOptions);
+        }
+
+        // Status filter options are static, just need to initialize
+        const statusOptions = [
+            { value: '', label: 'All Status' },
+            { value: 'assigned', label: 'Salary Assigned' },
+            { value: 'pending', label: 'Pending Assignment' }
+        ];
+        updateSearchableDropdownOptions('empSalaryStatusFilter', statusOptions);
+    } catch (error) {
+        console.error('Error populating employee salary filters:', error);
+    }
 }

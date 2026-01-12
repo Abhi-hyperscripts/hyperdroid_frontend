@@ -153,14 +153,13 @@
                                     <th>Designation</th>
                                     <th>Office</th>
                                     <th>Joining Date</th>
-                                    <th>CTC</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="employeesTableBody">
                                 <tr>
-                                    <td colspan="8">
+                                    <td colspan="7">
                                         <div class="loading-spinner">
                                             <div class="spinner"></div>
                                         </div>
@@ -806,190 +805,6 @@
         </div>
     </div>
 
-    <!-- Manage Salary Modal -->
-    <div class="modal" id="salaryModal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="salaryModalTitle">Manage Employee Salary</h3>
-                    <button class="close-btn" onclick="closeModal('salaryModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Employee Info Header -->
-                    <div class="salary-employee-header" id="salaryEmployeeHeader">
-                        <div class="employee-info">
-                            <div class="employee-avatar" id="salaryEmployeeAvatar">-</div>
-                            <div class="employee-details">
-                                <h4 id="salaryEmployeeName">-</h4>
-                                <p id="salaryEmployeeDesignation">-</p>
-                            </div>
-                        </div>
-                        <div class="salary-status" id="salaryStatusBadge">
-                            <span class="badge badge-warning">Not Configured</span>
-                        </div>
-                    </div>
-
-                    <!-- Current Salary Display (when exists) -->
-                    <div class="current-salary-section" id="currentSalarySection" style="display: none;">
-                        <h4>Current Salary</h4>
-                        <div class="salary-summary-grid">
-                            <div class="salary-card">
-                                <span class="salary-label">Annual CTC</span>
-                                <span class="salary-value" id="currentCTC">-</span>
-                            </div>
-                            <div class="salary-card">
-                                <span class="salary-label">Monthly Gross</span>
-                                <span class="salary-value" id="currentMonthlyGross">-</span>
-                            </div>
-                            <div class="salary-card">
-                                <span class="salary-label">Monthly Net</span>
-                                <span class="salary-value" id="currentMonthlyNet">-</span>
-                            </div>
-                        </div>
-                        <div class="salary-effective-from">
-                            <span>Effective From: </span>
-                            <span id="currentEffectiveFrom">-</span>
-                        </div>
-                    </div>
-
-                    <!-- Salary Form -->
-                    <form id="salaryForm">
-                        <input type="hidden" id="salaryEmployeeId">
-                        <input type="hidden" id="existingSalaryId">
-
-                        <div class="form-section">
-                            <h4 id="salaryFormTitle">Configure Salary</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Salary Structure <span class="required">*</span></label>
-                                    <select id="salaryStructureId" required onchange="previewSalaryBreakdown()">
-                                        <option value="">Select Salary Structure...</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Annual CTC <span class="required">*</span></label>
-                                    <div class="input-with-prefix">
-                                        <span class="input-prefix" id="salaryCurrencyPrefix">₹</span>
-                                        <input type="number" id="salaryCTC" required min="0" step="1"
-                                               placeholder="e.g. 1200000" onchange="previewSalaryBreakdown()">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Effective From <span class="required">*</span></label>
-                                    <input type="date" id="salaryEffectiveFrom" required>
-                                </div>
-                                <div class="form-group" id="revisionReasonGroup" style="display: none;">
-                                    <label>Revision Reason</label>
-                                    <select id="salaryRevisionType">
-                                        <option value="adjustment">Adjustment</option>
-                                        <option value="promotion">Promotion</option>
-                                        <option value="annual_increment">Annual Increment</option>
-                                        <option value="correction">Correction</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Salary Breakdown Preview -->
-                        <div class="form-section" id="salaryBreakdownSection" style="display: none;">
-                            <h4>Salary Breakdown Preview</h4>
-                            <div class="salary-breakdown-grid" id="salaryBreakdownGrid">
-                                <!-- Dynamically populated -->
-                            </div>
-                            <div class="salary-totals">
-                                <div class="salary-total-row">
-                                    <span>Monthly Gross</span>
-                                    <span id="previewMonthlyGross">₹0</span>
-                                </div>
-                                <div class="salary-total-row">
-                                    <span>Monthly Deductions</span>
-                                    <span id="previewMonthlyDeductions">₹0</span>
-                                </div>
-                                <div class="salary-total-row net">
-                                    <span>Monthly Net Pay</span>
-                                    <span id="previewMonthlyNet">₹0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-
-                    <!-- Salary History Section -->
-                    <div class="form-section compact" id="salaryHistorySection" style="display: none;">
-                        <h4>Salary History</h4>
-                        <div class="salary-history-table-wrapper">
-                            <table class="salary-history-table compact">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 22%;">Date</th>
-                                        <th style="width: 28%;">CTC</th>
-                                        <th style="width: 12%;">Change</th>
-                                        <th style="width: 18%;">Type</th>
-                                        <th style="width: 20%;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="salaryHistoryTableBody">
-                                    <!-- Dynamically populated -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="saveEmployeeSalary()" id="saveSalaryBtn">
-                        <span id="saveSalaryBtnText">Save Salary</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Scheduled Salary Modal -->
-    <div class="modal" id="editScheduledSalaryModal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Edit Scheduled Salary</h3>
-                    <button class="close-btn" onclick="closeModal('editScheduledSalaryModal')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 6px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-                        <small>This salary entry has not been used in any payroll processing yet, so it can be edited.</small>
-                    </div>
-                    <form id="editScheduledSalaryForm">
-                        <div class="form-group">
-                            <label for="editSalaryCTC">Annual CTC *</label>
-                            <input type="number" id="editSalaryCTC" class="form-control" step="0.01" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editSalaryEffectiveFrom">Effective From *</label>
-                            <input type="date" id="editSalaryEffectiveFrom" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editSalaryRevisionReason">Revision Reason</label>
-                            <input type="text" id="editSalaryRevisionReason" class="form-control" placeholder="e.g., Annual Increment, Correction">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('editScheduledSalaryModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveScheduledSalaryEdit()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Transfer Employee Modal -->
     <div class="modal" id="transferModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1073,13 +888,6 @@
                                     </label>
                                     <span class="switch-label">Change Manager</span>
                                 </div>
-                                <div class="switch-container">
-                                    <label class="switch">
-                                        <input type="checkbox" id="reviseSalary" onchange="toggleTransferSection('salaryRevisionSection', this)">
-                                        <span class="slider round"></span>
-                                    </label>
-                                    <span class="switch-label">Revise Salary</span>
-                                </div>
                             </div>
                         </div>
 
@@ -1122,18 +930,6 @@
                                     <option value="">No manager (CEO/Top level)</option>
                                 </select>
                                 <small class="validation-message text-danger" id="transferManagerValidationMsg" style="display: none;"></small>
-                            </div>
-                        </div>
-
-                        <!-- Salary Revision Section -->
-                        <div class="form-section conditional-section" id="salaryRevisionSection" style="display: none;">
-                            <h4>Salary Revision</h4>
-                            <div class="form-group">
-                                <label>New Annual CTC</label>
-                                <div class="input-with-prefix">
-                                    <span class="input-prefix">₹</span>
-                                    <input type="number" id="newCTC" min="0" step="1" placeholder="Enter new CTC...">
-                                </div>
                             </div>
                         </div>
                     </form>

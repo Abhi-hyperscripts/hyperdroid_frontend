@@ -109,17 +109,20 @@
                             <span class="chevron">▼</span>
                         </div>
                         <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="employee-salaries" id="employeeSalariesTab">
+                                <span class="nav-number">3</span><span class="nav-label">Employee Salaries</span>
+                            </button>
                             <button class="sidebar-btn" data-tab="loans" id="loansTab">
-                                <span class="nav-number">3</span><span class="nav-label">Loans & Advances</span>
+                                <span class="nav-number">4</span><span class="nav-label">Loans & Advances</span>
                             </button>
                             <button class="sidebar-btn" data-tab="voluntary-deductions" id="voluntaryDeductionsTab">
-                                <span class="nav-number">4</span><span class="nav-label">Voluntary Deductions</span>
+                                <span class="nav-number">5</span><span class="nav-label">Voluntary Deductions</span>
                             </button>
                             <button class="sidebar-btn" data-tab="adjustments" id="adjustmentsTab">
-                                <span class="nav-number">5</span><span class="nav-label">Adjustments</span>
+                                <span class="nav-number">6</span><span class="nav-label">Adjustments</span>
                             </button>
                             <button class="sidebar-btn" data-tab="arrears" id="arrearsTab">
-                                <span class="nav-number">6</span><span class="nav-label">Arrears</span>
+                                <span class="nav-number">7</span><span class="nav-label">Arrears</span>
                             </button>
                         </div>
                     </div>
@@ -140,16 +143,16 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="payroll-drafts" id="payrollDraftsTab">
-                                <span class="nav-number">7</span><span class="nav-label">Payroll Drafts</span>
+                                <span class="nav-number">8</span><span class="nav-label">Payroll Drafts</span>
                             </button>
                             <button class="sidebar-btn" data-tab="payroll-runs" id="payrollRunsTab">
-                                <span class="nav-number">8</span><span class="nav-label">Finalized Runs</span>
+                                <span class="nav-number">9</span><span class="nav-label">Finalized Runs</span>
                             </button>
                             <button class="sidebar-btn" data-tab="all-payslips" id="allPayslipsTab">
-                                <span class="nav-number">9</span><span class="nav-label">All Payslips</span>
+                                <span class="nav-number">10</span><span class="nav-label">All Payslips</span>
                             </button>
                             <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
-                                <span class="nav-number">10</span><span class="nav-label">Salary Reports</span>
+                                <span class="nav-number">11</span><span class="nav-label">Salary Reports</span>
                             </button>
                         </div>
                     </div>
@@ -444,6 +447,88 @@
                                         <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
                                     <p>No finalized payroll runs found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Employee Salaries Tab -->
+        <div class="tab-content" id="employee-salaries">
+            <div class="filters-bar">
+                <div class="search-box-modern">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="empSalarySearch" placeholder="Search employees..." oninput="filterEmployeeSalaries()">
+                </div>
+                <div class="filter-group">
+                    <select id="empSalaryOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices" onchange="loadEmployeeSalaries()">
+                        <option value="">All Offices</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="empSalaryDeptFilter" class="form-select searchable-dropdown" data-placeholder="All Departments" onchange="loadEmployeeSalaries()">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="empSalaryStatusFilter" class="form-select" onchange="filterEmployeeSalaries()">
+                        <option value="">All Status</option>
+                        <option value="assigned">Salary Assigned</option>
+                        <option value="pending">Pending Assignment</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row" id="empSalaryStats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalEmployeesCount">0</div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="salaryAssignedCount">0</div>
+                    <div class="stat-label">Salary Assigned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="salaryPendingCount">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPayrollCost">0</div>
+                    <div class="stat-label">Total Monthly CTC</div>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                            <th>Salary Structure</th>
+                            <th>CTC</th>
+                            <th>Effective From</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeSalariesTable">
+                        <tr class="empty-state">
+                            <td colspan="8">
+                                <div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <line x1="19" y1="8" x2="19" y2="14"></line>
+                                        <line x1="22" y1="11" x2="16" y2="11"></line>
+                                    </svg>
+                                    <p>No employees found</p>
                                 </div>
                             </td>
                         </tr>
@@ -1552,7 +1637,7 @@
                         <!-- User-configurable Components -->
                         <div class="components-header">
                             <span class="components-title">Salary Components</span>
-                            <button type="button" class="btn-add-component" onclick="addStructureComponent()">
+                            <button type="button" class="btn-add-component" id="btnAddStructureComponent" onclick="addStructureComponent()" disabled title="Select an office first to add components">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2388,7 +2473,7 @@
                             <line x1="12" y1="9" x2="12" y2="13"></line>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        <span class="text-warning-dark">Arrears are automatically calculated when a version is created with a retrospective effective date. Review and apply them to the next payroll.</span>
+                        <span class="text-warning-dark">Click "Calculate Arrears" to detect employees affected by retrospective version changes. Review and apply them to the next payroll.</span>
                     </div>
 
                     <div class="arrears-summary" id="arrearsSummary" style="display: none; margin: 16px 0; padding: 16px; background: var(--color-info-light); border-radius: 8px;">
@@ -2436,6 +2521,13 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="calculateVersionArrears()" id="calculateArrearsBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Calculate Arrears
+                    </button>
                     <button type="button" class="btn btn-outline" onclick="refreshArrears()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 4 23 10 17 10"></polyline>
@@ -3386,6 +3478,169 @@
                             <line x1="9" y1="9" x2="15" y2="15"></line>
                         </svg>
                         Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Salary Modal -->
+    <div class="modal" id="employeeSalaryModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="employeeSalaryFormTitle">Configure Salary</h5>
+                    <button class="close-btn" onclick="closeModal('employeeSalaryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee Info Header -->
+                    <div class="employee-salary-header">
+                        <div class="employee-avatar" id="empSalaryAvatar">--</div>
+                        <div class="employee-info">
+                            <h4 id="empSalaryName">Employee Name</h4>
+                            <p id="empSalaryDesignation">Designation</p>
+                            <p id="empSalaryDepartment" class="text-muted">Department</p>
+                        </div>
+                        <div class="salary-status" id="empSalaryStatusBadge">
+                            <span class="badge badge-warning">Not Configured</span>
+                        </div>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="emp-salary-tabs">
+                        <button type="button" class="emp-salary-tab active" data-tab="details" onclick="switchEmpSalaryTab('details')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            Salary Details
+                        </button>
+                        <button type="button" class="emp-salary-tab" data-tab="history" onclick="switchEmpSalaryTab('history')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            History
+                            <span class="history-count" id="empSalaryHistoryCount" style="display: none;">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab Content: Salary Details -->
+                    <div class="emp-salary-tab-content active" id="empSalaryTabDetails">
+                        <!-- Current Salary Section (shown only for existing salary) -->
+                        <div class="current-salary-section" id="empCurrentSalarySection" style="display: none;">
+                            <div class="salary-summary-grid">
+                                <div class="summary-item">
+                                    <span class="label">Annual CTC</span>
+                                    <span class="value" id="empCurrentCTC">-</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="label">Monthly Gross</span>
+                                    <span class="value" id="empCurrentMonthlyGross">-</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="label">Monthly Net</span>
+                                    <span class="value" id="empCurrentMonthlyNet">-</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="label">Effective From</span>
+                                    <span class="value" id="empCurrentEffectiveFrom">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salary Form -->
+                        <form id="employeeSalaryForm" onsubmit="saveEmployeeSalaryFromPayroll(event)">
+                            <input type="hidden" id="empSalaryEmployeeId">
+                            <input type="hidden" id="empSalaryExistingId">
+                            <div class="form-section">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="empSalaryStructureId">Salary Structure *</label>
+                                        <select id="empSalaryStructureId" class="form-control" required onchange="onEmpSalaryStructureChange()">
+                                            <option value="">Select Salary Structure...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="empSalaryCTC">Annual CTC *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="empSalaryCurrencyPrefix">₹</span>
+                                            <input type="number" id="empSalaryCTC" class="form-control" placeholder="Enter annual CTC" required min="0" step="1" oninput="previewEmpSalaryBreakdown()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="empSalaryEffectiveFrom">Effective From *</label>
+                                        <input type="date" id="empSalaryEffectiveFrom" class="form-control" required>
+                                    </div>
+                                    <div class="form-group" id="empRevisionReasonGroup" style="display: none;">
+                                        <label for="empRevisionReason">Revision Reason</label>
+                                        <input type="text" id="empRevisionReason" class="form-control" placeholder="e.g., Annual increment, Promotion">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Salary Breakdown Preview -->
+                            <div class="salary-breakdown-section" id="empSalaryBreakdownSection" style="display: none;">
+                                <h5>Salary Breakdown (Monthly)</h5>
+                                <div class="breakdown-grid" id="empSalaryBreakdownGrid">
+                                    <!-- Populated dynamically -->
+                                </div>
+                                <div class="breakdown-summary">
+                                    <div class="summary-row">
+                                        <span>Total Earnings</span>
+                                        <span id="empBreakdownTotalEarnings">₹0</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Total Deductions</span>
+                                        <span id="empBreakdownTotalDeductions">₹0</span>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span>Net Pay</span>
+                                        <span id="empBreakdownNetPay">₹0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab Content: Salary History -->
+                    <div class="emp-salary-tab-content" id="empSalaryTabHistory">
+                        <div class="salary-history-section" id="empSalaryHistorySection">
+                            <div class="data-table-container">
+                                <table class="data-table compact">
+                                    <thead>
+                                        <tr>
+                                            <th>Effective Date</th>
+                                            <th>CTC</th>
+                                            <th>Structure</th>
+                                            <th>Reason</th>
+                                            <th>Updated By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="empSalaryHistoryTableBody">
+                                        <tr class="empty-state">
+                                            <td colspan="5">
+                                                <div class="empty-message">
+                                                    <p>No salary history available</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveEmployeeSalaryFromPayroll(event)" id="empSaveSalaryBtn">
+                        <span id="empSaveSalaryBtnText">Save Salary</span>
                     </button>
                 </div>
             </div>
