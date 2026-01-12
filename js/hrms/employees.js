@@ -506,6 +506,9 @@ async function openCreateEmployeeModal() {
     // Reset documents and banking
     resetDocumentsAndBanking();
 
+    // Reset gender dropdown
+    resetGenderDropdown();
+
     // Load available users
     try {
         const response = await api.getAvailableUsersForEmployee();
@@ -719,7 +722,15 @@ async function editEmployee(id) {
 
     document.getElementById('workPhone').value = emp.work_phone || '';
     document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
-    document.getElementById('gender').value = emp.gender || '';
+
+    // Set gender dropdown
+    if (emp.gender) {
+        const genderLabels = { male: 'Male', female: 'Female', other: 'Other' };
+        selectGender(emp.gender, genderLabels[emp.gender] || emp.gender);
+    } else {
+        resetGenderDropdown();
+    }
+
     document.getElementById('employmentType').value = emp.employment_type || 'full_time';
     document.getElementById('dateOfJoining').value = emp.hire_date?.split('T')[0] || '';
     document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
@@ -3279,6 +3290,61 @@ const searchableDropdownData = {
 };
 
 const DROPDOWN_BATCH_SIZE = 50;
+
+/**
+ * Toggle gender dropdown open/close
+ */
+function toggleGenderDropdown() {
+    const dropdown = document.getElementById('genderDropdown');
+
+    // Close all other dropdowns first
+    document.querySelectorAll('.searchable-dropdown.open').forEach(d => {
+        if (d.id !== 'genderDropdown') {
+            d.classList.remove('open');
+        }
+    });
+
+    dropdown.classList.toggle('open');
+}
+
+/**
+ * Select gender value
+ */
+function selectGender(value, label) {
+    const dropdown = document.getElementById('genderDropdown');
+    const hiddenInput = document.getElementById('gender');
+    const selectedText = dropdown.querySelector('.selected-text');
+
+    hiddenInput.value = value;
+    selectedText.textContent = label;
+    selectedText.classList.remove('placeholder');
+
+    // Update selected state
+    dropdown.querySelectorAll('.searchable-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === value);
+    });
+
+    dropdown.classList.remove('open');
+}
+
+/**
+ * Reset gender dropdown
+ */
+function resetGenderDropdown() {
+    const dropdown = document.getElementById('genderDropdown');
+    const hiddenInput = document.getElementById('gender');
+    const selectedText = dropdown.querySelector('.selected-text');
+
+    if (hiddenInput) hiddenInput.value = '';
+    if (selectedText) {
+        selectedText.textContent = 'Select gender...';
+        selectedText.classList.add('placeholder');
+    }
+
+    dropdown?.querySelectorAll('.searchable-dropdown-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+}
 
 /**
  * Toggle searchable dropdown open/close

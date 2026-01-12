@@ -333,12 +333,22 @@
                                         </div>
                                         <div class="form-group">
                                             <label>Gender</label>
-                                            <select id="gender">
-                                                <option value="">Select...</option>
-                                                <option value="male">Male</option>
-                                                <option value="female">Female</option>
-                                                <option value="other">Other</option>
-                                            </select>
+                                            <input type="hidden" id="gender">
+                                            <div class="searchable-dropdown" id="genderDropdown" data-field="gender">
+                                                <div class="searchable-dropdown-trigger" onclick="toggleGenderDropdown()">
+                                                    <span class="selected-text placeholder">Select gender...</span>
+                                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                                    </svg>
+                                                </div>
+                                                <div class="searchable-dropdown-panel">
+                                                    <div class="searchable-dropdown-list">
+                                                        <div class="searchable-dropdown-item" data-value="male" onclick="selectGender('male', 'Male')">Male</div>
+                                                        <div class="searchable-dropdown-item" data-value="female" onclick="selectGender('female', 'Female')">Female</div>
+                                                        <div class="searchable-dropdown-item" data-value="other" onclick="selectGender('other', 'Other')">Other</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
