@@ -706,7 +706,7 @@ function initSearchableDropdowns() {
         { id: 'empSalaryStatusFilter', placeholder: 'All Status', searchPlaceholder: 'Search status...', compact: true }
     ];
 
-    // Form dropdowns configuration (16 dropdowns)
+    // Form dropdowns configuration (18 dropdowns)
     const formDropdowns = [
         { id: 'draftPayrollOffice', placeholder: 'Select Office', searchPlaceholder: 'Search office...' },
         { id: 'structureOffice', placeholder: 'Select Office (Required)', searchPlaceholder: 'Search office...' },
@@ -723,7 +723,10 @@ function initSearchableDropdowns() {
         { id: 'bulkDepartmentId', placeholder: 'All Departments', searchPlaceholder: 'Search department...' },
         { id: 'bulkDesignationId', placeholder: 'All Designations', searchPlaceholder: 'Search designation...' },
         { id: 'vdTypeIsActive', placeholder: 'Select Status', searchPlaceholder: 'Search...' },
-        { id: 'vdEnrollmentDeductionType', placeholder: 'Select VD Type', searchPlaceholder: 'Search type...' }
+        { id: 'vdEnrollmentDeductionType', placeholder: 'Select VD Type', searchPlaceholder: 'Search type...' },
+        // Employee Salary Modal dropdowns
+        { id: 'empSalaryStructureId', placeholder: 'Select Salary Structure', searchPlaceholder: 'Search structure...', onChange: () => onEmpSalaryStructureChange() },
+        { id: 'empRevisionType', placeholder: 'Select Revision Type', searchPlaceholder: 'Search type...' }
     ];
 
     // Convert all dropdowns
@@ -734,7 +737,8 @@ function initSearchableDropdowns() {
                 placeholder: config.placeholder,
                 searchPlaceholder: config.searchPlaceholder,
                 compact: config.compact || false,
-                virtualScroll: config.virtualScroll || false
+                virtualScroll: config.virtualScroll || false,
+                onChange: config.onChange || null
             });
             if (dropdown) {
                 searchableDropdownInstances.set(config.id, dropdown);
@@ -2560,6 +2564,9 @@ function buildCalculationProofUI(proof, response) {
                             </div>
                         </div>
 
+                        <!-- Version Timeline Section (v3.0.49) - Shows mid-month salary structure changes -->
+                        ${buildVersionTimelineSection(proof, fmt)}
+
                         <!-- Earnings Table -->
                         ${buildEarningsSection(proof, fmt)}
 
@@ -2577,6 +2584,9 @@ function buildCalculationProofUI(proof, response) {
 
                         <!-- Employer Contributions -->
                         ${buildEmployerContributionsSection(proof, fmt)}
+
+                        <!-- Location Breakdown Section (v3.0.49) - Shows multi-location payroll split -->
+                        ${buildLocationBreakdownSection(proof, fmt)}
 
                         <!-- Verification & Footer -->
                         <div class="proof-card verification-card">
@@ -2644,11 +2654,21 @@ function buildCalculationProofUI(proof, response) {
 
 /**
  * Build earnings section HTML
+ * v3.0.49: Groups earnings by salary structure when multiple versions exist
  */
 function buildEarningsSection(proof, fmt) {
     const items = proof.earningsItems || [];
     if (items.length === 0) return '';
 
+    const timeline = proof.versionTimeline || [];
+    const hasMultipleVersions = proof.hasMultipleVersions || timeline.length > 1;
+
+    // If multiple versions, group earnings by proration factor
+    if (hasMultipleVersions && timeline.length > 0) {
+        return buildGroupedEarningsSection(proof, fmt, timeline);
+    }
+
+    // Single version - simple flat list
     let rows = items.map(item => `
         <tr>
             <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
@@ -2693,11 +2713,154 @@ function buildEarningsSection(proof, fmt) {
 }
 
 /**
- * Build deductions section HTML
+ * v3.0.49: Build earnings grouped by salary structure version
+ */
+function buildGroupedEarningsSection(proof, fmt, timeline) {
+    const items = proof.earningsItems || [];
+
+    // Group items by proration factor (which corresponds to version)
+    const groupedItems = {};
+    const prorationToVersion = {};
+
+    // Map proration factors to versions
+    timeline.forEach((version, index) => {
+        const totalDays = proof.totalWorkingDays || 22;
+        const expectedProration = version.daysApplied / totalDays;
+        prorationToVersion[expectedProration.toFixed(4)] = {
+            versionCode: version.versionCode || `V${index + 1}`,
+            structureName: version.structureName,
+            daysApplied: version.daysApplied,
+            effectiveFrom: version.effectiveFrom,
+            effectiveTo: version.effectiveTo
+        };
+    });
+
+    // Group earnings by proration factor
+    items.forEach(item => {
+        const factor = item.proratedFactor || 1;
+        const key = factor.toFixed(4);
+        if (!groupedItems[key]) {
+            groupedItems[key] = [];
+        }
+        groupedItems[key].push(item);
+    });
+
+    // Build grouped rows with section headers
+    let groupedRowsHtml = '';
+    let groupIndex = 0;
+
+    for (const [prorationKey, groupItems] of Object.entries(groupedItems)) {
+        const versionInfo = prorationToVersion[prorationKey] || findClosestVersion(prorationKey, prorationToVersion);
+        const subtotal = groupItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+        // Section header row
+        const structureLabel = versionInfo
+            ? `${versionInfo.structureName} (${versionInfo.daysApplied} days)`
+            : `Period ${groupIndex + 1}`;
+        const periodLabel = versionInfo && versionInfo.effectiveFrom
+            ? `${formatDate(versionInfo.effectiveFrom)} - ${formatDate(versionInfo.effectiveTo)}`
+            : '';
+
+        groupedRowsHtml += `
+            <tr class="version-group-header">
+                <td colspan="4">
+                    <div class="version-group-title">
+                        <span class="version-badge-sm">${versionInfo?.versionCode || `V${groupIndex + 1}`}</span>
+                        <span class="structure-name">${structureLabel}</span>
+                        ${periodLabel ? `<span class="period-label">${periodLabel}</span>` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        // Component rows for this group
+        groupItems.forEach(item => {
+            groupedRowsHtml += `
+                <tr class="version-group-item">
+                    <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+                    <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
+                    <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
+                    <td class="text-right amount-cell">${fmt(item.amount)}</td>
+                </tr>
+            `;
+        });
+
+        // Subtotal row for this group
+        groupedRowsHtml += `
+            <tr class="version-subtotal-row">
+                <td colspan="3" class="text-right"><em>Subtotal</em></td>
+                <td class="text-right"><em>${fmt(subtotal)}</em></td>
+            </tr>
+        `;
+
+        groupIndex++;
+    }
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header earnings-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                </svg>
+                <span>Earnings Breakdown</span>
+                <span class="header-badge earnings-badge">${fmt(proof.grossEarnings)}</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">Earnings grouped by salary structure. Each group shows components for the period that structure was active.</p>
+                <table class="proof-table grouped-earnings-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-right">Base Amount</th>
+                            <th class="text-center">Proration</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${groupedRowsHtml}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Total Gross Earnings</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.grossEarnings)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Find closest matching version for a proration factor
+ */
+function findClosestVersion(prorationKey, prorationToVersion) {
+    const target = parseFloat(prorationKey);
+    let closest = null;
+    let minDiff = Infinity;
+
+    for (const [key, version] of Object.entries(prorationToVersion)) {
+        const diff = Math.abs(parseFloat(key) - target);
+        if (diff < minDiff) {
+            minDiff = diff;
+            closest = version;
+        }
+    }
+
+    return closest;
+}
+
+/**
+ * v3.0.49: Build deductions section HTML
+ * Adds jurisdiction info for location-specific deductions (like Professional Tax)
  */
 function buildDeductionsSection(proof, fmt) {
     const items = proof.deductionItems || [];
     if (items.length === 0) return '';
+
+    // Check if there are multiple locations (for description note)
+    const hasMultipleLocations = (proof.locationBreakdowns || []).length > 1;
+    const hasJurisdictionDeductions = items.some(item => item.jurisdictionName || item.jurisdictionCode);
 
     let rows = items.map(item => {
         const isEligible = item.isEligible !== false;
@@ -2705,10 +2868,17 @@ function buildDeductionsSection(proof, fmt) {
         const eligibilityIcon = isEligible ? '✓' : '✗';
         const eligibilityReason = item.eligibilityReason || '';
 
+        // v3.0.49: Add jurisdiction name for location-specific deductions
+        const componentName = item.componentName || item.componentCode || '-';
+        const jurisdictionLabel = item.jurisdictionName
+            ? `<span class="jurisdiction-label">(${item.jurisdictionName})</span>`
+            : '';
+
         return `
             <tr class="${eligibilityClass}">
                 <td class="component-name">
-                    ${item.componentName || item.componentCode || '-'}
+                    ${componentName}
+                    ${jurisdictionLabel}
                     ${eligibilityReason ? `<span class="eligibility-reason" title="${eligibilityReason}">ℹ</span>` : ''}
                 </td>
                 <td class="text-center">
@@ -2718,6 +2888,11 @@ function buildDeductionsSection(proof, fmt) {
             </tr>
         `;
     }).join('');
+
+    // v3.0.49: Add note if there are jurisdiction-specific deductions
+    const jurisdictionNote = hasJurisdictionDeductions && hasMultipleLocations
+        ? `<p class="section-description">Some deductions (like Professional Tax) are state-specific and appear separately for each location worked.</p>`
+        : '';
 
     return `
         <div class="proof-card">
@@ -2729,6 +2904,7 @@ function buildDeductionsSection(proof, fmt) {
                 <span class="header-badge deductions-badge">${fmt(proof.totalDeductions)}</span>
             </div>
             <div class="proof-card-body">
+                ${jurisdictionNote}
                 <table class="proof-table">
                     <thead>
                         <tr>
@@ -3224,6 +3400,178 @@ function buildEmployerContributionsSection(proof, fmt) {
 }
 
 /**
+ * v3.0.49: Build version timeline section HTML
+ * Shows salary structure changes mid-month for HR visibility
+ */
+function buildVersionTimelineSection(proof, fmt) {
+    const timeline = proof.versionTimeline || [];
+    if (timeline.length <= 1) return ''; // Only show if multiple versions
+
+    const rows = timeline.map((version, index) => {
+        const effectiveFrom = formatDate(version.effectiveFrom);
+        const effectiveTo = formatDate(version.effectiveTo);
+        const reasonDisplay = formatChangeReason(version.changeReason);
+        const isFirst = index === 0;
+
+        return `
+            <tr class="${isFirst ? 'first-version' : ''}">
+                <td class="version-code">
+                    <span class="version-badge">${version.versionCode || `V${index + 1}`}</span>
+                </td>
+                <td class="structure-name">${version.structureName || '-'}</td>
+                <td class="text-center">${effectiveFrom} - ${effectiveTo}</td>
+                <td class="text-center">
+                    <span class="days-badge">${version.daysApplied || 0} days</span>
+                </td>
+                <td class="text-center">
+                    <span class="reason-badge ${version.changeReason || 'default'}">${reasonDisplay}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="proof-card timeline-card">
+            <div class="proof-card-header timeline-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Salary Structure Timeline</span>
+                <span class="header-badge timeline-badge">${timeline.length} versions</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">Employee had salary structure changes during this pay period. Earnings are prorated based on days worked under each structure.</p>
+                <table class="proof-table timeline-table">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Salary Structure</th>
+                            <th class="text-center">Period</th>
+                            <th class="text-center">Days Applied</th>
+                            <th class="text-center">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Format change reason for display
+ */
+function formatChangeReason(reason) {
+    if (!reason) return 'Standard';
+    const reasonMap = {
+        'salary_period': 'Standard Period',
+        'structure_update': 'Structure Change',
+        'transfer': 'Transfer',
+        'promotion': 'Promotion',
+        'revision': 'Salary Revision',
+        'mid_month_change': 'Mid-Month Change'
+    };
+    return reasonMap[reason.toLowerCase()] || reason.replace(/_/g, ' ');
+}
+
+/**
+ * v3.0.49: Build location breakdown section HTML
+ * Shows multi-location payroll split for HR visibility
+ */
+function buildLocationBreakdownSection(proof, fmt) {
+    const locations = proof.locationBreakdowns || [];
+    if (locations.length <= 1) return ''; // Only show if multiple locations
+
+    const rows = locations.map((loc, index) => {
+        const isFirst = index === 0;
+        return `
+            <tr class="${isFirst ? 'primary-location' : ''}">
+                <td class="location-name">
+                    <span class="location-icon">📍</span>
+                    ${loc.officeName || '-'}
+                    <span class="office-code">(${loc.officeCode || '-'})</span>
+                </td>
+                <td class="text-center">
+                    <span class="days-badge">${loc.workedDays || 0} days</span>
+                </td>
+                <td class="text-right">${fmt(loc.grossEarnings || 0)}</td>
+                <td class="text-right">${fmt(loc.totalDeductions || 0)}</td>
+                <td class="text-right net-cell">
+                    <strong>${fmt(loc.netPay || 0)}</strong>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Calculate totals
+    const totalWorkedDays = locations.reduce((sum, loc) => sum + (loc.workedDays || 0), 0);
+    const totalGross = locations.reduce((sum, loc) => sum + (loc.grossEarnings || 0), 0);
+    const totalDeductions = locations.reduce((sum, loc) => sum + (loc.totalDeductions || 0), 0);
+    const totalNet = locations.reduce((sum, loc) => sum + (loc.netPay || 0), 0);
+
+    // Jurisdiction policy note
+    const jurisdictionNote = proof.jurisdictionPolicy
+        ? `<p class="jurisdiction-note"><strong>Tax Jurisdiction Policy:</strong> ${formatJurisdictionPolicy(proof.jurisdictionPolicy)}</p>`
+        : '';
+
+    return `
+        <div class="proof-card location-card">
+            <div class="proof-card-header location-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>Multi-Location Breakdown</span>
+                <span class="header-badge location-badge">${locations.length} locations</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">Employee worked at multiple locations during this pay period. Statutory deductions are applied based on each location's tax jurisdiction.</p>
+                ${jurisdictionNote}
+                <table class="proof-table location-table">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th class="text-center">Days Worked</th>
+                            <th class="text-right">Gross Earnings</th>
+                            <th class="text-right">Deductions</th>
+                            <th class="text-right">Net Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td><strong>Combined Total</strong></td>
+                            <td class="text-center"><strong>${totalWorkedDays} days</strong></td>
+                            <td class="text-right"><strong>${fmt(totalGross)}</strong></td>
+                            <td class="text-right"><strong>${fmt(totalDeductions)}</strong></td>
+                            <td class="text-right"><strong>${fmt(totalNet)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Format jurisdiction policy for display
+ */
+function formatJurisdictionPolicy(policy) {
+    if (!policy) return 'Standard';
+    const policyMap = {
+        'CALENDAR_MONTH_FIRST': 'Tax applied based on first location of the calendar month',
+        'DAYS_MAJORITY': 'Tax applied based on location with most days worked',
+        'PROPORTIONAL': 'Tax prorated based on days worked at each location',
+        'PRIMARY_OFFICE': 'Tax applied based on employee\'s primary office'
+    };
+    return policyMap[policy.toUpperCase()] || policy.replace(/_/g, ' ');
+}
+
+/**
  * Inject CSS styles for the calculation proof modal.
  * v3.0.28: New beautiful card-based design with theme-aware colors.
  */
@@ -3350,15 +3698,15 @@ function injectCalculationProofStyles() {
         }
 
         .proof-summary-card.earnings {
-            background: linear-gradient(135deg, var(--color-success), var(--status-approved));
+            background: linear-gradient(135deg, #10b981, #059669);
         }
 
         .proof-summary-card.deductions {
-            background: linear-gradient(135deg, var(--color-warning), var(--status-pending));
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
 
         .proof-summary-card.net-pay {
-            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
         }
 
         .summary-label {
@@ -3395,9 +3743,49 @@ function injectCalculationProofStyles() {
         .proof-card {
             background: var(--bg-secondary);
             border-radius: 10px;
-            border: 1px solid var(--border-primary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             margin-bottom: 1rem;
             overflow: hidden;
+            transition: all 0.25s ease;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+                        0 4px 12px rgba(0, 0, 0, 0.2),
+                        0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Light mode adjustment */
+        @media (prefers-color-scheme: light) {
+            .proof-card {
+                border-color: rgba(0, 0, 0, 0.12);
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06),
+                            0 4px 12px rgba(0, 0, 0, 0.08),
+                            0 2px 4px rgba(0, 0, 0, 0.04);
+            }
+        }
+
+        /* Force light mode styling when theme is light */
+        [data-theme="light"] .proof-card,
+        :root:not([data-theme="dark"]) .proof-card {
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Force dark mode styling */
+        [data-theme="dark"] .proof-card {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+                        0 4px 12px rgba(0, 0, 0, 0.3),
+                        0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .proof-card:hover {
+            background: var(--bg-hover);
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 1px var(--brand-primary),
+                        0 8px 24px rgba(var(--brand-primary-rgb), 0.25),
+                        0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-3px);
         }
 
         .proof-card-header {
@@ -3709,6 +4097,8 @@ function injectCalculationProofStyles() {
             background: var(--bg-tertiary);
             border-radius: 8px;
             padding: 1rem;
+            padding-bottom: 3rem;
+            position: relative;
         }
 
         .tax-line {
@@ -3723,15 +4113,20 @@ function injectCalculationProofStyles() {
             border-top: 1px solid var(--border-primary);
             margin-top: 0.5rem;
             padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
             font-weight: 600;
         }
 
         .tax-line.monthly {
             background: var(--brand-primary);
             color: var(--text-inverse);
-            margin: 0.5rem -1rem -1rem -1rem;
+            margin-top: 0.5rem;
             padding: 0.75rem 1rem;
             border-radius: 0 0 8px 8px;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         .monthly-tds {
@@ -3938,6 +4333,220 @@ function injectCalculationProofStyles() {
         .text-muted {
             color: var(--text-secondary);
             font-style: italic;
+        }
+
+        /* v3.0.49: Version Timeline Section */
+        .timeline-card {
+            border-left: 3px solid var(--color-info);
+        }
+
+        .timeline-header svg {
+            color: var(--color-info);
+        }
+
+        .timeline-badge {
+            background: var(--color-info);
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.5rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        .days-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .reason-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            text-transform: capitalize;
+        }
+
+        .reason-badge.structure_update {
+            background: var(--status-pending);
+            color: var(--text-inverse);
+        }
+
+        .reason-badge.transfer {
+            background: var(--color-info);
+            color: var(--text-inverse);
+        }
+
+        .reason-badge.promotion {
+            background: var(--color-success);
+            color: var(--text-inverse);
+        }
+
+        .timeline-table .structure-name {
+            font-weight: 500;
+        }
+
+        .timeline-table .first-version td {
+            background: var(--bg-hover);
+        }
+
+        /* v3.0.49: Location Breakdown Section */
+        .location-card {
+            border-left: 3px solid var(--brand-secondary, var(--brand-primary));
+        }
+
+        .location-header svg {
+            color: var(--brand-secondary, var(--brand-primary));
+        }
+
+        .location-badge {
+            background: var(--brand-secondary, var(--brand-primary));
+        }
+
+        .location-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .location-icon {
+            font-size: 1rem;
+        }
+
+        .office-code {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        .location-table .primary-location td {
+            background: var(--bg-hover);
+        }
+
+        .location-table .net-cell {
+            color: var(--color-success);
+        }
+
+        .jurisdiction-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-hover);
+            border-radius: 6px;
+            border-left: 3px solid var(--color-info);
+        }
+
+        .jurisdiction-note strong {
+            color: var(--text-primary);
+        }
+
+        /* v3.0.49: Grouped Earnings/Deductions by Salary Structure Version */
+        .grouped-earnings-table,
+        .grouped-deductions-table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .section-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-hover);
+            border-radius: 6px;
+            border-left: 3px solid var(--brand-primary);
+        }
+
+        .version-group-header td {
+            background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%);
+            padding: 0.75rem 1rem !important;
+            border-top: 2px solid var(--brand-primary);
+        }
+
+        .version-group-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .version-badge-sm {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-inverse);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            letter-spacing: 0.05em;
+        }
+
+        .version-group-title .structure-name {
+            color: var(--text-inverse);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .period-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            font-style: italic;
+            margin-left: auto;
+        }
+
+        .version-group-item td {
+            background: var(--bg-secondary);
+            border-left: 3px solid transparent;
+            padding-left: 1.5rem !important;
+        }
+
+        .version-group-item:hover td {
+            background: var(--bg-hover);
+        }
+
+        .version-subtotal-row td {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem !important;
+        }
+
+        .version-subtotal-row em {
+            color: var(--text-secondary);
+        }
+
+        /* v3.0.49: Jurisdiction label for location-specific deductions */
+        .jurisdiction-label {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.15rem 0.5rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
     `;
     document.head.appendChild(style);
@@ -13707,17 +14316,29 @@ function updateVDTypesTable() {
 
 // Populate VD type filter dropdowns
 function populateVDTypeFilters() {
-    const filterSelect = document.getElementById('vdEnrollmentType');
-    const enrollmentSelect = document.getElementById('vdEnrollmentDeductionType');
-
     const activeTypes = vdTypes.filter(t => t.is_active);
-    const options = activeTypes.map(t => `<option value="${t.id}">${escapeHtml(t.type_name)}</option>`).join('');
 
-    if (filterSelect) {
-        filterSelect.innerHTML = `<option value="">All Types</option>${options}`;
+    // Format options for searchable dropdowns
+    const filterOptions = [
+        { value: '', label: 'All Types' },
+        ...activeTypes.map(t => ({ value: t.id, label: t.type_name }))
+    ];
+
+    const enrollmentOptions = [
+        { value: '', label: 'Select VD Type' },
+        ...activeTypes.map(t => ({ value: t.id, label: t.type_name }))
+    ];
+
+    // Update filter dropdown (searchable)
+    const filterDropdown = searchableDropdownInstances.get('vdEnrollmentType');
+    if (filterDropdown) {
+        filterDropdown.setOptions(filterOptions);
     }
-    if (enrollmentSelect) {
-        enrollmentSelect.innerHTML = `<option value="">Select VD Type</option>${options}`;
+
+    // Update enrollment modal dropdown (searchable)
+    const enrollmentDropdown = searchableDropdownInstances.get('vdEnrollmentDeductionType');
+    if (enrollmentDropdown) {
+        enrollmentDropdown.setOptions(enrollmentOptions);
     }
 }
 
@@ -15978,13 +16599,14 @@ async function openEmployeeSalaryModal(employeeId) {
     // Load salary structures for employee's office
     try {
         empSalarySalaryStructures = await api.getHrmsSalaryStructures(employee.office_id);
-        const structureSelect = document.getElementById('empSalaryStructureId');
-        structureSelect.innerHTML = '<option value="">Select Salary Structure...</option>';
-        empSalarySalaryStructures.forEach(s => {
-            const currencySymbol = s.currency_symbol || '';
-            const currencyCode = s.currency_code || '';
-            structureSelect.innerHTML += `<option value="${s.id}" data-currency-symbol="${escapeHtml(currencySymbol)}" data-currency-code="${escapeHtml(currencyCode)}">${escapeHtml(s.structure_name)}</option>`;
-        });
+        const structureOptions = [
+            { value: '', label: 'Select Salary Structure...' },
+            ...empSalarySalaryStructures.map(s => ({
+                value: s.id,
+                label: s.structure_name
+            }))
+        ];
+        updateSearchableDropdownOptions('empSalaryStructureId', structureOptions);
         // Reset currency prefix to default
         updateEmpSalaryCurrencyPrefix();
     } catch (error) {
@@ -16014,7 +16636,10 @@ async function openEmployeeSalaryModal(employeeId) {
                 '<span class="badge badge-success">Active</span>';
 
             // Pre-fill form for revision
-            document.getElementById('empSalaryStructureId').value = salary.structure_id || '';
+            const structureDropdown = getSearchableDropdown('empSalaryStructureId');
+            if (structureDropdown) {
+                structureDropdown.setValue(salary.structure_id || '');
+            }
             document.getElementById('empSalaryCTC').value = salary.ctc || '';
             document.getElementById('employeeSalaryFormTitle').textContent = 'Revise Salary';
             document.getElementById('empRevisionTypeGroup').style.display = 'block';
@@ -16046,9 +16671,17 @@ async function openEmployeeSalaryModal(employeeId) {
  * Update currency prefix when salary structure changes
  */
 function updateEmpSalaryCurrencyPrefix() {
-    const structureSelect = document.getElementById('empSalaryStructureId');
-    const selectedOption = structureSelect.options[structureSelect.selectedIndex];
-    let currencySymbol = selectedOption?.getAttribute('data-currency-symbol');
+    const structureDropdown = getSearchableDropdown('empSalaryStructureId');
+    const selectedValue = structureDropdown ? structureDropdown.getValue() : '';
+
+    // Look up currency from stored structures array
+    let currencySymbol = '';
+    if (selectedValue && empSalarySalaryStructures) {
+        const structure = empSalarySalaryStructures.find(s => s.id === selectedValue);
+        if (structure) {
+            currencySymbol = structure.currency_symbol || '';
+        }
+    }
 
     // If no structure selected, use employee's office currency as fallback
     if (!currencySymbol && empSalaryCurrentEmployee) {
@@ -16072,7 +16705,8 @@ async function onEmpSalaryStructureChange() {
  * Uses the versioned calculate endpoint to include PF, ESI, PT, TDS, etc.
  */
 async function previewEmpSalaryBreakdown() {
-    const structureId = document.getElementById('empSalaryStructureId').value;
+    const structureDropdown = getSearchableDropdown('empSalaryStructureId');
+    const structureId = structureDropdown ? structureDropdown.getValue() : '';
     const ctc = parseFloat(document.getElementById('empSalaryCTC').value);
 
     if (!structureId || !ctc || ctc <= 0) {
@@ -16354,7 +16988,8 @@ async function saveEmployeeSalaryFromPayroll(event) {
 
     const employeeId = document.getElementById('empSalaryEmployeeId').value;
     const existingSalaryId = document.getElementById('empSalaryExistingId').value;
-    const structureId = document.getElementById('empSalaryStructureId').value;
+    const structureDropdown = getSearchableDropdown('empSalaryStructureId');
+    const structureId = structureDropdown ? structureDropdown.getValue() : '';
     const ctc = parseFloat(document.getElementById('empSalaryCTC').value);
     const effectiveFrom = document.getElementById('empSalaryEffectiveFrom').value;
 
@@ -16373,12 +17008,14 @@ async function saveEmployeeSalaryFromPayroll(event) {
 
         if (existingSalaryId) {
             // Revise existing salary
+            const revisionTypeDropdown = getSearchableDropdown('empRevisionType');
+            const revisionType = revisionTypeDropdown ? revisionTypeDropdown.getValue() : 'adjustment';
             salaryData = {
                 employee_id: employeeId,
                 new_structure_id: structureId,
                 new_ctc: ctc,
                 effective_from: effectiveFrom,
-                revision_type: document.getElementById('empRevisionType')?.value || 'adjustment',
+                revision_type: revisionType || 'adjustment',
                 revision_reason: document.getElementById('empRevisionReason')?.value || ''
             };
             await api.updateEmployeeSalary(employeeId, salaryData);
