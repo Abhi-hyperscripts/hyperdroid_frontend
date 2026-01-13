@@ -20293,51 +20293,66 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 /* v3.0.45: Arrears Visual Guide - Theme Aware */
 .arrears-guide-section {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    margin-bottom: 16px;
+    border: 1px solid var(--border-color-strong);
+    border-radius: 12px;
+    margin-bottom: 20px;
     overflow: hidden;
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 }
 
 .arrears-guide-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 10%, transparent), color-mix(in srgb, var(--brand-accent) 5%, transparent));
+    padding: 16px 20px;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--brand-primary) 15%, var(--bg-tertiary)),
+        color-mix(in srgb, var(--brand-accent) 10%, var(--bg-tertiary)));
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    border-bottom: 1px solid var(--border-color-strong);
 }
 
 .arrears-guide-header:hover {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 15%, transparent), color-mix(in srgb, var(--brand-accent) 10%, transparent));
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--brand-primary) 20%, var(--bg-secondary)),
+        color-mix(in srgb, var(--brand-accent) 15%, var(--bg-secondary)));
 }
 
 .arrears-guide-header .guide-title {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-weight: 600;
+    font-size: 15px;
     color: var(--text-primary);
 }
 
 .arrears-guide-header .guide-title svg {
     color: var(--brand-primary);
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
 }
 
 .arrears-guide-header .guide-toggle svg {
-    color: var(--text-secondary);
+    color: var(--brand-primary);
     transition: transform 0.3s;
+    flex-shrink: 0;
 }
 
 .arrears-guide-section.collapsed .guide-toggle svg {
     transform: rotate(-90deg);
 }
 
+.arrears-guide-section.collapsed .arrears-guide-header {
+    border-bottom-color: transparent;
+}
+
 .arrears-guide-content {
-    padding: 20px;
+    padding: 24px;
     display: block;
-    border-top: 1px solid var(--border-secondary);
+    background: var(--bg-secondary);
 }
 
 .arrears-guide-section.collapsed .arrears-guide-content {
@@ -20370,67 +20385,97 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     margin: 0 0 16px 0;
     color: var(--text-primary);
     font-size: 16px;
+    font-weight: 600;
 }
 
 .types-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.arrears-guide-section .type-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color-strong);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 16px;
-    margin-bottom: 24px;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
-.type-card {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    padding: 16px;
+.arrears-guide-section .type-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+    transform: translateY(-1px);
 }
 
-.type-card .type-icon {
-    width: 48px;
-    height: 48px;
+.arrears-guide-section .type-card .type-icon {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
-.type-card .type-icon.version {
-    background: color-mix(in srgb, var(--color-info) 20%, transparent);
+.arrears-guide-section .type-card .type-icon svg {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.arrears-guide-section .type-card .type-icon.version {
+    background: color-mix(in srgb, var(--color-info) 20%, var(--bg-tertiary));
     color: var(--color-info);
+    border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
 }
 
-.type-card .type-icon.ctc {
-    background: color-mix(in srgb, var(--color-success) 20%, transparent);
+.arrears-guide-section .type-card .type-icon.ctc {
+    background: color-mix(in srgb, var(--color-success) 20%, var(--bg-tertiary));
     color: var(--color-success);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
-.type-card h5 {
+.arrears-guide-section .type-card .type-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.arrears-guide-section .type-card h5 {
     margin: 0 0 8px 0;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
 }
 
-.type-card p {
+.arrears-guide-section .type-card p {
     margin: 0 0 12px 0;
     color: var(--text-secondary);
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .type-example {
-    background: var(--bg-secondary);
-    padding: 10px 12px;
-    border-radius: 6px;
+    background: var(--bg-tertiary);
+    padding: 12px 14px;
+    border-radius: 8px;
     font-size: 12px;
     color: var(--text-secondary);
+    line-height: 1.5;
+    border-left: 3px solid var(--brand-primary);
 }
 
 .type-example .example-label {
     color: var(--brand-primary);
     font-weight: 600;
-    margin-right: 4px;
+    margin-right: 6px;
 }
 
 /* Flow Steps */
@@ -20454,23 +20499,26 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 .flow-step {
     display: flex;
     gap: 16px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color-strong);
+    border-radius: 10px;
     padding: 16px;
     width: 100%;
     max-width: 500px;
     position: relative;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 .flow-step.highlight {
     border-color: var(--status-pending);
-    background: color-mix(in srgb, var(--status-pending) 5%, var(--bg-tertiary));
+    background: var(--bg-primary);
+    border-left: 3px solid var(--status-pending);
 }
 
 .flow-step.success {
     border-color: var(--color-success);
-    background: color-mix(in srgb, var(--color-success) 5%, var(--bg-tertiary));
+    background: var(--bg-primary);
+    border-left: 3px solid var(--color-success);
 }
 
 .flow-step .step-number {
@@ -20592,47 +20640,69 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* Quick Tips */
+.guide-tips {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 20px;
+}
+
 .guide-tips h4 {
     margin: 0 0 16px 0;
     color: var(--text-primary);
     font-size: 16px;
+    font-weight: 600;
 }
 
 .tips-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
 }
 
 .tip-item {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
+    gap: 12px;
+    padding: 14px 16px;
     background: var(--bg-tertiary);
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
     color: var(--text-secondary);
     line-height: 1.5;
+    border: 1px solid var(--border-secondary);
 }
 
 .tip-item svg {
     color: var(--color-success);
     flex-shrink: 0;
     margin-top: 2px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
     .types-grid {
         grid-template-columns: 1fr;
     }
-    
+
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .arrears-guide-section .type-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .flow-step {
         max-width: 100%;
     }
-    
-    .tips-grid {
-        grid-template-columns: 1fr;
+
+    .arrears-guide-content {
+        padding: 16px;
     }
 }
