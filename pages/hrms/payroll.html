@@ -1079,6 +1079,227 @@
 
         <!-- Arrears Management Tab -->
         <div class="tab-content" id="arrears">
+            <!-- v3.0.45: How Arrears Work - Visual Guide for HR -->
+            <div class="arrears-guide-section" id="arrearsGuideSection">
+                <div class="arrears-guide-header" onclick="toggleArrearsGuide()">
+                    <div class="guide-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <span>How Arrears Work - Click to Learn</span>
+                    </div>
+                    <div class="guide-toggle">
+                        <svg id="arrearsGuideToggleIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="arrears-guide-content" id="arrearsGuideContent">
+                    <!-- What are Arrears -->
+                    <div class="guide-intro">
+                        <h4>What are Arrears?</h4>
+                        <p>Arrears are the <strong>difference in salary</strong> when an employee's pay is revised with a <strong>past effective date</strong>. If payroll was already processed at the old salary, arrears compensate for the difference.</p>
+                    </div>
+
+                    <!-- Two Types of Arrears -->
+                    <div class="guide-types">
+                        <h4>Two Types of Arrears</h4>
+                        <div class="types-grid">
+                            <div class="type-card">
+                                <div class="type-icon version">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <h5>Version Arrears</h5>
+                                <p>When a <strong>Salary Structure</strong> is updated (e.g., HRA % increased) and applied to past periods.</p>
+                                <div class="type-example">
+                                    <span class="example-label">Example:</span>
+                                    Company increases HRA from 40% to 50% for all employees effective Jan 1st.
+                                </div>
+                            </div>
+                            <div class="type-card">
+                                <div class="type-icon ctc">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                </div>
+                                <h5>CTC Revision Arrears</h5>
+                                <p>When an <strong>individual employee's CTC</strong> is revised (e.g., promotion, annual increment).</p>
+                                <div class="type-example">
+                                    <span class="example-label">Example:</span>
+                                    Employee gets promotion with CTC increase from ₹18L to ₹20L effective Jan 1st.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step by Step Flow -->
+                    <div class="guide-flow">
+                        <h4>Step-by-Step: CTC Revision Arrears Flow</h4>
+                        <div class="flow-steps">
+                            <div class="flow-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h5>Payroll Processed</h5>
+                                    <p>January payroll is processed at employee's current CTC (₹18L)</p>
+                                    <div class="step-visual">
+                                        <span class="visual-label">Jan Salary:</span>
+                                        <span class="visual-value">₹1,50,000</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-connector">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="flow-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h5>Salary Revised (Retroactive)</h5>
+                                    <p>In February, HR revises CTC to ₹19.2L with <strong>effective date Jan 1st</strong></p>
+                                    <div class="step-action">
+                                        Go to: <strong>Employee Salaries → Click "Revise"</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-connector">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="flow-step highlight">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h5>Pending Calculation Appears</h5>
+                                    <p>System detects that January was paid at old CTC. A <strong>"Pending Arrears Calculations"</strong> alert appears.</p>
+                                    <div class="step-action">
+                                        Go to: <strong>Arrears → CTC Revision Arrears</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-connector">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="flow-step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h5>Calculate Arrears</h5>
+                                    <p>Click <strong>"Calculate Arrears"</strong> button. System computes the difference.</p>
+                                    <div class="step-visual calculation">
+                                        <div class="calc-row">
+                                            <span>New Monthly:</span>
+                                            <span>₹1,60,000</span>
+                                        </div>
+                                        <div class="calc-row">
+                                            <span>Old Monthly:</span>
+                                            <span>- ₹1,50,000</span>
+                                        </div>
+                                        <div class="calc-row result">
+                                            <span>Arrears:</span>
+                                            <span>= ₹10,000</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-connector">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="flow-step">
+                                <div class="step-number">5</div>
+                                <div class="step-content">
+                                    <h5>Review & Apply</h5>
+                                    <p>Arrears appear in the table with <strong>"pending"</strong> status. You can:</p>
+                                    <div class="step-actions-list">
+                                        <span class="action-item apply">✓ Apply</span> - Add to next payroll
+                                        <span class="action-item cancel">✕ Cancel</span> - Don't pay arrears
+                                        <span class="action-item view">👁 View</span> - See breakdown
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-connector">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="flow-step success">
+                                <div class="step-number">6</div>
+                                <div class="step-content">
+                                    <h5>Arrears Paid</h5>
+                                    <p>In February payroll, employee receives:</p>
+                                    <div class="step-visual final">
+                                        <div class="calc-row">
+                                            <span>Feb Salary:</span>
+                                            <span>₹1,60,000</span>
+                                        </div>
+                                        <div class="calc-row">
+                                            <span>Jan Arrears:</span>
+                                            <span>+ ₹10,000</span>
+                                        </div>
+                                        <div class="calc-row result">
+                                            <span>Total:</span>
+                                            <span>= ₹1,70,000</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="guide-tips">
+                        <h4>Quick Tips</h4>
+                        <div class="tips-grid">
+                            <div class="tip-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span>Always process regular payroll <strong>before</strong> revising salaries retroactively</span>
+                            </div>
+                            <div class="tip-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span>Check <strong>"Pending Arrears Calculations"</strong> section after any salary revision</span>
+                            </div>
+                            <div class="tip-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span>Arrears are automatically calculated for <strong>all affected months</strong></span>
+                            </div>
+                            <div class="tip-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span>Use <strong>"Bulk Apply"</strong> to apply multiple arrears at once</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Sub-tabs for Arrears Types -->
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" data-subtab="version-arrears" onclick="switchArrearsSubtab('version-arrears')">Version Arrears</button>

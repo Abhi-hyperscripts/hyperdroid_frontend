@@ -832,6 +832,9 @@ async function initializePage() {
         // Initialize searchable dropdowns (after data is loaded)
         initSearchableDropdowns();
 
+        // v3.0.45: Initialize arrears guide section
+        initArrearsGuide();
+
         hideLoading();
     } catch (error) {
         console.error('Error initializing page:', error);
@@ -12813,6 +12816,50 @@ let ctcArrearsData = [];
 let filteredCtcArrearsData = [];
 let selectedCtcArrearsIds = [];
 let currentCtcArrearsId = null;
+
+/**
+ * v3.0.45: Toggle the Arrears Visual Guide section
+ * Stores preference in localStorage so it stays collapsed/expanded across sessions
+ */
+function toggleArrearsGuide() {
+    const section = document.getElementById('arrearsGuideSection');
+    const icon = document.getElementById('arrearsGuideToggleIcon');
+
+    if (!section) return;
+
+    const isCollapsed = section.classList.toggle('collapsed');
+
+    // Update icon rotation
+    if (icon) {
+        icon.innerHTML = isCollapsed
+            ? '<polyline points="6 15 12 9 18 15"></polyline>'  // Points up when collapsed
+            : '<polyline points="6 9 12 15 18 9"></polyline>';  // Points down when expanded
+    }
+
+    // Store preference
+    localStorage.setItem('arrearsGuideCollapsed', isCollapsed ? 'true' : 'false');
+}
+
+/**
+ * v3.0.45: Initialize the Arrears Guide section state from localStorage
+ */
+function initArrearsGuide() {
+    const section = document.getElementById('arrearsGuideSection');
+    const icon = document.getElementById('arrearsGuideToggleIcon');
+
+    if (!section) return;
+
+    // Default to collapsed after first view
+    const wasCollapsed = localStorage.getItem('arrearsGuideCollapsed');
+
+    // If user has seen it before and collapsed it, keep it collapsed
+    if (wasCollapsed === 'true') {
+        section.classList.add('collapsed');
+        if (icon) {
+            icon.innerHTML = '<polyline points="6 15 12 9 18 15"></polyline>';
+        }
+    }
+}
 
 /**
  * Switch between Version Arrears and CTC Revision Arrears sub-tabs
