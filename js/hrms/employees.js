@@ -773,6 +773,17 @@ async function editEmployee(id) {
     setDatePickerValue('probationEndDate', emp.probation_end_date);
     document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
 
+    // Set attendance exempt override dropdown
+    // null = "Use Designation Default", true = "Exempt", false = "Required"
+    const attendanceExemptSelect = document.getElementById('attendanceExemptOverride');
+    if (emp.attendance_exempt_override === true) {
+        attendanceExemptSelect.value = 'true';
+    } else if (emp.attendance_exempt_override === false) {
+        attendanceExemptSelect.value = 'false';
+    } else {
+        attendanceExemptSelect.value = ''; // Use designation default
+    }
+
     // Set searchable dropdown values for Step 2 Employment
     setEmploymentDropdownValues(emp);
 
@@ -887,6 +898,13 @@ async function saveEmployeeAtomic() {
 
     formData.append('enable_geofence_attendance', document.getElementById('enableGeofenceAttendance').checked);
 
+    // Attendance exempt override: "" (null/use default), "true", or "false"
+    const attendanceExemptValue = document.getElementById('attendanceExemptOverride').value;
+    if (attendanceExemptValue !== '') {
+        formData.append('attendance_exempt_override', attendanceExemptValue === 'true');
+    }
+    // If value is empty string, don't append it - backend will treat as null (use designation default)
+
     // Document numbers
     const panNumber = document.getElementById('pan-number')?.value;
     if (panNumber) formData.append('pan_number', panNumber);
@@ -970,7 +988,12 @@ async function saveEmployeeEdit(id) {
         employment_type: document.getElementById('employmentType').value,
         hire_date: document.getElementById('dateOfJoining').value,
         probation_end_date: document.getElementById('probationEndDate').value,
-        enable_geofence_attendance: document.getElementById('enableGeofenceAttendance').checked
+        enable_geofence_attendance: document.getElementById('enableGeofenceAttendance').checked,
+        // Attendance exempt override: null (use designation default), true (exempt), or false (required)
+        attendance_exempt_override: (() => {
+            const val = document.getElementById('attendanceExemptOverride').value;
+            return val === '' ? null : val === 'true';
+        })()
     };
 
     // Update employee record

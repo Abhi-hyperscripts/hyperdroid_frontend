@@ -2164,6 +2164,9 @@ function showCreateDesignationModal() {
     // Reset all HRMS role checkboxes (except HRMS_USER which is always checked and disabled)
     resetHrmsRoleCheckboxes();
 
+    // Reset attendance exempt checkbox (default is attendance required)
+    document.getElementById('designationAttendanceExempt').checked = false;
+
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
     document.getElementById('designationModal').classList.add('active');
 }
@@ -2559,6 +2562,7 @@ function editDesignation(id) {
     setHrmsRoleCheckboxes(desig.default_hrms_roles);
 
     document.getElementById('designationDescription').value = desig.description || '';
+    document.getElementById('designationAttendanceExempt').checked = desig.is_attendance_exempt === true;
     document.getElementById('designationIsActive').checked = desig.is_active !== false;
 
     document.getElementById('designationModalTitle').textContent = 'Edit Designation';
@@ -2975,6 +2979,7 @@ async function saveDesignation() {
             role_category: document.getElementById('desigCategory').value || null,
             default_hrms_roles: selectedRoles,
             description: document.getElementById('designationDescription').value,
+            is_attendance_exempt: document.getElementById('designationAttendanceExempt').checked,
             is_active: document.getElementById('designationIsActive').checked
         };
 

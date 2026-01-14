@@ -2538,6 +2538,36 @@ function buildCalculationProofUI(proof, response) {
                             </div>
                         </div>
 
+                        <!-- Attendance Exemption Card (v3.0.50) - Shows if employee is exempt from attendance tracking -->
+                        ${proof.isAttendanceExempt ? `
+                        <div class="proof-card attendance-exempt-card">
+                            <div class="proof-card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <span>Attendance Exemption</span>
+                                <span style="margin-left: auto; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 11px;">EXEMPT</span>
+                            </div>
+                            <div class="proof-card-body">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label">Status</span>
+                                        <span class="info-value" style="color: #10b981; font-weight: 600;">✓ Attendance Exempt</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Exemption Source</span>
+                                        <span class="info-value">${proof.attendanceExemptSource === 'designation' ? 'Designation Default' : proof.attendanceExemptSource === 'employee_override' ? 'Employee Override' : proof.attendanceExemptSource}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 12px; padding: 10px 12px; background: #ecfdf5; border-radius: 6px; border-left: 3px solid #10b981;">
+                                    <p style="margin: 0; font-size: 13px; color: #065f46; line-height: 1.5;">
+                                        ${proof.attendanceExemptLopNote || 'This employee is exempt from clock-in/out attendance tracking. LOP is calculated from unpaid leave only.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
                         <!-- Compensation Card -->
                         <div class="proof-card">
                             <div class="proof-card-header">

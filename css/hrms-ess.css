@@ -632,6 +632,66 @@
 }
 
 /* =============================================================
+   ATTENDANCE EXEMPT BANNER - Info message for exempt employees
+   ============================================================= */
+
+.ess-exempt-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.04));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.ess-exempt-banner-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--color-info);
+}
+
+.ess-exempt-banner-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.ess-exempt-banner-content {
+    flex: 1;
+}
+
+.ess-exempt-banner-content strong {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.ess-exempt-banner-content p {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+    .ess-exempt-banner {
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    .ess-exempt-banner-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* =============================================================
    STATS GRID - Leave balances and quick stats
    ============================================================= */
 
@@ -3334,6 +3394,398 @@
     color: var(--color-success);
 }
 
+/* Salary Tabs Container */
+.ess-salary-tabs-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ess-salary-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.ess-salary-tab {
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.ess-salary-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.ess-salary-tab.active {
+    color: var(--brand-primary);
+    background: var(--bg-card);
+}
+
+.ess-salary-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--brand-primary);
+}
+
+.ess-salary-tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.ess-salary-tab-content.active {
+    display: block;
+}
+
+/* Current Salary Card Styles (within tab) - Payroll Modal Layout */
+.ess-salary-tabs-container .ess-salary-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+/* Top Stats Row */
+.ess-salary-tabs-container .salary-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-card, var(--bg-secondary));
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ess-salary-tabs-container .salary-stats-row:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.ess-salary-tabs-container .salary-stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.ess-salary-tabs-container .salary-stat-box .stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ess-salary-tabs-container .salary-stat-box .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Breakdown Header */
+.ess-salary-tabs-container .breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ess-salary-tabs-container .breakdown-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ess-salary-tabs-container .structure-badge {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+/* Earnings and Deductions Grid */
+.ess-salary-tabs-container .salary-components-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.ess-salary-tabs-container .components-column {
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card, var(--bg-primary));
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ess-salary-tabs-container .components-column:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Earnings Column - Subtle success accent */
+.ess-salary-tabs-container .earnings-column {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--color-success);
+}
+
+.ess-salary-tabs-container .earnings-header {
+    background: var(--bg-secondary);
+    color: var(--color-success);
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Deductions Column - Subtle danger accent */
+.ess-salary-tabs-container .deductions-column {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--color-danger);
+}
+
+.ess-salary-tabs-container .deductions-header {
+    background: var(--bg-secondary);
+    color: var(--color-danger);
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ess-salary-tabs-container .components-list {
+    padding: 12px 14px;
+}
+
+.ess-salary-tabs-container .component-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ess-salary-tabs-container .component-row:last-child {
+    border-bottom: none;
+}
+
+.ess-salary-tabs-container .component-row.total-row {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px solid var(--border-color);
+    border-bottom: none;
+    font-weight: 600;
+}
+
+.ess-salary-tabs-container .component-row.zero-amount {
+    opacity: 0.6;
+}
+
+.ess-salary-tabs-container .component-name {
+    color: var(--text-secondary);
+}
+
+.ess-salary-tabs-container .component-amount {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.ess-salary-tabs-container .earnings-amount {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.ess-salary-tabs-container .deductions-amount {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.ess-salary-tabs-container .no-data {
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+    font-style: italic;
+    margin: 0;
+    padding: 8px 0;
+}
+
+/* Summary Boxes - Professional design */
+.ess-salary-tabs-container .salary-summary-boxes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.ess-salary-tabs-container .summary-box {
+    padding: 20px 24px;
+    border-radius: 12px;
+    text-align: center;
+    background: var(--bg-card, var(--bg-secondary));
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ess-salary-tabs-container .summary-box:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.ess-salary-tabs-container .summary-box .box-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.ess-salary-tabs-container .summary-box .box-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* Gross box - success accent */
+.ess-salary-tabs-container .gross-box {
+    background: var(--bg-card, var(--bg-secondary));
+    border: 1px solid var(--color-success);
+}
+
+.ess-salary-tabs-container .gross-box .box-label {
+    color: var(--color-success);
+}
+
+.ess-salary-tabs-container .gross-box .box-value {
+    color: var(--color-success);
+}
+
+/* Deductions box - danger accent */
+.ess-salary-tabs-container .deductions-box {
+    background: var(--bg-card, var(--bg-secondary));
+    border: 1px solid var(--color-danger);
+}
+
+.ess-salary-tabs-container .deductions-box .box-label {
+    color: var(--color-danger);
+}
+
+.ess-salary-tabs-container .deductions-box .box-value {
+    color: var(--color-danger);
+}
+
+/* Net pay box - highlighted with brand color border */
+.ess-salary-tabs-container .net-box {
+    background: var(--bg-secondary);
+    border: 2px solid var(--brand-primary);
+}
+
+.ess-salary-tabs-container .net-box .box-label {
+    color: var(--brand-primary);
+}
+
+.ess-salary-tabs-container .net-box .box-value {
+    color: var(--brand-primary);
+}
+
+/* Salary History Table */
+.ess-salary-history {
+    overflow-x: auto;
+}
+
+.ess-salary-history .ess-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ess-salary-history .ess-table th {
+    background: var(--bg-secondary);
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ess-salary-history .ess-table td {
+    padding: 12px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.ess-salary-history .ess-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ess-salary-history .ess-table tr.current-salary {
+    background: var(--bg-hover);
+}
+
+.ess-salary-history .ess-table tr.current-salary td:first-child::before {
+    content: '●';
+    color: var(--color-success);
+    margin-right: 6px;
+    font-size: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Responsive adjustments for salary tabs */
+@media (max-width: 768px) {
+    .ess-salary-tabs-container .salary-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ess-salary-tabs-container .salary-components-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ess-salary-tabs-container .salary-summary-boxes {
+        grid-template-columns: 1fr;
+    }
+
+    .ess-salary-history .ess-table th,
+    .ess-salary-history .ess-table td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+}
+
 /* =============================================================
    ORG CHART CONTAINER
    ============================================================= */
@@ -3952,6 +4404,22 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* Geofence hint - shown when outside geofence radius */
+.ess-geofence-hint {
+    font-size: 0.7rem;
+    color: var(--color-danger);
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Location accuracy note - subtle desktop warning */
+.ess-location-accuracy-note {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    margin-top: 10px;
+    font-style: italic;
 }
 
 /* =============================================================

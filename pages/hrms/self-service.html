@@ -283,6 +283,21 @@
                     </div>
                 </div>
 
+                <!-- Attendance Exempt Info Banner (shown only for exempt employees) -->
+                <div class="ess-exempt-banner" id="attendanceExemptBanner" style="display: none;">
+                    <div class="ess-exempt-banner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="ess-exempt-banner-content">
+                        <strong>Attendance Tracking Optional</strong>
+                        <p>Your role is exempt from attendance requirements for payroll. You may still clock in/out for your own records, but missing attendance will not affect your salary.</p>
+                    </div>
+                </div>
+
                 <!-- Geofence Location Cards (shown only when all 3 geofence flags are ON) -->
                 <div class="ess-location-section" id="geofenceLocationSection" style="display: none;">
                     <div class="ess-location-grid">
@@ -343,6 +358,9 @@
                                     <span class="distance-value">--</span>
                                     <span class="distance-label">from office</span>
                                 </div>
+                                <div class="ess-geofence-hint" id="geofenceHint" style="display: none;">
+                                    Outside configured geofence (<span id="geofenceRadiusHint">100</span>m)
+                                </div>
                                 <div class="ess-location-coords" id="currentCoords">
                                     <span class="coord-label">Lat:</span> <span id="currentLatitude">--</span>
                                     <span class="coord-label">Long:</span> <span id="currentLongitude">--</span>
@@ -355,6 +373,9 @@
                                     </svg>
                                     <span>Refresh</span>
                                 </button>
+                                <div class="ess-location-accuracy-note">
+                                    Location accuracy may vary on desktop/laptop devices.
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1268,28 +1289,7 @@
         </div>
     </div>
 
-    <!-- Payslip View Modal -->
-    <div class="modal" id="payslipModal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h2>Payslip Details</h2>
-                <button class="modal-close" onclick="closeModal('payslipModal')">&times;</button>
-            </div>
-            <div class="modal-body" id="payslipDetails">
-                <!-- Payslip content loaded dynamically -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="downloadPayslipBtn" onclick="downloadPayslip()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Download PDF
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Payslip Modal is now injected by payslip-modal.js -->
 
     <!-- Loan Application Modal -->
     <div class="modal" id="loanModal">
@@ -1440,6 +1440,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/payslip-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/self-service.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

@@ -540,6 +540,25 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
+
+                            <!-- Attendance Exempt Override -->
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label for="attendanceExemptOverride">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M8 12l2 2 4-4"/>
+                                    </svg>
+                                    Attendance Exemption for Payroll
+                                </label>
+                                <select id="attendanceExemptOverride" name="attendance_exempt_override" class="form-control">
+                                    <option value="">Use Designation Default</option>
+                                    <option value="true">Exempt (LOP not calculated from missing attendance)</option>
+                                    <option value="false">Required (LOP calculated from missing attendance)</option>
+                                </select>
+                                <small class="form-text" style="color: var(--text-secondary);">
+                                    Overrides the designation-level setting. Exempt employees (CEO, CTO, field staff) won't have LOP deducted for missing clock in/out records.
+                                </small>
+                            </div>
                         </div>
 
                         <!-- Step 3: Banking Details -->
