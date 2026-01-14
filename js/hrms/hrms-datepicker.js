@@ -501,7 +501,17 @@
             config.defaultDate = element.value;
         }
 
-        return flatpickr(element, config);
+        // IMPORTANT: Read placeholder BEFORE flatpickr converts input to hidden
+        const originalPlaceholder = element.getAttribute('placeholder') || element.dataset.placeholder;
+
+        const instance = flatpickr(element, config);
+
+        // Apply placeholder to altInput if it exists
+        if (instance.altInput && originalPlaceholder) {
+            instance.altInput.placeholder = originalPlaceholder;
+        }
+
+        return instance;
     }
 
     /**

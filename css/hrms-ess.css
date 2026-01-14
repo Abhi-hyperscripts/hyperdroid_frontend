@@ -3745,3 +3745,536 @@
         border: 1px solid var(--border-primary);
     }
 }
+
+/* =============================================================
+   GEOFENCE LOCATION CARDS
+   ============================================================= */
+
+.ess-location-section {
+    margin-bottom: 24px;
+}
+
+.ess-location-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.ess-location-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.ess-location-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.ess-location-card.current {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(var(--brand-primary-rgb), 0.05) 100%);
+}
+
+.ess-location-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ess-location-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ess-location-icon.office {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+    color: var(--text-inverse);
+}
+
+.ess-location-icon.current {
+    background: var(--color-success);
+    color: var(--text-inverse);
+}
+
+.ess-location-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.ess-location-title {
+    flex: 1;
+}
+
+.ess-location-title h4 {
+    margin: 0 0 2px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ess-location-radius,
+.ess-location-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.ess-location-status.fetching {
+    color: var(--color-warning);
+}
+
+.ess-location-status.success {
+    color: var(--color-success);
+}
+
+.ess-location-status.error {
+    color: var(--color-danger);
+}
+
+.ess-location-map-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.ess-location-map-btn:hover {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.ess-location-map-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ess-location-details {
+    padding-left: 52px; /* Align with text after icon */
+}
+
+.ess-location-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.ess-location-address {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.ess-location-coords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.75rem;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    color: var(--text-tertiary);
+}
+
+.ess-location-coords .coord-label {
+    color: var(--text-secondary);
+}
+
+.ess-location-distance {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ess-location-distance .distance-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ess-location-distance .distance-value.within-range {
+    color: var(--color-success);
+}
+
+.ess-location-distance .distance-value.out-of-range {
+    color: var(--color-danger);
+}
+
+.ess-location-distance .distance-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ess-refresh-location-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+.ess-refresh-location-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.ess-refresh-location-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ess-refresh-location-btn.refreshing svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* =============================================================
+   GOOGLE MAPS MODAL
+   ============================================================= */
+
+.ess-map-modal {
+    width: 90%;
+    max-width: 700px;
+}
+
+.ess-map-body {
+    padding: 0;
+}
+
+.ess-map-info {
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ess-map-coords-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+}
+
+.map-coord-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.map-coord-label {
+    color: var(--text-secondary);
+}
+
+.map-coord-value {
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ess-map-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: var(--bg-tertiary);
+}
+
+.ess-map-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.ess-map-actions {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: center;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+}
+
+.ess-map-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* =============================================================
+   LOCATION PERMISSION BANNER
+   ============================================================= */
+
+.ess-permission-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    margin-top: 12px;
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: 8px;
+}
+
+.permission-banner-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--color-danger);
+}
+
+.permission-banner-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.permission-banner-message {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+.permission-banner-message strong {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--color-danger-text);
+}
+
+.permission-banner-content {
+    flex: 1;
+}
+
+.permission-banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.permission-try-again-btn,
+.permission-help-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.permission-try-again-btn {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border: none;
+}
+
+.permission-try-again-btn:hover {
+    background: var(--brand-primary-hover);
+}
+
+.permission-help-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.permission-help-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+/* =============================================================
+   LOCATION HELP MODAL
+   ============================================================= */
+
+.ess-help-modal {
+    width: 90%;
+    max-width: 420px;
+}
+
+.ess-help-body {
+    padding: 16px;
+}
+
+/* Quick Fix Banner */
+.ess-help-quickfix {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--color-success-light);
+    border: 1px solid var(--color-success);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.quickfix-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    color: var(--color-success);
+}
+
+.quickfix-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.quickfix-content strong {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--color-success-text);
+    margin-bottom: 2px;
+}
+
+.quickfix-content p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.quickfix-content p strong {
+    display: inline;
+    color: var(--text-primary);
+    font-size: inherit;
+}
+
+/* Help Tabs */
+.ess-help-tabs {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.help-tab-buttons {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-right: 1px solid var(--border-color);
+}
+
+.help-tab-btn:last-child {
+    border-right: none;
+}
+
+.help-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.help-tab-btn.active {
+    color: var(--brand-primary);
+    background: var(--bg-card);
+    font-weight: 600;
+}
+
+.help-tab-content {
+    padding: 12px;
+    background: var(--bg-card);
+}
+
+.help-tab-pane {
+    display: none;
+}
+
+.help-tab-pane.active {
+    display: block;
+}
+
+.help-tab-pane ol {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.help-tab-pane li {
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.help-tab-pane li:last-child {
+    margin-bottom: 0;
+}
+
+.help-tab-pane li strong {
+    color: var(--text-primary);
+}
+
+.ess-help-footer {
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.ess-help-footer .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* =============================================================
+   LOCATION CARDS RESPONSIVE
+   ============================================================= */
+
+@media (max-width: 768px) {
+    .ess-location-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ess-location-details {
+        padding-left: 0;
+        margin-top: 8px;
+    }
+
+    .ess-map-modal {
+        width: 95%;
+    }
+
+    .ess-map-container {
+        height: 300px;
+    }
+}

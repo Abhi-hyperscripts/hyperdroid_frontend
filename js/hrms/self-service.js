@@ -370,6 +370,9 @@ async function loadDashboard() {
                 loadUpcomingAnniversaries()
             ]);
 
+            // Initialize geofence location cards (shown only when all 3 flags are ON)
+            await initGeofenceLocationCards();
+
             // Show admin link if applicable
             checkAdminAccess();
         } else {
@@ -1268,8 +1271,8 @@ async function loadRegularizationRequests() {
 
         tbody.innerHTML = requests.map(r => {
             const date = formatDate(r.date || r.regularization_date);
-            const checkIn = r.check_in_time || '--';
-            const checkOut = r.check_out_time || '--';
+            const checkIn = r.requested_check_in ? formatTime(r.requested_check_in) : '--';
+            const checkOut = r.requested_check_out ? formatTime(r.requested_check_out) : '--';
             const status = r.status || 'pending';
 
             return `
@@ -2116,18 +2119,55 @@ function openRegularizationModal() {
  */
 async function submitRegularization() {
     try {
-        const date = document.getElementById('regDate').value;
-        const checkIn = document.getElementById('regCheckIn').value;
-        const checkOut = document.getElementById('regCheckOut').value;
-        const reason = document.getElementById('regReason').value;
+        const checkInDate = document.getElementById('regCheckInDate').value;
+        const checkInTime = document.getElementById('regCheckInTime').value;
+        const checkOutDate = document.getElementById('regCheckOutDate').value;
+        const checkOutTime = document.getElementById('regCheckOutTime').value;
+        const reason = document.getElementById('regReason').value?.trim();
 
-        if (!date || !checkIn || !checkOut || !reason) {
-            showToast('Please fill all required fields', 'error');
+        // Validate all required fields
+        if (!checkInDate) {
+            showToast('Please select check-in date', 'error');
+            return;
+        }
+        if (!checkInTime) {
+            showToast('Please provide check-in time', 'error');
+            return;
+        }
+        if (!checkOutDate) {
+            showToast('Please select check-out date', 'error');
+            return;
+        }
+        if (!checkOutTime) {
+            showToast('Please provide check-out time', 'error');
+            return;
+        }
+        if (!reason) {
+            showToast('Please provide a reason', 'error');
             return;
         }
 
-        await api.request('/hrms/attendance/regularization', 'POST', {
-            date, check_in_time: checkIn, check_out_time: checkOut, reason
+        // Build full datetime objects
+        const checkInDateTime = new Date(`${checkInDate}T${checkInTime}:00`);
+        const checkOutDateTime = new Date(`${checkOutDate}T${checkOutTime}:00`);
+
+        // Validate check-out is after check-in
+        if (checkOutDateTime <= checkInDateTime) {
+            showToast('Check-out must be after check-in', 'error');
+            return;
+        }
+
+        // Build request with full datetime values (use check-in date as the "date" field)
+        const requestData = {
+            date: checkInDate,
+            reason: reason,
+            requested_check_in: checkInDateTime.toISOString(),
+            requested_check_out: checkOutDateTime.toISOString()
+        };
+
+        await api.request('/hrms/attendance/regularization', {
+            method: 'POST',
+            body: JSON.stringify(requestData)
         });
 
         showToast('Regularization request submitted', 'success');
@@ -2136,6 +2176,30 @@ async function submitRegularization() {
     } catch (error) {
         console.error('Error submitting regularization:', error);
         showToast(error.message || 'Failed to submit request', 'error');
+    }
+}
+
+/**
+ * Cancel/delete a pending regularization request
+ */
+async function cancelRegularization(id) {
+    const confirmed = await Confirm.danger(
+        'Are you sure you want to cancel this regularization request?',
+        'Cancel Request'
+    );
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        await api.request(`/hrms/attendance/regularization/${id}`, {
+            method: 'DELETE'
+        });
+        showToast('Regularization request cancelled', 'success');
+        loadRegularizationRequests();
+    } catch (error) {
+        console.error('Error cancelling regularization:', error);
+        showToast(error.message || 'Failed to cancel request', 'error');
     }
 }
 
@@ -2535,6 +2599,14 @@ function formatDate(dateStr, monthDay = false) {
 }
 
 /**
+ * Format time for display (HH:MM AM/PM)
+ */
+function formatTime(timeStr) {
+    if (!timeStr) return '--';
+    return new Date(timeStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
  * Format date for payslip display
  */
 function formatPayslipDate(dateStr) {
@@ -2585,6 +2657,658 @@ function escapeHtml(text) {
 }
 
 // Note: getStoredUser() is defined in config.js - do not duplicate here
+
+// ==========================================
+// GEOFENCE LOCATION CARDS
+// ==========================================
+
+// Global variables for geofence
+let officeLocation = null;
+let currentUserLocation = null;
+
+/**
+ * Check if geofence validation is required (all 3 flags must be ON)
+ * Returns { required: boolean, office: object, shift: object, employee: object }
+ */
+async function checkGeofenceRequirement() {
+    try {
+        if (!currentEmployee) return { required: false };
+
+        // Get employee data which includes office, shift, and employee geofence flags
+        const employee = currentEmployee;
+
+        // Get office details
+        if (!employee.office_id) {
+            console.log('No office assigned to employee');
+            return { required: false };
+        }
+
+        const office = await api.request(`/hrms/offices/${employee.office_id}`);
+        if (!office) {
+            console.log('Office not found');
+            return { required: false };
+        }
+
+        // Get shift details if assigned
+        let shift = null;
+        if (employee.shift_id) {
+            try {
+                shift = await api.request(`/hrms/shifts/${employee.shift_id}`);
+            } catch (e) {
+                console.log('Could not fetch shift:', e);
+            }
+        }
+
+        // Check all three geofence flags
+        const officeGeofenceEnabled = office.enable_geofence_attendance === true;
+        const shiftGeofenceEnabled = shift?.enable_geofence_attendance === true;
+        const employeeGeofenceEnabled = employee.enable_geofence_attendance === true;
+
+        const allEnabled = officeGeofenceEnabled && shiftGeofenceEnabled && employeeGeofenceEnabled;
+
+        console.log('Geofence check:', {
+            office: officeGeofenceEnabled,
+            shift: shiftGeofenceEnabled,
+            employee: employeeGeofenceEnabled,
+            allEnabled
+        });
+
+        return {
+            required: allEnabled,
+            office: office,
+            shift: shift,
+            employee: employee
+        };
+    } catch (error) {
+        console.error('Error checking geofence requirement:', error);
+        return { required: false };
+    }
+}
+
+/**
+ * Initialize geofence location cards if all 3 flags are ON
+ */
+async function initGeofenceLocationCards() {
+    const geofenceSection = document.getElementById('geofenceLocationSection');
+    if (!geofenceSection) return;
+
+    try {
+        const geofenceStatus = await checkGeofenceRequirement();
+
+        if (!geofenceStatus.required) {
+            geofenceSection.style.display = 'none';
+            return;
+        }
+
+        // Show the location cards section
+        geofenceSection.style.display = 'block';
+
+        // Store office location globally
+        officeLocation = {
+            latitude: parseFloat(geofenceStatus.office.latitude),
+            longitude: parseFloat(geofenceStatus.office.longitude),
+            radius: geofenceStatus.office.geofence_radius_meters || 100,
+            name: geofenceStatus.office.office_name,
+            address: formatOfficeAddress(geofenceStatus.office)
+        };
+
+        // Update office location card
+        updateOfficeLocationCard(geofenceStatus.office);
+
+        // Setup event listeners for map buttons
+        setupLocationCardListeners();
+
+        // Fetch and display current location
+        await refreshCurrentLocation();
+
+    } catch (error) {
+        console.error('Error initializing geofence location cards:', error);
+        geofenceSection.style.display = 'none';
+    }
+}
+
+/**
+ * Format office address from office object
+ */
+function formatOfficeAddress(office) {
+    const parts = [];
+    if (office.address_line1) parts.push(office.address_line1);
+    if (office.address_line2) parts.push(office.address_line2);
+    if (office.city) parts.push(office.city);
+    if (office.state) parts.push(office.state);
+    if (office.postal_code) parts.push(office.postal_code);
+    return parts.join(', ') || 'Address not available';
+}
+
+/**
+ * Update office location card with data
+ */
+function updateOfficeLocationCard(office) {
+    // Update office name
+    const nameEl = document.getElementById('officeName');
+    if (nameEl) nameEl.textContent = office.office_name || 'Office';
+
+    // Update address
+    const addressEl = document.getElementById('officeAddress');
+    if (addressEl) addressEl.textContent = formatOfficeAddress(office);
+
+    // Update radius
+    const radiusEl = document.getElementById('officeRadius');
+    if (radiusEl) {
+        const radius = office.geofence_radius_meters || 100;
+        radiusEl.textContent = `Geofence: ${radius}m`;
+    }
+
+    // Update coordinates
+    const latEl = document.getElementById('officeLatitude');
+    const longEl = document.getElementById('officeLongitude');
+    if (latEl && office.latitude) latEl.textContent = parseFloat(office.latitude).toFixed(6);
+    if (longEl && office.longitude) longEl.textContent = parseFloat(office.longitude).toFixed(6);
+}
+
+/**
+ * Check geolocation permission status
+ * Returns: 'granted', 'denied', 'prompt', or 'unsupported'
+ */
+async function checkLocationPermission() {
+    if (!navigator.geolocation) {
+        return 'unsupported';
+    }
+
+    // Use Permissions API if available (modern browsers)
+    if (navigator.permissions && navigator.permissions.query) {
+        try {
+            const result = await navigator.permissions.query({ name: 'geolocation' });
+            return result.state; // 'granted', 'denied', or 'prompt'
+        } catch (e) {
+            // Permissions API not supported for geolocation, fall back
+            return 'prompt';
+        }
+    }
+
+    // Fallback for browsers without Permissions API
+    return 'prompt';
+}
+
+/**
+ * Refresh current location
+ */
+async function refreshCurrentLocation() {
+    const statusEl = document.getElementById('locationStatus');
+    const refreshBtn = document.getElementById('refreshLocationBtn');
+    const distanceValueEl = document.querySelector('.distance-value');
+    const permissionBanner = document.getElementById('locationPermissionBanner');
+
+    // Check permission status first
+    const permissionStatus = await checkLocationPermission();
+
+    if (permissionStatus === 'unsupported') {
+        if (statusEl) {
+            statusEl.textContent = 'Not supported';
+            statusEl.className = 'ess-location-status error';
+        }
+        showLocationPermissionBanner('unsupported');
+        return;
+    }
+
+    if (permissionStatus === 'denied') {
+        if (statusEl) {
+            statusEl.textContent = 'Permission denied';
+            statusEl.className = 'ess-location-status error';
+        }
+        showLocationPermissionBanner('denied');
+        return;
+    }
+
+    // Show fetching state
+    if (statusEl) {
+        statusEl.textContent = permissionStatus === 'prompt' ? 'Requesting permission...' : 'Fetching...';
+        statusEl.className = 'ess-location-status fetching';
+    }
+    if (refreshBtn) {
+        refreshBtn.classList.add('refreshing');
+    }
+
+    // Hide permission banner if visible
+    hideLocationPermissionBanner();
+
+    try {
+        const location = await getCurrentLocation();
+        currentUserLocation = location;
+
+        // Update status
+        if (statusEl) {
+            statusEl.textContent = 'Location acquired';
+            statusEl.className = 'ess-location-status success';
+        }
+
+        // Update coordinates
+        const latEl = document.getElementById('currentLatitude');
+        const longEl = document.getElementById('currentLongitude');
+        if (latEl) latEl.textContent = location.latitude.toFixed(6);
+        if (longEl) longEl.textContent = location.longitude.toFixed(6);
+
+        // Calculate and display distance from office
+        if (officeLocation && officeLocation.latitude && officeLocation.longitude) {
+            const distance = calculateDistance(
+                location.latitude,
+                location.longitude,
+                officeLocation.latitude,
+                officeLocation.longitude
+            );
+
+            if (distanceValueEl) {
+                distanceValueEl.textContent = formatDistance(distance);
+
+                // Update styling based on whether within geofence
+                if (distance <= officeLocation.radius) {
+                    distanceValueEl.classList.add('within-range');
+                    distanceValueEl.classList.remove('out-of-range');
+                } else {
+                    distanceValueEl.classList.add('out-of-range');
+                    distanceValueEl.classList.remove('within-range');
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Error getting current location:', error);
+
+        // Handle specific geolocation errors
+        let errorMessage = 'Location unavailable';
+        let bannerType = 'error';
+
+        if (error.code) {
+            switch (error.code) {
+                case 1: // PERMISSION_DENIED
+                    errorMessage = 'Permission denied';
+                    bannerType = 'denied';
+                    break;
+                case 2: // POSITION_UNAVAILABLE
+                    errorMessage = 'Position unavailable';
+                    bannerType = 'unavailable';
+                    break;
+                case 3: // TIMEOUT
+                    errorMessage = 'Request timed out';
+                    bannerType = 'timeout';
+                    break;
+            }
+        }
+
+        if (statusEl) {
+            statusEl.textContent = errorMessage;
+            statusEl.className = 'ess-location-status error';
+        }
+
+        if (distanceValueEl) {
+            distanceValueEl.textContent = '--';
+            distanceValueEl.classList.remove('within-range', 'out-of-range');
+        }
+
+        showLocationPermissionBanner(bannerType);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.classList.remove('refreshing');
+        }
+    }
+}
+
+/**
+ * Show location permission banner with appropriate message
+ */
+function showLocationPermissionBanner(type) {
+    let banner = document.getElementById('locationPermissionBanner');
+
+    // Create banner if it doesn't exist
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'locationPermissionBanner';
+        banner.className = 'ess-permission-banner';
+
+        const currentLocationCard = document.getElementById('currentLocationCard');
+        if (currentLocationCard) {
+            currentLocationCard.appendChild(banner);
+        }
+    }
+
+    let message = '';
+    let icon = '';
+    let showTryAgain = true;
+    let showHowToEnable = false;
+
+    switch (type) {
+        case 'denied':
+            icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`;
+            message = `<strong>Location access denied</strong><br>Enable location in browser settings to use geofence attendance.`;
+            showHowToEnable = true;
+            break;
+        case 'unsupported':
+            icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+            message = `<strong>Geolocation not supported</strong><br>Your browser does not support location services.`;
+            showTryAgain = false;
+            break;
+        case 'unavailable':
+            icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+            message = `<strong>Location unavailable</strong><br>Could not determine your position. Check your device's location settings.`;
+            showHowToEnable = true;
+            break;
+        case 'timeout':
+            icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+            message = `<strong>Location request timed out</strong><br>Please try again or check your connection.`;
+            break;
+        default:
+            icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+            message = `<strong>Location error</strong><br>Could not get your location. Please try again.`;
+    }
+
+    // Build action buttons
+    let actions = '';
+    if (showTryAgain || showHowToEnable) {
+        actions = '<div class="permission-banner-actions">';
+        if (showTryAgain) {
+            actions += `<button class="permission-try-again-btn" onclick="retryLocationPermission()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Try Again
+            </button>`;
+        }
+        if (showHowToEnable) {
+            actions += `<button class="permission-help-btn" onclick="showLocationHelpModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                How to Enable
+            </button>`;
+        }
+        actions += '</div>';
+    }
+
+    banner.innerHTML = `
+        <div class="permission-banner-icon">${icon}</div>
+        <div class="permission-banner-content">
+            <div class="permission-banner-message">${message}</div>
+            ${actions}
+        </div>
+    `;
+    banner.style.display = 'flex';
+}
+
+/**
+ * Retry getting location permission
+ */
+async function retryLocationPermission() {
+    // Hide any existing banner
+    hideLocationPermissionBanner();
+
+    // Update status to show we're trying
+    const statusEl = document.getElementById('currentLocationStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Requesting permission...';
+        statusEl.className = 'ess-location-status fetching';
+    }
+
+    // Try to get location again
+    await refreshCurrentLocation();
+}
+
+/**
+ * Show modal with instructions on how to enable location
+ */
+function showLocationHelpModal() {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('locationHelpModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'locationHelpModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content ess-help-modal">
+                <div class="modal-header">
+                    <h3>Enable Location Access</h3>
+                    <button class="modal-close" onclick="closeLocationHelpModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body ess-help-body">
+                    <div class="ess-help-quickfix">
+                        <div class="quickfix-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="quickfix-content">
+                            <strong>Quick Fix</strong>
+                            <p>Click the <strong>🔒 lock icon</strong> in address bar → <strong>Location</strong> → <strong>Allow</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="ess-help-tabs">
+                        <div class="help-tab-buttons">
+                            <button class="help-tab-btn active" onclick="switchHelpTab('chrome')">Chrome/Edge</button>
+                            <button class="help-tab-btn" onclick="switchHelpTab('safari')">Safari</button>
+                            <button class="help-tab-btn" onclick="switchHelpTab('mobile')">Mobile</button>
+                        </div>
+                        <div class="help-tab-content">
+                            <div class="help-tab-pane active" id="helpTabChrome">
+                                <ol>
+                                    <li><strong>⋮</strong> menu → <strong>Settings</strong></li>
+                                    <li><strong>Privacy and security</strong> → <strong>Site settings</strong> → <strong>Location</strong></li>
+                                    <li>Find this site → <strong>"Allow"</strong></li>
+                                </ol>
+                            </div>
+                            <div class="help-tab-pane" id="helpTabSafari">
+                                <ol>
+                                    <li><strong>Safari</strong> menu → <strong>Settings</strong></li>
+                                    <li><strong>Websites</strong> tab → <strong>Location</strong></li>
+                                    <li>Find this site → <strong>"Allow"</strong></li>
+                                </ol>
+                            </div>
+                            <div class="help-tab-pane" id="helpTabMobile">
+                                <ol>
+                                    <li>Open device <strong>Settings</strong></li>
+                                    <li><strong>Privacy</strong> → <strong>Location Services</strong></li>
+                                    <li>Find browser → <strong>"While Using"</strong></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ess-help-footer">
+                    <button class="btn btn-secondary" onclick="closeLocationHelpModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="closeLocationHelpModal(); retryLocationPermission();">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    modal.style.display = 'flex';
+}
+
+/**
+ * Switch help tab
+ */
+function switchHelpTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.help-tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Update tab panes
+    document.querySelectorAll('.help-tab-pane').forEach(pane => pane.classList.remove('active'));
+    const tabMap = { chrome: 'helpTabChrome', safari: 'helpTabSafari', mobile: 'helpTabMobile' };
+    document.getElementById(tabMap[tab])?.classList.add('active');
+}
+
+/**
+ * Close location help modal
+ */
+function closeLocationHelpModal() {
+    const modal = document.getElementById('locationHelpModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Hide location permission banner
+ */
+function hideLocationPermissionBanner() {
+    const banner = document.getElementById('locationPermissionBanner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * Returns distance in meters
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+/**
+ * Convert degrees to radians
+ */
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+/**
+ * Format distance for display
+ */
+function formatDistance(meters) {
+    if (meters < 1000) {
+        return `${Math.round(meters)}m`;
+    }
+    return `${(meters / 1000).toFixed(1)}km`;
+}
+
+/**
+ * Setup event listeners for location cards
+ */
+function setupLocationCardListeners() {
+    // Office map button
+    const officeMapBtn = document.getElementById('viewOfficeMapBtn');
+    if (officeMapBtn) {
+        officeMapBtn.addEventListener('click', () => {
+            if (officeLocation) {
+                openMapModal('Office Location', officeLocation.latitude, officeLocation.longitude);
+            }
+        });
+    }
+
+    // Current location map button
+    const currentMapBtn = document.getElementById('viewCurrentMapBtn');
+    if (currentMapBtn) {
+        currentMapBtn.addEventListener('click', () => {
+            if (currentUserLocation) {
+                openMapModal('Your Location', currentUserLocation.latitude, currentUserLocation.longitude);
+            } else {
+                showToast('Location not available. Click Refresh to get your location.', 'warning');
+            }
+        });
+    }
+
+    // Refresh location button
+    const refreshBtn = document.getElementById('refreshLocationBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshCurrentLocation);
+    }
+}
+
+/**
+ * Open Google Maps modal with coordinates
+ */
+function openMapModal(title, latitude, longitude) {
+    const overlay = document.getElementById('mapModalOverlay');
+    const titleEl = document.getElementById('mapModalTitle');
+    const latEl = document.getElementById('mapLatitude');
+    const longEl = document.getElementById('mapLongitude');
+    const iframe = document.getElementById('googleMapIframe');
+    const openLink = document.getElementById('openInGoogleMaps');
+
+    if (!overlay || !iframe) return;
+
+    // Update title
+    if (titleEl) titleEl.textContent = title;
+
+    // Update coordinates display
+    if (latEl) latEl.textContent = latitude.toFixed(6);
+    if (longEl) longEl.textContent = longitude.toFixed(6);
+
+    // Set iframe source to Google Maps embed
+    // Using place mode which shows a marker at the coordinates
+    const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d500!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM!5e0!3m2!1sen!2s!4v1!5m2!1sen!2s`;
+    iframe.src = mapUrl;
+
+    // Update "Open in Google Maps" link
+    if (openLink) {
+        openLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    }
+
+    // Show modal
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close Google Maps modal
+ */
+function closeMapModal() {
+    const overlay = document.getElementById('mapModalOverlay');
+    const iframe = document.getElementById('googleMapIframe');
+
+    if (overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // Clear iframe to stop loading
+    if (iframe) {
+        iframe.src = '';
+    }
+}
+
+// Close modal when clicking overlay
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('mapModalOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeMapModal();
+            }
+        });
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('mapModalOverlay');
+        if (overlay && overlay.style.display === 'flex') {
+            closeMapModal();
+        }
+    }
+});
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {

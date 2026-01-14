@@ -1684,6 +1684,27 @@ class API {
         return this.request(`/hrms/attendance/regularization/pending${query}`);
     }
 
+    async getTeamRegularizations(status = null, all = false, month = null, year = null, officeId = null) {
+        const params = new URLSearchParams();
+        if (status && status !== 'all') {
+            params.append('status', status);
+        }
+        if (all) {
+            params.append('all', 'true');
+        }
+        if (month) {
+            params.append('month', month);
+        }
+        if (year) {
+            params.append('year', year);
+        }
+        if (officeId) {
+            params.append('officeId', officeId);
+        }
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/hrms/attendance/regularization/team${query}`);
+    }
+
     async approveRegularization(id, rejection_reason = null) {
         return this.request(`/hrms/attendance/regularization/${id}/approve`, {
             method: 'POST',
@@ -2267,6 +2288,17 @@ class API {
     async getPendingOvertimeRequestsAll(all = false) {
         const query = all ? '?all=true' : '';
         return this.request(`/hrms/attendance/overtime/pending${query}`);
+    }
+
+    async getTeamOvertimeRequests(status = null, all = false, month = null, year = null, officeId = null) {
+        const params = new URLSearchParams();
+        if (status && status !== 'all') params.append('status', status);
+        if (all) params.append('all', 'true');
+        if (month) params.append('month', month);
+        if (year) params.append('year', year);
+        if (officeId) params.append('officeId', officeId);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/hrms/attendance/overtime/team${query}`);
     }
 
     async approveOvertimeRequest(id) {

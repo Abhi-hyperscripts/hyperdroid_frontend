@@ -3,8 +3,17 @@ let pendingRejectionId = null;
 
 // SearchableDropdown instances
 let officeDropdown = null;
+let regOfficeDropdown = null;
+let otOfficeDropdown = null;
 let regStatusDropdown = null;
 let otStatusDropdown = null;
+
+// MonthPicker instances
+let regMonthPicker = null;
+let otMonthPicker = null;
+
+// Date picker instance for daily attendance
+let dailyDatePicker = null;
 
 // Data arrays
 let offices = [];
@@ -27,11 +36,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup sidebar navigation
     setupSidebar();
 
-    // Set default date for daily attendance view
-    document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
-
-    // Add date filter change event
-    document.getElementById('dateFilter').addEventListener('change', loadAttendance);
+    // Initialize daily date picker with Flatpickr
+    initializeDailyDatePicker();
 
     // Load offices first, then initialize dropdowns
     await loadOffices();
@@ -53,7 +59,67 @@ function applyAttendanceRBAC() {
     }
 }
 
-// Load offices and initialize office dropdown
+// Initialize daily date picker using HRMSDatePicker (styled Flatpickr with custom month/year selectors)
+function initializeDailyDatePicker() {
+    const container = document.getElementById('dailyDatePicker');
+    if (!container || dailyDatePicker) return;
+
+    // Create the date input element as type="text" to prevent MutationObserver auto-init
+    // The MutationObserver in hrms-datepicker.js auto-initializes type="date" inputs
+    // which prevents our custom options (defaultDate, onChange) from being applied
+    const input = document.createElement('input');
+    input.type = 'text';  // Use text to avoid auto-init, Flatpickr will handle it
+    input.id = 'dateFilter';
+    input.className = 'date-picker-input';
+    input.placeholder = 'Select date...';
+    container.appendChild(input);
+
+    // Get today's date as YYYY-MM-DD string (required for setDate with maxDate constraint)
+    // Using Date object with maxDate:'today' causes issues due to time comparison
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Initialize using HRMSDatePicker for beautifully styled calendar
+    // This adds custom month/year dropdown selectors with search
+    dailyDatePicker = HRMSDatePicker.init(input, {
+        defaultDate: todayStr,
+        maxDate: 'today',
+        onChange: function(selectedDates, dateStr) {
+            if (dateStr) {
+                loadAttendance();
+            }
+        },
+        onReady: function(selectedDates, dateStr, instance) {
+            // Set today's date once Flatpickr is fully initialized
+            // This ensures the date is displayed in the input on page load
+            // Must use string format, not Date object, due to maxDate time comparison issues
+            if (selectedDates.length === 0) {
+                instance.setDate(todayStr, false);  // false = don't trigger onChange yet
+            }
+        }
+    });
+}
+
+// Get selected date from daily date picker
+function getSelectedDate() {
+    if (dailyDatePicker && dailyDatePicker.selectedDates.length > 0) {
+        // Format as YYYY-MM-DD using local date (not UTC)
+        // toISOString() returns UTC which causes timezone bugs
+        const date = dailyDatePicker.selectedDates[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    // Default to today (using local date)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Load offices and initialize office dropdowns
 async function loadOffices() {
     try {
         const response = await api.request('/hrms/offices');
@@ -69,7 +135,7 @@ async function loadOffices() {
             label: opt.label
         }));
 
-        // Initialize or update office dropdown
+        // Initialize Daily Attendance office dropdown
         if (!officeDropdown && typeof convertSelectToSearchable === 'function') {
             officeDropdown = convertSelectToSearchable('officeFilter', {
                 compact: true,
@@ -86,6 +152,40 @@ async function loadOffices() {
             officeDropdown.setOptions(searchableOptions);
             officeDropdown.setValue(selectedOfficeId);
         }
+
+        // Initialize Regularization office dropdown
+        if (!regOfficeDropdown && document.getElementById('regOfficeFilter') && typeof convertSelectToSearchable === 'function') {
+            regOfficeDropdown = convertSelectToSearchable('regOfficeFilter', {
+                compact: true,
+                placeholder: 'All Offices',
+                searchPlaceholder: 'Search offices...',
+                onChange: () => {
+                    loadTeamRegularizations();
+                }
+            });
+        }
+
+        if (regOfficeDropdown) {
+            regOfficeDropdown.setOptions(searchableOptions);
+            regOfficeDropdown.setValue(selectedOfficeId);
+        }
+
+        // Initialize Overtime office dropdown
+        if (!otOfficeDropdown && document.getElementById('otOfficeFilter') && typeof convertSelectToSearchable === 'function') {
+            otOfficeDropdown = convertSelectToSearchable('otOfficeFilter', {
+                compact: true,
+                placeholder: 'All Offices',
+                searchPlaceholder: 'Search offices...',
+                onChange: () => {
+                    loadTeamOvertime();
+                }
+            });
+        }
+
+        if (otOfficeDropdown) {
+            otOfficeDropdown.setOptions(searchableOptions);
+            otOfficeDropdown.setValue(selectedOfficeId);
+        }
     } catch (error) {
         console.error('Error loading offices:', error);
     }
@@ -93,6 +193,21 @@ async function loadOffices() {
 
 // Initialize status filter dropdowns with SearchableDropdown
 function initializeStatusDropdowns() {
+    // Regularization month picker
+    if (document.getElementById('regMonthPicker') && typeof MonthPicker !== 'undefined') {
+        const now = new Date();
+        regMonthPicker = new MonthPicker('regMonthPicker', {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1, // Current month selected by default
+            allowAllMonths: true,
+            yearsBack: 2,
+            yearsForward: 0,
+            onChange: () => {
+                loadTeamRegularizations();
+            }
+        });
+    }
+
     // Regularization status filter
     if (document.getElementById('regStatusFilter') && typeof convertSelectToSearchable === 'function') {
         regStatusDropdown = convertSelectToSearchable('regStatusFilter', {
@@ -101,6 +216,21 @@ function initializeStatusDropdowns() {
             searchPlaceholder: 'Search...',
             onChange: (value) => {
                 loadTeamRegularizations();
+            }
+        });
+    }
+
+    // Overtime month picker
+    if (document.getElementById('otMonthPicker') && typeof MonthPicker !== 'undefined') {
+        const now = new Date();
+        otMonthPicker = new MonthPicker('otMonthPicker', {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1, // Current month selected by default
+            allowAllMonths: true,
+            yearsBack: 2,
+            yearsForward: 0,
+            onChange: () => {
+                loadTeamOvertime();
             }
         });
     }
@@ -158,7 +288,7 @@ async function loadAttendance() {
     tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        const date = document.getElementById('dateFilter').value;
+        const date = getSelectedDate();
         const selectedOfficeId = officeDropdown ? officeDropdown.getValue() : '';
 
         // Build query string with optional office filter
@@ -192,7 +322,17 @@ async function loadAttendance() {
 
         updateDailyStats(present, absent, late, onLeave);
 
-        tbody.innerHTML = attendance.map(a => `
+        tbody.innerHTML = attendance.map(a => {
+            // Build status display - show Late badge if late_by_minutes > 0
+            let statusHtml = `<span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span>`;
+            if (a.late_by_minutes > 0) {
+                const lateText = a.late_by_minutes >= 60
+                    ? `${Math.floor(a.late_by_minutes / 60)}h ${a.late_by_minutes % 60}m`
+                    : `${a.late_by_minutes}m`;
+                statusHtml += ` <span class="status-badge late" title="Late by ${lateText}">Late (${lateText})</span>`;
+            }
+
+            return `
             <tr>
                 <td>
                     <div class="employee-info">
@@ -203,10 +343,11 @@ async function loadAttendance() {
                 <td>${formatTime(a.check_in_time)}</td>
                 <td>${formatTime(a.check_out_time)}</td>
                 <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
-                <td><span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span></td>
+                <td>${statusHtml}</td>
                 <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
     } catch (error) {
         console.error('Error loading attendance:', error);
@@ -229,11 +370,21 @@ async function loadTeamRegularizations() {
 
     try {
         const statusFilter = regStatusDropdown ? regStatusDropdown.getValue() : (document.getElementById('regStatusFilter')?.value || 'pending');
-        // Use pending regularizations endpoint for team requests
-        const reqs = await api.getPendingRegularizations(hrmsRoles.isHRAdmin()) || [];
 
-        // Filter by status
-        const filtered = statusFilter === 'all' ? reqs : reqs.filter(r => r.status?.toLowerCase() === statusFilter);
+        // Get month/year from picker
+        let month = null;
+        let year = null;
+        if (regMonthPicker) {
+            const pickerValue = regMonthPicker.getValue();
+            month = pickerValue.month;
+            year = pickerValue.year;
+        }
+
+        // Get office filter
+        const officeId = regOfficeDropdown ? regOfficeDropdown.getValue() : '';
+
+        // Use team regularizations endpoint with status, month/year, and office filter
+        const filtered = await api.getTeamRegularizations(statusFilter, hrmsRoles.isHRAdmin(), month, year, officeId || null) || [];
 
         if (!filtered || filtered.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><p>No ${statusFilter === 'all' ? '' : statusFilter} regularization requests</p></td></tr>`;
@@ -264,7 +415,7 @@ async function loadTeamRegularizations() {
                 <td>
                     ${r.status?.toLowerCase() === 'pending' && canApprove ? `
                         <div class="action-buttons">
-                            <button class="action-btn success" onclick="approveRegularization('${r.id}')" data-tooltip="Approve">
+                            <button class="action-btn success" onclick="approveRegularizationRequest('${r.id}')" data-tooltip="Approve">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="20 6 9 17 4 12"/>
                                 </svg>
@@ -295,11 +446,21 @@ async function loadTeamOvertime() {
 
     try {
         const statusFilter = otStatusDropdown ? otStatusDropdown.getValue() : (document.getElementById('otStatusFilter')?.value || 'pending');
-        // Use pending overtime endpoint for team requests
-        const reqs = await api.getPendingOvertimeRequests(hrmsRoles.isHRAdmin()) || [];
 
-        // Filter by status
-        const filtered = statusFilter === 'all' ? reqs : reqs.filter(r => r.status?.toLowerCase() === statusFilter);
+        // Get month/year from picker
+        let month = null;
+        let year = null;
+        if (otMonthPicker) {
+            const pickerValue = otMonthPicker.getValue();
+            month = pickerValue.month;
+            year = pickerValue.year;
+        }
+
+        // Get office filter
+        const officeId = otOfficeDropdown ? otOfficeDropdown.getValue() : '';
+
+        // Use team overtime endpoint with status, month/year, and office filter
+        const filtered = await api.getTeamOvertimeRequests(statusFilter, hrmsRoles.isHRAdmin(), month, year, officeId || null) || [];
 
         if (!filtered || filtered.length === 0) {
             tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><p>No ${statusFilter === 'all' ? '' : statusFilter} overtime requests</p></td></tr>`;
@@ -474,6 +635,7 @@ async function loadOvertimeRequests() {
 
 async function loadPendingApprovals() {
     const tbody = document.getElementById('pendingRegularizationsTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="6"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
@@ -534,6 +696,8 @@ async function approveRegularizationRequest(id) {
     try {
         await api.approveRegularization(id);
         showToast('Regularization approved successfully', 'success');
+        // Refresh whichever view is currently active
+        loadTeamRegularizations();
         loadPendingApprovals();
     } catch (error) {
         showToast(error.message || 'Error approving request', 'error');
@@ -556,6 +720,8 @@ async function confirmRejectRegularization() {
         showToast('Regularization request rejected', 'success');
         closeModal('rejectionModal');
         pendingRejectionId = null;
+        // Refresh whichever view is currently active
+        loadTeamRegularizations();
         loadPendingApprovals();
     } catch (error) {
         showToast(error.message || 'Error rejecting request', 'error');

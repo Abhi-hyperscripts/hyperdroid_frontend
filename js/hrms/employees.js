@@ -26,6 +26,38 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Helper function to set date picker values (works with flatpickr)
+function setDatePickerValue(elementId, dateValue) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    const dateStr = dateValue ? dateValue.split('T')[0] : '';
+
+    // If flatpickr is initialized, use setDate for proper display
+    if (element._flatpickr) {
+        if (dateStr) {
+            element._flatpickr.setDate(dateStr, true);
+        } else {
+            element._flatpickr.clear();
+        }
+    } else {
+        // Fallback: set value directly (flatpickr not yet initialized)
+        element.value = dateStr;
+    }
+}
+
+// Helper function to clear date picker values
+function clearDatePickerValue(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    if (element._flatpickr) {
+        element._flatpickr.clear();
+    } else {
+        element.value = '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
         window.location.href = '/index.html';
@@ -492,6 +524,11 @@ async function openCreateEmployeeModal() {
     // Reset wizard to step 1
     resetEmployeeWizard();
 
+    // Clear date pickers (flatpickr needs explicit clearing)
+    clearDatePickerValue('dateOfBirth');
+    clearDatePickerValue('dateOfJoining');
+    clearDatePickerValue('probationEndDate');
+
     // Hide user info display until user is selected
     document.getElementById('userInfoDisplay').style.display = 'none';
 
@@ -721,7 +758,9 @@ async function editEmployee(id) {
     document.getElementById('userEmailDisplay').textContent = emp.work_email || '-';
 
     document.getElementById('workPhone').value = emp.work_phone || '';
-    document.getElementById('dateOfBirth').value = emp.date_of_birth?.split('T')[0] || '';
+
+    // Set date fields using flatpickr's setDate method for proper display
+    setDatePickerValue('dateOfBirth', emp.date_of_birth);
 
     // Initialize and set gender dropdown (using SearchableDropdown component)
     initGenderDropdown();
@@ -730,8 +769,8 @@ async function editEmployee(id) {
     // Initialize and set employment type dropdown (using SearchableDropdown component)
     initEmploymentTypeDropdown();
     setEmploymentTypeValue(emp.employment_type || 'full_time');
-    document.getElementById('dateOfJoining').value = emp.hire_date?.split('T')[0] || '';
-    document.getElementById('probationEndDate').value = emp.probation_end_date?.split('T')[0] || '';
+    setDatePickerValue('dateOfJoining', emp.hire_date);
+    setDatePickerValue('probationEndDate', emp.probation_end_date);
     document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
 
     // Set searchable dropdown values for Step 2 Employment

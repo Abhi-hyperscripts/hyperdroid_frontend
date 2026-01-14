@@ -2789,6 +2789,45 @@ async function saveOffice() {
         const countryId = document.getElementById('officeCountryId').value;
         const stateId = document.getElementById('officeStateId').value;
 
+        // Geofence validation: if enabled, lat/long/radius are required
+        const enableGeofence = document.getElementById('officeEnableGeofence').checked;
+        if (enableGeofence) {
+            if (!latitudeVal || latitudeVal.trim() === '') {
+                hideLoading();
+                showToast('Latitude is required when geofence attendance is enabled', 'error');
+                document.getElementById('officeLatitude').focus();
+                return;
+            }
+            if (!longitudeVal || longitudeVal.trim() === '') {
+                hideLoading();
+                showToast('Longitude is required when geofence attendance is enabled', 'error');
+                document.getElementById('officeLongitude').focus();
+                return;
+            }
+            if (!geofenceVal || geofenceVal.trim() === '' || parseInt(geofenceVal) <= 0) {
+                hideLoading();
+                showToast('Geofence radius must be a positive number when geofence attendance is enabled', 'error');
+                document.getElementById('officeGeofenceRadius').focus();
+                return;
+            }
+            // Validate latitude range
+            const lat = parseFloat(latitudeVal);
+            if (isNaN(lat) || lat < -90 || lat > 90) {
+                hideLoading();
+                showToast('Latitude must be between -90 and 90', 'error');
+                document.getElementById('officeLatitude').focus();
+                return;
+            }
+            // Validate longitude range
+            const lng = parseFloat(longitudeVal);
+            if (isNaN(lng) || lng < -180 || lng > 180) {
+                hideLoading();
+                showToast('Longitude must be between -180 and 180', 'error');
+                document.getElementById('officeLongitude').focus();
+                return;
+            }
+        }
+
         const data = {
             office_name: document.getElementById('officeName').value,
             office_code: document.getElementById('officeCode').value,
@@ -2815,6 +2854,16 @@ async function saveOffice() {
             enable_geofence_attendance: document.getElementById('officeEnableGeofence').checked,
             is_active: document.getElementById('officeIsActive').checked
         };
+
+        // Validation: Cannot deactivate office with employees
+        if (id && !data.is_active) {
+            const existingOffice = offices.find(o => o.id === id);
+            if (existingOffice && existingOffice.is_active && existingOffice.employee_count > 0) {
+                hideLoading();
+                showToast(`Cannot deactivate office '${existingOffice.office_name}'. ${existingOffice.employee_count} employee(s) are assigned to this office. Please reassign all employees first.`, 'error');
+                return;
+            }
+        }
 
         console.log('Saving office with data:', data);
 

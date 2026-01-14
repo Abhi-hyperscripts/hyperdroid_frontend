@@ -54,3 +54,12 @@
 .tab-content.active {
     display: block;
 }
+
+/* =============================================================
+   DATE PICKER CONTAINER (Daily Attendance)
+   Height styling handled by flatpickr-custom.css
+   ============================================================= */
+.date-picker-container {
+    position: relative;
+    min-width: 160px;
+}

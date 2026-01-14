@@ -283,6 +283,83 @@
                     </div>
                 </div>
 
+                <!-- Geofence Location Cards (shown only when all 3 geofence flags are ON) -->
+                <div class="ess-location-section" id="geofenceLocationSection" style="display: none;">
+                    <div class="ess-location-grid">
+                        <!-- Office Location Card -->
+                        <div class="ess-location-card" id="officeLocationCard">
+                            <div class="ess-location-header">
+                                <div class="ess-location-icon office">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </div>
+                                <div class="ess-location-title">
+                                    <h4>Office Location</h4>
+                                    <span class="ess-location-radius" id="officeRadius">Geofence: 100m</span>
+                                </div>
+                                <button class="ess-location-map-btn" id="viewOfficeMapBtn" title="View on Map">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                        <line x1="8" y1="2" x2="8" y2="18"/>
+                                        <line x1="16" y1="6" x2="16" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="ess-location-details">
+                                <div class="ess-location-name" id="officeName">Loading...</div>
+                                <div class="ess-location-address" id="officeAddress">Loading address...</div>
+                                <div class="ess-location-coords" id="officeCoords">
+                                    <span class="coord-label">Lat:</span> <span id="officeLatitude">--</span>
+                                    <span class="coord-label">Long:</span> <span id="officeLongitude">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Location Card -->
+                        <div class="ess-location-card current" id="currentLocationCard">
+                            <div class="ess-location-header">
+                                <div class="ess-location-icon current">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="10" r="3"/>
+                                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/>
+                                    </svg>
+                                </div>
+                                <div class="ess-location-title">
+                                    <h4>Your Location</h4>
+                                    <span class="ess-location-status" id="locationStatus">Fetching...</span>
+                                </div>
+                                <button class="ess-location-map-btn" id="viewCurrentMapBtn" title="View on Map">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                        <line x1="8" y1="2" x2="8" y2="18"/>
+                                        <line x1="16" y1="6" x2="16" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="ess-location-details">
+                                <div class="ess-location-distance" id="distanceFromOffice">
+                                    <span class="distance-value">--</span>
+                                    <span class="distance-label">from office</span>
+                                </div>
+                                <div class="ess-location-coords" id="currentCoords">
+                                    <span class="coord-label">Lat:</span> <span id="currentLatitude">--</span>
+                                    <span class="coord-label">Long:</span> <span id="currentLongitude">--</span>
+                                </div>
+                                <button class="ess-refresh-location-btn" id="refreshLocationBtn" title="Refresh Location">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"/>
+                                        <polyline points="1 20 1 14 7 14"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                    <span>Refresh</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quick Stats Grid -->
                 <div class="ess-stats-grid">
                     <div class="ess-stat-card">
@@ -981,18 +1058,24 @@
             </div>
             <div class="modal-body">
                 <form id="regularizationForm">
-                    <div class="form-group">
-                        <label>Date <span class="required">*</span></label>
-                        <input type="date" id="regDate" required>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Check In Date <span class="required">*</span></label>
+                            <input type="date" id="regCheckInDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Check In Time <span class="required">*</span></label>
+                            <input type="time" id="regCheckInTime" required>
+                        </div>
                     </div>
                     <div class="form-row two-col">
                         <div class="form-group">
-                            <label>Check In Time <span class="required">*</span></label>
-                            <input type="time" id="regCheckIn" required>
+                            <label>Check Out Date <span class="required">*</span></label>
+                            <input type="date" id="regCheckOutDate" required>
                         </div>
                         <div class="form-group">
                             <label>Check Out Time <span class="required">*</span></label>
-                            <input type="time" id="regCheckOut" required>
+                            <input type="time" id="regCheckOutTime" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -1290,6 +1373,56 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="submitReimbursement()">Submit Claim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Maps Modal -->
+    <div class="modal-overlay" id="mapModalOverlay" style="display: none;">
+        <div class="modal-content ess-map-modal">
+            <div class="modal-header">
+                <h3 id="mapModalTitle">Location</h3>
+                <button class="modal-close" onclick="closeMapModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body ess-map-body">
+                <div class="ess-map-info">
+                    <div class="ess-map-coords-display">
+                        <span class="map-coord-item">
+                            <span class="map-coord-label">Latitude:</span>
+                            <span class="map-coord-value" id="mapLatitude">--</span>
+                        </span>
+                        <span class="map-coord-item">
+                            <span class="map-coord-label">Longitude:</span>
+                            <span class="map-coord-value" id="mapLongitude">--</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="ess-map-container">
+                    <iframe
+                        id="googleMapIframe"
+                        width="100%"
+                        height="400"
+                        style="border:0;"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="ess-map-actions">
+                    <a id="openInGoogleMaps" href="#" target="_blank" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        Open in Google Maps
+                    </a>
+                </div>
             </div>
         </div>
     </div>

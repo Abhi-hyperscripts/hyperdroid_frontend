@@ -120,7 +120,7 @@
                         <select id="officeFilter" class="filter-select">
                             <option value="">All Offices</option>
                         </select>
-                        <input type="date" id="dateFilter" class="filter-select">
+                        <div id="dailyDatePicker" class="date-picker-container"></div>
                     </div>
 
                     <div class="stats-row">
@@ -169,10 +169,11 @@
 
                 <!-- Regularization Requests Tab (Team Pending) -->
                 <div class="tab-content" id="regularization">
-                    <div class="filters-bar">
-                        <div class="filter-info">
-                            <span class="filter-label">Team Regularization Requests</span>
-                        </div>
+                    <div class="filters-bar inline-filters">
+                        <select id="regOfficeFilter" class="filter-select">
+                            <option value="">All Offices</option>
+                        </select>
+                        <div id="regMonthPicker"></div>
                         <select class="filter-select" id="regStatusFilter">
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
@@ -209,10 +210,11 @@
 
                 <!-- Overtime Requests Tab (Team Pending) -->
                 <div class="tab-content" id="overtime">
-                    <div class="filters-bar">
-                        <div class="filter-info">
-                            <span class="filter-label">Team Overtime Requests</span>
-                        </div>
+                    <div class="filters-bar inline-filters">
+                        <select id="otOfficeFilter" class="filter-select">
+                            <option value="">All Offices</option>
+                        </select>
+                        <div id="otMonthPicker"></div>
                         <select class="filter-select" id="otStatusFilter">
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
@@ -362,6 +364,7 @@
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-monthpicker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

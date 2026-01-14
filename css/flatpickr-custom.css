@@ -3,6 +3,13 @@
  * Theme-aware, compact date picker styling
  */
 
+/* Flatpickr input placeholder styling */
+input.flatpickr-input::placeholder,
+.flatpickr-input.form-control::placeholder {
+    color: var(--text-tertiary, #9ca3af);
+    opacity: 1;
+}
+
 /* Base calendar container */
 .flatpickr-calendar {
     background: var(--bg-card, var(--bg-secondary, #ffffff));
@@ -887,4 +894,72 @@ input.flatpickr-input[readonly] {
 [data-theme="dark"] .fp-custom-year-options::-webkit-scrollbar-thumb:hover,
 .dark .fp-custom-year-options::-webkit-scrollbar-thumb:hover {
     background: var(--border-color, #6b7280);
+}
+
+/* ========================================
+   FILTER BAR FLATPICKR ALT INPUT
+   Match SearchableDropdown compact height (34px)
+   ======================================== */
+
+.filters-bar .flatpickr-input[readonly],
+.inline-filters .flatpickr-input[readonly],
+.filter-group .flatpickr-input[readonly],
+.date-picker-container .flatpickr-input[readonly],
+.date-picker-container input.form-control,
+.date-picker-container input[type="text"] {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    border: 1px solid var(--border-primary, var(--gray-300, #d1d5db)) !important;
+    border-radius: 4px !important;
+    background: var(--bg-input, var(--bg-secondary, #f8fafc)) !important;
+    color: var(--text-primary, #1e293b) !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+}
+
+.filters-bar .flatpickr-input[readonly]:hover,
+.inline-filters .flatpickr-input[readonly]:hover,
+.filter-group .flatpickr-input[readonly]:hover,
+.date-picker-container .flatpickr-input[readonly]:hover,
+.date-picker-container input.form-control:hover,
+.date-picker-container input[type="text"]:hover {
+    border-color: var(--border-secondary, var(--gray-400, #9ca3af)) !important;
+}
+
+.filters-bar .flatpickr-input[readonly]:focus,
+.inline-filters .flatpickr-input[readonly]:focus,
+.filter-group .flatpickr-input[readonly]:focus,
+.date-picker-container .flatpickr-input[readonly]:focus,
+.date-picker-container input.form-control:focus,
+.date-picker-container input[type="text"]:focus {
+    outline: none !important;
+    border-color: var(--brand-primary, #3b82f6) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Dark mode filter bar Flatpickr */
+[data-theme="dark"] .filters-bar .flatpickr-input[readonly],
+[data-theme="dark"] .inline-filters .flatpickr-input[readonly],
+[data-theme="dark"] .filter-group .flatpickr-input[readonly],
+[data-theme="dark"] .date-picker-container .flatpickr-input[readonly],
+[data-theme="dark"] .date-picker-container input.form-control,
+[data-theme="dark"] .date-picker-container input[type="text"] {
+    background: var(--bg-input, #1e293b) !important;
+    border-color: var(--border-primary, #475569) !important;
+    color: var(--text-primary, #e2e8f0) !important;
+}
+
+[data-theme="dark"] .filters-bar .flatpickr-input[readonly]:hover,
+[data-theme="dark"] .inline-filters .flatpickr-input[readonly]:hover,
+[data-theme="dark"] .filter-group .flatpickr-input[readonly]:hover,
+[data-theme="dark"] .date-picker-container .flatpickr-input[readonly]:hover,
+[data-theme="dark"] .date-picker-container input.form-control:hover,
+[data-theme="dark"] .date-picker-container input[type="text"]:hover {
+    border-color: var(--border-secondary, #64748b) !important;
 }
