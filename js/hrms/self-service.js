@@ -3413,62 +3413,19 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ==========================================
-// CALCULATION PROOF - v3.0.51
+// CALCULATION PROOF - v3.0.52
 // ==========================================
 
 /**
- * View calculation proof for a PROCESSED payslip.
- * v3.0.51: Ported from payroll.js for self-service page.
+ * View calculation proof for a PROCESSED payslip in ESS mode.
+ * v3.0.52: Now uses centralized PayslipModal with ESS mode enabled.
+ * - Hides deductions where employerPortion='organizational_overhead'
+ * - Hides JSON Data tab (employees don't need raw JSON)
  */
 async function viewCalculationProofProcessed(payslipId) {
-    try {
-        showLoading();
-
-        const response = await api.request(`/hrms/payroll-processing/payslips/${payslipId}/calculation-proof?format=json`);
-
-        if (!response || !response.calculation_proof_data) {
-            hideLoading();
-            showToast('Calculation proof not available for this payslip. This may be an older payslip processed before calculation proof was enabled.', 'warning');
-            return;
-        }
-
-        // Close the payslip modal first
-        closeModal('payslipModal');
-
-        const proof = response.calculation_proof_data;
-
-        // Store data for download/print
-        window.currentCalculationProof = {
-            payslipId: payslipId,
-            proof: proof,
-            employeeName: response.employee_name,
-            employeeCode: response.employee_code,
-            payPeriod: `${formatDateForProof(response.pay_period_start)} - ${formatDateForProof(response.pay_period_end)}`,
-            isProcessed: true
-        };
-
-        // Create or get the calculation proof modal
-        let modal = document.getElementById('calculationProofModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'calculationProofModal';
-            modal.className = 'modal';
-            document.body.appendChild(modal);
-            injectCalculationProofStylesESS();
-        }
-
-        // Build the beautiful UI
-        modal.innerHTML = buildCalculationProofUIESS(proof, response);
-
-        // Open the modal
-        modal.classList.add('active');
-        hideLoading();
-
-    } catch (error) {
-        console.error('Error loading calculation proof:', error);
-        hideLoading();
-        showToast(error.message || 'Failed to load calculation proof', 'error');
-    }
+    // Use centralized PayslipModal with ESS mode
+    // This filters out organizational_overhead items and hides JSON tab
+    return PayslipModal.viewCalculationProofEss(payslipId, false);
 }
 
 /**
