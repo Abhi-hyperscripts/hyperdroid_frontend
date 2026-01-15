@@ -2250,13 +2250,13 @@ async function viewDraftPayslip(payslipId) {
             </div>
             ` : ''}
 
-            <!-- Calculation Proof Button - v3.0.16 -->
+            <!-- Calculation Button - v3.0.16 -->
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
                 <button class="btn btn-secondary" onclick="viewCalculationProof('${payslipId}')" style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    View Calculation Proof
+                    View Calculation
                 </button>
             </div>
         `;
@@ -2403,7 +2403,7 @@ function buildCalculationProofUI(proof, response) {
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Calculation Proof - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                        Calculation - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
                     </h5>
                     <button class="close-btn" onclick="closeModal('calculationProofModal')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -4742,7 +4742,7 @@ function printCalculationProof() {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Calculation Proof - ${window.currentCalculationProof.employeeCode || 'Employee'}</title>
+            <title>Calculation - ${window.currentCalculationProof.employeeCode || 'Employee'}</title>
             <style>
                 * { box-sizing: border-box; }
                 body {
@@ -7919,13 +7919,13 @@ async function viewPayslip(payslipId) {
 
             ${structureBreakdownHtml}
 
-            <!-- v3.0.26: Calculation Proof Button for processed payslips -->
+            <!-- v3.0.26: Calculation Button for processed payslips -->
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
                 <button class="btn btn-secondary" onclick="viewCalculationProofProcessed('${payslipId}')" style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    View Calculation Proof
+                    View Calculation
                 </button>
             </div>
         `;

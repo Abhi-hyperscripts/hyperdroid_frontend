@@ -889,12 +889,17 @@ const PayslipModal = (function() {
     /**
      * View a processed (finalized) payslip
      * @param {string} payslipId - The payslip ID
+     * @param {object} options - Display options
+     * @param {boolean} options.essMode - If true, use ESS mode for calculation proof (hide organizational_overhead items and JSON tab)
      */
-    async function viewProcessed(payslipId) {
+    async function viewProcessed(payslipId, options = {}) {
         try {
             injectStyles();
             ensureModalExists();
             currentPayslipId = payslipId;
+
+            // Store ESS mode option for use in button onclick
+            const isEssMode = options.essMode === true;
 
             const payslip = await api.request(`/hrms/payroll-processing/payslips/${payslipId}?includeItems=true`);
 
@@ -1062,11 +1067,11 @@ const PayslipModal = (function() {
                 ${structureBreakdownHtml}
 
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
-                    <button class="btn btn-secondary" onclick="PayslipModal.viewCalculationProof('${payslipId}', false)" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="${isEssMode ? `PayslipModal.viewCalculationProofEss('${payslipId}', false)` : `PayslipModal.viewCalculationProof('${payslipId}', false)`}" style="display: flex; align-items: center; gap: 0.5rem;">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        View Calculation Proof
+                        View Calculation
                     </button>
                 </div>
             `;
@@ -1307,7 +1312,7 @@ const PayslipModal = (function() {
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            Calculation Proof - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                            Calculation - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
                         </h5>
                         <button class="close-btn" onclick="PayslipModal.closeProof()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1605,22 +1610,21 @@ const PayslipModal = (function() {
      * Build deductions section - comprehensive version matching payroll.js
      * @param {object} proof - The calculation proof data
      * @param {function} fmt - Currency formatting function
-     * @param {object} displayOptions - Display options
-     * @param {boolean} displayOptions.hideOrganizationalOverhead - Hide items with employerPortion='organizational_overhead'
+     * @param {object} displayOptions - Display options (not used for deductions - employee deductions are always shown)
      */
     function buildDeductionsSection(proof, fmt, displayOptions = {}) {
         let items = proof.deductionItems || [];
         if (items.length === 0) return '';
 
-        // ESS mode: Filter out organizational overhead items (not visible to employees)
-        if (displayOptions.hideOrganizationalOverhead) {
-            items = items.filter(item => item.employerPortion !== 'organizational_overhead');
-        }
+        // NOTE: Employee deductions are ALWAYS shown, even in ESS mode.
+        // The `employerPortion` field describes the EMPLOYER's contribution classification,
+        // not the employee deduction. Employee deductions directly affect take-home pay
+        // and should always be visible to employees.
+        //
+        // Only employer contributions are filtered based on employerPortion in ESS mode
+        // (see buildEmployerContributionsSection)
 
-        // If no items remain after filtering, don't show the section
-        if (items.length === 0) return '';
-
-        // Calculate visible total (sum of filtered items)
+        // Calculate total (no filtering for deductions)
         const visibleTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
 
         let rows = items.map(item => {
@@ -1649,8 +1653,8 @@ const PayslipModal = (function() {
             `;
         }).join('');
 
-        // Use filtered total in ESS mode, original total otherwise
-        const displayTotal = displayOptions.hideOrganizationalOverhead ? visibleTotal : proof.totalDeductions;
+        // Always use the original total - deductions are never filtered
+        const displayTotal = proof.totalDeductions;
 
         return `
             <div class="proof-card">
@@ -2299,7 +2303,7 @@ const PayslipModal = (function() {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Calculation Proof - ${proofData?.employeeName || 'Employee'}</title>
+                <title>Calculation - ${proofData?.employeeName || 'Employee'}</title>
                 <style>
                     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
                     h1 { font-size: 18px; margin-bottom: 5px; }
@@ -2316,7 +2320,7 @@ const PayslipModal = (function() {
                 </style>
             </head>
             <body>
-                <h1>Calculation Proof</h1>
+                <h1>Calculation</h1>
                 <p class="meta">${proofData?.employeeName || ''} • ${proofData?.employeeCode || ''} • ${proofData?.payPeriod || ''}</p>
                 ${proofContent.innerHTML}
             </body>
@@ -2420,6 +2424,11 @@ function viewPayslip(payslipId) {
     return PayslipModal.viewProcessed(payslipId);
 }
 
+// ESS mode: View payslip with ESS mode enabled (hides organizational_overhead items and JSON tab in calculation proof)
+function viewPayslipEss(payslipId) {
+    return PayslipModal.viewProcessed(payslipId, { essMode: true });
+}
+
 function viewCalculationProofProcessed(payslipId) {
     return PayslipModal.viewCalculationProof(payslipId, false);
 }
@@ -2431,5 +2440,5 @@ function viewCalculationProofProcessedEss(payslipId) {
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { PayslipModal, viewPayslip, viewCalculationProofProcessed, viewCalculationProofProcessedEss };
+    module.exports = { PayslipModal, viewPayslip, viewPayslipEss, viewCalculationProofProcessed, viewCalculationProofProcessedEss };
 }

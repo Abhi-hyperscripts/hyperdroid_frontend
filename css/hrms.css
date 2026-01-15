@@ -4362,6 +4362,20 @@ td.text-right strong,
     box-shadow: 0 2px 8px var(--primary-shadow);
 }
 
+/* Danger (Delete/Withdraw) - v3.0.54 */
+.btn-icon-danger {
+    background: var(--error-transparent-light, rgba(239, 68, 68, 0.1));
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+.btn-icon-danger:hover {
+    background: var(--color-error);
+    color: var(--text-inverse);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--error-transparent-strong, rgba(239, 68, 68, 0.3));
+}
+
 /* Tooltip styling for icon buttons - uses theme-aware variables */
 .btn-icon[title],
 .btn-icon[data-tooltip] {

@@ -688,9 +688,12 @@ async function handleClock() {
 
         if (clockedIn) {
             // Clock out
+            // v3.0.52: Pass accuracy and device_type for location confidence tracking
             const result = await api.hrmsClockOut({
                 latitude: location?.latitude,
                 longitude: location?.longitude,
+                accuracy: location?.accuracy,
+                device_type: getDeviceType(),
                 source: 'web'
             });
 
@@ -725,9 +728,12 @@ async function handleClock() {
 
         } else {
             // Clock in
+            // v3.0.52: Pass accuracy and device_type for location confidence tracking
             const result = await api.hrmsClockIn({
                 latitude: location?.latitude,
                 longitude: location?.longitude,
+                accuracy: location?.accuracy,
+                device_type: getDeviceType(),
                 source: 'web',
                 attendance_type: 'office'
             });
@@ -788,15 +794,109 @@ function getCurrentLocation() {
             (position) => {
                 resolve({
                     latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
                 });
             },
             (error) => {
                 reject(error);
             },
-            { timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 10000 }
         );
     });
+}
+
+/**
+ * v3.0.52: Detect device type for location confidence tracking.
+ *
+ * Returns: 'mobile' | 'tablet' | 'desktop'
+ *
+ * Desktop devices have unreliable GPS (often 500m-1km city-level accuracy).
+ * The backend uses this to:
+ * - Cap desktop confidence at LOW (never HIGH)
+ * - Apply advisory-only geofence checks for desktops
+ */
+function getDeviceType() {
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    // Check for mobile devices
+    const mobileKeywords = ['android', 'iphone', 'ipod', 'blackberry', 'windows phone', 'mobile'];
+    const isMobile = mobileKeywords.some(keyword => userAgent.includes(keyword));
+
+    // Check for tablets
+    const tabletKeywords = ['ipad', 'tablet', 'kindle', 'playbook'];
+    const isTablet = tabletKeywords.some(keyword => userAgent.includes(keyword)) ||
+        (userAgent.includes('android') && !userAgent.includes('mobile'));
+
+    if (isTablet) return 'tablet';
+    if (isMobile) return 'mobile';
+    return 'desktop';
+}
+
+/**
+ * v3.0.52: Calculate and display location confidence based on accuracy and device type.
+ * This mirrors the backend logic in BusinessLayer_Attendance.cs
+ * @param {number|null} accuracy - GPS accuracy in meters
+ * @returns {Object} - { confidence: string, reason: string }
+ */
+function calculateLocationConfidence(accuracy) {
+    const deviceType = getDeviceType();
+    const isDesktop = deviceType === 'desktop';
+
+    // No location data
+    if (!accuracy || accuracy === null) {
+        return { confidence: 'NONE', reason: 'No location data' };
+    }
+
+    // Desktop devices ALWAYS capped at LOW confidence (advisory only)
+    if (isDesktop) {
+        let reason;
+        if (accuracy <= 50) {
+            reason = 'Desktop (capped)';
+        } else if (accuracy <= 150) {
+            reason = 'Desktop (capped)';
+        } else if (accuracy <= 500) {
+            reason = 'WiFi location';
+        } else {
+            reason = 'WiFi (weak)';
+        }
+        return { confidence: 'LOW', reason: reason };
+    }
+
+    // Mobile/Tablet devices - full confidence levels
+    if (accuracy <= 50) {
+        return { confidence: 'HIGH', reason: 'GPS (precise)' };
+    } else if (accuracy <= 150) {
+        return { confidence: 'MEDIUM', reason: 'GPS (normal)' };
+    } else if (accuracy <= 500) {
+        return { confidence: 'LOW', reason: 'WiFi location' };
+    } else {
+        return { confidence: 'WEAK', reason: 'WiFi (weak)' };
+    }
+}
+
+/**
+ * v3.0.52: Update the confidence indicator in the UI
+ * @param {number|null} accuracy - GPS accuracy in meters
+ */
+function updateLocationConfidenceUI(accuracy) {
+    const section = document.getElementById('locationConfidenceSection');
+    const badge = document.getElementById('locationConfidenceBadge');
+    const reason = document.getElementById('locationConfidenceReason');
+
+    if (!section || !badge || !reason) return;
+
+    const { confidence, reason: reasonText } = calculateLocationConfidence(accuracy);
+
+    // Show the section
+    section.style.display = 'flex';
+
+    // Update badge
+    badge.textContent = confidence;
+    badge.className = 'confidence-badge confidence-' + confidence.toLowerCase();
+
+    // Update reason text
+    reason.textContent = `(${reasonText})`;
 }
 
 // ==========================================
@@ -1820,6 +1920,7 @@ function renderSalaryHistoryContent(history) {
 
 /**
  * Load loans
+ * v3.0.53: COUNTRY-AGNOSTIC - uses currency_symbol and currency_code from backend
  */
 async function loadLoans() {
     const container = document.getElementById('loansContainer');
@@ -1829,30 +1930,67 @@ async function loadLoans() {
         container.innerHTML = `<div class="ess-loading"><div class="spinner"></div><span>Loading loans...</span></div>`;
 
         const response = await api.request('/hrms/payroll-processing/my-loans');
-        const loans = response?.loans || response || [];
+        const loans = response?.loans || [];
+        // v3.0.53: Extract currency info from API response (country-agnostic)
+        const currencySymbol = response?.currency_symbol || '';
+        const currencyCode = response?.currency_code || '';
 
         if (!loans.length) {
-            container.innerHTML = `<div class="ess-empty-state"><p>No loans or advances</p></div>`;
+            container.innerHTML = `
+                <div class="empty-message" style="text-align: center; padding: 2rem;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">No loans or advances</p>
+                </div>`;
             return;
         }
 
+        // v3.0.54: Check if any loans are withdrawable (pending/rejected)
+        const hasWithdrawable = loans.some(l => ['pending', 'rejected'].includes((l.status || '').toLowerCase()));
+
         container.innerHTML = `
-            <table class="ess-table">
-                <thead>
-                    <tr><th>Type</th><th>Amount</th><th>EMI</th><th>Outstanding</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    ${loans.map(l => `
+            <div class="table-responsive">
+                <table class="data-table" style="table-layout: fixed;">
+                    <thead>
                         <tr>
-                            <td>${capitalizeFirst(l.loan_type || l.type)}</td>
-                            <td>${formatCurrency(l.amount)}</td>
-                            <td>${formatCurrency(l.emi_amount || l.emi)}</td>
-                            <td>${formatCurrency(l.outstanding_amount || l.outstanding)}</td>
-                            <td><span class="status-badge status-${l.status}">${capitalizeFirst(l.status)}</span></td>
+                            <th style="width: ${hasWithdrawable ? '20%' : '22%'};">Loan Type</th>
+                            <th style="width: ${hasWithdrawable ? '18%' : '20%'}; text-align: right;">Principal</th>
+                            <th style="width: ${hasWithdrawable ? '15%' : '18%'}; text-align: right;">EMI</th>
+                            <th style="width: ${hasWithdrawable ? '18%' : '22%'}; text-align: right;">Outstanding</th>
+                            <th style="width: ${hasWithdrawable ? '15%' : '18%'};">Status</th>
+                            ${hasWithdrawable ? '<th style="width: 14%; text-align: center;">Actions</th>' : ''}
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${loans.map(l => {
+                            const status = (l.status || 'pending').toLowerCase();
+                            const loanType = l.loan_type || l.type || 'unknown';
+                            const canWithdraw = ['pending', 'rejected'].includes(status);
+                            return `
+                            <tr>
+                                <td>${formatLoanTypeBadge(loanType)}</td>
+                                <td class="amount-cell">${formatCurrency(l.principal_amount || l.amount, currencySymbol, currencyCode)}</td>
+                                <td class="amount-cell">${formatCurrency(l.emi_amount || l.emi, currencySymbol, currencyCode)}</td>
+                                <td class="amount-cell">${formatCurrency(l.outstanding_amount || l.outstanding, currencySymbol, currencyCode)}</td>
+                                <td>${getLoanStatusBadge(status)}</td>
+                                ${hasWithdrawable ? `
+                                <td style="text-align: center;">
+                                    ${canWithdraw ? `
+                                        <button class="btn-icon-danger" onclick="withdrawLoan('${l.id}')" title="Withdraw application">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                            </svg>
+                                        </button>
+                                    ` : '-'}
+                                </td>
+                                ` : ''}
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            </div>
         `;
 
     } catch (error) {
@@ -1862,58 +2000,125 @@ async function loadLoans() {
 }
 
 /**
+ * Format loan type as badge
+ */
+function formatLoanTypeBadge(type) {
+    const types = {
+        'salary_advance': 'Salary Advance',
+        'personal_loan': 'Personal Loan',
+        'emergency_loan': 'Emergency Loan'
+    };
+    const label = types[type] || capitalizeFirst(type.replace(/_/g, ' '));
+    return `<span class="type-badge earning">${label}</span>`;
+}
+
+/**
+ * Get loan status badge
+ */
+function getLoanStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="status-badge pending">Pending</span>',
+        'approved': '<span class="status-badge approved">Approved</span>',
+        'active': '<span class="status-badge active">Active</span>',
+        'completed': '<span class="status-badge approved">Completed</span>',
+        'rejected': '<span class="status-badge rejected">Rejected</span>',
+        'cancelled': '<span class="status-badge inactive">Cancelled</span>'
+    };
+    return badges[status] || `<span class="status-badge">${capitalizeFirst(status)}</span>`;
+}
+
+/**
  * Load reimbursements
+ * v3.0.52: Connected to backend my-adjustments API with type=reimbursement filter
  */
 async function loadReimbursements() {
     const container = document.getElementById('reimbursementsContainer');
     if (!container) return;
 
-    // Reimbursements feature is not yet implemented in the backend
-    container.innerHTML = `<div class="ess-empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <p>Reimbursements feature coming soon</p>
-    </div>`;
-    return;
-
-    // TODO: Uncomment when backend implements reimbursements
-    /*
     try {
         container.innerHTML = `<div class="ess-loading"><div class="spinner"></div><span>Loading reimbursements...</span></div>`;
 
-        const response = await api.request('/hrms/payroll/reimbursements/my');
-        const claims = response?.claims || response || [];
+        // v3.0.52: Fetch reimbursement adjustments from new ESS endpoint
+        const response = await api.request('/hrms/payroll-processing/my-adjustments?type=reimbursement');
+        const claims = response?.data || [];
+        // v3.0.53: COUNTRY-AGNOSTIC - Extract currency info from API response
+        const currencySymbol = response?.currency_symbol || '';
+        const currencyCode = response?.currency_code || '';
 
         if (!claims.length) {
-            container.innerHTML = `<div class="ess-empty-state"><p>No reimbursement claims</p></div>`;
+            container.innerHTML = `
+                <div class="empty-message" style="text-align: center; padding: 2rem;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">No reimbursement claims</p>
+                </div>`;
             return;
         }
 
+        // v3.0.54: Check if any claims are withdrawable (pending/rejected)
+        const hasWithdrawable = claims.some(c => ['pending', 'rejected'].includes((c.status || '').toLowerCase()));
+
         container.innerHTML = `
-            <table class="ess-table">
-                <thead>
-                    <tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    ${claims.map(c => `
+            <div class="table-responsive">
+                <table class="data-table" style="table-layout: fixed;">
+                    <thead>
                         <tr>
-                            <td>${formatDate(c.expense_date || c.date)}</td>
-                            <td>${capitalizeFirst(c.expense_type || c.type)}</td>
-                            <td>${formatCurrency(c.amount)}</td>
-                            <td>${escapeHtml(truncateText(c.description, 30))}</td>
-                            <td><span class="status-badge status-${c.status}">${capitalizeFirst(c.status)}</span></td>
+                            <th style="width: ${hasWithdrawable ? '15%' : '18%'};">Type</th>
+                            <th style="width: ${hasWithdrawable ? '12%' : '15%'}; text-align: right;">Amount</th>
+                            <th style="width: ${hasWithdrawable ? '14%' : '17%'};">Period</th>
+                            <th style="width: ${hasWithdrawable ? '30%' : '35%'};">Description</th>
+                            <th style="width: ${hasWithdrawable ? '15%' : '15%'};">Status</th>
+                            ${hasWithdrawable ? '<th style="width: 14%; text-align: center;">Actions</th>' : ''}
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${claims.map(c => {
+                            const status = (c.status || 'pending').toLowerCase();
+                            const period = `${getMonthName(c.effective_month)} ${c.effective_year}`;
+                            const canWithdraw = ['pending', 'rejected'].includes(status);
+                            return `
+                            <tr>
+                                <td><span class="type-badge earning">Reimbursement</span></td>
+                                <td class="amount-cell positive">+${formatCurrency(c.amount, currencySymbol, currencyCode)}</td>
+                                <td>${period}</td>
+                                <td class="reason-cell" title="${escapeHtml(c.reason || '')}">${escapeHtml(truncateText(c.reason || '-', 35))}</td>
+                                <td>${getReimbursementStatusBadge(status)}</td>
+                                ${hasWithdrawable ? `
+                                <td style="text-align: center;">
+                                    ${canWithdraw ? `
+                                        <button class="btn-icon-danger" onclick="withdrawAdjustment('${c.id}')" title="Withdraw claim">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                            </svg>
+                                        </button>
+                                    ` : '-'}
+                                </td>
+                                ` : ''}
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            </div>
         `;
 
     } catch (error) {
         console.error('Error loading reimbursements:', error);
         container.innerHTML = `<div class="ess-error-state"><p>Failed to load reimbursements</p></div>`;
     }
-    */
+}
+
+/**
+ * Get reimbursement status badge
+ */
+function getReimbursementStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="status-badge pending">Pending</span>',
+        'approved': '<span class="status-badge approved">Approved</span>',
+        'rejected': '<span class="status-badge rejected">Rejected</span>',
+        'applied': '<span class="status-badge processing">Applied</span>'
+    };
+    return badges[status] || `<span class="status-badge">${capitalizeFirst(status)}</span>`;
 }
 
 /**
@@ -2150,7 +2355,7 @@ function updateMyPayslipsTable(payslips) {
                 <td><span class="status-badge status-${status.toLowerCase()}">${capitalizeFirst(status)}</span></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="viewPayslip('${slip.id}')" title="View Payslip">
+                        <button class="action-btn" onclick="viewPayslipEss('${slip.id}')" title="View Payslip">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -2170,7 +2375,8 @@ function updateMyPayslipsTable(payslips) {
     }).join('');
 }
 
-// viewPayslip is now provided by payslip-modal.js (PayslipModal.viewProcessed)
+// viewPayslipEss is used on ESS page - it enables ESS mode which hides organizational_overhead items and JSON tab
+// viewPayslip is still available globally but doesn't use ESS mode (for payroll admin pages)
 // viewCalculationProofProcessed is also provided by payslip-modal.js
 // downloadPayslip is now provided by payslip-modal.js (PayslipModal.downloadPdf)
 
@@ -2319,8 +2525,12 @@ async function submitOvertime() {
             return;
         }
 
-        await api.request('/hrms/attendance/overtime', 'POST', {
-            date, planned_start: startTime, planned_end: endTime, reason, task
+        // v3.0.52: Fixed API call format
+        await api.request('/hrms/attendance/overtime', {
+            method: 'POST',
+            body: JSON.stringify({
+                date, planned_start: startTime, planned_end: endTime, reason, task
+            })
         });
 
         showToast('Overtime request submitted', 'success');
@@ -2424,13 +2634,17 @@ async function submitLeaveApplication() {
             return;
         }
 
-        await api.request('/hrms/leave/requests', 'POST', {
-            leave_type_id: leaveType,
-            from_date: fromDate,
-            to_date: toDate,
-            reason,
-            half_day: halfDay || null,
-            emergency_contact: emergencyContact || null
+        // v3.0.52: Fixed API call format
+        await api.request('/hrms/leave/requests', {
+            method: 'POST',
+            body: JSON.stringify({
+                leave_type_id: leaveType,
+                from_date: fromDate,
+                to_date: toDate,
+                reason,
+                half_day: halfDay || null,
+                emergency_contact: emergencyContact || null
+            })
         });
 
         showToast('Leave application submitted', 'success');
@@ -2579,11 +2793,16 @@ async function submitLoanApplication() {
             return;
         }
 
-        await api.request('/hrms/payroll-processing/loans', 'POST', {
-            loan_type: loanType,
-            amount: parseFloat(amount),
-            emi_months: parseInt(emi),
-            reason
+        // v3.0.52: Fixed API call format and field names
+        await api.request('/hrms/payroll-processing/loans', {
+            method: 'POST',
+            body: JSON.stringify({
+                loan_type: loanType,
+                principal_amount: parseFloat(amount),
+                tenure_months: parseInt(emi),
+                interest_rate: 0, // Interest-free by default, HR can update if needed
+                purpose: reason
+            })
         });
 
         showToast('Loan application submitted', 'success');
@@ -2596,25 +2815,89 @@ async function submitLoanApplication() {
 }
 
 /**
+ * v3.0.54: Withdraw loan application (only pending/rejected)
+ */
+async function withdrawLoan(loanId) {
+    if (!confirm('Are you sure you want to withdraw this loan application?')) {
+        return;
+    }
+
+    try {
+        await api.request(`/hrms/payroll-processing/my-loans/${loanId}`, {
+            method: 'DELETE'
+        });
+
+        showToast('Loan application withdrawn successfully', 'success');
+        loadLoans();
+    } catch (error) {
+        console.error('Error withdrawing loan:', error);
+        showToast(error.message || 'Failed to withdraw loan application', 'error');
+    }
+}
+
+/**
+ * v3.0.54: Withdraw reimbursement/adjustment claim (only pending/rejected)
+ */
+async function withdrawAdjustment(adjustmentId) {
+    if (!confirm('Are you sure you want to withdraw this claim?')) {
+        return;
+    }
+
+    try {
+        await api.request(`/hrms/payroll-processing/my-adjustments/${adjustmentId}`, {
+            method: 'DELETE'
+        });
+
+        showToast('Claim withdrawn successfully', 'success');
+        loadReimbursements();
+    } catch (error) {
+        console.error('Error withdrawing claim:', error);
+        showToast(error.message || 'Failed to withdraw claim', 'error');
+    }
+}
+
+/**
  * Submit reimbursement claim
+ * v3.0.52: Connected to backend adjustments/claim API
  */
 async function submitReimbursement() {
     try {
         const expenseType = expenseTypeDropdown
             ? expenseTypeDropdown.getValue()
             : document.getElementById('expenseType')?.value;
-        const date = document.getElementById('expenseDate')?.value;
+        const expenseDate = document.getElementById('expenseDate')?.value;
         const amount = document.getElementById('expenseAmount')?.value;
         const description = document.getElementById('expenseDescription')?.value;
 
-        if (!expenseType || !date || !amount || !description) {
+        if (!expenseType || !expenseDate || !amount || !description) {
             showToast('Please fill all required fields', 'error');
             return;
         }
 
-        // TODO: Implement when backend supports reimbursements
-        showToast('Reimbursement feature coming soon', 'info');
+        if (parseFloat(amount) <= 0) {
+            showToast('Amount must be greater than 0', 'error');
+            return;
+        }
+
+        // v3.0.52: Call the new ESS reimbursement claim endpoint
+        await api.request('/hrms/payroll-processing/adjustments/claim', {
+            method: 'POST',
+            body: JSON.stringify({
+                expense_type: expenseType,
+                expense_date: expenseDate,
+                amount: parseFloat(amount),
+                description: description
+            })
+        });
+
+        showToast('Reimbursement claim submitted successfully! Pending HR approval.', 'success');
         closeModal('reimbursementModal');
+
+        // Reset form
+        document.getElementById('reimbursementForm')?.reset();
+
+        // Refresh claims list
+        loadReimbursements();
     } catch (error) {
         console.error('Error submitting reimbursement:', error);
         showToast(error.message || 'Failed to submit claim', 'error');
@@ -2652,15 +2935,48 @@ async function submitLeaveEncashment() {
 
 /**
  * Format currency
+ * v3.0.53: COUNTRY-AGNOSTIC - accepts currency symbol/code from backend
+ * @param {number} amount - The amount to format
+ * @param {string} currencySymbol - Currency symbol (e.g., '₹', '$', '£')
+ * @param {string} currencyCode - Currency code (e.g., 'INR', 'USD', 'GBP')
  */
-function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '₹0';
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
+function formatCurrency(amount, currencySymbol = '', currencyCode = '') {
+    if (amount === null || amount === undefined) {
+        return currencySymbol ? `${currencySymbol}0` : '0';
+    }
+
+    // If we have currency code, use Intl.NumberFormat for proper localization
+    if (currencyCode) {
+        const localeMap = {
+            'INR': 'en-IN',
+            'USD': 'en-US',
+            'GBP': 'en-GB',
+            'EUR': 'de-DE',
+            'AED': 'ar-AE',
+            'IDR': 'id-ID',
+            'MVR': 'en-MV'
+        };
+        const locale = localeMap[currencyCode] || 'en-US';
+        try {
+            return new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: currencyCode,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        } catch (e) {
+            // Fallback if currency code not supported
+            return `${currencySymbol || currencyCode} ${Number(amount).toLocaleString()}`;
+        }
+    }
+
+    // If only symbol provided, format with symbol
+    if (currencySymbol) {
+        return `${currencySymbol}${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+
+    // Fallback: just format the number
+    return Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 /**
@@ -2974,11 +3290,16 @@ async function refreshCurrentLocation() {
             statusEl.className = 'ess-location-status success';
         }
 
-        // Update coordinates
+        // Update coordinates and accuracy
         const latEl = document.getElementById('currentLatitude');
         const longEl = document.getElementById('currentLongitude');
+        const accEl = document.getElementById('currentAccuracy');
         if (latEl) latEl.textContent = location.latitude.toFixed(6);
         if (longEl) longEl.textContent = location.longitude.toFixed(6);
+        if (accEl) accEl.textContent = location.accuracy ? `±${Math.round(location.accuracy)}m` : '--';
+
+        // v3.0.52: Update location confidence indicator
+        updateLocationConfidenceUI(location.accuracy);
 
         // Calculate and display distance from office
         if (officeLocation && officeLocation.latitude && officeLocation.longitude) {
@@ -3460,7 +3781,7 @@ function buildCalculationProofUIESS(proof, response) {
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Calculation Proof - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                        Calculation - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
                     </h5>
                     <button class="close-btn" onclick="closeModal('calculationProofModal')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -4748,7 +5069,7 @@ function printCalculationProofESS() {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Calculation Proof - ${window.currentCalculationProof.employeeCode || 'Employee'}</title>
+            <title>Calculation - ${window.currentCalculationProof.employeeCode || 'Employee'}</title>
             <style>
                 * { box-sizing: border-box; }
                 body {

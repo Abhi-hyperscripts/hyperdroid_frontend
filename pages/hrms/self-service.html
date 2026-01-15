@@ -10,6 +10,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-ess.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
@@ -364,6 +365,13 @@
                                 <div class="ess-location-coords" id="currentCoords">
                                     <span class="coord-label">Lat:</span> <span id="currentLatitude">--</span>
                                     <span class="coord-label">Long:</span> <span id="currentLongitude">--</span>
+                                    <span class="coord-label">Accuracy:</span> <span id="currentAccuracy">--</span>
+                                </div>
+                                <!-- v3.0.52: Location confidence indicator -->
+                                <div class="ess-location-confidence" id="locationConfidenceSection" style="display: none;">
+                                    <span class="confidence-label">Signal:</span>
+                                    <span class="confidence-badge" id="locationConfidenceBadge">--</span>
+                                    <span class="confidence-reason" id="locationConfidenceReason"></span>
                                 </div>
                                 <button class="ess-refresh-location-btn" id="refreshLocationBtn" title="Refresh Location">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1305,8 +1313,8 @@
                         <select id="loanType" class="form-control" required>
                             <option value="">Select Type</option>
                             <option value="salary_advance">Salary Advance</option>
-                            <option value="personal">Personal Loan</option>
-                            <option value="emergency">Emergency Loan</option>
+                            <option value="personal_loan">Personal Loan</option>
+                            <option value="emergency_loan">Emergency Loan</option>
                         </select>
                     </div>
                     <div class="form-row two-col">
