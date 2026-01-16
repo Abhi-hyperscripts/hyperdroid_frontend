@@ -532,11 +532,9 @@ function initLeaveTypeCountryFilterDropdown(countryOptions) {
     const container = document.getElementById('leaveTypeCountryFilterContainer');
     if (!container || typeof SearchableDropdown !== 'function') return;
 
-    // Add "All Countries" option at the beginning for filter
-    const filterOptions = [
-        { value: '', label: 'All Countries' },
-        ...countryOptions
-    ];
+    // Use country options directly (no "All Countries" option)
+    // Default to first available country
+    const defaultValue = countryOptions.length > 0 ? countryOptions[0].value : '';
 
     // Destroy existing dropdown if any
     if (leaveTypeCountryFilterDropdown) {
@@ -545,14 +543,20 @@ function initLeaveTypeCountryFilterDropdown(countryOptions) {
 
     leaveTypeCountryFilterDropdown = new SearchableDropdown(container, {
         id: 'leaveTypeCountryFilter',
-        options: filterOptions,
-        value: '',
+        options: countryOptions,
+        value: defaultValue,
         placeholder: 'Select Country',
         searchPlaceholder: 'Search countries...',
+        compact: true,
         onChange: (value) => {
             filterLeaveTypesByCountry();
         }
     });
+
+    // Trigger initial filter with default country
+    if (defaultValue) {
+        filterLeaveTypesByCountry();
+    }
 }
 
 /**
