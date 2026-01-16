@@ -72,6 +72,7 @@ function initHolidayYearPicker() {
         value: currentYear,
         placeholder: 'Select Year',
         searchPlaceholder: 'Search year...',
+        compact: true,
         onChange: (value) => {
             loadHolidays();
         }
@@ -89,6 +90,10 @@ function getHolidayYear() {
     return new Date().getFullYear();
 }
 
+// Flag to track when data is loaded (for country filter initialization)
+let dataLoaded = false;
+let searchableDropdownsReady = false;
+
 /**
  * Initialize searchable dropdowns with retry mechanism for script loading timing
  * Retries up to 5 times with 100ms delay if SearchableDropdown isn't available yet
@@ -100,7 +105,13 @@ function initSearchableDropdownsWithRetry(retryCount = 0, maxRetries = 20) {
     if (searchableAvailable && officeSelectionAvailable) {
         initHolidayYearPicker();
         initOrganizationSearchableDropdowns();
+        searchableDropdownsReady = true;
         console.log('[Organization] Searchable dropdowns initialized on retry', retryCount);
+
+        // Initialize country filters if data is already loaded
+        if (dataLoaded) {
+            initCountryFiltersForAllTabs();
+        }
     } else if (retryCount < maxRetries) {
         setTimeout(() => initSearchableDropdownsWithRetry(retryCount + 1, maxRetries), 50);
     } else {
@@ -320,6 +331,186 @@ function initOrganizationSearchableDropdowns() {
     });
 
     console.log('Organization searchable dropdowns initialized');
+}
+
+// ========================================
+// COUNTRY FILTER FUNCTIONALITY
+// ========================================
+
+// Store country filter dropdown instances
+const countryFilterInstances = new Map();
+
+// Store selected country code per tab (default to first country)
+let selectedCountryByTab = {
+    offices: '',
+    departments: '',
+    designations: '',
+    shifts: '',
+    rosters: '',
+    holidays: ''
+};
+
+/**
+ * Build country options from complianceCountries
+ * @returns {Array} Array of {value, label} objects
+ */
+function buildCountryOptions() {
+    if (!complianceCountries || complianceCountries.length === 0) {
+        return [];
+    }
+
+    return complianceCountries.map(c => ({
+        value: c.country_code,
+        label: `${c.country_name} (${c.country_code})`
+    }));
+}
+
+/**
+ * Get the default country code (first country)
+ * @returns {string} The first country code or empty string
+ */
+function getDefaultCountryCode() {
+    if (complianceCountries && complianceCountries.length > 0) {
+        return complianceCountries[0].country_code;
+    }
+    return '';
+}
+
+/**
+ * Initialize country filter dropdown for a specific tab
+ * @param {string} tabName - Tab identifier (offices, departments, etc.)
+ * @param {string} containerId - DOM container ID for the dropdown
+ * @param {Function} onChangeCallback - Function to call when country changes
+ */
+function initCountryFilterDropdown(tabName, containerId, onChangeCallback) {
+    const container = document.getElementById(containerId);
+    if (!container || typeof SearchableDropdown !== 'function') {
+        console.warn(`Cannot init country filter for ${tabName}: container or SearchableDropdown not available`);
+        return;
+    }
+
+    // Destroy existing dropdown if any
+    if (countryFilterInstances.has(tabName)) {
+        countryFilterInstances.get(tabName).destroy?.();
+    }
+
+    const countryOptions = buildCountryOptions();
+    const defaultValue = getDefaultCountryCode();
+
+    // Set initial selected country
+    selectedCountryByTab[tabName] = defaultValue;
+
+    const dropdown = new SearchableDropdown(container, {
+        id: `${tabName}CountryFilter`,
+        options: countryOptions,
+        value: defaultValue,
+        placeholder: 'Select Country',
+        searchPlaceholder: 'Search countries...',
+        compact: true,
+        onChange: (value) => {
+            selectedCountryByTab[tabName] = value;
+            if (onChangeCallback) {
+                onChangeCallback(value);
+            }
+        }
+    });
+
+    countryFilterInstances.set(tabName, dropdown);
+    return dropdown;
+}
+
+/**
+ * Initialize country filters for all tabs
+ * Called after complianceCountries is loaded
+ */
+function initCountryFiltersForAllTabs() {
+    // Offices tab - country filter directly filters offices
+    initCountryFilterDropdown('offices', 'officeCountryFilterContainer', (countryCode) => {
+        updateOfficesTable();
+    });
+
+    // Departments tab - country filter filters office dropdown options
+    initCountryFilterDropdown('departments', 'departmentCountryFilterContainer', (countryCode) => {
+        updateOfficeDropdownForCountry('departmentOffice', countryCode);
+        updateDepartmentsTable();
+    });
+
+    // Designations tab - country filter filters office dropdown options
+    initCountryFilterDropdown('designations', 'designationCountryFilterContainer', (countryCode) => {
+        updateOfficeDropdownForCountry('designationOffice', countryCode);
+        updateDesignationDepartmentFilter();
+        updateDesignationsTable();
+    });
+
+    // Shifts tab - country filter filters office dropdown options
+    initCountryFilterDropdown('shifts', 'shiftCountryFilterContainer', (countryCode) => {
+        updateOfficeDropdownForCountry('shiftOffice', countryCode);
+        updateShiftsTable();
+    });
+
+    // Shift Rosters tab - country filter filters office dropdown options
+    initCountryFilterDropdown('rosters', 'rosterCountryFilterContainer', (countryCode) => {
+        updateOfficeDropdownForCountry('rosterOffice', countryCode);
+        const selectedOffice = getSearchableDropdownValue('rosterOffice');
+        updateRosterShiftFilter(selectedOffice);
+        updateRostersTable();
+    });
+
+    // Holidays tab - country filter filters office dropdown options
+    initCountryFilterDropdown('holidays', 'holidayCountryFilterContainer', (countryCode) => {
+        updateOfficeDropdownForCountry('holidayOffice', countryCode);
+        updateHolidaysTable();
+    });
+
+    console.log('Country filters initialized for all tabs');
+}
+
+/**
+ * Update office dropdown options based on selected country
+ * @param {string} dropdownId - The office dropdown ID
+ * @param {string} countryCode - The selected country code
+ */
+function updateOfficeDropdownForCountry(dropdownId, countryCode) {
+    const dropdown = searchableDropdownInstances.get(dropdownId);
+    if (!dropdown) return;
+
+    // Filter active offices by country
+    let filteredOffices = offices.filter(o => o.is_active);
+    if (countryCode) {
+        filteredOffices = filteredOffices.filter(o => o.country_code === countryCode);
+    }
+
+    // Build options without "All Offices" since country is now the top filter
+    const options = filteredOffices.map(o => ({
+        value: o.id,
+        label: `${o.office_name} (${o.office_code})`
+    }));
+
+    dropdown.setOptions(options);
+
+    // Auto-select first office if available
+    if (options.length > 0) {
+        dropdown.setValue(options[0].value);
+        HrmsOfficeSelection.setSelectedOfficeId(options[0].value);
+    } else {
+        dropdown.setValue('');
+    }
+}
+
+/**
+ * Get offices filtered by country for a specific tab
+ * @param {string} tabName - Tab identifier
+ * @returns {Array} Filtered offices
+ */
+function getOfficesForTab(tabName) {
+    const countryCode = selectedCountryByTab[tabName] || '';
+    let filteredOffices = offices.filter(o => o.is_active);
+
+    if (countryCode) {
+        filteredOffices = filteredOffices.filter(o => o.country_code === countryCode);
+    }
+
+    return filteredOffices;
 }
 
 /**
@@ -1091,6 +1282,12 @@ async function loadAllData() {
     populateDepartmentSelects();
     populateRosterFilters();
 
+    // Mark data as loaded and initialize country filters if SearchableDropdown is ready
+    dataLoaded = true;
+    if (searchableDropdownsReady) {
+        initCountryFiltersForAllTabs();
+    }
+
     // Load employees only if user can edit (for department head selection, etc.)
     if (canEditOrganization()) {
         await loadEmployees();
@@ -1169,6 +1366,7 @@ function getStatesForCountry(countryIdOrName) {
 function updateOfficesTable() {
     const tbody = document.getElementById('officesTable');
     const searchTerm = document.getElementById('officeSearch')?.value?.toLowerCase() || '';
+    const selectedCountry = selectedCountryByTab.offices || '';
 
     // Map office_type to display text for searching
     const typeMap = {
@@ -1178,7 +1376,27 @@ function updateOfficesTable() {
         'satellite': 'satellite office'
     };
 
-    const filtered = offices.filter(o => {
+    // First filter by country
+    let countryFiltered = offices;
+    if (selectedCountry) {
+        countryFiltered = offices.filter(o => o.country_code === selectedCountry);
+    }
+
+    // Update stats based on country filter (before search filter)
+    const totalOfficesEl = document.getElementById('totalOffices');
+    const headOfficeCountEl = document.getElementById('headOfficeCount');
+    const regionalOfficeCountEl = document.getElementById('regionalOfficeCount');
+    const branchOfficeCountEl = document.getElementById('branchOfficeCount');
+    const satelliteOfficeCountEl = document.getElementById('satelliteOfficeCount');
+
+    if (totalOfficesEl) totalOfficesEl.textContent = countryFiltered.length;
+    if (headOfficeCountEl) headOfficeCountEl.textContent = countryFiltered.filter(o => o.office_type === 'head').length;
+    if (regionalOfficeCountEl) regionalOfficeCountEl.textContent = countryFiltered.filter(o => o.office_type === 'regional').length;
+    if (branchOfficeCountEl) branchOfficeCountEl.textContent = countryFiltered.filter(o => o.office_type === 'branch' || !o.office_type).length;
+    if (satelliteOfficeCountEl) satelliteOfficeCountEl.textContent = countryFiltered.filter(o => o.office_type === 'satellite').length;
+
+    // Then filter by search term
+    const filtered = countryFiltered.filter(o => {
         const officeTypeText = typeMap[o.office_type] || 'branch office';
         const statusText = o.is_active ? 'active' : 'inactive';
         const location = `${o.city || ''} ${o.country || ''}`.toLowerCase();
