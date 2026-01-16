@@ -1496,19 +1496,21 @@ async function loadMyLeaves() {
             return `
                 <tr>
                     <td>${escapeHtml(r.leave_type_name || r.leaveTypeName || 'Leave')}</td>
-                    <td>${formatDate(r.from_date || r.fromDate)}</td>
-                    <td>${formatDate(r.to_date || r.toDate)}</td>
+                    <td>${formatDate(r.start_date || r.from_date || r.fromDate)}</td>
+                    <td>${formatDate(r.end_date || r.to_date || r.toDate)}</td>
                     <td>${r.total_days || r.totalDays || 1}</td>
                     <td>${escapeHtml(truncateText(r.reason, 30))}</td>
                     <td><span class="status-badge status-${reqStatus}">${capitalizeFirst(reqStatus)}</span></td>
                     <td>
-                        <button class="action-btn" onclick="viewLeaveRequest('${r.id}')" title="View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                        ${reqStatus === 'pending' ? `<button class="action-btn" onclick="cancelLeaveRequest('${r.id}')" title="Cancel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
+                        <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                            <button class="action-btn" onclick="viewLeaveRequest('${r.id}')" title="View">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                            ${reqStatus === 'pending' ? `<button class="action-btn" onclick="cancelLeaveRequest('${r.id}')" title="Cancel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1538,6 +1540,131 @@ function updateLeaveBalanceCards(balances) {
 }
 
 /**
+ * View leave request details
+ */
+async function viewLeaveRequest(requestId) {
+    try {
+        const response = await api.request(`/hrms/leave/requests/${requestId}`);
+        if (!response) {
+            showToast('Leave request not found', 'error');
+            return;
+        }
+
+        const r = response;
+        const status = r.status?.toLowerCase() || 'pending';
+        const statusClass = status === 'approved' ? 'ess-badge-success' :
+                           status === 'rejected' ? 'ess-badge-danger' : 'ess-badge-warning';
+
+        // Create and show modal
+        const modalHtml = `
+            <div class="ess-modal-overlay" id="viewLeaveModal" onclick="if(event.target === this) closeViewLeaveModal()">
+                <div class="ess-modal-content" style="max-width: 500px;">
+                    <div class="ess-modal-header">
+                        <h2>Leave Request Details</h2>
+                        <button class="ess-modal-close" onclick="closeViewLeaveModal()">&times;</button>
+                    </div>
+                    <div class="ess-modal-body">
+                        <div class="ess-detail-group">
+                            <label>Leave Type</label>
+                            <p>${escapeHtml(r.leave_type_name || r.leave_type || 'N/A')}</p>
+                        </div>
+                        <div class="ess-detail-row">
+                            <div class="ess-detail-group">
+                                <label>From Date</label>
+                                <p>${formatDate(r.start_date || r.from_date)}</p>
+                            </div>
+                            <div class="ess-detail-group">
+                                <label>To Date</label>
+                                <p>${formatDate(r.end_date || r.to_date)}</p>
+                            </div>
+                        </div>
+                        <div class="ess-detail-row">
+                            <div class="ess-detail-group">
+                                <label>Total Days</label>
+                                <p>${r.total_days ?? r.days ?? 0}</p>
+                            </div>
+                            <div class="ess-detail-group">
+                                <label>Status</label>
+                                <p><span class="ess-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></p>
+                            </div>
+                        </div>
+                        <div class="ess-detail-group">
+                            <label>Reason</label>
+                            <p>${escapeHtml(r.reason || 'No reason provided')}</p>
+                        </div>
+                        ${r.half_day ? `
+                        <div class="ess-detail-group">
+                            <label>Half Day</label>
+                            <p>${r.half_day_type || 'Yes'}</p>
+                        </div>
+                        ` : ''}
+                        ${r.approved_by || r.rejected_by ? `
+                        <div class="ess-detail-group">
+                            <label>${r.status === 'approved' ? 'Approved' : 'Rejected'} By</label>
+                            <p>${escapeHtml(r.approved_by || r.rejected_by || 'N/A')}</p>
+                        </div>
+                        ` : ''}
+                        ${r.rejection_reason ? `
+                        <div class="ess-detail-group">
+                            <label>Rejection Reason</label>
+                            <p>${escapeHtml(r.rejection_reason)}</p>
+                        </div>
+                        ` : ''}
+                        <div class="ess-detail-group">
+                            <label>Submitted On</label>
+                            <p>${formatDate(r.created_at || r.applied_on)}</p>
+                        </div>
+                    </div>
+                    <div class="ess-modal-actions">
+                        <button class="ess-btn ess-btn-secondary" onclick="closeViewLeaveModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('viewLeaveModal');
+        if (existingModal) existingModal.remove();
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    } catch (error) {
+        console.error('Error viewing leave request:', error);
+        showToast('Failed to load leave request details', 'error');
+    }
+}
+
+/**
+ * Close view leave modal
+ */
+function closeViewLeaveModal() {
+    const modal = document.getElementById('viewLeaveModal');
+    if (modal) modal.remove();
+}
+
+/**
+ * Cancel a leave request
+ */
+async function cancelLeaveRequest(requestId) {
+    if (!confirm('Are you sure you want to cancel this leave request?')) {
+        return;
+    }
+
+    try {
+        await api.request(`/hrms/leave/requests/${requestId}`, {
+            method: 'DELETE'
+        });
+        showToast('Leave request cancelled successfully', 'success');
+        // Reload the leaves list
+        loadMyLeaves();
+    } catch (error) {
+        console.error('Error cancelling leave request:', error);
+        showToast(error.message || 'Failed to cancel leave request', 'error');
+    }
+}
+
+/**
  * Load detailed leave balance
  */
 async function loadLeaveBalanceDetailed() {
@@ -1551,33 +1678,77 @@ async function loadLeaveBalanceDetailed() {
         const balances = response?.balances || response || [];
 
         if (!balances.length) {
-            container.innerHTML = `<div class="ess-empty-state"><p>No leave balances configured</p></div>`;
+            container.innerHTML = `
+                <div class="ess-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <p>No leave balances configured</p>
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = `
             <div class="ess-leave-balance-grid">
-                ${balances.map(b => `
-                    <div class="ess-leave-balance-item">
-                        <div class="leave-type-header">
-                            <span class="leave-type-code">${escapeHtml(b.leave_type_code || b.code)}</span>
-                            <span class="leave-type-name">${escapeHtml(b.leave_type_name || b.name)}</span>
+                ${balances.map(b => {
+                    // Calculate available balance
+                    const total = parseFloat(b.total_days) || parseFloat(b.total) || 0;
+                    const carried = parseFloat(b.carried_forward_days) || 0;
+                    const used = parseFloat(b.used_days) || parseFloat(b.used) || 0;
+                    const pending = parseFloat(b.pending_days) || parseFloat(b.pending) || 0;
+                    const encashed = parseFloat(b.encashed_days) || 0;
+                    const available = Math.max(0, total + carried - used - pending - encashed);
+                    const totalAllocation = total + carried;
+
+                    // Calculate usage percentage for progress bar
+                    const usedPercent = totalAllocation > 0 ? Math.min(((used + pending + encashed) / totalAllocation) * 100, 100) : 0;
+
+                    // Check if this is a zero allocation leave type
+                    const isZeroBalance = available === 0 && totalAllocation === 0;
+
+                    return `
+                        <div class="ess-leave-balance-item ${isZeroBalance ? 'zero-balance' : ''}">
+                            <div class="leave-type-header">
+                                <span class="leave-type-code">${escapeHtml(b.leave_type_code || b.code || 'N/A')}</span>
+                                <span class="leave-type-name">${escapeHtml(b.leave_type_name || b.name || 'Unknown')}</span>
+                            </div>
+                            <div class="leave-balance-bar">
+                                <div class="balance-used" style="width: ${usedPercent}%"></div>
+                            </div>
+                            <div class="leave-balance-stats">
+                                <span class="balance-available">${available} available</span>
+                                <span class="balance-total">of ${totalAllocation}</span>
+                            </div>
+                            ${(used > 0 || pending > 0 || encashed > 0 || carried > 0) ? `
+                                <div class="leave-balance-breakdown">
+                                    ${used > 0 ? `<span class="breakdown-item used">Used: ${used}</span>` : ''}
+                                    ${pending > 0 ? `<span class="breakdown-item pending">Pending: ${pending}</span>` : ''}
+                                    ${encashed > 0 ? `<span class="breakdown-item encashed">Encashed: ${encashed}</span>` : ''}
+                                    ${carried > 0 ? `<span class="breakdown-item carried">Carried Forward: ${carried}</span>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div class="leave-balance-bar">
-                            <div class="balance-used" style="width: ${Math.min((b.used || 0) / (b.total || 1) * 100, 100)}%"></div>
-                        </div>
-                        <div class="leave-balance-stats">
-                            <span class="balance-available">${b.available ?? b.balance ?? 0} available</span>
-                            <span class="balance-total">of ${b.total ?? b.annual_quota ?? 0}</span>
-                        </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
 
     } catch (error) {
         console.error('Error loading leave balances:', error);
-        container.innerHTML = `<div class="ess-error-state"><p>Failed to load leave balances</p></div>`;
+        container.innerHTML = `
+            <div class="ess-error-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p>Failed to load leave balances</p>
+            </div>
+        `;
     }
 }
 
@@ -2562,7 +2733,7 @@ async function showApplyLeaveModal() {
             { value: '', label: 'Select Leave Type' },
             ...types.map(t => ({
                 value: t.id,
-                label: t.leave_type_name || t.name
+                label: t.leave_name || t.leave_type_name || t.name
             }))
         ];
 
@@ -2574,7 +2745,7 @@ async function showApplyLeaveModal() {
             const select = document.getElementById('leaveType');
             if (select) {
                 select.innerHTML = '<option value="">Select Leave Type</option>' +
-                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_type_name || t.name)}</option>`).join('');
+                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_name || t.leave_type_name || t.name)}</option>`).join('');
             }
         }
     } catch (e) {
@@ -2634,16 +2805,16 @@ async function submitLeaveApplication() {
             return;
         }
 
-        // v3.0.52: Fixed API call format
+        // v3.0.55: Fixed field names to match backend (start_date, end_date)
         await api.request('/hrms/leave/requests', {
             method: 'POST',
             body: JSON.stringify({
                 leave_type_id: leaveType,
-                from_date: fromDate,
-                to_date: toDate,
+                start_date: fromDate,
+                end_date: toDate,
                 reason,
-                half_day: halfDay || null,
-                emergency_contact: emergencyContact || null
+                is_half_day: halfDay === 'first_half' || halfDay === 'second_half' ? true : false,
+                half_day_type: halfDay || null
             })
         });
 
@@ -2677,13 +2848,13 @@ async function showEncashLeaveModal() {
     // Load leave types with encashment enabled
     try {
         const response = await api.request('/hrms/leave/types');
-        const types = (response?.types || response || []).filter(t => t.allow_encashment);
+        const types = (response?.types || response || []).filter(t => t.encashment_enabled || t.allow_encashment);
 
         const options = [
             { value: '', label: 'Select Leave Type' },
             ...types.map(t => ({
                 value: t.id,
-                label: t.leave_type_name || t.name
+                label: t.leave_name || t.leave_type_name || t.name
             }))
         ];
 
@@ -2694,7 +2865,7 @@ async function showEncashLeaveModal() {
             const select = document.getElementById('encashLeaveType');
             if (select) {
                 select.innerHTML = '<option value="">Select Leave Type</option>' +
-                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_type_name || t.name)}</option>`).join('');
+                    types.map(t => `<option value="${t.id}">${escapeHtml(t.leave_name || t.leave_type_name || t.name)}</option>`).join('');
             }
         }
     } catch (e) {
@@ -2753,9 +2924,9 @@ function openReimbursementModal() {
 }
 
 /**
- * Update encashment preview
+ * Update encashment preview - fetch leave balance and calculate available days
  */
-function updateEncashPreview() {
+async function updateEncashPreview() {
     const leaveTypeId = encashLeaveTypeDropdown
         ? encashLeaveTypeDropdown.getValue()
         : document.getElementById('encashLeaveType')?.value;
@@ -2768,12 +2939,50 @@ function updateEncashPreview() {
     if (!leaveTypeId) {
         if (availableEl) availableEl.textContent = 'Available: 0 days';
         if (previewEl) previewEl.textContent = '--';
+        // Store available days for validation
+        window.encashableBalance = 0;
         return;
     }
 
-    // TODO: Calculate based on actual leave balance and daily rate
-    // For now show placeholder
-    if (previewEl) previewEl.textContent = days > 0 ? 'Calculating...' : '--';
+    // Fetch leave balance for the selected leave type
+    try {
+        const year = new Date().getFullYear();
+        const response = await api.request(`/hrms/leave/balances?year=${year}`);
+        const balances = response?.balances || response || [];
+
+        // Find the balance for the selected leave type
+        const balance = balances.find(b => b.leave_type_id === leaveTypeId);
+
+        if (balance) {
+            // Calculate available balance: total + carried_forward - used - pending - encashed
+            const total = parseFloat(balance.total_days) || 0;
+            const carried = parseFloat(balance.carried_forward_days) || 0;
+            const used = parseFloat(balance.used_days) || 0;
+            const pending = parseFloat(balance.pending_days) || 0;
+            const encashed = parseFloat(balance.encashed_days) || 0;
+            const available = total + carried - used - pending - encashed;
+
+            if (availableEl) availableEl.textContent = `Available: ${Math.max(0, available)} days`;
+            // Store available days for validation
+            window.encashableBalance = Math.max(0, available);
+        } else {
+            if (availableEl) availableEl.textContent = 'Available: 0 days';
+            window.encashableBalance = 0;
+        }
+    } catch (error) {
+        console.error('Error fetching leave balance for encashment:', error);
+        if (availableEl) availableEl.textContent = 'Available: -- days';
+        window.encashableBalance = 0;
+    }
+
+    // Update amount preview
+    if (previewEl) {
+        if (days > 0 && window.encashableBalance > 0) {
+            previewEl.textContent = 'Contact HR for rate';
+        } else {
+            previewEl.textContent = '--';
+        }
+    }
 }
 
 /**
@@ -2859,6 +3068,7 @@ async function withdrawAdjustment(adjustmentId) {
 /**
  * Submit reimbursement claim
  * v3.0.52: Connected to backend adjustments/claim API
+ * v3.0.53: Updated to use FormData for atomic file upload (optional receipt)
  */
 async function submitReimbursement() {
     try {
@@ -2868,6 +3078,8 @@ async function submitReimbursement() {
         const expenseDate = document.getElementById('expenseDate')?.value;
         const amount = document.getElementById('expenseAmount')?.value;
         const description = document.getElementById('expenseDescription')?.value;
+        const receiptInput = document.getElementById('expenseReceipt');
+        const receiptFile = receiptInput?.files?.[0];
 
         if (!expenseType || !expenseDate || !amount || !description) {
             showToast('Please fill all required fields', 'error');
@@ -2879,16 +3091,34 @@ async function submitReimbursement() {
             return;
         }
 
-        // v3.0.52: Call the new ESS reimbursement claim endpoint
-        await api.request('/hrms/payroll-processing/adjustments/claim', {
-            method: 'POST',
-            body: JSON.stringify({
-                expense_type: expenseType,
-                expense_date: expenseDate,
-                amount: parseFloat(amount),
-                description: description
-            })
-        });
+        // v3.0.53: Validate receipt file if provided (optional, max 5MB, image/pdf only)
+        if (receiptFile) {
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            if (!allowedTypes.includes(receiptFile.type)) {
+                showToast('Invalid receipt file type. Only PDF, JPEG, and PNG are allowed.', 'error');
+                return;
+            }
+            const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+            if (receiptFile.size > maxSizeBytes) {
+                showToast('Receipt file too large. Maximum size is 5MB.', 'error');
+                return;
+            }
+        }
+
+        // v3.0.53: Build FormData for atomic upload (file + data together)
+        const formData = new FormData();
+        formData.append('expense_type', expenseType);
+        formData.append('expense_date', expenseDate);
+        formData.append('amount', parseFloat(amount).toString());
+        formData.append('description', description);
+
+        // Append receipt file if provided (optional)
+        if (receiptFile) {
+            formData.append('receipt', receiptFile);
+        }
+
+        // v3.0.53: Use the new API method that handles FormData
+        await api.submitReimbursementClaim(formData);
 
         showToast('Reimbursement claim submitted successfully! Pending HR approval.', 'success');
         closeModal('reimbursementModal');
@@ -2912,7 +3142,7 @@ async function submitLeaveEncashment() {
         const leaveTypeId = encashLeaveTypeDropdown
             ? encashLeaveTypeDropdown.getValue()
             : document.getElementById('encashLeaveType')?.value;
-        const days = document.getElementById('encashDays')?.value;
+        const days = parseFloat(document.getElementById('encashDays')?.value) || 0;
         const reason = document.getElementById('encashReason')?.value;
 
         if (!leaveTypeId || !days) {
@@ -2920,9 +3150,28 @@ async function submitLeaveEncashment() {
             return;
         }
 
-        // TODO: Implement when backend supports leave encashment
-        showToast('Leave encashment feature coming soon', 'info');
+        // Validate days against available balance
+        if (window.encashableBalance && days > window.encashableBalance) {
+            showToast(`Cannot encash more than ${window.encashableBalance} days`, 'error');
+            return;
+        }
+
+        // Call backend API to process encashment
+        const year = new Date().getFullYear();
+        const response = await api.request('/hrms/leave/encash', {
+            method: 'POST',
+            body: JSON.stringify({
+                leave_type_id: leaveTypeId,
+                year: year,
+                days: days
+            })
+        });
+
+        showToast(response?.message || 'Leave encashment submitted successfully', 'success');
         closeModal('encashLeaveModal');
+
+        // Refresh leave balances
+        loadMyLeaves();
     } catch (error) {
         console.error('Error submitting encashment:', error);
         showToast(error.message || 'Failed to submit encashment', 'error');

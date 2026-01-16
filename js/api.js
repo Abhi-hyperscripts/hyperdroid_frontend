@@ -2099,6 +2099,51 @@ class API {
         });
     }
 
+    /**
+     * v3.0.53: Submit reimbursement claim with optional receipt file.
+     * Uses FormData for atomic file + data upload.
+     * @param {FormData} formData - FormData with expense_type, expense_date, amount, description, and optional receipt file
+     * @returns {Promise<Object>} Created adjustment data
+     */
+    async submitReimbursementClaim(formData) {
+        const token = getAuthToken();
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        const response = await fetch(`${this._getBaseUrl('/hrms/')}/payroll-processing/adjustments/claim`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+                // Note: Do NOT set Content-Type for FormData - browser sets it automatically with boundary
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.error || errorText;
+            } catch {
+                errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
+        }
+
+        return response.json();
+    }
+
+    /**
+     * v3.0.53: Get presigned URL for reimbursement receipt download.
+     * @param {string} adjustmentId - The adjustment ID
+     * @returns {Promise<Object>} Object with url, file_name, and expires_in_minutes
+     */
+    async getReimbursementReceiptUrl(adjustmentId) {
+        return this.request(`/hrms/payroll-processing/adjustments/${adjustmentId}/receipt`);
+    }
+
     // --- Announcements ---
     async getAnnouncements() {
         return this.request('/hrms/announcements');

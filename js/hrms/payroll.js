@@ -15144,17 +15144,19 @@ function updateAdjustmentStats() {
         a.effective_year === currentYear
     ).length;
 
-    const totalReimbursements = adjustments
-        .filter(a => a.adjustment_type === 'reimbursement' && (a.status === 'approved' || a.status === 'applied'))
-        .reduce((sum, a) => sum + (a.amount || 0), 0);
+    const reimbursementItems = adjustments
+        .filter(a => a.adjustment_type === 'reimbursement' && (a.status === 'approved' || a.status === 'applied'));
+    const totalReimbursements = reimbursementItems.reduce((sum, a) => sum + (a.amount || 0), 0);
 
-    const totalBonuses = adjustments
-        .filter(a => a.adjustment_type === 'bonus' && (a.status === 'approved' || a.status === 'applied'))
-        .reduce((sum, a) => sum + (a.amount || 0), 0);
+    const bonusItems = adjustments
+        .filter(a => a.adjustment_type === 'bonus' && (a.status === 'approved' || a.status === 'applied'));
+    const totalBonuses = bonusItems.reduce((sum, a) => sum + (a.amount || 0), 0);
 
-    // v3.0.32: Use currency from selected office filter (not global country filter)
-    const selectedOfficeId = document.getElementById('adjustmentOfficeFilter')?.value || '';
-    const { code: currCode, symbol: currSymbol } = getCurrencyFromOfficeId(selectedOfficeId);
+    // v3.0.55: Use backend-provided currency from adjustments (country-agnostic)
+    // Get representative currency from first adjustment with currency info
+    const firstWithCurrency = adjustments.find(a => a.currency_symbol);
+    const currCode = firstWithCurrency?.currency_code || '';
+    const currSymbol = firstWithCurrency?.currency_symbol || '';
 
     document.getElementById('pendingAdjustmentsCount').textContent = pendingCount;
     document.getElementById('approvedAdjustmentsCount').textContent = approvedThisMonth;
@@ -15216,21 +15218,38 @@ function renderAdjustmentsTable() {
         return;
     }
 
-    // v3.0.32: Get currency from selected office filter
-    const selectedOfficeId = document.getElementById('adjustmentOfficeFilter')?.value || '';
-    const { code: currCode, symbol: currSymbol } = getCurrencyFromOfficeId(selectedOfficeId);
+    // v3.0.55: Removed hardcoded currency - now using backend-provided currency_symbol per adjustment
+    // Each adjustment is enriched with currency from employee's office → country config
 
     tbody.innerHTML = filtered.map(adj => {
         const statusBadge = getAdjustmentStatusBadge(adj.status);
         const typeBadge = getAdjustmentTypeBadge(adj.adjustment_type);
         const period = `${getMonthName(adj.effective_month)} ${adj.effective_year}`;
 
+        // v3.0.54: Generate initials from employee name for avatar
+        const fullName = adj.employee_name || '-';
+        const nameParts = fullName.split(' ').filter(p => p.length > 0);
+        const initials = nameParts.length >= 2
+            ? (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase()
+            : (nameParts[0] || '-').substring(0, 2).toUpperCase();
+
+        // Avatar: show profile photo if available, otherwise show initials
+        const avatarHtml = adj.profile_photo_url
+            ? `<img src="${escapeHtml(adj.profile_photo_url)}" alt="${escapeHtml(fullName)}" class="emp-avatar-xs-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+               <div class="emp-avatar-xs" style="display:none;">${initials}</div>`
+            : `<div class="emp-avatar-xs">${initials}</div>`;
+
+        // v3.0.55: Use backend-provided currency (country-agnostic)
+        const currSymbol = adj.currency_symbol || '';
+        const currCode = adj.currency_code || '';
+
         return `
             <tr>
                 <td>
-                    <div class="employee-cell">
-                        <span class="employee-name">${escapeHtml(adj.employee_name || '-')}</span>
-                        <span class="employee-code">${escapeHtml(adj.employee_code || '')}</span>
+                    <div class="emp-cell-compact">
+                        ${avatarHtml}
+                        <span class="emp-name-inline">${escapeHtml(fullName)}</span>
+                        <span class="emp-code-badge">${escapeHtml(adj.employee_code || '-')}</span>
                     </div>
                 </td>
                 <td>${typeBadge}</td>
@@ -15673,6 +15692,16 @@ async function viewAdjustment(adjustmentId) {
             rejectionRow.style.display = 'none';
         }
 
+        // v3.0.53: Show/hide receipt section for reimbursements with attached receipt
+        const receiptRow = document.getElementById('viewAdjustmentReceiptRow');
+        if (adj.receipt_s3_key && adj.receipt_file_name) {
+            document.getElementById('viewAdjustmentReceiptName').textContent = adj.receipt_file_name;
+            document.getElementById('viewAdjustmentReceiptBtn').setAttribute('data-adjustment-id', adj.id);
+            receiptRow.style.display = '';
+        } else {
+            receiptRow.style.display = 'none';
+        }
+
         // Show/hide action buttons based on status and permissions
         const btnApprove = document.getElementById('btnApproveAdjustment');
         const btnReject = document.getElementById('btnRejectAdjustment');
@@ -15690,6 +15719,37 @@ async function viewAdjustment(adjustmentId) {
     } catch (error) {
         console.error('Error loading adjustment details:', error);
         showToast('Failed to load adjustment details', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * v3.0.53: Download/view reimbursement receipt
+ * Gets presigned URL from backend and opens in new tab
+ */
+async function downloadAdjustmentReceipt() {
+    try {
+        const adjustmentId = document.getElementById('viewAdjustmentReceiptBtn')?.getAttribute('data-adjustment-id');
+        if (!adjustmentId) {
+            showToast('No receipt available', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        // Get presigned download URL
+        const result = await api.getReimbursementReceiptUrl(adjustmentId);
+
+        if (result.url) {
+            // Open receipt in new tab
+            window.open(result.url, '_blank');
+        } else {
+            showToast('Receipt not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error downloading receipt:', error);
+        showToast(error.message || 'Failed to download receipt', 'error');
     } finally {
         hideLoading();
     }
@@ -16537,10 +16597,10 @@ function renderEmployeeSalariesTable(employees) {
                 <td>${escapeHtml(emp.department_name || '-')}</td>
                 <td>${escapeHtml(emp.designation_name || '-')}</td>
                 <td>${escapeHtml(structureName)}</td>
-                <td class="text-right">${ctcDisplay}</td>
+                <td class="amount-cell">${ctcDisplay}</td>
                 <td>${effectiveFrom}</td>
-                <td>${statusBadge}</td>
-                <td>${actionBtn}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${actionBtn}</td>
             </tr>
         `;
     });

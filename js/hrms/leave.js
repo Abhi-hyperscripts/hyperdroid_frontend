@@ -3,8 +3,9 @@ let leaveTypes = [];
 let employees = [];
 let departments = [];
 let offices = [];
+let countries = [];
 
-// SearchableDropdown instances
+// SearchableDropdown instances - Filter dropdowns
 let requestOfficeDropdown = null;
 let requestStatusDropdown = null;
 let requestDepartmentDropdown = null;
@@ -13,6 +14,19 @@ let balanceYearDropdown = null;
 let balanceDepartmentDropdown = null;
 let calendarOfficeDropdown = null;
 let calendarDepartmentDropdown = null;
+
+// SearchableDropdown instances - Leave Type Modal
+let leaveTypeCarryForwardDropdown = null;
+let leaveTypeIsPaidDropdown = null;
+let leaveTypeRequiresApprovalDropdown = null;
+let leaveTypeAllowHalfDayDropdown = null;
+let leaveTypeProrateOnJoiningDropdown = null;
+let leaveTypeIsActiveDropdown = null;
+let leaveTypeModalDropdownsInitialized = false;
+
+// SearchableDropdown instances - Country dropdowns
+let leaveTypeCountryFilterDropdown = null;
+let leaveTypeModalCountryDropdown = null;
 
 // Employee search dropdown state (virtual scrolling)
 let filteredEmployees = [];
@@ -305,6 +319,118 @@ function initializeFilterDropdowns() {
     }
 }
 
+// Initialize SearchableDropdowns for Leave Type Modal
+function initializeLeaveTypeModalDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') {
+        console.warn('SearchableDropdown not available for Leave Type modal');
+        return;
+    }
+
+    // Only initialize once
+    if (leaveTypeModalDropdownsInitialized) return;
+
+    // Allow Carry Forward dropdown
+    if (document.getElementById('carryForward') && !leaveTypeCarryForwardDropdown) {
+        leaveTypeCarryForwardDropdown = convertSelectToSearchable('carryForward', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    // Paid Leave dropdown
+    if (document.getElementById('isPaid') && !leaveTypeIsPaidDropdown) {
+        leaveTypeIsPaidDropdown = convertSelectToSearchable('isPaid', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    // Requires Approval dropdown
+    if (document.getElementById('requiresApproval') && !leaveTypeRequiresApprovalDropdown) {
+        leaveTypeRequiresApprovalDropdown = convertSelectToSearchable('requiresApproval', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    // Allow Half Day dropdown
+    if (document.getElementById('allowHalfDay') && !leaveTypeAllowHalfDayDropdown) {
+        leaveTypeAllowHalfDayDropdown = convertSelectToSearchable('allowHalfDay', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    // Prorate on Joining dropdown
+    if (document.getElementById('prorateOnJoining') && !leaveTypeProrateOnJoiningDropdown) {
+        leaveTypeProrateOnJoiningDropdown = convertSelectToSearchable('prorateOnJoining', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    // Status dropdown
+    if (document.getElementById('typeIsActive') && !leaveTypeIsActiveDropdown) {
+        leaveTypeIsActiveDropdown = convertSelectToSearchable('typeIsActive', {
+            compact: false,
+            placeholder: 'Select',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    leaveTypeModalDropdownsInitialized = true;
+}
+
+// Set Leave Type Modal dropdown values (for edit mode)
+function setLeaveTypeModalDropdownValues(values) {
+    if (leaveTypeCarryForwardDropdown) {
+        leaveTypeCarryForwardDropdown.setValue(values.carryForward);
+    }
+    if (leaveTypeIsPaidDropdown) {
+        leaveTypeIsPaidDropdown.setValue(values.isPaid);
+    }
+    if (leaveTypeRequiresApprovalDropdown) {
+        leaveTypeRequiresApprovalDropdown.setValue(values.requiresApproval);
+    }
+    if (leaveTypeAllowHalfDayDropdown) {
+        leaveTypeAllowHalfDayDropdown.setValue(values.allowHalfDay);
+    }
+    if (leaveTypeProrateOnJoiningDropdown) {
+        leaveTypeProrateOnJoiningDropdown.setValue(values.prorateOnJoining);
+    }
+    if (leaveTypeIsActiveDropdown) {
+        leaveTypeIsActiveDropdown.setValue(values.isActive);
+    }
+}
+
+// Reset Leave Type Modal dropdown values (for create mode)
+function resetLeaveTypeModalDropdowns() {
+    // Reset to default values
+    if (leaveTypeCarryForwardDropdown) {
+        leaveTypeCarryForwardDropdown.setValue('false');
+    }
+    if (leaveTypeIsPaidDropdown) {
+        leaveTypeIsPaidDropdown.setValue('true');
+    }
+    if (leaveTypeRequiresApprovalDropdown) {
+        leaveTypeRequiresApprovalDropdown.setValue('true');
+    }
+    if (leaveTypeAllowHalfDayDropdown) {
+        leaveTypeAllowHalfDayDropdown.setValue('true');
+    }
+    if (leaveTypeProrateOnJoiningDropdown) {
+        leaveTypeProrateOnJoiningDropdown.setValue('false');
+    }
+    if (leaveTypeIsActiveDropdown) {
+        leaveTypeIsActiveDropdown.setValue('true');
+    }
+}
+
 function setupTabs() {
     const tabBtns = document.querySelectorAll('.sidebar-btn');
     tabBtns.forEach(btn => {
@@ -350,9 +476,30 @@ function switchTab(tabName) {
 
 async function loadLeaveTypes() {
     try {
-        const response = await api.request('/hrms/leave-types');
+        // Load both leave types and countries in parallel
+        const [leaveTypesResponse, countriesResponse] = await Promise.all([
+            api.request('/hrms/leave-types'),
+            api.request('/hrms/countries').catch(err => {
+                console.warn('Could not load countries:', err);
+                return { data: [] };
+            })
+        ]);
+
         // Handle both array response and { success, data } response format
-        leaveTypes = Array.isArray(response) ? response : (response?.data || []);
+        leaveTypes = Array.isArray(leaveTypesResponse) ? leaveTypesResponse : (leaveTypesResponse?.data || []);
+        countries = Array.isArray(countriesResponse) ? countriesResponse : (countriesResponse?.data || []);
+
+        // Build country options for SearchableDropdown (no Global option)
+        const countryOptions = countries.map(c => ({
+            value: c.id,
+            label: `${c.country_name} (${c.country_code})`
+        }));
+
+        // Initialize country filter dropdown
+        initLeaveTypeCountryFilterDropdown(countryOptions);
+
+        // Initialize modal country dropdown
+        initLeaveTypeModalCountryDropdown(countryOptions);
 
         // Populate leave type selects (for admin allocation modal)
         const selects = ['allocLeaveType'];
@@ -376,6 +523,63 @@ async function loadLeaveTypes() {
     } catch (error) {
         console.error('Error loading leave types:', error);
     }
+}
+
+/**
+ * Initialize the country filter dropdown for Leave Types tab
+ */
+function initLeaveTypeCountryFilterDropdown(countryOptions) {
+    const container = document.getElementById('leaveTypeCountryFilterContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+
+    // Add "All Countries" option at the beginning for filter
+    const filterOptions = [
+        { value: '', label: 'All Countries' },
+        ...countryOptions
+    ];
+
+    // Destroy existing dropdown if any
+    if (leaveTypeCountryFilterDropdown) {
+        leaveTypeCountryFilterDropdown.destroy?.();
+    }
+
+    leaveTypeCountryFilterDropdown = new SearchableDropdown(container, {
+        id: 'leaveTypeCountryFilter',
+        options: filterOptions,
+        value: '',
+        placeholder: 'Select Country',
+        searchPlaceholder: 'Search countries...',
+        onChange: (value) => {
+            filterLeaveTypesByCountry();
+        }
+    });
+}
+
+/**
+ * Initialize the country dropdown in the Leave Type modal
+ */
+function initLeaveTypeModalCountryDropdown(countryOptions) {
+    const container = document.getElementById('typeCountryContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+
+    // Destroy existing dropdown if any
+    if (leaveTypeModalCountryDropdown) {
+        leaveTypeModalCountryDropdown.destroy?.();
+    }
+
+    // Default to first country if available
+    const defaultValue = countryOptions.length > 0 ? countryOptions[0].value : '';
+
+    leaveTypeModalCountryDropdown = new SearchableDropdown(container, {
+        id: 'typeCountry',
+        options: countryOptions,
+        value: defaultValue,
+        placeholder: 'Select Country',
+        searchPlaceholder: 'Search countries...',
+        onChange: (value) => {
+            // Optional: any logic when country changes
+        }
+    });
 }
 
 async function loadMyLeaveBalance() {
@@ -728,15 +932,23 @@ function updateLeaveTypesTable() {
     const tbody = document.getElementById('leaveTypesTable');
     const searchTerm = document.getElementById('leaveTypeSearch')?.value?.toLowerCase() || '';
 
-    const filtered = leaveTypes.filter(t =>
+    // Get country filter value from SearchableDropdown
+    const countryFilter = leaveTypeCountryFilterDropdown?.getValue?.() || '';
+
+    let filtered = leaveTypes.filter(t =>
         (t.leave_name || '').toLowerCase().includes(searchTerm) ||
         (t.leave_code || '').toLowerCase().includes(searchTerm)
     );
 
+    // Apply country filter - show only leave types for selected country
+    if (countryFilter) {
+        filtered = filtered.filter(t => t.country_id === countryFilter);
+    }
+
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="9">
+                <td colspan="10">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -751,13 +963,18 @@ function updateLeaveTypesTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(type => `
+    tbody.innerHTML = filtered.map(type => {
+        // Display country name/code
+        const countryDisplay = type.country_name || type.country_code || '-';
+
+        return `
         <tr>
             <td><strong>${type.leave_name}</strong></td>
             <td><code>${type.leave_code}</code></td>
+            <td>${countryDisplay}</td>
             <td>${type.default_days_per_year}</td>
             <td>${type.carry_forward_enabled ? 'Yes' : 'No'}</td>
-            <td>${type.max_carry_forward_days || '-'}</td>
+            <td>${type.max_carry_forward_days ?? '-'}</td>
             <td>${type.is_paid ? 'Yes' : 'No'}</td>
             <td>${type.prorate_on_joining ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${type.is_active ? 'active' : 'inactive'}">${type.is_active ? 'Active' : 'Inactive'}</span></td>
@@ -772,7 +989,12 @@ function updateLeaveTypesTable() {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
+}
+
+// Filter leave types by country
+function filterLeaveTypesByCountry() {
+    updateLeaveTypesTable();
 }
 
 async function loadDepartments() {
@@ -1036,6 +1258,18 @@ function showCreateLeaveTypeModal() {
     document.getElementById('leaveTypeForm').reset();
     document.getElementById('leaveTypeId').value = '';
     document.getElementById('leaveTypeModalTitle').textContent = 'Create Leave Type';
+
+    // Initialize SearchableDropdowns for the modal (only once)
+    initializeLeaveTypeModalDropdowns();
+
+    // Reset dropdown values to defaults
+    resetLeaveTypeModalDropdowns();
+
+    // Set country dropdown to first country (country is now required)
+    if (leaveTypeModalCountryDropdown && countries.length > 0) {
+        leaveTypeModalCountryDropdown.setValue(countries[0].id);
+    }
+
     document.getElementById('leaveTypeModal').classList.add('active');
 }
 
@@ -1043,19 +1277,35 @@ function editLeaveType(id) {
     const type = leaveTypes.find(t => t.id === id);
     if (!type) return;
 
+    // Initialize SearchableDropdowns for the modal (only once)
+    initializeLeaveTypeModalDropdowns();
+
+    // Set text input values
     document.getElementById('leaveTypeId').value = type.id;
     document.getElementById('typeName').value = type.leave_name;
     document.getElementById('typeCode').value = type.leave_code;
     document.getElementById('typeDescription').value = type.description || '';
     document.getElementById('defaultDays').value = type.default_days_per_year;
     document.getElementById('maxDaysPerRequest').value = type.max_consecutive_days || 0;
-    document.getElementById('carryForward').value = type.carry_forward_enabled ? 'true' : 'false';
     document.getElementById('maxCarryForward').value = type.max_carry_forward_days || 0;
-    document.getElementById('isPaid').value = type.is_paid ? 'true' : 'false';
-    document.getElementById('requiresApproval').value = type.requires_approval ? 'true' : 'false';
-    document.getElementById('allowHalfDay').value = type.allow_half_day ? 'true' : 'false';
-    document.getElementById('prorateOnJoining').value = type.prorate_on_joining ? 'true' : 'false';
-    document.getElementById('typeIsActive').value = type.is_active ? 'true' : 'false';
+
+    // Set country dropdown value using SearchableDropdown
+    if (leaveTypeModalCountryDropdown && type.country_id) {
+        leaveTypeModalCountryDropdown.setValue(type.country_id);
+    } else if (leaveTypeModalCountryDropdown && countries.length > 0) {
+        // Fallback to first country if no country_id
+        leaveTypeModalCountryDropdown.setValue(countries[0].id);
+    }
+
+    // Set dropdown values using SearchableDropdown instances
+    setLeaveTypeModalDropdownValues({
+        carryForward: type.carry_forward_enabled ? 'true' : 'false',
+        isPaid: type.is_paid ? 'true' : 'false',
+        requiresApproval: type.requires_approval ? 'true' : 'false',
+        allowHalfDay: type.allow_half_day ? 'true' : 'false',
+        prorateOnJoining: type.prorate_on_joining ? 'true' : 'false',
+        isActive: type.is_active ? 'true' : 'false'
+    });
 
     document.getElementById('leaveTypeModalTitle').textContent = 'Edit Leave Type';
     document.getElementById('leaveTypeModal').classList.add('active');
@@ -1165,19 +1415,35 @@ async function saveLeaveType() {
     try {
         showLoading();
         const id = document.getElementById('leaveTypeId').value;
+
+        // Get dropdown values from SearchableDropdown instances (with fallback to direct element access)
+        const getDropdownValue = (dropdown, elementId) => {
+            if (dropdown) return dropdown.getValue();
+            return document.getElementById(elementId)?.value;
+        };
+
+        // Get country_id from SearchableDropdown (country is required)
+        const countryId = leaveTypeModalCountryDropdown?.getValue?.() || null;
+        if (!countryId) {
+            showToast('Please select a country', 'error');
+            hideLoading();
+            return;
+        }
+
         const data = {
+            country_id: countryId,
             leave_name: document.getElementById('typeName').value,
             leave_code: document.getElementById('typeCode').value,
             description: document.getElementById('typeDescription').value,
             default_days_per_year: parseInt(document.getElementById('defaultDays').value),
             max_consecutive_days: parseInt(document.getElementById('maxDaysPerRequest').value) || null,
-            carry_forward_enabled: document.getElementById('carryForward').value === 'true',
+            carry_forward_enabled: getDropdownValue(leaveTypeCarryForwardDropdown, 'carryForward') === 'true',
             max_carry_forward_days: parseInt(document.getElementById('maxCarryForward').value) || 0,
-            is_paid: document.getElementById('isPaid').value === 'true',
-            requires_approval: document.getElementById('requiresApproval').value === 'true',
-            allow_half_day: document.getElementById('allowHalfDay').value === 'true',
-            prorate_on_joining: document.getElementById('prorateOnJoining').value === 'true',
-            is_active: document.getElementById('typeIsActive').value === 'true'
+            is_paid: getDropdownValue(leaveTypeIsPaidDropdown, 'isPaid') === 'true',
+            requires_approval: getDropdownValue(leaveTypeRequiresApprovalDropdown, 'requiresApproval') === 'true',
+            allow_half_day: getDropdownValue(leaveTypeAllowHalfDayDropdown, 'allowHalfDay') === 'true',
+            prorate_on_joining: getDropdownValue(leaveTypeProrateOnJoiningDropdown, 'prorateOnJoining') === 'true',
+            is_active: getDropdownValue(leaveTypeIsActiveDropdown, 'typeIsActive') === 'true'
         };
 
         if (id) {

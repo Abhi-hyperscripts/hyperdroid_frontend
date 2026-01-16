@@ -714,6 +714,7 @@
 }
 
 .ess-stat-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -896,7 +897,7 @@
 .ess-action-card:hover {
     border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
-    transform: translateY(-3px);
+    transform: translateY(-2px);
 }
 
 .ess-action-icon {
@@ -994,6 +995,13 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 18px;
+    transition: all 0.2s ease;
+}
+
+.ess-upcoming-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-upcoming-card h4 {
@@ -1129,14 +1137,15 @@
     padding: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     transition: all 0.2s ease;
     cursor: pointer;
 }
 
 .ess-announcement-item:hover {
     border-color: var(--brand-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-announcement-icon {
@@ -1227,6 +1236,16 @@
 
 .ess-table tbody tr:hover td {
     background: var(--bg-secondary);
+}
+
+/* Action buttons in table cells - display side by side */
+.ess-table td .action-btn {
+    display: inline-flex;
+    margin-right: 6px;
+}
+
+.ess-table td .action-btn:last-child {
+    margin-right: 0;
 }
 
 /* Empty State - Standalone */
@@ -1340,7 +1359,7 @@
     padding: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     flex-wrap: wrap;
 }
 
@@ -1552,14 +1571,16 @@
 .ess-leave-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 16px;
     text-align: center;
     transition: all 0.2s ease;
 }
 
 .ess-leave-card:hover {
-    box-shadow: var(--shadow-sm);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-leave-type {
@@ -1656,7 +1677,7 @@
     padding: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     transition: all 0.2s ease;
     cursor: pointer;
 }
@@ -1664,6 +1685,7 @@
 .ess-directory-card:hover {
     border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-directory-avatar {
@@ -2701,8 +2723,9 @@
     align-items: center;
     gap: 12px;
     padding: 12px;
-    background: var(--bg-tertiary);
-    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
@@ -2710,8 +2733,9 @@
 }
 
 .manager-card:hover {
-    background: var(--bg-hover);
-    transform: translateY(-1px);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .manager-avatar {
@@ -3007,9 +3031,15 @@
 .ess-profile-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.ess-profile-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-profile-card h3 {
@@ -3218,12 +3248,14 @@
     padding: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     transition: all 0.2s ease;
 }
 
 .ess-holiday-item:hover {
-    box-shadow: var(--shadow-sm);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-holiday-date {
@@ -3279,11 +3311,169 @@
    ============================================================= */
 
 .ess-leave-balance-detailed {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    padding: 0;
 }
 
+.ess-leave-balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.ess-leave-balance-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.ess-leave-balance-item:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.leave-type-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.leave-type-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    height: 32px;
+    padding: 0 12px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.leave-type-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.leave-balance-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.balance-used {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-warning), var(--color-error));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.leave-balance-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.balance-available {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-success);
+}
+
+.balance-total {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Alternative card style for zero balance */
+.ess-leave-balance-item.zero-balance .balance-available {
+    color: var(--text-tertiary);
+}
+
+.ess-leave-balance-item.zero-balance .leave-type-code {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+/* Breakdown section */
+.leave-balance-breakdown {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.breakdown-item {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.breakdown-item.used {
+    background: var(--error-alpha-10, rgba(239, 68, 68, 0.1));
+    color: var(--color-error);
+}
+
+.breakdown-item.pending {
+    background: var(--warning-alpha-10, rgba(245, 158, 11, 0.1));
+    color: var(--color-warning);
+}
+
+.breakdown-item.encashed {
+    background: var(--info-alpha-10, rgba(59, 130, 246, 0.1));
+    color: var(--color-info);
+}
+
+.breakdown-item.carried {
+    background: var(--success-alpha-10, rgba(34, 197, 94, 0.1));
+    color: var(--color-success);
+}
+
+/* Empty and error states for leave balance */
+.ess-leave-balance-detailed .ess-empty-state,
+.ess-leave-balance-detailed .ess-error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-primary);
+    border-radius: 12px;
+}
+
+.ess-leave-balance-detailed .ess-empty-state svg,
+.ess-leave-balance-detailed .ess-error-state svg {
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+}
+
+.ess-leave-balance-detailed .ess-empty-state p,
+.ess-leave-balance-detailed .ess-error-state p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* Legacy support */
 .ess-balance-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -3294,7 +3484,9 @@
 }
 
 .ess-balance-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-balance-type {
@@ -3314,7 +3506,7 @@
 .ess-balance-details {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-primary);
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
@@ -3340,6 +3532,13 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.ess-salary-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-salary-card h3 {
@@ -3794,14 +3993,15 @@
     padding: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .ess-policy-item:hover {
     border-color: var(--brand-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-policy-icon {
@@ -4201,6 +4401,7 @@
 .ess-location-card:hover {
     border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
 .ess-location-card.current {
@@ -4782,5 +4983,219 @@
 
     .ess-map-container {
         height: 300px;
+    }
+}
+
+/* =============================================================
+   ESS MODAL OVERLAY - For dynamically created modals
+   ============================================================= */
+
+.ess-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.ess-modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-xl);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: essModalSlideIn 0.2s ease-out;
+}
+
+@keyframes essModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ess-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.ess-modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.ess-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-primary-sm);
+    padding: 0;
+}
+
+.ess-modal-close:hover {
+    background: var(--brand-primary-dark);
+    box-shadow: var(--shadow-primary-md);
+    transform: scale(1.05);
+}
+
+.ess-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.ess-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color-light);
+}
+
+/* Modal detail groups */
+.ess-detail-group {
+    margin-bottom: 16px;
+}
+
+.ess-detail-group:last-child {
+    margin-bottom: 0;
+}
+
+.ess-detail-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.ess-detail-group p {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.ess-detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Modal buttons */
+.ess-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ess-btn-primary {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.ess-btn-primary:hover {
+    background: var(--brand-primary-hover);
+}
+
+.ess-btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.ess-btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--brand-primary);
+}
+
+.ess-btn-danger {
+    background: var(--color-error);
+    color: var(--text-inverse);
+}
+
+.ess-btn-danger:hover {
+    background: var(--color-error-hover, #dc2626);
+}
+
+/* Badges for modal */
+.ess-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.ess-badge-success {
+    background: var(--success-alpha-20);
+    color: var(--color-success);
+}
+
+.ess-badge-warning {
+    background: var(--warning-alpha-20);
+    color: var(--color-warning);
+}
+
+.ess-badge-danger {
+    background: var(--danger-alpha-20);
+    color: var(--color-error);
+}
+
+@media (max-width: 600px) {
+    .ess-modal-overlay {
+        padding: 10px;
+    }
+
+    .ess-modal-content {
+        max-height: 95vh;
+    }
+
+    .ess-detail-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }

@@ -514,10 +514,10 @@
                             <th>Department</th>
                             <th>Designation</th>
                             <th>Salary Structure</th>
-                            <th>CTC</th>
+                            <th class="text-right">CTC</th>
                             <th>Effective From</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="employeeSalariesTable">
@@ -3630,6 +3630,26 @@
                     <div class="adjustment-reason-section rejection" id="viewAdjustmentRejectionRow" style="display: none;">
                         <span class="adj-section-label">Rejection Reason</span>
                         <p class="adj-reason-text" id="viewAdjustmentRejectionReason">-</p>
+                    </div>
+
+                    <!-- v3.0.53: Receipt Section (for reimbursements) -->
+                    <div class="adjustment-receipt-section" id="viewAdjustmentReceiptRow" style="display: none;">
+                        <span class="adj-section-label">Receipt/Bill</span>
+                        <div class="adj-receipt-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span id="viewAdjustmentReceiptName">receipt.pdf</span>
+                            <button type="button" class="btn btn-link btn-sm" id="viewAdjustmentReceiptBtn" onclick="downloadAdjustmentReceipt()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                View Receipt
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Footer Meta -->

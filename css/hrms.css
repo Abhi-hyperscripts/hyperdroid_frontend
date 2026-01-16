@@ -9370,6 +9370,10 @@ input:checked + .slider:before {
     text-align: right !important;
 }
 
+.text-center {
+    text-align: center !important;
+}
+
 .amount-cell.positive {
     color: var(--color-success);
 }
@@ -9581,6 +9585,54 @@ input:checked + .slider:before {
 
 .adjustment-reason-section.rejection .adj-section-label {
     color: var(--color-danger);
+}
+
+/* v3.0.53: Receipt Section */
+.adjustment-receipt-section {
+    margin-bottom: 14px;
+    background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.adjustment-receipt-section .adj-section-label {
+    color: var(--brand-primary);
+}
+
+.adj-receipt-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.adj-receipt-content svg {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.adj-receipt-content .btn-link {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--brand-primary);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.adj-receipt-content .btn-link:hover {
+    background: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
 }
 
 .adj-section-label {
@@ -20744,4 +20796,98 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     .arrears-guide-content {
         padding: 12px;
     }
+}
+
+/* ============================================
+   v3.0.55: Payroll Tables - Column Alignment
+   Natural sizing like Salary Reports table
+   ============================================ */
+
+/* Adjustments Table - Amount column styling */
+#adjustmentsTable .amount-cell {
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    text-align: right;
+}
+
+#adjustmentsTable .amount-cell.positive {
+    color: var(--color-success);
+}
+
+#adjustmentsTable .amount-cell.negative {
+    color: var(--color-error);
+}
+
+/* Adjustments Table - Type column center align */
+#adjustmentsTable th:nth-child(2),
+#adjustmentsTable td:nth-child(2) {
+    text-align: center;
+}
+
+/* Adjustments Table - Amount column right align */
+#adjustmentsTable th:nth-child(3),
+#adjustmentsTable td:nth-child(3) {
+    text-align: right;
+}
+
+/* Adjustments Table - Status column center align */
+#adjustmentsTable th:nth-child(6),
+#adjustmentsTable td:nth-child(6) {
+    text-align: center;
+}
+
+/* Adjustments Table - Actions column center align */
+#adjustmentsTable th:nth-child(7),
+#adjustmentsTable td:nth-child(7) {
+    text-align: center;
+}
+
+/* Reason cell truncation */
+#adjustmentsTable .reason-cell {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================
+   v3.0.56: Employee Salaries Table - Column Alignment
+   Using nth-child selectors to ensure alignment
+   works regardless of HTML caching
+   ============================================ */
+
+/* Employee Salaries Table - Column width distribution */
+#employee-salaries table {
+    table-layout: auto;
+}
+
+/* CTC column (5th) - right align header and cells */
+#employee-salaries table th:nth-child(5),
+#employee-salaries table td:nth-child(5) {
+    text-align: right !important;
+    padding-right: 24px !important;
+}
+
+/* CTC cell - monospace font for numbers */
+#employee-salaries table td:nth-child(5) {
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    font-weight: 600;
+}
+
+/* Effective From column (6th) - add left padding for spacing */
+#employee-salaries table th:nth-child(6),
+#employee-salaries table td:nth-child(6) {
+    padding-left: 24px !important;
+}
+
+/* Status column (7th) - center align */
+#employee-salaries table th:nth-child(7),
+#employee-salaries table td:nth-child(7) {
+    text-align: center !important;
+}
+
+/* Actions column (8th) - center align */
+#employee-salaries table th:nth-child(8),
+#employee-salaries table td:nth-child(8) {
+    text-align: center !important;
 }
