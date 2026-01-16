@@ -57,6 +57,14 @@ async function initializePage() {
         // Initialize RBAC
         hrmsRoles.init();
 
+        // CRITICAL: Require organization setup before accessing Leave page
+        // This prevents users from bypassing setup by directly navigating to URL
+        const setupComplete = await hrmsRoles.requireOrganizationSetup({
+            showToast: true,
+            redirectUrl: 'organization.html'
+        });
+        if (!setupComplete) return;
+
         // Apply RBAC visibility - this may redirect to ESS for regular employees
         applyLeaveRBAC();
 

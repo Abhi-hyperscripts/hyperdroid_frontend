@@ -743,6 +743,195 @@ class HRMSRoleUtils {
             isBasicUser: this.isBasicUser()
         };
     }
+
+    // ==================== Setup Validation ====================
+
+    /**
+     * Cached setup status to avoid repeated API calls on the same page
+     */
+    _setupStatus = null;
+    _setupStatusPromise = null;
+
+    /**
+     * Fetch setup status from backend (with caching)
+     * @returns {Promise<Object>} Setup status object
+     */
+    async getSetupStatus() {
+        // Return cached status if available
+        if (this._setupStatus) {
+            return this._setupStatus;
+        }
+
+        // Return existing promise if already fetching
+        if (this._setupStatusPromise) {
+            return this._setupStatusPromise;
+        }
+
+        // Fetch and cache
+        this._setupStatusPromise = (async () => {
+            try {
+                // Check if api is available
+                if (typeof api === 'undefined' || !api.request) {
+                    console.warn('[RBAC] API not available for setup check');
+                    return null;
+                }
+
+                const status = await api.request('/hrms/dashboard/setup-status');
+                this._setupStatus = status;
+                return status;
+            } catch (error) {
+                console.error('[RBAC] Error fetching setup status:', error);
+                return null;
+            } finally {
+                this._setupStatusPromise = null;
+            }
+        })();
+
+        return this._setupStatusPromise;
+    }
+
+    /**
+     * Clear cached setup status (call after setup changes)
+     */
+    clearSetupStatusCache() {
+        this._setupStatus = null;
+        this._setupStatusPromise = null;
+    }
+
+    /**
+     * Require compliance setup to be complete before accessing the page.
+     * Redirects to compliance.html with error message if not complete.
+     *
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.showToast - Whether to show toast message (default: true)
+     * @param {string} options.redirectUrl - URL to redirect to (default: compliance.html)
+     * @returns {Promise<boolean>} True if compliance is complete, false if redirecting
+     */
+    async requireComplianceSetup(options = {}) {
+        const { showToast = true, redirectUrl = 'compliance.html' } = options;
+
+        const status = await this.getSetupStatus();
+
+        if (!status) {
+            // If we can't fetch status, allow access (fail open) but log warning
+            console.warn('[RBAC] Could not verify setup status, allowing access');
+            return true;
+        }
+
+        if (!status.is_compliance_complete) {
+            if (showToast && typeof window.showToast === 'function') {
+                window.showToast('Please complete Compliance setup first', 'error');
+            }
+            window.location.href = redirectUrl;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Require organization setup to be complete before accessing the page.
+     * This includes: at least one office, department, designation, and shift.
+     * Redirects to organization.html with error message if not complete.
+     *
+     * Note: This also implicitly requires compliance setup.
+     *
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.showToast - Whether to show toast message (default: true)
+     * @param {string} options.redirectUrl - URL to redirect to (default: organization.html)
+     * @param {boolean} options.requireBasicOnly - Only require basic setup (office, dept, desig, shift)
+     * @returns {Promise<boolean>} True if setup is complete, false if redirecting
+     */
+    async requireOrganizationSetup(options = {}) {
+        const {
+            showToast = true,
+            redirectUrl = 'organization.html',
+            requireBasicOnly = false
+        } = options;
+
+        const status = await this.getSetupStatus();
+
+        if (!status) {
+            console.warn('[RBAC] Could not verify setup status, allowing access');
+            return true;
+        }
+
+        // First check compliance
+        if (!status.is_compliance_complete) {
+            if (showToast && typeof window.showToast === 'function') {
+                window.showToast('Please complete Compliance setup first', 'error');
+            }
+            window.location.href = 'compliance.html';
+            return false;
+        }
+
+        // Check basic setup (office, department, designation, shift)
+        const hasBasicSetup = status.has_office && status.has_department &&
+                             status.has_designation && status.has_shift;
+
+        if (requireBasicOnly) {
+            if (!hasBasicSetup) {
+                if (showToast && typeof window.showToast === 'function') {
+                    window.showToast('Please complete Organization setup first (Office, Department, Designation, Shift)', 'error');
+                }
+                window.location.href = redirectUrl;
+                return false;
+            }
+            return true;
+        }
+
+        // Full setup check
+        if (!status.is_setup_complete) {
+            if (showToast && typeof window.showToast === 'function') {
+                window.showToast('Please complete Organization setup first', 'error');
+            }
+            window.location.href = redirectUrl;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Require full setup (compliance + organization) before accessing the page.
+     * Convenience method that combines both checks.
+     *
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.showToast - Whether to show toast message (default: true)
+     * @returns {Promise<boolean>} True if all setup is complete, false if redirecting
+     */
+    async requireFullSetup(options = {}) {
+        return this.requireOrganizationSetup(options);
+    }
+
+    /**
+     * Check if setup is complete without redirecting.
+     * Useful for conditionally showing/hiding UI elements.
+     *
+     * @returns {Promise<Object>} Object with is_compliance_complete, is_setup_complete, has_basic_setup
+     */
+    async checkSetupComplete() {
+        const status = await this.getSetupStatus();
+
+        if (!status) {
+            return {
+                is_compliance_complete: false,
+                is_setup_complete: false,
+                has_basic_setup: false,
+                error: true
+            };
+        }
+
+        const hasBasicSetup = status.has_office && status.has_department &&
+                             status.has_designation && status.has_shift;
+
+        return {
+            is_compliance_complete: status.is_compliance_complete || false,
+            is_setup_complete: status.is_setup_complete || false,
+            has_basic_setup: hasBasicSetup,
+            error: false
+        };
+    }
 }
 
 // Create singleton instance

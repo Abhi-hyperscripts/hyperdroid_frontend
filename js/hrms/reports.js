@@ -160,6 +160,15 @@ async function initializePage() {
             return;
         }
 
+        // CRITICAL: Require organization setup before accessing Reports page
+        // This prevents users from bypassing setup by directly navigating to URL
+        const setupComplete = await hrmsRoles.requireOrganizationSetup({
+            showToast: true,
+            redirectUrl: 'organization.html',
+            requireBasicOnly: true  // Reports can work with basic setup
+        });
+        if (!setupComplete) return;
+
         // Apply RBAC visibility
         applyReportsRBAC();
 

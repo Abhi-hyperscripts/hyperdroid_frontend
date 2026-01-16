@@ -799,6 +799,16 @@ async function initializePage() {
         // Initialize RBAC
         hrmsRoles.init();
 
+        // CRITICAL: Require basic organization setup before accessing Payroll page
+        // This prevents users from bypassing setup by directly navigating to URL
+        // Payroll requires at least: compliance + office + department + designation + shift
+        const setupComplete = await hrmsRoles.requireOrganizationSetup({
+            showToast: true,
+            redirectUrl: 'organization.html',
+            requireBasicOnly: true  // Payroll can work with basic setup
+        });
+        if (!setupComplete) return;
+
         // Apply RBAC visibility
         applyPayrollRBAC();
 

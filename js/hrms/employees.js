@@ -76,6 +76,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // CRITICAL: Require organization setup before accessing Employees page
+    // This prevents users from bypassing setup by directly navigating to URL
+    const setupComplete = await hrmsRoles.requireOrganizationSetup({
+        showToast: true,
+        redirectUrl: 'organization.html'
+    });
+    if (!setupComplete) return;
+
     // Apply RBAC visibility
     applyEmployeesRBAC();
 

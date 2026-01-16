@@ -57,6 +57,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Initialize RBAC
+        if (typeof hrmsRoles !== 'undefined') {
+            hrmsRoles.init();
+
+            // CRITICAL: Require compliance setup before accessing Self-Service page
+            // This prevents users from bypassing setup by directly navigating to URL
+            // ESS requires at least compliance setup (employees need to exist in the system)
+            const setupComplete = await hrmsRoles.requireComplianceSetup({
+                showToast: true,
+                redirectUrl: 'compliance.html'
+            });
+            if (!setupComplete) return;
+        }
+
         // Initialize navigation - use loadNavigation() which auto-detects path
         if (typeof loadNavigation === 'function') {
             await loadNavigation();
