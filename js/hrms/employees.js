@@ -351,7 +351,7 @@ function populateSelect(elementId, items, labelField, isFilter = false) {
 
 async function loadEmployees() {
     const tbody = document.getElementById('employeesTableBody');
-    tbody.innerHTML = '<tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
         employees = await api.getHrmsEmployees(false);
@@ -364,7 +364,7 @@ async function loadEmployees() {
 
     } catch (error) {
         console.error('Error loading employees:', error);
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading employees</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Error loading employees</p></td></tr>';
     }
 }
 
@@ -449,6 +449,12 @@ function renderEmployees() {
         const desig = designations.find(d => d.id === emp.designation_id);
         const office = offices.find(o => o.id === emp.office_id);
 
+        // Find manager by user_id
+        const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
+        const managerDisplay = manager
+            ? `<div class="manager-info"><div class="manager-name">${manager.first_name} ${manager.last_name}</div><div class="manager-email">${manager.work_email || ''}</div></div>`
+            : '<span class="text-muted">-</span>';
+
         // Get photo from cache if available
         const photoUrl = employeePhotoCache[emp.id];
         const photoHtml = photoUrl
@@ -469,6 +475,7 @@ function renderEmployees() {
                 <td>${dept?.department_name || '-'}</td>
                 <td>${desig?.designation_name || '-'}</td>
                 <td>${office?.office_name || '-'}</td>
+                <td>${managerDisplay}</td>
                 <td>${formatDate(emp.hire_date)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
                 <td>
@@ -892,8 +899,8 @@ async function saveEmployeeAtomic() {
     const shiftId = document.getElementById('shiftId').value;
     if (shiftId) formData.append('shift_id', shiftId);
 
-    const managerId = document.getElementById('reportingManagerId').value;
-    if (managerId) formData.append('manager_user_id', managerId);
+    const managerIdValue = document.getElementById('managerId').value;
+    if (managerIdValue) formData.append('manager_user_id', managerIdValue);
 
     const employmentType = document.getElementById('employmentType').value;
     if (employmentType) formData.append('employment_type', employmentType);
@@ -992,7 +999,7 @@ async function saveEmployeeEdit(id) {
         designation_id: document.getElementById('designationId').value,
         office_id: document.getElementById('officeId').value,
         shift_id: document.getElementById('shiftId').value || null,
-        manager_user_id: document.getElementById('reportingManagerId').value || null,
+        manager_user_id: document.getElementById('managerId').value || null,
         employment_type: document.getElementById('employmentType').value,
         hire_date: document.getElementById('dateOfJoining').value,
         probation_end_date: document.getElementById('probationEndDate').value,
@@ -2109,7 +2116,7 @@ function onManagerChange() {
     const employeeId = document.getElementById('employeeId').value;
     const userSelect = document.getElementById('userSelect');
     const employeeUserId = userSelect ? userSelect.value : null;
-    const managerUserId = document.getElementById('reportingManagerId').value;
+    const managerUserId = document.getElementById('managerId').value;
     const validationMsg = document.getElementById('managerValidationMsg');
 
     // For edit mode, get the employee's user_id from existing data
@@ -2121,7 +2128,7 @@ function onManagerChange() {
 
     const validation = validateManagerSelection(employeeId, actualEmployeeUserId, managerUserId);
 
-    const managerSelect = document.getElementById('reportingManagerId');
+    const managerSelect = document.getElementById('managerId');
     if (!validation.valid) {
         showToast(validation.message, 'error');
         // Show inline validation message
@@ -4069,7 +4076,7 @@ function setEmploymentDropdownValues(emp) {
             const managerText = managerDropdown.querySelector('.selected-text');
             managerText.textContent = `${manager.first_name} ${manager.last_name} (${manager.employee_code})`;
             managerText.classList.remove('placeholder');
-            document.getElementById('reportingManagerId').value = emp.manager_user_id;
+            document.getElementById('managerId').value = emp.manager_user_id;
             searchableDropdownData.manager.selectedId = emp.manager_user_id;
         }
     }
@@ -4084,7 +4091,8 @@ function setEmploymentDropdownValues(emp) {
  */
 function onEmployeeUpdated(data) {
     console.log('[Employees] Employee updated:', data);
-    showToast(`Employee ${data.EmployeeName || 'record'} was updated`, 'info');
+    // Don't show toast here - the updater already sees a toast from saveEmployee()
+    // This handler is for refreshing data when other users update employees
     loadEmployees();
 }
 
@@ -4093,6 +4101,7 @@ function onEmployeeUpdated(data) {
  */
 function onEmployeeCreated(data) {
     console.log('[Employees] Employee created:', data);
-    showToast(`New employee ${data.EmployeeName || ''} added`, 'success');
+    // Don't show toast here - the creator already sees a toast from saveEmployee()
+    // This handler is for refreshing data when other users create employees
     loadEmployees();
 }

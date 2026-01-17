@@ -5289,10 +5289,74 @@ function updateSalaryStructuresTable() {
                         </svg>
                     </span>
                     `}
+                    ${(s.employee_count || 0) === 0 ? `
+                    <button class="action-btn danger" onclick="deleteSalaryStructure('${s.id}')" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                    ` : `
+                    <span class="action-btn action-btn-disabled" title="Cannot delete: ${s.employee_count} employee(s) using this structure">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </span>
+                    `}
                 </div>
             </td>
         </tr>
     `).join('');
+}
+
+async function deleteSalaryStructure(structureId) {
+    const structure = structures.find(s => s.id === structureId);
+    if (!structure) {
+        showToast('Salary structure not found', 'error');
+        return;
+    }
+
+    // Double check employee count
+    if ((structure.employee_count || 0) > 0) {
+        showToast(`Cannot delete: ${structure.employee_count} employee(s) are using this structure`, 'error');
+        return;
+    }
+
+    const structureName = structure.structure_name || 'this structure';
+    const confirmed = await Confirm.show({
+        message: `Are you sure you want to delete "${structureName}"? This action cannot be undone.`,
+        title: 'Delete Salary Structure',
+        type: 'danger',
+        confirmText: 'Delete'
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await api.request(`/hrms/payroll/structures/${structureId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok || response.success) {
+            showToast(`Salary structure "${structureName}" deleted successfully`, 'success');
+            await loadSalaryStructures(); // Reload the structures list
+        } else {
+            const errorMessage = response.message || response.error || 'Failed to delete salary structure';
+            showToast(errorMessage, 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting salary structure:', error);
+        let errorMessage = 'Failed to delete salary structure';
+        if (error.message) {
+            errorMessage = error.message;
+        }
+        showToast(errorMessage, 'error');
+    }
 }
 
 async function loadComponents() {
@@ -5444,11 +5508,13 @@ function switchStructureTab(tabName) {
 
 /**
  * Update the statutory count badge on the Auto-Attached tab
+ * v3.0.54: Only counts employee deductions - employer contributions are NOT part of salary structure
  */
 function updateStatutoryCountBadge() {
     const badge = document.getElementById('statutoryCountBadge');
     if (badge) {
-        const totalCount = (statutoryEmployeeDeductions?.length || 0) + (statutoryEmployerContributions?.length || 0);
+        // v3.0.54: Only count employee deductions - employer contributions are calculated during payroll
+        const totalCount = statutoryEmployeeDeductions?.length || 0;
         badge.textContent = totalCount;
     }
 }
@@ -5468,23 +5534,18 @@ function updateComponentsEmptyState() {
 
 /**
  * Load statutory employer contributions for a given country/state.
- * These are the employer-side statutory components (e.g., retirement, social insurance, benefit accrual)
- * that are auto-attached to salary structures based on country config.
+ * v3.0.54: DEPRECATED - Employer contributions are NOT part of salary structure.
+ * They are calculated during payroll processing from country compliance config.
+ * This function is now a no-op and will be removed in a future version.
  */
 async function loadStatutoryEmployerContributions(countryCode, stateCode) {
-    try {
-        if (!countryCode || !stateCode) {
-            console.log('No country/state code provided, skipping employer contributions load');
-            statutoryEmployerContributions = [];
-            return;
-        }
-        const response = await api.request(`/hrms/payroll/components/statutory-employer-contributions?countryCode=${encodeURIComponent(countryCode)}&stateCode=${encodeURIComponent(stateCode)}`);
-        statutoryEmployerContributions = response?.components || [];
-        console.log(`Loaded ${statutoryEmployerContributions.length} statutory employer contributions for ${countryCode}/${stateCode}`);
-    } catch (error) {
-        console.error('Error loading statutory employer contributions:', error);
-        statutoryEmployerContributions = [];
-    }
+    // v3.0.54: No-op - employer contributions are not loaded for salary structures
+    // Employer contributions (PF_ER, ESI_ER, GRATUITY, LWF_ER, etc.) are:
+    // - NOT auto-attached to salary structures
+    // - Calculated during payroll processing from country config
+    // - Shown separately in payslip under "Employer Contributions"
+    console.log('v3.0.54: loadStatutoryEmployerContributions is deprecated - employer contributions are calculated during payroll, not stored in salary structures');
+    statutoryEmployerContributions = [];
 }
 
 /**
@@ -5563,57 +5624,17 @@ function getCTCClassificationBadge(component) {
 
 /**
  * Render the statutory employer contributions section in the salary structure modal.
- * These components are auto-attached by the backend and are displayed as locked/non-editable.
- * Uses card-based layout in the Auto-Attached tab.
+ * v3.0.54: Employer contributions are NOT part of salary structure.
+ * They are calculated during payroll processing from country compliance config.
+ * This function is now a no-op since the info note is static HTML.
  */
 function renderStatutoryEmployerContributionsSection() {
-    const container = document.getElementById('statutoryEmployerContributionsContainer');
-    if (!container) {
-        console.warn('Statutory employer contributions container not found');
-        return;
-    }
-
-    // Check if an office is selected
-    const selectedOfficeId = document.getElementById('structureOffice')?.value;
-
-    if (!selectedOfficeId) {
-        container.innerHTML = `
-            <div class="statutory-compact-list">
-                <div class="statutory-compact-empty">Select an office to see applicable contributions</div>
-            </div>
-        `;
-        updateStatutoryCountBadge();
-        return;
-    }
-
-    if (!statutoryEmployerContributions || statutoryEmployerContributions.length === 0) {
-        container.innerHTML = `
-            <div class="statutory-compact-list">
-                <div class="statutory-compact-empty">No contributions configured for this location</div>
-            </div>
-        `;
-        updateStatutoryCountBadge();
-        return;
-    }
-
-    const html = `
-        <div class="statutory-compact-list">
-            ${statutoryEmployerContributions.map(c => `
-                <div class="statutory-compact-item employer">
-                    <span class="statutory-compact-code">${escapeHtml(c.component_code || c.code)}</span>
-                    <span class="statutory-compact-name">${escapeHtml(c.component_name || c.name)}</span>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    container.innerHTML = html;
-
-    // Update the contribution count in header
-    const countEl = document.getElementById('contributionCount');
-    if (countEl) {
-        countEl.textContent = statutoryEmployerContributions.length;
-    }
-
+    // v3.0.54: No-op - employer contributions are not part of salary structure
+    // The info note explaining this is now static HTML in payroll.html
+    // Employer contributions (PF_ER, ESI_ER, GRATUITY, LWF_ER, etc.) are:
+    // - NOT auto-attached to salary structures
+    // - Calculated during payroll processing from country config
+    // - Shown separately in payslip under "Employer Contributions"
     updateStatutoryCountBadge();
 }
 
@@ -6395,6 +6416,15 @@ async function showCreateStructureModal() {
     document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
     document.getElementById('structureComponents').innerHTML = '';
     structureComponentCounter = 0; // Reset counter
+
+    // RE-ENABLE code field (it may have been disabled during edit mode)
+    const codeInput = document.getElementById('structureCode');
+    if (codeInput) {
+        codeInput.readOnly = false;
+        codeInput.classList.remove('readonly-field');
+        codeInput.title = '';
+    }
+
     // Reset office dropdown and RE-ENABLE it (disabled during edit mode)
     const officeSelect = document.getElementById('structureOffice');
     if (officeSelect) {
@@ -6613,6 +6643,14 @@ async function editSalaryStructure(structureId) {
         document.getElementById('structureName').value = structure.structure_name || '';
         document.getElementById('structureCode').value = structure.structure_code || '';
         document.getElementById('structureDescription').value = structure.description || '';
+
+        // DISABLE code field when editing (code is a key and cannot be changed after creation)
+        const codeInput = document.getElementById('structureCode');
+        if (codeInput) {
+            codeInput.readOnly = true;
+            codeInput.classList.add('readonly-field');
+            codeInput.title = 'Structure code cannot be changed after creation';
+        }
 
         // Set office dropdown and DISABLE it when editing (office cannot be changed after creation)
         const officeSelect = document.getElementById('structureOffice');
@@ -6892,11 +6930,25 @@ function showCreateComponentModal() {
     document.getElementById('componentForm').reset();
     document.getElementById('componentId').value = '';
     document.getElementById('componentModalTitle').textContent = 'Create Salary Component';
+
+    // Explicitly reset all form fields to defaults
+    document.getElementById('componentName').value = '';
+    document.getElementById('componentCode').value = '';
+    document.getElementById('componentCategory').value = 'earning';
+    document.getElementById('calculationType').value = 'fixed';
+    document.getElementById('componentPercentage').value = '';
+    document.getElementById('calculationBase').value = 'basic';
+    document.getElementById('isTaxable').value = 'true';
+    document.getElementById('componentDescription').value = '';
+    const fixedAmountInput = document.getElementById('componentFixedAmount');
+    if (fixedAmountInput) fixedAmountInput.value = '';
+
     // Reset status to active for new components
     const isActiveCheckbox = document.getElementById('componentIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
+
     document.getElementById('componentModal').classList.add('active');
-    // Reset percentage fields visibility
+    // Reset percentage fields visibility based on calculation type
     togglePercentageFields();
 }
 
@@ -8863,24 +8915,31 @@ function createSearchableDropdown(componentId, containerId) {
                            onclick="event.stopPropagation()">
                 </div>
                 <div class="dropdown-options" data-component-id="${componentId}">
-                    ${selectableComponents.map(c => `
+                    ${selectableComponents.map(c => {
+                        const calcType = c.calculation_type || 'fixed';
+                        const calcBase = c.calculation_base || 'basic';
+                        const isBasic = c.is_basic_component || false;
+                        // Determine calc type label
+                        let calcLabel = calcType === 'fixed' ? 'Fixed' : '% ' + (isBasic ? 'CTC' : (calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic'));
+                        return `
                         <div class="dropdown-option"
                              data-value="${c.id}"
                              data-type="${c.component_type || c.category}"
-                             data-calc-type="${c.calculation_type || 'fixed'}"
-                             data-calc-base="${c.calculation_base || 'basic'}"
-                             data-is-basic="${c.is_basic_component || false}"
+                             data-calc-type="${calcType}"
+                             data-calc-base="${calcBase}"
+                             data-is-basic="${isBasic}"
                              data-is-balance="${c.is_balance_component || false}"
                              data-percentage="${c.percentage || c.default_percentage || ''}"
                              data-fixed="${c.fixed_amount || ''}"
                              data-name="${escapeHtml(c.component_name || c.name)}"
                              data-code="${escapeHtml(c.component_code || c.code)}"
+                             data-calc-label="${calcLabel}"
                              onclick="selectDropdownOption('${dropdownId}', this, '${componentId}')">
                             <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
                             <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
-                            <span class="option-type badge badge-${(c.component_type || c.category) === 'earning' ? 'success' : 'warning'}">${c.component_type || c.category}</span>
+                            <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
             <input type="hidden" class="component-select-value" name="component_${componentId}" required>
@@ -8920,6 +8979,7 @@ function closeAllSearchDropdowns(exceptId = null) {
 
 function closeSearchDropdown(dropdown) {
     dropdown.classList.remove('open');
+    dropdown.classList.remove('open-up');
     // Remove portal menu if exists
     const portalMenu = document.querySelector(`.dropdown-menu-portal[data-dropdown-id="${dropdown.id}"]`);
     if (portalMenu) {
@@ -8941,12 +9001,30 @@ function openSearchDropdown(dropdown) {
 
         // Position using fixed coordinates
         const rect = trigger.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const menuHeight = 280; // Approximate max height of dropdown menu (search + options)
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
         portalMenu.style.position = 'fixed';
-        portalMenu.style.top = (rect.bottom + 4) + 'px';
         portalMenu.style.left = rect.left + 'px';
         portalMenu.style.width = rect.width + 'px';
         portalMenu.style.display = 'block';
         portalMenu.style.zIndex = '999999';
+
+        // Check if there's enough space below, otherwise open upward (dropup)
+        if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+            // Open upward - position bottom of menu at top of trigger
+            portalMenu.style.bottom = (viewportHeight - rect.top + 4) + 'px';
+            portalMenu.style.top = 'auto';
+            portalMenu.classList.add('dropdown-menu-dropup');
+            dropdown.classList.add('open-up');
+        } else {
+            // Open downward - default behavior
+            portalMenu.style.top = (rect.bottom + 4) + 'px';
+            portalMenu.style.bottom = 'auto';
+            dropdown.classList.remove('open-up');
+        }
 
         // Hide original menu
         originalMenu.style.display = 'none';
@@ -8976,11 +9054,13 @@ function attachPortalMenuListeners(portalMenu, dropdownId) {
     }
 
     // Option click listeners
+    // Extract componentId from dropdownId (dropdown_sc_0 -> sc_0)
+    const componentId = dropdownId.replace('dropdown_', '');
     portalMenu.querySelectorAll('.dropdown-option').forEach(opt => {
         opt.addEventListener('click', (e) => {
             e.stopPropagation();
             const dropdown = document.getElementById(dropdownId);
-            selectDropdownOption(dropdownId, opt, opt.dataset.value);
+            selectDropdownOption(dropdownId, opt, componentId);
             closeSearchDropdown(dropdown);
         });
     });
@@ -9031,19 +9111,25 @@ function selectDropdownOption(dropdownId, optionElement, componentId) {
     const name = optionElement.dataset.name;
     const code = optionElement.dataset.code;
     const componentType = optionElement.dataset.type || '';
+    const calcType = optionElement.dataset.calcType || 'fixed';
+    const calcLabel = optionElement.dataset.calcLabel || (calcType === 'fixed' ? 'Fixed' : '% Basic');
+    // v3.0.54: Read calculation_base for percentage validation
+    const calcBase = optionElement.dataset.calcBase || 'basic';
 
-    // Update display
+    // Update display with calc type badge
     const trigger = dropdown.querySelector('.dropdown-selected-text');
     if (trigger) {
-        trigger.textContent = `${name} (${code})`;
+        trigger.innerHTML = `<span class="selected-name">${escapeHtml(name)} (${escapeHtml(code)})</span><span class="selected-calc-badge badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>`;
         trigger.classList.add('has-selection');
     }
 
-    // Update hidden input with value and component type
+    // Update hidden input with value, component type, calc type, and calc base
     const hiddenInput = dropdown.querySelector('.component-select-value');
     if (hiddenInput) {
         hiddenInput.value = value;
         hiddenInput.dataset.componentType = componentType;  // Store component type for validation
+        hiddenInput.dataset.calcType = calcType;  // Store calc type for form submission
+        hiddenInput.dataset.calcBase = calcBase;  // v3.0.54: Store calc base for backend validation
     }
 
     // Mark as selected in original dropdown (find by value)
@@ -9072,7 +9158,6 @@ function updateStructureCalcTypeFromDropdown(optionElement, componentId) {
     const row = document.getElementById(componentId);
     if (!row) return;
 
-    const calcTypeSelect = row.querySelector('.calc-type-select');
     const percentageInput = row.querySelector('.percentage-value');
     const fixedInput = row.querySelector('.fixed-value');
 
@@ -9095,36 +9180,30 @@ function updateStructureCalcTypeFromDropdown(optionElement, componentId) {
     const defaultPercentage = optionElement.dataset.percentage;
     const defaultFixed = optionElement.dataset.fixed;
 
-    // Build label based on calculation base
-    let percentageLabel = '% of Basic';
-    if (calcBase === 'ctc') {
-        percentageLabel = '% of CTC';
+    // Build placeholder based on calculation base
+    let percentagePlaceholder = '% of Basic';
+    if (calcBase === 'ctc' || isBasic) {
+        percentagePlaceholder = '% of CTC';
     } else if (calcBase === 'gross') {
-        percentageLabel = '% of Gross';
-    } else if (isBasic) {
-        percentageLabel = '% of CTC';
+        percentagePlaceholder = '% of Gross';
     }
 
-    // Update dropdown options
-    calcTypeSelect.innerHTML = `
-        <option value="percentage">${percentageLabel}</option>
-        <option value="fixed">Fixed Amount</option>
-    `;
-
-    // Set the default calculation type
+    // Auto-show correct input based on component's calculation type
     if (calcType === 'fixed') {
-        calcTypeSelect.value = 'fixed';
         percentageInput.style.display = 'none';
         percentageInput.disabled = true;
+        percentageInput.value = '';
         fixedInput.style.display = 'block';
         fixedInput.disabled = false;
+        fixedInput.placeholder = 'Amount';
         if (defaultFixed) fixedInput.value = defaultFixed;
     } else {
-        calcTypeSelect.value = 'percentage';
         percentageInput.style.display = 'block';
         percentageInput.disabled = false;
+        percentageInput.placeholder = percentagePlaceholder;
         fixedInput.style.display = 'none';
         fixedInput.disabled = true;
+        fixedInput.value = '';
         if (defaultPercentage) percentageInput.value = defaultPercentage;
     }
 
@@ -9168,14 +9247,8 @@ function addStructureComponent() {
     const componentHtml = `
         <div class="structure-component-row" id="${componentId}">
             <div class="form-row component-row">
-                <div class="form-group" style="flex: 2;">
+                <div class="form-group" style="flex: 3;">
                     ${createSearchableDropdown(componentId)}
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <select id="${componentId}-calc-type" class="form-control calc-type-select">
-                        <option value="percentage">% of Basic</option>
-                        <option value="fixed">Fixed Amount</option>
-                    </select>
                 </div>
                 <div class="form-group value-field" style="flex: 1;">
                     <input type="number" class="form-control percentage-value" placeholder="%" step="0.01" min="0" max="100" oninput="updateStructureSummary()">
@@ -9192,20 +9265,6 @@ function addStructureComponent() {
     `;
 
     container.insertAdjacentHTML('beforeend', componentHtml);
-
-    // Convert calc type select to searchable dropdown
-    convertSelectToSearchable(`${componentId}-calc-type`, {
-        placeholder: '% of Basic',
-        searchPlaceholder: 'Search...',
-        compact: true,
-        onChange: (value) => {
-            const row = document.getElementById(componentId);
-            if (row) {
-                const select = row.querySelector('.calc-type-select');
-                toggleComponentValueFields(select, componentId);
-            }
-        }
-    });
 
     // Hide empty state when component is added
     updateComponentsEmptyState();
@@ -9340,7 +9399,6 @@ function updateStructureSummary() {
 
     rows.forEach(row => {
         const hiddenInput = row.querySelector('.component-select-value');
-        const calcTypeSelect = row.querySelector('.calc-type-select');
         const percentageInput = row.querySelector('.percentage-value');
         const fixedInput = row.querySelector('.fixed-value');
 
@@ -9352,6 +9410,7 @@ function updateStructureSummary() {
         const selectedOption = dropdown?.querySelector(`.dropdown-option[data-value="${hiddenInput.value}"]`);
         const componentType = selectedOption?.getAttribute('data-type') || '';
         const calcBase = selectedOption?.getAttribute('data-calc-base') || 'basic';
+        const calcType = selectedOption?.getAttribute('data-calc-type') || 'fixed';
         const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
         const isBalance = selectedOption?.getAttribute('data-is-balance') === 'true';
         const componentName = selectedOption?.getAttribute('data-name') || '';
@@ -9375,7 +9434,7 @@ function updateStructureSummary() {
             return;
         }
 
-        if (calcTypeSelect.value === 'percentage') {
+        if (calcType === 'percentage') {
             const percentage = parseFloat(percentageInput.value) || 0;
 
             if (componentType === 'earning') {
@@ -9392,7 +9451,7 @@ function updateStructureSummary() {
             } else if (componentType === 'deduction') {
                 deductionsBasicTotal += percentage;
             }
-        } else if (calcTypeSelect.value === 'fixed') {
+        } else if (calcType === 'fixed') {
             // Fixed amount component
             if (componentType === 'earning') {
                 fixedAmountsCount++;
@@ -9543,20 +9602,24 @@ function getStructureComponents() {
     rows.forEach((row, index) => {
         // Use hidden input from searchable dropdown
         const hiddenInput = row.querySelector('.component-select-value');
-        const calcTypeSelect = row.querySelector('.calc-type-select');
         const percentageInput = row.querySelector('.percentage-value');
         const fixedInput = row.querySelector('.fixed-value');
 
         if (hiddenInput && hiddenInput.value) {
-            // Get component_type from hidden input's data attribute (stored during selection)
+            // Get component_type, calc_type, and calc_base from hidden input's data attributes (stored during selection)
             const componentType = hiddenInput.dataset.componentType || '';
+            const calcType = hiddenInput.dataset.calcType || 'fixed';
+            // v3.0.54: Include calculation_base - REQUIRED for percentage components
+            const calcBase = hiddenInput.dataset.calcBase || (calcType === 'percentage' ? 'basic' : null);
 
             componentsList.push({
                 component_id: hiddenInput.value,
                 component_type: componentType,
-                calculation_type: calcTypeSelect.value,
-                percentage: calcTypeSelect.value === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
-                fixed_amount: calcTypeSelect.value === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
+                calculation_type: calcType,
+                // v3.0.54: Include calculation_base for backend validation
+                calculation_base: calcType === 'percentage' ? calcBase : null,
+                percentage: calcType === 'percentage' ? parseFloat(percentageInput.value) || 0 : null,
+                fixed_amount: calcType === 'fixed' ? parseFloat(fixedInput.value) || 0 : null,
                 display_order: index + 1
             });
         }
@@ -9577,7 +9640,6 @@ function populateStructureComponents(structureComponents) {
             if (lastRow) {
                 const dropdown = lastRow.querySelector('.searchable-dropdown');
                 const hiddenInput = lastRow.querySelector('.component-select-value');
-                const calcTypeSelect = lastRow.querySelector('.calc-type-select');
                 const percentageInput = lastRow.querySelector('.percentage-value');
                 const fixedInput = lastRow.querySelector('.fixed-value');
 
@@ -9592,14 +9654,19 @@ function populateStructureComponents(structureComponents) {
                         const componentCode = sc.component_code || sc.code || '';
                         const componentType = sc.component_type || 'earning';
                         const calcBase = sc.calculation_base || 'basic';
+                        const calcType = sc.calculation_type || 'fixed';
                         const isBasic = sc.is_basic_component || false;
+
+                        // Build calc label for badge
+                        let calcLabel = calcType === 'fixed' ? 'Fixed' : '% ' + (isBasic ? 'CTC' : (calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic'));
 
                         const newOptionHtml = `
                             <div class="dropdown-option"
                                  data-value="${sc.component_id}"
                                  data-type="${componentType}"
-                                 data-calc-type="${sc.calculation_type || 'fixed'}"
+                                 data-calc-type="${calcType}"
                                  data-calc-base="${calcBase}"
+                                 data-calc-label="${calcLabel}"
                                  data-is-basic="${isBasic}"
                                  data-is-balance="${sc.is_balance_component || false}"
                                  data-percentage="${sc.percentage || sc.default_percentage || ''}"
@@ -9609,7 +9676,7 @@ function populateStructureComponents(structureComponents) {
                                  onclick="selectDropdownOption('${dropdown.id}', this, '${lastRow.id}')">
                                 <span class="option-name">${escapeHtml(componentName)}</span>
                                 <span class="option-code">${escapeHtml(componentCode)}</span>
-                                <span class="option-type badge badge-${componentType === 'earning' ? 'success' : 'warning'}">${componentType}</span>
+                                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>
                             </div>
                         `;
                         optionsContainer.insertAdjacentHTML('afterbegin', newOptionHtml);
@@ -9618,54 +9685,31 @@ function populateStructureComponents(structureComponents) {
                 }
 
                 if (option && dropdown) {
-                    // Set hidden input value and component type
+                    // Get component info
+                    const calcBase = option.getAttribute('data-calc-base') || 'basic';
+                    const calcType = sc.calculation_type || option.getAttribute('data-calc-type') || 'fixed';
+                    const isBasic = option.getAttribute('data-is-basic') === 'true';
+                    const componentName = option.dataset.name || sc.component_name || '';
+                    const componentCode = option.dataset.code || sc.component_code || '';
+
+                    // Build calc label for badge
+                    let calcLabel = calcType === 'fixed' ? 'Fixed' : '% ' + (isBasic ? 'CTC' : (calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic'));
+
+                    // Set hidden input value, component type, calc type, and calc base
                     hiddenInput.value = sc.component_id;
                     hiddenInput.dataset.componentType = option.dataset.type || sc.component_type || '';
+                    hiddenInput.dataset.calcType = calcType;
+                    hiddenInput.dataset.calcBase = calcBase;  // v3.0.54: Store calc base for backend validation
 
-                    // Update display text
+                    // Update display text with badge
                     const trigger = dropdown.querySelector('.dropdown-selected-text');
                     if (trigger) {
-                        trigger.textContent = `${option.dataset.name} (${option.dataset.code})`;
+                        trigger.innerHTML = `<span class="selected-name">${escapeHtml(componentName)} (${escapeHtml(componentCode)})</span><span class="selected-calc-badge badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>`;
                         trigger.classList.add('has-selection');
                     }
 
                     // Mark option as selected
                     option.classList.add('selected');
-
-                    // Get component info for dynamic label update
-                    const calcBase = option.getAttribute('data-calc-base') || 'basic';
-                    const isBasic = option.getAttribute('data-is-basic') === 'true';
-
-                    // Build label based on calculation base
-                    let percentageLabel = '% of Basic';
-                    if (calcBase === 'ctc' || isBasic) {
-                        percentageLabel = '% of CTC';
-                    } else if (calcBase === 'gross') {
-                        percentageLabel = '% of Gross';
-                    }
-
-                    // Get the SearchableDropdown instance for the calc type
-                    const calcTypeId = `${lastRow.id}-calc-type`;
-                    const calcTypeDropdown = SearchableDropdown.getInstance(calcTypeId);
-
-                    if (calcTypeDropdown) {
-                        // Update options with correct label
-                        calcTypeDropdown.setOptions([
-                            { value: 'percentage', label: percentageLabel },
-                            { value: 'fixed', label: 'Fixed Amount' }
-                        ]);
-
-                        // Set the correct calculation type value (default to 'fixed' if not specified)
-                        const calcType = sc.calculation_type || 'fixed';
-                        calcTypeDropdown.setValue(calcType);
-                    } else {
-                        // Fallback for regular select (shouldn't normally happen)
-                        calcTypeSelect.innerHTML = `
-                            <option value="percentage">${percentageLabel}</option>
-                            <option value="fixed">Fixed Amount</option>
-                        `;
-                        calcTypeSelect.value = sc.calculation_type || 'fixed';
-                    }
                 }
 
                 // Get the actual calculation type to use
@@ -11535,9 +11579,10 @@ function updateVersionSummary() {
 
 /**
  * Populate statutory sections in the Version modal's Auto-Attached tab
+ * v3.0.54: ONLY shows employee deductions - employer contributions are NOT part of salary structure
  */
 function populateVersionStatutorySections() {
-    // Employee Deductions
+    // Employee Deductions (auto-attached to salary structure)
     const deductionsContainer = document.getElementById('versionStatutoryDeductionsContainer');
     const deductionCountEl = document.getElementById('versionDeductionCount');
 
@@ -11557,37 +11602,39 @@ function populateVersionStatutorySections() {
         deductionCountEl.textContent = statutoryEmployeeDeductions?.length || 0;
     }
 
-    // Employer Contributions
+    // v3.0.54: Employer Contributions are NOT part of salary structure
+    // They are calculated during payroll processing from country config
+    // Show an informational note instead of listing components
     const contributionsContainer = document.getElementById('versionStatutoryContributionsContainer');
     const contributionCountEl = document.getElementById('versionContributionCount');
 
     if (contributionsContainer) {
-        if (statutoryEmployerContributions && statutoryEmployerContributions.length > 0) {
-            contributionsContainer.innerHTML = statutoryEmployerContributions.map(c => `
-                <div class="statutory-compact-item">
-                    <span class="statutory-item-code">${escapeHtml(c.component_code || c.code)}</span>
-                    <span class="statutory-item-name">${escapeHtml(c.component_name || c.name)}</span>
-                </div>
-            `).join('');
-        } else {
-            contributionsContainer.innerHTML = '<div class="statutory-empty">No employer contributions configured</div>';
-        }
+        contributionsContainer.innerHTML = `
+            <div class="statutory-info-note">
+                <span style="opacity: 0.7; font-size: 11px;">
+                    Employer contributions (PF, ESI, Gratuity) are calculated during payroll processing
+                    based on country compliance rules. They are not part of the salary structure definition.
+                </span>
+            </div>
+        `;
     }
     if (contributionCountEl) {
-        contributionCountEl.textContent = statutoryEmployerContributions?.length || 0;
+        contributionCountEl.textContent = '—';  // Em dash to indicate N/A
     }
 
-    // Update badge count
+    // Update badge count (only employee deductions count)
     updateVersionStatutoryCountBadge();
 }
 
 /**
  * Update the statutory count badge for version modal
+ * v3.0.54: Only counts employee deductions (employer contributions are NOT part of structure)
  */
 function updateVersionStatutoryCountBadge() {
     const badge = document.getElementById('versionStatutoryCountBadge');
     if (badge) {
-        const totalCount = (statutoryEmployeeDeductions?.length || 0) + (statutoryEmployerContributions?.length || 0);
+        // Only count employee deductions - employer contributions are calculated during payroll
+        const totalCount = statutoryEmployeeDeductions?.length || 0;
         badge.textContent = totalCount;
     }
 }
@@ -11701,10 +11748,14 @@ async function previewVersionedSalary() {
         return;
     }
 
+    // Use formatDateLocal to avoid timezone issues (toISOString converts to UTC, shifting dates for non-UTC timezones)
+    const now = new Date();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
     const periodStart = await Prompt.show({
         title: 'Period Start Date',
         message: 'Select the period start date:',
-        defaultValue: new Date().toISOString().slice(0, 8) + '01',
+        defaultValue: formatDateLocal(now.getFullYear(), now.getMonth() + 1, 1),
         placeholder: 'DD-MM-YYYY',
         type: 'date'
     });
@@ -11716,7 +11767,7 @@ async function previewVersionedSalary() {
     const periodEnd = await Prompt.show({
         title: 'Period End Date',
         message: 'Select the period end date:',
-        defaultValue: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+        defaultValue: formatDateLocal(now.getFullYear(), now.getMonth() + 1, lastDayOfMonth),
         placeholder: 'DD-MM-YYYY',
         type: 'date'
     });
@@ -11742,9 +11793,14 @@ async function previewVersionedSalary() {
         const deductions = breakdown.aggregated_deductions || breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
         const employerContributions = breakdown.aggregated_employer_contributions || [];
 
-        // Filter to show only non-zero amounts for cleaner display (keep zero statutory for transparency)
-        const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+        // v3.0.53: Show ALL earnings including negative adjustments (like CTC-BAL)
+        // This ensures the math adds up correctly: sum of earnings = gross
+        // Negative components (auto-balance) are shown with different styling
+        const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) !== 0);
         const activeDeductions = deductions; // Show all deductions including zero for statutory transparency
+
+        // Calculate sum of displayed earnings to detect if there's a discrepancy with gross
+        const sumDisplayedEarnings = activeEarnings.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
 
         // v3.0.18: COUNTRY-AGNOSTIC - Use currency symbol from backend response, not hardcoded
         const currencySymbol = breakdown.currency_symbol || '₹'; // Fallback to ₹ only if not provided
@@ -11814,11 +11870,27 @@ async function previewVersionedSalary() {
                         <div class="sp-column-body">
         `;
 
-        // Earnings column
+        // Earnings column - v3.0.53: Handle negative amounts (CTC-BAL, adjustments)
         activeEarnings.forEach(cb => {
             const amount = cb.total_amount || cb.prorated_amount || 0;
-            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt earn">+${currencySymbol} ${formatAmt(amount)}</span></div>`;
+            const isNegative = amount < 0;
+            const displayAmount = Math.abs(amount);
+            const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
+            const prefix = isNegative ? '−' : '+';  // Minus sign for negative
+            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ${amtClass}">${prefix}${currencySymbol} ${formatAmt(displayAmount)}</span></div>`;
         });
+
+        // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
+        // This happens when CTC-BAL adjustment isn't fully captured in earnings array
+        const earningsDiscrepancy = sumDisplayedEarnings - totalGross;
+        if (Math.abs(earningsDiscrepancy) > 0.5) {  // Allow small rounding tolerance
+            const adjustmentLabel = earningsDiscrepancy > 0 ? 'CTC Balance Adjustment' : 'Additional Allowance';
+            const adjAmount = Math.abs(earningsDiscrepancy);
+            const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
+            const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
+            htmlContent += `<div class="sp-row" style="font-style: italic; opacity: 0.85;"><span class="sp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="sp-row-amt ${adjClass}">${adjPrefix}${currencySymbol} ${formatAmt(adjAmount)}</span></div>`;
+        }
+
         htmlContent += `
                             <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
                         </div>
@@ -16664,7 +16736,15 @@ async function openEmployeeSalaryModal(employeeId) {
     document.getElementById('empSalaryEmployeeId').value = employeeId;
     document.getElementById('empSalaryExistingId').value = '';
     document.getElementById('empSalaryCTC').value = '';
-    document.getElementById('empSalaryEffectiveFrom').value = new Date().toISOString().split('T')[0];
+    // Use formatDateLocal to avoid timezone issues and update flatpickr properly
+    const now = new Date();
+    const todayStr = formatDateLocal(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const effectiveFromEl = document.getElementById('empSalaryEffectiveFrom');
+    if (effectiveFromEl._flatpickr) {
+        effectiveFromEl._flatpickr.setDate(todayStr, true);
+    } else {
+        effectiveFromEl.value = todayStr;
+    }
     document.getElementById('empCurrentSalarySection').style.display = 'none';
     document.getElementById('empSalaryBreakdownSection').style.display = 'none';
     document.getElementById('empRevisionTypeGroup').style.display = 'none';
@@ -16817,9 +16897,11 @@ async function previewEmpSalaryBreakdown() {
     try {
         // Use the versioned calculate endpoint which includes statutory deductions
         // Calculate for current month as preview
+        // Use formatDateLocal to avoid timezone issues (toISOString converts to UTC, shifting dates for non-UTC timezones)
         const now = new Date();
-        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-        const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const periodStart = formatDateLocal(now.getFullYear(), now.getMonth() + 1, 1);
+        const periodEnd = formatDateLocal(now.getFullYear(), now.getMonth() + 1, lastDayOfMonth);
 
         const breakdown = await api.request(`/hrms/payroll/structures/${structureId}/versions/calculate`, {
             method: 'POST',
@@ -16861,9 +16943,13 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
     const deductions = breakdown.aggregated_deductions || breakdown.component_breakdowns?.filter(c => c.component_type === 'deduction') || [];
     const employerContributions = breakdown.aggregated_employer_contributions || [];
 
-    // Filter to show non-zero earnings, but show all deductions (including zero for transparency)
-    const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
+    // v3.0.53: Show ALL earnings including negative adjustments (like CTC-BAL)
+    // This ensures the math adds up correctly: sum of earnings = gross
+    const activeEarnings = earnings.filter(e => (e.total_amount || e.prorated_amount || 0) !== 0);
     const activeDeductions = deductions; // Show all deductions including zero for statutory transparency
+
+    // Calculate sum of displayed earnings to detect if there's a discrepancy with gross
+    const sumDisplayedEarnings = activeEarnings.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
 
     const totalGross = breakdown.total_gross || 0;
     const totalDeductions = breakdown.total_deductions || 0;
@@ -16934,11 +17020,26 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
                     <div class="esp-column-body">
     `;
 
-    // Earnings column
+    // Earnings column - v3.0.53: Handle negative amounts (CTC-BAL, adjustments)
     activeEarnings.forEach(cb => {
         const amount = cb.total_amount || cb.prorated_amount || 0;
-        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt earn">+${currencySymbol} ${formatAmt(amount)}</span></div>`;
+        const isNegative = amount < 0;
+        const displayAmount = Math.abs(amount);
+        const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
+        const prefix = isNegative ? '−' : '+';  // Minus sign for negative
+        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ${amtClass}">${prefix}${currencySymbol} ${formatAmt(displayAmount)}</span></div>`;
     });
+
+    // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
+    const earningsDiscrepancy = sumDisplayedEarnings - totalGross;
+    if (Math.abs(earningsDiscrepancy) > 0.5) {  // Allow small rounding tolerance
+        const adjustmentLabel = earningsDiscrepancy > 0 ? 'CTC Balance Adjustment' : 'Additional Allowance';
+        const adjAmount = Math.abs(earningsDiscrepancy);
+        const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
+        const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
+        htmlContent += `<div class="esp-row" style="font-style: italic; opacity: 0.85;"><span class="esp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="esp-row-amt ${adjClass}">${adjPrefix}${currencySymbol} ${formatAmt(adjAmount)}</span></div>`;
+    }
+
     htmlContent += `
                         <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
                     </div>
@@ -17118,6 +17219,8 @@ async function saveEmployeeSalaryFromPayroll(event) {
                 revision_type: revisionType || 'adjustment',
                 revision_reason: document.getElementById('empRevisionReason')?.value || ''
             };
+            // Mark as pending so SignalR handler skips notification for this user
+            markHrmsPendingAction('SalaryRevised', employeeId);
             await api.updateEmployeeSalary(employeeId, salaryData);
             showToast('Salary revised successfully', 'success');
         } else {
@@ -17128,6 +17231,8 @@ async function saveEmployeeSalaryFromPayroll(event) {
                 ctc: ctc,
                 effective_from: effectiveFrom
             };
+            // Mark as pending so SignalR handler skips notification for this user
+            markHrmsPendingAction('SalaryCreated', employeeId);
             await api.assignEmployeeSalary(salaryData);
             showToast('Salary assigned successfully', 'success');
         }

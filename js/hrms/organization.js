@@ -4057,27 +4057,9 @@ function onOrganizationUpdated(data) {
     const action = data.action || data.Action;
     const entityName = data.entityName || data.EntityName || entityType;
 
-    // Show toast notification only if we have valid data
-    if (entityType && action) {
-        let message = '';
-        switch(action) {
-            case 'created':
-                message = `${entityType} "${entityName}" was created`;
-                break;
-            case 'updated':
-                message = `${entityType} "${entityName}" was updated`;
-                break;
-            case 'deleted':
-                message = `${entityType} "${entityName}" was deleted`;
-                break;
-            case 'bulk_created':
-                message = `${entityName} were created`;
-                break;
-            default:
-                message = `${entityType} was ${action}`;
-        }
-        showToast(message, 'info');
-    }
+    // Don't show toast here - the creator already sees a toast from save functions
+    // (saveOffice, saveDepartment, saveDesignation, saveShift, saveHoliday)
+    // This handler is for refreshing data when other users make changes
 
     // Reload the relevant data based on entity type
     switch(entityType) {

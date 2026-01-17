@@ -46,18 +46,19 @@
 .hrms-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 16px 24px;
+    padding-top: 80px; /* Account for fixed navbar */
 }
 
 .hrms-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: 16px;
 }
 
 .hrms-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     margin: 0;
@@ -66,7 +67,7 @@
 
 .hrms-header p {
     color: var(--text-secondary);
-    margin: 4px 0 0 0;
+    margin: 2px 0 0 0;
     font-size: 0.8rem;
 }
 
@@ -136,9 +137,9 @@
    ============================================================= */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .stat-card {
@@ -146,13 +147,15 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-color-light);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-lg);
 }
 
@@ -160,21 +163,21 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .stat-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     color: var(--text-inverse);
 }
 
@@ -203,16 +206,16 @@
 }
 
 .stat-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .stat-trend {
@@ -233,72 +236,203 @@
 }
 
 /* =============================================================
-   QUICK ACTIONS
+   QUICK ACTIONS - Compact Professional Theme-Aware Design
+   All colors use CSS variables for brand consistency
    ============================================================= */
 .quick-actions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .action-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
+    background: var(--bg-card);
     border: 1px solid var(--border-color-light);
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-3);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-base);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-3);
+    position: relative;
+    box-shadow: var(--shadow-xs);
 }
 
 .action-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-color-medium);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand-primary);
+    background: var(--bg-card-hover);
+}
+
+.action-card:active {
+    transform: translateY(0);
 }
 
 .action-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--border-radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: var(--overlay-light);
+    transition: all var(--transition-base);
 }
 
 .action-icon svg {
     width: 22px;
     height: 22px;
-    color: var(--text-primary);
+    transition: transform var(--transition-fast);
+}
+
+.action-card:hover .action-icon svg {
+    transform: scale(1.05);
+}
+
+.action-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .action-content h4 {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
+    line-height: var(--line-height-tight);
 }
 
 .action-content p {
-    font-size: 0.8rem;
+    font-size: var(--font-size-xs);
     color: var(--text-secondary);
     margin: 0;
+    line-height: var(--line-height-normal);
 }
 
 .action-arrow {
     margin-left: auto;
-    color: var(--text-tertiary);
-    transition: transform 0.2s;
+    color: var(--text-muted);
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+    opacity: 0.5;
 }
 
 .action-card:hover .action-arrow {
     transform: translateX(4px);
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+/* =============================================================
+   ACTION CARD VARIANTS - Theme-Aware Color System
+   Using brand/semantic colors from theme.css
+   ============================================================= */
+
+/* Primary Setup Cards - Brand Gradient */
+#cardCompliance .action-icon {
+    background: var(--gradient-accent);
+}
+#cardCompliance .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardCompliance:hover {
+    border-color: var(--brand-accent);
+}
+
+/* Organization - Success Color */
+#cardOrganization .action-icon {
+    background: var(--gradient-success);
+}
+#cardOrganization .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardOrganization:hover {
+    border-color: var(--color-success);
+}
+
+/* Payroll - Primary Brand Color */
+#cardPayroll .action-icon {
+    background: var(--gradient-primary);
+}
+#cardPayroll .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardPayroll:hover {
+    border-color: var(--brand-primary);
+}
+
+/* Employee Management - Secondary/Purple */
+#cardEmployees .action-icon {
+    background: var(--gradient-secondary);
+}
+#cardEmployees .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardEmployees:hover {
+    border-color: var(--brand-secondary);
+}
+
+/* Leave Management - Warning/Amber */
+#cardLeave .action-icon {
+    background: var(--gradient-warning);
+}
+#cardLeave .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardLeave:hover {
+    border-color: var(--color-warning);
+}
+
+/* Reports - Info/Cyan */
+#cardReports .action-icon {
+    background: var(--gradient-info);
+}
+#cardReports .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardReports:hover {
+    border-color: var(--color-info);
+}
+
+/* Self-Service Portal - Featured card with accent background */
+.action-card[onclick*="self-service"] {
+    background: var(--accent-bg-light);
+    border-color: var(--accent-border-light);
+}
+.action-card[onclick*="self-service"] .action-icon {
+    background: var(--gradient-accent);
+}
+.action-card[onclick*="self-service"] .action-icon svg {
+    color: var(--text-inverse);
+}
+.action-card[onclick*="self-service"]:hover {
+    background: var(--accent-alpha-15);
+    border-color: var(--brand-accent);
+}
+
+/* Team Directory - Muted/Gray */
+.action-card[onclick*="directory"] .action-icon {
+    background: var(--gray-500);
+}
+.action-card[onclick*="directory"] .action-icon svg {
+    color: var(--text-inverse);
+}
+.action-card[onclick*="directory"]:hover {
+    border-color: var(--gray-400);
+}
+
+/* Organization Chart - Purple variant */
+.action-card[onclick*="org-chart"] .action-icon {
+    background: linear-gradient(135deg, var(--color-purple) 0%, var(--color-purple-dark) 100%);
+}
+.action-card[onclick*="org-chart"] .action-icon svg {
+    color: var(--text-inverse);
+}
+.action-card[onclick*="org-chart"]:hover {
+    border-color: var(--color-purple);
 }
 
 /* =============================================================
@@ -316,9 +450,10 @@
 }
 
 .section-title {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
+    margin-bottom: 10px;
 }
 
 .data-table-container {
@@ -528,28 +663,28 @@
 .setup-warning-banner {
     background: linear-gradient(135deg, var(--color-warning-bg-light), var(--color-warning-bg));
     border: 1px solid var(--color-warning);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .setup-warning-icon {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     background: var(--color-warning);
-    border-radius: 12px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .setup-warning-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     color: var(--text-inverse);
 }
 
@@ -558,39 +693,39 @@
 }
 
 .setup-warning-content h4 {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-warning-text-dark);
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
 }
 
 .setup-warning-content p {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--color-warning-text);
     margin: 0;
 }
 
 .setup-missing-list {
-    margin: 8px 0 0 0;
-    padding-left: 20px;
-    font-size: 0.8rem;
+    margin: 4px 0 0 0;
+    padding-left: 16px;
+    font-size: 0.7rem;
     color: var(--color-warning-text-dark);
 }
 
 .setup-missing-list li {
-    margin: 2px 0;
+    margin: 1px 0;
 }
 
 .setup-warning-action {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+    gap: 6px;
+    padding: 8px 16px;
     background: var(--color-warning);
     color: var(--text-inverse);
     border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;

@@ -605,6 +605,13 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.rule-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .rule-card-header {
@@ -872,10 +879,12 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     overflow: hidden;
-    transition: var(--transition-colors);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
 .regime-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
 }
 
@@ -1027,6 +1036,13 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     padding: var(--space-4);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.cess-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .cess-card.empty {
@@ -1642,10 +1658,11 @@
     border-radius: var(--border-radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .calc-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -2047,10 +2064,11 @@
     border-radius: var(--border-radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .validation-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -2259,6 +2277,13 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-sm);
     padding: var(--space-3);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.employee-violation-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .employee-violation-card .emp-header {
@@ -2367,7 +2392,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
 .pt-config-card:hover {
@@ -2687,7 +2713,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
 .lwf-config-card:hover {
@@ -3467,6 +3494,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
     cursor: pointer;
     position: relative;
@@ -4084,6 +4112,13 @@
     text-align: center;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.contrib-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .contrib-card::before {

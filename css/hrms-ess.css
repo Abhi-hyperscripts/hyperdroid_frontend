@@ -710,6 +710,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -889,6 +890,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    box-shadow: var(--shadow-sm);
     text-decoration: none;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -995,6 +997,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 18px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -1574,6 +1577,7 @@
     border-radius: 12px;
     padding: 16px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -1678,6 +1682,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
     cursor: pointer;
 }
@@ -2727,6 +2732,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
     width: 100%;
     margin-top: 8px;
@@ -3033,6 +3039,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -3325,6 +3332,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -3480,6 +3488,7 @@
     border-radius: 12px;
     padding: 20px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -3532,6 +3541,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
@@ -4395,6 +4405,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 

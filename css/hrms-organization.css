@@ -298,7 +298,7 @@
     background: var(--text-secondary);
     border-radius: 50%;
     transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-xs);
 }
 
 .basic-salary-toggle input:checked + .basic-salary-toggle-track {
@@ -1238,12 +1238,13 @@ select option:disabled {
     background: var(--bg-tertiary);
     border-radius: 12px;
     border: 1px solid var(--border-color-light);
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
 .version-detail-card:hover {
     border-color: var(--brand-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-md);
 }
 
 .version-detail-icon {
@@ -1939,6 +1940,13 @@ select option:disabled {
     border: 1px solid var(--border-color-light);
     border-radius: 8px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.preview-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .preview-card-label {
@@ -2389,12 +2397,13 @@ select option:disabled {
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-xs);
     transition: all 0.2s ease;
 }
 
 .compare-item:hover {
     border-color: var(--brand-primary);
-    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .compare-item-name {

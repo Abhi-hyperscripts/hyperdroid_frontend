@@ -21,6 +21,39 @@ let hrmsConnectionState = {
     reconnectAttempts: 0
 };
 
+// Track pending actions to avoid duplicate notifications for the acting user
+// When a user performs an action, we add it here. When SignalR broadcasts,
+// we skip the notification if it matches a pending action (but still sync data).
+const hrmsPendingActions = new Map();
+
+/**
+ * Mark an action as pending (call before API request)
+ * @param {string} actionType - e.g., 'SalaryRevised', 'SalaryCreated'
+ * @param {string} entityId - e.g., employeeId
+ * @param {number} timeoutMs - Auto-remove after this time (default 10s)
+ */
+function markHrmsPendingAction(actionType, entityId, timeoutMs = 10000) {
+    const key = `${actionType}:${entityId}`;
+    hrmsPendingActions.set(key, Date.now());
+    // Auto-cleanup after timeout
+    setTimeout(() => hrmsPendingActions.delete(key), timeoutMs);
+}
+
+/**
+ * Check and consume a pending action (call in SignalR handler)
+ * @param {string} actionType - e.g., 'SalaryRevised', 'SalaryCreated'
+ * @param {string} entityId - e.g., employeeId
+ * @returns {boolean} True if this was a pending action by current user
+ */
+function consumeHrmsPendingAction(actionType, entityId) {
+    const key = `${actionType}:${entityId}`;
+    if (hrmsPendingActions.has(key)) {
+        hrmsPendingActions.delete(key);
+        return true; // This user performed this action, skip notification
+    }
+    return false; // Another user performed this action, show notification
+}
+
 /**
  * Initialize SignalR connection to HRMS hub
  * @returns {Promise<boolean>} True if connected successfully
@@ -133,8 +166,8 @@ function registerHrmsEventHandlers() {
         if (typeof onEmployeeCreated === 'function') {
             onEmployeeCreated(data);
         }
-        const name = getProp(data, 'EmployeeName') || 'Employee';
-        showHrmsNotification('Employee Created', `${name} has been added`, 'success');
+        // Don't show toast here - the creator already sees a toast from saveEmployee()
+        // This handler is for refreshing data when other users create employees
     });
 
     hrmsHubConnection.on('EmployeeUpdated', (data) => {
@@ -142,8 +175,8 @@ function registerHrmsEventHandlers() {
         if (typeof onEmployeeUpdated === 'function') {
             onEmployeeUpdated(data);
         }
-        const name = getProp(data, 'EmployeeName') || 'Employee';
-        showHrmsNotification('Employee Updated', `${name} profile updated`, 'info');
+        // Don't show toast here - the updater already sees a toast from saveEmployee()
+        // This handler is for refreshing data when other users update employees
     });
 
     hrmsHubConnection.on('EmployeeTerminated', (data) => {
@@ -161,8 +194,16 @@ function registerHrmsEventHandlers() {
         if (typeof onSalaryCreated === 'function') {
             onSalaryCreated(data);
         }
-        const name = getProp(data, 'EmployeeName') || 'Employee';
-        showHrmsNotification('Salary Assigned', `Salary assigned to ${name}`, 'success');
+        // Show refresh prompt only if this action was performed by another user
+        const employeeId = getProp(data, 'EmployeeId');
+        if (!consumeHrmsPendingAction('SalaryCreated', employeeId)) {
+            const name = getProp(data, 'EmployeeName') || 'Employee';
+            showRefreshPrompt(`Salary assigned to ${name}. Refresh to see changes?`, () => {
+                // Refresh the employee salaries view if the function exists
+                if (typeof loadEmployeeSalaries === 'function') loadEmployeeSalaries();
+                if (typeof loadSalaryStructures === 'function') loadSalaryStructures();
+            }, 'success');
+        }
     });
 
     hrmsHubConnection.on('SalaryUpdated', (data) => {
@@ -170,8 +211,15 @@ function registerHrmsEventHandlers() {
         if (typeof onSalaryUpdated === 'function') {
             onSalaryUpdated(data);
         }
-        const name = getProp(data, 'EmployeeName') || 'Employee';
-        showHrmsNotification('Salary Updated', `Salary updated for ${name}`, 'info');
+        // Show refresh prompt only if this action was performed by another user
+        const employeeId = getProp(data, 'EmployeeId');
+        if (!consumeHrmsPendingAction('SalaryUpdated', employeeId)) {
+            const name = getProp(data, 'EmployeeName') || 'Employee';
+            showRefreshPrompt(`Salary updated for ${name}. Refresh to see changes?`, () => {
+                if (typeof loadEmployeeSalaries === 'function') loadEmployeeSalaries();
+                if (typeof loadSalaryStructures === 'function') loadSalaryStructures();
+            }, 'info');
+        }
     });
 
     hrmsHubConnection.on('SalaryRevised', (data) => {
@@ -179,8 +227,15 @@ function registerHrmsEventHandlers() {
         if (typeof onSalaryRevised === 'function') {
             onSalaryRevised(data);
         }
-        const name = getProp(data, 'EmployeeName') || 'Employee';
-        showHrmsNotification('Salary Revised', `Salary revised for ${name}`, 'info');
+        // Show refresh prompt only if this action was performed by another user
+        const employeeId = getProp(data, 'EmployeeId');
+        if (!consumeHrmsPendingAction('SalaryRevised', employeeId)) {
+            const name = getProp(data, 'EmployeeName') || 'Employee';
+            showRefreshPrompt(`Salary revised for ${name}. Refresh to see changes?`, () => {
+                if (typeof loadEmployeeSalaries === 'function') loadEmployeeSalaries();
+                if (typeof loadSalaryStructures === 'function') loadSalaryStructures();
+            }, 'info');
+        }
     });
 
     // ==================== Attendance Events ====================
@@ -417,13 +472,8 @@ function registerHrmsEventHandlers() {
         if (typeof onOrganizationUpdated === 'function') {
             onOrganizationUpdated(data);
         }
-        // Show notification based on entity type
-        const entityType = getProp(data, 'EntityType') || 'organization';
-        const action = getProp(data, 'Action') || 'updated';
-        const entityName = getProp(data, 'EntityName') || entityType;
-        showHrmsNotification(`${entityType.charAt(0).toUpperCase() + entityType.slice(1)} ${action}`,
-            `${entityName} has been ${action}`,
-            action === 'deleted' ? 'warning' : 'info');
+        // Don't show toast here - the page that initiated the action already shows a toast
+        // This handler is for refreshing data when other users make changes
     });
 
     // ==================== Adjustment Events ====================
@@ -439,6 +489,40 @@ function registerHrmsEventHandlers() {
         if (typeof onAdjustmentApproved === 'function') {
             onAdjustmentApproved(data);
         }
+    });
+
+    // ==================== Salary Structure Events ====================
+    hrmsHubConnection.on('SalaryStructureEmployeeCountChanged', (data) => {
+        console.log('[HRMS SignalR] SalaryStructureEmployeeCountChanged:', data);
+        if (typeof onSalaryStructureEmployeeCountChanged === 'function') {
+            onSalaryStructureEmployeeCountChanged(data);
+        }
+        // Auto-refresh salary structures list if on payroll page
+        if (typeof loadSalaryStructures === 'function') {
+            loadSalaryStructures();
+        }
+    });
+
+    hrmsHubConnection.on('SalaryStructureCreated', (data) => {
+        console.log('[HRMS SignalR] SalaryStructureCreated:', data);
+        if (typeof onSalaryStructureCreated === 'function') {
+            onSalaryStructureCreated(data);
+        }
+        if (typeof loadSalaryStructures === 'function') {
+            loadSalaryStructures();
+        }
+    });
+
+    hrmsHubConnection.on('SalaryStructureDeleted', (data) => {
+        console.log('[HRMS SignalR] SalaryStructureDeleted:', data);
+        if (typeof onSalaryStructureDeleted === 'function') {
+            onSalaryStructureDeleted(data);
+        }
+        if (typeof loadSalaryStructures === 'function') {
+            loadSalaryStructures();
+        }
+        const name = getProp(data, 'StructureName') || 'Salary structure';
+        showHrmsNotification('Structure Deleted', `${name} has been deleted`, 'warning');
     });
 
     // ==================== Generic Data Refresh ====================
@@ -501,6 +585,33 @@ function showHrmsNotification(title, message, type = 'info') {
     // Fallback: console log
     else {
         console.log(`[HRMS ${type.toUpperCase()}] ${title}: ${message}`);
+    }
+}
+
+/**
+ * Show a refresh prompt toast for other users when data changes
+ * Uses Toast.action() which shows Yes/No buttons
+ * @param {string} message - Message describing what changed
+ * @param {Function} refreshCallback - Function to call if user clicks Yes
+ * @param {string} type - Toast type: info, warning, success, error
+ */
+async function showRefreshPrompt(message, refreshCallback, type = 'info') {
+    // Use Toast.action if available
+    if (typeof Toast !== 'undefined' && typeof Toast.action === 'function') {
+        const shouldRefresh = await Toast.action(message, {
+            type: type,
+            title: 'Data Changed',
+            yesText: 'Refresh',
+            noText: 'Dismiss'
+        });
+
+        if (shouldRefresh && typeof refreshCallback === 'function') {
+            refreshCallback();
+        }
+    }
+    // Fallback to simple toast notification
+    else {
+        showHrmsNotification('Data Changed', message, type);
     }
 }
 

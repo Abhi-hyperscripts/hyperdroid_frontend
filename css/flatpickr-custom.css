@@ -15,7 +15,7 @@ input.flatpickr-input::placeholder,
     background: var(--bg-card, var(--bg-secondary, #ffffff));
     border: 1px solid var(--border-color-light, var(--border-primary, #e5e7eb));
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-lg);
     font-family: inherit;
     font-size: 12px;
     width: 260px;
@@ -337,7 +337,7 @@ input.flatpickr-input[readonly] {
 .dark .flatpickr-calendar {
     background: var(--bg-card, #1f2937);
     border-color: var(--border-color-light, #374151);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .flatpickr-current-month,
@@ -492,7 +492,7 @@ input.flatpickr-input[readonly] {
     background: var(--bg-card, #ffffff);
     border: 1px solid var(--border-color-light, #e5e7eb);
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
     opacity: 0;
     visibility: hidden;
     transition: max-height 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
@@ -613,7 +613,7 @@ input.flatpickr-input[readonly] {
     background: var(--bg-card, #ffffff);
     border: 1px solid var(--border-color-light, #e5e7eb);
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
     opacity: 0;
     visibility: hidden;
     transition: max-height 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
@@ -754,7 +754,7 @@ input.flatpickr-input[readonly] {
 .dark .fp-custom-month-dropdown {
     background: var(--bg-card, #1f2937);
     border-color: var(--border-color-light, #374151);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .fp-custom-month-search,
@@ -843,7 +843,7 @@ input.flatpickr-input[readonly] {
 .dark .fp-custom-year-dropdown {
     background: var(--bg-card, #1f2937);
     border-color: var(--border-color-light, #374151);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .fp-custom-year-search,

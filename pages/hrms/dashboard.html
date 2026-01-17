@@ -164,7 +164,24 @@
             <h3 class="section-title">Quick Actions</h3>
         </div>
         <div class="quick-actions" id="quickActionsGrid">
-            <!-- 1. Organization (always enabled) -->
+            <!-- 1. Statutory Compliance (First - Setup starts here) -->
+            <div class="action-card" id="cardCompliance" onclick="navigateTo('compliance.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Statutory Compliance</h4>
+                    <p>Upload country config & manage compliance</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <!-- 2. Organization Setup -->
             <div class="action-card" id="cardOrganization" onclick="navigateTo('organization.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -173,15 +190,32 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Organization</h4>
-                    <p>Manage offices, departments, and designations</p>
+                    <h4>Organization Setup</h4>
+                    <p>Offices, departments, shifts & holidays</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
                 </svg>
             </div>
 
-            <!-- 2. Employee Management -->
+            <!-- 3. Payroll Setup -->
+            <div class="action-card" id="cardPayroll" onclick="navigateIfSetupComplete('payroll.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Payroll Setup</h4>
+                    <p>Salary structures, components & processing</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <!-- 4. Employee Management -->
             <div class="action-card" id="cardEmployees" onclick="navigateIfSetupComplete('employees.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -200,24 +234,7 @@
                 </svg>
             </div>
 
-            <!-- 3. Attendance (Admin/Manager) -->
-            <div class="action-card" id="cardAttendance" onclick="navigateIfSetupComplete('attendance.html')">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Team Attendance</h4>
-                    <p>Manage team attendance & approvals</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </div>
-
-            <!-- 4. Leave Management (Admin/Manager) -->
+            <!-- 5. Leave Management -->
             <div class="action-card" id="cardLeave" onclick="navigateIfSetupComplete('leave.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -228,25 +245,8 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Leave Approvals</h4>
-                    <p>Review requests & team calendar</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </div>
-
-            <!-- 5. Payroll -->
-            <div class="action-card" id="cardPayroll" onclick="navigateIfSetupComplete('payroll.html')">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                        <line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Payroll</h4>
-                    <p>Process salaries and view payslips</p>
+                    <h4>Leave Management</h4>
+                    <p>Leave types, balances & approvals</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -270,27 +270,10 @@
                 </svg>
             </div>
 
-            <!-- 7. Statutory Compliance (HR Admin only) -->
-            <div class="action-card" id="cardCompliance" onclick="navigateIfSetupComplete('compliance.html')">
+            <!-- 7. Self-Service Portal -->
+            <div class="action-card" onclick="navigateTo('self-service.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Statutory Compliance</h4>
-                    <p>PF ECR, ESI Challan & Form 16</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </div>
-
-            <!-- 8. Self-Service Portal -->
-            <div class="action-card" onclick="navigateTo('self-service.html')" style="background: linear-gradient(135deg, var(--primary-transparent), var(--secondary-transparent)); border-color: var(--primary-transparent-strong);">
-                <div class="action-icon" style="background: var(--gradient-accent);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
                     </svg>
@@ -304,7 +287,7 @@
                 </svg>
             </div>
 
-            <!-- 9. Team Directory -->
+            <!-- 8. Team Directory -->
             <div class="action-card" onclick="navigateTo('directory.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -323,7 +306,7 @@
                 </svg>
             </div>
 
-            <!-- 10. Organization Chart -->
+            <!-- 9. Organization Chart -->
             <div class="action-card" onclick="navigateTo('org-chart.html')">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -343,62 +326,6 @@
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
                 </svg>
-            </div>
-        </div>
-
-        <!-- Recent Activity Section -->
-        <div class="data-section">
-            <div class="section-header">
-                <h3 class="section-title">Recent Leave Requests</h3>
-                <a href="leave.html" class="text-secondary" style="font-size: 0.85rem; text-decoration: none;">View All</a>
-            </div>
-            <div class="data-table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Employee</th>
-                            <th>Leave Type</th>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Days</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentLeaveRequests">
-                        <tr>
-                            <td colspan="6">
-                                <div class="loading-spinner">
-                                    <div class="spinner"></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Upcoming Events Section -->
-        <div class="data-section">
-            <div class="section-header">
-                <h3 class="section-title">Upcoming</h3>
-            </div>
-            <div class="quick-actions">
-                <div class="stat-card">
-                    <h4 class="text-primary" style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;">Upcoming Holidays</h4>
-                    <div id="upcomingHolidays">
-                        <div class="loading-spinner" style="padding: 20px;">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-primary" style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;">Birthdays This Week</h4>
-                    <div id="upcomingBirthdays">
-                        <div class="loading-spinner" style="padding: 20px;">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

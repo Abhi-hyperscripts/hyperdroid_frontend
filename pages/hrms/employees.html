@@ -154,6 +154,7 @@
                                     <th>Department</th>
                                     <th>Designation</th>
                                     <th>Office</th>
+                                    <th>Manager</th>
                                     <th>Joining Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -161,7 +162,7 @@
                             </thead>
                             <tbody id="employeesTableBody">
                                 <tr>
-                                    <td colspan="7">
+                                    <td colspan="8">
                                         <div class="loading-spinner">
                                             <div class="spinner"></div>
                                         </div>
@@ -473,7 +474,7 @@
                                 <!-- Reporting Manager Searchable Dropdown -->
                                 <div class="form-group">
                                     <label>Reporting Manager</label>
-                                    <input type="hidden" id="reportingManagerId">
+                                    <input type="hidden" id="managerId">
                                     <div class="searchable-dropdown" id="managerDropdown" data-field="manager">
                                         <div class="searchable-dropdown-trigger" onclick="toggleSearchableDropdown('manager')">
                                             <span class="selected-text placeholder">None (Select manager...)</span>

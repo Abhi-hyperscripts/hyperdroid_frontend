@@ -786,7 +786,7 @@ body {
     background-color: var(--text-inverse) !important;
     transition: 0.3s;
     border-radius: 50%;
-    box-shadow: 0 1px 3px var(--shadow-color, rgba(0, 0, 0, 0.3));
+    box-shadow: var(--shadow-xs);
 }
 
 .dark-mode-toggle .toggle-switch input:checked + .toggle-slider {
@@ -832,13 +832,13 @@ body {
     padding: 24px;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 4px 16px var(--hover-overlay-strong);
+    box-shadow: var(--shadow-sm);
 }
 
 .project-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px var(--hover-overlay-darker);
-    border-color: var(--border-color-strong);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--brand-primary);
 }
 
 .project-card h3 {
@@ -3562,12 +3562,13 @@ body:has(.pre-meeting-container) {
     transition: all 0.2s ease;
     position: relative;
     z-index: 20;
+    box-shadow: var(--shadow-xs);
 }
 
 .meeting-card:hover {
     background: var(--bg-card-hover);
-    border-color: var(--border-color-strong);
-    box-shadow: 0 1px 3px var(--hover-overlay-strong);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .meeting-card-header {
@@ -5731,12 +5732,14 @@ label.toggle-switch,
     border-radius: 10px;
     border: 1px dashed var(--border-color);
     margin-bottom: 8px;
+    box-shadow: var(--shadow-xs);
     transition: all 0.2s ease;
 }
 
 .empty-project-card:hover {
     background: var(--bg-secondary);
-    border-color: var(--border-color-strong);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .empty-project-info {

@@ -110,6 +110,7 @@ body.shared-page {
     margin-bottom: 24px;
     border: 1px solid var(--border-color-light);
     text-align: left;
+    box-shadow: var(--shadow-sm);
 }
 
 .file-card-header {

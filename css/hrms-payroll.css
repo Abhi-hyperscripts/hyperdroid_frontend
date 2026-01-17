@@ -1166,8 +1166,16 @@
 .ctc-summary-card {
     padding: 16px;
     background: var(--bg-input);
+    border: 1px solid var(--border-color-light);
     border-radius: 10px;
     text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ctc-summary-card:hover {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .ctc-summary-card .value {
@@ -1292,10 +1300,12 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
 .summary-card:hover {
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -1390,12 +1400,13 @@
     background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: 10px;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
 .dept-breakdown-card:hover {
     border-color: var(--brand-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
 }
 
 .dept-header {

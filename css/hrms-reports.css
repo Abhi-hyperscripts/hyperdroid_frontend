@@ -20,14 +20,15 @@
     gap: 16px;
     padding: 24px;
     background: var(--bg-card);
-    border: 1px solid var(--gray-300);
+    border: 1px solid var(--border-color-light);
     border-radius: 12px;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
 
 .category-card:hover {
-    border-color: var(--gray-950);
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }

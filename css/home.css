@@ -70,7 +70,7 @@
 
 .app-card:hover {
     transform: translateY(-4px);
-    border-color: var(--border-color-strong);
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-xl);
 }
 

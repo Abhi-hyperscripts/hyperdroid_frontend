@@ -40,6 +40,7 @@
     max-width: 720px;
     width: 100%;
     margin: 0 auto;
+    box-shadow: var(--shadow-sm);
 }
 
 /* Override auth-container max-width for activate page when success is shown */

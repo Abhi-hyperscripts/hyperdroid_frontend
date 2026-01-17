@@ -938,36 +938,33 @@
                                     <textarea id="designationDescription" name="description" class="form-control" rows="2" placeholder="Job responsibilities"></textarea>
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row two-col">
                                 <div class="form-group">
-                                    <div class="status-toggle-row">
-                                        <label>Attendance Exempt</label>
-                                        <small class="form-text" style="flex: 1; margin-left: 8px; color: var(--text-secondary);">
-                                            If enabled, employees with this designation are not required to clock in/out for payroll calculations.
-                                        </small>
-                                        <div class="status-toggle-container" style="margin-left: auto;">
-                                            <span class="status-label inactive">Required</span>
-                                            <label class="status-toggle">
-                                                <input type="checkbox" id="designationAttendanceExempt" name="isAttendanceExempt">
-                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                            </label>
-                                            <span class="status-label active">Exempt</span>
-                                        </div>
+                                    <label>Attendance Exempt</label>
+                                    <small class="form-text" style="color: var(--text-secondary); margin-bottom: 8px;">
+                                        If enabled, employees are not required to clock in/out for payroll.
+                                    </small>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">Required</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="designationAttendanceExempt" name="isAttendanceExempt">
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Exempt</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="form-row">
                                 <div class="form-group">
-                                    <div class="status-toggle-row">
-                                        <label>Status</label>
-                                        <div class="status-toggle-container">
-                                            <span class="status-label inactive">Inactive</span>
-                                            <label class="status-toggle">
-                                                <input type="checkbox" id="designationIsActive" name="isActive" checked>
-                                                <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
-                                            </label>
-                                            <span class="status-label active">Active</span>
-                                        </div>
+                                    <label>Status</label>
+                                    <small class="form-text" style="color: var(--text-secondary); margin-bottom: 8px;">
+                                        &nbsp;
+                                    </small>
+                                    <div class="status-toggle-container">
+                                        <span class="status-label inactive">Inactive</span>
+                                        <label class="status-toggle">
+                                            <input type="checkbox" id="designationIsActive" name="isActive" checked>
+                                            <span class="status-toggle-track"><span class="status-toggle-thumb"></span></span>
+                                        </label>
+                                        <span class="status-label active">Active</span>
                                     </div>
                                 </div>
                             </div>

@@ -101,6 +101,7 @@
 
 .drive-item:hover {
     transform: translateY(-4px);
+    border-color: var(--brand-primary);
     box-shadow: var(--shadow-lg);
     background: var(--bg-card-hover);
 }

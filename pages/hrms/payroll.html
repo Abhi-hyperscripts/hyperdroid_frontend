@@ -1901,13 +1901,18 @@
                                 <div id="statutoryDeductionsContainer"></div>
                             </div>
 
-                            <!-- Employer Contributions -->
-                            <div class="statutory-compact-section">
+                            <!-- Employer Contributions Info Note (v3.0.54) -->
+                            <div class="statutory-compact-section employer-info">
                                 <div class="statutory-compact-header employer">
                                     <span class="statutory-compact-label">Employer Contributions</span>
-                                    <span class="statutory-compact-count" id="contributionCount">0</span>
                                 </div>
-                                <div id="statutoryEmployerContributionsContainer"></div>
+                                <div class="statutory-info-note">
+                                    <span style="opacity: 0.7; font-size: 11px;">
+                                        Employer contributions (PF, ESI, Gratuity, etc.) are calculated during payroll
+                                        processing based on country compliance rules. They are not part of the
+                                        salary structure definition.
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1935,7 +1940,7 @@
                 </div>
                 <div class="modal-body">
                 <!-- Info banner about statutory components -->
-                <div class="info-banner" style="background: var(--bg-tertiary); border-left: 4px solid var(--brand-primary); padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                <div class="info-banner" style="border-left: 4px solid var(--brand-primary);">
                     <div style="display: flex; align-items: flex-start; gap: 12px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
                             <circle cx="12" cy="12" r="10"/>

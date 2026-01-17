@@ -296,13 +296,14 @@ async function loadDashboard() {
                 currentEmployee = profileResult;
             }
         } catch (e) {
-            // User doesn't have an employee profile - that's okay
-            console.log('User has no employee profile');
+            // User doesn't have an employee profile - that's okay for admin users
+            console.log('User has no employee profile (admin user)');
         }
 
         // Show clock section for ANY user with an employee profile
-        if (hasEmployeeProfile || hrmsRoles.isBasicUser()) {
-            document.getElementById('clockSection').style.display = 'block';
+        const clockSection = document.getElementById('clockSection');
+        if (clockSection && (hasEmployeeProfile || hrmsRoles.isBasicUser())) {
+            clockSection.style.display = 'block';
             await loadEmployeeAttendance();
         }
 
@@ -314,9 +315,16 @@ async function loadDashboard() {
             await loadEmployeeStats();
         }
 
-        // Load common sections
-        await loadRecentLeaveRequests();
-        await loadUpcomingEvents();
+        // Load common sections only if DOM elements exist
+        const leaveRequestsEl = document.getElementById('recentLeaveRequests');
+        if (leaveRequestsEl) {
+            await loadRecentLeaveRequests();
+        }
+
+        const holidaysEl = document.getElementById('upcomingHolidays');
+        if (holidaysEl) {
+            await loadUpcomingEvents();
+        }
 
     } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -468,6 +476,8 @@ async function handleClock() {
 
 async function loadRecentLeaveRequests() {
     const tbody = document.getElementById('recentLeaveRequests');
+    if (!tbody) return; // Element removed from page
+
     try {
         // For HR users/manager, show pending approvals
         // For basic employee, show their own requests
@@ -529,34 +539,41 @@ async function loadUpcomingEvents() {
     const holidaysContainer = document.getElementById('upcomingHolidays');
     const birthdaysContainer = document.getElementById('upcomingBirthdays');
 
-    try {
-        // Load upcoming holidays for current year
-        const holidays = await api.request(`/hrms/holidays?year=${new Date().getFullYear()}`);
-        const holidayList = Array.isArray(holidays) ? holidays : (holidays?.data || []);
+    // Elements removed from page
+    if (!holidaysContainer && !birthdaysContainer) return;
 
-        // Filter for upcoming holidays only
-        const today = new Date();
-        const upcomingHolidays = holidayList
-            .filter(h => new Date(h.holiday_date) >= today)
-            .sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date))
-            .slice(0, 5);
+    if (holidaysContainer) {
+        try {
+            // Load upcoming holidays for current year
+            const holidays = await api.request(`/hrms/holidays?year=${new Date().getFullYear()}`);
+            const holidayList = Array.isArray(holidays) ? holidays : (holidays?.data || []);
 
-        if (upcomingHolidays.length > 0) {
-            holidaysContainer.innerHTML = upcomingHolidays.map(h => `
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color-light);">
-                    <span style="font-size: 0.85rem;">${h.holiday_name}</span>
-                    <span class="text-muted" style="font-size: 0.8rem;">${formatDate(h.holiday_date)}</span>
-                </div>
-            `).join('');
-        } else {
-            holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">No upcoming holidays</p>';
+            // Filter for upcoming holidays only
+            const today = new Date();
+            const upcomingHolidays = holidayList
+                .filter(h => new Date(h.holiday_date) >= today)
+                .sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date))
+                .slice(0, 5);
+
+            if (upcomingHolidays.length > 0) {
+                holidaysContainer.innerHTML = upcomingHolidays.map(h => `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color-light);">
+                        <span style="font-size: 0.85rem;">${h.holiday_name}</span>
+                        <span class="text-muted" style="font-size: 0.8rem;">${formatDate(h.holiday_date)}</span>
+                    </div>
+                `).join('');
+            } else {
+                holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">No upcoming holidays</p>';
+            }
+        } catch (error) {
+            holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Unable to load holidays</p>';
         }
-    } catch (error) {
-        holidaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Unable to load holidays</p>';
     }
 
     // Birthdays feature - show placeholder for now (requires backend API)
-    birthdaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Feature coming soon</p>';
+    if (birthdaysContainer) {
+        birthdaysContainer.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Feature coming soon</p>';
+    }
 }
 
 function refreshDashboard() {
@@ -608,7 +625,8 @@ function onEmployeeUpdated(data) {
  */
 function onEmployeeCreated(data) {
     console.log('[Dashboard] Employee created:', data);
-    showToast(`New employee ${data.EmployeeName || ''} added`, 'success');
+    // Don't show toast here - the creator already sees a toast from saveEmployee()
+    // This handler is for refreshing dashboard stats when other users create employees
     loadDashboard();
 }
 

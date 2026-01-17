@@ -240,6 +240,166 @@ const Toast = (function() {
         Array.from(container.children).forEach(toast => removeToast(toast));
     }
 
+    /**
+     * Create and show an action toast with Yes/No buttons
+     * Used for prompting users to take action (e.g., refresh page)
+     * @param {string} message - The message to display
+     * @param {object} options - Configuration options
+     * @returns {Promise<boolean>} - Resolves to true if Yes clicked, false if No clicked or dismissed
+     */
+    function showAction(message, options = {}) {
+        init();
+
+        const {
+            type = 'info',
+            yesText = 'Yes',
+            noText = 'No',
+            title = null
+        } = options;
+
+        const themeColors = getColors();
+        const colors = themeColors[type] || themeColors.info;
+        const icon = ICONS[type] || ICONS.info;
+
+        return new Promise((resolve) => {
+            // Limit concurrent toasts
+            while (container.children.length >= CONFIG.maxToasts) {
+                const oldest = container.firstChild;
+                if (oldest) removeToast(oldest);
+            }
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 14px 16px;
+                background: ${colors.bg};
+                border-left: 4px solid ${colors.border};
+                border-radius: 8px;
+                box-shadow: var(--shadow-lg);
+                color: var(--text-inverse);
+                font-size: 14px;
+                font-weight: 500;
+                line-height: 1.4;
+                pointer-events: auto;
+                transform: translateX(120%);
+                transition: transform ${CONFIG.animationDuration}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${CONFIG.animationDuration}ms ease;
+                opacity: 0;
+                max-width: 100%;
+                word-wrap: break-word;
+            `;
+
+            // Build title HTML if provided
+            const titleHtml = title ? `<div style="font-weight: 600; font-size: 13px; margin-bottom: 2px;">${escapeHtml(title)}</div>` : '';
+
+            // Toast content with buttons
+            toast.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="flex-shrink: 0; margin-top: 1px;">${icon}</div>
+                    <div style="flex: 1;">
+                        ${titleHtml}
+                        <div>${escapeHtml(message)}</div>
+                    </div>
+                    <button class="toast-dismiss-btn" style="
+                        flex-shrink: 0;
+                        background: none;
+                        border: none;
+                        color: var(--text-inverse);
+                        opacity: 0.7;
+                        cursor: pointer;
+                        padding: 0;
+                        font-size: 18px;
+                        line-height: 1;
+                        transition: opacity 0.2s;
+                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">&times;</button>
+                </div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;">
+                    <button class="toast-no-btn" style="
+                        padding: 6px 14px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        border: 1px solid rgba(255,255,255,0.3);
+                        background: transparent;
+                        color: var(--text-inverse);
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">${escapeHtml(noText)}</button>
+                    <button class="toast-yes-btn" style="
+                        padding: 6px 14px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        border: none;
+                        background: rgba(255,255,255,0.2);
+                        color: var(--text-inverse);
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">${escapeHtml(yesText)}</button>
+                </div>
+            `;
+
+            // Get button references
+            const dismissBtn = toast.querySelector('.toast-dismiss-btn');
+            const noBtn = toast.querySelector('.toast-no-btn');
+            const yesBtn = toast.querySelector('.toast-yes-btn');
+
+            // Track if already resolved
+            let resolved = false;
+
+            function closeAndResolve(result) {
+                if (resolved) return;
+                resolved = true;
+                removeToast(toast);
+                resolve(result);
+            }
+
+            // Button handlers
+            dismissBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAndResolve(false);
+            });
+
+            noBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAndResolve(false);
+            });
+
+            yesBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAndResolve(true);
+            });
+
+            // Add to container
+            container.appendChild(toast);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.style.transform = 'translateX(0)';
+                    toast.style.opacity = '1';
+                });
+            });
+
+            // No auto-dismiss for action toasts - user must click a button
+            // But auto-dismiss after 30 seconds to prevent stale toasts
+            const timeoutId = setTimeout(() => closeAndResolve(false), 30000);
+            toast.dataset.timeoutId = timeoutId;
+
+            // Pause auto-dismiss on hover
+            toast.addEventListener('mouseenter', () => {
+                clearTimeout(parseInt(toast.dataset.timeoutId));
+            });
+
+            toast.addEventListener('mouseleave', () => {
+                const newTimeoutId = setTimeout(() => closeAndResolve(false), 30000);
+                toast.dataset.timeoutId = newTimeoutId;
+            });
+        });
+    }
+
     // Public API
     return {
         show,
@@ -247,6 +407,7 @@ const Toast = (function() {
         error: (message, options) => show(message, 'error', options),
         warning: (message, options) => show(message, 'warning', options),
         info: (message, options) => show(message, 'info', options),
+        action: showAction,
         clear: clearAll
     };
 })();
