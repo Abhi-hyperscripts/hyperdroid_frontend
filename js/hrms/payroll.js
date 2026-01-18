@@ -2695,6 +2695,7 @@ function buildCalculationProofUI(proof, response) {
 /**
  * Build earnings section HTML
  * v3.0.49: Groups earnings by salary structure when multiple versions exist
+ * v3.0.58: Groups earnings by office location for multi-location payroll
  */
 function buildEarningsSection(proof, fmt) {
     const items = proof.earningsItems || [];
@@ -2702,6 +2703,14 @@ function buildEarningsSection(proof, fmt) {
 
     const timeline = proof.versionTimeline || [];
     const hasMultipleVersions = proof.hasMultipleVersions || timeline.length > 1;
+
+    // v3.0.58: Check if this is multi-location payroll (any item has officeCode)
+    const hasLocationData = items.some(item => item.officeCode);
+
+    // v3.0.58: If multi-location, group by office location
+    if (hasLocationData) {
+        return buildLocationGroupedEarningsSection(proof, fmt);
+    }
 
     // If multiple versions, group earnings by proration factor
     if (hasMultipleVersions && timeline.length > 0) {
@@ -2888,6 +2897,117 @@ function findClosestVersion(prorationKey, prorationToVersion) {
     }
 
     return closest;
+}
+
+/**
+ * v3.0.58: Build earnings grouped by office location for multi-location payroll
+ */
+function buildLocationGroupedEarningsSection(proof, fmt) {
+    const items = proof.earningsItems || [];
+
+    // Group items by officeCode
+    const groupedByOffice = {};
+    items.forEach(item => {
+        const officeKey = item.officeCode || 'UNKNOWN';
+        if (!groupedByOffice[officeKey]) {
+            groupedByOffice[officeKey] = {
+                officeName: item.officeName || item.officeCode || 'Unknown Office',
+                officeCode: item.officeCode,
+                locationWorkedDays: item.locationWorkedDays,
+                totalMonthWorkingDays: item.totalMonthWorkingDays,
+                proratedFactor: item.proratedFactor,
+                locationPeriodStart: item.locationPeriodStart,
+                locationPeriodEnd: item.locationPeriodEnd,
+                items: []
+            };
+        }
+        groupedByOffice[officeKey].items.push(item);
+    });
+
+    // Generate rows with location headers
+    let groupedRowsHtml = '';
+    Object.values(groupedByOffice).forEach(group => {
+        // Location header row
+        const daysInfo = group.locationWorkedDays && group.totalMonthWorkingDays
+            ? `${group.locationWorkedDays} of ${group.totalMonthWorkingDays} days`
+            : '';
+        const prorateInfo = group.proratedFactor
+            ? `(${(group.proratedFactor * 100).toFixed(1)}%)`
+            : '';
+        const locationSubtotal = group.items.reduce((sum, i) => sum + (i.amount || 0), 0);
+
+        // Format period dates if available
+        let periodLabel = '';
+        if (group.locationPeriodStart && group.locationPeriodEnd) {
+            const startDate = new Date(group.locationPeriodStart);
+            const endDate = new Date(group.locationPeriodEnd);
+            periodLabel = `${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${endDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
+        }
+
+        groupedRowsHtml += `
+            <tr class="location-header-row">
+                <td colspan="3">
+                    <div class="location-header">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span class="location-name">${group.officeName}</span>
+                        <span class="location-code">(${group.officeCode})</span>
+                        <span class="location-days">${daysInfo} ${prorateInfo}</span>
+                        ${periodLabel ? `<span class="location-period">${periodLabel}</span>` : ''}
+                    </div>
+                </td>
+                <td class="text-right location-subtotal">${fmt(locationSubtotal)}</td>
+            </tr>
+        `;
+
+        // Component rows for this location
+        group.items.forEach(item => {
+            groupedRowsHtml += `
+                <tr class="location-item-row">
+                    <td class="component-name" style="padding-left: 24px;">${item.componentName || item.componentCode || '-'}</td>
+                    <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
+                    <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
+                    <td class="text-right amount-cell">${fmt(item.amount)}</td>
+                </tr>
+            `;
+        });
+    });
+
+    return `
+        <div class="proof-card">
+            <div class="proof-card-header earnings-header">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                </svg>
+                <span>Earnings Breakdown</span>
+                <span class="header-badge earnings-badge">${fmt(proof.grossEarnings)}</span>
+            </div>
+            <div class="proof-card-body">
+                <p class="section-description">Earnings grouped by work location. Employee worked at multiple offices during this pay period.</p>
+                <table class="proof-table grouped-earnings-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-right">Base Amount</th>
+                            <th class="text-center">Proration</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${groupedRowsHtml}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Total Gross Earnings</strong></td>
+                            <td class="text-right"><strong>${fmt(proof.grossEarnings)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
 }
 
 /**

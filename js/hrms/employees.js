@@ -98,8 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Apply RBAC visibility to employees page elements
  */
 function applyEmployeesRBAC() {
-    // Show create button only for HR Admin
+    // Show create/bulk import buttons only for HR Admin
     hrmsRoles.setElementVisibility('createEmployeeBtn', hrmsRoles.canCreateEmployee());
+    hrmsRoles.setElementVisibility('bulkImportBtn', hrmsRoles.canCreateEmployee());
 
     console.log('Employees RBAC applied:', hrmsRoles.getDebugInfo());
 }

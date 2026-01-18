@@ -1558,19 +1558,85 @@ const PayslipModal = (function() {
 
     /**
      * Build earnings section - comprehensive version matching payroll.js
+     * v3.0.58: Support multi-location earnings with location grouping
      */
     function buildEarningsSection(proof, fmt) {
         const items = proof.earningsItems || [];
         if (items.length === 0) return '';
 
-        let rows = items.map(item => `
-            <tr>
-                <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
-                <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
-                <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
-                <td class="text-right amount-cell">${fmt(item.amount)}</td>
-            </tr>
-        `).join('');
+        // v3.0.58: Check if this is a multi-location payslip (any item has officeCode)
+        const hasLocationData = items.some(item => item.officeCode);
+        console.log('[buildEarningsSection] hasLocationData:', hasLocationData, 'items:', items.length, 'first item officeCode:', items[0]?.officeCode);
+        let rows = '';
+
+        if (hasLocationData) {
+            // Group items by officeCode for multi-location display
+            const groupedByOffice = {};
+            items.forEach(item => {
+                const officeKey = item.officeCode || 'UNKNOWN';
+                if (!groupedByOffice[officeKey]) {
+                    groupedByOffice[officeKey] = {
+                        officeName: item.officeName || item.officeCode || 'Unknown Office',
+                        officeCode: item.officeCode,
+                        locationWorkedDays: item.locationWorkedDays,
+                        totalMonthWorkingDays: item.totalMonthWorkingDays,
+                        proratedFactor: item.proratedFactor,
+                        items: []
+                    };
+                }
+                groupedByOffice[officeKey].items.push(item);
+            });
+
+            // Generate rows with location headers
+            Object.values(groupedByOffice).forEach(group => {
+                // Location header row
+                const daysInfo = group.locationWorkedDays && group.totalMonthWorkingDays
+                    ? `${group.locationWorkedDays} of ${group.totalMonthWorkingDays} days`
+                    : '';
+                const prorateInfo = group.proratedFactor
+                    ? `(${(group.proratedFactor * 100).toFixed(1)}%)`
+                    : '';
+                const locationSubtotal = group.items.reduce((sum, i) => sum + (i.amount || 0), 0);
+
+                rows += `
+                    <tr class="location-header-row">
+                        <td colspan="3">
+                            <div class="location-header">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span class="location-name">${group.officeName}</span>
+                                <span class="location-days">${daysInfo} ${prorateInfo}</span>
+                            </div>
+                        </td>
+                        <td class="text-right location-subtotal">${fmt(locationSubtotal)}</td>
+                    </tr>
+                `;
+
+                // Component rows for this location
+                group.items.forEach(item => {
+                    rows += `
+                        <tr class="location-item-row">
+                            <td class="component-name" style="padding-left: 24px;">${item.componentName || item.componentCode || '-'}</td>
+                            <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
+                            <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
+                            <td class="text-right amount-cell">${fmt(item.amount)}</td>
+                        </tr>
+                    `;
+                });
+            });
+        } else {
+            // Single location - flat list as before
+            rows = items.map(item => `
+                <tr>
+                    <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+                    <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
+                    <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
+                    <td class="text-right amount-cell">${fmt(item.amount)}</td>
+                </tr>
+            `).join('');
+        }
 
         return `
             <div class="proof-card">

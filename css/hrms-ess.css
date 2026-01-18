@@ -5210,3 +5210,69 @@
         gap: 12px;
     }
 }
+
+/* ==============================================
+ * v3.0.58: Multi-Location Earnings Display
+ * Shows office location headers with grouped earnings
+ * ============================================== */
+
+/* Location header row in earnings table */
+.location-header-row {
+    background: var(--bg-secondary);
+    border-top: 2px solid var(--brand-primary);
+}
+
+.location-header-row td {
+    padding: 10px 12px !important;
+}
+
+.location-header-row .location-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.location-header-row .location-header svg {
+    stroke: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.location-header-row .location-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.location-header-row .location-days {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
+.location-header-row .location-subtotal {
+    font-weight: 600;
+    color: var(--color-success);
+    font-size: 0.85rem;
+}
+
+/* Component rows under location header */
+.location-item-row {
+    background: var(--bg-primary);
+}
+
+.location-item-row td {
+    border-bottom: 1px dashed var(--border-secondary) !important;
+}
+
+.location-item-row:last-child td {
+    border-bottom: none !important;
+}
+
+/* Alternating location groups visual separation */
+.location-header-row + .location-item-row:nth-last-of-type(even) {
+    background: var(--bg-hover);
+}

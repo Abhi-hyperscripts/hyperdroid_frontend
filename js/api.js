@@ -1537,6 +1537,41 @@ class API {
         return this.request('/hrms/employees/available-users');
     }
 
+    // --- Bulk Employee Import ---
+
+    /**
+     * Bulk create users in Auth service
+     * @param {Object} request - { Users: [...], DefaultRoles: [...], GeneratePasswords: bool }
+     */
+    async bulkCreateUsers(request) {
+        return this.request('/users/bulk', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    /**
+     * Validate bulk employee import data (dry run)
+     * @param {Object} request - { Employees: [...] }
+     */
+    async validateBulkEmployeeImport(request) {
+        return this.request('/hrms/employees/bulk/validate', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
+    /**
+     * Bulk import employees (Phase 2 - after users are created in Auth)
+     * @param {Object} request - { Employees: [...] }
+     */
+    async bulkImportEmployees(request) {
+        return this.request('/hrms/employees/bulk', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
+    }
+
     // --- Employee Bank Accounts ---
     async getEmployeeBankAccounts(employeeId) {
         return this.request(`/hrms/employees/${employeeId}/bank-accounts`);
