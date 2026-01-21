@@ -18,6 +18,10 @@ let officeFilterDropdown = null;
 let departmentFilterDropdown = null;
 let statusFilterDropdown = null;
 
+// Pagination instances
+let employeesPagination = null;
+let nfcCardsPagination = null;
+
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
     if (text == null) return '';
@@ -419,6 +423,8 @@ function filterEmployees() {
 
 function renderEmployees() {
     const tbody = document.getElementById('employeesTableBody');
+    if (!tbody) return;
+
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
     // Get filter values from SearchableDropdown instances or fallback to native select
@@ -440,7 +446,27 @@ function renderEmployees() {
         return matchesSearch && matchesDept && matchesOffice && matchesStatus;
     });
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        employeesPagination = createTablePagination('employeesPagination', {
+            containerSelector: '#employeesPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderEmployeesRows(paginatedData);
+            }
+        });
+    } else {
+        renderEmployeesRows(filtered);
+    }
+}
+
+function renderEmployeesRows(filtered) {
+    const tbody = document.getElementById('employeesTableBody');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No employees found</p></td></tr>';
         return;
     }
@@ -469,7 +495,7 @@ function renderEmployees() {
                         <div id="emp-photo-${emp.id}">${photoHtml}</div>
                         <div>
                             <div class="employee-name">${emp.first_name} ${emp.last_name}</div>
-                            <div class="employee-code">${emp.employee_code}</div>
+                            <div class="employee-code">${emp.employee_code || '-'}</div>
                         </div>
                     </div>
                 </td>
@@ -1104,7 +1130,7 @@ async function viewEmployee(id) {
                 ${photoHtml}
                 <div>
                     <h2>${emp.first_name} ${emp.last_name}</h2>
-                    <p>${emp.employee_code} | ${desig?.designation_name || '-'}</p>
+                    <p>${emp.employee_code || '-'} | ${desig?.designation_name || '-'}</p>
                 </div>
                 <span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span>
             </div>
@@ -2903,7 +2929,7 @@ async function submitReassignManager() {
 // ============================================
 
 let currentEmployeeStep = 1;
-const totalEmployeeSteps = 4;
+const totalEmployeeSteps = 4; // Always 4 steps (NFC management moved to separate tab)
 
 function goToEmployeeStep(stepNumber) {
     // Validate current step before moving forward
@@ -2935,7 +2961,7 @@ function goToEmployeeStep(stepNumber) {
     }
 
     // Update navigation buttons
-    const backBtn = document.getElementById('empWizardBackBtn');
+    const backBtn = document.getElementById('empWizardPrevBtn');
     const nextBtn = document.getElementById('empWizardNextBtn');
     const saveBtn = document.getElementById('empWizardSaveBtn');
 
@@ -3153,7 +3179,7 @@ function showTerminateModal(employeeId) {
                 ${photoHtml}
                 <div class="terminate-employee-details">
                     <h4>${employee.first_name} ${employee.last_name}</h4>
-                    <p class="employee-code">${employee.employee_code}</p>
+                    <p class="employee-code">${employee.employee_code || '-'}</p>
                     <p>${desig?.designation_name || '-'} • ${dept?.department_name || '-'}</p>
                     <p class="join-date">Joined: ${formatDate(employee.hire_date)}</p>
                 </div>
@@ -3295,7 +3321,8 @@ function setupSidebar() {
 
     // Tab name mapping for display
     const tabNames = {
-        'directory': 'Employee Directory'
+        'directory': 'Employee Directory',
+        'nfcCards': 'NFC Cards'
     };
 
     // Update active tab title
@@ -3334,11 +3361,30 @@ function setupSidebar() {
         });
     });
 
-    // Update title when a tab is selected
-    document.querySelectorAll('.sidebar-btn[data-tab]').forEach(btn => {
+    // Tab switching functionality
+    const tabBtns = document.querySelectorAll('.sidebar-btn[data-tab]');
+    tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
+
+            // Update button states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update tab content visibility
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Update title
             updateActiveTabTitle(tabId);
+
+            // Load data for the tab if needed
+            if (tabId === 'nfcCards' && !nfcCardsLoaded) {
+                loadNfcCardsTable();
+            }
         });
     });
 
@@ -4105,4 +4151,650 @@ function onEmployeeCreated(data) {
     // Don't show toast here - the creator already sees a toast from saveEmployee()
     // This handler is for refreshing data when other users create employees
     loadEmployees();
+}
+
+// ============================================
+// NFC Card Management Functions (v3.0.62)
+// ============================================
+
+let allNfcCards = []; // Cache of all NFC cards for the table
+let nfcCardsLoaded = false; // Track if NFC cards have been loaded
+let viewingEmployeeCards = null; // Employee being viewed in modal
+
+/**
+ * Load all NFC cards for the table
+ */
+async function loadNfcCardsTable() {
+    try {
+        const cards = await api.getAllNfcCards(true); // Include inactive
+        allNfcCards = cards || [];
+        nfcCardsLoaded = true;
+
+        // Populate office filter for NFC tab
+        populateNfcOfficeFilter();
+
+        // Show issue button for HR Admin
+        hrmsRoles.setElementVisibility('issueNfcCardBtn', hrmsRoles.canCreateEmployee());
+
+        renderNfcCardsTable();
+    } catch (error) {
+        console.error('Error loading NFC cards:', error);
+        allNfcCards = [];
+        renderNfcCardsTable();
+    }
+}
+
+/**
+ * Populate office filter dropdown for NFC Cards tab
+ */
+function populateNfcOfficeFilter() {
+    const select = document.getElementById('nfcOfficeFilter');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">All Offices</option>';
+    offices.forEach(office => {
+        const option = document.createElement('option');
+        option.value = office.id;
+        option.textContent = office.office_name;
+        select.appendChild(option);
+    });
+}
+
+/**
+ * Filter NFC cards based on search and filters
+ */
+function filterNfcCards() {
+    renderNfcCardsTable();
+}
+
+/**
+ * Get filtered NFC cards based on current filter values
+ */
+function getFilteredNfcCards() {
+    const searchTerm = document.getElementById('nfcSearchInput')?.value?.toLowerCase() || '';
+    const statusFilter = document.getElementById('nfcStatusFilter')?.value || '';
+    const officeFilter = document.getElementById('nfcOfficeFilter')?.value || '';
+
+    return allNfcCards.filter(card => {
+        // Search filter
+        if (searchTerm) {
+            const employeeName = `${card.employee_first_name || ''} ${card.employee_last_name || ''}`.toLowerCase();
+            const employeeCode = (card.employee_code || '').toLowerCase();
+            const cardUid = (card.card_uid || '').toLowerCase();
+            const cardLabel = (card.card_label || '').toLowerCase();
+
+            if (!employeeName.includes(searchTerm) &&
+                !employeeCode.includes(searchTerm) &&
+                !cardUid.includes(searchTerm) &&
+                !cardLabel.includes(searchTerm)) {
+                return false;
+            }
+        }
+
+        // Status filter
+        if (statusFilter === 'active' && !card.is_active) return false;
+        if (statusFilter === 'inactive' && card.is_active) return false;
+
+        // Office filter
+        if (officeFilter && card.employee_office_id !== officeFilter) return false;
+
+        return true;
+    });
+}
+
+/**
+ * Render the NFC cards table
+ */
+function renderNfcCardsTable() {
+    const tbody = document.getElementById('nfcCardsTableBody');
+    if (!tbody) return;
+
+    const filteredCards = getFilteredNfcCards();
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        nfcCardsPagination = createTablePagination('nfcCardsPagination', {
+            containerSelector: '#nfcCardsPagination',
+            data: filteredCards,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderNfcCardsRows(paginatedData);
+            }
+        });
+    } else {
+        renderNfcCardsRows(filteredCards);
+    }
+}
+
+function renderNfcCardsRows(filteredCards) {
+    const tbody = document.getElementById('nfcCardsTableBody');
+    if (!tbody) return;
+
+    if (!filteredCards || filteredCards.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-row">
+                <td colspan="7">
+                    <div class="empty-state">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                        </svg>
+                        <p>No NFC cards found</p>
+                        <small>Issue NFC cards to employees for attendance kiosks</small>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = filteredCards.map(card => {
+        const statusClass = card.is_active ? 'active' : 'inactive';
+        const statusText = card.is_active ? 'Active' : 'Inactive';
+        const employeeName = `${card.employee_first_name || ''} ${card.employee_last_name || ''}`.trim() || '-';
+        const dept = departments.find(d => d.id === card.employee_department_id);
+
+        return `
+            <tr data-card-id="${card.id}">
+                <td>
+                    <div class="employee-cell">
+                        <div class="employee-avatar-sm">${getInitials(card.employee_first_name, card.employee_last_name)}</div>
+                        <div class="employee-info-cell">
+                            <span class="employee-name">${escapeHtml(employeeName)}</span>
+                            <span class="employee-code">${escapeHtml(card.employee_code || '-')}</span>
+                        </div>
+                    </div>
+                </td>
+                <td><code class="card-uid">${formatCardUid(card.card_uid)}</code></td>
+                <td>${escapeHtml(card.card_label || '-')}</td>
+                <td><span class="badge badge-${statusClass}">${statusText}</span></td>
+                <td>${card.is_primary ? '<span class="badge badge-primary">Primary</span>' : '-'}</td>
+                <td>${formatDate(card.issued_at)}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline" onclick="openViewEmployeeCardsModal('${card.employee_id}')" title="View all cards">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                        ${card.is_active && !card.is_primary ? `
+                            <button class="btn btn-sm btn-outline-primary" onclick="setNfcCardPrimaryFromTable('${card.id}')" title="Set as primary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                        ${card.is_active ? `
+                            <button class="btn btn-sm btn-outline-warning" onclick="openDeactivateCardModal('${card.id}')" title="Deactivate">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                </svg>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-outline-success" onclick="reactivateNfcCardFromTable('${card.id}')" title="Reactivate">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                            </button>
+                        `}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * Format card UID for display (add colons every 2 chars)
+ */
+function formatCardUid(uid) {
+    if (!uid) return '-';
+    return uid.match(/.{1,2}/g)?.join(':') || uid;
+}
+
+/**
+ * Get employee initials for avatar
+ */
+function getInitials(firstName, lastName) {
+    const first = (firstName || '').charAt(0).toUpperCase();
+    const last = (lastName || '').charAt(0).toUpperCase();
+    return first + last || '?';
+}
+
+// ============================================
+// Issue NFC Card Modal Functions
+// ============================================
+
+/**
+ * Open the issue NFC card modal
+ */
+function openIssueNfcCardModal() {
+    document.getElementById('nfcCardModalTitle').textContent = 'Issue NFC Card';
+    document.getElementById('issueNfcCardForm').reset();
+    document.getElementById('nfcCardId').value = '';
+    document.getElementById('nfcSelectedEmployeeCard').style.display = 'none';
+
+    // Populate employee dropdown
+    populateNfcEmployeeSelect();
+
+    openModal('issueNfcCardModal');
+}
+
+/**
+ * Populate employee select dropdown for issue card modal
+ */
+function populateNfcEmployeeSelect() {
+    const select = document.getElementById('nfcEmployeeSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select employee...</option>';
+
+    // Only show active employees
+    const activeEmployees = employees.filter(e => e.employment_status === 'active');
+
+    activeEmployees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = `${emp.first_name} ${emp.last_name} (${emp.employee_code})`;
+        select.appendChild(option);
+    });
+
+    // Add change handler
+    select.onchange = onNfcEmployeeSelect;
+}
+
+/**
+ * Handle employee selection in issue card modal
+ */
+async function onNfcEmployeeSelect() {
+    const select = document.getElementById('nfcEmployeeSelect');
+    const employeeId = select.value;
+    const cardEl = document.getElementById('nfcSelectedEmployeeCard');
+
+    if (!employeeId) {
+        cardEl.style.display = 'none';
+        return;
+    }
+
+    const emp = employees.find(e => e.id === employeeId);
+    if (!emp) {
+        cardEl.style.display = 'none';
+        return;
+    }
+
+    // Show employee card
+    document.getElementById('nfcEmployeeAvatar').textContent = getInitials(emp.first_name, emp.last_name);
+    document.getElementById('nfcEmployeeName').textContent = `${emp.first_name} ${emp.last_name}`;
+    document.getElementById('nfcEmployeeCode').textContent = emp.employee_code;
+
+    const dept = departments.find(d => d.id === emp.department_id);
+    const desig = designations.find(d => d.id === emp.designation_id);
+    document.getElementById('nfcEmployeeDept').textContent = dept?.department_name || '-';
+    document.getElementById('nfcEmployeeDesig').textContent = desig?.designation_name || '-';
+
+    // Load existing cards for this employee
+    try {
+        const existingCards = await api.getNfcCardsByEmployee(employeeId);
+        const infoEl = document.getElementById('nfcExistingCardsInfo');
+
+        if (existingCards && existingCards.length > 0) {
+            const activeCount = existingCards.filter(c => c.is_active).length;
+            infoEl.innerHTML = `<span class="existing-cards-badge">${activeCount} active card(s)</span>`;
+        } else {
+            infoEl.innerHTML = '<span class="no-cards-badge">No cards assigned</span>';
+        }
+    } catch (error) {
+        console.error('Error loading existing cards:', error);
+    }
+
+    cardEl.style.display = 'flex';
+}
+
+/**
+ * Submit new NFC card issue
+ */
+async function submitIssueNfcCard() {
+    const employeeId = document.getElementById('nfcEmployeeSelect').value;
+    if (!employeeId) {
+        showToast('Please select an employee', 'error');
+        return;
+    }
+
+    const cardUid = document.getElementById('nfcNewCardUid').value.trim().toUpperCase().replace(/[^A-F0-9]/g, '');
+    const cardLabel = document.getElementById('nfcNewCardLabel').value.trim();
+    const isPrimary = document.getElementById('nfcNewCardPrimary').checked;
+
+    if (!cardUid) {
+        showToast('Card UID is required', 'error');
+        return;
+    }
+
+    if (cardUid.length < 8) {
+        showToast('Card UID must be at least 8 hex characters', 'error');
+        return;
+    }
+
+    try {
+        await api.issueNfcCard({
+            employee_id: employeeId,
+            card_uid: cardUid,
+            card_label: cardLabel || null,
+            is_primary: isPrimary
+        });
+
+        showToast('NFC card issued successfully', 'success');
+        closeModal('issueNfcCardModal');
+
+        // Reload table
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error issuing NFC card:', error);
+        showToast(error.message || 'Failed to issue NFC card', 'error');
+    }
+}
+
+// ============================================
+// View Employee Cards Modal Functions
+// ============================================
+
+/**
+ * Open modal to view/manage all cards for an employee
+ */
+async function openViewEmployeeCardsModal(employeeId) {
+    viewingEmployeeCards = employeeId;
+
+    const emp = employees.find(e => e.id === employeeId);
+    if (!emp) {
+        showToast('Employee not found', 'error');
+        return;
+    }
+
+    // Update employee info
+    document.getElementById('viewCardsEmployeeAvatar').textContent = getInitials(emp.first_name, emp.last_name);
+    document.getElementById('viewCardsEmployeeName').textContent = `${emp.first_name} ${emp.last_name}`;
+    document.getElementById('viewCardsEmployeeCode').textContent = emp.employee_code;
+
+    const dept = departments.find(d => d.id === emp.department_id);
+    const desig = designations.find(d => d.id === emp.designation_id);
+    document.getElementById('viewCardsEmployeeDept').textContent = dept?.department_name || '-';
+    document.getElementById('viewCardsEmployeeDesig').textContent = desig?.designation_name || '-';
+
+    // Show/hide issue section based on permissions
+    const issueSection = document.getElementById('viewCardsIssueSection');
+    if (issueSection) {
+        issueSection.style.display = hrmsRoles.canCreateEmployee() ? 'block' : 'none';
+    }
+
+    // Load and render cards
+    await loadViewEmployeeCards();
+
+    openModal('viewEmployeeCardsModal');
+}
+
+/**
+ * Load cards for the view modal
+ */
+async function loadViewEmployeeCards() {
+    if (!viewingEmployeeCards) return;
+
+    const listEl = document.getElementById('viewCardsCardsList');
+    if (!listEl) return;
+
+    try {
+        const cards = await api.getNfcCardsByEmployee(viewingEmployeeCards);
+
+        if (!cards || cards.length === 0) {
+            listEl.innerHTML = `
+                <div class="nfc-cards-empty-modal">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                        <line x1="2" y1="10" x2="22" y2="10"/>
+                    </svg>
+                    <p>No NFC cards assigned</p>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = cards.map(card => {
+            const statusClass = card.is_active ? 'active' : 'inactive';
+            const statusText = card.is_active ? 'Active' : 'Inactive';
+
+            return `
+                <div class="nfc-card-item-modal ${card.is_active ? '' : 'inactive'}">
+                    <div class="nfc-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="nfc-card-info-modal">
+                        <code class="card-uid">${formatCardUid(card.card_uid)}</code>
+                        <span class="card-label">${escapeHtml(card.card_label || 'No label')}</span>
+                        <div class="card-badges">
+                            <span class="badge badge-${statusClass}">${statusText}</span>
+                            ${card.is_primary ? '<span class="badge badge-primary">Primary</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="nfc-card-actions-modal">
+                        ${card.is_active && !card.is_primary ? `
+                            <button class="btn btn-sm btn-outline-primary" onclick="setNfcCardPrimaryFromModal('${card.id}')" title="Set as primary">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                        ${card.is_active ? `
+                            <button class="btn btn-sm btn-outline-warning" onclick="deactivateCardFromModal('${card.id}')" title="Deactivate">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                </svg>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-outline-success" onclick="reactivateCardFromModal('${card.id}')" title="Reactivate">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading employee cards:', error);
+        listEl.innerHTML = '<p class="error-text">Failed to load cards</p>';
+    }
+}
+
+/**
+ * Issue card from view modal
+ */
+async function issueCardFromViewModal() {
+    if (!viewingEmployeeCards) return;
+
+    const cardUid = document.getElementById('viewCardsNewUid').value.trim().toUpperCase().replace(/[^A-F0-9]/g, '');
+    const cardLabel = document.getElementById('viewCardsNewLabel').value.trim();
+    const isPrimary = document.getElementById('viewCardsNewPrimary').checked;
+
+    if (!cardUid) {
+        showToast('Card UID is required', 'error');
+        return;
+    }
+
+    if (cardUid.length < 8) {
+        showToast('Card UID must be at least 8 hex characters', 'error');
+        return;
+    }
+
+    try {
+        await api.issueNfcCard({
+            employee_id: viewingEmployeeCards,
+            card_uid: cardUid,
+            card_label: cardLabel || null,
+            is_primary: isPrimary
+        });
+
+        showToast('NFC card issued successfully', 'success');
+
+        // Clear form
+        document.getElementById('viewCardsNewUid').value = '';
+        document.getElementById('viewCardsNewLabel').value = '';
+        document.getElementById('viewCardsNewPrimary').checked = false;
+
+        // Reload cards in modal and table
+        await loadViewEmployeeCards();
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error issuing NFC card:', error);
+        showToast(error.message || 'Failed to issue NFC card', 'error');
+    }
+}
+
+// ============================================
+// NFC Card Action Functions
+// ============================================
+
+/**
+ * Set card as primary (from table)
+ */
+async function setNfcCardPrimaryFromTable(cardId) {
+    try {
+        await api.setNfcCardAsPrimary(cardId);
+        showToast('Card set as primary', 'success');
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error setting primary card:', error);
+        showToast(error.message || 'Failed to set primary card', 'error');
+    }
+}
+
+/**
+ * Set card as primary (from modal)
+ */
+async function setNfcCardPrimaryFromModal(cardId) {
+    try {
+        await api.setNfcCardAsPrimary(cardId);
+        showToast('Card set as primary', 'success');
+        await loadViewEmployeeCards();
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error setting primary card:', error);
+        showToast(error.message || 'Failed to set primary card', 'error');
+    }
+}
+
+/**
+ * Open deactivate card modal
+ */
+function openDeactivateCardModal(cardId) {
+    document.getElementById('deactivateCardId').value = cardId;
+    document.getElementById('deactivateCardReason').value = '';
+    openModal('deactivateCardModal');
+}
+
+/**
+ * Confirm card deactivation
+ */
+async function confirmDeactivateCard() {
+    const cardId = document.getElementById('deactivateCardId').value;
+    const reason = document.getElementById('deactivateCardReason').value.trim();
+
+    if (!cardId) return;
+
+    // Default reason if not provided
+    const deactivationReason = reason || 'returned';
+
+    try {
+        await api.deactivateNfcCard(cardId, deactivationReason);
+        showToast('NFC card deactivated', 'success');
+        closeModal('deactivateCardModal');
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error deactivating NFC card:', error);
+        showToast(error.message || 'Failed to deactivate card', 'error');
+    }
+}
+
+/**
+ * Deactivate card from view modal (quick action)
+ */
+async function deactivateCardFromModal(cardId) {
+    const confirmed = await Confirm.show({
+        title: 'Deactivate Card',
+        message: 'Are you sure you want to deactivate this card?',
+        type: 'warning',
+        confirmText: 'Deactivate'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.deactivateNfcCard(cardId, 'returned');
+        showToast('NFC card deactivated', 'success');
+        await loadViewEmployeeCards();
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error deactivating NFC card:', error);
+        showToast(error.message || 'Failed to deactivate card', 'error');
+    }
+}
+
+/**
+ * Reactivate card (from table)
+ */
+async function reactivateNfcCardFromTable(cardId) {
+    const confirmed = await Confirm.show({
+        title: 'Reactivate Card',
+        message: 'Are you sure you want to reactivate this card?',
+        type: 'info',
+        confirmText: 'Reactivate'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.reactivateNfcCard(cardId);
+        showToast('NFC card reactivated', 'success');
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error reactivating NFC card:', error);
+        showToast(error.message || 'Failed to reactivate card', 'error');
+    }
+}
+
+/**
+ * Reactivate card (from modal)
+ */
+async function reactivateCardFromModal(cardId) {
+    const confirmed = await Confirm.show({
+        title: 'Reactivate Card',
+        message: 'Are you sure you want to reactivate this card?',
+        type: 'info',
+        confirmText: 'Reactivate'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.reactivateNfcCard(cardId);
+        showToast('NFC card reactivated', 'success');
+        await loadViewEmployeeCards();
+        await loadNfcCardsTable();
+    } catch (error) {
+        console.error('Error reactivating NFC card:', error);
+        showToast(error.message || 'Failed to reactivate card', 'error');
+    }
+}
+
+/**
+ * Format date for display
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
 }

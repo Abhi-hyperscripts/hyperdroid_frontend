@@ -5276,3 +5276,197 @@
 .location-header-row + .location-item-row:nth-last-of-type(even) {
     background: var(--bg-hover);
 }
+
+/* =============================================================
+   NFC CARDS SECTION - MY PROFILE (v3.0.62)
+   ============================================================= */
+
+/* NFC Cards List */
+.my-nfc-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+/* NFC Card Item */
+.my-nfc-card-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.my-nfc-card-item:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.my-nfc-card-item.inactive {
+    opacity: 0.6;
+    background: var(--bg-tertiary);
+}
+
+.my-nfc-card-item .card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.my-nfc-card-item .card-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.my-nfc-card-item .card-uid {
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.my-nfc-card-item .card-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.my-nfc-card-item .card-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.my-nfc-card-item .badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.my-nfc-card-item .badge.active {
+    background: var(--status-active);
+    color: var(--text-inverse);
+}
+
+.my-nfc-card-item .badge.inactive {
+    background: var(--status-inactive);
+    color: var(--text-inverse);
+}
+
+.my-nfc-card-item .badge.primary {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.my-nfc-card-item .card-meta {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.my-nfc-card-item .card-date {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+/* Profile Subsection */
+.profile-subsection {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-top: 20px;
+    border: 1px solid var(--border-primary);
+}
+
+.profile-subsection-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.profile-subsection-title svg {
+    color: var(--brand-primary);
+}
+
+.subsection-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* Toggle Row */
+.profile-toggle-row {
+    padding: 8px 0;
+}
+
+/* Public Profile URL Display */
+.public-profile-url-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-secondary);
+}
+
+.profile-url-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.profile-url-display .btn-copy {
+    flex-shrink: 0;
+    padding: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.profile-url-display .btn-copy:hover {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .my-nfc-card-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .my-nfc-card-item .card-meta {
+        text-align: left;
+        width: 100%;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-secondary);
+    }
+}

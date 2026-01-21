@@ -1661,9 +1661,13 @@ function closeViewLeaveModal() {
  * Cancel a leave request
  */
 async function cancelLeaveRequest(requestId) {
-    if (!confirm('Are you sure you want to cancel this leave request?')) {
-        return;
-    }
+    const confirmed = await Confirm.show({
+        title: 'Cancel Leave Request',
+        message: 'Are you sure you want to cancel this leave request?',
+        type: 'warning',
+        confirmText: 'Cancel Request'
+    });
+    if (!confirmed) return;
 
     try {
         await api.request(`/hrms/leave/requests/${requestId}`, {
@@ -3041,9 +3045,13 @@ async function submitLoanApplication() {
  * v3.0.54: Withdraw loan application (only pending/rejected)
  */
 async function withdrawLoan(loanId) {
-    if (!confirm('Are you sure you want to withdraw this loan application?')) {
-        return;
-    }
+    const confirmed = await Confirm.show({
+        title: 'Withdraw Loan Application',
+        message: 'Are you sure you want to withdraw this loan application?',
+        type: 'warning',
+        confirmText: 'Withdraw'
+    });
+    if (!confirmed) return;
 
     try {
         await api.request(`/hrms/payroll-processing/my-loans/${loanId}`, {
@@ -3062,9 +3070,13 @@ async function withdrawLoan(loanId) {
  * v3.0.54: Withdraw reimbursement/adjustment claim (only pending/rejected)
  */
 async function withdrawAdjustment(adjustmentId) {
-    if (!confirm('Are you sure you want to withdraw this claim?')) {
-        return;
-    }
+    const confirmed = await Confirm.show({
+        title: 'Withdraw Claim',
+        message: 'Are you sure you want to withdraw this claim?',
+        type: 'warning',
+        confirmText: 'Withdraw'
+    });
+    if (!confirmed) return;
 
     try {
         await api.request(`/hrms/payroll-processing/my-adjustments/${adjustmentId}`, {

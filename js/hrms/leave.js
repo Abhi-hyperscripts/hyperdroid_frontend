@@ -34,6 +34,11 @@ let displayedEmployeeCount = 0;
 let selectedEmployeeId = null;
 const EMPLOYEE_BATCH_SIZE = 20;
 
+// Pagination instances
+let leaveRequestsPagination = null;
+let leaveBalancePagination = null;
+let leaveTypesPagination = null;
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadNavigation();
     setupSidebar();
@@ -716,6 +721,43 @@ async function loadPendingRequests() {
 
 function updateLeaveRequestsTable(requests) {
     const tbody = document.getElementById('leaveRequestsTable');
+    if (!tbody) return;
+
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p>No pending leave requests</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        leaveRequestsPagination = createTablePagination('leaveRequestsPagination', {
+            containerSelector: '#leaveRequestsPagination',
+            data: requests,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderLeaveRequestsRows(paginatedData);
+            }
+        });
+    } else {
+        renderLeaveRequestsRows(requests);
+    }
+}
+
+function renderLeaveRequestsRows(requests) {
+    const tbody = document.getElementById('leaveRequestsTable');
+    if (!tbody) return;
 
     if (!requests || requests.length === 0) {
         tbody.innerHTML = `
@@ -882,6 +924,43 @@ function transformLeaveBalancesToAggregated(rawBalances) {
 
 function updateLeaveBalanceTable(balances) {
     const tbody = document.getElementById('leaveBalanceTable');
+    if (!tbody) return;
+
+    if (!balances || balances.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <p>No leave balance data found</p>
+                    </div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        leaveBalancePagination = createTablePagination('leaveBalancePagination', {
+            containerSelector: '#leaveBalancePagination',
+            data: balances,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderLeaveBalanceRows(paginatedData);
+            }
+        });
+    } else {
+        renderLeaveBalanceRows(balances);
+    }
+}
+
+function renderLeaveBalanceRows(balances) {
+    const tbody = document.getElementById('leaveBalanceTable');
+    if (!tbody) return;
 
     if (!balances || balances.length === 0) {
         tbody.innerHTML = `
@@ -942,6 +1021,8 @@ function updateLeaveBalanceTable(balances) {
 
 function updateLeaveTypesTable() {
     const tbody = document.getElementById('leaveTypesTable');
+    if (!tbody) return;
+
     const searchTerm = document.getElementById('leaveTypeSearch')?.value?.toLowerCase() || '';
 
     // Get country filter value from SearchableDropdown
@@ -957,7 +1038,27 @@ function updateLeaveTypesTable() {
         filtered = filtered.filter(t => t.country_id === countryFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        leaveTypesPagination = createTablePagination('leaveTypesPagination', {
+            containerSelector: '#leaveTypesPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderLeaveTypesRows(paginatedData);
+            }
+        });
+    } else {
+        renderLeaveTypesRows(filtered);
+    }
+}
+
+function renderLeaveTypesRows(filtered) {
+    const tbody = document.getElementById('leaveTypesTable');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="10">

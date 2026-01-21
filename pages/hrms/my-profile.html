@@ -75,6 +75,7 @@
             <button class="profile-tab" data-tab="statutory" onclick="showTab('statutory')">Statutory Info</button>
             <button class="profile-tab" data-tab="documents" onclick="showTab('documents')">Documents</button>
             <button class="profile-tab" data-tab="requests" onclick="showTab('requests')">Update Requests</button>
+            <button class="profile-tab" data-tab="nfc" onclick="showTab('nfc')">NFC Cards</button>
         </div>
 
         <!-- Personal Info Tab -->
@@ -266,6 +267,63 @@
                 <div class="ess-loading">
                     <div class="spinner"></div>
                     <span>Loading requests...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- NFC Cards Tab -->
+        <div class="profile-section tab-content hidden" id="tab-nfc">
+            <h3 class="profile-section-title">NFC Access Cards</h3>
+            <p class="section-description">Your assigned NFC cards for attendance tracking and building access.</p>
+
+            <!-- Cards List -->
+            <div id="myNfcCardsList" class="my-nfc-cards-list">
+                <div class="ess-loading" id="nfcCardsLoading">
+                    <div class="spinner"></div>
+                    <span>Loading cards...</span>
+                </div>
+                <div class="ess-empty-state" id="nfcCardsEmpty" style="display: none;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                        <line x1="2" y1="10" x2="22" y2="10"/>
+                    </svg>
+                    <p>No NFC cards assigned</p>
+                    <small>Contact HR if you need an access card issued</small>
+                </div>
+            </div>
+
+            <!-- Public Profile Section -->
+            <div class="profile-subsection" id="publicProfileSection">
+                <h4 class="profile-subsection-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Public Profile
+                </h4>
+                <p class="subsection-description">When enabled, your basic info (name, photo, designation) can be displayed when tapping your NFC card on public kiosks.</p>
+
+                <div class="profile-toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="myPublicProfileEnabled" onchange="toggleMyPublicProfile()">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Enable Public Profile</span>
+                    </label>
+                </div>
+
+                <div class="public-profile-url-section" id="myPublicProfileUrlSection" style="display: none;">
+                    <div class="profile-field">
+                        <span class="profile-field-label">Your Public Profile URL</span>
+                        <div class="profile-url-display">
+                            <span id="myPublicProfileUrl">-</span>
+                            <button class="btn-copy" onclick="copyPublicProfileUrl()" title="Copy URL">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

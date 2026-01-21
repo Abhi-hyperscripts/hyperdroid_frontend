@@ -9,6 +9,12 @@ let departments = [];
 let officeDropdown = null;
 let departmentDropdown = null;
 
+// Pagination instance
+let reportPagination = null;
+
+// Cache for pagination - store columns and data for pagination rendering
+let cachedReportColumns = [];
+
 const reportConfig = {
     'employee-headcount': {
         title: 'Employee Headcount Report',
@@ -537,11 +543,11 @@ function renderReportTable(columns, data) {
 
     if (!data || data.length === 0) {
         container.innerHTML = '<p class="placeholder-text">No data found for the selected filters</p>';
+        // Clear pagination
+        const paginationContainer = document.getElementById('reportPagination');
+        if (paginationContainer) paginationContainer.innerHTML = '';
         return;
     }
-
-    const table = document.createElement('table');
-    table.className = 'data-table';
 
     // Determine columns based on data if default columns don't match
     let tableColumns = columns;
@@ -565,6 +571,37 @@ function renderReportTable(columns, data) {
                 .map(key => formatFieldName(key));
         }
     }
+
+    // Cache columns for pagination rendering
+    cachedReportColumns = tableColumns;
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        reportPagination = createTablePagination('reportPagination', {
+            containerSelector: '#reportPagination',
+            data: data,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderReportTableRows(cachedReportColumns, paginatedData);
+            }
+        });
+    } else {
+        renderReportTableRows(tableColumns, data);
+    }
+}
+
+function renderReportTableRows(tableColumns, data) {
+    const container = document.getElementById('reportTable');
+    if (!container) return;
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<p class="placeholder-text">No data found for the selected filters</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'data-table';
 
     // Header
     const thead = document.createElement('thead');
@@ -902,4 +939,33 @@ function setupSidebar() {
             container?.classList.remove('sidebar-open');
         }
     });
+}
+
+// Global function alias for HTML onclick handlers
+function generateReport() {
+    runReport();
+}
+
+function resetFilters() {
+    // Reset date filters
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+
+    // Reset dropdowns to default
+    if (officeDropdown) {
+        officeDropdown.setValue('');
+    }
+    if (departmentDropdown) {
+        departmentDropdown.setValue('');
+    }
+
+    // Clear report table
+    document.getElementById('reportTable').innerHTML = '<p class="placeholder-text">Select a report from the sidebar and click "Generate Report" to view data</p>';
+    document.getElementById('recordCount').textContent = '0 records';
+
+    // Clear pagination
+    const paginationContainer = document.getElementById('reportPagination');
+    if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+    }
 }

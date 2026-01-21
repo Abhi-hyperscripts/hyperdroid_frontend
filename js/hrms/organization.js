@@ -17,6 +17,14 @@ let shiftRosters = [];
 let holidays = [];
 let employees = [];
 
+// Pagination instances
+let officesPagination = null;
+let departmentsPagination = null;
+let designationsPagination = null;
+let shiftsPagination = null;
+let rostersPagination = null;
+let holidaysPagination = null;
+
 // Compliance-first: Countries and States from statutory compliance
 let complianceCountries = [];
 let complianceStates = [];  // States with PT configured
@@ -1408,7 +1416,26 @@ function updateOfficesTable() {
             statusText.includes(searchTerm);
     });
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        officesPagination = createTablePagination('officesPagination', {
+            containerSelector: '#officesPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderOfficesRows(paginatedData);
+            }
+        });
+    } else {
+        renderOfficesRows(filtered);
+    }
+}
+
+function renderOfficesRows(filtered) {
+    const tbody = document.getElementById('officesTable');
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="7">
@@ -1546,7 +1573,6 @@ async function loadDepartments() {
 }
 
 function updateDepartmentsTable() {
-    const tbody = document.getElementById('departmentsTable');
     const searchTerm = document.getElementById('departmentSearch')?.value?.toLowerCase() || '';
     const officeFilter = getSearchableDropdownValue('departmentOffice');
 
@@ -1559,7 +1585,26 @@ function updateDepartmentsTable() {
         filtered = filtered.filter(d => d.office_id === officeFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        departmentsPagination = createTablePagination('departmentsPagination', {
+            containerSelector: '#departmentsPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderDepartmentsRows(paginatedData);
+            }
+        });
+    } else {
+        renderDepartmentsRows(filtered);
+    }
+}
+
+function renderDepartmentsRows(filtered) {
+    const tbody = document.getElementById('departmentsTable');
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="7">
@@ -1824,7 +1869,6 @@ async function loadDesignations() {
 }
 
 function updateDesignationsTable() {
-    const tbody = document.getElementById('designationsTable');
     const searchTerm = document.getElementById('designationSearch')?.value?.toLowerCase() || '';
     const officeFilter = getSearchableDropdownValue('designationOffice');
     const deptFilter = getSearchableDropdownValue('designationDepartment');
@@ -1842,7 +1886,26 @@ function updateDesignationsTable() {
         filtered = filtered.filter(d => d.department_id === deptFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        designationsPagination = createTablePagination('designationsPagination', {
+            containerSelector: '#designationsPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderDesignationsRows(paginatedData);
+            }
+        });
+    } else {
+        renderDesignationsRows(filtered);
+    }
+}
+
+function renderDesignationsRows(filtered) {
+    const tbody = document.getElementById('designationsTable');
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="10">
@@ -1896,7 +1959,6 @@ async function loadShifts() {
 }
 
 function updateShiftsTable() {
-    const tbody = document.getElementById('shiftsTable');
     const searchTerm = document.getElementById('shiftSearch')?.value?.toLowerCase() || '';
     const officeFilter = getSearchableDropdownValue('shiftOffice');
 
@@ -1909,7 +1971,26 @@ function updateShiftsTable() {
         filtered = filtered.filter(s => s.office_id === officeFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        shiftsPagination = createTablePagination('shiftsPagination', {
+            containerSelector: '#shiftsPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderShiftsRows(paginatedData);
+            }
+        });
+    } else {
+        renderShiftsRows(filtered);
+    }
+}
+
+function renderShiftsRows(filtered) {
+    const tbody = document.getElementById('shiftsTable');
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="8">
@@ -2020,7 +2101,27 @@ function updateRostersTable() {
         filtered = filtered.filter(r => r.shift_id === shiftFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        rostersPagination = createTablePagination('rostersPagination', {
+            containerSelector: '#rostersPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderRostersRows(paginatedData);
+            }
+        });
+    } else {
+        renderRostersRows(filtered);
+    }
+}
+
+function renderRostersRows(filtered) {
+    const tbody = document.getElementById('rostersTable');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="8">
@@ -2164,6 +2265,8 @@ async function loadHolidays() {
 
 function updateHolidaysTable() {
     const tbody = document.getElementById('holidaysTable');
+    if (!tbody) return;
+
     const officeFilter = getSearchableDropdownValue('holidayOffice');
     const typeFilter = getSearchableDropdownValue('holidayType');
 
@@ -2173,7 +2276,27 @@ function updateHolidaysTable() {
         filtered = filtered.filter(h => h.holiday_type === typeFilter);
     }
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        holidaysPagination = createTablePagination('holidaysPagination', {
+            containerSelector: '#holidaysPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderHolidaysRows(paginatedData);
+            }
+        });
+    } else {
+        renderHolidaysRows(filtered);
+    }
+}
+
+function renderHolidaysRows(filtered) {
+    const tbody = document.getElementById('holidaysTable');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="6">

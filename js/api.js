@@ -2642,6 +2642,119 @@ class API {
     async downloadPayslip(payslipId) {
         return this.request(`/hrms/payroll/payslips/${payslipId}/download`);
     }
+
+    // ==================== NFC Cards ====================
+
+    /**
+     * Issue a new NFC card to an employee
+     * @param {Object} cardData - { employee_id, card_uid, card_label?, is_primary? }
+     */
+    async issueNfcCard(cardData) {
+        return this.request('/hrms/nfc-cards/issue', {
+            method: 'POST',
+            body: JSON.stringify(cardData)
+        });
+    }
+
+    /**
+     * Get all NFC cards for the tenant
+     * @param {boolean} includeInactive - Include deactivated cards
+     */
+    async getAllNfcCards(includeInactive = false) {
+        return this.request(`/hrms/nfc-cards?includeInactive=${includeInactive}`);
+    }
+
+    /**
+     * Get NFC card by ID
+     */
+    async getNfcCardById(cardId) {
+        return this.request(`/hrms/nfc-cards/${cardId}`);
+    }
+
+    /**
+     * Get all NFC cards for an employee
+     */
+    async getNfcCardsByEmployee(employeeId) {
+        return this.request(`/hrms/nfc-cards/employee/${employeeId}`);
+    }
+
+    /**
+     * Deactivate an NFC card
+     * @param {string} cardId - Card UUID
+     * @param {string} reason - One of: lost, damaged, terminated, replaced, returned
+     */
+    async deactivateNfcCard(cardId, reason) {
+        return this.request(`/hrms/nfc-cards/${cardId}/deactivate`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    }
+
+    /**
+     * Reactivate a deactivated NFC card
+     */
+    async reactivateNfcCard(cardId) {
+        return this.request(`/hrms/nfc-cards/${cardId}/reactivate`, {
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Set an NFC card as the primary card for its employee
+     */
+    async setNfcCardAsPrimary(cardId) {
+        return this.request(`/hrms/nfc-cards/${cardId}/set-primary`, {
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Get current user's NFC cards (self-service)
+     */
+    async getMyNfcCards() {
+        return this.request('/hrms/nfc-cards/my-cards');
+    }
+
+    /**
+     * Get current user's primary NFC card (self-service)
+     */
+    async getMyPrimaryNfcCard() {
+        return this.request('/hrms/nfc-cards/my-cards/primary');
+    }
+
+    /**
+     * Lookup employee by NFC card UID (anonymous - for kiosk)
+     * Returns basic employee info for attendance terminal
+     */
+    async lookupEmployeeByNfcCard(cardUid) {
+        return this.request(`/hrms/nfc-cards/kiosk/lookup/${encodeURIComponent(cardUid)}`);
+    }
+
+    /**
+     * Get public profile by slug (anonymous)
+     */
+    async getPublicProfileBySlug(slug) {
+        return this.request(`/hrms/nfc-cards/public/${encodeURIComponent(slug)}`);
+    }
+
+    /**
+     * Get public profile by NFC card UID (anonymous)
+     */
+    async getPublicProfileByCardUid(cardUid) {
+        return this.request(`/hrms/nfc-cards/public/by-card/${encodeURIComponent(cardUid)}`);
+    }
+
+    /**
+     * Update employee's public profile settings
+     * @param {string} employeeId - Employee UUID
+     * @param {Object} settings - { public_profile_enabled, public_profile_slug }
+     */
+    async updatePublicProfileSettings(employeeId, settings) {
+        return this.request(`/hrms/employees/${employeeId}/public-profile`, {
+            method: 'PUT',
+            body: JSON.stringify(settings)
+        });
+    }
 }
 
 // Export singleton instance

@@ -88,6 +88,24 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Access Control Section -->
+                    <div class="nav-group" data-group="access">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                    <line x1="2" y1="10" x2="22" y2="10"/>
+                                </svg>
+                                Access Control
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
+                                <span class="nav-number">2</span><span class="nav-label">NFC Cards</span>
+                            </button>
+                        </div>
+                    </div>
                 </nav>
             </aside>
 
@@ -178,9 +196,256 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div id="employeesPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- NFC Cards Tab -->
+                <div class="tab-content" id="nfcCards">
+                    <!-- Filters -->
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="nfcSearchInput" placeholder="Search by name, code, or card UID..." oninput="filterNfcCards()">
+                        </div>
+                        <select class="filter-select" id="nfcStatusFilter" onchange="filterNfcCards()">
+                            <option value="">All Status</option>
+                            <option value="active">Active Cards</option>
+                            <option value="inactive">Inactive Cards</option>
+                        </select>
+                        <select class="filter-select" id="nfcOfficeFilter" onchange="filterNfcCards()">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button class="btn btn-primary" onclick="openIssueNfcCardModal()" id="issueNfcCardBtn" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Issue Card
+                        </button>
+                    </div>
+
+                    <!-- NFC Cards Table -->
+                    <div class="table-container">
+                        <table class="data-table" id="nfcCardsTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Card UID</th>
+                                    <th>Label</th>
+                                    <th>Status</th>
+                                    <th>Primary</th>
+                                    <th>Issued Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nfcCardsTableBody">
+                                <tr class="empty-row">
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                                <line x1="2" y1="10" x2="22" y2="10"/>
+                                            </svg>
+                                            <p>No NFC cards found</p>
+                                            <small>Issue NFC cards to employees for attendance kiosks</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="nfcCardsPagination" class="pagination-container"></div>
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Issue NFC Card Modal -->
+    <div class="modal" id="issueNfcCardModal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="nfcCardModalTitle">Issue NFC Card</h3>
+                    <button class="close-btn" onclick="closeModal('issueNfcCardModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="issueNfcCardForm">
+                        <input type="hidden" id="nfcCardId">
+
+                        <!-- Employee Selection -->
+                        <div class="form-group">
+                            <label>Employee <span class="required">*</span></label>
+                            <select id="nfcEmployeeSelect" class="form-control" required>
+                                <option value="">Select employee...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Selected Employee Card -->
+                        <div class="nfc-employee-card" id="nfcSelectedEmployeeCard" style="display: none;">
+                            <div class="employee-avatar" id="nfcEmployeeAvatar">-</div>
+                            <div class="employee-card-content">
+                                <div class="employee-card-header">
+                                    <span class="employee-name" id="nfcEmployeeName">-</span>
+                                    <span class="employee-code" id="nfcEmployeeCode">-</span>
+                                </div>
+                                <div class="assignment-row">
+                                    <span class="assign-item"><span class="assign-icon">🏢</span><span id="nfcEmployeeDept">-</span></span>
+                                    <span class="assign-item"><span class="assign-icon">💼</span><span id="nfcEmployeeDesig">-</span></span>
+                                </div>
+                                <div class="existing-cards-info" id="nfcExistingCardsInfo">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Details -->
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>Card UID <span class="required">*</span></label>
+                                <input type="text" id="nfcNewCardUid" class="form-control"
+                                       placeholder="e.g., 04ABCDEF123456"
+                                       style="text-transform: uppercase; font-family: monospace;"
+                                       pattern="[A-Fa-f0-9]+" title="Hex characters only (0-9, A-F)" required>
+                                <small class="form-text">NFC card's unique identifier (hex format)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Card Label</label>
+                                <input type="text" id="nfcNewCardLabel" class="form-control"
+                                       placeholder="e.g., Office Badge, Building Access">
+                                <small class="form-text">Optional friendly name</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="nfcNewCardPrimary" checked>
+                                <span>Set as primary card</span>
+                            </label>
+                            <small class="form-text">Primary card is used for quick lookups at attendance kiosks</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('issueNfcCardModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitIssueNfcCard()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                        </svg>
+                        Issue Card
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Employee Cards Modal -->
+    <div class="modal" id="viewEmployeeCardsModal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Employee NFC Cards</h3>
+                    <button class="close-btn" onclick="closeModal('viewEmployeeCardsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee Info Header -->
+                    <div class="nfc-employee-card" id="viewCardsEmployeeCard">
+                        <div class="employee-avatar" id="viewCardsEmployeeAvatar">-</div>
+                        <div class="employee-card-content">
+                            <div class="employee-card-header">
+                                <span class="employee-name" id="viewCardsEmployeeName">-</span>
+                                <span class="employee-code" id="viewCardsEmployeeCode">-</span>
+                            </div>
+                            <div class="assignment-row">
+                                <span class="assign-item"><span class="assign-icon">🏢</span><span id="viewCardsEmployeeDept">-</span></span>
+                                <span class="assign-item"><span class="assign-icon">💼</span><span id="viewCardsEmployeeDesig">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cards List -->
+                    <div class="nfc-cards-list-modal" id="viewCardsCardsList">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Issue New Card Section -->
+                    <div class="nfc-issue-inline" id="viewCardsIssueSection">
+                        <h4>Issue New Card</h4>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <input type="text" id="viewCardsNewUid" class="form-control"
+                                       placeholder="Card UID (hex)"
+                                       style="text-transform: uppercase; font-family: monospace;">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="viewCardsNewLabel" class="form-control"
+                                       placeholder="Label (optional)">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="viewCardsNewPrimary">
+                                <span>Set as primary</span>
+                            </label>
+                            <button class="btn btn-primary btn-sm" onclick="issueCardFromViewModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Issue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('viewEmployeeCardsModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deactivate Card Modal -->
+    <div class="modal" id="deactivateCardModal">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Deactivate Card</h3>
+                    <button class="close-btn" onclick="closeModal('deactivateCardModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="deactivateCardId">
+                    <p>Are you sure you want to deactivate this NFC card?</p>
+                    <div class="form-group">
+                        <label>Reason for deactivation</label>
+                        <textarea id="deactivateCardReason" class="form-control" rows="2"
+                                  placeholder="e.g., Card lost, Employee transfer, Card damaged"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('deactivateCardModal')">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeactivateCard()">Deactivate</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1165,6 +1430,7 @@
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

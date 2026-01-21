@@ -22293,3 +22293,594 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
         justify-content: center;
     }
 }
+
+/* =============================================================
+   NFC CARD MANAGEMENT STYLES (v3.0.62)
+   ============================================================= */
+
+/* NFC Cards Section */
+.nfc-issue-section,
+.nfc-cards-section,
+.nfc-profile-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-primary);
+}
+
+.nfc-issue-section .section-title,
+.nfc-cards-section .section-title,
+.nfc-profile-section .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.nfc-issue-section .section-title svg,
+.nfc-cards-section .section-title svg,
+.nfc-profile-section .section-title svg {
+    color: var(--brand-primary);
+}
+
+.nfc-cards-section .badge-count {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+
+/* NFC Cards List */
+.nfc-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nfc-cards-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.nfc-cards-empty svg {
+    color: var(--border-primary);
+    margin-bottom: 12px;
+}
+
+.nfc-cards-empty p {
+    margin: 0 0 4px 0;
+    font-weight: 500;
+}
+
+.nfc-cards-empty small {
+    font-size: 0.75rem;
+}
+
+/* NFC Card Item */
+.nfc-card-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nfc-card-item:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.nfc-card-item.inactive {
+    opacity: 0.6;
+    background: var(--bg-tertiary);
+}
+
+.nfc-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.nfc-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nfc-card-uid {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.nfc-card-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.nfc-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.nfc-card-meta .badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.nfc-card-meta .badge-active {
+    background: var(--status-active);
+    color: var(--text-inverse);
+}
+
+.nfc-card-meta .badge-inactive {
+    background: var(--status-inactive);
+    color: var(--text-inverse);
+}
+
+.nfc-card-meta .badge-primary {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.nfc-card-date {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+.nfc-card-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.nfc-card-actions .btn {
+    padding: 6px 8px;
+}
+
+/* Public Profile Section */
+.section-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.public-profile-settings {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-secondary);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    transition: background 0.2s;
+    border: 1px solid var(--border-primary);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 2px;
+    top: 2px;
+    background: var(--text-inverse);
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Input with Prefix */
+.input-with-prefix {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.input-with-prefix:focus-within {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.1);
+}
+
+.input-prefix {
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-primary);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.input-with-prefix input {
+    flex: 1;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    background: transparent;
+    outline: none;
+    font-family: monospace;
+}
+
+/* Form Actions in NFC Section */
+.nfc-issue-section .form-actions,
+.nfc-profile-section .form-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nfc-card-item {
+        flex-wrap: wrap;
+    }
+
+    .nfc-card-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-secondary);
+    }
+}
+
+/* =====================================================
+   NFC Cards Tab - Table View Styles
+   ===================================================== */
+
+/* NFC Cards Table */
+#nfcCardsTable .card-uid {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: var(--bg-tertiary);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+}
+
+#nfcCardsTable .employee-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#nfcCardsTable .employee-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+#nfcCardsTable .employee-info-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#nfcCardsTable .employee-info-cell .employee-name {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+#nfcCardsTable .employee-info-cell .employee-code {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+#nfcCardsTable .action-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+#nfcCardsTable .action-buttons .btn {
+    padding: 6px 8px;
+}
+
+/* NFC Employee Card (used in modals) */
+.nfc-employee-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.nfc-employee-card .employee-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.nfc-employee-card .employee-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.nfc-employee-card .employee-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nfc-employee-card .employee-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.nfc-employee-card .employee-code {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.nfc-employee-card .assignment-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.nfc-employee-card .assign-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.nfc-employee-card .assign-icon {
+    font-size: 0.9rem;
+}
+
+.nfc-employee-card .existing-cards-info {
+    margin-top: 8px;
+}
+
+.nfc-employee-card .existing-cards-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background: var(--status-active);
+    color: var(--text-inverse);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.nfc-employee-card .no-cards-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+}
+
+/* View Employee Cards Modal */
+.nfc-cards-list-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.nfc-cards-empty-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.nfc-cards-empty-modal svg {
+    stroke: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.nfc-cards-empty-modal p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.nfc-card-item-modal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+}
+
+.nfc-card-item-modal.inactive {
+    opacity: 0.7;
+    background: var(--bg-tertiary);
+}
+
+.nfc-card-item-modal .nfc-card-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.nfc-card-item-modal .nfc-card-icon svg {
+    stroke: var(--text-secondary);
+}
+
+.nfc-card-info-modal {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nfc-card-info-modal .card-uid {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.nfc-card-info-modal .card-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.nfc-card-info-modal .card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.nfc-card-actions-modal {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.nfc-card-actions-modal .btn {
+    padding: 4px 6px;
+}
+
+/* Issue Card Inline Section */
+.nfc-issue-inline {
+    padding-top: 16px;
+    border-top: 1px solid var(--border-primary);
+}
+
+.nfc-issue-inline h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.nfc-issue-inline .form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.nfc-issue-inline .form-row.two-col {
+    margin-bottom: 12px;
+}
+
+.nfc-issue-inline .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.nfc-issue-inline .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Deactivate Card Modal */
+#deactivateCardModal .modal-body p {
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+#deactivateCardModal textarea {
+    resize: vertical;
+    min-height: 60px;
+}

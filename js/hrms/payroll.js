@@ -9,6 +9,7 @@ function escapeHtml(text) {
 let currentUser = null;
 let employees = [];
 let offices = [];
+let allOffices = []; // Unfiltered list of all offices (for country filtering)
 let components = [];
 let structures = [];
 let currentPayslipId = null;
@@ -17,6 +18,13 @@ let statutoryEmployeeDeductions = []; // Auto-attached to salary structures
 let statutoryEmployerContributions = []; // Employer-side statutory contributions (e.g., retirement, social insurance)
 let costClassifications = {}; // CTC classifications from country config (charge_code -> {employee_portion, employer_portion})
 let selectableComponentsForCountry = []; // COUNTRY-FILTERED: Selectable components from backend for selected office's country
+let selectedGlobalCountry = ''; // Currently selected country in global filter
+let loadedCountriesList = []; // Cached list of countries for the global filter
+let allLoansData = []; // Store for loans data (for pagination)
+let allPayslipsData = []; // Store for all payslips data (for pagination)
+let allAdjustmentsData = []; // Store for adjustments data (for pagination)
+let allArrearsData = []; // Store for arrears data (for pagination)
+let allVdEnrollmentsData = []; // Store for VD enrollments data (for pagination)
 
 // Store for searchable dropdown instances
 const payrollSearchableDropdowns = new Map();
@@ -29,6 +37,15 @@ let createDraftMonthPicker = null;
 
 // VD employee dropdown instance
 let vdEmployeeDropdown = null;
+
+// Pagination instances for tables
+let empSalariesPagination = null;
+let salaryStructuresPagination = null;
+let loansPagination = null;
+let vdEnrollmentsPagination = null;
+let allPayslipsPagination = null;
+let adjustmentsPagination = null;
+let arrearsPagination = null;
 
 /**
  * SearchableDropdown - A reusable searchable dropdown component with virtual scroll
@@ -676,9 +693,8 @@ function initSearchableDropdowns() {
         return;
     }
 
-    // Filter dropdowns configuration (24 dropdowns)
+    // Filter dropdowns configuration (note: country filters are initialized separately via loadCountryFilter())
     const filterDropdowns = [
-        { id: 'countryFilter', placeholder: 'Select Country', searchPlaceholder: 'Search country...', compact: true },
         { id: 'componentType', placeholder: 'All Types', searchPlaceholder: 'Search type...', compact: true },
         { id: 'structureOfficeFilter', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
         { id: 'draftOffice', placeholder: 'All Offices', searchPlaceholder: 'Search office...', compact: true },
@@ -5348,7 +5364,6 @@ function updateOfficeStructureStatusCards(statusList) {
 }
 
 function updateSalaryStructuresTable() {
-    const tbody = document.getElementById('salaryStructuresTable');
     const searchTerm = document.getElementById('structureSearch')?.value?.toLowerCase() || '';
 
     const filtered = structures.filter(s =>
@@ -5356,6 +5371,25 @@ function updateSalaryStructuresTable() {
         (s.structure_code || '').toLowerCase().includes(searchTerm) ||
         (s.office_name || '').toLowerCase().includes(searchTerm)
     );
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        salaryStructuresPagination = createTablePagination('salaryStructuresPagination', {
+            containerSelector: '#salaryStructuresPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderSalaryStructuresRows(paginatedData);
+            }
+        });
+    } else {
+        renderSalaryStructuresRows(filtered);
+    }
+}
+
+function renderSalaryStructuresRows(filtered) {
+    const tbody = document.getElementById('salaryStructuresTable');
 
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -6294,7 +6328,22 @@ async function loadLoans() {
             loans = loans.filter(loan => loan.office_id === officeFilter);
         }
 
-        updateLoansTable(loans);
+        allLoansData = loans;
+
+        // Use pagination if available
+        if (typeof createTablePagination !== 'undefined') {
+            loansPagination = createTablePagination('loansPagination', {
+                containerSelector: '#loansPagination',
+                data: loans,
+                rowsPerPage: 25,
+                rowsPerPageOptions: [10, 25, 50, 100],
+                onPageChange: (paginatedData, pageInfo) => {
+                    updateLoansTable(paginatedData);
+                }
+            });
+        } else {
+            updateLoansTable(loans);
+        }
     } catch (error) {
         console.error('Error loading loans:', error);
     }
@@ -6409,54 +6458,66 @@ function updateLoansTable(loans) {
 async function loadOffices() {
     try {
         const response = await api.request('/hrms/offices');
-        offices = response || [];
+        // Store ALL offices for country filtering
+        allOffices = response || [];
+        // Initially set offices to all (will be filtered when country is selected)
+        offices = [...allOffices];
 
+        console.log('[PayrollOffices] Loaded', allOffices.length, 'offices');
+
+        // Initial population - will be re-filtered when country filter changes
         // Use HrmsOfficeSelection to get persisted or first office
         const selectedOfficeId = HrmsOfficeSelection.initializeSelection(offices);
 
-        // Filter dropdowns - NO "All Offices", auto-select first office
+        // Filter dropdowns - WITH "All Offices" as first option and default
         const filterSelects = ['runOffice', 'structureOfficeFilter', 'draftOffice', 'allPayslipsOffice'];
         filterSelects.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
-                const options = HrmsOfficeSelection.buildOfficeOptions(offices, { isFormDropdown: false });
+                const options = [
+                    { value: '', label: 'All Offices' },
+                    ...offices.map(o => ({
+                        value: o.id,
+                        label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                    }))
+                ];
                 select.innerHTML = options.map(opt =>
-                    `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+                    `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
                 ).join('');
 
-                // Update SearchableDropdown instance if exists
+                // Update SearchableDropdown instance if exists - default to "All Offices"
                 const dropdown = searchableDropdownInstances.get(id);
                 if (dropdown) {
                     dropdown.setOptions(options);
-                    dropdown.setValue(selectedOfficeId);
+                    dropdown.setValue(''); // Default to "All Offices"
                 }
             }
         });
 
-        // v3.0.32: Filter dropdowns WITHOUT "All Offices" - default to first office
+        // Filter dropdowns WITH "All Offices" as first option and default
         const officeFilterIds = ['loanOfficeFilter', 'vdOfficeFilter', 'adjustmentOfficeFilter', 'arrearsOfficeFilter'];
         officeFilterIds.forEach(id => {
             const select = document.getElementById(id);
             if (select) {
-                // Build options WITHOUT "All Offices" - just offices
-                const officeOptions = offices.map(o => ({
-                    value: o.id,
-                    label: `${o.office_name} (${o.office_code || o.country_code || ''})`
-                }));
+                // Build options WITH "All Offices" as first option
+                const officeOptions = [
+                    { value: '', label: 'All Offices' },
+                    ...offices.map(o => ({
+                        value: o.id,
+                        label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                    }))
+                ];
                 select.innerHTML = officeOptions.map(opt =>
-                    `<option value="${opt.value}">${opt.label}</option>`
+                    `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
                 ).join('');
 
-                // Default to first office if available
-                const defaultOfficeId = offices.length > 0 ? offices[0].id : '';
-
-                // Update SearchableDropdown instance if exists
+                // Update SearchableDropdown instance if exists - default to "All Offices"
                 const dropdown = searchableDropdownInstances.get(id);
                 if (dropdown) {
                     dropdown.setOptions(officeOptions);
-                    dropdown.setValue(defaultOfficeId);
+                    dropdown.setValue(''); // Default to "All Offices"
                 } else if (select) {
-                    select.value = defaultOfficeId;
+                    select.value = ''; // Default to "All Offices"
                 }
             }
         });
@@ -6980,40 +7041,83 @@ async function saveSalaryStructure() {
     }
 }
 
-// Load countries for global filter dropdown
-// COUNTRY-AGNOSTIC: Removes "All Countries" option - a specific country must be selected
+// Country dropdown instances (one per tab)
+const countryDropdownInstances = new Map();
+
+// List of all country filter container IDs
+const COUNTRY_FILTER_CONTAINERS = [
+    'countryFilterContainer',           // Salary Components tab
+    'structureCountryFilterContainer',  // Salary Structures tab
+    'draftCountryFilterContainer',      // Payroll Drafts tab
+    'runCountryFilterContainer',        // Payroll Runs tab
+    'empSalaryCountryFilterContainer',  // Employee Salaries tab
+    'loanCountryFilterContainer',       // Loans tab
+    'vdCountryFilterContainer',         // Voluntary Deductions tab
+    'allPayslipsCountryFilterContainer', // All Payslips tab
+    'adjustmentCountryFilterContainer', // Adjustments tab
+    'arrearsCountryFilterContainer'     // Arrears tab
+];
+
+// Load countries and initialize ALL country filter dropdowns across tabs
+// COUNTRY-AGNOSTIC: A specific country MUST be selected first
 async function loadCountryFilter() {
     try {
         const response = await api.request('/hrms/countries');
         const countries = Array.isArray(response) ? response : (response.countries || []);
 
-        // v3.0.32: Store countries globally for currency lookups across all tabs
+        // Store countries globally for currency lookups across all tabs
         window.loadedCountries = countries;
+        loadedCountriesList = countries;
 
-        const select = document.getElementById('countryFilter');
-        if (select) {
-            // No "All Countries" option - user MUST select a specific country
-            select.innerHTML = countries.length === 0
-                ? '<option value="" disabled>No countries configured</option>'
-                : '';
-            countries.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.country_code;
-                option.textContent = `${c.country_name} (${c.country_code})`;
-                select.appendChild(option);
-            });
-            // Add change event listener for country filter
-            select.addEventListener('change', () => {
-                onCountryFilterChange();
-            });
+        // Build options for SearchableDropdown
+        const countryOptions = countries.length === 0
+            ? [{ value: '', label: 'No countries configured', disabled: true }]
+            : countries.map(c => ({
+                value: c.country_code,
+                label: `${c.country_name} (${c.country_code})`,
+                description: c.currency_code || ''
+            }));
 
-            // Auto-select first country if any exist
-            if (countries.length > 0) {
-                select.value = countries[0].country_code;
-                // Trigger change event to load data for this country
-                onCountryFilterChange();
+        const defaultCountry = countries.length > 0 ? countries[0].country_code : null;
+
+        // Initialize SearchableDropdown for EACH country filter container
+        COUNTRY_FILTER_CONTAINERS.forEach(containerId => {
+            const container = document.getElementById(containerId);
+            if (container) {
+                // Destroy existing instance if any
+                const existingInstance = countryDropdownInstances.get(containerId);
+                if (existingInstance && typeof existingInstance.destroy === 'function') {
+                    existingInstance.destroy();
+                }
+
+                // Create new SearchableDropdown
+                const dropdown = new SearchableDropdown(container, {
+                    id: `${containerId}-dropdown`,
+                    options: countryOptions,
+                    placeholder: 'Select Country',
+                    searchPlaceholder: 'Search countries...',
+                    value: defaultCountry,
+                    compact: true,
+                    onChange: async (value, option) => {
+                        // Sync all other country dropdowns to the same value
+                        syncCountryDropdowns(containerId, value);
+                        selectedGlobalCountry = value;
+                        await onGlobalCountryChange();
+                    }
+                });
+
+                countryDropdownInstances.set(containerId, dropdown);
             }
+        });
+
+        // Auto-select first country if any exist
+        if (countries.length > 0) {
+            selectedGlobalCountry = countries[0].country_code;
+            // Trigger change event to filter offices and load data
+            await onGlobalCountryChange();
         }
+
+        console.log('[PayrollCountryFilter] Initialized', countryDropdownInstances.size, 'country dropdowns');
         return countries;
     } catch (error) {
         console.error('Error loading countries:', error);
@@ -7021,22 +7125,148 @@ async function loadCountryFilter() {
     }
 }
 
-// Get selected country from global filter
-function getSelectedCountry() {
-    const select = document.getElementById('countryFilter');
-    return select ? select.value : '';
+// Sync all country dropdowns when one changes
+function syncCountryDropdowns(sourceContainerId, newValue) {
+    countryDropdownInstances.forEach((dropdown, containerId) => {
+        if (containerId !== sourceContainerId && dropdown && typeof dropdown.setValue === 'function') {
+            dropdown.setValue(newValue);
+        }
+    });
 }
 
-// Handle country filter change - refresh components display and load cost classifications
-async function onCountryFilterChange() {
+// Get selected country from any initialized country filter
+function getSelectedCountry() {
+    // Use the stored value (updated by onChange callback)
+    return selectedGlobalCountry || '';
+}
+
+// Handle GLOBAL country filter change - filters ALL office dropdowns across all tabs
+async function onGlobalCountryChange() {
     const countryCode = getSelectedCountry();
+    selectedGlobalCountry = countryCode;
+
+    console.log('[PayrollCountryFilter] Country changed to:', countryCode);
+
+    // Filter offices by selected country
+    filterOfficesByCountry(countryCode);
+
     // Load cost classifications for the selected country (for CTC badges)
     if (countryCode) {
         await loadCostClassifications(countryCode);
     } else {
         costClassifications = {};
     }
+
+    // Refresh components table (filters by country)
     updateComponentsTables();
+
+    // Refresh salary structures list (now filtered by country via offices)
+    if (typeof loadSalaryStructures === 'function') {
+        loadSalaryStructures();
+    }
+}
+
+// Filter all office dropdowns by selected country
+function filterOfficesByCountry(countryCode) {
+    // Filter offices based on country
+    if (countryCode && allOffices.length > 0) {
+        offices = allOffices.filter(o => o.country_code === countryCode);
+    } else {
+        offices = [...allOffices];
+    }
+
+    console.log('[PayrollCountryFilter] Filtered offices:', offices.length, 'of', allOffices.length, 'for country:', countryCode);
+
+    // Get persisted office ID (if still valid after filtering)
+    const persistedOfficeId = HrmsOfficeSelection.getSelectedOfficeId();
+    const persistedOfficeStillValid = offices.some(o => o.id === persistedOfficeId);
+    const selectedOfficeId = persistedOfficeStillValid ? persistedOfficeId : (offices.length > 0 ? offices[0].id : '');
+
+    // Update all filter dropdowns (with "All Offices" as first option and default)
+    const filterSelects = ['runOffice', 'structureOfficeFilter', 'draftOffice', 'allPayslipsOffice'];
+    filterSelects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const options = [
+                { value: '', label: 'All Offices' },
+                ...offices.map(o => ({
+                    value: o.id,
+                    label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                }))
+            ];
+            select.innerHTML = options.map(opt =>
+                `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+            ).join('');
+
+            // Update SearchableDropdown instance if exists - default to "All Offices"
+            const dropdown = searchableDropdownInstances.get(id);
+            if (dropdown) {
+                dropdown.setOptions(options);
+                dropdown.setValue(''); // Default to "All Offices"
+            }
+        }
+    });
+
+    // Update employee/loan/adjustment filter dropdowns (with "All Offices" as first option and default)
+    const employeeFilterIds = ['loanOfficeFilter', 'vdOfficeFilter', 'adjustmentOfficeFilter', 'arrearsOfficeFilter', 'empSalaryOfficeFilter'];
+    employeeFilterIds.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            const officeOptions = [
+                { value: '', label: 'All Offices' },
+                ...offices.map(o => ({
+                    value: o.id,
+                    label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                }))
+            ];
+            select.innerHTML = officeOptions.map(opt =>
+                `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+            ).join('');
+
+            // Update SearchableDropdown instance if exists - default to "All Offices"
+            const dropdown = searchableDropdownInstances.get(id);
+            if (dropdown) {
+                dropdown.setOptions(officeOptions);
+                dropdown.setValue(''); // Default to "All Offices"
+            } else if (select) {
+                select.value = ''; // Default to "All Offices"
+            }
+        }
+    });
+
+    // Update form dropdowns (with "Select Office" placeholder)
+    const formSelects = [
+        { id: 'payrollOffice', placeholder: 'Select Office' },
+        { id: 'structureOffice', placeholder: 'Select Office (Required)' },
+        { id: 'draftPayrollOffice', placeholder: 'Select Office' }
+    ];
+    formSelects.forEach(config => {
+        const select = document.getElementById(config.id);
+        if (select) {
+            const options = [
+                { value: '', label: config.placeholder },
+                ...offices.map(o => ({
+                    value: o.id,
+                    label: `${o.office_name} (${o.office_code || o.country_code || ''})`
+                }))
+            ];
+            select.innerHTML = options.map(opt =>
+                `<option value="${opt.value}">${opt.label}</option>`
+            ).join('');
+
+            // Update PayrollSearchableDropdown instance if exists (used for structureOffice)
+            const dropdown = payrollSearchableDropdowns.get(config.id);
+            if (dropdown) {
+                dropdown.setOptions(options);
+                dropdown.reset(); // Reset to placeholder
+            }
+        }
+    });
+
+    // Persist the selected office if valid
+    if (selectedOfficeId) {
+        HrmsOfficeSelection.setSelectedOfficeId(selectedOfficeId);
+    }
 }
 
 function showCreateComponentModal() {
@@ -8311,10 +8541,27 @@ async function loadAllPayslips() {
 }
 
 function updateAllPayslipsTable() {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        allPayslipsPagination = createTablePagination('allPayslipsPagination', {
+            containerSelector: '#allPayslipsPagination',
+            data: allPayslips,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderAllPayslipsRows(paginatedData);
+            }
+        });
+    } else {
+        renderAllPayslipsRows(allPayslips);
+    }
+}
+
+function renderAllPayslipsRows(payslips) {
     const tbody = document.getElementById('allPayslipsTable');
     if (!tbody) return;
 
-    if (allPayslips.length === 0) {
+    if (!payslips || payslips.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="9">
@@ -8330,7 +8577,7 @@ function updateAllPayslipsTable() {
         return;
     }
 
-    tbody.innerHTML = allPayslips.map(p => {
+    tbody.innerHTML = payslips.map(p => {
         const employeeName = p.employee_name || p.employeeName || 'N/A';
         const employeeCode = p.employee_code || p.employeeCode || 'N/A';
         const departmentName = p.department_name || p.departmentName || 'N/A';
@@ -8894,12 +9141,17 @@ function editComponent(componentId) {
     document.getElementById('componentDescription').value = component.description || '';
 
     // Country is set from global filter, state not required for custom components
-    // When editing, set the global filter to match the component's country
-    if (component.country_code) {
-        const countryFilter = document.getElementById('countryFilter');
-        if (countryFilter) {
-            countryFilter.value = component.country_code;
-        }
+    // When editing, sync all country dropdowns to match the component's country
+    if (component.country_code && component.country_code !== selectedGlobalCountry) {
+        selectedGlobalCountry = component.country_code;
+        // Sync all country dropdowns
+        countryDropdownInstances.forEach((dropdown) => {
+            if (dropdown && typeof dropdown.setValue === 'function') {
+                dropdown.setValue(component.country_code);
+            }
+        });
+        // Filter offices for the new country
+        filterOfficesByCountry(component.country_code);
     }
 
     // Note: is_part_of_gross and is_part_of_ctc are auto-set based on component type
@@ -9906,8 +10158,8 @@ function formatCurrency(amount, currencyCode = null, currencySymbol = null) {
  * Falls back to INR if country not found.
  */
 function getSelectedCurrency() {
-    // v3.0.32: Fixed to use correct dropdown ID (countryFilter, not globalCountryFilter)
-    const countryCode = document.getElementById('countryFilter')?.value || 'IN';
+    // Use the centralized getSelectedCountry() function which returns the synchronized country code
+    const countryCode = getSelectedCountry() || 'IN';
     // Look up from loaded countries data (loaded at page init)
     const country = window.loadedCountries?.find(c => c.country_code === countryCode);
     return {
@@ -13306,10 +13558,27 @@ function filterArrearsTable() {
  * Update the arrears table display
  */
 function updateArrearsTable() {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        arrearsPagination = createTablePagination('arrearsPagination', {
+            containerSelector: '#arrearsPagination',
+            data: filteredArrearsData,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderArrearsRows(paginatedData);
+            }
+        });
+    } else {
+        renderArrearsRows(filteredArrearsData);
+    }
+}
+
+function renderArrearsRows(arrearsItems) {
     const tbody = document.getElementById('arrearsTable');
     if (!tbody) return;
 
-    if (filteredArrearsData.length === 0) {
+    if (!arrearsItems || arrearsItems.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="9">
@@ -13327,7 +13596,7 @@ function updateArrearsTable() {
     }
 
     // v3.0.33: Use currency from arrears object (enriched by backend)
-    tbody.innerHTML = filteredArrearsData.map(arr => {
+    tbody.innerHTML = arrearsItems.map(arr => {
         const currCode = arr.currency_code || null;
         const currSymbol = arr.currency_symbol || null;
         return `
@@ -14704,9 +14973,6 @@ async function loadVDEnrollments() {
 
 // Update VD enrollments table
 function updateVDEnrollmentsTable() {
-    const tbody = document.getElementById('vdEnrollmentsTable');
-    if (!tbody) return;
-
     const searchTerm = document.getElementById('vdEnrollmentSearch')?.value.toLowerCase() || '';
 
     let filtered = vdEnrollments.filter(e => {
@@ -14716,7 +14982,27 @@ function updateVDEnrollmentsTable() {
         return employeeName.includes(searchTerm) || employeeCode.includes(searchTerm);
     });
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        vdEnrollmentsPagination = createTablePagination('vdEnrollmentsPagination', {
+            containerSelector: '#vdEnrollmentsPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderVDEnrollmentsRows(paginatedData);
+            }
+        });
+    } else {
+        renderVDEnrollmentsRows(filtered);
+    }
+}
+
+function renderVDEnrollmentsRows(filtered) {
+    const tbody = document.getElementById('vdEnrollmentsTable');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
                 <td colspan="7">
@@ -15368,9 +15654,6 @@ function updateAdjustmentStats() {
 
 // Render adjustments table
 function renderAdjustmentsTable() {
-    const tbody = document.getElementById('adjustmentsTableBody');
-    if (!tbody) return;
-
     // Apply filters
     const search = (document.getElementById('adjustmentSearch')?.value || '').toLowerCase();
     const statusFilter = document.getElementById('adjustmentStatusFilter')?.value || '';
@@ -15401,7 +15684,27 @@ function renderAdjustmentsTable() {
     // Sort by created_at desc
     filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    if (filtered.length === 0) {
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        adjustmentsPagination = createTablePagination('adjustmentsPagination', {
+            containerSelector: '#adjustmentsPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderAdjustmentsRows(paginatedData);
+            }
+        });
+    } else {
+        renderAdjustmentsRows(filtered);
+    }
+}
+
+function renderAdjustmentsRows(filtered) {
+    const tbody = document.getElementById('adjustmentsTableBody');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center">
@@ -16720,7 +17023,20 @@ function filterEmployeeSalaries() {
         filtered = filtered.filter(emp => !emp.salary || !emp.salary.id);
     }
 
-    renderEmployeeSalariesTable(filtered);
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        empSalariesPagination = createTablePagination('empSalariesPagination', {
+            containerSelector: '#employeeSalariesPagination',
+            data: filtered,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderEmployeeSalariesTable(paginatedData);
+            }
+        });
+    } else {
+        renderEmployeeSalariesTable(filtered);
+    }
 }
 
 /**

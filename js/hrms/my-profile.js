@@ -357,6 +357,11 @@ function showTab(tabName) {
     });
 
     currentTab = tabName;
+
+    // Load NFC cards when switching to NFC tab
+    if (tabName === 'nfc' && !nfcCardsLoaded) {
+        loadMyNfcCards();
+    }
 }
 
 /**
@@ -600,3 +605,195 @@ function escapeHtml(text) {
 }
 
 // Local showToast removed - using unified toast.js instead
+
+// ============================================
+// NFC Card Functions (v3.0.62)
+// ============================================
+
+let nfcCardsLoaded = false;
+let myNfcCards = [];
+
+/**
+ * Load current user's NFC cards
+ */
+async function loadMyNfcCards() {
+    const loadingEl = document.getElementById('nfcCardsLoading');
+    const emptyEl = document.getElementById('nfcCardsEmpty');
+    const listEl = document.getElementById('myNfcCardsList');
+
+    try {
+        if (loadingEl) loadingEl.style.display = 'flex';
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        myNfcCards = await api.getMyNfcCards();
+        nfcCardsLoaded = true;
+
+        renderMyNfcCards();
+
+        // Also load public profile settings
+        loadMyPublicProfile();
+    } catch (error) {
+        console.error('Error loading NFC cards:', error);
+        myNfcCards = [];
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'flex';
+    }
+}
+
+/**
+ * Render NFC cards list in my-profile
+ */
+function renderMyNfcCards() {
+    const loadingEl = document.getElementById('nfcCardsLoading');
+    const emptyEl = document.getElementById('nfcCardsEmpty');
+    const listEl = document.getElementById('myNfcCardsList');
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    // Remove existing card items
+    const existingCards = listEl?.querySelectorAll('.my-nfc-card-item');
+    existingCards?.forEach(el => el.remove());
+
+    if (!myNfcCards || myNfcCards.length === 0) {
+        if (emptyEl) emptyEl.style.display = 'flex';
+        return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    myNfcCards.forEach(card => {
+        const cardEl = createMyNfcCardElement(card);
+        listEl?.appendChild(cardEl);
+    });
+}
+
+/**
+ * Create DOM element for a single NFC card in my-profile view
+ */
+function createMyNfcCardElement(card) {
+    const div = document.createElement('div');
+    div.className = `my-nfc-card-item ${card.is_active ? '' : 'inactive'}`;
+
+    const statusText = card.is_active ? 'Active' : 'Inactive';
+    const statusClass = card.is_active ? 'active' : 'inactive';
+    const primaryBadge = card.is_primary ? '<span class="badge primary">Primary</span>' : '';
+
+    div.innerHTML = `
+        <div class="card-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+        </div>
+        <div class="card-details">
+            <div class="card-uid">${formatNfcCardUid(card.card_uid)}</div>
+            <div class="card-label">${card.card_label || 'Access Card'}</div>
+            <div class="card-badges">
+                <span class="badge ${statusClass}">${statusText}</span>
+                ${primaryBadge}
+            </div>
+        </div>
+        <div class="card-meta">
+            <span class="card-date">Issued: ${formatCardDate(card.issued_at)}</span>
+        </div>
+    `;
+
+    return div;
+}
+
+/**
+ * Format card UID for display
+ */
+function formatNfcCardUid(uid) {
+    if (!uid) return '-';
+    return uid.match(/.{1,2}/g)?.join(':') || uid;
+}
+
+/**
+ * Format date for card display
+ */
+function formatCardDate(dateStr) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString();
+}
+
+/**
+ * Load public profile settings
+ */
+async function loadMyPublicProfile() {
+    try {
+        const response = await api.request('/hrms/employees/me/public-profile');
+
+        const enabledCheckbox = document.getElementById('myPublicProfileEnabled');
+        const urlSection = document.getElementById('myPublicProfileUrlSection');
+        const urlDisplay = document.getElementById('myPublicProfileUrl');
+
+        if (enabledCheckbox) {
+            enabledCheckbox.checked = response.public_profile_enabled || false;
+        }
+
+        if (response.public_profile_enabled && response.public_profile_url) {
+            if (urlSection) urlSection.style.display = 'block';
+            if (urlDisplay) urlDisplay.textContent = window.location.origin + response.public_profile_url;
+        } else {
+            if (urlSection) urlSection.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading public profile settings:', error);
+    }
+}
+
+/**
+ * Toggle public profile on/off
+ */
+async function toggleMyPublicProfile() {
+    const enabledCheckbox = document.getElementById('myPublicProfileEnabled');
+    const enabled = enabledCheckbox?.checked || false;
+
+    try {
+        // Get current employee's ID
+        const employeeResponse = await api.getMyProfile();
+        if (!employeeResponse || !employeeResponse.id) {
+            throw new Error('Could not get employee ID');
+        }
+
+        await api.updatePublicProfileSettings(employeeResponse.id, {
+            public_profile_enabled: enabled,
+            public_profile_slug: null // Let backend auto-generate
+        });
+
+        showToast(enabled ? 'Public profile enabled' : 'Public profile disabled', 'success');
+
+        // Reload to get the generated URL
+        await loadMyPublicProfile();
+    } catch (error) {
+        console.error('Error updating public profile:', error);
+        showToast(error.message || 'Failed to update public profile', 'error');
+
+        // Revert checkbox
+        if (enabledCheckbox) {
+            enabledCheckbox.checked = !enabled;
+        }
+    }
+}
+
+/**
+ * Copy public profile URL to clipboard
+ */
+async function copyPublicProfileUrl() {
+    const urlDisplay = document.getElementById('myPublicProfileUrl');
+    const url = urlDisplay?.textContent;
+
+    if (!url || url === '-') {
+        showToast('No URL to copy', 'warning');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(url);
+        showToast('URL copied to clipboard', 'success');
+    } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        showToast('Failed to copy URL', 'error');
+    }
+}

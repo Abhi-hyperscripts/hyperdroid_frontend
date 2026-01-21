@@ -18,6 +18,11 @@ let dailyDatePicker = null;
 // Data arrays
 let offices = [];
 
+// Pagination instances
+let attendancePagination = null;
+let regularizationPagination = null;
+let overtimePagination = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) {
         window.location.href = '/index.html';
@@ -330,37 +335,62 @@ async function loadAttendance() {
 
         updateDailyStats(present, absent, late, onLeave);
 
-        tbody.innerHTML = attendance.map(a => {
-            // Build status display - show Late badge if late_by_minutes > 0
-            let statusHtml = `<span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span>`;
-            if (a.late_by_minutes > 0) {
-                const lateText = a.late_by_minutes >= 60
-                    ? `${Math.floor(a.late_by_minutes / 60)}h ${a.late_by_minutes % 60}m`
-                    : `${a.late_by_minutes}m`;
-                statusHtml += ` <span class="status-badge late" title="Late by ${lateText}">Late (${lateText})</span>`;
-            }
-
-            return `
-            <tr>
-                <td>
-                    <div class="employee-info">
-                        <div class="employee-avatar">${escapeHtml(getInitials(a.employee_name))}</div>
-                        <div class="employee-name">${escapeHtml(a.employee_name) || 'Employee'}</div>
-                    </div>
-                </td>
-                <td>${formatTime(a.check_in_time)}</td>
-                <td>${formatTime(a.check_out_time)}</td>
-                <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
-                <td>${statusHtml}</td>
-                <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
-            </tr>
-        `;
-        }).join('');
+        // Use pagination if available
+        if (typeof createTablePagination !== 'undefined') {
+            attendancePagination = createTablePagination('attendancePagination', {
+                containerSelector: '#attendancePagination',
+                data: attendance,
+                rowsPerPage: 25,
+                rowsPerPageOptions: [10, 25, 50, 100],
+                onPageChange: (paginatedData, pageInfo) => {
+                    renderAttendanceRows(paginatedData);
+                }
+            });
+        } else {
+            renderAttendanceRows(attendance);
+        }
 
     } catch (error) {
         console.error('Error loading attendance:', error);
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Error loading attendance</p></td></tr>';
     }
+}
+
+function renderAttendanceRows(attendance) {
+    const tbody = document.getElementById('attendanceTableBody');
+    if (!tbody) return;
+
+    if (!attendance || attendance.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No attendance records for this date</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = attendance.map(a => {
+        // Build status display - show Late badge if late_by_minutes > 0
+        let statusHtml = `<span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span>`;
+        if (a.late_by_minutes > 0) {
+            const lateText = a.late_by_minutes >= 60
+                ? `${Math.floor(a.late_by_minutes / 60)}h ${a.late_by_minutes % 60}m`
+                : `${a.late_by_minutes}m`;
+            statusHtml += ` <span class="status-badge late" title="Late by ${lateText}">Late (${lateText})</span>`;
+        }
+
+        return `
+        <tr>
+            <td>
+                <div class="employee-info">
+                    <div class="employee-avatar">${escapeHtml(getInitials(a.employee_name))}</div>
+                    <div class="employee-name">${escapeHtml(a.employee_name) || 'Employee'}</div>
+                </div>
+            </td>
+            <td>${formatTime(a.check_in_time)}</td>
+            <td>${formatTime(a.check_out_time)}</td>
+            <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
+            <td>${statusHtml}</td>
+            <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
+        </tr>
+    `;
+    }).join('');
 }
 
 function updateDailyStats(present, absent, late, onLeave) {
@@ -399,51 +429,76 @@ async function loadTeamRegularizations() {
             return;
         }
 
-        tbody.innerHTML = filtered.map(r => {
-            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
-            const canApprove = (
-                hrmsRoles.isSuperAdmin() ||
-                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
-                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
-            );
-
-            return `
-            <tr>
-                <td>
-                    <div class="employee-info">
-                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
-                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
-                    </div>
-                </td>
-                <td>${formatDate(r.date)}</td>
-                <td>${formatTime(r.requested_check_in)}</td>
-                <td>${formatTime(r.requested_check_out)}</td>
-                <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
-                <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
-                <td>
-                    ${r.status?.toLowerCase() === 'pending' && canApprove ? `
-                        <div class="action-buttons">
-                            <button class="action-btn success" onclick="approveRegularizationRequest('${r.id}')" data-tooltip="Approve">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                            </button>
-                            <button class="action-btn danger" onclick="openRejectModal('${r.id}')" data-tooltip="Reject">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                    ` : '-'}
-                </td>
-            </tr>
-        `}).join('');
+        // Use pagination if available
+        if (typeof createTablePagination !== 'undefined') {
+            regularizationPagination = createTablePagination('regularizationPagination', {
+                containerSelector: '#regularizationPagination',
+                data: filtered,
+                rowsPerPage: 25,
+                rowsPerPageOptions: [10, 25, 50, 100],
+                onPageChange: (paginatedData, pageInfo) => {
+                    renderRegularizationRows(paginatedData);
+                }
+            });
+        } else {
+            renderRegularizationRows(filtered);
+        }
 
     } catch (error) {
         console.error('Error loading team regularizations:', error);
         tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Error loading requests</p></td></tr>';
     }
+}
+
+function renderRegularizationRows(filtered) {
+    const tbody = document.getElementById('teamRegularizationTableBody');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No regularization requests</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(r => {
+        const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+        const canApprove = (
+            hrmsRoles.isSuperAdmin() ||
+            (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
+            (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
+        );
+
+        return `
+        <tr>
+            <td>
+                <div class="employee-info">
+                    <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                    <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                </div>
+            </td>
+            <td>${formatDate(r.date)}</td>
+            <td>${formatTime(r.requested_check_in)}</td>
+            <td>${formatTime(r.requested_check_out)}</td>
+            <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
+            <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
+            <td>
+                ${r.status?.toLowerCase() === 'pending' && canApprove ? `
+                    <div class="action-buttons">
+                        <button class="action-btn success" onclick="approveRegularizationRequest('${r.id}')" data-tooltip="Approve">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn danger" onclick="openRejectModal('${r.id}')" data-tooltip="Reject">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                ` : '-'}
+            </td>
+        </tr>
+    `}).join('');
 }
 
 // Team Overtime Requests (Admin/Manager view)
@@ -475,52 +530,77 @@ async function loadTeamOvertime() {
             return;
         }
 
-        tbody.innerHTML = filtered.map(r => {
-            const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
-            const canApprove = (
-                hrmsRoles.isSuperAdmin() ||
-                (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
-                (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
-            );
-
-            return `
-            <tr>
-                <td>
-                    <div class="employee-info">
-                        <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
-                        <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
-                    </div>
-                </td>
-                <td>${formatDate(r.date)}</td>
-                <td>${formatTime(r.planned_start_time)}</td>
-                <td>${formatTime(r.planned_end_time)}</td>
-                <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
-                <td>${escapeHtml(r.task_project) || '-'}</td>
-                <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
-                <td>
-                    ${r.status?.toLowerCase() === 'pending' && canApprove ? `
-                        <div class="action-buttons">
-                            <button class="action-btn success" onclick="approveOvertime('${r.id}')" data-tooltip="Approve">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                            </button>
-                            <button class="action-btn danger" onclick="openOvertimeRejectModal('${r.id}')" data-tooltip="Reject">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                    ` : '-'}
-                </td>
-            </tr>
-        `}).join('');
+        // Use pagination if available
+        if (typeof createTablePagination !== 'undefined') {
+            overtimePagination = createTablePagination('overtimePagination', {
+                containerSelector: '#overtimePagination',
+                data: filtered,
+                rowsPerPage: 25,
+                rowsPerPageOptions: [10, 25, 50, 100],
+                onPageChange: (paginatedData, pageInfo) => {
+                    renderOvertimeRows(paginatedData);
+                }
+            });
+        } else {
+            renderOvertimeRows(filtered);
+        }
 
     } catch (error) {
         console.error('Error loading team overtime:', error);
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>Error loading requests</p></td></tr>';
     }
+}
+
+function renderOvertimeRows(filtered) {
+    const tbody = document.getElementById('teamOvertimeTableBody');
+    if (!tbody) return;
+
+    if (!filtered || filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No overtime requests</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(r => {
+        const isOwnRequest = r.employee_user_id === currentUser?.userId || r.employee_email === currentUser?.email;
+        const canApprove = (
+            hrmsRoles.isSuperAdmin() ||
+            (hrmsRoles.isHRAdmin() && !isOwnRequest) ||
+            (!hrmsRoles.isHRAdmin() && hrmsRoles.isManager())
+        );
+
+        return `
+        <tr>
+            <td>
+                <div class="employee-info">
+                    <div class="employee-avatar">${escapeHtml(getInitials(r.employee_name))}</div>
+                    <div class="employee-name">${escapeHtml(r.employee_name) || 'Employee'}</div>
+                </div>
+            </td>
+            <td>${formatDate(r.date)}</td>
+            <td>${formatTime(r.planned_start_time)}</td>
+            <td>${formatTime(r.planned_end_time)}</td>
+            <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
+            <td>${escapeHtml(r.task_project) || '-'}</td>
+            <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
+            <td>
+                ${r.status?.toLowerCase() === 'pending' && canApprove ? `
+                    <div class="action-buttons">
+                        <button class="action-btn success" onclick="approveOvertime('${r.id}')" data-tooltip="Approve">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn danger" onclick="openOvertimeRejectModal('${r.id}')" data-tooltip="Reject">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                ` : '-'}
+            </td>
+        </tr>
+    `}).join('');
 }
 
 // Keep old function for backwards compatibility but remove it later

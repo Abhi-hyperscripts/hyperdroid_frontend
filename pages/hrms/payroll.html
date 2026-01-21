@@ -167,9 +167,7 @@
         <div class="tab-content active" id="salary-components">
             <div class="filters-bar">
                 <div class="filter-group">
-                    <select id="countryFilter" class="form-select" onchange="onCountryFilterChange()">
-                        <option value="">All Countries</option>
-                    </select>
+                    <div id="countryFilterContainer" class="country-filter-dropdown"></div>
                 </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -308,8 +306,11 @@
 
             <div class="filters-bar">
                 <div class="filter-group">
+                    <div id="structureCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="filter-group">
                     <select id="structureOfficeFilter" class="form-select">
-                        <!-- Populated dynamically - NO "All Offices" -->
+                        <!-- Populated dynamically - filtered by country -->
                     </select>
                 </div>
                 <div class="search-box-modern">
@@ -359,6 +360,7 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="salaryStructuresPagination" class="pagination-container"></div>
             </div>
         </div>
 
@@ -366,9 +368,12 @@
         <div class="tab-content" id="payroll-drafts">
             <div class="filters-bar">
                 <div class="filter-group">
+                    <div id="draftCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="filter-group">
                     <div class="month-picker-container" id="draftMonthPicker"></div>
                     <select id="draftOffice" class="form-select" onchange="loadPayrollDrafts()">
-                        <!-- Populated dynamically - NO "All Offices" -->
+                        <!-- Populated dynamically - filtered by country -->
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="openCreateDraftModal()">
@@ -419,9 +424,12 @@
         <div class="tab-content" id="payroll-runs">
             <div class="filters-bar">
                 <div class="filter-group">
+                    <div id="runCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="filter-group">
                     <div class="month-picker-container" id="runMonthPicker"></div>
                     <select id="runOffice" class="form-select" onchange="loadPayrollRuns()">
-                        <!-- Populated dynamically - NO "All Offices" -->
+                        <!-- Populated dynamically - filtered by country -->
                     </select>
                 </div>
             </div>
@@ -460,6 +468,9 @@
         <!-- Employee Salaries Tab -->
         <div class="tab-content" id="employee-salaries">
             <div class="filters-bar">
+                <div class="filter-group">
+                    <div id="empSalaryCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -536,12 +547,16 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="employeeSalariesPagination" class="pagination-container"></div>
             </div>
         </div>
 
         <!-- Loans Tab -->
         <div class="tab-content" id="loans">
             <div class="filters-bar">
+                <div class="filter-group">
+                    <div id="loanCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -599,6 +614,7 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="loansPagination" class="pagination-container"></div>
             </div>
         </div>
 
@@ -613,6 +629,9 @@
             <!-- VD Enrollments Sub-tab -->
             <div class="sub-tab-content active" id="vd-enrollments">
                 <div class="filters-bar">
+                    <div class="filter-group">
+                        <div id="vdCountryFilterContainer" class="country-filter-dropdown"></div>
+                    </div>
                     <div class="search-box-modern">
                         <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"/>
@@ -696,6 +715,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div id="vdEnrollmentsPagination" class="pagination-container"></div>
                 </div>
             </div>
 
@@ -757,9 +777,12 @@
         <div class="tab-content" id="all-payslips">
             <div class="filters-bar">
                 <div class="filter-group">
+                    <div id="allPayslipsCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="filter-group">
                     <div class="month-picker-container" id="allPayslipsMonthPicker"></div>
                     <select id="allPayslipsOffice" class="form-select">
-                        <!-- Populated dynamically - NO "All Offices" -->
+                        <!-- Populated dynamically - filtered by country -->
                     </select>
                     <select id="allPayslipsDepartment" class="form-select">
                         <option value="">All Departments</option>
@@ -830,6 +853,7 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="allPayslipsPagination" class="pagination-container"></div>
             </div>
         </div>
 
@@ -995,6 +1019,9 @@
         <!-- Adjustments Tab (Reimbursements, Bonuses, Deductions, etc.) -->
         <div class="tab-content" id="adjustments">
             <div class="filters-bar">
+                <div class="filter-group">
+                    <div id="adjustmentCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
                 <div class="search-box-modern">
                     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -1074,6 +1101,7 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="adjustmentsPagination" class="pagination-container"></div>
             </div>
         </div>
 
@@ -1283,6 +1311,9 @@
             <div class="arrears-subtab-content active" id="version-arrears-content">
                 <div class="filters-bar">
                     <div class="filter-group">
+                        <div id="arrearsCountryFilterContainer" class="country-filter-dropdown"></div>
+                    </div>
+                    <div class="filter-group">
                         <select id="arrearsOfficeFilter" class="form-select searchable-dropdown" data-placeholder="All Offices">
                             <option value="">All Offices</option>
                         </select>
@@ -1363,6 +1394,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div id="arrearsPagination" class="pagination-container"></div>
                 </div>
             </div>
 
@@ -3924,6 +3956,7 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/office-selection.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payroll.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
