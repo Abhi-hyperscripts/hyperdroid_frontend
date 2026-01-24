@@ -194,7 +194,7 @@ const PayslipModal = (function() {
 
             .payslip-summary .summary-item {
                 padding: 0.5rem;
-                background: var(--bg-subtle, var(--bg-tertiary));
+                background: var(--bg-subtle, var(--bg-body, #f5f7fa));
                 border-radius: 6px;
                 text-align: center;
             }
@@ -270,8 +270,8 @@ const PayslipModal = (function() {
                 align-items: center;
                 gap: 0.5rem;
                 padding: 0.75rem 1rem;
-                background: var(--bg-tertiary);
-                border-bottom: 1px solid var(--border-primary);
+                background: var(--bg-body, #f5f7fa);
+                border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
             }
 
             .proof-tab {
@@ -280,7 +280,7 @@ const PayslipModal = (function() {
                 gap: 0.375rem;
                 padding: 0.5rem 1rem;
                 background: transparent;
-                border: 1px solid var(--border-secondary);
+                border: 1px solid var(--border-color, rgba(0,0,0,0.08));
                 border-radius: 6px;
                 cursor: pointer;
                 font-size: 0.875rem;
@@ -290,7 +290,7 @@ const PayslipModal = (function() {
             }
 
             .proof-tab:hover {
-                background: var(--bg-hover);
+                background: var(--bg-elevated, rgba(0,0,0,0.03));
                 color: var(--text-primary);
             }
 
@@ -308,12 +308,12 @@ const PayslipModal = (function() {
                 gap: 0.5rem;
             }
 
-            /* Tab Content */
+            /* Tab Content - use body background for contrast with white cards */
             .proof-tab-content {
                 flex: 1;
                 overflow-y: auto;
-                padding: 1.5rem;
-                background: var(--bg-primary);
+                padding: 1rem;
+                background: var(--bg-body, #f5f7fa);
             }
 
             #proofTabFormatted, #proofTabJson {
@@ -326,7 +326,7 @@ const PayslipModal = (function() {
                 gap: 0.5rem;
                 margin-bottom: 1rem;
                 padding-bottom: 1rem;
-                border-bottom: 1px solid var(--border-secondary);
+                border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
             }
 
             .json-viewer {
@@ -334,8 +334,8 @@ const PayslipModal = (function() {
                 font-size: 0.8rem;
                 line-height: 1.5;
                 padding: 1rem;
-                background: var(--bg-secondary);
-                border: 1px solid var(--border-primary);
+                background: var(--bg-card, #ffffff);
+                border: 1px solid var(--border-color, rgba(0,0,0,0.1));
                 border-radius: 8px;
                 overflow: auto;
                 max-height: calc(90vh - 250px);
@@ -348,13 +348,13 @@ const PayslipModal = (function() {
             .proof-summary-row {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 1rem;
-                margin-bottom: 1.5rem;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
             }
 
             .proof-summary-card {
-                padding: 1.25rem;
-                border-radius: 10px;
+                padding: 0.875rem;
+                border-radius: 8px;
                 text-align: center;
                 transition: transform 0.2s;
                 color: var(--text-inverse);
@@ -373,14 +373,14 @@ const PayslipModal = (function() {
                 margin-bottom: 0.25rem;
             }
 
-            .summary-value { font-size: 1.5rem; font-weight: 700; }
+            .summary-value { font-size: 1.25rem; font-weight: 700; }
 
             /* Section Grid */
             .proof-section-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-                margin-bottom: 1rem;
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
             }
 
             @media (max-width: 768px) {
@@ -388,39 +388,45 @@ const PayslipModal = (function() {
                 .proof-summary-row { grid-template-columns: 1fr; }
             }
 
-            /* Cards */
+            /* Cards - compact design with visible shadow for clear separation */
             .proof-card {
-                background: var(--bg-secondary);
-                border-radius: 10px;
-                border: 1px solid var(--border-primary);
-                margin-bottom: 1rem;
+                background: var(--bg-card, #ffffff);
+                border-radius: 8px;
+                border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+                margin-bottom: 0.5rem;
                 overflow: hidden;
-                transition: all 0.25s ease;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
             }
 
             .proof-card:hover {
                 border-color: var(--brand-primary);
-                transform: translateY(-2px);
+                transform: translateY(-1px);
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
             }
 
             .proof-card-header {
                 display: flex;
                 align-items: center;
-                gap: 0.5rem;
-                padding: 0.875rem 1rem;
-                background: var(--bg-tertiary);
+                gap: 0.375rem;
+                padding: 0.5rem 0.625rem;
+                background: var(--bg-elevated, rgba(245,245,248,0.95));
                 font-weight: 600;
-                font-size: 0.9rem;
-                border-bottom: 1px solid var(--border-primary);
+                font-size: 0.75rem;
+                border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
                 color: var(--text-primary);
+            }
+
+            .proof-card-header svg {
+                width: 14px;
+                height: 14px;
             }
 
             .header-badge {
                 margin-left: auto;
-                padding: 0.25rem 0.75rem;
-                border-radius: 20px;
-                font-size: 0.8rem;
+                padding: 0.125rem 0.5rem;
+                border-radius: 12px;
+                font-size: 0.65rem;
                 font-weight: 600;
                 color: var(--text-inverse);
             }
@@ -433,13 +439,13 @@ const PayslipModal = (function() {
             .timeline-badge { background: var(--color-info); }
             .location-badge { background: var(--brand-secondary, var(--brand-primary)); }
 
-            .proof-card-body { padding: 1rem; }
+            .proof-card-body { padding: 0.5rem; }
 
             /* Info Grid - using cp- prefix to avoid conflicts with hrms-ess.css */
             .cp-info-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
+                gap: 0.375rem;
             }
 
             .cp-info-item {
@@ -451,14 +457,14 @@ const PayslipModal = (function() {
             }
 
             .info-label {
-                font-size: 0.75rem;
+                font-size: 0.65rem;
                 color: var(--text-secondary);
                 text-transform: uppercase;
                 letter-spacing: 0.03em;
             }
 
             .info-value {
-                font-size: 0.9rem;
+                font-size: 0.8rem;
                 font-weight: 500;
                 color: var(--text-primary);
             }
@@ -467,43 +473,43 @@ const PayslipModal = (function() {
             .compensation-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 1.5rem;
+                gap: 0.75rem;
                 text-align: center;
             }
 
             .comp-item { display: flex; flex-direction: column; }
-            .comp-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
-            .comp-value { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
+            .comp-label { font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; }
+            .comp-value { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
 
             /* Tables */
             .proof-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 0.85rem;
+                font-size: 0.75rem;
             }
 
             .proof-table th {
-                background: var(--bg-tertiary);
-                padding: 0.625rem 0.75rem;
+                background: var(--bg-body, #f5f7fa);
+                padding: 0.375rem 0.5rem;
                 font-weight: 600;
                 text-align: left;
-                border-bottom: 2px solid var(--border-primary);
+                border-bottom: 2px solid var(--border-color, rgba(0,0,0,0.1));
                 color: var(--text-primary);
             }
 
             .proof-table td {
-                padding: 0.625rem 0.75rem;
-                border-bottom: 1px solid var(--border-secondary);
+                padding: 0.375rem 0.5rem;
+                border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08));
                 color: var(--text-primary);
             }
 
-            .proof-table tbody tr:hover { background: var(--bg-hover); }
+            .proof-table tbody tr:hover { background: var(--bg-elevated, rgba(0,0,0,0.03)); }
             .proof-table .text-right { text-align: right; }
             .proof-table .text-center { text-align: center; }
 
             .proof-table tfoot td {
-                background: var(--bg-tertiary);
-                border-top: 2px solid var(--border-primary);
+                background: var(--bg-body, #f5f7fa);
+                border-top: 2px solid var(--border-color, rgba(0,0,0,0.1));
                 border-bottom: none;
             }
 
@@ -512,7 +518,7 @@ const PayslipModal = (function() {
             .component-name {
                 display: flex;
                 align-items: center;
-                gap: 0.5rem;
+                gap: 0.375rem;
             }
 
             .eligibility-reason { color: var(--text-secondary); cursor: help; }
@@ -521,10 +527,10 @@ const PayslipModal = (function() {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                width: 20px;
-                height: 20px;
+                width: 16px;
+                height: 16px;
                 border-radius: 50%;
-                font-size: 0.75rem;
+                font-size: 0.65rem;
                 color: var(--text-inverse);
             }
 
@@ -554,7 +560,7 @@ const PayslipModal = (function() {
                 flex-wrap: wrap;
                 gap: 0.5rem;
                 padding: 1rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 8px;
                 margin-bottom: 1rem;
             }
@@ -564,9 +570,9 @@ const PayslipModal = (function() {
                 flex-direction: column;
                 align-items: center;
                 padding: 0.5rem 1rem;
-                background: var(--bg-secondary);
+                background: var(--bg-card, #ffffff);
                 border-radius: 6px;
-                border: 1px solid var(--border-secondary);
+                border: 1px solid var(--border-color, rgba(0,0,0,0.08));
                 color: var(--text-primary);
             }
 
@@ -581,7 +587,7 @@ const PayslipModal = (function() {
             .tax-flow-operator { font-size: 1.25rem; font-weight: bold; color: var(--text-secondary); }
 
             .pretax-section {
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 8px;
                 padding: 1rem;
                 margin-bottom: 1rem;
@@ -603,7 +609,7 @@ const PayslipModal = (function() {
             }
 
             .pretax-item.pretax-total {
-                border-top: 1px dashed var(--border-primary);
+                border-top: 1px dashed var(--border-color, rgba(0,0,0,0.1));
                 margin-top: 0.5rem;
                 padding-top: 0.5rem;
                 font-weight: 600;
@@ -626,7 +632,7 @@ const PayslipModal = (function() {
             .rebate-reason { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
             .tax-final {
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 8px;
                 padding: 1rem;
                 padding-bottom: 3rem;
@@ -634,7 +640,7 @@ const PayslipModal = (function() {
             }
 
             .tax-line { display: flex; justify-content: space-between; padding: 0.375rem 0; font-size: 0.9rem; color: var(--text-primary); }
-            .tax-line.total { border-top: 1px solid var(--border-primary); margin-top: 0.5rem; padding-top: 0.5rem; font-weight: 600; }
+            .tax-line.total { border-top: 1px solid var(--border-color, rgba(0,0,0,0.1)); margin-top: 0.5rem; padding-top: 0.5rem; font-weight: 600; }
             .tax-line.monthly {
                 background: var(--brand-primary);
                 color: var(--text-inverse);
@@ -654,7 +660,7 @@ const PayslipModal = (function() {
                 font-style: italic;
                 margin-bottom: 0.75rem;
                 padding: 0.5rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 6px;
             }
 
@@ -666,14 +672,14 @@ const PayslipModal = (function() {
                 display: flex;
                 align-items: center;
                 padding: 0.625rem 0.75rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 6px;
                 color: var(--text-primary);
             }
 
             .verification-item.highlight {
-                background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
-                color: var(--text-inverse);
+                background: linear-gradient(135deg, var(--brand-primary, #3b82f6), var(--brand-primary-light, #6ca1f8));
+                color: var(--text-inverse, #ffffff);
             }
 
             .verification-label { flex: 1; font-size: 0.9rem; }
@@ -684,8 +690,8 @@ const PayslipModal = (function() {
             /* Footer */
             .proof-footer {
                 padding: 1rem;
-                background: var(--bg-tertiary);
-                border-top: 1px solid var(--border-primary);
+                background: var(--bg-body, #f5f7fa);
+                border-top: 1px solid var(--border-color, rgba(0,0,0,0.1));
                 text-align: center;
             }
 
@@ -708,7 +714,7 @@ const PayslipModal = (function() {
                 color: var(--text-secondary);
                 margin-bottom: 1rem;
                 padding: 0.75rem 1rem;
-                background: var(--bg-hover);
+                background: var(--bg-elevated, rgba(0,0,0,0.03));
                 border-radius: 6px;
                 border-left: 3px solid var(--brand-primary);
             }
@@ -726,7 +732,7 @@ const PayslipModal = (function() {
             }
 
             .proration-note {
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 border-radius: 6px;
                 padding: 0.75rem 1rem;
                 margin-top: 0.75rem;
@@ -758,12 +764,16 @@ const PayslipModal = (function() {
             .adjustment-type { display: inline-flex; align-items: center; gap: 0.25rem; }
             .adjustment-type.addition svg { color: var(--color-success); }
             .adjustment-type.deduction svg { color: var(--color-error); }
+            .adjustment-reason { font-size: 0.75rem; color: var(--text-secondary); }
 
             .addition-amount { color: var(--color-success); font-weight: 600; }
             .deduction-amount { color: var(--color-error); font-weight: 600; }
 
-            .subtotal-row td { background: var(--bg-tertiary); font-size: 0.9rem; }
+            .subtotal-row td { background: var(--bg-body, #f5f7fa); font-size: 0.9rem; }
             .adjustments-table { margin-bottom: 0; }
+            .adjustments-table td { border-bottom: none; }
+            .adjustments-table tbody tr:hover { background: transparent; }
+            .adjustments-table tfoot td { border-top: none; }
             .text-muted { color: var(--text-secondary); font-style: italic; }
 
             /* Version Timeline Section */
@@ -788,7 +798,7 @@ const PayslipModal = (function() {
                 display: inline-flex;
                 align-items: center;
                 padding: 0.25rem 0.75rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 color: var(--text-primary);
                 border-radius: 12px;
                 font-size: 0.8rem;
@@ -799,7 +809,7 @@ const PayslipModal = (function() {
                 display: inline-flex;
                 align-items: center;
                 padding: 0.25rem 0.75rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 color: var(--text-secondary);
                 border-radius: 12px;
                 font-size: 0.75rem;
@@ -811,25 +821,215 @@ const PayslipModal = (function() {
             .reason-badge.promotion { background: var(--color-success); color: var(--text-inverse); }
 
             .timeline-table .structure-name { font-weight: 500; }
-            .timeline-table .first-version td { background: var(--bg-hover); }
+            .timeline-table .first-version td { background: var(--bg-elevated, rgba(0,0,0,0.03)); }
+
+            /* Arrears Lifecycle Section - v3.0.114 - Compact */
+            .arrears-lifecycle-card { border-left: 2px solid var(--color-warning); }
+            .arrears-lifecycle-header svg { color: var(--color-warning); }
+
+            .arrears-summary-banner {
+                padding: 0.5rem 0.75rem;
+                background: linear-gradient(135deg, var(--bg-body, #f5f7fa) 0%, var(--bg-elevated, rgba(0,0,0,0.03)) 100%);
+                border-radius: 6px;
+                margin-bottom: 0.625rem;
+                border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+            }
+
+            .arrears-summary-text {
+                font-size: 0.8rem;
+                color: var(--text-primary);
+                margin: 0;
+                line-height: 1.4;
+            }
+
+            .arrears-chain-alert {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.5rem;
+                padding: 0.5rem 0.75rem;
+                background: var(--bg-elevated, rgba(0,0,0,0.03));
+                border-radius: 6px;
+                margin-bottom: 0.625rem;
+                border-left: 2px solid var(--color-info);
+            }
+
+            .arrears-chain-alert svg {
+                flex-shrink: 0;
+                color: var(--color-info);
+                margin-top: 1px;
+                width: 14px;
+                height: 14px;
+            }
+
+            .arrears-chain-alert .chain-text {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                line-height: 1.4;
+            }
+
+            .arrears-records-title {
+                display: flex;
+                align-items: center;
+                gap: 0.375rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.375rem;
+                border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08));
+            }
+
+            .arrears-record {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.625rem;
+                padding: 0.5rem 0.625rem;
+                margin-bottom: 0.375rem;
+                background: var(--bg-card, #ffffff);
+                border-radius: 6px;
+                border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+                transition: all 0.15s ease;
+            }
+
+            .arrears-record:hover {
+                background: var(--bg-elevated, rgba(0,0,0,0.03));
+                border-color: var(--border-color, rgba(0,0,0,0.1));
+            }
+
+            .arrears-record.status-applied {
+                border-left: 2px solid var(--color-success);
+            }
+
+            .arrears-record.status-superseded {
+                border-left: 2px solid var(--text-tertiary);
+                opacity: 0.75;
+            }
+
+            .arrears-record-status {
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.125rem;
+                min-width: 65px;
+            }
+
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.125rem;
+                padding: 0.125rem 0.5rem;
+                border-radius: 10px;
+                font-size: 0.625rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.025em;
+            }
+
+            .status-badge.applied {
+                background: var(--color-success);
+                color: var(--text-inverse);
+            }
+
+            .status-badge.superseded {
+                background: #f59e0b;
+                color: #ffffff;
+            }
+
+            .arrears-record-details {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .arrears-record-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.125rem;
+            }
+
+            .arrears-period {
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.8rem;
+            }
+
+            .arrears-amount {
+                font-weight: 700;
+                font-size: 0.8rem;
+                font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            }
+
+            .arrears-amount.positive { color: var(--color-success); }
+            .arrears-amount.negative { color: var(--color-error); }
+            .arrears-amount.zero { color: var(--text-tertiary); text-decoration: line-through; }
+
+            .arrears-ctc-change {
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                margin-bottom: 0.125rem;
+            }
+
+            .arrears-ctc-change .ctc-arrow {
+                color: var(--text-tertiary);
+                margin: 0 0.25rem;
+            }
+
+            .arrears-note {
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                font-style: italic;
+                line-height: 1.3;
+            }
+
+            .arrears-stats-row {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 0.625rem;
+                padding-top: 0.625rem;
+                border-top: 1px solid var(--border-color, rgba(0,0,0,0.08));
+                flex-wrap: wrap;
+            }
+
+            .arrears-stat {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                padding: 0.25rem 0.5rem;
+                background: var(--bg-body, #f5f7fa);
+                border-radius: 4px;
+                font-size: 0.7rem;
+            }
+
+            .arrears-stat-label { color: var(--text-secondary); }
+            .arrears-stat-value { font-weight: 600; color: var(--text-primary); }
+            .arrears-stat-value.applied { color: var(--color-success); }
+            .arrears-stat-value.superseded { color: var(--text-tertiary); }
 
             /* Location Breakdown Section */
             .location-card { border-left: 3px solid var(--brand-secondary, var(--brand-primary)); }
             .location-header svg { color: var(--brand-secondary, var(--brand-primary)); }
 
-            .location-name { display: flex; align-items: center; gap: 0.5rem; }
-            .location-icon { font-size: 1rem; }
-            .office-code { color: var(--text-secondary); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
+            .location-name { font-size: 0.8rem; white-space: nowrap; }
+            .location-icon { font-size: 0.85rem; }
+            .office-code { color: var(--text-secondary); font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-left: 0.25rem; }
 
-            .location-table .primary-location td { background: var(--bg-hover); }
+            .location-table { font-size: 0.75rem; border-collapse: collapse; }
+            .location-table th { font-size: 0.7rem; padding: 0.5rem; vertical-align: middle; border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08)); }
+            .location-table td { padding: 0.5rem; vertical-align: middle; line-height: 1.4; border-bottom: none; }
+            .location-table .primary-location td { background: transparent; }
             .location-table .net-cell { color: var(--color-success); }
+            .location-table .days-badge { padding: 0.125rem 0.375rem; font-size: 0.7rem; }
+            .location-table tfoot td { border-top: none; }
+            .location-table tbody tr:hover { background: transparent; }
 
             .jurisdiction-note {
                 font-size: 0.8rem;
                 color: var(--text-secondary);
                 margin-bottom: 1rem;
                 padding: 0.75rem 1rem;
-                background: var(--bg-hover);
+                background: var(--bg-elevated, rgba(0,0,0,0.03));
                 border-radius: 6px;
                 border-left: 3px solid var(--color-info);
             }
@@ -862,17 +1062,17 @@ const PayslipModal = (function() {
             .version-group-title .structure-name { color: var(--text-inverse); font-weight: 600; font-size: 0.9rem; }
             .period-label { color: rgba(255, 255, 255, 0.8); font-size: 0.8rem; font-style: italic; margin-left: auto; }
 
-            .version-group-item td { background: var(--bg-secondary); border-left: 3px solid transparent; padding-left: 1.5rem !important; }
-            .version-group-item:hover td { background: var(--bg-hover); }
+            .version-group-item td { background: var(--bg-card, #ffffff); border-left: 3px solid transparent; padding-left: 1.5rem !important; }
+            .version-group-item:hover td { background: var(--bg-elevated, rgba(0,0,0,0.03)); }
 
-            .version-subtotal-row td { background: var(--bg-tertiary); border-bottom: 1px solid var(--border-primary); font-size: 0.85rem; padding: 0.5rem 1rem !important; }
+            .version-subtotal-row td { background: var(--bg-body, #f5f7fa); border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1)); font-size: 0.85rem; padding: 0.5rem 1rem !important; }
             .version-subtotal-row em { color: var(--text-secondary); }
 
             .jurisdiction-label {
                 display: inline-block;
                 margin-left: 0.5rem;
                 padding: 0.15rem 0.5rem;
-                background: var(--bg-tertiary);
+                background: var(--bg-body, #f5f7fa);
                 color: var(--text-secondary);
                 border-radius: 10px;
                 font-size: 0.75rem;
@@ -1185,7 +1385,7 @@ const PayslipModal = (function() {
 
         // Combined totals
         html += `
-            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border: 2px solid var(--border-color);">
+            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-card, #ffffff); border-radius: 8px; border: 2px solid var(--border-color);">
                 <h5 style="margin: 0 0 1rem 0;">Combined Totals</h5>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
@@ -1201,7 +1401,7 @@ const PayslipModal = (function() {
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; margin-top: 0.5rem; background: var(--bg-body, #f5f7fa); border-radius: 4px; padding-left: 0.5rem; padding-right: 0.5rem;">
                     <span style="font-weight: 700;">Net Pay</span>
                     <span style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem;">${fmtCurrency(payslip.net_pay)}</span>
                 </div>
@@ -1483,6 +1683,9 @@ const PayslipModal = (function() {
                             <!-- Adjustments Section -->
                             ${buildAdjustmentsSection(proof, fmt)}
 
+                            <!-- Arrears Lifecycle Audit Section - v3.0.114 -->
+                            ${buildArrearsLifecycleSection(proof, fmt)}
+
                             <!-- Tax Calculation Section -->
                             ${buildTaxCalculationSection(proof, fmt, pct)}
 
@@ -1505,17 +1708,14 @@ const PayslipModal = (function() {
                                         <div class="verification-item">
                                             <span class="verification-label">Gross Earnings</span>
                                             <span class="verification-value">${fmt(proof.grossEarnings)}</span>
-                                            <span class="verification-check">✓</span>
                                         </div>
                                         <div class="verification-item">
                                             <span class="verification-label">Total Deductions</span>
                                             <span class="verification-value">${fmt(proof.totalDeductions)}</span>
-                                            <span class="verification-check">✓</span>
                                         </div>
                                         <div class="verification-item highlight">
                                             <span class="verification-label">Net Pay (Gross - Deductions)</span>
                                             <span class="verification-value">${fmt(proof.netPay)}</span>
-                                            <span class="verification-check">✓</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1838,7 +2038,7 @@ const PayslipModal = (function() {
                     <td class="component-name">
                         <span class="adjustment-type addition">${item.displayType || item.adjustmentType || 'Adjustment'}</span>
                     </td>
-                    <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                    <td class="text-left adjustment-reason">${item.reason || '-'}</td>
                     <td class="text-right amount-cell addition-amount">+${fmt(item.amount)}</td>
                 </tr>
             `).join('')
@@ -1850,7 +2050,7 @@ const PayslipModal = (function() {
                     <td class="component-name">
                         <span class="adjustment-type deduction">${item.displayType || item.adjustmentType || 'Adjustment'}</span>
                     </td>
-                    <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                    <td class="text-left adjustment-reason">${item.reason || '-'}</td>
                     <td class="text-right amount-cell deduction-amount">-${fmt(item.amount)}</td>
                 </tr>
             `).join('')
@@ -1884,10 +2084,156 @@ const PayslipModal = (function() {
                         </table>
                     </div>
 
-                    <div class="adjustment-net-impact" style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="adjustment-net-impact" style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-body, #f5f7fa); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 500;">Net Impact from Adjustments</span>
                         <span class="${netClass}" style="font-size: 1.1rem; font-weight: 600;">${netSign}${fmt(Math.abs(netAdjustment))}</span>
                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Build arrears lifecycle section - v3.0.114
+     * Shows the full audit trail of retro salary revisions with chain collapsing explanation
+     * @param {object} proof - The calculation proof data
+     * @param {function} fmt - Currency formatting function
+     */
+    function buildArrearsLifecycleSection(proof, fmt) {
+        const audit = proof.arrearsLifecycleAudit;
+
+        // Only show if there are arrears records
+        if (!audit || !audit.totalArrearsRecords || audit.totalArrearsRecords === 0) {
+            return '';
+        }
+
+        // Build summary banner
+        const summaryBanner = audit.explanationSummary ? `
+            <div class="arrears-summary-banner">
+                <p class="arrears-summary-text">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    ${escapeHtml(audit.explanationSummary)}
+                </p>
+            </div>
+        ` : '';
+
+        // Build chain collapsing alert if applicable
+        const chainAlert = audit.hasChainCollapsing ? `
+            <div class="arrears-chain-alert">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                <div class="chain-text">
+                    <strong>Retro Chain Collapsing Active:</strong> ${escapeHtml(audit.chainCollapsingNote || 'Multiple retrospective revisions detected for the same period. Only the latest revision per month is paid; earlier revisions are superseded.')}
+                </div>
+            </div>
+        ` : '';
+
+        // Build individual record cards
+        let recordsHtml = '';
+        const records = audit.allRecords || [];
+
+        if (records.length > 0) {
+            // Sort records: applied first, then superseded, then by period
+            const sortedRecords = [...records].sort((a, b) => {
+                if (a.status === 'applied' && b.status !== 'applied') return -1;
+                if (a.status !== 'applied' && b.status === 'applied') return 1;
+                return (a.payrollPeriod || '').localeCompare(b.payrollPeriod || '');
+            });
+
+            const recordCards = sortedRecords.map(record => {
+                const isApplied = record.status === 'applied';
+                const statusClass = isApplied ? 'status-applied' : 'status-superseded';
+                const badgeClass = isApplied ? 'applied' : 'superseded';
+                const badgeIcon = isApplied
+                    ? '<svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>'
+                    : '<svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
+
+                // Format CTC values
+                const oldCtcL = record.oldCtc ? `₹${(record.oldCtc / 100000).toFixed(1)}L` : '-';
+                const newCtcL = record.newCtc ? `₹${(record.newCtc / 100000).toFixed(1)}L` : '-';
+
+                // Determine amount display
+                const amount = record.arrearsAmount || 0;
+                const amountClass = isApplied ? (amount >= 0 ? 'positive' : 'negative') : 'zero';
+                const amountPrefix = isApplied ? (amount >= 0 ? '+' : '') : '';
+                const amountDisplay = isApplied ? `${amountPrefix}${fmt(amount)}` : fmt(amount);
+
+                return `
+                    <div class="arrears-record ${statusClass}">
+                        <div class="arrears-record-status">
+                            <span class="status-badge ${badgeClass}">
+                                ${badgeIcon}
+                                ${isApplied ? 'Paid' : 'Superseded'}
+                            </span>
+                        </div>
+                        <div class="arrears-record-details">
+                            <div class="arrears-record-header">
+                                <span class="arrears-period">${escapeHtml(record.payrollPeriod || 'Unknown Period')}</span>
+                                <span class="arrears-amount ${amountClass}">${amountDisplay}</span>
+                            </div>
+                            <div class="arrears-ctc-change">
+                                CTC: ${oldCtcL}<span class="ctc-arrow">→</span>${newCtcL}
+                            </div>
+                            ${record.note ? `<div class="arrears-note">${escapeHtml(record.note)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            recordsHtml = `
+                <div class="arrears-records-title">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    All Revision Records (${records.length} total)
+                </div>
+                ${recordCards}
+            `;
+        }
+
+        // Build stats row
+        const statsRow = `
+            <div class="arrears-stats-row">
+                <div class="arrears-stat">
+                    <span class="arrears-stat-label">Total Records:</span>
+                    <span class="arrears-stat-value">${audit.totalArrearsRecords || 0}</span>
+                </div>
+                <div class="arrears-stat">
+                    <span class="arrears-stat-label">Applied:</span>
+                    <span class="arrears-stat-value applied">${audit.appliedArrearsCount || audit.appliedInThisPayslipCount || 0}</span>
+                </div>
+                ${audit.supersededArrearsCount > 0 ? `
+                    <div class="arrears-stat">
+                        <span class="arrears-stat-label">Superseded:</span>
+                        <span class="arrears-stat-value superseded">${audit.supersededArrearsCount}</span>
+                    </div>
+                ` : ''}
+                ${audit.appliedInThisPayslipAmount ? `
+                    <div class="arrears-stat">
+                        <span class="arrears-stat-label">Total Paid:</span>
+                        <span class="arrears-stat-value applied">${fmt(audit.appliedInThisPayslipAmount)}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        return `
+            <div class="proof-card arrears-lifecycle-card">
+                <div class="proof-card-header arrears-lifecycle-header">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Arrears Lifecycle Audit</span>
+                    ${audit.hasChainCollapsing ? '<span class="header-badge" style="background: var(--color-info); color: var(--text-inverse);">Chain Collapsed</span>' : ''}
+                </div>
+                <div class="proof-card-body">
+                    ${summaryBanner}
+                    ${chainAlert}
+                    ${recordsHtml}
+                    ${statsRow}
                 </div>
             </div>
         `;
@@ -2212,7 +2558,6 @@ const PayslipModal = (function() {
             return `
                 <tr class="${isFirst ? 'primary-location' : ''}">
                     <td class="location-name">
-                        <span class="location-icon">📍</span>
                         ${loc.officeName || '-'}
                         <span class="office-code">(${loc.officeCode || '-'})</span>
                     </td>
@@ -2348,10 +2693,10 @@ const PayslipModal = (function() {
     }
 
     /**
-     * Print the calculation proof
+     * Print the calculation proof with full formatting
      */
     function printCalculationProof() {
-        const proofContent = document.getElementById('proofFormatted');
+        const proofContent = document.getElementById('proofTabFormatted');
         if (!proofContent) {
             showToast('No proof content to print', 'warning');
             return;
@@ -2365,30 +2710,546 @@ const PayslipModal = (function() {
 
         const proofData = window.currentCalculationProof;
 
+        // Comprehensive print styles matching the UI
+        const printStyles = `
+            /* ========================================
+               STANDARDIZED FONT SIZES:
+               - Title (h1): 18px
+               - Section headers: 12px
+               - Body text/values: 11px
+               - Small labels: 9px
+               - Large summary values: 16px
+               - Badges: 9px
+               ======================================== */
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                padding: 20px;
+                color: #1f2937;
+                font-size: 11px;
+                line-height: 1.5;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Header */
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            .print-header h1 { font-size: 18px; margin-bottom: 5px; color: #111827; }
+            .print-header .meta { color: #6b7280; font-size: 11px; }
+
+            /* Summary Cards - with forced print colors */
+            .proof-summary-row {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            .proof-summary-card {
+                flex: 1;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .proof-summary-card.earnings { background: #10b981 !important; }
+            .proof-summary-card.deductions { background: #f59e0b !important; }
+            .proof-summary-card.net-pay { background: #6366f1 !important; }
+            .summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
+            .summary-value { font-size: 16px; font-weight: 700; margin-top: 4px; }
+
+            /* Section Grid */
+            .proof-section-grid {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 15px;
+            }
+            .proof-section-grid > .proof-card { flex: 1; }
+
+            /* Cards - with forced print colors */
+            .proof-card {
+                background: #fff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                overflow: hidden;
+                page-break-inside: avoid;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .proof-card-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                background: #f3f4f6 !important;
+                font-weight: 600;
+                font-size: 12px;
+                border-bottom: 1px solid #e5e7eb;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .proof-card-header svg { width: 16px; height: 16px; }
+            .proof-card-body { padding: 12px; font-size: 11px; }
+
+            /* Badges - with forced print colors */
+            .header-badge {
+                margin-left: auto;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 9px;
+                font-weight: 600;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .earnings-badge { background: #10b981 !important; }
+            .deductions-badge { background: #f59e0b !important; }
+            .tax-badge { background: #8b5cf6 !important; }
+            .employer-badge { background: #3b82f6 !important; }
+            .voluntary-badge { background: #06b6d4 !important; }
+            .timeline-badge { background: #6366f1 !important; }
+            .location-badge { background: #ec4899 !important; }
+            .arrears-badge { background: #f97316 !important; }
+
+            /* Info Grid */
+            .cp-info-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .cp-info-item { display: flex; flex-direction: column; }
+            .info-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; }
+            .info-value { font-size: 11px; font-weight: 500; color: #111827; }
+
+            /* Compensation Grid */
+            .compensation-grid {
+                display: flex;
+                justify-content: space-around;
+                text-align: center;
+            }
+            .comp-item { display: flex; flex-direction: column; }
+            .comp-label { font-size: 9px; color: #6b7280; text-transform: uppercase; }
+            .comp-value { font-size: 12px; font-weight: 600; color: #111827; }
+
+            /* Tables - with forced print colors */
+            .proof-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 11px;
+            }
+            .proof-table th {
+                background: #f3f4f6 !important;
+                padding: 8px 10px;
+                font-weight: 600;
+                font-size: 11px;
+                text-align: left;
+                border-bottom: 2px solid #e5e7eb;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .proof-table td {
+                padding: 8px 10px;
+                font-size: 11px;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .proof-table .text-right { text-align: right; }
+            .proof-table .text-center { text-align: center; }
+            .proof-table tfoot td {
+                background: #f9fafb !important;
+                font-weight: 600;
+                font-size: 11px;
+                border-top: 2px solid #e5e7eb;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .total-row td { font-weight: 700; background: #f3f4f6 !important; }
+            tr.not-eligible { opacity: 0.5; }
+
+            /* Adjustments Table - override inline styles for consistency */
+            .adjustments-table td { font-size: 11px !important; }
+            .adjustments-table .component-name { font-size: 11px; }
+            .adjustments-table .component-name { font-size: 11px; }
+            .adjustments-table .adjustment-type { font-size: 11px; }
+            .adjustments-table .adjustment-reason { font-size: 11px; color: #6b7280; }
+            .adjustments-table .amount-cell { font-size: 11px; font-weight: 600; }
+            .subsection-title { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+            .section-description { font-size: 9px; color: #6b7280; margin-bottom: 12px; }
+            .adjustment-net-impact { font-size: 11px !important; }
+            .adjustment-net-impact span { font-size: 11px !important; }
+
+            /* Status Badges - with forced print colors */
+            .status-badge, .arrears-status-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 9px;
+                font-weight: 600;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .status-badge.paid, .arrears-status-badge.paid { background: #dcfce7 !important; color: #166534 !important; }
+            .status-badge.pending, .arrears-status-badge.pending { background: #fef3c7 !important; color: #92400e !important; }
+            .status-badge.superseded, .arrears-status-badge.superseded { background: #f59e0b !important; color: #ffffff !important; }
+            .status-badge.active { background: #dbeafe !important; color: #1e40af !important; }
+
+            /* Version Timeline - with forced print colors */
+            .version-timeline { display: flex; flex-direction: column; gap: 10px; }
+            .version-entry {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 10px;
+                background: #f9fafb !important;
+                border-radius: 6px;
+                border-left: 3px solid #6366f1;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .version-marker {
+                width: 28px;
+                height: 28px;
+                background: #6366f1 !important;
+                color: white !important;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 600;
+                flex-shrink: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .version-content { flex: 1; }
+            .version-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+            .version-title { font-weight: 600; font-size: 11px; }
+            .version-dates { font-size: 9px; color: #6b7280; }
+            .version-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 11px; }
+            .version-detail-item { display: flex; flex-direction: column; }
+            .version-detail-label { font-size: 9px; color: #9ca3af; text-transform: uppercase; }
+            .version-detail-value { font-size: 11px; font-weight: 500; }
+
+            /* Tax Section - with forced print colors */
+            .tax-regime-banner {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                background: #8b5cf6 !important;
+                color: white !important;
+                border-radius: 6px;
+                margin-bottom: 12px;
+                font-size: 11px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .regime-label { opacity: 0.9; font-size: 11px; }
+            .regime-value { font-weight: 600; font-size: 11px; }
+            .tax-flow { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+            .tax-flow-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 12px;
+                background: #f9fafb !important;
+                border-radius: 6px;
+                font-size: 11px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tax-flow-item.result { background: #fef3c7 !important; font-weight: 600; }
+            .tax-flow-item.final { background: #dbeafe !important; font-weight: 700; }
+            .slab-table { margin-top: 10px; }
+
+            /* Arrears Lifecycle Card - specific styling */
+            .arrears-lifecycle-card {
+                border: 1px solid #f97316 !important;
+            }
+            .arrears-lifecycle-header {
+                background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
+                background: #fff7ed !important;
+                border-bottom: 1px solid #fed7aa !important;
+            }
+            .arrears-lifecycle-header .header-badge {
+                background: #3b82f6 !important;
+            }
+
+            /* Arrears Records - organized layout for print */
+            .arrears-records-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 11px;
+                font-weight: 600;
+                color: #6b7280;
+                margin: 12px 0 8px 0;
+                padding-bottom: 6px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .arrears-record {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                background: #f9fafb !important;
+                border-radius: 6px;
+                border: 1px solid #e5e7eb;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .arrears-record.status-applied {
+                border-left: 3px solid #10b981 !important;
+                background: #f0fdf4 !important;
+            }
+            .arrears-record.status-superseded {
+                border-left: 3px solid #9ca3af !important;
+                background: #f9fafb !important;
+                opacity: 0.8;
+            }
+            .arrears-record-status {
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                min-width: 70px;
+            }
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 3px 8px;
+                border-radius: 10px;
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .status-badge.applied {
+                background: #10b981 !important;
+                color: white !important;
+            }
+            .status-badge.superseded {
+                background: #f59e0b !important;
+                color: #ffffff !important;
+            }
+            .arrears-record-details {
+                flex: 1;
+                min-width: 0;
+            }
+            .arrears-record-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 4px;
+            }
+            .arrears-period {
+                font-weight: 600;
+                color: #111827;
+                font-size: 11px;
+            }
+            .arrears-amount {
+                font-weight: 600;
+                font-size: 11px;
+            }
+            .arrears-amount.positive { color: #10b981 !important; }
+            .arrears-amount.negative { color: #ef4444 !important; }
+            .arrears-ctc-change {
+                font-size: 9px;
+                color: #6b7280;
+                margin-bottom: 2px;
+            }
+            .arrears-note {
+                font-size: 9px;
+                color: #9ca3af;
+                font-style: italic;
+            }
+            /* Arrears Summary Banner and Chain Alert */
+            .arrears-summary-banner {
+                padding: 10px 12px;
+                background: #fef3c7 !important;
+                border: 1px solid #fcd34d;
+                border-radius: 6px;
+                margin-bottom: 12px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .arrears-summary-text {
+                font-size: 11px;
+                color: #92400e !important;
+                margin: 0;
+            }
+            .arrears-chain-alert {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 10px 12px;
+                background: #dbeafe !important;
+                border: 1px solid #93c5fd;
+                border-radius: 6px;
+                margin-bottom: 12px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .chain-text {
+                font-size: 11px;
+                color: #1e40af !important;
+            }
+            .ctc-arrow {
+                margin: 0 4px;
+                color: #9ca3af;
+            }
+
+            /* Arrears Stats Row - matches HTML class names */
+            .arrears-stats-row {
+                display: flex;
+                gap: 20px;
+                margin-top: 12px;
+                padding: 12px;
+                background: #f3f4f6 !important;
+                border-radius: 6px;
+                border: 1px solid #e5e7eb;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .arrears-stat {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .arrears-stat-label {
+                font-size: 9px;
+                color: #6b7280;
+                font-weight: 500;
+            }
+            .arrears-stat-value {
+                font-size: 11px;
+                font-weight: 700;
+                color: #111827;
+            }
+            .arrears-stat-value.applied {
+                color: #16a34a !important;
+            }
+            .arrears-stat-value.superseded {
+                color: #9ca3af !important;
+            }
+
+            /* Location Breakdown - with forced print colors */
+            .location-breakdown-visual { margin-bottom: 15px; }
+            .location-bar-container {
+                height: 24px;
+                background: #f3f4f6 !important;
+                border-radius: 6px;
+                overflow: hidden;
+                display: flex;
+                margin-bottom: 8px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .location-bar-segment {
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white !important;
+                font-size: 9px;
+                font-weight: 600;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .location-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; }
+            .legend-item { display: flex; align-items: center; gap: 6px; }
+            .legend-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 3px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Verification - with forced print colors */
+            .verification-grid { display: flex; flex-direction: column; gap: 8px; }
+            .verification-item {
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                gap: 20px;
+                align-items: center;
+                padding: 8px 12px;
+                background: #f9fafb !important;
+                border-radius: 6px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .verification-item.highlight { background: #dbeafe !important; }
+            .verification-label { font-size: 11px; font-weight: 500; text-align: left; }
+            .verification-value { font-size: 11px; font-weight: 600; text-align: right; min-width: 120px; }
+            .verification-check { font-size: 11px; color: #10b981 !important; font-weight: bold; text-align: center; min-width: 20px; }
+
+            /* Footer */
+            .print-footer {
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+                font-size: 9px;
+                color: #9ca3af;
+            }
+
+            /* Utility */
+            .text-success { color: #10b981; }
+            .text-warning { color: #f59e0b; }
+            .text-error { color: #ef4444; }
+            .positive { color: #10b981; }
+            .negative { color: #ef4444; }
+
+            /* Print specific */
+            @media print {
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
+                body { padding: 10px; }
+                .proof-card { break-inside: avoid; }
+                .no-print { display: none !important; }
+            }
+
+            /* Hide SVG icons in print (they don't render well) */
+            svg { display: none; }
+        `;
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Calculation - ${proofData?.employeeName || 'Employee'}</title>
-                <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-                    h1 { font-size: 18px; margin-bottom: 5px; }
-                    .meta { color: #666; font-size: 14px; margin-bottom: 20px; }
-                    .proof-section { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-                    .proof-section-header { padding: 10px 15px; background: #f5f5f5; font-weight: 600; border-bottom: 1px solid #ddd; }
-                    .proof-section-body { padding: 10px 15px; }
-                    .proof-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-                    .proof-item:last-child { border-bottom: none; }
-                    .proof-total { display: flex; justify-content: space-between; padding: 10px 15px; background: #f5f5f5; font-weight: 700; border-top: 2px solid #ddd; }
-                    .positive { color: #22c55e; }
-                    .negative { color: #ef4444; }
-                    @media print { body { padding: 0; } }
-                </style>
+                <title>Payroll Calculation - ${proofData?.employeeName || 'Employee'}</title>
+                <style>${printStyles}</style>
             </head>
             <body>
-                <h1>Calculation</h1>
-                <p class="meta">${proofData?.employeeName || ''} • ${proofData?.employeeCode || ''} • ${proofData?.payPeriod || ''}</p>
+                <div class="print-header">
+                    <h1>Payroll Calculation</h1>
+                    <p class="meta">${proofData?.employeeName || ''} (${proofData?.employeeCode || ''}) &bull; ${proofData?.payPeriod || ''}</p>
+                </div>
                 ${proofContent.innerHTML}
+                <div class="print-footer">
+                    <p>Generated on ${new Date().toLocaleString()} &bull; Engine Version: ${proofData?.proof?.engineVersion || 'N/A'}</p>
+                    <p>This is a system-generated document for verification purposes.</p>
+                </div>
             </body>
             </html>
         `);
@@ -2399,7 +3260,7 @@ const PayslipModal = (function() {
         setTimeout(() => {
             printWindow.print();
             printWindow.close();
-        }, 250);
+        }, 300);
     }
 
     // ==========================================
@@ -2474,6 +3335,7 @@ const PayslipModal = (function() {
         switchProofTab: switchProofTab,
         copyProofJson: copyProofJson,
         downloadProofJson: downloadProofJson,
+        downloadCalculationProof: downloadProofJson, // Alias for button onclick
         printCalculationProof: printCalculationProof,
 
         // PDF download
