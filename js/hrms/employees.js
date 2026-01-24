@@ -588,6 +588,9 @@ async function openCreateEmployeeModal() {
     // Initialize/reset gender dropdown (using SearchableDropdown component)
     initGenderDropdown();
 
+    // Initialize/reset marital status dropdown (using SearchableDropdown component)
+    initMaritalStatusDropdown();
+
     // Load available users
     try {
         const response = await api.getAvailableUsersForEmployee();
@@ -808,6 +811,10 @@ async function editEmployee(id) {
     initGenderDropdown();
     setGenderValue(emp.gender || '');
 
+    // Initialize and set marital status dropdown (using SearchableDropdown component)
+    initMaritalStatusDropdown();
+    setMaritalStatusValue(emp.marital_status || '');
+
     // Initialize and set employment type dropdown (using SearchableDropdown component)
     initEmploymentTypeDropdown();
     setEmploymentTypeValue(emp.employment_type || 'full_time');
@@ -911,8 +918,11 @@ async function saveEmployeeAtomic() {
     const dateOfBirth = document.getElementById('dateOfBirth').value;
     if (dateOfBirth) formData.append('date_of_birth', dateOfBirth);
 
-    const gender = document.getElementById('gender').value;
+    const gender = getGenderValue();
     if (gender) formData.append('gender', gender);
+
+    const maritalStatus = getMaritalStatusValue();
+    if (maritalStatus) formData.append('marital_status', maritalStatus);
 
     const departmentId = document.getElementById('departmentId').value;
     if (departmentId) formData.append('department_id', departmentId);
@@ -1021,7 +1031,8 @@ async function saveEmployeeEdit(id) {
         employee_code: document.getElementById('employeeCode').value,
         work_phone: document.getElementById('workPhone').value,
         date_of_birth: document.getElementById('dateOfBirth').value,
-        gender: document.getElementById('gender').value || null,
+        gender: getGenderValue() || null,
+        marital_status: getMaritalStatusValue() || null,
         department_id: document.getElementById('departmentId').value,
         designation_id: document.getElementById('designationId').value,
         office_id: document.getElementById('officeId').value,
@@ -3459,6 +3470,79 @@ function setGenderValue(value) {
     } else {
         const select = document.getElementById('gender');
         if (select) select.value = value || '';
+    }
+}
+
+/**
+ * Get gender dropdown value
+ */
+function getGenderValue() {
+    if (genderDropdown) {
+        return genderDropdown.getValue();
+    } else {
+        const select = document.getElementById('gender');
+        return select ? select.value : '';
+    }
+}
+
+// Marital Status dropdown instance (using SearchableDropdown component)
+let maritalStatusDropdown = null;
+
+/**
+ * Initialize marital status dropdown using SearchableDropdown component
+ */
+function initMaritalStatusDropdown() {
+    // Check if already converted
+    const existingContainer = document.getElementById('maritalStatus-searchable-container');
+    if (existingContainer) {
+        // Already converted, just reset
+        if (maritalStatusDropdown) {
+            maritalStatusDropdown.setValue(null);
+        }
+        return;
+    }
+
+    // Convert native select to searchable dropdown
+    maritalStatusDropdown = convertSelectToSearchable('maritalStatus', {
+        placeholder: 'Select marital status...',
+        searchPlaceholder: 'Search...',
+        compact: true
+    });
+}
+
+/**
+ * Reset marital status dropdown to default state
+ */
+function resetMaritalStatusDropdown() {
+    if (maritalStatusDropdown) {
+        maritalStatusDropdown.setValue(null);
+    } else {
+        const select = document.getElementById('maritalStatus');
+        if (select) select.value = '';
+    }
+}
+
+/**
+ * Set marital status dropdown value
+ */
+function setMaritalStatusValue(value) {
+    if (maritalStatusDropdown) {
+        maritalStatusDropdown.setValue(value);
+    } else {
+        const select = document.getElementById('maritalStatus');
+        if (select) select.value = value || '';
+    }
+}
+
+/**
+ * Get marital status dropdown value
+ */
+function getMaritalStatusValue() {
+    if (maritalStatusDropdown) {
+        return maritalStatusDropdown.getValue();
+    } else {
+        const select = document.getElementById('maritalStatus');
+        return select ? select.value : '';
     }
 }
 
