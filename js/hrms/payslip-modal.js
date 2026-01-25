@@ -631,6 +631,16 @@ const PayslipModal = (function() {
             .rebate-amount { font-weight: 600; color: var(--color-success); }
             .rebate-reason { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
+            /* Marginal Relief Section (Finance Bill 2025) */
+            .marginal-relief-section { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--color-success); }
+            .marginal-relief-section .rebate-header { border-bottom: 1px dashed rgba(16, 185, 129, 0.3); padding-bottom: 0.5rem; margin-bottom: 0.75rem; }
+            .marginal-relief-calculation { background: rgba(255, 255, 255, 0.5); border-radius: 6px; padding: 0.75rem; margin: 0.5rem 0; }
+            .relief-line { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; color: var(--text-primary); }
+            .relief-line.highlight { background: rgba(16, 185, 129, 0.15); border-radius: 4px; padding: 0.5rem 0.75rem; margin: 0.25rem -0.5rem; font-weight: 600; }
+            .relief-line.savings { color: var(--color-success); font-weight: 600; border-top: 1px dashed rgba(16, 185, 129, 0.3); margin-top: 0.5rem; padding-top: 0.5rem; }
+            .savings-amount { color: var(--color-success); }
+            .tax-line.cess-absorbed { opacity: 0.6; font-style: italic; }
+
             .tax-final {
                 background: var(--bg-body, #f5f7fa);
                 border-radius: 8px;
@@ -2365,11 +2375,45 @@ const PayslipModal = (function() {
                         </div>
                     ` : ''}
 
+                    <!-- Marginal Relief Section (Finance Bill 2025) -->
+                    ${tax.rebate?.marginalReliefApplied ? `
+                        <div class="marginal-relief-section applicable">
+                            <div class="rebate-header">
+                                <span class="rebate-icon">✓</span>
+                                <span class="rebate-title">Marginal Relief (Finance Bill 2025)</span>
+                            </div>
+                            <div class="rebate-details">
+                                <span>Cutoff Income: ${fmt(tax.rebate.reliefCutoffIncome || 1275000)} | Applies between ₹12L - ₹12.75L</span>
+                            </div>
+                            <div class="marginal-relief-calculation">
+                                <div class="relief-line">
+                                    <span>Tax from Slabs:</span>
+                                    <span>${fmt(tax.taxAfterRebate)}</span>
+                                </div>
+                                <div class="relief-line">
+                                    <span>Excess over ₹12L threshold:</span>
+                                    <span>${fmt(tax.rebate.actualTaxableIncome - 1200000)}</span>
+                                </div>
+                                <div class="relief-line highlight">
+                                    <span>Tax Capped at Excess Amount:</span>
+                                    <span>${fmt(Math.min(tax.taxAfterRebate, tax.rebate.actualTaxableIncome - 1200000))}</span>
+                                </div>
+                                <div class="relief-line savings">
+                                    <span>Tax Savings from Marginal Relief:</span>
+                                    <span class="savings-amount">- ${fmt(tax.rebate.marginalReliefAmount || (tax.taxAfterRebate - (tax.rebate.actualTaxableIncome - 1200000)))}</span>
+                                </div>
+                            </div>
+                            <div class="rebate-reason">
+                                ${tax.rebate.marginalReliefAlgorithm || 'For incomes slightly above ₹12L, tax is capped at the excess over ₹12L to prevent tax exceeding income increase.'}
+                            </div>
+                        </div>
+                    ` : ''}
+
                     <!-- Final Tax Calculation -->
                     <div class="tax-final">
                         <div class="tax-line">
-                            <span>Tax After Rebate</span>
-                            <span>${fmt(tax.taxAfterRebate)}</span>
+                            <span>Tax After Rebate${tax.rebate?.marginalReliefApplied ? ' & Marginal Relief' : ''}</span>
+                            <span>${fmt(tax.rebate?.marginalReliefApplied ? Math.min(tax.taxAfterRebate, tax.rebate.actualTaxableIncome - 1200000) : tax.taxAfterRebate)}</span>
                         </div>
                         ${tax.surchargeAmount > 0 ? `
                             <div class="tax-line">
@@ -2378,9 +2422,9 @@ const PayslipModal = (function() {
                             </div>
                         ` : ''}
                         ${tax.cessAmount > 0 ? `
-                            <div class="tax-line">
-                                <span>${tax.cessName || 'Cess'} (${pct(tax.cessPercentage)})</span>
-                                <span>+ ${fmt(tax.cessAmount)}</span>
+                            <div class="tax-line ${tax.rebate?.marginalReliefApplied ? 'cess-absorbed' : ''}">
+                                <span>${tax.cessName || 'Cess'} (${pct(tax.cessPercentage)})${tax.rebate?.marginalReliefApplied ? ' - absorbed by relief' : ''}</span>
+                                <span>${tax.rebate?.marginalReliefApplied ? '(included)' : `+ ${fmt(tax.cessAmount)}`}</span>
                             </div>
                         ` : ''}
                         <div class="tax-line total">

@@ -2126,3 +2126,262 @@
         height: 28px;
     }
 }
+
+/* =============================================================
+   TAX CONFIGURATION SECTION
+   ============================================================= */
+
+/* Stats grid */
+.tax-config-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+    .tax-config-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .tax-config-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* FY Label in filter bar */
+.tax-config-fy-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-primary);
+}
+
+.tax-config-fy-label svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* Info Banners */
+.tax-config-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.tax-config-info-banner svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tax-config-banner-info {
+    background: var(--info-alpha-20);
+    color: var(--color-info-dark);
+    border: 1px solid var(--info-alpha-30);
+}
+
+.tax-config-banner-warning {
+    background: var(--warning-alpha-20);
+    color: var(--color-orange-dark);
+    border: 1px solid var(--warning-alpha-30, rgba(245, 158, 11, 0.3));
+}
+
+/* Regime Cards Container */
+.regime-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* Regime Card */
+.regime-card {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-primary);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.regime-card:hover:not(.locked) {
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.regime-card.selected {
+    border-color: var(--brand-primary);
+    background: var(--bg-selected, rgba(59, 130, 246, 0.06));
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.regime-card.locked {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.regime-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.regime-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.regime-card-badges {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.regime-card-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.regime-card-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+/* Regime Badges */
+.regime-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.regime-badge-default {
+    background: var(--info-alpha-20);
+    color: var(--color-info-dark);
+}
+
+.regime-badge-custom {
+    background: var(--warning-alpha-20);
+    color: var(--color-orange-dark);
+}
+
+.regime-badge-locked {
+    background: var(--danger-alpha-20);
+    color: var(--color-danger-text, var(--color-error));
+}
+
+.regime-badge-current {
+    background: var(--success-alpha-20);
+    color: var(--color-success-text, var(--color-success));
+}
+
+/* Mini slab table inside regime card */
+.regime-slab-mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 11px;
+}
+
+.regime-slab-mini-table th {
+    text-align: left;
+    padding: 4px 6px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-secondary);
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.regime-slab-mini-table td {
+    padding: 3px 6px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.regime-slab-mini-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Regime Comparison Table */
+.regime-comparison-table-wrapper {
+    overflow-x: auto;
+}
+
+.regime-comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.regime-comparison-table th {
+    text-align: left;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.regime-comparison-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border-secondary);
+    color: var(--text-primary);
+}
+
+.regime-comparison-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+/* Tax Regime Employee Info in Modal */
+.tax-regime-employee-info {
+    margin-bottom: 16px;
+}
+
+.tax-regime-emp-header {
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-secondary);
+}
+
+.tax-regime-emp-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.tax-regime-emp-name .emp-code {
+    margin-left: 8px;
+}
+
+.tax-regime-emp-details {
+    font-size: 13px;
+    color: var(--text-secondary);
+}

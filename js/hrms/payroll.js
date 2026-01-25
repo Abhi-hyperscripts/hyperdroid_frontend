@@ -1073,6 +1073,8 @@ function setupTabs() {
                 await loadSalaryReports();
             } else if (tabId === 'employee-salaries') {
                 await loadEmployeeSalaries();
+            } else if (tabId === 'tax-configuration') {
+                await loadTaxConfiguration();
             }
         });
     });
@@ -4322,7 +4324,8 @@ const COUNTRY_FILTER_CONTAINERS = [
     'vdCountryFilterContainer',         // Voluntary Deductions tab
     'allPayslipsCountryFilterContainer', // All Payslips tab
     'adjustmentCountryFilterContainer', // Adjustments tab
-    'arrearsCountryFilterContainer'     // Arrears tab
+    'arrearsCountryFilterContainer',    // Arrears tab
+    'taxConfigCountryFilterContainer'   // Tax Configuration tab
 ];
 
 // Load countries and initialize ALL country filter dropdowns across tabs
@@ -13669,7 +13672,8 @@ function setupSidebar() {
         'finalized-runs': 'Finalized Runs',
         'all-payslips': 'All Payslips',
         'loans': 'Loans & Advances',
-        'arrears': 'Arrears Management'
+        'arrears': 'Arrears Management',
+        'tax-configuration': 'Tax Configuration'
     };
 
     // Update active tab title
@@ -14987,5 +14991,586 @@ async function populateEmpSalaryFilters() {
         updateSearchableDropdownOptions('empSalaryStatusFilter', statusOptions);
     } catch (error) {
         console.error('Error populating employee salary filters:', error);
+    }
+}
+
+// =====================================================
+// TAX CONFIGURATION SECTION
+// =====================================================
+
+let taxConfigRegimes = null;
+let taxConfigFinancialYear = '';
+let taxConfigEmployees = [];
+let taxRegimeModalEmployeeId = null;
+let selectedTaxRegimeCode = null;
+let taxConfigCountryCode = null;
+
+/**
+ * Compute financial year string from country's fiscal_year_start_month
+ */
+function getFinancialYear(countryCode) {
+    const country = window.loadedCountries?.find(c => c.country_code === countryCode);
+    const fyStart = country?.fiscal_year_start_month || 1;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    if (fyStart === 1) {
+        return `${year}`;
+    }
+    if (month >= fyStart) {
+        return `${year}-${(year + 1).toString().slice(2)}`;
+    } else {
+        return `${year - 1}-${year.toString().slice(2)}`;
+    }
+}
+
+/**
+ * Main entry point: load tax configuration for selected country
+ */
+async function loadTaxConfiguration() {
+    const countryCode = getSelectedCountry();
+    if (!countryCode) {
+        document.getElementById('taxConfigEmptyState').style.display = '';
+        document.getElementById('taxConfigStats').style.display = 'none';
+        document.getElementById('taxConfigTableContainer').style.display = 'none';
+        document.getElementById('taxConfigInfoBanner').style.display = 'none';
+        document.getElementById('taxConfigFYLabel').style.display = 'none';
+        return;
+    }
+
+    taxConfigCountryCode = countryCode;
+    taxConfigFinancialYear = getFinancialYear(countryCode);
+
+    // Show FY label
+    const fyLabel = document.getElementById('taxConfigFYLabel');
+    fyLabel.style.display = 'flex';
+    document.getElementById('taxConfigFYValue').textContent = taxConfigFinancialYear;
+
+    try {
+        // Fetch country config to get tax_regimes
+        const configResponse = await api.request(`/hrms/statutory/configs/country/${countryCode}`);
+        // API returns { success, config: { configData: {...} } }
+        let configData = configResponse?.config?.configData || configResponse?.config_data || configResponse?.ConfigData || configResponse;
+
+        // Handle string JSONB
+        if (typeof configData === 'string') {
+            try { configData = JSON.parse(configData); } catch (e) { configData = {}; }
+        }
+
+        const taxRegimes = configData?.tax_regimes || configData?.TaxRegimes || null;
+        taxConfigRegimes = taxRegimes;
+
+        renderTaxConfigContent();
+    } catch (error) {
+        console.error('Error loading tax configuration:', error);
+        taxConfigRegimes = null;
+        renderTaxConfigContent();
+    }
+}
+
+/**
+ * Decide which UI to show based on regime count (0, 1, or 2+)
+ */
+function renderTaxConfigContent() {
+    const infoBanner = document.getElementById('taxConfigInfoBanner');
+    const stats = document.getElementById('taxConfigStats');
+    const tableContainer = document.getElementById('taxConfigTableContainer');
+    const emptyState = document.getElementById('taxConfigEmptyState');
+
+    emptyState.style.display = 'none';
+
+    const regimeKeys = taxConfigRegimes ? Object.keys(taxConfigRegimes) : [];
+
+    if (regimeKeys.length === 0) {
+        // No tax regimes configured
+        infoBanner.style.display = 'block';
+        infoBanner.className = 'tax-config-info-banner tax-config-banner-info';
+        infoBanner.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div><strong>No tax regimes configured.</strong> This country's statutory compliance configuration does not include tax regimes. Tax will be calculated using default rules.</div>
+        `;
+        stats.style.display = 'none';
+        tableContainer.style.display = 'none';
+        return;
+    }
+
+    if (regimeKeys.length === 1) {
+        // Single regime - show info, load employees read-only
+        const regime = taxConfigRegimes[regimeKeys[0]];
+        const regimeName = regime?.regime_name || regime?.name || regimeKeys[0];
+        infoBanner.style.display = 'block';
+        infoBanner.className = 'tax-config-info-banner tax-config-banner-info';
+        infoBanner.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div><strong>Single tax regime: ${regimeName}.</strong> All employees are automatically assigned to this regime. No switching is required.</div>
+        `;
+        stats.style.display = 'none';
+        tableContainer.style.display = 'none';
+        loadTaxConfigEmployees(taxConfigCountryCode, true);
+        return;
+    }
+
+    // Multiple regimes - full functionality
+    infoBanner.style.display = 'none';
+    stats.style.display = '';  // Let CSS handle layout (stats-row uses flex)
+    tableContainer.style.display = '';
+    loadTaxConfigEmployees(taxConfigCountryCode, false);
+}
+
+/**
+ * Fetch employees and their regime data
+ */
+async function loadTaxConfigEmployees(countryCode, readOnly) {
+    const tableBody = document.getElementById('taxConfigTableBody');
+    tableBody.innerHTML = `<tr><td colspan="7"><div class="loading-placeholder"><div class="spinner"></div><p>Loading employees...</p></div></td></tr>`;
+
+    try {
+        // Get active employees
+        const empResponse = await api.request('/hrms/employees?status=active');
+        let employees = Array.isArray(empResponse) ? empResponse : (empResponse.employees || []);
+
+        // Filter by country - match employees whose office belongs to selected country
+        // We use office data if available
+        console.log('[TAX CONFIG DEBUG] Total employees from API:', employees.length);
+        console.log('[TAX CONFIG DEBUG] Sample employee fields:', employees.slice(0, 2).map(e => ({
+            code: e.employee_code,
+            office_country_code: e.office_country_code,
+            office_state_code: e.office_state_code,
+            country_code: e.country_code
+        })));
+        console.log('[TAX CONFIG DEBUG] Filtering for country:', countryCode);
+
+        const countryEmployees = employees.filter(emp => {
+            const officeCountry = emp.office_country_code || emp.country_code;
+            const matches = officeCountry === countryCode;
+            if (!matches && emp.employee_code) {
+                console.log(`[TAX CONFIG DEBUG] Employee ${emp.employee_code} filtered out: office_country=${emp.office_country_code}, country_code=${emp.country_code}, looking for=${countryCode}`);
+            }
+            return matches;
+        });
+
+        console.log('[TAX CONFIG DEBUG] Employees after country filter:', countryEmployees.length);
+
+        // For each employee, try to fetch their tax regime
+        const regimePromises = countryEmployees.map(async (emp) => {
+            try {
+                const regimeData = await api.request(`/hrms/statutory/employees/${emp.id}/tax-regime?countryCode=${countryCode}&financialYear=${encodeURIComponent(taxConfigFinancialYear)}`);
+                return { ...emp, regime_data: regimeData };
+            } catch (e) {
+                return { ...emp, regime_data: null };
+            }
+        });
+
+        taxConfigEmployees = await Promise.all(regimePromises);
+        filterAndPaginateTaxConfig(readOnly);
+        if (!readOnly) {
+            updateTaxConfigStats();
+        }
+    } catch (error) {
+        console.error('Error loading tax config employees:', error);
+        tableBody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>Error loading employees</p><p class="hint">${error.message || 'Unknown error'}</p></div></td></tr>`;
+    }
+}
+
+// Pagination instance for tax config
+let taxConfigPagination = null;
+let taxConfigReadOnly = false;
+
+/**
+ * Filter and paginate tax config employees
+ */
+function filterAndPaginateTaxConfig(readOnly) {
+    taxConfigReadOnly = readOnly;
+    const tableContainer = document.getElementById('taxConfigTableContainer');
+
+    if (taxConfigEmployees.length === 0) {
+        tableContainer.style.display = 'none';
+        document.getElementById('taxConfigEmptyState').style.display = '';
+        document.getElementById('taxConfigEmptyState').querySelector('.empty-message p').textContent = 'No employees found for this country';
+        return;
+    }
+
+    tableContainer.style.display = '';
+    document.getElementById('taxConfigEmptyState').style.display = 'none';
+
+    // Use pagination if available
+    if (typeof createTablePagination !== 'undefined') {
+        taxConfigPagination = createTablePagination('taxConfigPagination', {
+            containerSelector: '#taxConfigPagination',
+            data: taxConfigEmployees,
+            rowsPerPage: 25,
+            rowsPerPageOptions: [10, 25, 50, 100],
+            onPageChange: (paginatedData, pageInfo) => {
+                renderTaxConfigTable(paginatedData, taxConfigReadOnly);
+            }
+        });
+    } else {
+        renderTaxConfigTable(taxConfigEmployees, readOnly);
+    }
+}
+
+/**
+ * Render the employee tax regime table
+ */
+function renderTaxConfigTable(employees, readOnly) {
+    const tableBody = document.getElementById('taxConfigTableBody');
+
+    if (!employees || employees.length === 0) {
+        tableBody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="7">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <p>No employees found</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const regimeKeys = taxConfigRegimes ? Object.keys(taxConfigRegimes) : [];
+    const defaultRegimeKey = regimeKeys.find(k => taxConfigRegimes[k]?.is_default) || regimeKeys[0];
+
+    const rows = employees.map(emp => {
+        const rd = emp.regime_data;
+        // Extract from nested API response: { success, tax_regime: { data: { regime_code, locked } } }
+        const taxRegimeData = rd?.tax_regime?.data || rd;
+        const currentRegimeCode = taxRegimeData?.regime_code || taxRegimeData?.regimeCode || defaultRegimeKey;
+        const currentRegime = taxConfigRegimes?.[currentRegimeCode];
+        const currentRegimeName = currentRegime?.regime_name || currentRegime?.name || currentRegimeCode || 'Default';
+        const isLocked = taxRegimeData?.locked === true || taxRegimeData?.is_locked === true;
+        const isCustom = rd && rd.tax_regime && currentRegimeCode !== defaultRegimeKey;
+
+        let statusBadge = '';
+        if (isLocked) {
+            statusBadge = '<span class="badge badge-danger">Locked</span>';
+        } else if (isCustom) {
+            statusBadge = '<span class="badge badge-warning">Custom</span>';
+        } else {
+            statusBadge = '<span class="badge badge-info">Default</span>';
+        }
+
+        const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown';
+        const initials = getTaxConfigEmployeeInitials(emp.first_name, emp.last_name);
+        const empCode = emp.employee_code || emp.emp_code || '-';
+        const deptName = emp.department_name || emp.department || '-';
+        const officeName = emp.office_name || emp.office || '-';
+
+        // Avatar: show profile photo if available, otherwise show initials
+        const avatarHtml = emp.profile_photo_url
+            ? `<img src="${escapeHtml(emp.profile_photo_url)}" alt="${escapeHtml(fullName)}" class="emp-avatar-xs-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+               <div class="emp-avatar-xs" style="display:none;">${initials}</div>`
+            : `<div class="emp-avatar-xs">${initials}</div>`;
+
+        const actionBtn = readOnly
+            ? ''
+            : `<button class="btn btn-sm btn-outline" onclick="openTaxRegimeModal('${emp.id}')" title="Change Regime">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                   </svg>
+                   Change
+               </button>`;
+
+        return `
+            <tr>
+                <td>
+                    <div class="emp-cell-compact">
+                        ${avatarHtml}
+                        <span class="emp-name-inline">${escapeHtml(fullName)}</span>
+                        <span class="emp-code-badge">${escapeHtml(empCode)}</span>
+                    </div>
+                </td>
+                <td>${escapeHtml(deptName)}</td>
+                <td>${escapeHtml(officeName)}</td>
+                <td>${escapeHtml(currentRegimeName)}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td>${taxConfigFinancialYear}</td>
+                <td class="text-center">${actionBtn}</td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = rows.join('');
+}
+
+/**
+ * Get employee initials for tax config table
+ */
+function getTaxConfigEmployeeInitials(firstName, lastName) {
+    const f = (firstName || '').charAt(0).toUpperCase();
+    const l = (lastName || '').charAt(0).toUpperCase();
+    return f + l || '--';
+}
+
+/**
+ * Update the 4 stat cards
+ */
+function updateTaxConfigStats() {
+    const total = taxConfigEmployees.length;
+    const regimeKeys = taxConfigRegimes ? Object.keys(taxConfigRegimes) : [];
+    const defaultRegimeKey = regimeKeys.find(k => taxConfigRegimes[k]?.is_default) || regimeKeys[0];
+
+    let defaultCount = 0, customCount = 0, lockedCount = 0;
+    taxConfigEmployees.forEach(emp => {
+        const rd = emp.regime_data;
+        // Extract from nested API response: { success, tax_regime: { data: { regime_code, locked } } }
+        const taxRegimeData = rd?.tax_regime?.data || rd;
+        const isLocked = taxRegimeData?.locked === true || taxRegimeData?.is_locked === true;
+        const currentRegimeCode = taxRegimeData?.regime_code || taxRegimeData?.regimeCode || defaultRegimeKey;
+        const isCustom = rd && rd.tax_regime && currentRegimeCode !== defaultRegimeKey;
+
+        if (isLocked) lockedCount++;
+        if (isCustom) customCount++;
+        else defaultCount++;
+    });
+
+    document.getElementById('taxStatTotal').textContent = total;
+    document.getElementById('taxStatDefault').textContent = defaultCount;
+    document.getElementById('taxStatCustom').textContent = customCount;
+    document.getElementById('taxStatLocked').textContent = lockedCount;
+}
+
+/**
+ * Open the tax regime modal for an employee
+ */
+function openTaxRegimeModal(employeeId) {
+    taxRegimeModalEmployeeId = employeeId;
+    selectedTaxRegimeCode = null;
+
+    const emp = taxConfigEmployees.find(e => e.id === employeeId || e.id === String(employeeId));
+    if (!emp) return;
+
+    const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+    const empCode = emp.employee_code || emp.emp_code || '';
+    const deptName = emp.department_name || emp.department || '-';
+    const officeName = emp.office_name || emp.office || '-';
+
+    // Employee info header
+    document.getElementById('taxRegimeEmployeeInfo').innerHTML = `
+        <div class="tax-regime-emp-header">
+            <div class="tax-regime-emp-name">${empName} ${empCode ? `<span class="emp-code">${empCode}</span>` : ''}</div>
+            <div class="tax-regime-emp-details">${deptName} &middot; ${officeName}</div>
+        </div>
+    `;
+
+    // FY display
+    document.getElementById('taxRegimeFYDisplay').innerHTML = `
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+            Financial Year: <strong>${taxConfigFinancialYear}</strong>
+        </div>
+    `;
+
+    const rd = emp.regime_data;
+    // Extract from nested API response: { success, tax_regime: { data: { regime_code, locked } } }
+    const taxRegimeData = rd?.tax_regime?.data || rd;
+    const currentRegimeCode = taxRegimeData?.regime_code || taxRegimeData?.regimeCode || null;
+    const isLocked = taxRegimeData?.locked === true || taxRegimeData?.is_locked === true;
+
+    // Lock warning
+    const lockWarning = document.getElementById('taxRegimeLockWarning');
+    if (isLocked) {
+        lockWarning.style.display = 'flex';
+        const regimeKeys = Object.keys(taxConfigRegimes);
+        const currentRegime = taxConfigRegimes[currentRegimeCode];
+        const lockRules = currentRegime?.lock_in_rules || '';
+        document.getElementById('taxRegimeLockText').innerHTML = `<strong>Regime is locked.</strong> ${lockRules ? `Legal reference: ${lockRules}` : 'This employee\'s tax regime selection is locked for the current financial year.'}`;
+    } else {
+        lockWarning.style.display = 'none';
+    }
+
+    // Render regime cards
+    renderRegimeCards(currentRegimeCode, isLocked);
+
+    // Render comparison table
+    renderRegimeComparison();
+
+    // Disable save initially
+    document.getElementById('taxRegimeSaveBtn').disabled = true;
+
+    openModal('taxRegimeModal');
+}
+
+/**
+ * Render clickable regime cards
+ */
+function renderRegimeCards(currentRegimeCode, isLocked) {
+    const container = document.getElementById('taxRegimeCardsContainer');
+    const regimeKeys = Object.keys(taxConfigRegimes);
+    const defaultRegimeKey = regimeKeys.find(k => taxConfigRegimes[k]?.is_default) || regimeKeys[0];
+
+    container.innerHTML = regimeKeys.map(key => {
+        const regime = taxConfigRegimes[key];
+        const regimeName = regime?.regime_name || regime?.name || key;
+        const isDefault = regime?.is_default || key === defaultRegimeKey;
+        const isCurrent = key === currentRegimeCode || (!currentRegimeCode && isDefault);
+        const description = regime?.description || '';
+        const standardDeduction = regime?.standard_deduction;
+        const slabs = regime?.slabs || [];
+
+        const badges = [];
+        if (isDefault) badges.push('<span class="regime-badge regime-badge-default">Default</span>');
+        if (isCurrent) badges.push('<span class="regime-badge regime-badge-current">Current</span>');
+
+        const slabsHtml = slabs.length > 0 ? `
+            <table class="regime-slab-mini-table">
+                <thead><tr><th>From</th><th>To</th><th>Rate</th></tr></thead>
+                <tbody>
+                    ${slabs.slice(0, 4).map(s => `<tr>
+                        <td>${formatSlabAmount(s.from || s.min || 0)}</td>
+                        <td>${s.to || s.max ? formatSlabAmount(s.to || s.max) : '&infin;'}</td>
+                        <td>${s.rate || s.percentage || 0}%</td>
+                    </tr>`).join('')}
+                    ${slabs.length > 4 ? `<tr><td colspan="3" style="text-align:center;color:var(--text-tertiary);font-size:11px;">+${slabs.length - 4} more slabs</td></tr>` : ''}
+                </tbody>
+            </table>
+        ` : '';
+
+        const cardClass = `regime-card ${isCurrent ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
+
+        return `
+            <div class="${cardClass}" data-regime-code="${key}" onclick="${isLocked ? '' : `selectRegimeCard('${key}')`}">
+                <div class="regime-card-header">
+                    <div class="regime-card-name">${regimeName}</div>
+                    <div class="regime-card-badges">${badges.join(' ')}</div>
+                </div>
+                ${description ? `<div class="regime-card-description">${description}</div>` : ''}
+                ${standardDeduction != null ? `<div class="regime-card-detail">Standard Deduction: <strong>${formatSlabAmount(standardDeduction)}</strong></div>` : ''}
+                ${slabsHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Format a slab amount for display
+ */
+function formatSlabAmount(amount) {
+    if (amount == null || amount === 0) return '0';
+    const num = Number(amount);
+    if (num >= 10000000) return `${(num / 10000000).toFixed(1)}Cr`;
+    if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
+    return num.toLocaleString();
+}
+
+/**
+ * Select a regime card
+ */
+function selectRegimeCard(regimeCode) {
+    selectedTaxRegimeCode = regimeCode;
+
+    // Update card selection UI
+    document.querySelectorAll('#taxRegimeCardsContainer .regime-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.regimeCode === regimeCode);
+    });
+
+    // Enable save button
+    document.getElementById('taxRegimeSaveBtn').disabled = false;
+}
+
+/**
+ * Render side-by-side slab comparison table
+ */
+function renderRegimeComparison() {
+    const section = document.getElementById('taxRegimeComparisonSection');
+    const wrapper = document.getElementById('taxRegimeComparisonTable');
+    const regimeKeys = Object.keys(taxConfigRegimes);
+
+    if (regimeKeys.length < 2) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+
+    // Find max slabs
+    let maxSlabs = 0;
+    regimeKeys.forEach(k => {
+        const slabs = taxConfigRegimes[k]?.slabs || [];
+        if (slabs.length > maxSlabs) maxSlabs = slabs.length;
+    });
+
+    if (maxSlabs === 0) {
+        wrapper.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;">No slab data available for comparison.</p>';
+        return;
+    }
+
+    let headerRow = '<tr><th>Slab</th>';
+    regimeKeys.forEach(k => {
+        const name = taxConfigRegimes[k]?.regime_name || k;
+        headerRow += `<th colspan="2">${name}</th>`;
+    });
+    headerRow += '</tr>';
+
+    let subHeaderRow = '<tr><th></th>';
+    regimeKeys.forEach(() => {
+        subHeaderRow += '<th>Range</th><th>Rate</th>';
+    });
+    subHeaderRow += '</tr>';
+
+    let bodyRows = '';
+    for (let i = 0; i < maxSlabs; i++) {
+        let row = `<tr><td>${i + 1}</td>`;
+        regimeKeys.forEach(k => {
+            const slabs = taxConfigRegimes[k]?.slabs || [];
+            const s = slabs[i];
+            if (s) {
+                const from = formatSlabAmount(s.from || s.min || 0);
+                const to = s.to || s.max ? formatSlabAmount(s.to || s.max) : '&infin;';
+                row += `<td>${from} - ${to}</td><td>${s.rate || s.percentage || 0}%</td>`;
+            } else {
+                row += '<td>-</td><td>-</td>';
+            }
+        });
+        row += '</tr>';
+        bodyRows += row;
+    }
+
+    wrapper.innerHTML = `
+        <table class="regime-comparison-table">
+            <thead>${headerRow}${subHeaderRow}</thead>
+            <tbody>${bodyRows}</tbody>
+        </table>
+    `;
+}
+
+/**
+ * Save the selected tax regime
+ */
+async function saveTaxRegimeSelection() {
+    if (!selectedTaxRegimeCode || !taxRegimeModalEmployeeId) return;
+
+    const saveBtn = document.getElementById('taxRegimeSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Saving...';
+
+    try {
+        await api.request(`/hrms/statutory/employees/${taxRegimeModalEmployeeId}/tax-regime`, {
+            method: 'POST',
+            body: JSON.stringify({
+                countryCode: taxConfigCountryCode,
+                financialYear: taxConfigFinancialYear,
+                regimeCode: selectedTaxRegimeCode,
+                locked: false
+            }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        showToast('Tax regime updated successfully', 'success');
+        closeModal('taxRegimeModal');
+
+        // Refresh the table
+        await loadTaxConfiguration();
+    } catch (error) {
+        console.error('Error saving tax regime:', error);
+        showToast(error.message || 'Failed to save tax regime', 'error');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Selection`;
     }
 }

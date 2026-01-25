@@ -126,6 +126,9 @@
                             <button class="sidebar-btn" data-tab="arrears" id="arrearsTab">
                                 <span class="nav-number">7</span><span class="nav-label">Arrears</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="tax-configuration" id="taxConfigTab">
+                                <span class="nav-number">8</span><span class="nav-label">Tax Configuration</span>
+                            </button>
                         </div>
                     </div>
 
@@ -145,16 +148,16 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="payroll-drafts" id="payrollDraftsTab">
-                                <span class="nav-number">8</span><span class="nav-label">Payroll Drafts</span>
+                                <span class="nav-number">9</span><span class="nav-label">Payroll Drafts</span>
                             </button>
                             <button class="sidebar-btn" data-tab="payroll-runs" id="payrollRunsTab">
-                                <span class="nav-number">9</span><span class="nav-label">Finalized Runs</span>
+                                <span class="nav-number">10</span><span class="nav-label">Finalized Runs</span>
                             </button>
                             <button class="sidebar-btn" data-tab="all-payslips" id="allPayslipsTab">
-                                <span class="nav-number">10</span><span class="nav-label">All Payslips</span>
+                                <span class="nav-number">11</span><span class="nav-label">All Payslips</span>
                             </button>
                             <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
-                                <span class="nav-number">11</span><span class="nav-label">Salary Reports</span>
+                                <span class="nav-number">12</span><span class="nav-label">Salary Reports</span>
                             </button>
                         </div>
                     </div>
@@ -1507,6 +1510,87 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tax Configuration Tab -->
+        <div class="tab-content" id="tax-configuration">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <div id="taxConfigCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="tax-config-fy-label" id="taxConfigFYLabel" style="display:none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>Financial Year: <strong id="taxConfigFYValue"></strong></span>
+                </div>
+            </div>
+
+            <!-- Info banner for 0/1 regime scenarios -->
+            <div id="taxConfigInfoBanner" style="display:none;"></div>
+
+            <!-- Stats Row -->
+            <div class="stats-row" id="taxConfigStats" style="display:none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="taxStatTotal">0</div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="taxStatDefault">0</div>
+                    <div class="stat-label">Default Regime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="taxStatCustom">0</div>
+                    <div class="stat-label">Custom Selected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="taxStatLocked">0</div>
+                    <div class="stat-label">Locked</div>
+                </div>
+            </div>
+
+            <!-- Employee tax regime table -->
+            <div class="data-table-container" id="taxConfigTableContainer" style="display:none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Office</th>
+                            <th>Current Regime</th>
+                            <th class="text-center">Status</th>
+                            <th>FY</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taxConfigTableBody">
+                        <tr class="empty-state">
+                            <td colspan="7">
+                                <div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <p>Select a country to view tax regime configuration</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="taxConfigPagination" class="pagination-container"></div>
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-state-container" id="taxConfigEmptyState">
+                <div class="empty-message" style="text-align:center; padding:60px 20px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <p>Select a country to view tax regime configuration</p>
+                    <p class="hint">Tax regimes are defined in the country's statutory compliance configuration</p>
                 </div>
             </div>
         </div>
@@ -3930,6 +4014,52 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="saveEmployeeSalaryFromPayroll(event)" id="empSaveSalaryBtn">
                         <span id="empSaveSalaryBtnText">Save Salary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Regime Selection Modal -->
+    <div class="modal" id="taxRegimeModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Tax Regime</h5>
+                    <button class="close-btn" onclick="closeModal('taxRegimeModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee info header -->
+                    <div class="tax-regime-employee-info" id="taxRegimeEmployeeInfo"></div>
+
+                    <!-- Lock warning -->
+                    <div class="tax-config-info-banner tax-config-banner-warning" id="taxRegimeLockWarning" style="display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div id="taxRegimeLockText"></div>
+                    </div>
+
+                    <!-- Financial year -->
+                    <div class="tax-regime-fy-display" id="taxRegimeFYDisplay"></div>
+
+                    <!-- Regime cards -->
+                    <div class="regime-cards-container" id="taxRegimeCardsContainer"></div>
+
+                    <!-- Regime comparison table -->
+                    <div class="regime-comparison-section" id="taxRegimeComparisonSection" style="display:none;">
+                        <h4 style="margin:20px 0 12px; font-size:14px; font-weight:600; color:var(--text-primary);">Slab Comparison</h4>
+                        <div class="regime-comparison-table-wrapper" id="taxRegimeComparisonTable"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('taxRegimeModal')">Cancel</button>
+                    <button class="btn btn-primary" id="taxRegimeSaveBtn" onclick="saveTaxRegimeSelection()" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Selection
                     </button>
                 </div>
             </div>
