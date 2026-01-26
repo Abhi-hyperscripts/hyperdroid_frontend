@@ -357,23 +357,23 @@ const PayslipModal = (function() {
                 border-radius: 8px;
                 text-align: center;
                 transition: transform 0.2s;
-                color: var(--text-inverse);
+                color: var(--text-inverse, #ffffff);
             }
 
             .proof-summary-card:hover { transform: translateY(-2px); }
-            .proof-summary-card.earnings { background: linear-gradient(135deg, #10b981, #059669); }
-            .proof-summary-card.deductions { background: linear-gradient(135deg, #f59e0b, #d97706); }
-            .proof-summary-card.net-pay { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+            .proof-summary-card.earnings { background: linear-gradient(135deg, var(--color-success, #10b981), var(--color-success-dark, #059669)); }
+            .proof-summary-card.deductions { background: linear-gradient(135deg, var(--color-warning, #f59e0b), var(--color-warning-dark, #d97706)); }
+            .proof-summary-card.net-pay { background: linear-gradient(135deg, var(--brand-accent, #6366f1), var(--brand-primary, #4f46e5)); }
 
             .summary-label {
                 font-size: 0.75rem;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
-                opacity: 0.9;
+                color: var(--text-inverse, #ffffff);
                 margin-bottom: 0.25rem;
             }
 
-            .summary-value { font-size: 1.25rem; font-weight: 700; }
+            .summary-value { font-size: 1.25rem; font-weight: 700; color: var(--text-inverse, #ffffff); }
 
             /* Section Grid */
             .proof-section-grid {
@@ -544,15 +544,15 @@ const PayslipModal = (function() {
                 align-items: center;
                 gap: 0.5rem;
                 padding: 0.75rem 1rem;
-                background: linear-gradient(135deg, var(--brand-accent, var(--brand-primary)), var(--brand-primary-hover));
-                color: var(--text-inverse);
+                background: linear-gradient(135deg, var(--brand-secondary, #8b5cf6), var(--brand-accent, #7c3aed));
+                color: var(--text-inverse, #ffffff);
                 border-radius: 8px;
                 margin-bottom: 1rem;
             }
 
-            .regime-label { opacity: 0.9; }
-            .regime-value { font-weight: 600; }
-            .regime-section { opacity: 0.8; font-size: 0.85rem; }
+            .regime-label { opacity: 0.9; color: var(--text-inverse, #ffffff); }
+            .regime-value { font-weight: 600; color: var(--text-inverse, #ffffff); }
+            .regime-section { opacity: 0.8; font-size: 0.85rem; color: var(--text-inverse, #ffffff); }
 
             .tax-flow {
                 display: flex;
@@ -613,6 +613,171 @@ const PayslipModal = (function() {
                 margin-top: 0.5rem;
                 padding-top: 0.5rem;
                 font-weight: 600;
+            }
+
+            /* v3.0.128: Declaration Validation Section (80C, 80D, etc.) */
+            .declaration-validation-section {
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                border-radius: 8px;
+                padding: 0.6rem 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .declaration-title {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--color-success, #10b981);
+                margin-bottom: 0.2rem;
+            }
+
+            .declaration-subtitle {
+                font-size: 0.7rem;
+                color: var(--text-secondary, #64748b);
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.4rem;
+                border-bottom: 1px dashed var(--color-success-alpha, rgba(16, 185, 129, 0.3));
+            }
+
+            .declaration-section-group {
+                background: var(--bg-card);
+                border-radius: 6px;
+                padding: 0.5rem 0.6rem;
+                margin-bottom: 0.4rem;
+                border: 1px solid var(--border-color);
+            }
+
+            .declaration-section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.35rem;
+            }
+
+            .declaration-section-name {
+                font-weight: 600;
+                font-size: 0.75rem;
+                color: var(--text-primary);
+            }
+
+            .declaration-section-code {
+                background: var(--brand-primary, #3b82f6);
+                color: var(--text-inverse, #ffffff);
+                font-size: 0.55rem;
+                padding: 0.1rem 0.3rem;
+                border-radius: 3px;
+                font-weight: 500;
+            }
+
+            .declaration-items-header {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 0.75rem;
+                font-size: 0.6rem;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                color: var(--text-secondary);
+                padding: 0.25rem 0;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .declaration-items-header span:not(:first-child) {
+                text-align: right;
+            }
+
+            .declaration-item {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 0.75rem;
+                padding: 0.3rem 0;
+                font-size: 0.7rem;
+                color: var(--text-primary);
+                border-bottom: 1px dotted var(--border-color-light);
+                align-items: center;
+            }
+
+            .declaration-item-name {
+                font-size: 0.7rem;
+                color: var(--text-primary);
+            }
+
+            .declaration-item-declared,
+            .declaration-item-allowed {
+                text-align: right;
+                font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+                font-size: 0.7rem;
+                white-space: nowrap;
+                color: var(--text-primary);
+            }
+
+            .declaration-capped-badge {
+                background: rgba(245, 158, 11, 0.2);
+                color: var(--color-warning, #f59e0b);
+                font-size: 0.6rem;
+                padding: 0.1rem 0.3rem;
+                border-radius: 3px;
+                margin-left: 0.25rem;
+            }
+
+            .declaration-section-total {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 0.75rem;
+                padding: 0.4rem 0 0.2rem;
+                margin-top: 0.25rem;
+                border-top: 1px solid var(--border-color);
+                font-weight: 600;
+                font-size: 0.7rem;
+                align-items: start;
+            }
+
+            .declaration-section-total span:first-child {
+                color: var(--text-primary);
+            }
+
+            .declaration-section-total span:nth-child(2),
+            .declaration-section-total span:nth-child(3) {
+                text-align: right;
+                font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+                white-space: nowrap;
+                color: var(--text-primary);
+            }
+
+            .declaration-section-capped {
+                display: block;
+                font-size: 0.6rem;
+                color: var(--color-warning, #f59e0b);
+                font-weight: 500;
+                margin-top: 0.35rem;
+                padding: 0.3rem 0.5rem;
+                background: rgba(245, 158, 11, 0.1);
+                border: 1px solid rgba(245, 158, 11, 0.3);
+                border-radius: 4px;
+                text-align: center;
+            }
+
+            .declaration-warnings {
+                background: rgba(245, 158, 11, 0.1);
+                border: 1px solid rgba(245, 158, 11, 0.3);
+                border-radius: 5px;
+                padding: 0.4rem 0.5rem;
+                margin-top: 0.4rem;
+            }
+
+            .declaration-warning-title {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--color-warning, #f59e0b);
+                margin-bottom: 0.2rem;
+            }
+
+            .declaration-warning-item {
+                font-size: 0.65rem;
+                color: var(--text-secondary, #64748b);
+                padding: 0.1rem 0;
             }
 
             .slab-section { margin-bottom: 1rem; }
@@ -2290,6 +2455,87 @@ const PayslipModal = (function() {
             `;
         }
 
+        // v3.0.128: Build Declaration Validation Section (80C, 80D, etc.)
+        let declarationSection = '';
+        if (tax.declarationValidation && tax.declarationValidation.sections) {
+            const sectionsWithItems = tax.declarationValidation.sections.filter(
+                section => section.items && section.items.length > 0
+            );
+
+            if (sectionsWithItems.length > 0) {
+                let sectionsHtml = sectionsWithItems.map(section => {
+                    // Build items for this section
+                    const itemsHtml = section.items.map(item => {
+                        const cappedNote = item.wasCapped
+                            ? `<span class="declaration-capped-badge" title="Capped at ${fmt(item.itemMaxLimit)}">Capped</span>`
+                            : '';
+                        return `
+                            <div class="declaration-item">
+                                <span class="declaration-item-name">${item.itemName || item.itemCode}</span>
+                                <span class="declaration-item-declared">${fmt(item.declaredAmount)}</span>
+                                <span class="declaration-item-allowed">${fmt(item.allowedAmount)} ${cappedNote}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Section summary
+                    const sectionCapped = section.excessAmount > 0
+                        ? `<span class="declaration-section-capped">Excess: ${fmt(section.excessAmount)} (capped at ${fmt(section.sectionMaxLimit)})</span>`
+                        : '';
+
+                    return `
+                        <div class="declaration-section-group">
+                            <div class="declaration-section-header">
+                                <span class="declaration-section-name">${section.sectionName}</span>
+                                <span class="declaration-section-code">${section.sectionCode}</span>
+                            </div>
+                            <div class="declaration-items-header">
+                                <span>Item</span>
+                                <span>Declared</span>
+                                <span>Allowed</span>
+                            </div>
+                            ${itemsHtml}
+                            <div class="declaration-section-total">
+                                <span>Section Total</span>
+                                <span>${fmt(section.declaredTotal)}</span>
+                                <span>${fmt(section.allowedTotal)}</span>
+                            </div>
+                            ${sectionCapped}
+                        </div>
+                    `;
+                }).join('');
+
+                // Warnings if any
+                let warningsHtml = '';
+                if (tax.declarationValidation.validationWarnings && tax.declarationValidation.validationWarnings.length > 0) {
+                    warningsHtml = `
+                        <div class="declaration-warnings">
+                            <div class="declaration-warning-title">⚠️ Declaration Notes</div>
+                            ${tax.declarationValidation.validationWarnings.map(w => `
+                                <div class="declaration-warning-item">${w}</div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                declarationSection = `
+                    <div class="declaration-validation-section">
+                        <div class="declaration-title">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Tax Saving Declarations (${tax.declarationValidation.taxRegimeUsed === 'old_regime' ? 'Old Regime' : 'New Regime'})
+                        </div>
+                        <div class="declaration-subtitle">
+                            Total Allowed: ${fmt(tax.declarationValidation.totalAllowedDeductions || tax.declarationDeductions)}
+                        </div>
+                        ${sectionsHtml}
+                        ${warningsHtml}
+                    </div>
+                `;
+            }
+        }
+
         return `
             <div class="proof-card tax-card">
                 <div class="proof-card-header tax-header">
@@ -2333,6 +2579,8 @@ const PayslipModal = (function() {
                     </div>
 
                     ${preTaxSection}
+
+                    ${declarationSection}
 
                     <!-- Slab Breakdown -->
                     ${slabRows ? `
@@ -2811,8 +3059,8 @@ const PayslipModal = (function() {
             .proof-summary-card.earnings { background: #10b981 !important; }
             .proof-summary-card.deductions { background: #f59e0b !important; }
             .proof-summary-card.net-pay { background: #6366f1 !important; }
-            .summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-            .summary-value { font-size: 16px; font-weight: 700; margin-top: 4px; }
+            .summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: white !important; }
+            .summary-value { font-size: 16px; font-weight: 700; margin-top: 4px; color: white !important; }
 
             /* Section Grid */
             .proof-section-grid {
@@ -3000,21 +3248,38 @@ const PayslipModal = (function() {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .regime-label { opacity: 0.9; font-size: 11px; }
-            .regime-value { font-weight: 600; font-size: 11px; }
-            .tax-flow { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-            .tax-flow-item {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px 12px;
+            .regime-label { opacity: 0.9; font-size: 10px; }
+            .regime-value { font-weight: 600; font-size: 10px; }
+            .tax-flow {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                gap: 6px;
+                margin-bottom: 10px;
+                padding: 8px;
                 background: #f9fafb !important;
                 border-radius: 6px;
-                font-size: 11px;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .tax-flow-item.result { background: #fef3c7 !important; font-weight: 600; }
-            .tax-flow-item.final { background: #dbeafe !important; font-weight: 700; }
+            .tax-flow-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 4px 8px;
+                background: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 4px;
+                font-size: 9px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tax-flow-item .flow-label { font-size: 7px; text-transform: uppercase; opacity: 0.7; }
+            .tax-flow-item .flow-value { font-size: 9px; font-weight: 600; }
+            .tax-flow-operator { font-size: 12px; font-weight: bold; color: #6b7280; padding: 0 2px; }
+            .tax-flow-item.result { background: #fef3c7 !important; font-weight: 600; border-color: #fcd34d; }
+            .tax-flow-item.final { background: #dbeafe !important; font-weight: 700; border-color: #93c5fd; }
             .slab-table { margin-top: 10px; }
 
             /* Arrears Lifecycle Card - specific styling */
@@ -3271,6 +3536,127 @@ const PayslipModal = (function() {
                 body { padding: 10px; }
                 .proof-card { break-inside: avoid; }
                 .no-print { display: none !important; }
+            }
+
+            /* Declaration Validation Section - Print Styles */
+            .declaration-validation-section {
+                padding: 12px;
+                font-size: 11px;
+            }
+            .declaration-section-group {
+                margin-bottom: 16px;
+                padding: 10px;
+                background: #f9fafb !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .declaration-section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .declaration-section-header h4 {
+                font-size: 11px;
+                font-weight: 600;
+                color: #111827;
+                margin: 0;
+            }
+            .declaration-section-header .limit-info {
+                font-size: 9px;
+                color: #6b7280;
+            }
+            .declaration-items-header {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 1rem;
+                font-size: 9px;
+                font-weight: 600;
+                color: #6b7280;
+                text-transform: uppercase;
+                padding-bottom: 6px;
+                border-bottom: 1px solid #e5e7eb;
+                margin-bottom: 6px;
+            }
+            .declaration-items-header span:not(:first-child) {
+                text-align: right;
+            }
+            .declaration-item {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 1rem;
+                padding: 6px 0;
+                font-size: 10px;
+                align-items: center;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .declaration-item:last-of-type {
+                border-bottom: none;
+            }
+            .declaration-item-name {
+                color: #374151;
+                font-weight: 500;
+            }
+            .declaration-item-declared,
+            .declaration-item-allowed {
+                text-align: right;
+                font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Courier New', monospace;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+            .declaration-section-total {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 1rem;
+                padding: 8px 0;
+                margin-top: 8px;
+                border-top: 2px solid #e5e7eb;
+                font-weight: 600;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+            .declaration-section-total span:not(:first-child) {
+                text-align: right;
+            }
+            .declaration-section-capped {
+                padding: 6px 10px;
+                margin-top: 8px;
+                background: #fef3c7 !important;
+                border: 1px solid #fcd34d;
+                border-radius: 4px;
+                font-size: 9px;
+                color: #92400e !important;
+                white-space: nowrap;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .declaration-warnings {
+                margin-top: 12px;
+                padding: 10px;
+                background: #fef3c7 !important;
+                border: 1px solid #fcd34d;
+                border-radius: 6px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .declaration-warnings h5 {
+                font-size: 10px;
+                font-weight: 600;
+                color: #92400e !important;
+                margin: 0 0 6px 0;
+            }
+            .declaration-warnings ul {
+                margin: 0;
+                padding-left: 16px;
+            }
+            .declaration-warnings li {
+                font-size: 9px;
+                color: #92400e !important;
+                margin-bottom: 2px;
             }
 
             /* Hide SVG icons in print (they don't render well) */

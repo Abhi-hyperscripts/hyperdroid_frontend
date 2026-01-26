@@ -29,6 +29,7 @@ const panelTitles = {
     'panel-salary': 'Salary Details',
     'panel-loans': 'Loans & Advances',
     'panel-reimbursements': 'Reimbursements',
+    'panel-declarations': 'Tax Declarations',
     'panel-directory': 'Team Directory',
     'panel-orgchart': 'Org Chart',
     'panel-announcements': 'Announcements',
@@ -279,6 +280,9 @@ function loadPanelData(panelId) {
         case 'panel-reimbursements':
             loadReimbursements();
             break;
+        case 'panel-declarations':
+            loadDeclarations();
+            break;
         case 'panel-directory':
             loadDirectory();
             break;
@@ -392,6 +396,9 @@ async function loadDashboard() {
 
             // Show admin link if applicable
             checkAdminAccess();
+
+            // v3.0.128: Check if declarations feature is available for employee's country
+            await checkDeclarationsAvailability(dashboard.employee);
         } else {
             // User doesn't have an employee profile
             showNoEmployeeProfile();
@@ -2585,11 +2592,13 @@ function openModal(modalId) {
 
 /**
  * Close modal
+ * v3.0.130: Also set display:none for modals using style.display
  */
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('active');
+        modal.style.display = 'none';
     }
 }
 
@@ -3157,6 +3166,590 @@ async function submitReimbursement() {
     } catch (error) {
         console.error('Error submitting reimbursement:', error);
         showToast(error.message || 'Failed to submit claim', 'error');
+    }
+}
+
+// ==========================================
+// TAX DECLARATIONS FUNCTIONS
+// ==========================================
+
+// Store declaration sections config from backend
+let declarationSectionsConfig = [];
+let currentDeclarations = {};
+let currentTaxRegime = null;
+// v3.0.131: Store tax regime metadata from country config (schema-driven)
+let taxRegimeMetadata = null;
+
+/**
+ * v3.0.131: Get tax regime display info from metadata (schema-driven)
+ * Returns { name, description, icon } for the given regime key
+ */
+function getRegimeDisplayInfo(regimeKey) {
+    // Default fallback if no metadata
+    const fallback = {
+        name: regimeKey || 'Not Set',
+        description: 'Tax regime information not available',
+        icon: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+    };
+
+    if (!taxRegimeMetadata?.regimes?.length || !regimeKey) {
+        return fallback;
+    }
+
+    // Find the regime in metadata
+    const regime = taxRegimeMetadata.regimes.find(r => r.regime_key === regimeKey || r.regime_code === regimeKey);
+    if (!regime) {
+        return fallback;
+    }
+
+    // Choose icon based on whether regime allows deductions
+    const hasDeductions = regime.allowed_deductions?.length > 3;
+    const icon = hasDeductions
+        ? '<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>'  // Document icon for deduction-heavy regimes
+        : '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>';  // Lightning for simplified regimes
+
+    return {
+        name: regime.regime_name || regime.regime_key,
+        description: regime.description || 'No description available',
+        icon: icon
+    };
+}
+
+/**
+ * Load tax declarations panel
+ * v3.0.128: Country-agnostic - fetches declaration sections from country config
+ * Only sections applicable to the selected tax regime are shown
+ */
+async function loadDeclarations() {
+    const regimeSection = document.getElementById('taxRegimeSection');
+    const summarySection = document.getElementById('declarationSummary');
+    const sectionsContainer = document.getElementById('declarationSections');
+
+    if (!regimeSection || !summarySection || !sectionsContainer) return;
+
+    try {
+        // Get employee ID
+        if (!currentEmployee?.id) {
+            showToast('Employee profile not loaded', 'error');
+            return;
+        }
+
+        // Get country code from employee (country-agnostic)
+        const countryCode = currentEmployee.country_code || currentEmployee.office_country_code;
+        if (!countryCode) {
+            summarySection.innerHTML = `<div class="ess-error-state"><p>Country not configured for employee</p></div>`;
+            sectionsContainer.innerHTML = '';
+            return;
+        }
+
+        // Get current financial year first
+        const financialYear = getCurrentFinancialYear();
+
+        // Load tax regime first to know which sections to fetch
+        // v3.0.129: Pass required countryCode and financialYear parameters
+        // v3.0.130: Extract regime_code from nested response structure (tax_regime.data.regime_code)
+        const regimeResponse = await api.request(
+            `/hrms/statutory/employees/${currentEmployee.id}/tax-regime?countryCode=${countryCode}&financialYear=${financialYear}`
+        ).catch(() => null);
+        currentTaxRegime = regimeResponse?.tax_regime?.data?.regime_code || 'new_regime';
+
+        // v3.0.131: Fetch tax regime metadata from country config (schema-driven)
+        // This ensures regime names and descriptions come from the backend, not hardcoded
+        const regimeMetadataResponse = await api.request(
+            `/hrms/statutory/tax-regimes/${countryCode}`
+        ).catch(() => null);
+        taxRegimeMetadata = regimeMetadataResponse?.data || null;
+
+        // Load declaration sections and validated declarations in parallel
+        // v3.0.128: Pass regime to backend to get only applicable sections
+        // v3.0.129: Pass required countryCode and financialYear parameters
+        const [declarationsResponse, sectionsResponse] = await Promise.all([
+            api.request(`/hrms/statutory/employees/${currentEmployee.id}/declarations/validated?countryCode=${countryCode}&financialYear=${financialYear}`).catch(() => null),
+            api.request(`/hrms/statutory/configs/${countryCode}/declaration-sections?regime=${currentTaxRegime}`).catch(() => null)
+        ]);
+
+        // Store sections config from backend (country-agnostic)
+        declarationSectionsConfig = sectionsResponse?.sections || [];
+
+        // Update nav visibility based on whether declarations are available for this country
+        updateDeclarationsNavVisibility();
+
+        // If no declaration sections available for this country/regime, show message
+        if (!declarationSectionsConfig.length) {
+            regimeSection.innerHTML = '';
+            summarySection.innerHTML = `
+                <div class="declarations-not-available">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p>Tax declarations are not applicable for your country/region or tax regime.</p>
+                </div>
+            `;
+            sectionsContainer.innerHTML = '';
+            return;
+        }
+
+        // Update regime section - v3.0.130: Show only the employee's current regime
+        // v3.0.131: Use schema-driven metadata from backend (no hardcoded labels)
+        document.getElementById('regimeFinancialYear').textContent = `FY ${financialYear}`;
+        const regimeInfo = getRegimeDisplayInfo(currentTaxRegime);
+
+        document.getElementById('regimeOptions').innerHTML = `
+            <div class="regime-display single">
+                <div class="regime-card active">
+                    <span class="regime-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            ${regimeInfo.icon}
+                        </svg>
+                    </span>
+                    <div class="regime-info">
+                        <span class="regime-name">${regimeInfo.name}</span>
+                        <span class="regime-desc">${regimeInfo.description}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Process declarations
+        const validatedDeclarations = declarationsResponse?.sections || [];
+        currentDeclarations = {};
+
+        // Build summary
+        let totalDeclared = 0;
+        let totalAllowed = 0;
+
+        validatedDeclarations.forEach(section => {
+            section.items?.forEach(item => {
+                currentDeclarations[`${section.sectionCode}_${item.itemCode}`] = item.declaredAmount || 0;
+                totalDeclared += item.declaredAmount || 0;
+                totalAllowed += item.allowedAmount || 0;
+            });
+        });
+
+        // Update summary section - v3.0.131: Use schema-driven regime name
+        summarySection.innerHTML = `
+            <div class="declaration-summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">Total Declared</div>
+                    <div class="summary-value">${formatCurrency(totalDeclared)}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Allowed (Within Limits)</div>
+                    <div class="summary-value">${formatCurrency(totalAllowed)}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Tax Regime</div>
+                    <div class="summary-value">${regimeInfo.name}</div>
+                </div>
+            </div>
+        `;
+
+        // Show declaration details by section
+        // v3.0.128: Country-agnostic - only show sections applicable to current regime
+        if (declarationSectionsConfig.length === 0) {
+            // No sections applicable for this regime (e.g., new regime with no deductions)
+            sectionsContainer.innerHTML = `
+                <div class="new-regime-notice">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div>
+                        <strong>No Deductions Available</strong>
+                        <p>Based on your selected tax regime, no tax-saving deductions are applicable.
+                        If you wish to claim deductions, please contact HR to switch to a different tax regime (if available).</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Show declaration sections applicable to current regime
+            sectionsContainer.innerHTML = renderDeclarationSections(validatedDeclarations, declarationSectionsConfig);
+        }
+
+    } catch (error) {
+        console.error('Error loading declarations:', error);
+        summarySection.innerHTML = `<div class="ess-error-state"><p>Failed to load declarations</p></div>`;
+    }
+}
+
+/**
+ * Render declaration sections for display
+ */
+function renderDeclarationSections(validatedSections, configSections) {
+    if (!validatedSections?.length && !configSections?.length) {
+        return `<div class="empty-message">No declaration sections available</div>`;
+    }
+
+    // Use validated sections if available, otherwise use config
+    const sections = validatedSections?.length ? validatedSections : configSections.map(cs => ({
+        sectionCode: cs.section_code,
+        sectionName: cs.section_name,
+        sectionMaxLimit: cs.max_limit || 0,
+        items: cs.items || [],
+        allowedTotal: 0,
+        declaredTotal: 0
+    }));
+
+    return sections.map(section => {
+        const hasItems = section.items && section.items.length > 0;
+        const declaredTotal = section.declaredTotal || section.items?.reduce((sum, i) => sum + (i.declaredAmount || 0), 0) || 0;
+        const allowedTotal = section.allowedTotal || section.items?.reduce((sum, i) => sum + (i.allowedAmount || 0), 0) || 0;
+        const maxLimit = section.sectionMaxLimit || 0;
+
+        return `
+            <div class="declaration-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h4>${escapeHtml(section.sectionName || section.section_name)}</h4>
+                        <span class="section-code">${escapeHtml(section.sectionCode || section.section_code)}</span>
+                    </div>
+                    <div class="section-summary">
+                        <span class="declared">Declared: ${formatCurrency(declaredTotal)}</span>
+                        ${maxLimit > 0 ? `<span class="limit">Limit: ${formatCurrency(maxLimit)}</span>` : ''}
+                    </div>
+                </div>
+                ${hasItems ? `
+                    <div class="section-items">
+                        ${section.items.map(item => `
+                            <div class="declaration-item">
+                                <div class="item-info">
+                                    <span class="item-name">${escapeHtml(item.itemName || item.item_name || item.itemCode || item.item_code)}</span>
+                                    ${item.wasCapped ? '<span class="capped-badge">Capped</span>' : ''}
+                                </div>
+                                <div class="item-amounts">
+                                    <span class="declared-amount">${formatCurrency(item.declaredAmount || 0)}</span>
+                                    ${item.wasCapped ? `<span class="allowed-amount">Allowed: ${formatCurrency(item.allowedAmount || 0)}</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="no-items">No declarations in this section</div>
+                `}
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Open declaration modal for editing
+ * v3.0.128: Country-agnostic - dynamically fetches sections for selected regime
+ * v3.0.129: Removed regime switching - employees can only edit declarations for HR-assigned regime
+ */
+async function openDeclarationModal() {
+    const modal = document.getElementById('declarationsModal');
+    const sectionsContainer = document.getElementById('declarationSectionsModal');
+    const regimeInfoContainer = document.getElementById('modalRegimeInfo');
+
+    if (!modal || !sectionsContainer) return;
+
+    // Show current regime info (read-only - HR controls regime)
+    // v3.0.131: Use schema-driven metadata from backend (no hardcoded labels)
+    if (regimeInfoContainer) {
+        const regimeInfo = getRegimeDisplayInfo(currentTaxRegime);
+
+        regimeInfoContainer.innerHTML = `
+            <div class="regime-info-card">
+                <div class="regime-info-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        ${regimeInfo.icon}
+                    </svg>
+                </div>
+                <div class="regime-info-content">
+                    <div class="regime-info-label">Your Tax Regime</div>
+                    <div class="regime-info-value">${regimeInfo.name}</div>
+                    <div class="regime-info-desc">${regimeInfo.description}</div>
+                </div>
+            </div>
+            <p class="regime-info-note">Tax regime is set by HR. Contact HR if you need to change it.</p>
+        `;
+    }
+
+    // Load sections for current regime (no switching allowed)
+    await updateModalDeclarationSections(currentTaxRegime);
+
+    // Show modal
+    modal.style.display = 'flex';
+}
+
+/**
+ * Update declaration sections in modal based on regime
+ * v3.0.128: Country-agnostic - fetches sections from backend filtered by regime
+ */
+async function updateModalDeclarationSections(regime) {
+    const sectionsContainer = document.getElementById('declarationSectionsModal');
+    if (!sectionsContainer) return;
+
+    // Get country code from employee
+    const countryCode = currentEmployee?.country_code || currentEmployee?.office_country_code;
+    if (!countryCode) {
+        sectionsContainer.innerHTML = `<div class="ess-error-state"><p>Country not configured</p></div>`;
+        return;
+    }
+
+    // Show loading
+    sectionsContainer.innerHTML = `
+        <div class="ess-loading">
+            <div class="spinner"></div>
+            <span>Loading declaration sections...</span>
+        </div>
+    `;
+
+    try {
+        // Fetch sections for selected regime from backend
+        const response = await api.request(`/hrms/statutory/configs/${countryCode}/declaration-sections?regime=${regime}`);
+        const sections = response?.sections || [];
+
+        // Store for form submission
+        declarationSectionsConfig = sections;
+
+        if (!sections.length) {
+            // No sections available for this regime
+            sectionsContainer.innerHTML = `
+                <div class="new-regime-notice" style="margin-top: 1rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div>
+                        <strong>No Deductions Available</strong>
+                        <p>No tax-saving deductions are applicable under the selected regime.</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Render form sections
+            sectionsContainer.innerHTML = renderDeclarationSectionsForm(sections);
+            populateDeclarationForm();
+        }
+    } catch (error) {
+        console.error('Error loading declaration sections:', error);
+        sectionsContainer.innerHTML = `<div class="ess-error-state"><p>Failed to load declaration sections</p></div>`;
+    }
+}
+
+/**
+ * Render declaration sections as editable form
+ */
+function renderDeclarationSectionsForm(sections) {
+    if (!sections?.length) {
+        return `<div class="empty-message">No declaration sections configured</div>`;
+    }
+
+    return sections.map(section => {
+        const sectionCode = section.section_code || section.sectionCode;
+        const sectionName = section.section_name || section.sectionName;
+        const maxLimit = section.max_limit || section.sectionMaxLimit || 0;
+        const items = section.items || [];
+
+        if (!items.length) return '';
+
+        return `
+            <div class="form-section declaration-form-section" data-section="${sectionCode}">
+                <h4 class="form-section-title">
+                    ${escapeHtml(sectionName)}
+                    ${maxLimit > 0 ? `<span class="section-limit-badge">Max: ${formatCurrency(maxLimit)}</span>` : ''}
+                </h4>
+                <div class="declaration-items-form">
+                    ${items.map(item => {
+                        const itemCode = item.item_code || item.itemCode;
+                        const itemName = item.item_name || item.itemName;
+                        const itemMaxLimit = item.max_limit || item.itemMaxLimit || 0;
+                        const fieldId = `decl_${sectionCode}_${itemCode}`;
+
+                        return `
+                            <div class="form-group declaration-item-group">
+                                <label for="${fieldId}">
+                                    ${escapeHtml(itemName)}
+                                    ${itemMaxLimit > 0 ? `<small class="item-limit">(Max: ${formatCurrency(itemMaxLimit)})</small>` : ''}
+                                </label>
+                                <input type="number"
+                                       id="${fieldId}"
+                                       class="form-control declaration-input"
+                                       data-section="${sectionCode}"
+                                       data-item="${itemCode}"
+                                       min="0"
+                                       ${itemMaxLimit > 0 ? `max="${itemMaxLimit}"` : ''}
+                                       placeholder="0">
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Populate declaration form with current values
+ */
+function populateDeclarationForm() {
+    const inputs = document.querySelectorAll('.declaration-input');
+    inputs.forEach(input => {
+        const section = input.dataset.section;
+        const item = input.dataset.item;
+        const key = `${section}_${item}`;
+        if (currentDeclarations[key] !== undefined) {
+            input.value = currentDeclarations[key];
+        }
+    });
+}
+
+/**
+ * Submit declarations to backend
+ */
+async function submitDeclarations() {
+    try {
+        if (!currentEmployee?.id) {
+            showToast('Employee profile not loaded', 'error');
+            return;
+        }
+
+        // Get selected tax regime
+        const selectedRegime = document.querySelector('input[name="taxRegime"]:checked')?.value;
+        if (!selectedRegime) {
+            showToast('Please select a tax regime', 'error');
+            return;
+        }
+
+        // Save tax regime first
+        await api.request(`/hrms/statutory/employees/${currentEmployee.id}/tax-regime`, {
+            method: 'POST',
+            body: JSON.stringify({
+                tax_regime: selectedRegime,
+                financial_year: getCurrentFinancialYear()
+            })
+        });
+
+        // If new regime, no declarations needed
+        if (selectedRegime === 'new_regime') {
+            showToast('Tax regime updated successfully', 'success');
+            closeModal('declarationsModal');
+            loadDeclarations();
+            return;
+        }
+
+        // Collect declarations from form
+        const declarations = {};
+        const inputs = document.querySelectorAll('.declaration-input');
+        inputs.forEach(input => {
+            const section = input.dataset.section;
+            const item = input.dataset.item;
+            const value = parseFloat(input.value) || 0;
+
+            if (!declarations[section]) {
+                declarations[section] = {};
+            }
+            declarations[section][item] = value;
+        });
+
+        // Save declarations
+        await api.request(`/hrms/statutory/employees/${currentEmployee.id}/declarations`, {
+            method: 'POST',
+            body: JSON.stringify({
+                declarations: declarations,
+                financial_year: getCurrentFinancialYear()
+            })
+        });
+
+        showToast('Declarations saved successfully', 'success');
+        closeModal('declarationsModal');
+        loadDeclarations();
+
+    } catch (error) {
+        console.error('Error saving declarations:', error);
+        showToast(error.message || 'Failed to save declarations', 'error');
+    }
+}
+
+/**
+ * Get current financial year (e.g., "2025-26")
+ */
+function getCurrentFinancialYear() {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    const year = now.getFullYear();
+
+    // Financial year starts in April (month 3)
+    if (month >= 3) {
+        // April onwards - current year to next year
+        return `${year}-${(year + 1).toString().slice(-2)}`;
+    } else {
+        // Jan-Mar - previous year to current year
+        return `${year - 1}-${year.toString().slice(-2)}`;
+    }
+}
+
+/**
+ * Check if declarations feature is available for the employee's country
+ * v3.0.128: Country-agnostic - only show if country config has declaration sections
+ */
+function isDeclarationsAvailableForCountry() {
+    // If no declaration sections were loaded from backend, feature is not available
+    return declarationSectionsConfig && declarationSectionsConfig.length > 0;
+}
+
+/**
+ * Update declarations nav button visibility based on country config
+ * v3.0.128: Hide the nav button if country doesn't support declarations
+ */
+function updateDeclarationsNavVisibility() {
+    const navBtn = document.querySelector('[data-panel="panel-declarations"]');
+    if (navBtn) {
+        navBtn.style.display = isDeclarationsAvailableForCountry() ? '' : 'none';
+    }
+}
+
+/**
+ * Check if declarations feature is available for employee's country on page load
+ * v3.0.128: Fetches declaration sections from backend to determine nav visibility
+ * @param {Object} employee - Employee object with office_id for country lookup
+ */
+async function checkDeclarationsAvailability(employee) {
+    try {
+        let countryCode = employee.country_code || employee.office_country_code;
+
+        // If no country code directly available, try to get it from the office
+        if (!countryCode && employee.office_id) {
+            try {
+                const officeResponse = await api.request(`/hrms/offices/${employee.office_id}`);
+                if (officeResponse && officeResponse.country_code) {
+                    countryCode = officeResponse.country_code;
+                    // Store for later use
+                    employee.office_country_code = countryCode;
+                }
+            } catch (officeError) {
+                console.log('[Declarations] Could not fetch office details:', officeError.message);
+            }
+        }
+
+        if (!countryCode) {
+            console.log('[Declarations] No country code available for employee');
+            updateDeclarationsNavVisibility();
+            return;
+        }
+
+        // Fetch declaration sections for the country (without regime filter to check if any exist)
+        const response = await api.request(`/hrms/statutory/configs/${countryCode}/declaration-sections`);
+
+        if (response && response.success && response.sections) {
+            declarationSectionsConfig = response.sections;
+            console.log(`[Declarations] Found ${response.sections.length} declaration sections for ${countryCode}`);
+        } else {
+            declarationSectionsConfig = [];
+            console.log(`[Declarations] No declaration sections available for ${countryCode}`);
+        }
+
+        // Update nav button visibility
+        updateDeclarationsNavVisibility();
+    } catch (error) {
+        console.error('[Declarations] Error checking declarations availability:', error);
+        declarationSectionsConfig = [];
+        updateDeclarationsNavVisibility();
     }
 }
 

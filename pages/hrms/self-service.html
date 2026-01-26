@@ -173,6 +173,15 @@
                         </svg>
                         <span>Reimbursements</span>
                     </button>
+                    <button class="ess-nav-btn" data-panel="panel-declarations">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            <path d="M9 12h6"/>
+                            <path d="M9 16h6"/>
+                        </svg>
+                        <span>Tax Declarations</span>
+                    </button>
                 </div>
 
                 <!-- Company Section -->
@@ -1005,6 +1014,49 @@
             </div>
 
             <!-- ======================= -->
+            <!-- Tax Declarations Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-declarations">
+                <div class="ess-panel-header">
+                    <h2>Tax Declarations</h2>
+                    <button class="btn btn-primary" onclick="openDeclarationModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Update Declarations
+                    </button>
+                </div>
+
+                <!-- Tax Regime Selection -->
+                <div class="ess-declaration-regime" id="taxRegimeSection">
+                    <div class="regime-header">
+                        <h3>Tax Regime</h3>
+                        <span class="regime-year" id="regimeFinancialYear"></span>
+                    </div>
+                    <div class="regime-options" id="regimeOptions">
+                        <div class="ess-loading">
+                            <div class="spinner"></div>
+                            <span>Loading tax regime...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Declaration Summary -->
+                <div class="ess-declaration-summary" id="declarationSummary">
+                    <div class="ess-loading">
+                        <div class="spinner"></div>
+                        <span>Loading declarations...</span>
+                    </div>
+                </div>
+
+                <!-- Declaration Sections -->
+                <div class="ess-declaration-sections" id="declarationSections">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- ======================= -->
             <!-- Team Directory Panel -->
             <!-- ======================= -->
             <div class="ess-panel" id="panel-directory">
@@ -1381,6 +1433,42 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="submitReimbursement()">Submit Claim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Declarations Modal -->
+    <div class="modal-overlay" id="declarationsModal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh;">
+            <div class="modal-header">
+                <h3>Update Tax Declarations</h3>
+                <button class="modal-close" onclick="closeModal('declarationsModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; max-height: calc(90vh - 140px);">
+                <form id="declarationsForm">
+                    <!-- Tax Regime Info (Read-only - HR controls regime selection) -->
+                    <div class="declaration-regime-info" id="modalRegimeInfo">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <!-- Declaration Sections Container -->
+                    <div id="declarationSectionsModal">
+                        <!-- Will be populated dynamically -->
+                        <div class="ess-loading">
+                            <div class="spinner"></div>
+                            <span>Loading declaration sections...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('declarationsModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitDeclarations()">Save Declarations</button>
             </div>
         </div>
     </div>
