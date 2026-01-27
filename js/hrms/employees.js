@@ -4244,6 +4244,8 @@ function onEmployeeCreated(data) {
 let allNfcCards = []; // Cache of all NFC cards for the table
 let nfcCardsLoaded = false; // Track if NFC cards have been loaded
 let viewingEmployeeCards = null; // Employee being viewed in modal
+let nfcStatusDropdown = null; // Searchable dropdown for status filter
+let nfcOfficeDropdown = null; // Searchable dropdown for office filter
 
 /**
  * Load all NFC cards for the table
@@ -4253,6 +4255,9 @@ async function loadNfcCardsTable() {
         const cards = await api.getAllNfcCards(true); // Include inactive
         allNfcCards = cards || [];
         nfcCardsLoaded = true;
+
+        // Initialize searchable dropdowns for NFC filters (if not already initialized)
+        initNfcFilterDropdowns();
 
         // Populate office filter for NFC tab
         populateNfcOfficeFilter();
@@ -4269,19 +4274,59 @@ async function loadNfcCardsTable() {
 }
 
 /**
+ * Initialize searchable dropdowns for NFC Cards filters
+ */
+function initNfcFilterDropdowns() {
+    // Initialize status filter dropdown (if not already created)
+    if (!nfcStatusDropdown) {
+        const statusContainer = document.getElementById('nfcStatusFilterContainer');
+        if (statusContainer) {
+            nfcStatusDropdown = new SearchableDropdown(statusContainer, {
+                options: [
+                    { value: '', label: 'All Status' },
+                    { value: 'active', label: 'Active Cards' },
+                    { value: 'inactive', label: 'Inactive Cards' }
+                ],
+                placeholder: 'All Status',
+                searchPlaceholder: 'Filter status...',
+                compact: true,
+                onChange: () => filterNfcCards()
+            });
+        }
+    }
+
+    // Initialize office filter dropdown (if not already created)
+    if (!nfcOfficeDropdown) {
+        const officeContainer = document.getElementById('nfcOfficeFilterContainer');
+        if (officeContainer) {
+            nfcOfficeDropdown = new SearchableDropdown(officeContainer, {
+                options: [{ value: '', label: 'All Offices' }],
+                placeholder: 'All Offices',
+                searchPlaceholder: 'Search offices...',
+                compact: true,
+                onChange: () => filterNfcCards()
+            });
+        }
+    }
+}
+
+/**
  * Populate office filter dropdown for NFC Cards tab
  */
 function populateNfcOfficeFilter() {
-    const select = document.getElementById('nfcOfficeFilter');
-    if (!select) return;
+    if (!nfcOfficeDropdown) return;
 
-    select.innerHTML = '<option value="">All Offices</option>';
+    // Build options array with "All Offices" as first option
+    const officeOptions = [{ value: '', label: 'All Offices' }];
     offices.forEach(office => {
-        const option = document.createElement('option');
-        option.value = office.id;
-        option.textContent = office.office_name;
-        select.appendChild(option);
+        officeOptions.push({
+            value: office.id,
+            label: office.office_name
+        });
     });
+
+    // Update the dropdown options
+    nfcOfficeDropdown.setOptions(officeOptions, true);
 }
 
 /**
@@ -4296,8 +4341,8 @@ function filterNfcCards() {
  */
 function getFilteredNfcCards() {
     const searchTerm = document.getElementById('nfcSearchInput')?.value?.toLowerCase() || '';
-    const statusFilter = document.getElementById('nfcStatusFilter')?.value || '';
-    const officeFilter = document.getElementById('nfcOfficeFilter')?.value || '';
+    const statusFilter = nfcStatusDropdown?.getValue() || '';
+    const officeFilter = nfcOfficeDropdown?.getValue() || '';
 
     return allNfcCards.filter(card => {
         // Search filter
@@ -4462,41 +4507,168 @@ function openIssueNfcCardModal() {
     document.getElementById('nfcCardId').value = '';
     document.getElementById('nfcSelectedEmployeeCard').style.display = 'none';
 
+    // Reset employee dropdown
+    document.getElementById('nfcEmployeeSelect').value = '';
+    const selectedText = document.querySelector('#nfcEmployeeSelected .selected-user-text');
+    if (selectedText) {
+        selectedText.textContent = 'Select employee...';
+        selectedText.classList.add('placeholder');
+    }
+    document.getElementById('nfcEmployeeDropdown')?.classList.remove('open');
+    document.getElementById('nfcEmployeePanel').style.display = 'none';
+    document.getElementById('nfcEmployeeSearchInput').value = '';
+    document.getElementById('clearNfcEmployeeSearchBtn').style.display = 'none';
+
     // Populate employee dropdown
     populateNfcEmployeeSelect();
 
     openModal('issueNfcCardModal');
 }
 
+// Store filtered employees for the NFC modal dropdown
+let nfcFilteredEmployees = [];
+
 /**
- * Populate employee select dropdown for issue card modal
+ * Populate employee searchable dropdown for issue card modal
  */
 function populateNfcEmployeeSelect() {
-    const select = document.getElementById('nfcEmployeeSelect');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Select employee...</option>';
-
     // Only show active employees
+    nfcFilteredEmployees = employees.filter(e => e.employment_status === 'active');
+
+    // Update count display
+    document.getElementById('nfcEmployeeCountDisplay').textContent = `${nfcFilteredEmployees.length} employees`;
+
+    // Render the list
+    renderNfcEmployeeList();
+}
+
+/**
+ * Toggle NFC employee dropdown visibility
+ */
+function toggleNfcEmployeeDropdown() {
+    const dropdown = document.getElementById('nfcEmployeeDropdown');
+    const panel = document.getElementById('nfcEmployeePanel');
+    const isOpen = dropdown.classList.contains('open');
+
+    if (isOpen) {
+        dropdown.classList.remove('open');
+        panel.style.display = 'none';
+        document.removeEventListener('click', closeNfcEmployeeDropdownOnOutsideClick);
+    } else {
+        dropdown.classList.add('open');
+        panel.style.display = 'block';
+        document.getElementById('nfcEmployeeSearchInput').focus();
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeNfcEmployeeDropdownOnOutsideClick);
+        }, 0);
+    }
+}
+
+/**
+ * Close NFC employee dropdown when clicking outside
+ */
+function closeNfcEmployeeDropdownOnOutsideClick(e) {
+    const dropdown = document.getElementById('nfcEmployeeDropdown');
+    if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('nfcEmployeePanel').style.display = 'none';
+        document.removeEventListener('click', closeNfcEmployeeDropdownOnOutsideClick);
+    }
+}
+
+/**
+ * Filter NFC employee list based on search input
+ */
+function filterNfcEmployeeList() {
+    const searchTerm = document.getElementById('nfcEmployeeSearchInput').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('clearNfcEmployeeSearchBtn');
+
+    // Show/hide clear button
+    clearBtn.style.display = searchTerm ? 'flex' : 'none';
+
+    // Filter employees
     const activeEmployees = employees.filter(e => e.employment_status === 'active');
 
-    activeEmployees.forEach(emp => {
-        const option = document.createElement('option');
-        option.value = emp.id;
-        option.textContent = `${emp.first_name} ${emp.last_name} (${emp.employee_code})`;
-        select.appendChild(option);
-    });
+    if (searchTerm) {
+        nfcFilteredEmployees = activeEmployees.filter(emp => {
+            const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
+            const code = (emp.employee_code || '').toLowerCase();
+            const email = (emp.work_email || '').toLowerCase();
+            return fullName.includes(searchTerm) || code.includes(searchTerm) || email.includes(searchTerm);
+        });
+    } else {
+        nfcFilteredEmployees = activeEmployees;
+    }
 
-    // Add change handler
-    select.onchange = onNfcEmployeeSelect;
+    // Update count and render
+    document.getElementById('nfcEmployeeCountDisplay').textContent = `${nfcFilteredEmployees.length} employees`;
+    renderNfcEmployeeList();
+}
+
+/**
+ * Clear NFC employee search input
+ */
+function clearNfcEmployeeSearch() {
+    document.getElementById('nfcEmployeeSearchInput').value = '';
+    document.getElementById('clearNfcEmployeeSearchBtn').style.display = 'none';
+    filterNfcEmployeeList();
+    document.getElementById('nfcEmployeeSearchInput').focus();
+}
+
+/**
+ * Render NFC employee list
+ */
+function renderNfcEmployeeList() {
+    const listEl = document.getElementById('nfcEmployeeList');
+
+    if (nfcFilteredEmployees.length === 0) {
+        listEl.innerHTML = '<p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">No employees found</p>';
+        return;
+    }
+
+    listEl.innerHTML = nfcFilteredEmployees.map(emp => {
+        const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+        const email = emp.work_email || '';
+        return `
+            <div class="user-select-item" onclick="selectNfcEmployee('${emp.id}')">
+                <div class="user-info-compact">
+                    <div class="user-name-compact">${escapeHtml(fullName)}</div>
+                    <div class="user-email-compact">${escapeHtml(emp.employee_code)}${email ? ' • ' + escapeHtml(email) : ''}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Select an employee in the NFC dropdown
+ */
+async function selectNfcEmployee(employeeId) {
+    const emp = employees.find(e => e.id === employeeId);
+    if (!emp) return;
+
+    // Update hidden input
+    document.getElementById('nfcEmployeeSelect').value = employeeId;
+
+    // Update display text
+    const selectedText = document.querySelector('#nfcEmployeeSelected .selected-user-text');
+    selectedText.textContent = `${emp.first_name} ${emp.last_name} (${emp.employee_code})`;
+    selectedText.classList.remove('placeholder');
+
+    // Close dropdown
+    document.getElementById('nfcEmployeeDropdown').classList.remove('open');
+    document.getElementById('nfcEmployeePanel').style.display = 'none';
+    document.removeEventListener('click', closeNfcEmployeeDropdownOnOutsideClick);
+
+    // Trigger the selection handler to show employee card
+    await onNfcEmployeeSelect(employeeId);
 }
 
 /**
  * Handle employee selection in issue card modal
  */
-async function onNfcEmployeeSelect() {
-    const select = document.getElementById('nfcEmployeeSelect');
-    const employeeId = select.value;
+async function onNfcEmployeeSelect(employeeId) {
     const cardEl = document.getElementById('nfcSelectedEmployeeCard');
 
     if (!employeeId) {

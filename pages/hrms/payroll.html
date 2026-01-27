@@ -159,6 +159,9 @@
                             <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
                                 <span class="nav-number">12</span><span class="nav-label">Salary Reports</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="statutory-filing" id="statutoryFilingTab">
+                                <span class="nav-number">13</span><span class="nav-label">Statutory Filing</span>
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -1010,6 +1013,165 @@
                                             <polyline points="14 2 14 8 20 8"></polyline>
                                         </svg>
                                         <p>Loading salary data...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statutory Filing Tab -->
+        <div class="tab-content" id="statutory-filing">
+            <!-- Filters Bar -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <div id="sfCountryFilterContainer" class="country-filter-dropdown"></div>
+                </div>
+                <div class="filter-group">
+                    <div class="month-picker-container" id="sfMonthPicker"></div>
+                </div>
+                <div class="filter-group">
+                    <div id="sfPayrollRunContainer" style="min-width: 280px;"></div>
+                </div>
+                <button class="btn btn-secondary" onclick="loadStatutoryFilingData()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" onclick="showGenerateArtifactsModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    Generate Artifacts
+                </button>
+            </div>
+
+            <!-- Stats Summary -->
+            <div class="salary-reports-summary" style="margin-bottom: 24px;">
+                <div class="summary-card summary-employees">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="sfTotalArtifacts">0</div>
+                        <div class="summary-label">Generated Artifacts</div>
+                        <div class="summary-sublabel">This period</div>
+                    </div>
+                </div>
+                <div class="summary-card summary-ctc">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="sfTotalDownloads">0</div>
+                        <div class="summary-label">Total Downloads</div>
+                        <div class="summary-sublabel">Across all artifacts</div>
+                    </div>
+                </div>
+                <div class="summary-card summary-monthly">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v6l4 2"></path>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="sfPendingReports">0</div>
+                        <div class="summary-label">Pending Reports</div>
+                        <div class="summary-sublabel">Not yet generated</div>
+                    </div>
+                </div>
+                <div class="summary-card summary-average">
+                    <div class="summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value" id="sfApprovedRuns">0</div>
+                        <div class="summary-label">Approved Runs</div>
+                        <div class="summary-sublabel">Available for filing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Reports Section (Collapsible - collapsed by default) -->
+            <div class="collapsible-section collapsed" id="availableReportsSection">
+                <div class="collapsible-header" onclick="toggleCollapsibleSection('availableReportsSection')">
+                    <div class="collapsible-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 21h18"></path>
+                            <path d="M5 21V7l7-4 7 4v14"></path>
+                            <path d="M9 21v-8h6v8"></path>
+                        </svg>
+                        <span>Available Report Types</span>
+                        <span class="collapsible-count" id="availableReportsCount">(0)</span>
+                    </div>
+                    <svg class="collapsible-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="collapsible-content">
+                    <div class="report-cards-compact-grid" id="availableReportsGrid">
+                        <div class="empty-state">
+                            <p>Loading report types...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generated Artifacts Table -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Generated Artifacts
+                </h3>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Report Type</th>
+                                <th>Period</th>
+                                <th>Establishment</th>
+                                <th>Format</th>
+                                <th>Rows</th>
+                                <th>Generated</th>
+                                <th>Downloads</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="generatedArtifactsTable">
+                            <tr class="empty-state">
+                                <td colspan="8">
+                                    <div class="empty-message">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <p>No artifacts generated for this period</p>
+                                        <p class="hint">Select a payroll run and click "Generate Artifacts" to create statutory filings</p>
                                     </div>
                                 </td>
                             </tr>
@@ -4060,6 +4222,87 @@
                     <button class="btn btn-primary" id="taxRegimeSaveBtn" onclick="saveTaxRegimeSelection()" disabled>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                         Save Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Statutory Artifacts Modal -->
+    <div class="modal" id="generateArtifactsModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate Statutory Artifacts</h5>
+                    <button class="close-btn" onclick="closeModal('generateArtifactsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="genArtifactPayrollRun">Payroll Run *</label>
+                        <div id="genArtifactPayrollRunContainer"></div>
+                        <small class="form-text text-muted">Only approved or paid payroll runs can be used for statutory filing</small>
+                    </div>
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label>Reports to Generate</label>
+                        <div id="reportCheckboxes" class="checkbox-group" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-primary); border-radius: 6px; padding: 12px;">
+                            <p class="text-muted" style="margin: 0; font-size: 13px;">Select a payroll run to see available reports</p>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch small" style="flex-shrink: 0;">
+                                <input type="checkbox" id="genRegenerate">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Regenerate existing artifacts</span>
+                        </div>
+                        <small class="form-text text-muted" style="margin-top: 6px; display: block;">If enabled, previously generated artifacts will be replaced</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('generateArtifactsModal')">Cancel</button>
+                    <button class="btn btn-primary" id="generateArtifactsBtn" onclick="generateStatutoryArtifacts()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Artifact Details Modal -->
+    <div class="modal" id="artifactDetailsModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="artifactDetailsTitle">Artifact Details</h5>
+                    <button class="close-btn" onclick="closeModal('artifactDetailsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="artifactDetailsContent">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('artifactDetailsModal')">Close</button>
+                    <button class="btn btn-primary" id="artifactDownloadBtn" onclick="downloadCurrentArtifact()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download
                     </button>
                 </div>
             </div>

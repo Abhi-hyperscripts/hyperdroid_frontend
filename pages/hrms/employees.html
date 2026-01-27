@@ -211,14 +211,8 @@
                             </svg>
                             <input type="text" id="nfcSearchInput" placeholder="Search by name, code, or card UID..." oninput="filterNfcCards()">
                         </div>
-                        <select class="filter-select" id="nfcStatusFilter" onchange="filterNfcCards()">
-                            <option value="">All Status</option>
-                            <option value="active">Active Cards</option>
-                            <option value="inactive">Inactive Cards</option>
-                        </select>
-                        <select class="filter-select" id="nfcOfficeFilter" onchange="filterNfcCards()">
-                            <!-- Populated dynamically -->
-                        </select>
+                        <div id="nfcStatusFilterContainer" class="filter-dropdown-container"></div>
+                        <div id="nfcOfficeFilterContainer" class="filter-dropdown-container"></div>
                         <button class="btn btn-primary" onclick="openIssueNfcCardModal()" id="issueNfcCardBtn" style="display: none;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -284,10 +278,36 @@
                         <!-- Employee Selection -->
                         <div class="form-group">
                             <label>Employee <span class="required">*</span></label>
-                            <select id="nfcEmployeeSelect" class="form-control" required>
-                                <option value="">Select employee...</option>
-                                <!-- Populated dynamically -->
-                            </select>
+                            <input type="hidden" id="nfcEmployeeSelect" required>
+                            <div class="user-search-dropdown" id="nfcEmployeeDropdown">
+                                <div class="user-search-selected" id="nfcEmployeeSelected" onclick="toggleNfcEmployeeDropdown()">
+                                    <span class="selected-user-text">Select employee...</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="user-search-panel" id="nfcEmployeePanel">
+                                    <div class="search-box-modern">
+                                        <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <path d="m21 21-4.35-4.35"/>
+                                        </svg>
+                                        <input type="text" id="nfcEmployeeSearchInput" placeholder="Search by name or employee code..." oninput="filterNfcEmployeeList()">
+                                        <button type="button" class="clear-search-btn" id="clearNfcEmployeeSearchBtn" style="display: none;" onclick="clearNfcEmployeeSearch()">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                                <line x1="6" y1="6" x2="18" y2="18"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="user-list-header">
+                                        <span id="nfcEmployeeCountDisplay">0 employees</span>
+                                    </div>
+                                    <div id="nfcEmployeeList" class="users-list-modern">
+                                        <p class="text-muted" style="text-align: center; font-size: 0.75rem; padding: 20px;">Loading employees...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Selected Employee Card -->

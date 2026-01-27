@@ -33,6 +33,7 @@ const payrollSearchableDropdowns = new Map();
 let draftMonthPicker = null;
 let runMonthPicker = null;
 let allPayslipsMonthPicker = null;
+let sfMonthPicker = null; // Statutory Filing month picker
 let createDraftMonthPicker = null;
 
 // VD employee dropdown instance
@@ -979,6 +980,16 @@ async function populateYearDropdowns() {
         onChange: () => loadAllPayslips()
     });
 
+    // Initialize Statutory Filing Month Picker - current month selected by default
+    sfMonthPicker = new MonthPicker('sfMonthPicker', {
+        yearsBack: 20,
+        yearsForward: 10,
+        year: currentYear,
+        month: currentMonth,
+        allowAllMonths: false,
+        onChange: () => loadStatutoryFilingData()
+    });
+
     // Keep draftPayrollYear select for create draft modal (if it exists)
     const draftPayrollYearSelect = document.getElementById('draftPayrollYear');
     if (draftPayrollYearSelect) {
@@ -1075,6 +1086,9 @@ function setupTabs() {
                 await loadEmployeeSalaries();
             } else if (tabId === 'tax-configuration') {
                 await loadTaxConfiguration();
+            } else if (tabId === 'statutory-filing') {
+                initStatutoryFilingTab();
+                await loadStatutoryFilingData();
             }
         });
     });
@@ -4325,7 +4339,8 @@ const COUNTRY_FILTER_CONTAINERS = [
     'allPayslipsCountryFilterContainer', // All Payslips tab
     'adjustmentCountryFilterContainer', // Adjustments tab
     'arrearsCountryFilterContainer',    // Arrears tab
-    'taxConfigCountryFilterContainer'   // Tax Configuration tab
+    'taxConfigCountryFilterContainer',  // Tax Configuration tab
+    'sfCountryFilterContainer'          // Statutory Filing tab
 ];
 
 // Load countries and initialize ALL country filter dropdowns across tabs
@@ -4433,6 +4448,12 @@ async function onGlobalCountryChange() {
     // Refresh salary structures list (now filtered by country via offices)
     if (typeof loadSalaryStructures === 'function') {
         loadSalaryStructures();
+    }
+
+    // Refresh statutory filing available reports (country-specific)
+    // COUNTRY-AGNOSTIC: Reload reports when country changes
+    if (typeof loadAvailableReports === 'function') {
+        loadAvailableReports();
     }
 }
 
@@ -15573,4 +15594,736 @@ async function saveTaxRegimeSelection() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Selection`;
     }
+}
+
+// =====================================================
+// STATUTORY FILING FUNCTIONS
+// =====================================================
+
+// Statutory Filing state
+let sfAvailableReports = [];
+let sfGeneratedArtifacts = [];
+let sfApprovedPayrollRuns = [];
+let sfCurrentArtifactId = null;
+
+// Statutory Filing searchable dropdown instances
+let sfPayrollRunDropdown = null;
+let genArtifactPayrollRunDropdown = null;
+
+/**
+ * Initialize the statutory filing tab
+ * Note: MonthPicker is initialized in populateYearDropdowns() with onChange callback
+ */
+function initStatutoryFilingTab() {
+    // MonthPicker (sfMonthPicker) is already initialized in populateYearDropdowns()
+    // with onChange callback that calls loadStatutoryFilingData()
+
+    // Initialize searchable dropdown for filter bar payroll run
+    const sfPayrollRunContainer = document.getElementById('sfPayrollRunContainer');
+    if (sfPayrollRunContainer && !sfPayrollRunDropdown) {
+        sfPayrollRunDropdown = new SearchableDropdown(sfPayrollRunContainer, {
+            id: 'sfPayrollRun',
+            options: [{ value: '', label: 'All Payroll Runs' }],
+            placeholder: 'All Payroll Runs',
+            searchPlaceholder: 'Search payroll runs...',
+            value: '',
+            compact: true,
+            onChange: (value, option) => {
+                onStatutoryPayrollRunChange();
+            }
+        });
+    }
+
+    // Initialize searchable dropdown for Generate Artifacts modal
+    const genArtifactContainer = document.getElementById('genArtifactPayrollRunContainer');
+    if (genArtifactContainer && !genArtifactPayrollRunDropdown) {
+        genArtifactPayrollRunDropdown = new SearchableDropdown(genArtifactContainer, {
+            id: 'genArtifactPayrollRun',
+            options: [{ value: '', label: 'Select approved payroll run...' }],
+            placeholder: 'Select approved payroll run...',
+            searchPlaceholder: 'Search payroll runs...',
+            value: '',
+            compact: true,
+            onChange: (value, option) => {
+                onGenerateModalPayrollRunChange();
+            }
+        });
+    }
+
+    console.log('[StatutoryFiling] Tab initialized with searchable dropdowns');
+}
+
+/**
+ * Load all data for statutory filing tab
+ */
+async function loadStatutoryFilingData() {
+    try {
+        showLoading();
+        await Promise.all([
+            loadAvailableReports(),
+            loadApprovedPayrollRuns(),
+            loadGeneratedArtifacts()
+        ]);
+        updateStatutoryStats();
+    } catch (error) {
+        console.error('Error loading statutory filing data:', error);
+        showToast(error.message || 'Failed to load statutory filing data', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Load available report types for the country
+ * COUNTRY-AGNOSTIC: Uses selected country from global filter, no hardcoded defaults
+ */
+async function loadAvailableReports() {
+    const countryCode = selectedGlobalCountry;
+    if (!countryCode) {
+        console.log('[StatutoryFiling] No country selected, skipping report load');
+        sfAvailableReports = [];
+        renderAvailableReports();
+        return;
+    }
+    try {
+        const response = await api.request(`/hrms/statutory/artifacts/reports/${countryCode}`);
+        sfAvailableReports = response || [];
+        renderAvailableReports();
+    } catch (error) {
+        console.error('Error loading available reports:', error);
+        sfAvailableReports = [];
+        renderAvailableReports();
+    }
+}
+
+/**
+ * Load approved payroll runs for dropdowns
+ */
+async function loadApprovedPayrollRuns() {
+    try {
+        const pickerValue = sfMonthPicker?.getValue() || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+        const year = pickerValue.year;
+        const month = pickerValue.month;
+
+        let url = `/hrms/payroll-processing/runs?year=${year}`;
+        if (month) url += `&month=${month}`;
+
+        const response = await api.request(url);
+        // Filter for approved or paid runs only
+        sfApprovedPayrollRuns = (response || []).filter(r =>
+            r.status === 'approved' || r.status === 'paid'
+        );
+        populatePayrollRunDropdowns();
+    } catch (error) {
+        console.error('Error loading approved payroll runs:', error);
+        sfApprovedPayrollRuns = [];
+        populatePayrollRunDropdowns();
+    }
+}
+
+/**
+ * Load generated artifacts for selected period
+ */
+async function loadGeneratedArtifacts() {
+    const pickerValue = sfMonthPicker?.getValue() || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+    const month = pickerValue.month;
+    const year = pickerValue.year;
+    const payrollRunId = sfPayrollRunDropdown?.getValue() || '';
+
+    if (!month || !year) {
+        sfGeneratedArtifacts = [];
+        renderGeneratedArtifacts();
+        return;
+    }
+
+    try {
+        let response;
+        if (payrollRunId) {
+            // Load by specific payroll run
+            response = await api.request(`/hrms/statutory/artifacts/payroll-run/${payrollRunId}`);
+        } else {
+            // Load by period
+            response = await api.request(`/hrms/statutory/artifacts/period/${year}/${month}`);
+        }
+        sfGeneratedArtifacts = response || [];
+        renderGeneratedArtifacts();
+    } catch (error) {
+        console.error('Error loading generated artifacts:', error);
+        sfGeneratedArtifacts = [];
+        renderGeneratedArtifacts();
+    }
+}
+
+/**
+ * Populate payroll run dropdowns using SearchableDropdown API
+ */
+function populatePayrollRunDropdowns() {
+    // Build options array for searchable dropdowns
+    const runOptions = sfApprovedPayrollRuns.map(run => {
+        const period = `${getMonthNameShort(run.payroll_month)} ${run.payroll_year}`;
+        const office = run.office_name || 'All Offices';
+        const status = run.status.charAt(0).toUpperCase() + run.status.slice(1);
+        return {
+            value: run.id,
+            label: `${run.run_code || run.id.substring(0, 8)} - ${period} - ${office} (${status})`,
+            description: `${office} | ${status}`
+        };
+    });
+
+    // Update filter bar dropdown (with "All Payroll Runs" option)
+    if (sfPayrollRunDropdown) {
+        const filterOptions = [
+            { value: '', label: 'All Payroll Runs' },
+            ...runOptions
+        ];
+        sfPayrollRunDropdown.setOptions(filterOptions);
+    }
+
+    // Update modal dropdown (with "Select..." placeholder)
+    if (genArtifactPayrollRunDropdown) {
+        const modalOptions = [
+            { value: '', label: 'Select approved payroll run...' },
+            ...runOptions
+        ];
+        genArtifactPayrollRunDropdown.setOptions(modalOptions);
+    }
+}
+
+/**
+ * Toggle collapsible section visibility
+ */
+function toggleCollapsibleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.classList.toggle('collapsed');
+}
+
+/**
+ * Render available report type cards (compact version)
+ * COUNTRY-AGNOSTIC: Shows message when no country selected
+ */
+function renderAvailableReports() {
+    const grid = document.getElementById('availableReportsGrid');
+    const countEl = document.getElementById('availableReportsCount');
+    if (!grid) return;
+
+    // Update count in header
+    if (countEl) {
+        countEl.textContent = `(${sfAvailableReports?.length || 0})`;
+    }
+
+    // Show message if no country selected
+    if (!selectedGlobalCountry) {
+        grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <p style="color: var(--text-tertiary);">Please select a country from the filter to view available reports</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (!sfAvailableReports || sfAvailableReports.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <p style="color: var(--text-tertiary);">No report types configured for ${selectedGlobalCountry}</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Compact card layout - single row with key info
+    grid.innerHTML = sfAvailableReports.map(report => `
+        <div class="report-card-compact">
+            <div class="report-card-compact-name">${escapeHtml(report.report_name)}</div>
+            <div class="report-card-compact-meta">
+                <span class="report-code">${escapeHtml(report.report_code)}</span>
+                <span class="report-badge">${(report.format || 'txt').toUpperCase()}</span>
+                <span class="report-freq">${escapeHtml(report.frequency || 'monthly')}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Render generated artifacts table
+ */
+function renderGeneratedArtifacts() {
+    const tbody = document.getElementById('generatedArtifactsTable');
+    if (!tbody) return;
+
+    // COUNTRY-AGNOSTIC: Show message when no country selected
+    if (!selectedGlobalCountry) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M2 12h20"></path>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <p>Please select a country from the filter</p>
+                        <p class="hint">Choose a country to view generated statutory filings</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    if (!sfGeneratedArtifacts || sfGeneratedArtifacts.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state">
+                <td colspan="8">
+                    <div class="empty-message">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p>No artifacts generated for this period</p>
+                        <p class="hint">Select a payroll run and click "Generate Artifacts" to create statutory filings</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    // Get period from filter dropdowns since API doesn't return it
+    const pickerValue = sfMonthPicker?.getValue() || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+    const filterMonth = pickerValue.month;
+    const filterYear = pickerValue.year;
+
+    tbody.innerHTML = sfGeneratedArtifacts.map(artifact => `
+        <tr>
+            <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="report-icon-small">${getReportIcon(artifact.report_code)}</span>
+                    <div>
+                        <strong>${escapeHtml(artifact.report_name || artifact.report_code)}</strong>
+                        <div style="font-size: 12px; color: var(--text-tertiary);">${escapeHtml(artifact.report_code)}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${getMonthNameShort(filterMonth)} ${filterYear}</td>
+            <td>${escapeHtml(artifact.establishment_code || 'All')}</td>
+            <td><span class="badge badge-info">${(artifact.format || 'txt').toUpperCase()}</span></td>
+            <td>${artifact.row_count || 0}</td>
+            <td>
+                <div style="font-size: 13px;">${formatDateTimeShort(artifact.generated_at)}</div>
+                <div style="font-size: 11px; color: var(--text-tertiary);">by ${escapeHtml(artifact.generated_by_name || 'System')}</div>
+            </td>
+            <td>
+                <span class="badge ${artifact.download_count > 0 ? 'badge-success' : 'badge-secondary'}">${artifact.download_count || 0}</span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-icon btn-ghost" onclick="downloadArtifact('${artifact.id}')" title="Download">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
+                    <button class="btn btn-icon btn-ghost" onclick="viewArtifactDetails('${artifact.id}')" title="Details">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+/**
+ * Update statutory filing stats
+ */
+function updateStatutoryStats() {
+    const totalArtifacts = sfGeneratedArtifacts.length;
+    const totalDownloads = sfGeneratedArtifacts.reduce((sum, a) => sum + (a.download_count || 0), 0);
+    const availableCount = sfAvailableReports.length;
+    const generatedCodes = new Set(sfGeneratedArtifacts.map(a => a.report_code));
+    const pendingReports = availableCount - generatedCodes.size;
+    const approvedRuns = sfApprovedPayrollRuns.length;
+
+    const sfTotalArtifactsEl = document.getElementById('sfTotalArtifacts');
+    const sfTotalDownloadsEl = document.getElementById('sfTotalDownloads');
+    const sfPendingReportsEl = document.getElementById('sfPendingReports');
+    const sfApprovedRunsEl = document.getElementById('sfApprovedRuns');
+
+    if (sfTotalArtifactsEl) sfTotalArtifactsEl.textContent = totalArtifacts;
+    if (sfTotalDownloadsEl) sfTotalDownloadsEl.textContent = totalDownloads;
+    if (sfPendingReportsEl) sfPendingReportsEl.textContent = pendingReports > 0 ? pendingReports : 0;
+    if (sfApprovedRunsEl) sfApprovedRunsEl.textContent = approvedRuns;
+}
+
+/**
+ * Show generate artifacts modal
+ * COUNTRY-AGNOSTIC: Requires country selection before generation
+ */
+function showGenerateArtifactsModal() {
+    // Check if country is selected first
+    if (!selectedGlobalCountry) {
+        showToast('Please select a country from the filter first', 'warning');
+        return;
+    }
+
+    // Check if there are approved payroll runs
+    if (sfApprovedPayrollRuns.length === 0) {
+        showToast('No approved payroll runs available. Please approve a payroll run first.', 'warning');
+        return;
+    }
+
+    // Populate payroll run dropdown
+    populatePayrollRunDropdowns();
+
+    // Reset the modal dropdown selection
+    if (genArtifactPayrollRunDropdown) {
+        genArtifactPayrollRunDropdown.setValue('');
+    }
+
+    // Reset checkboxes
+    const checkboxContainer = document.getElementById('reportCheckboxes');
+    if (checkboxContainer) {
+        checkboxContainer.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 13px;">Select a payroll run to see available reports</p>';
+    }
+
+    // Reset regenerate checkbox
+    const regenCheckbox = document.getElementById('genRegenerate');
+    if (regenCheckbox) regenCheckbox.checked = false;
+
+    openModal('generateArtifactsModal');
+}
+
+/**
+ * Handle payroll run change in generate modal
+ */
+async function onGenerateModalPayrollRunChange() {
+    const payrollRunId = genArtifactPayrollRunDropdown?.getValue() || '';
+    const checkboxContainer = document.getElementById('reportCheckboxes');
+
+    if (!payrollRunId || !checkboxContainer) {
+        if (checkboxContainer) {
+            checkboxContainer.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 13px;">Select a payroll run to see available reports</p>';
+        }
+        return;
+    }
+
+    // COUNTRY-AGNOSTIC: Get country code from selected payroll run or global filter
+    // No hardcoded defaults - user must select a country
+    const selectedRun = sfApprovedPayrollRuns.find(r => r.id === payrollRunId);
+    const countryCode = selectedRun?.country_code || selectedRun?.office_country_code || selectedGlobalCountry;
+    if (!countryCode || countryCode === '') {
+        checkboxContainer.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 13px; color: var(--color-warning);">Please select a country from the filter first</p>';
+        return;
+    }
+
+    try {
+        // Load reports for this country
+        const reports = await api.request(`/hrms/statutory/artifacts/reports/${countryCode}`);
+
+        if (!reports || reports.length === 0) {
+            checkboxContainer.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 13px;">No report types configured for this country</p>';
+            return;
+        }
+
+        checkboxContainer.innerHTML = reports.map(report => `
+            <div class="report-toggle-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-secondary);">
+                <label class="toggle-switch small" style="flex-shrink: 0;">
+                    <input type="checkbox" value="${escapeHtml(report.report_code)}" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary);">${escapeHtml(report.report_name)}</span>
+                <span class="badge badge-info" style="font-size: 10px;">${(report.format || 'txt').toUpperCase()}</span>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading reports for modal:', error);
+        checkboxContainer.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 13px; color: var(--color-error);">Failed to load report types</p>';
+    }
+}
+
+/**
+ * Generate statutory artifacts
+ */
+async function generateStatutoryArtifacts() {
+    const payrollRunId = genArtifactPayrollRunDropdown?.getValue() || '';
+    if (!payrollRunId) {
+        showToast('Please select a payroll run', 'warning');
+        return;
+    }
+
+    const selectedReports = Array.from(document.querySelectorAll('#reportCheckboxes input:checked'))
+        .map(cb => cb.value);
+
+    if (selectedReports.length === 0) {
+        showToast('Please select at least one report to generate', 'warning');
+        return;
+    }
+
+    const generateBtn = document.getElementById('generateArtifactsBtn');
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><div class="spinner" style="width:16px;height:16px;"></div> Generating...</span>';
+    }
+
+    try {
+        const selectedRun = sfApprovedPayrollRuns.find(r => r.id === payrollRunId);
+        // COUNTRY-AGNOSTIC: Get country code from payroll run or global filter
+        // No hardcoded defaults - system must have a country selected
+        const countryCode = selectedRun?.country_code || selectedRun?.office_country_code || selectedGlobalCountry;
+        if (!countryCode || countryCode === '') {
+            showToast('Please select a country from the filter first', 'warning');
+            return;
+        }
+
+        // Get period from the MonthPicker
+        const pickerValue = sfMonthPicker?.getValue() || { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+        const month = pickerValue.month;
+        const year = pickerValue.year;
+
+        console.log('[StatutoryFiling] Generating artifacts with:', { countryCode, payrollRunId, month, year, selectedReports: selectedReports.length });
+
+        const response = await api.request('/hrms/statutory/artifacts/generate-bulk', {
+            method: 'POST',
+            body: JSON.stringify({
+                countryCode: countryCode,
+                payrollRunId: payrollRunId,
+                payrollMonth: month,
+                payrollYear: year,
+                reportCodes: selectedReports,
+                regenerate: document.getElementById('genRegenerate')?.checked || false
+            }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        closeModal('generateArtifactsModal');
+
+        const successCount = response.success_count || 0;
+        const failCount = response.failed_count || 0;
+
+        if (successCount > 0) {
+            showToast(`Generated ${successCount} artifact(s) successfully${failCount > 0 ? `, ${failCount} failed` : ''}`, 'success');
+        } else if (failCount > 0) {
+            showToast(`Failed to generate ${failCount} artifact(s)`, 'error');
+        }
+
+        await loadStatutoryFilingData();
+    } catch (error) {
+        console.error('Error generating artifacts:', error);
+        showToast(error.message || 'Failed to generate artifacts', 'error');
+    } finally {
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Generate`;
+        }
+    }
+}
+
+/**
+ * Download artifact file
+ */
+async function downloadArtifact(artifactId) {
+    try {
+        showToast('Downloading artifact...', 'info');
+
+        const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+        const response = await fetch(`${CONFIG.hrmsApiBaseUrl}/statutory/artifacts/${artifactId}/download`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Download failed');
+        }
+
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'artifact.txt';
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (match && match[1]) {
+                filename = match[1].replace(/['"]/g, '');
+            }
+        }
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+        showToast('Artifact downloaded successfully', 'success');
+
+        // Refresh to update download count
+        await loadGeneratedArtifacts();
+        updateStatutoryStats();
+    } catch (error) {
+        console.error('Error downloading artifact:', error);
+        showToast(error.message || 'Failed to download artifact', 'error');
+    }
+}
+
+/**
+ * View artifact details
+ */
+async function viewArtifactDetails(artifactId) {
+    try {
+        showLoading();
+
+        const artifact = await api.request(`/hrms/statutory/artifacts/${artifactId}`);
+        sfCurrentArtifactId = artifactId;
+
+        const title = document.getElementById('artifactDetailsTitle');
+        const content = document.getElementById('artifactDetailsContent');
+
+        if (title) {
+            // Support both camelCase (API) and snake_case (legacy)
+            title.textContent = artifact.reportName || artifact.report_name || artifact.reportCode || artifact.report_code;
+        }
+
+        if (content) {
+            // Support both camelCase (API response) and snake_case field names
+            const reportCode = artifact.reportCode || artifact.report_code || '';
+            const format = artifact.format || 'txt';
+            const payrollMonth = artifact.payrollMonth || artifact.payroll_month;
+            const payrollYear = artifact.payrollYear || artifact.payroll_year;
+            const establishmentCode = artifact.establishmentCode || artifact.establishment_code || 'All';
+            const rowCount = artifact.rowCount || artifact.row_count || 0;
+            const fileName = artifact.fileName || artifact.file_name || 'N/A';
+            const generatedAt = artifact.generatedAt || artifact.generated_at;
+            const generatedByName = artifact.generatedByName || artifact.generated_by_name || 'System';
+            const downloadCount = artifact.downloadCount || artifact.download_count || 0;
+            const lastDownloadedAt = artifact.lastDownloadedAt || artifact.last_downloaded_at;
+
+            content.innerHTML = `
+                <div class="artifact-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Report Code</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${escapeHtml(reportCode)}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Format</label>
+                        <div style="font-size: 14px; margin-top: 4px;"><span class="badge badge-info">${format.toUpperCase()}</span></div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Period</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${getMonthNameShort(payrollMonth)} ${payrollYear}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Establishment</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${escapeHtml(establishmentCode)}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Row Count</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${rowCount}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">File Name</label>
+                        <div style="font-size: 14px; margin-top: 4px; word-break: break-all;">${escapeHtml(fileName)}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Generated At</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${formatDateTime(generatedAt)}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Generated By</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${escapeHtml(generatedByName)}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Download Count</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${downloadCount}</div>
+                    </div>
+                    <div class="detail-group">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Last Downloaded</label>
+                        <div style="font-size: 14px; margin-top: 4px;">${lastDownloadedAt ? formatDateTime(lastDownloadedAt) : 'Never'}</div>
+                    </div>
+                </div>
+                ${artifact.notes ? `
+                    <div class="detail-group" style="margin-top: 16px;">
+                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Notes</label>
+                        <div style="font-size: 14px; margin-top: 4px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">${escapeHtml(artifact.notes)}</div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        openModal('artifactDetailsModal');
+    } catch (error) {
+        console.error('Error loading artifact details:', error);
+        showToast(error.message || 'Failed to load artifact details', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Download current artifact from details modal
+ */
+function downloadCurrentArtifact() {
+    if (sfCurrentArtifactId) {
+        downloadArtifact(sfCurrentArtifactId);
+    }
+}
+
+/**
+ * Handle statutory payroll run filter change
+ */
+function onStatutoryPayrollRunChange() {
+    loadGeneratedArtifacts().then(() => updateStatutoryStats());
+}
+
+/**
+ * Get report icon based on report code
+ * Returns empty string - emojis removed for professional appearance
+ */
+function getReportIcon(reportCode) {
+    return '';
+}
+
+/**
+ * Get short month name
+ */
+function getMonthNameShort(month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[(month || 1) - 1] || '';
+}
+
+/**
+ * Format date time short
+ */
+function formatDateTimeShort(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+/**
+ * Format full date time
+ */
+function formatDateTime(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
