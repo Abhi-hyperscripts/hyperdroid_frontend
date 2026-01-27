@@ -112,19 +112,21 @@
             <!-- Input: Statutory Compliance (Left) -->
             <div class="flowchart-input input-left">
                 <div class="input-box statutory">
-                    <div class="input-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                            <path d="M2 17l10 5 10-5"/>
-                            <path d="M2 12l10 5 10-5"/>
-                        </svg>
+                    <div class="input-header">
+                        <div class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <h4>Statutory Compliance</h4>
                     </div>
-                    <h4>Statutory Compliance</h4>
                     <div class="input-tags">
-                        <span class="tag">PF Rules</span>
-                        <span class="tag">ESI Slabs</span>
+                        <span class="tag">Retirement</span>
+                        <span class="tag">Insurance</span>
                         <span class="tag">Tax Tables</span>
-                        <span class="tag">PT Rates</span>
+                        <span class="tag">Local Taxes</span>
                     </div>
                     <p class="input-note">Country-specific JSON config</p>
                 </div>
@@ -138,15 +140,17 @@
             <!-- Input: Employee Data (Top) -->
             <div class="flowchart-input input-top">
                 <div class="input-box employee">
-                    <div class="input-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
+                    <div class="input-header">
+                        <div class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <h4>Employee Data</h4>
                     </div>
-                    <h4>Employee Data</h4>
                     <div class="input-tags">
                         <span class="tag">Salary Structure</span>
                         <span class="tag">Attendance</span>
@@ -160,31 +164,86 @@
                 </div>
             </div>
 
-            <!-- Center: Payroll Engine -->
+            <!-- Center: Payroll Engine - The Heart -->
             <div class="flowchart-engine">
-                <div class="engine-box">
-                    <div class="engine-glow"></div>
-                    <div class="engine-inner">
-                        <div class="engine-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="4" y="4" width="16" height="16" rx="2"/>
-                                <rect x="9" y="9" width="6" height="6"/>
-                                <line x1="9" y1="1" x2="9" y2="4"/>
-                                <line x1="15" y1="1" x2="15" y2="4"/>
-                                <line x1="9" y1="20" x2="9" y2="23"/>
-                                <line x1="15" y1="20" x2="15" y2="23"/>
-                                <line x1="20" y1="9" x2="23" y2="9"/>
-                                <line x1="20" y1="14" x2="23" y2="14"/>
-                                <line x1="1" y1="9" x2="4" y2="9"/>
-                                <line x1="1" y1="14" x2="4" y2="14"/>
+                <div class="engine-core-v2">
+                    <!-- Animated hex background -->
+                    <div class="engine-hex-bg">
+                        <svg viewBox="0 0 400 400" fill="none">
+                            <!-- Outer hexagon ring -->
+                            <polygon class="hex-outer" points="200,20 350,95 350,245 200,320 50,245 50,95"/>
+                            <!-- Middle hexagon ring -->
+                            <polygon class="hex-middle" points="200,50 320,110 320,230 200,290 80,230 80,110"/>
+                            <!-- Inner hexagon -->
+                            <polygon class="hex-inner" points="200,80 280,125 280,215 200,260 120,215 120,125"/>
+                            <!-- Connection lines -->
+                            <line class="hex-line" x1="200" y1="20" x2="200" y2="0"/>
+                            <line class="hex-line" x1="350" y1="170" x2="380" y2="170"/>
+                            <line class="hex-line" x1="50" y1="170" x2="20" y2="170"/>
+                            <line class="hex-line" x1="200" y1="320" x2="200" y2="340"/>
+                            <!-- Data nodes -->
+                            <circle class="data-node n1" cx="200" cy="20" r="6"/>
+                            <circle class="data-node n2" cx="350" cy="170" r="6"/>
+                            <circle class="data-node n3" cx="50" cy="170" r="6"/>
+                            <circle class="data-node n4" cx="200" cy="320" r="6"/>
+                        </svg>
+                    </div>
+
+                    <!-- Rotating scanner line -->
+                    <div class="engine-scanner"></div>
+
+                    <!-- Main engine content -->
+                    <div class="engine-main-v2">
+                        <div class="engine-glow"></div>
+
+                        <!-- CPU Icon -->
+                        <div class="engine-cpu">
+                            <svg viewBox="0 0 64 64" fill="none">
+                                <rect x="12" y="12" width="40" height="40" rx="6" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="22" y="22" width="20" height="20" rx="3" fill="currentColor" opacity="0.2"/>
+                                <rect x="24" y="24" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <!-- Top pins -->
+                                <line x1="20" y1="4" x2="20" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="32" y1="4" x2="32" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="44" y1="4" x2="44" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Bottom pins -->
+                                <line x1="20" y1="52" x2="20" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="32" y1="52" x2="32" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="44" y1="52" x2="44" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Left pins -->
+                                <line x1="4" y1="20" x2="12" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="4" y1="32" x2="12" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="4" y1="44" x2="12" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Right pins -->
+                                <line x1="52" y1="20" x2="60" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="52" y1="32" x2="60" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="52" y1="44" x2="60" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                             </svg>
                         </div>
-                        <h3>Payroll Engine</h3>
-                        <span class="engine-version">v3.0.114</span>
-                        <div class="engine-features">
+
+                        <h3 class="engine-title">Payroll Engine</h3>
+
+                        <div class="engine-tagline">
                             <span>Deterministic</span>
-                            <span>•</span>
+                            <span class="tagline-sep">•</span>
                             <span>Order-Independent</span>
+                        </div>
+
+                        <div class="engine-metrics">
+                            <div class="metric">
+                                <span class="metric-value">57</span>
+                                <span class="metric-label">Audit Fields</span>
+                            </div>
+                            <div class="metric-divider"></div>
+                            <div class="metric">
+                                <span class="metric-value">100%</span>
+                                <span class="metric-label">Traceable</span>
+                            </div>
+                        </div>
+
+                        <div class="engine-status-v2">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">Processing Ready</span>
                         </div>
                     </div>
                 </div>
@@ -231,7 +290,7 @@
                         </svg>
                     </div>
                     <h5>Statutory Filings</h5>
-                    <p>PF, ESI, PT returns ready</p>
+                    <p>Country-specific returns ready</p>
                 </div>
             </div>
         </div>
@@ -284,7 +343,7 @@
                     </svg>
                 </div>
                 <h3 class="feature-title">Audit-Ready Always</h3>
-                <p class="feature-description">Statutory auditors ask tough questions. Our calculation proofs answer them instantly. PF contributions, tax deductions, arrears—all documented.</p>
+                <p class="feature-description">Statutory auditors ask tough questions. Our calculation proofs answer them instantly. Retirement contributions, tax deductions, arrears—all documented.</p>
             </div>
 
             <div class="feature-card blue">
@@ -306,7 +365,7 @@
                     </svg>
                 </div>
                 <h3 class="feature-title">Handles the Hard Cases</h3>
-                <p class="feature-description">Retroactive salary revisions? Mid-month office transfers? PF ceiling changes? Our engine handles complex scenarios that break other systems.</p>
+                <p class="feature-description">Retroactive salary revisions? Mid-month office transfers? Statutory ceiling changes? Our engine handles complex scenarios that break other systems.</p>
             </div>
 
             <div class="feature-card cyan">
@@ -318,7 +377,7 @@
                     </svg>
                 </div>
                 <h3 class="feature-title">Multi-Location Payroll</h3>
-                <p class="feature-description">Employee worked in Mumbai for 15 days, transferred to Bangalore mid-month? Payroll splits correctly by location with proper tax jurisdiction tracking.</p>
+                <p class="feature-description">Employee worked at one office for 15 days, transferred mid-month? Payroll splits correctly by location with proper tax jurisdiction tracking.</p>
             </div>
 
             <div class="feature-card pink">
@@ -333,6 +392,241 @@
                 </div>
                 <h3 class="feature-title">Complete HR Suite</h3>
                 <p class="feature-description">Attendance, leave management, employee records, self-service portal—everything your HR team needs, with the same transparent approach.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Complete HRMS Platform Section - Bento Grid -->
+    <section class="platform-section" id="platform">
+        <div class="section-header">
+            <div class="section-badge platform-badge">Complete Platform</div>
+            <h2 class="section-title">Enterprise HR. Without the enterprise complexity.</h2>
+            <p class="section-description">
+                A unified platform that handles everything from onboarding to offboarding. Configure once, scale infinitely.
+            </p>
+        </div>
+
+        <div class="bento-grid">
+            <!-- Hero Card: Advanced Payroll -->
+            <div class="bento-card bento-hero payroll-hero">
+                <div class="bento-card-content">
+                    <div class="bento-badge">Core Engine</div>
+                    <h3>Advanced Payroll Processing</h3>
+                    <p>The most sophisticated payroll engine in its class. Every calculation documented, every number traceable.</p>
+                    <ul class="bento-features">
+                        <li>Multiple salary structures per office</li>
+                        <li>Mid-month transfers with split calculations</li>
+                        <li>Retrospective arrears handling</li>
+                        <li>Draft preview before finalization</li>
+                    </ul>
+                </div>
+                <div class="bento-visual payroll-visual">
+                    <div class="payroll-preview">
+                        <div class="preview-header">
+                            <span class="preview-title">Payslip Preview</span>
+                            <span class="preview-badge">Jan 2025</span>
+                        </div>
+                        <div class="preview-rows">
+                            <div class="preview-row">
+                                <span>Basic Salary</span>
+                                <span class="amount positive">$5,400</span>
+                            </div>
+                            <div class="preview-row">
+                                <span>Housing Allowance</span>
+                                <span class="amount positive">$2,160</span>
+                            </div>
+                            <div class="preview-row">
+                                <span>Transport</span>
+                                <span class="amount positive">$800</span>
+                            </div>
+                            <div class="preview-row deduction">
+                                <span>Retirement Fund</span>
+                                <span class="amount negative">−$648</span>
+                            </div>
+                            <div class="preview-row deduction">
+                                <span>Income Tax</span>
+                                <span class="amount negative">−$1,247</span>
+                            </div>
+                            <div class="preview-row total">
+                                <span>Net Pay</span>
+                                <span class="amount">$6,465</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statutory Compliance -->
+            <div class="bento-card bento-tall statutory-card">
+                <div class="bento-icon statutory">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h3>Statutory Compliance</h3>
+                <p>Stay compliant in any jurisdiction, automatically.</p>
+                <div class="compliance-tags">
+                    <span class="compliance-tag">Retirement</span>
+                    <span class="compliance-tag">Insurance</span>
+                    <span class="compliance-tag">Tax Tables</span>
+                    <span class="compliance-tag">Local Levies</span>
+                </div>
+                <div class="bento-stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-text">Audit Ready</span>
+                </div>
+            </div>
+
+            <!-- Organization Structure -->
+            <div class="bento-card bento-small org-card">
+                <div class="bento-icon org">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/>
+                    </svg>
+                </div>
+                <h3>Organization</h3>
+                <div class="feature-chips">
+                    <span class="chip">Offices</span>
+                    <span class="chip">Departments</span>
+                    <span class="chip">Designations</span>
+                    <span class="chip">Shifts</span>
+                    <span class="chip">Holidays</span>
+                </div>
+            </div>
+
+            <!-- Employee Lifecycle -->
+            <div class="bento-card bento-small employee-card">
+                <div class="bento-icon employee">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                </div>
+                <h3>Employees</h3>
+                <div class="feature-chips">
+                    <span class="chip">Onboarding</span>
+                    <span class="chip">Documents</span>
+                    <span class="chip">Transfers</span>
+                    <span class="chip">Hierarchy</span>
+                </div>
+            </div>
+
+            <!-- Time & Attendance - with mini visualization -->
+            <div class="bento-card bento-wide attendance-card">
+                <div class="bento-card-row">
+                    <div class="bento-card-info">
+                        <div class="bento-icon attendance">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Time & Attendance</h3>
+                            <div class="feature-chips inline">
+                                <span class="chip">Geofenced Clock-in</span>
+                                <span class="chip">NFC Kiosks</span>
+                                <span class="chip">Regularization</span>
+                                <span class="chip">Overtime</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="attendance-mini-chart">
+                        <div class="chart-bar" style="--height: 85%"><span>M</span></div>
+                        <div class="chart-bar" style="--height: 92%"><span>T</span></div>
+                        <div class="chart-bar" style="--height: 88%"><span>W</span></div>
+                        <div class="chart-bar" style="--height: 95%"><span>T</span></div>
+                        <div class="chart-bar" style="--height: 78%"><span>F</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leave Management -->
+            <div class="bento-card bento-medium leave-card">
+                <div class="bento-icon leave">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <h3>Leave Management</h3>
+                <div class="feature-chips">
+                    <span class="chip">Unlimited Types</span>
+                    <span class="chip">Carry-forward</span>
+                    <span class="chip">Accruals</span>
+                    <span class="chip">Approvals</span>
+                </div>
+                <div class="leave-balance-preview">
+                    <div class="balance-item"><span class="bal-type">Annual</span><span class="bal-num">18</span></div>
+                    <div class="balance-item"><span class="bal-type">Sick</span><span class="bal-num">12</span></div>
+                    <div class="balance-item"><span class="bal-type">Personal</span><span class="bal-num">5</span></div>
+                </div>
+            </div>
+
+            <!-- Loans & Advances -->
+            <div class="bento-card bento-small loans-card">
+                <div class="bento-icon loans">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v12M8 10h8M8 14h8"/>
+                    </svg>
+                </div>
+                <h3>Loans & Advances</h3>
+                <div class="feature-chips">
+                    <span class="chip">Workflows</span>
+                    <span class="chip">Auto EMI</span>
+                    <span class="chip">Tracking</span>
+                </div>
+            </div>
+
+            <!-- Self-Service Portal - wider card -->
+            <div class="bento-card bento-wide selfservice-card">
+                <div class="selfservice-header">
+                    <div class="bento-icon selfservice">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Employee Self-Service</h3>
+                        <p class="selfservice-desc">Everything employees need in one place</p>
+                    </div>
+                </div>
+                <div class="selfservice-actions">
+                    <span class="action-chip">View Payslip</span>
+                    <span class="action-chip">Apply Leave</span>
+                    <span class="action-chip">Request Loan</span>
+                    <span class="action-chip">My Team</span>
+                    <span class="action-chip">Approvals</span>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="bento-card bento-stats">
+                <div class="stats-grid">
+                    <div class="stat-block">
+                        <span class="stat-value">8</span>
+                        <span class="stat-label">Integrated<br>Modules</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">Audit<br>Trail</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-value">Any</span>
+                        <span class="stat-label">Country<br>Ready</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-value">Zero</span>
+                        <span class="stat-label">Manual<br>Errors</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -368,11 +662,11 @@
                         <div class="card-details">
                             <div class="detail-row">
                                 <span class="detail-label">Base Salary</span>
-                                <span class="detail-value">₹75,000/month</span>
+                                <span class="detail-value">$7,500/month</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Location</span>
-                                <span class="detail-value">Mumbai → Bangalore (Day 15)</span>
+                                <span class="detail-value">Office A → Office B (Day 15)</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Period</span>
@@ -398,7 +692,7 @@
                         <div class="chaos-number">1</div>
                         <div class="chaos-content">
                             <h5>Retro Revision #1</h5>
-                            <p>Salary increased to ₹85,000 effective Oct 2024</p>
+                            <p>Salary increased to $8,500 effective Oct 2024</p>
                             <span class="chaos-impact">4 months arrears triggered</span>
                         </div>
                     </div>
@@ -406,7 +700,7 @@
                         <div class="chaos-number">2</div>
                         <div class="chaos-content">
                             <h5>Retro Revision #2</h5>
-                            <p>Further increased to ₹90,000 effective Nov 2024</p>
+                            <p>Further increased to $9,000 effective Nov 2024</p>
                             <span class="chaos-impact">Arrears on arrears</span>
                         </div>
                     </div>
@@ -414,15 +708,15 @@
                         <div class="chaos-number">3</div>
                         <div class="chaos-content">
                             <h5>Retro Revision #3</h5>
-                            <p>Adjusted to ₹88,000 effective Dec 2024</p>
+                            <p>Adjusted to $8,800 effective Dec 2024</p>
                             <span class="chaos-impact">Negative arrears correction</span>
                         </div>
                     </div>
                     <div class="timeline-card chaos-card">
                         <div class="chaos-number">4</div>
                         <div class="chaos-content">
-                            <h5>PF Ceiling Change</h5>
-                            <p>Government raised limit ₹15K → ₹21K</p>
+                            <h5>Statutory Ceiling Change</h5>
+                            <p>Retirement contribution limit updated mid-period</p>
                             <span class="chaos-impact">Mid-period statutory change</span>
                         </div>
                     </div>
@@ -453,21 +747,24 @@
                         <div class="engine-animation">
                             <div class="engine-pulse"></div>
                             <div class="engine-core">
-                                <span>v3.0.114</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                    <rect x="9" y="9" width="6" height="6"/>
+                                </svg>
                             </div>
                         </div>
                         <div class="engine-steps">
                             <div class="engine-step">
                                 <span class="step-icon">→</span>
-                                <span>Collapse arrears chain by event_occurred_at</span>
+                                <span>Collapse arrears chain chronologically</span>
                             </div>
                             <div class="engine-step">
                                 <span class="step-icon">→</span>
-                                <span>Split earnings by location (15 days Mumbai, 16 days Bangalore)</span>
+                                <span>Split earnings by location (15 days Office A, 16 days Office B)</span>
                             </div>
                             <div class="engine-step">
                                 <span class="step-icon">→</span>
-                                <span>Apply PF ceiling per timeline boundary</span>
+                                <span>Apply statutory ceilings per timeline boundary</span>
                             </div>
                             <div class="engine-step">
                                 <span class="step-icon">→</span>
@@ -515,7 +812,7 @@
                             </div>
                             <div class="check-item">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>PF ceiling honored</span>
+                                <span>Statutory ceilings honored</span>
                             </div>
                             <div class="check-item">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -531,11 +828,11 @@
                             </div>
                         </div>
                         <div class="invariants-box">
-                            <span class="invariants-label">Hard-Stop Invariants</span>
+                            <span class="invariants-label">Hard-Stop Guarantees</span>
                             <div class="invariants-list">
-                                <code>NET_PAY_NON_NEGATIVE</code>
-                                <code>ENGINE_VERSION_TRACKED</code>
-                                <code>STATUTORY_CEILING_ENFORCED</code>
+                                <span class="invariant-tag">Net Pay Always Positive</span>
+                                <span class="invariant-tag">Every Calculation Tracked</span>
+                                <span class="invariant-tag">Statutory Limits Enforced</span>
                             </div>
                         </div>
                     </div>
@@ -545,7 +842,7 @@
 
         <div class="stress-test-quote">
             <blockquote>
-                "If it can handle The Perfect Storm, your monthly payroll is a light breeze."
+                If it can handle The Perfect Storm, your monthly payroll is a light breeze.
             </blockquote>
         </div>
     </section>
