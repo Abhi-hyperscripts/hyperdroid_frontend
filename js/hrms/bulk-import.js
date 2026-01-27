@@ -16,7 +16,7 @@ let importResults = {
     phase2: null  // Employee creation results
 };
 
-// Template column definitions
+// Template column definitions - using codes for unique identification
 const TEMPLATE_COLUMNS = [
     { key: 'email', label: 'Email', required: true },
     { key: 'password', label: 'Password', required: false, hint: 'Leave empty to generate random' },
@@ -24,9 +24,9 @@ const TEMPLATE_COLUMNS = [
     { key: 'last_name', label: 'Last Name', required: true },
     { key: 'employee_code', label: 'Employee Code', required: false, hint: 'Leave empty to auto-generate' },
     { key: 'office_code', label: 'Office Code', required: true },
-    { key: 'department_name', label: 'Department Name', required: true },
-    { key: 'designation_name', label: 'Designation Name', required: true },
-    { key: 'shift_name', label: 'Shift Name', required: true },
+    { key: 'department_code', label: 'Department Code', required: true },
+    { key: 'designation_code', label: 'Designation Code', required: true },
+    { key: 'shift_code', label: 'Shift Code', required: true },
     { key: 'date_of_joining', label: 'Date of Joining', required: true, format: 'YYYY-MM-DD' },
     { key: 'date_of_birth', label: 'Date of Birth', required: true, format: 'YYYY-MM-DD' },
     { key: 'ctc', label: 'Annual CTC', required: true },
@@ -132,7 +132,7 @@ function downloadTemplate() {
     const headers = TEMPLATE_COLUMNS.map(col => col.label);
     const hints = TEMPLATE_COLUMNS.map(col => col.hint || (col.required ? 'Required' : 'Optional'));
 
-    // Sample data row
+    // Sample data row - uses codes for department, designation, shift
     const sampleData = [
         'john.doe@company.com',
         '', // Password - leave empty
@@ -140,9 +140,9 @@ function downloadTemplate() {
         'Doe',
         '', // Employee code - auto-generate
         'MUM-HQ',
-        'Engineering',
-        'Software Engineer',
-        'General Day Shift',
+        'ENG',        // Department code
+        'SE',         // Designation code
+        'GEN-DAY',    // Shift code
         '2026-01-15',
         '1990-05-20',
         '1200000',
@@ -378,63 +378,69 @@ function validateDataLocally() {
             }
         }
 
-        if (!item.department_name) {
-            item.errors.push('Department is required');
+        if (!item.department_code) {
+            item.errors.push('Department code is required');
         } else {
+            // Case-insensitive match by code
             const result = findUniqueMatch(
                 lookupData.departments,
-                d => d.department_name?.toLowerCase() === item.department_name.toLowerCase(),
+                d => d.department_code?.toLowerCase() === item.department_code.toLowerCase(),
                 'Department',
-                item.department_name
+                item.department_code
             );
             if (result.error) {
                 item.errors.push(result.error);
             } else {
                 item.department_id = result.match.id;
+                item.department_name = result.match.department_name; // Store for display
             }
         }
 
-        if (!item.designation_name) {
-            item.errors.push('Designation is required');
+        if (!item.designation_code) {
+            item.errors.push('Designation code is required');
         } else {
+            // Case-insensitive match by code
             const result = findUniqueMatch(
                 lookupData.designations,
-                d => d.designation_name?.toLowerCase() === item.designation_name.toLowerCase(),
+                d => d.designation_code?.toLowerCase() === item.designation_code.toLowerCase(),
                 'Designation',
-                item.designation_name
+                item.designation_code
             );
             if (result.error) {
                 item.errors.push(result.error);
             } else {
                 item.designation_id = result.match.id;
+                item.designation_name = result.match.designation_name; // Store for display
             }
         }
 
-        if (!item.shift_name) {
-            item.errors.push('Shift is required');
+        if (!item.shift_code) {
+            item.errors.push('Shift code is required');
         } else {
-            // Find shift that belongs to the selected office (office_id must be resolved first)
+            // Find shift by code that belongs to the selected office (office_id must be resolved first)
+            // Case-insensitive match by code
             const result = findUniqueMatch(
                 lookupData.shifts,
-                s => s.shift_name?.toLowerCase() === item.shift_name.toLowerCase() &&
+                s => s.shift_code?.toLowerCase() === item.shift_code.toLowerCase() &&
                      s.office_id === item.office_id,
                 'Shift',
-                item.shift_name
+                item.shift_code
             );
             if (result.error) {
-                // Try finding any shift with that name for a better error message
+                // Try finding any shift with that code for a better error message
                 const anyShift = lookupData.shifts.find(s =>
-                    s.shift_name?.toLowerCase() === item.shift_name.toLowerCase()
+                    s.shift_code?.toLowerCase() === item.shift_code.toLowerCase()
                 );
                 if (anyShift && item.office_id) {
-                    item.errors.push(`Shift '${item.shift_name}' not found in office ${item.office_code}`);
+                    item.errors.push(`Shift '${item.shift_code}' not found in office ${item.office_code}`);
                 } else if (!item.office_id) {
                     item.errors.push(`Cannot validate shift - office must be valid first`);
                 } else {
-                    item.errors.push(`Shift not found: ${item.shift_name}`);
+                    item.errors.push(`Shift not found: ${item.shift_code}`);
                 }
             } else {
                 item.shift_id = result.match.id;
+                item.shift_name = result.match.shift_name; // Store for display
             }
         }
 
@@ -605,9 +611,9 @@ function updatePreviewTable() {
                 <td>${escapeHtml(item.last_name || '-')}</td>
                 <td>${escapeHtml(item.employee_code || '(auto)')}</td>
                 <td>${escapeHtml(item.office_code || '-')}</td>
-                <td>${escapeHtml(item.department_name || '-')}</td>
-                <td>${escapeHtml(item.designation_name || '-')}</td>
-                <td>${escapeHtml(item.shift_name || '-')}</td>
+                <td>${escapeHtml(item.department_code || '-')}</td>
+                <td>${escapeHtml(item.designation_code || '-')}</td>
+                <td>${escapeHtml(item.shift_code || '-')}</td>
                 <td style="text-align: right; font-family: var(--font-family-mono);">${item.ctc ? formatCurrency(parseFloat(item.ctc)) : '-'}</td>
                 <td>${formatDate(item.date_of_joining) || '-'}</td>
                 <td>${formatDate(item.date_of_birth) || '-'}</td>
