@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Real-time Team Messaging | HyperDroid</title>
+    <meta name="description" content="Real-time team messaging integrated with video meetings. Persistent chat history, file sharing, and instant notifications powered by SignalR.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="landing-page landing-chat">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="../index.html">
+            <img src="../assets/logo-svg.svg" alt="HyperDroid" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="vision.html" class="nav-link">Vision</a>
+            <a href="chat.html" class="nav-link active">Chat</a>
+            <a href="drive.html" class="nav-link">Drive</a>
+            <a href="hrms.html" class="nav-link">HRMS</a>
+        </div>
+        <div class="nav-cta">
+            <a href="login.html" class="btn-secondary">Sign In</a>
+            <a href="register.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">Team Messaging</div>
+                <h1 class="hero-title">
+                    Real-time messaging,<br>
+                    <span class="highlight">seamless collaboration.</span>
+                </h1>
+                <p class="hero-description">
+                    Instant team communication powered by SignalR WebSocket technology. Integrated with video meetings, persistent chat history, file sharing, and system notifications.
+                </p>
+                <div class="hero-actions">
+                    <a href="login.html" class="btn-primary">Start Chatting</a>
+                    <a href="#features" class="btn-secondary">Explore Features</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">&lt;50ms</div>
+                        <div class="stat-label">Message Latency</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">E2E</div>
+                        <div class="stat-label">Encrypted</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Message Delivery</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                    </div>
+                    <div class="mockup-content">
+                        <svg width="100%" height="180" viewBox="0 0 400 180" fill="none">
+                            <!-- Sidebar -->
+                            <rect x="10" y="10" width="90" height="160" rx="8" fill="rgba(139, 92, 246, 0.1)" stroke="rgba(139, 92, 246, 0.2)" stroke-width="1"/>
+                            <rect x="20" y="25" width="70" height="8" rx="4" fill="rgba(255, 255, 255, 0.15)"/>
+                            <rect x="20" y="45" width="70" height="20" rx="4" fill="rgba(139, 92, 246, 0.3)"/>
+                            <rect x="20" y="75" width="70" height="20" rx="4" fill="rgba(255, 255, 255, 0.05)"/>
+                            <rect x="20" y="105" width="70" height="20" rx="4" fill="rgba(255, 255, 255, 0.05)"/>
+                            <!-- Chat area -->
+                            <rect x="110" y="10" width="280" height="125" rx="8" fill="rgba(255, 255, 255, 0.03)"/>
+                            <!-- Messages -->
+                            <rect x="125" y="25" width="120" height="25" rx="12" fill="rgba(139, 92, 246, 0.2)"/>
+                            <rect x="255" y="60" width="120" height="25" rx="12" fill="rgba(255, 255, 255, 0.1)"/>
+                            <rect x="125" y="95" width="150" height="25" rx="12" fill="rgba(139, 92, 246, 0.2)"/>
+                            <!-- Input -->
+                            <rect x="110" y="145" width="280" height="25" rx="8" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <div class="section-badge">Features</div>
+            <h2 class="section-title">Communication built for teams</h2>
+            <p class="section-description">
+                Real-time messaging that integrates seamlessly with video meetings, keeping all your team communication in one place.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Real-time Messaging</h3>
+                <p class="feature-description">Instant message delivery with SignalR WebSocket technology. Sub-50ms latency ensures conversations flow naturally without delays.</p>
+            </div>
+
+            <div class="feature-card blue">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Meeting Integration</h3>
+                <p class="feature-description">Chat seamlessly during video meetings. Messages persist after meetings end, so you never lose important discussions or shared links.</p>
+            </div>
+
+            <div class="feature-card pink">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">File Sharing</h3>
+                <p class="feature-description">Share documents, images, and files directly in chat. Automatic integration with Drive for secure storage and easy access.</p>
+            </div>
+
+            <div class="feature-card cyan">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Persistent History</h3>
+                <p class="feature-description">All messages saved to database for authenticated users. Access chat history anytime with up to 100 messages per conversation.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">System Notifications</h3>
+                <p class="feature-description">Automatic notifications for participant joins, leaves, mute actions, and meeting events. Stay informed about everything happening.</p>
+            </div>
+
+            <div class="feature-card orange">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" y1="8" x2="19" y2="14"/>
+                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Guest Support</h3>
+                <p class="feature-description">Both authenticated users and guests can participate in meeting chats. Guest messages visible to all, with name-based identification.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2 class="cta-title">Ready to streamline team communication?</h2>
+            <p class="cta-description">Start messaging with your team in real-time, integrated with your video meetings.</p>
+            <div class="cta-actions">
+                <a href="login.html" class="btn-primary">Get Started Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <img src="../assets/logo-svg.svg" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="vision.html" class="footer-link">Vision</a>
+            <a href="chat.html" class="footer-link">Chat</a>
+            <a href="drive.html" class="footer-link">Drive</a>
+            <a href="hrms.html" class="footer-link">HRMS</a>
+            <a href="login.html" class="footer-link">Sign In</a>
+        </div>
+        <p class="footer-copy">&copy; 2025 HyperDroid. All rights reserved.</p>
+    </footer>
+</body>
+</html>
