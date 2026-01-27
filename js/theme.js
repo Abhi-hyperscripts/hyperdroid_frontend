@@ -492,10 +492,8 @@ const Theme = {
      * Get system color scheme preference
      */
     getSystemPreference() {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
+        // Default to dark mode for HyperDroid (ignore system preference)
+        return 'dark';
     },
 
     /**
