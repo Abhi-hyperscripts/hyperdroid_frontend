@@ -188,93 +188,202 @@
             <div class="section-badge stress-badge">Battle Tested</div>
             <h2 class="section-title">We call it "The Perfect Storm"</h2>
             <p class="section-description">
-                The hardest payroll scenario we could imagine. Triple retroactive salary revisions, mid-month office transfers, PF ceiling changes—all in one payslip. Our engine passed every test.
+                We designed the hardest payroll scenario imaginable—then ran it through our engine. Here's what happened.
             </p>
         </div>
 
-        <div class="stress-test-container">
-            <div class="stress-test-scenario">
-                <div class="scenario-header">
-                    <div class="scenario-icon">
+        <!-- Timeline -->
+        <div class="timeline-container">
+            <!-- Phase 1: The Setup -->
+            <div class="timeline-phase">
+                <div class="phase-marker">
+                    <div class="phase-icon setup">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                            <path d="M2 17l10 5 10-5"/>
-                            <path d="M2 12l10 5 10-5"/>
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
                         </svg>
                     </div>
-                    <h3>The Test Scenario</h3>
+                    <span class="phase-label">The Setup</span>
                 </div>
-                <div class="scenario-challenges">
-                    <div class="challenge-item">
-                        <span class="challenge-number">1</span>
-                        <div class="challenge-text">
-                            <strong>Triple Retro Chain</strong>
-                            <span>Three salary revisions applied retroactively, each affecting the previous one's arrears calculations</span>
+                <div class="phase-content">
+                    <div class="timeline-card setup-card">
+                        <div class="card-header">
+                            <h4>Employee: Priya Sharma</h4>
+                            <span class="card-tag">Test Subject</span>
                         </div>
-                    </div>
-                    <div class="challenge-item">
-                        <span class="challenge-number">2</span>
-                        <div class="challenge-text">
-                            <strong>Mid-Month Transfer</strong>
-                            <span>Employee moved from Mumbai to Bangalore on day 15—different tax jurisdictions, prorated correctly</span>
-                        </div>
-                    </div>
-                    <div class="challenge-item">
-                        <span class="challenge-number">3</span>
-                        <div class="challenge-text">
-                            <strong>PF Ceiling Timeline</strong>
-                            <span>₹15,000 ceiling changed to ₹21,000 mid-period—engine tracked both limits accurately</span>
-                        </div>
-                    </div>
-                    <div class="challenge-item">
-                        <span class="challenge-number">4</span>
-                        <div class="challenge-text">
-                            <strong>Order Independence</strong>
-                            <span>Process revisions in any order—same result every time, guaranteed deterministic</span>
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Base Salary</span>
+                                <span class="detail-value">₹75,000/month</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Location</span>
+                                <span class="detail-value">Mumbai → Bangalore (Day 15)</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Period</span>
+                                <span class="detail-value">January 2025</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="stress-test-results">
-                <div class="results-header">
-                    <div class="results-icon">
+            <!-- Phase 2: The Chaos -->
+            <div class="timeline-phase">
+                <div class="phase-marker">
+                    <div class="phase-icon chaos">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                    </div>
+                    <span class="phase-label">The Chaos</span>
+                </div>
+                <div class="phase-content chaos-grid">
+                    <div class="timeline-card chaos-card">
+                        <div class="chaos-number">1</div>
+                        <div class="chaos-content">
+                            <h5>Retro Revision #1</h5>
+                            <p>Salary increased to ₹85,000 effective Oct 2024</p>
+                            <span class="chaos-impact">4 months arrears triggered</span>
+                        </div>
+                    </div>
+                    <div class="timeline-card chaos-card">
+                        <div class="chaos-number">2</div>
+                        <div class="chaos-content">
+                            <h5>Retro Revision #2</h5>
+                            <p>Further increased to ₹90,000 effective Nov 2024</p>
+                            <span class="chaos-impact">Arrears on arrears</span>
+                        </div>
+                    </div>
+                    <div class="timeline-card chaos-card">
+                        <div class="chaos-number">3</div>
+                        <div class="chaos-content">
+                            <h5>Retro Revision #3</h5>
+                            <p>Adjusted to ₹88,000 effective Dec 2024</p>
+                            <span class="chaos-impact">Negative arrears correction</span>
+                        </div>
+                    </div>
+                    <div class="timeline-card chaos-card">
+                        <div class="chaos-number">4</div>
+                        <div class="chaos-content">
+                            <h5>PF Ceiling Change</h5>
+                            <p>Government raised limit ₹15K → ₹21K</p>
+                            <span class="chaos-impact">Mid-period statutory change</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 3: The Processing -->
+            <div class="timeline-phase">
+                <div class="phase-marker">
+                    <div class="phase-icon processing">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                            <rect x="9" y="9" width="6" height="6"/>
+                            <line x1="9" y1="1" x2="9" y2="4"/>
+                            <line x1="15" y1="1" x2="15" y2="4"/>
+                            <line x1="9" y1="20" x2="9" y2="23"/>
+                            <line x1="15" y1="20" x2="15" y2="23"/>
+                            <line x1="20" y1="9" x2="23" y2="9"/>
+                            <line x1="20" y1="14" x2="23" y2="14"/>
+                            <line x1="1" y1="9" x2="4" y2="9"/>
+                            <line x1="1" y1="14" x2="4" y2="14"/>
+                        </svg>
+                    </div>
+                    <span class="phase-label">Engine Processing</span>
+                </div>
+                <div class="phase-content">
+                    <div class="timeline-card engine-card">
+                        <div class="engine-animation">
+                            <div class="engine-pulse"></div>
+                            <div class="engine-core">
+                                <span>v3.0.114</span>
+                            </div>
+                        </div>
+                        <div class="engine-steps">
+                            <div class="engine-step">
+                                <span class="step-icon">→</span>
+                                <span>Collapse arrears chain by event_occurred_at</span>
+                            </div>
+                            <div class="engine-step">
+                                <span class="step-icon">→</span>
+                                <span>Split earnings by location (15 days Mumbai, 16 days Bangalore)</span>
+                            </div>
+                            <div class="engine-step">
+                                <span class="step-icon">→</span>
+                                <span>Apply PF ceiling per timeline boundary</span>
+                            </div>
+                            <div class="engine-step">
+                                <span class="step-icon">→</span>
+                                <span>Calculate tax jurisdiction per location</span>
+                            </div>
+                            <div class="engine-step">
+                                <span class="step-icon">→</span>
+                                <span>Generate calculation proof (57 auditable fields)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase 4: The Results -->
+            <div class="timeline-phase">
+                <div class="phase-marker">
+                    <div class="phase-icon results">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>
                         </svg>
                     </div>
-                    <h3>The Results</h3>
+                    <span class="phase-label">The Verdict</span>
                 </div>
-                <div class="results-grid">
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>10 Trap Questions</span>
+                <div class="phase-content">
+                    <div class="timeline-card results-card">
+                        <div class="results-header-row">
+                            <div class="results-status">
+                                <span class="status-badge passed">ALL TESTS PASSED</span>
+                            </div>
+                            <div class="trap-questions">
+                                <span class="trap-count">10</span>
+                                <span class="trap-label">Trap Questions<br>Answered</span>
+                            </div>
+                        </div>
+                        <div class="results-checks">
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Arrears collapsed correctly</span>
+                            </div>
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Location split accurate</span>
+                            </div>
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>PF ceiling honored</span>
+                            </div>
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Tax jurisdiction correct</span>
+                            </div>
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Order-independent verified</span>
+                            </div>
+                            <div class="check-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Net pay non-negative</span>
+                            </div>
+                        </div>
+                        <div class="invariants-box">
+                            <span class="invariants-label">Hard-Stop Invariants</span>
+                            <div class="invariants-list">
+                                <code>NET_PAY_NON_NEGATIVE</code>
+                                <code>ENGINE_VERSION_TRACKED</code>
+                                <code>STATUTORY_CEILING_ENFORCED</code>
+                            </div>
+                        </div>
                     </div>
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>Arrears Chain Collapsed</span>
-                    </div>
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>Multi-Location Split</span>
-                    </div>
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>Tax Jurisdiction Tracked</span>
-                    </div>
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>PF Ceiling Honored</span>
-                    </div>
-                    <div class="result-item passed">
-                        <span class="result-check">✓</span>
-                        <span>Net Pay Non-Negative</span>
-                    </div>
-                </div>
-                <div class="engine-version">
-                    <span class="version-label">Engine Version</span>
-                    <span class="version-number">v3.0.114-ORDER-INDEPENDENT</span>
                 </div>
             </div>
         </div>
