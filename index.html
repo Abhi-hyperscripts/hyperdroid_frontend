@@ -171,6 +171,9 @@
         .home-hero-visual {
             position: relative;
             animation: fadeInUp 0.8s ease-out 0.2s both;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         /* Ambient glow behind mockup */
@@ -500,51 +503,36 @@
             margin-top: 2px;
         }
 
-        /* Floating decorative elements */
-        .hero-float-element {
-            position: absolute;
-            pointer-events: none;
-            z-index: 2;
+        /* Badges row below workspace card */
+        .hero-badges-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+            width: 560px;
         }
 
-        .hero-float-element.badge {
-            padding: 8px 14px;
+        .hero-badge {
+            padding: 10px 18px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.7);
+            border-radius: 24px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .hero-float-element.badge svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .hero-float-element.top-right {
-            top: -20px;
-            right: -30px;
-            animation: floatBadge 4s ease-in-out infinite;
-        }
-
-        .hero-float-element.bottom-left {
-            bottom: 30px;
-            left: -40px;
-            animation: floatBadge 5s ease-in-out 1s infinite;
-        }
-
-        @keyframes floatBadge {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .hero-badge svg {
+            width: 16px;
+            height: 16px;
         }
 
         .badge-dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #34d399;
             animation: pulse 2s ease-in-out infinite;
@@ -599,12 +587,13 @@
                 min-height: 300px;
             }
 
-            .hero-float-element.top-right {
-                right: 0;
+            .hero-badges-row {
+                gap: 12px;
             }
 
-            .hero-float-element.bottom-left {
-                left: 0;
+            .hero-badge {
+                padding: 8px 14px;
+                font-size: 11px;
             }
         }
 
@@ -664,8 +653,14 @@
                 gap: 12px;
             }
 
-            .hero-float-element {
-                display: none;
+            .hero-badges-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .hero-badge {
+                padding: 6px 12px;
+                font-size: 10px;
             }
 
             .hero-mockup-glow {
@@ -1304,18 +1299,6 @@
                 <!-- Ambient glow -->
                 <div class="hero-mockup-glow"></div>
 
-                <!-- Floating badges -->
-                <div class="hero-float-element badge top-right">
-                    <div class="badge-dot"></div>
-                    Live collaboration
-                </div>
-                <div class="hero-float-element badge bottom-left">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                    Enterprise secure
-                </div>
-
                 <!-- App window -->
                 <div class="hero-app-window">
                     <div class="window-header">
@@ -1436,6 +1419,21 @@
                                 </div>
                             </a>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Badges below workspace card -->
+                <div class="hero-badges-row">
+                    <div class="hero-badge">
+                        <div class="badge-dot"></div>
+                        Live collaboration
+                    </div>
+                    <div class="hero-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12l2 2 4-4"/>
+                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                        </svg>
+                        Statutory compliant
                     </div>
                 </div>
             </div>
