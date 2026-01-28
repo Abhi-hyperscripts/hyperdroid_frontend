@@ -996,6 +996,266 @@
                 font-size: 36px;
             }
         }
+
+        /* Deployment Section */
+        .deployment-section {
+            padding: 120px 60px;
+            position: relative;
+            background: linear-gradient(180deg, #0a0f1a 0%, #050810 100%);
+        }
+
+        .deployment-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .deployment-header .section-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #34d399;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 24px;
+        }
+
+        .deployment-header h2 {
+            font-family: 'Russo One', sans-serif;
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 20px 0;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .deployment-header p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* Deployment Cards Grid */
+        .deployment-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+            max-width: 1000px;
+            margin: 0 auto 64px;
+        }
+
+        .deployment-card {
+            position: relative;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .deployment-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--deploy-gradient);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .deployment-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--deploy-border);
+            box-shadow: 0 20px 60px var(--deploy-shadow);
+        }
+
+        .deployment-card:hover::before {
+            opacity: 1;
+        }
+
+        .deployment-card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .deployment-card.cloud {
+            --deploy-gradient: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+            --deploy-border: rgba(59, 130, 246, 0.3);
+            --deploy-shadow: rgba(59, 130, 246, 0.15);
+            --deploy-color: #60a5fa;
+            --deploy-bg: rgba(59, 130, 246, 0.15);
+        }
+
+        .deployment-card.selfhost {
+            --deploy-gradient: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+            --deploy-border: rgba(16, 185, 129, 0.3);
+            --deploy-shadow: rgba(16, 185, 129, 0.15);
+            --deploy-color: #34d399;
+            --deploy-bg: rgba(16, 185, 129, 0.15);
+        }
+
+        .deployment-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            background: var(--deploy-bg);
+            border: 1px solid var(--deploy-border);
+        }
+
+        .deployment-icon svg {
+            width: 32px;
+            height: 32px;
+            color: var(--deploy-color);
+        }
+
+        .deployment-card h3 {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 26px;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 8px 0;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .deployment-tagline {
+            font-size: 15px;
+            color: var(--deploy-color);
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .deployment-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px 0;
+        }
+
+        .deployment-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.75);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .deployment-features li:last-child {
+            border-bottom: none;
+        }
+
+        .deployment-features li svg {
+            width: 18px;
+            height: 18px;
+            color: var(--deploy-color);
+            flex-shrink: 0;
+        }
+
+        .deployment-best-for {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .deployment-best-for-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .deployment-best-for-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        /* Deployment Note */
+        .deployment-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 28px 32px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+
+        .deployment-note-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            flex-shrink: 0;
+        }
+
+        .deployment-note-icon svg {
+            width: 24px;
+            height: 24px;
+            color: #fbbf24;
+        }
+
+        .deployment-note-content strong {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .deployment-note-content p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Deployment Responsive */
+        @media (max-width: 900px) {
+            .deployment-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .deployment-section {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+
+            .deployment-note {
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .deployment-card {
+                padding: 28px;
+            }
+
+            .deployment-note {
+                padding: 20px 24px;
+            }
+        }
     </style>
 </head>
 <body class="landing-page home-page">
@@ -1027,38 +1287,15 @@
             <div class="home-hero-text">
                 <div class="home-badge">Enterprise Workspace Platform</div>
                 <h1 class="home-title">
-                    Everything your team needs.<br>
+                    Own your enterprise stack.<br>
                     <span class="gradient-text">One unified platform.</span>
                 </h1>
                 <p class="home-description">
-                    Video meetings, team chat, cloud storage, and HR management — seamlessly integrated. Built for teams that demand more.
+                    Video conferencing, team chat, cloud storage, and HR management — self-hosted or cloud. One platform, one contract, complete data sovereignty.
                 </p>
                 <div class="home-cta">
                     <a href="pages/register.html" class="btn-primary">Start Free Trial</a>
                     <a href="#products" class="btn-secondary">Explore Products</a>
-                </div>
-                <div class="home-trust">
-                    <div class="trust-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                        <span>Self-hosted</span>
-                    </div>
-                    <div class="trust-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                        <span>End-to-end encrypted</span>
-                    </div>
-                    <div class="trust-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M2 12h20"/>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        </svg>
-                        <span>Global CDN</span>
-                    </div>
                 </div>
             </div>
 
@@ -1201,6 +1438,130 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deployment Section -->
+    <section class="deployment-section" id="deployment">
+        <div class="deployment-header">
+            <div class="section-badge">Two Ways to Use</div>
+            <h2>Your workspace. Your way.</h2>
+            <p>Get started instantly on HyperDroid Cloud, or deploy on your own servers with full white-labeling.</p>
+        </div>
+
+        <div class="deployment-grid">
+            <!-- Cloud / SaaS Card -->
+            <div class="deployment-card cloud">
+                <div class="deployment-card-content">
+                    <div class="deployment-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                        </svg>
+                    </div>
+                    <h3>HyperDroid Cloud</h3>
+                    <p class="deployment-tagline">Start in minutes</p>
+                    <ul class="deployment-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            No setup, instant access
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            We manage infrastructure & updates
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            99.9% uptime SLA
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Pay-as-you-grow pricing
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Secure data centers
+                        </li>
+                    </ul>
+                    <div class="deployment-best-for">
+                        <div class="deployment-best-for-label">Best for</div>
+                        <div class="deployment-best-for-text">Teams who want to start fast and focus on work, not servers</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Self-Hosted Card -->
+            <div class="deployment-card selfhost">
+                <div class="deployment-card-content">
+                    <div class="deployment-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                            <line x1="6" y1="6" x2="6.01" y2="6"/>
+                            <line x1="6" y1="18" x2="6.01" y2="18"/>
+                        </svg>
+                    </div>
+                    <h3>On-Premises</h3>
+                    <p class="deployment-tagline">Your brand, your servers</p>
+                    <ul class="deployment-features">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            White-label with your logo & colors
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Data stays on your infrastructure
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Air-gapped deployment option
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Meet any compliance requirement
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Your domain, fully branded
+                        </li>
+                    </ul>
+                    <div class="deployment-best-for">
+                        <div class="deployment-best-for-label">Best for</div>
+                        <div class="deployment-best-for-text">Organizations needing data sovereignty, compliance, or custom branding</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="deployment-note">
+            <div class="deployment-note-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div class="deployment-note-content">
+                <strong>Same platform. Same features. Different control.</strong>
+                <p>On-premises customers get the full stack with white-labeling capabilities — your logo, your domain, your brand.</p>
             </div>
         </div>
     </section>

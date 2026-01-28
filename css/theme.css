@@ -666,7 +666,7 @@
 [data-theme="dark"] .shared-logo,
 [data-theme="dark"] .meeting-logo,
 [data-theme="dark"] .theme-aware-logo {
-  filter: brightness(0) invert(1);
+  filter: invert(1);
   transition: filter var(--transition-base);
 }
 

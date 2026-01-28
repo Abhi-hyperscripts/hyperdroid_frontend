@@ -562,7 +562,7 @@ body {
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     color: var(--text-primary);
-    padding: 15px 32px;
+    padding: 10px 32px 16px;
     max-height: 70px;
     display: flex;
     justify-content: space-between;
@@ -591,6 +591,7 @@ body {
 .navbar-logo {
     height: 40px;
     width: auto;
+    transform: translateY(2px);
 }
 
 .navbar-menu {
@@ -798,7 +799,7 @@ body {
 }
 
 .dashboard-content {
-    padding: 32px;
+    padding: 100px 32px 32px 32px;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -901,7 +902,7 @@ body {
     width: 100%;
     max-width: 500px;
     max-height: calc(100vh - 1.5rem);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Prevent any horizontal overflow in modals */
@@ -2688,7 +2689,7 @@ body {
     margin-left: 4px;
 }
 
-/* Pre-Meeting Device Testing Page */
+/* Pre-Meeting Device Testing Page - Blue/Cyan Animated Background */
 body:has(.pre-meeting-container) {
     display: flex;
     align-items: center;
@@ -2696,18 +2697,100 @@ body:has(.pre-meeting-container) {
     min-height: 100vh;
     margin: 0;
     padding: 10px;
+    position: relative;
+    overflow: hidden;
+    background: #050810 !important;
+}
+
+/* Animated gradient mesh background - Vision Landing Page Style */
+body:has(.pre-meeting-container)::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 70% 20%, rgba(99, 102, 241, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse 40% 50% at 80% 70%, rgba(6, 182, 212, 0.3) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 30% at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+    animation: lobbyGradientShift 30s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Grid pattern overlay - Vision Landing Page Style */
+body:has(.pre-meeting-container)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes lobbyGradientShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(3%, -2%) rotate(1deg) scale(1.02); }
+    66% { transform: translate(-2%, 3%) rotate(-1deg) scale(0.98); }
+}
+
+/* Floating rotating circle - top right */
+.pre-meeting-container::before {
+    content: '';
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    top: 10%;
+    right: -150px;
+    animation: floatRotate 40s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Floating organic shape - bottom left */
+.pre-meeting-container::after {
+    content: '';
+    position: fixed;
+    width: 250px;
+    height: 250px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    bottom: 10%;
+    left: -80px;
+    animation: floatRotate 30s linear infinite reverse;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes floatRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .pre-meeting-container {
+    position: relative;
+    z-index: 1;
     max-width: 900px;
     width: 100%;
     padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px var(--hover-overlay-darker);
-    border: 1px solid var(--hover-overlay-strong);
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 20px;
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 0 80px rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     animation: fadeInUp 0.6s ease-out;
 }
 
@@ -2859,8 +2942,8 @@ body:has(.pre-meeting-container) {
 }
 
 .device-control-btn.active {
-    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-    color: var(--text-inverse);
+    background: var(--gradient-primary);
+    color: var(--btn-primary-text);
     border-color: var(--brand-primary);
 }
 
@@ -5213,7 +5296,7 @@ label.toggle-switch,
 
     /* Dashboard content */
     .dashboard-content {
-        padding: 16px;
+        padding: 90px 16px 16px 16px;
     }
 
     .dashboard-header {
@@ -5418,7 +5501,7 @@ label.toggle-switch,
     }
 
     .dashboard-content {
-        padding: 12px;
+        padding: 80px 12px 12px 12px;
     }
 
     .dashboard-header h1 {
@@ -5954,8 +6037,8 @@ label.toggle-switch,
     box-shadow: 0 8px 20px var(--border-color-strong);
     z-index: 9999;
     display: none;
-    width: 220px;
-    padding: 8px;
+    min-width: 280px;
+    padding: 12px;
 }
 
 .date-dropdown.open {

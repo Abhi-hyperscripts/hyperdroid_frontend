@@ -13,7 +13,7 @@ body.chat-page {
     display: flex;
     height: calc(100vh - 70px - 24px);
     gap: 12px;
-    margin: 12px;
+    margin: 82px 12px 12px 12px;
     position: relative;
     overflow: hidden;
 }
@@ -1024,8 +1024,8 @@ body.chat-page {
 @media (max-width: 768px) {
     .chat-container {
         flex-direction: column;
-        height: calc(100vh - 60px);
-        margin: 0;
+        height: calc(100vh - 70px);
+        margin: 70px 0 0 0;
         gap: 0;
         border-radius: 0;
     }

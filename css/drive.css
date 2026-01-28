@@ -3,7 +3,7 @@
 .drive-content {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 100px 24px 24px 24px;
 }
 
 /* Header */
@@ -573,7 +573,7 @@
 /* Responsive - Tablet */
 @media (max-width: 768px) {
     .drive-content {
-        padding: 16px;
+        padding: 90px 16px 16px 16px;
     }
 
     .drive-header {
@@ -668,7 +668,7 @@
 /* Responsive - Mobile */
 @media (max-width: 480px) {
     .drive-content {
-        padding: 12px;
+        padding: 80px 12px 12px 12px;
     }
 
     .drive-breadcrumb {

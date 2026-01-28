@@ -5,7 +5,7 @@
    ============================================================= */
 
 /* =============================================================
-   BODY & CONTAINER
+   BODY & CONTAINER - Vision Landing Page Style Background
    ============================================================= */
 body.shared-page {
     display: flex;
@@ -13,22 +13,104 @@ body.shared-page {
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-300) 100%);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    background: #050810 !important;
+}
+
+/* Animated gradient mesh background */
+body.shared-page::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 70% 20%, rgba(99, 102, 241, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse 40% 50% at 80% 70%, rgba(6, 182, 212, 0.3) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 30% at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+    animation: sharedGradientShift 30s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Grid pattern overlay */
+body.shared-page::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes sharedGradientShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(3%, -2%) rotate(1deg) scale(1.02); }
+    66% { transform: translate(-2%, 3%) rotate(-1deg) scale(0.98); }
 }
 
 .shared-container {
-    max-width: 600px;
+    position: relative;
+    z-index: 1;
+    max-width: 500px;
     width: 100%;
     margin: 20px;
     padding: 40px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color-light);
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 20px;
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 0 80px rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
     animation: fadeInUp 0.6s ease-out;
+}
+
+/* Floating rotating circle - top right */
+.shared-container::before {
+    content: '';
+    position: fixed;
+    width: 350px;
+    height: 350px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    top: 5%;
+    right: -120px;
+    animation: sharedFloatRotate 40s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Floating organic shape - bottom left */
+.shared-container::after {
+    content: '';
+    position: fixed;
+    width: 220px;
+    height: 220px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    bottom: 5%;
+    left: -60px;
+    animation: sharedFloatRotate 30s linear infinite reverse;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes sharedFloatRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @keyframes fadeInUp {
@@ -47,7 +129,8 @@ body.shared-page {
    ============================================================= */
 .shared-logo {
     height: 50px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    filter: invert(1);
 }
 
 .shared-icon {
@@ -63,7 +146,8 @@ body.shared-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 20px;
     animation: pulse 2s ease-in-out infinite;
 }
@@ -71,12 +155,18 @@ body.shared-page {
 .shared-icon-svg svg {
     width: 44px;
     height: 44px;
-    color: var(--text-inverse);
-    stroke: var(--text-inverse);
+    color: #60a5fa;
+    stroke: #60a5fa;
 }
 
 .shared-icon-svg.folder-icon {
-    background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.shared-icon-svg.folder-icon svg {
+    color: #f59e0b;
+    stroke: #f59e0b;
 }
 
 @keyframes pulse {
@@ -87,7 +177,7 @@ body.shared-page {
 .shared-title {
     font-size: 1.25rem;
     margin-bottom: 8px;
-    color: var(--text-primary);
+    color: #ffffff;
     font-weight: 600;
     letter-spacing: -0.02em;
     word-break: break-word;
@@ -95,7 +185,7 @@ body.shared-page {
 
 .shared-subtitle {
     font-size: 15px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.7);
     margin-bottom: 32px;
     letter-spacing: -0.01em;
 }
@@ -104,20 +194,20 @@ body.shared-page {
    FILE CARD
    ============================================================= */
 .file-card {
-    background: var(--bg-card-transparent);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 24px;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     text-align: left;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .file-card-header {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 .file-icon-large {
@@ -126,9 +216,10 @@ body.shared-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    color: var(--text-inverse);
+    color: #60a5fa;
 }
 
 .file-icon-large svg {
@@ -143,14 +234,14 @@ body.shared-page {
 .file-name {
     font-size: 15px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #ffffff;
     margin-bottom: 4px;
     word-break: break-word;
 }
 
 .file-meta {
     font-size: 14px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* =============================================================
@@ -163,7 +254,7 @@ body.shared-page {
     gap: 10px;
     width: 100%;
     padding: 16px 32px;
-    background: var(--btn-primary-bg);
+    background: var(--gradient-primary);
     color: var(--btn-primary-text);
     border: none;
     border-radius: 12px;
@@ -172,12 +263,13 @@ body.shared-page {
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .download-btn:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    background: var(--btn-primary-hover);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    background: var(--gradient-primary-hover);
     color: var(--btn-primary-text);
 }
 
@@ -200,15 +292,15 @@ body.shared-page {
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px;
-    background: var(--bg-tertiary-transparent);
+    background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
     margin-bottom: 10px;
-    border: 1px solid var(--border-color-lighter);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     transition: all 0.2s ease;
 }
 
 .folder-file-item:hover {
-    background: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.05);
     transform: translateX(4px);
 }
 
@@ -226,7 +318,7 @@ body.shared-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--overlay-strong);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     flex-shrink: 0;
 }
@@ -234,7 +326,7 @@ body.shared-page {
 .folder-file-icon svg {
     width: 18px;
     height: 18px;
-    color: var(--text-primary);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .folder-file-details {
@@ -245,7 +337,7 @@ body.shared-page {
 .folder-file-name {
     font-size: 14px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -253,13 +345,13 @@ body.shared-page {
 
 .folder-file-size {
     font-size: 12px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .folder-file-download {
     padding: 8px 16px;
-    background: var(--btn-primary-bg);
-    color: var(--btn-primary-text);
+    background: var(--gradient-primary);
+    color: #ffffff;
     border: none;
     border-radius: 8px;
     font-size: 13px;
@@ -271,8 +363,8 @@ body.shared-page {
 }
 
 .folder-file-download:hover {
-    background: var(--btn-primary-hover);
-    color: var(--btn-primary-text);
+    background: var(--gradient-primary-hover);
+    color: #ffffff;
 }
 
 /* =============================================================
@@ -286,26 +378,30 @@ body.shared-page {
     display: block;
     font-size: 14px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 8px;
 }
 
 .password-form input {
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid var(--border-color-medium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     font-size: 15px;
     margin-bottom: 16px;
     transition: all 0.2s ease;
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.password-form input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .password-form input:focus {
     outline: none;
-    border-color: var(--gray-900);
-    box-shadow: 0 0 0 3px var(--overlay-strong);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 /* =============================================================
@@ -322,9 +418,10 @@ body.shared-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--danger-alpha-10);
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: 50%;
-    color: var(--color-danger);
+    color: #f87171;
 }
 
 .error-icon svg {
@@ -335,13 +432,13 @@ body.shared-page {
 .error-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #ffffff;
     margin-bottom: 8px;
 }
 
 .error-message {
     font-size: 15px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* =============================================================
@@ -357,8 +454,8 @@ body.shared-page {
 .spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid var(--overlay-medium);
-    border-top-color: var(--gray-900);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--brand-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -369,7 +466,7 @@ body.shared-page {
 
 .loading-text {
     font-size: 15px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* =============================================================
@@ -381,9 +478,10 @@ body.shared-page {
     justify-content: center;
     gap: 8px;
     padding: 14px 20px;
-    background: var(--warning-alpha-15);
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: 10px;
-    color: var(--color-warning-text);
+    color: #fbbf24;
     font-size: 14px;
     margin-top: 16px;
 }
