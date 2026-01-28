@@ -61,10 +61,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .login-split-container {
-    min-height: 100vh;
+    height: 100vh;
     display: grid;
     grid-template-columns: 1fr 1fr;
     padding-top: 72px;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -77,8 +79,10 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 60px;
+    padding: 40px 50px;
     overflow: hidden;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 /* Multi-layer gradient background */
@@ -194,7 +198,7 @@
 }
 
 .showcase-header {
-    margin-bottom: 50px;
+    margin-bottom: 30px;
 }
 
 .showcase-logo {
@@ -238,11 +242,11 @@
 }
 
 .showcase-headline {
-    font-size: 48px;
+    font-size: 42px;
     font-weight: var(--font-weight-bold);
     line-height: 1.15;
     letter-spacing: -0.03em;
-    margin: 0 0 20px 0;
+    margin: 0 0 16px 0;
     background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -265,8 +269,8 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: auto auto auto;
-    gap: 14px;
-    margin-bottom: 40px;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
 .bento-card {
@@ -274,14 +278,14 @@
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-xl);
-    padding: 20px;
+    padding: 16px;
     transition: var(--transition-all);
     cursor: default;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 /* Subtle gradient on cards */
@@ -407,8 +411,8 @@
 
 .trust-bar {
     display: flex;
-    gap: 28px;
-    padding-top: 28px;
+    gap: 24px;
+    padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -435,10 +439,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px;
+    padding: 40px;
     background: linear-gradient(160deg, #dbeafe 0%, #ede9fe 50%, #fce7f3 100%);
     position: relative;
     overflow: hidden;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 /* Colorful gradient orbs - more vibrant */

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify License - TenantManager</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/tooltip.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/tenant-manager.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="dashboard.html">
+                <img src="../../assets/brand_logo.png" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Populated by TMNavigation.init() -->
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <div class="app-container" id="appContainer">
+        <!-- App Header -->
+        <div class="app-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span class="current">Verify License</span>
+                </nav>
+                <div class="app-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>License Management</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Verify License</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="app-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="app-sidebar" id="appSidebar">
+                <div class="sidebar-header">
+                    <h3>TenantManager</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Overview Section -->
+                    <div class="nav-group" data-group="overview">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                Overview
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="dashboard" onclick="navigateTo('dashboard.html')">
+                                <span class="nav-number">1</span><span class="nav-label">Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Management Section -->
+                    <div class="nav-group" data-group="management">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Management
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="tenants" onclick="navigateTo('tenants.html')">
+                                <span class="nav-number">2</span><span class="nav-label">Tenants</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="services" onclick="navigateTo('services.html')">
+                                <span class="nav-number">3</span><span class="nav-label">Services</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tools Section -->
+                    <div class="nav-group" data-group="tools">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Tools
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="verify" onclick="navigateTo('verify.html')">
+                                <span class="nav-number">4</span><span class="nav-label">Verify License</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="app-content">
+                <!-- License Input Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            Enter License Token
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted" style="margin-bottom: 1.5rem;">
+                            Paste an encrypted license token to verify its contents and validity. This tool decrypts and validates the license signature.
+                        </p>
+
+                        <div class="form-group">
+                            <label class="form-label" for="licenseToken">License Token</label>
+                            <textarea id="licenseToken" class="form-control" rows="6" placeholder="Paste the encrypted license token here..."></textarea>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="verifyLicense()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Verify License
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" style="display: none;">
+                    <div id="validityAlert" class="alert" style="margin-bottom: 1.5rem;"></div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                License Details
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="details-grid">
+                                <div class="details-section">
+                                    <h4>Tenant Information</h4>
+                                    <div class="details-list">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Tenant ID</span>
+                                            <span class="detail-value" id="resultTenantId"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Tenant Name</span>
+                                            <span class="detail-value" id="resultTenantName"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Deployment Type</span>
+                                            <span class="detail-value" id="resultDeploymentType"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Max Tenants</span>
+                                            <span class="detail-value" id="resultMaxTenants"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Max Users</span>
+                                            <span class="detail-value" id="resultMaxUsers"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="details-section">
+                                    <h4>License Validity</h4>
+                                    <div class="details-list">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Start Date</span>
+                                            <span class="detail-value" id="resultStartDate"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Expiry Date</span>
+                                            <span class="detail-value" id="resultExpiryDate"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Issued At</span>
+                                            <span class="detail-value" id="resultIssuedAt"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="details-section" style="margin-top: 1.5rem;">
+                                <h4>Services</h4>
+                                <div id="resultServices" class="tags"></div>
+                            </div>
+
+                            <div class="details-section" style="margin-top: 1.5rem;">
+                                <h4>Features</h4>
+                                <div id="resultFeatures" class="tags"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/toast.js"></script>
+    <script src="../../js/tenant-manager/config.js"></script>
+    <script src="../../js/tenant-manager/api.js"></script>
+    <script src="../../js/tenant-manager/navigation.js"></script>
+    <script>
+        // Check authentication
+        if (!api.isAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Initialize navigation
+        TMNavigation.init('verify');
+
+        // Sidebar toggle functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const appContainer = document.getElementById('appContainer');
+        const appSidebar = document.getElementById('appSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // Check saved state or default to open on desktop
+        function initSidebar() {
+            const savedState = localStorage.getItem('sidebarOpen');
+            const isDesktop = window.innerWidth > 768;
+
+            // Default to open on desktop, closed on mobile (unless saved state exists)
+            const shouldBeOpen = savedState !== null ? savedState === 'true' : isDesktop;
+
+            if (shouldBeOpen) {
+                appContainer.classList.add('sidebar-open');
+                appSidebar.classList.add('open');
+            }
+        }
+
+        // Initialize sidebar state
+        initSidebar();
+
+        sidebarToggle.addEventListener('click', () => {
+            const isOpen = appContainer.classList.toggle('sidebar-open');
+            appSidebar.classList.toggle('open');
+            localStorage.setItem('sidebarOpen', isOpen);
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            appContainer.classList.remove('sidebar-open');
+            appSidebar.classList.remove('open');
+            localStorage.setItem('sidebarOpen', 'false');
+        });
+
+        // Navigation
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        async function verifyLicense() {
+            const token = document.getElementById('licenseToken').value.trim();
+
+            if (!token) {
+                alert('Please enter a license token');
+                return;
+            }
+
+            try {
+                const result = await api.verifyLicense(token);
+
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+
+                // Show validity alert
+                const alertDiv = document.getElementById('validityAlert');
+                if (result.valid) {
+                    alertDiv.className = 'alert alert-success';
+                    alertDiv.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <div>
+                            <strong>Valid License</strong>
+                            <p>${result.message}</p>
+                        </div>
+                    `;
+                } else {
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <div>
+                            <strong>Invalid License</strong>
+                            <p>${result.message}</p>
+                        </div>
+                    `;
+                }
+
+                // Populate license details
+                const payload = result.payload;
+                document.getElementById('resultTenantId').textContent = payload.tenantId;
+                document.getElementById('resultTenantName').textContent = payload.tenantName;
+                document.getElementById('resultDeploymentType').innerHTML = `
+                    <span class="badge ${payload.deploymentType === 'saas' ? 'badge-primary' : 'badge-warning'}">
+                        ${payload.deploymentType}
+                    </span>
+                `;
+                document.getElementById('resultMaxTenants').textContent =
+                    payload.maxTenants === -1 ? 'Unlimited' : payload.maxTenants;
+                document.getElementById('resultMaxUsers').textContent = payload.maxUsers;
+
+                document.getElementById('resultStartDate').textContent =
+                    new Date(payload.startDate).toLocaleDateString();
+                document.getElementById('resultExpiryDate').textContent =
+                    new Date(payload.expiryDate).toLocaleDateString();
+                document.getElementById('resultIssuedAt').textContent =
+                    new Date(payload.issuedAt).toLocaleString();
+
+                // Services
+                const servicesDiv = document.getElementById('resultServices');
+                if (payload.services && payload.services.length > 0) {
+                    servicesDiv.innerHTML = payload.services.map(s => `
+                        <span class="tag">
+                            ${s.name}
+                            <span class="tag-badge">
+                                ${s.read ? 'R' : ''}${s.write ? 'W' : ''}
+                            </span>
+                            ${s.storageLimitBytes ? `<span class="tag-storage">${formatBytes(s.storageLimitBytes)}</span>` : ''}
+                        </span>
+                    `).join('');
+                } else {
+                    servicesDiv.innerHTML = '<p class="text-muted">No services included</p>';
+                }
+
+                // Features
+                const featuresDiv = document.getElementById('resultFeatures');
+                if (payload.features && payload.features.length > 0) {
+                    featuresDiv.innerHTML = payload.features.map(f => `
+                        <span class="tag">${f}</span>
+                    `).join('');
+                } else {
+                    featuresDiv.innerHTML = '<p class="text-muted">No features included</p>';
+                }
+
+                // Scroll to results
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                document.getElementById('resultsSection').style.display = 'block';
+                const alertDiv = document.getElementById('validityAlert');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <div>
+                        <strong>Error</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

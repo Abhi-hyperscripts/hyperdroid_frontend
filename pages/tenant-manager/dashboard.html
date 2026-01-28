@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TenantManager</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/tooltip.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/tenant-manager.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="dashboard">
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="dashboard.html">
+                <img src="../../assets/brand_logo.png" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Populated by TMNavigation.init() -->
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <div class="app-container" id="appContainer">
+        <!-- App Header -->
+        <div class="app-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <span class="current">Dashboard</span>
+                </nav>
+                <div class="app-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>License Management</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Dashboard</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="app-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="app-sidebar" id="appSidebar">
+                <div class="sidebar-header">
+                    <h3>TenantManager</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Overview Section -->
+                    <div class="nav-group" data-group="overview">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                Overview
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="dashboard" onclick="navigateTo('dashboard.html')">
+                                <span class="nav-number">1</span><span class="nav-label">Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Management Section -->
+                    <div class="nav-group" data-group="management">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Management
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="tenants" onclick="navigateTo('tenants.html')">
+                                <span class="nav-number">2</span><span class="nav-label">Tenants</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="services" onclick="navigateTo('services.html')">
+                                <span class="nav-number">3</span><span class="nav-label">Services</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tools Section -->
+                    <div class="nav-group" data-group="tools">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Tools
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="verify" onclick="navigateTo('verify.html')">
+                                <span class="nav-number">4</span><span class="nav-label">Verify License</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="app-content">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalTenants">0</div>
+                            <div class="stat-label">Total Tenants</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="activeTenants">0</div>
+                            <div class="stat-label">Active Tenants</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon primary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="saasTenants">0</div>
+                            <div class="stat-label">SaaS Tenants</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="onPremTenants">0</div>
+                            <div class="stat-label">On-Premise</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tenants Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Tenants</h2>
+                        <a href="tenants.html" class="btn btn-secondary btn-sm">View All</a>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tenant ID</th>
+                                    <th>Tenant Name</th>
+                                    <th>Company</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTenantsBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <p>Loading...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/toast.js"></script>
+    <script src="../../js/tenant-manager/config.js"></script>
+    <script src="../../js/tenant-manager/api.js"></script>
+    <script src="../../js/tenant-manager/navigation.js"></script>
+    <script>
+        // Check authentication
+        if (!api.isAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Initialize navigation
+        TMNavigation.init('dashboard');
+
+        // Sidebar toggle functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const appContainer = document.getElementById('appContainer');
+        const appSidebar = document.getElementById('appSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // Check saved state or default to open on desktop
+        function initSidebar() {
+            const savedState = localStorage.getItem('sidebarOpen');
+            const isDesktop = window.innerWidth > 768;
+
+            // Default to open on desktop, closed on mobile (unless saved state exists)
+            const shouldBeOpen = savedState !== null ? savedState === 'true' : isDesktop;
+
+            if (shouldBeOpen) {
+                appContainer.classList.add('sidebar-open');
+                appSidebar.classList.add('open');
+            }
+        }
+
+        // Initialize sidebar state
+        initSidebar();
+
+        sidebarToggle.addEventListener('click', () => {
+            const isOpen = appContainer.classList.toggle('sidebar-open');
+            appSidebar.classList.toggle('open');
+            localStorage.setItem('sidebarOpen', isOpen);
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            appContainer.classList.remove('sidebar-open');
+            appSidebar.classList.remove('open');
+            localStorage.setItem('sidebarOpen', 'false');
+        });
+
+        // Navigation
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const { tenants } = await api.getTenants(true);
+
+                // Calculate stats
+                const active = tenants.filter(t => t.isActive).length;
+                const saas = tenants.filter(t => t.deploymentType === 'saas').length;
+                const onPrem = tenants.filter(t => t.deploymentType === 'on-premise').length;
+
+                document.getElementById('totalTenants').textContent = tenants.length;
+                document.getElementById('activeTenants').textContent = active;
+                document.getElementById('saasTenants').textContent = saas;
+                document.getElementById('onPremTenants').textContent = onPrem;
+
+                // Display recent tenants (last 5)
+                const tbody = document.getElementById('recentTenantsBody');
+
+                if (tenants.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <p>No tenants yet. Create your first tenant to get started.</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Sort by createdAt descending and take first 5
+                const recentTenants = [...tenants]
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 5);
+
+                tbody.innerHTML = recentTenants.map(tenant => `
+                    <tr>
+                        <td><code class="tenant-id">${tenant.id}</code></td>
+                        <td><strong>${tenant.tenantName}</strong></td>
+                        <td>${tenant.companyName || '-'}</td>
+                        <td>
+                            <span class="badge ${tenant.deploymentType === 'saas' ? 'badge-primary' : 'badge-warning'}">
+                                ${tenant.deploymentType}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${tenant.isActive ? 'badge-success' : 'badge-danger'}">
+                                ${tenant.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>${new Date(tenant.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+                document.getElementById('recentTenantsBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p style="color: var(--color-error)">Failed to load tenants. Please try again.</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
