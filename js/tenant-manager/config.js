@@ -1,6 +1,10 @@
 // TenantManager Frontend Configuration
+// Auto-detect environment based on hostname
+const isProduction = window.location.hostname !== 'localhost' &&
+                     window.location.hostname !== '127.0.0.1';
+
 const CONFIG = {
-    apiBaseUrl: 'http://localhost:5108',
+    apiBaseUrl: isProduction ? 'https://tenant.hyperdroid.io' : 'http://localhost:5108',
     endpoints: {
         login: '/api/auth/login',
         validate: '/api/auth/validate',
