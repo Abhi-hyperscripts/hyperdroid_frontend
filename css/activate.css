@@ -5,6 +5,193 @@
  * Uses theme variables from theme.css for consistent styling.
  */
 
+/* ==========================================
+   ACTIVATE PAGE SPECIFIC OVERRIDES
+   ========================================== */
+
+.activate-page .showcase-content {
+    max-width: 100%;
+    width: 100%;
+    padding-right: 3rem;
+}
+
+.activate-page .showcase-headline {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    line-height: 1.15;
+}
+
+.activate-page .showcase-subtext {
+    font-size: 1.1rem;
+    opacity: 0.85;
+    max-width: 100%;
+    line-height: 1.6;
+}
+
+.activate-page .tagline-wrapper {
+    max-width: 100%;
+}
+
+/* ==========================================
+   CONTACT GRID
+   ========================================== */
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    width: 100%;
+}
+
+.contact-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.contact-card-wide {
+    grid-column: 1 / -1;
+}
+
+.contact-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary, #6366f1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.contact-icon svg {
+    width: 22px;
+    height: 22px;
+    color: white;
+}
+
+.contact-content h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 0.35rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contact-content p {
+    font-size: 1rem;
+    font-weight: 500;
+    color: white;
+    margin: 0;
+}
+
+/* ==========================================
+   LICENSE BENEFITS
+   ========================================== */
+
+.license-benefits {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    width: 100%;
+}
+
+.license-benefits h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 1rem 0;
+}
+
+.benefits-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+}
+
+.benefit-item svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-success, #10b981);
+    flex-shrink: 0;
+}
+
+/* ==========================================
+   FORM PANEL ADJUSTMENTS FOR ACTIVATE
+   ========================================== */
+
+.activate-page .login-form-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.activate-page .form-panel-inner {
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.activate-page .success-container {
+    padding: 0;
+}
+
+.activate-page .success-container .success-card {
+    max-width: 100%;
+    margin: 0;
+    text-align: center;
+}
+
+/* ==========================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================== */
+
+@media (max-width: 1024px) {
+    .activate-page .showcase-content {
+        padding-right: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .activate-page .login-showcase-panel {
+        display: none;
+    }
+
+    .activate-page .login-split-container {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .benefits-list {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* License Key Textarea */
 .license-textarea {
     width: 100%;

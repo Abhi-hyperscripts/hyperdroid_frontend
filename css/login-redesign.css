@@ -11,7 +11,49 @@
     font-family: var(--font-family);
     background: var(--bg-body);
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
+}
+
+/* Auth Page Navigation */
+.login-page .auth-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(10, 15, 26, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login-page .auth-nav .nav-logo {
+    height: 32px;
+}
+
+/* Hide showcase logo when nav bar is present */
+.login-page .showcase-logo {
+    display: none;
+}
+
+/* Theme toggle in nav bar */
+.login-page .nav-theme-toggle {
+    position: static;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    margin-left: 12px;
+}
+
+.login-page .nav-theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.login-page .nav-theme-toggle svg {
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -22,6 +64,7 @@
     min-height: 100vh;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    padding-top: 72px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
