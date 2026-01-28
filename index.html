@@ -15,17 +15,15 @@
             font-family: 'Inter', var(--font-family);
         }
 
-        /* Hero Section */
+        /* Hero Section - Split Layout */
         .home-hero {
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 120px 60px 80px;
             position: relative;
             overflow: hidden;
-            text-align: center;
         }
 
         .home-hero-bg {
@@ -42,10 +40,10 @@
             top: -50%;
             left: -50%;
             background:
-                radial-gradient(ellipse 40% 30% at 20% 30%, rgba(139, 92, 246, 0.4) 0%, transparent 50%),
-                radial-gradient(ellipse 35% 40% at 80% 20%, rgba(59, 130, 246, 0.35) 0%, transparent 45%),
-                radial-gradient(ellipse 30% 35% at 70% 80%, rgba(16, 185, 129, 0.3) 0%, transparent 45%),
-                radial-gradient(ellipse 40% 25% at 30% 70%, rgba(245, 158, 11, 0.25) 0%, transparent 50%);
+                radial-gradient(ellipse 40% 30% at 20% 30%, rgba(139, 92, 246, 0.35) 0%, transparent 50%),
+                radial-gradient(ellipse 35% 40% at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 45%),
+                radial-gradient(ellipse 30% 35% at 70% 80%, rgba(16, 185, 129, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse 40% 25% at 30% 70%, rgba(245, 158, 11, 0.2) 0%, transparent 50%);
             animation: heroGradientShift 25s ease-in-out infinite;
         }
 
@@ -54,87 +52,64 @@
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 70%);
-            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 70%);
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
         }
 
-        /* Floating orbs */
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.5;
-            animation: float 20s ease-in-out infinite;
-        }
-
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: rgba(139, 92, 246, 0.3);
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: rgba(59, 130, 246, 0.3);
-            top: 60%;
-            right: 15%;
-            animation-delay: -7s;
-        }
-
-        .orb-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(16, 185, 129, 0.25);
-            bottom: 20%;
-            left: 20%;
-            animation-delay: -14s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.05); }
-            66% { transform: translate(-20px, 20px) scale(0.95); }
-        }
-
-        .home-hero-content {
+        .home-hero-inner {
             position: relative;
             z-index: 10;
-            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            max-width: 1400px;
+            width: 100%;
+            align-items: center;
         }
 
-        .home-logo {
-            height: 80px;
-            margin-bottom: 32px;
-            filter: brightness(0) invert(1);
+        /* Left: Text Content */
+        .home-hero-text {
             animation: fadeInUp 0.8s ease-out;
         }
 
-        .home-tagline {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
+        .home-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 100px;
+            font-size: 13px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 24px;
-            animation: fadeInUp 0.8s ease-out 0.1s both;
+            color: #a78bfa;
+            margin-bottom: 28px;
+        }
+
+        .home-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #a78bfa;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         .home-title {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(48px, 8vw, 80px);
+            font-size: clamp(40px, 5vw, 64px);
             font-weight: 700;
             line-height: 1.1;
             color: #ffffff;
             margin: 0 0 24px 0;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
         .home-title .gradient-text {
@@ -145,76 +120,430 @@
         }
 
         .home-description {
-            font-size: 20px;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.6;
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            animation: fadeInUp 0.8s ease-out 0.3s both;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.7;
+            margin-bottom: 36px;
+            max-width: 480px;
         }
 
         .home-cta {
             display: flex;
             gap: 16px;
-            justify-content: center;
-            margin-bottom: 60px;
-            animation: fadeInUp 0.8s ease-out 0.4s both;
+            margin-bottom: 48px;
         }
 
         .home-cta .btn-primary {
             padding: 16px 32px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
         }
 
         .home-cta .btn-secondary {
             padding: 16px 32px;
-            font-size: 16px;
+            font-size: 15px;
         }
 
-        /* Scroll indicator */
-        .scroll-indicator {
+        /* Trust indicators */
+        .home-trust {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        .trust-item svg {
+            width: 18px;
+            height: 18px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Right: Visual Showcase - App Window Mockup */
+        .home-hero-visual {
+            position: relative;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        /* Ambient glow behind mockup */
+        .hero-mockup-glow {
             position: absolute;
-            bottom: 40px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 500px;
+            background:
+                radial-gradient(ellipse 50% 50% at 30% 40%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse 40% 40% at 70% 60%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 35% 35% at 50% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* App window container */
+        .hero-app-window {
+            position: relative;
+            width: 560px;
+            background: linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(10, 15, 28, 0.98) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow:
+                0 50px 100px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            z-index: 1;
+            animation: windowEntrance 0.8s ease-out both;
+        }
+
+        @keyframes windowEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Window header with traffic lights */
+        .window-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .window-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .window-dot.red { background: #ff5f57; }
+        .window-dot.yellow { background: #febc2e; }
+        .window-dot.green { background: #28c840; }
+
+        .window-title {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+
+        /* App layout - sidebar + main */
+        .app-layout {
+            display: flex;
+            min-height: 340px;
+        }
+
+        /* Sidebar */
+        .app-sidebar {
+            width: 64px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 16px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            animation: fadeInUp 0.8s ease-out 0.6s both;
         }
 
-        .scroll-indicator .mouse {
-            width: 24px;
-            height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+        .sidebar-item {
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
             position: relative;
+            text-decoration: none;
         }
 
-        .scroll-indicator .mouse::before {
+        .sidebar-item::before {
             content: '';
             position: absolute;
-            top: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 2px;
-            animation: scrollPulse 2s ease-in-out infinite;
+            left: -8px;
+            width: 3px;
+            height: 0;
+            background: var(--item-color);
+            border-radius: 0 2px 2px 0;
+            transition: height 0.3s ease;
         }
 
-        @keyframes scrollPulse {
-            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            50% { opacity: 0.3; transform: translateX(-50%) translateY(8px); }
+        .sidebar-item:hover::before,
+        .sidebar-item.active::before {
+            height: 24px;
+        }
+
+        .sidebar-item svg {
+            width: 22px;
+            height: 22px;
+            color: var(--item-color);
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-item:hover svg,
+        .sidebar-item.active svg {
+            opacity: 1;
+        }
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
+            background: var(--item-bg);
+        }
+
+        .sidebar-item.vision { --item-color: #60a5fa; --item-bg: rgba(59, 130, 246, 0.15); }
+        .sidebar-item.chat { --item-color: #a78bfa; --item-bg: rgba(139, 92, 246, 0.15); }
+        .sidebar-item.drive { --item-color: #34d399; --item-bg: rgba(16, 185, 129, 0.15); }
+        .sidebar-item.hrms { --item-color: #fbbf24; --item-bg: rgba(245, 158, 11, 0.15); }
+
+        .sidebar-divider {
+            width: 32px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 8px 0;
+        }
+
+        /* Main content area */
+        .app-main {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Product preview cards */
+        .preview-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--card-border);
+            transform: translateY(-2px);
+        }
+
+        .preview-card.vision { --card-border: rgba(59, 130, 246, 0.3); --accent: #60a5fa; }
+        .preview-card.chat { --card-border: rgba(139, 92, 246, 0.3); --accent: #a78bfa; }
+        .preview-card.drive { --card-border: rgba(16, 185, 129, 0.3); --accent: #34d399; }
+        .preview-card.hrms { --card-border: rgba(245, 158, 11, 0.3); --accent: #fbbf24; }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .preview-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .preview-icon svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .preview-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* Preview content - stylized UI mockup */
+        .preview-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .preview-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+        }
+
+        .preview-bar.short { width: 60%; }
+        .preview-bar.medium { width: 80%; }
+        .preview-bar.accent { background: var(--accent); opacity: 0.3; width: 40%; }
+
+        /* Vision-specific preview */
+        .preview-card.vision .preview-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .video-tile {
+            aspect-ratio: 16/10;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Chat-specific preview */
+        .preview-card.chat .preview-content {
+            gap: 8px;
+        }
+
+        .chat-bubble {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            max-width: 80%;
+        }
+
+        .chat-bubble.sent {
+            background: rgba(139, 92, 246, 0.2);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.received {
+            background: rgba(255, 255, 255, 0.08);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        /* Drive-specific preview */
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+
+        .file-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 4px;
+        }
+
+        .file-name {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        /* HRMS-specific preview */
+        .stat-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stat-box {
+            flex: 1;
+            padding: 8px;
+            background: rgba(245, 158, 11, 0.08);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .stat-label {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+        }
+
+        /* Floating decorative elements */
+        .hero-float-element {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .hero-float-element.badge {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-float-element.badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .hero-float-element.top-right {
+            top: -20px;
+            right: -30px;
+            animation: floatBadge 4s ease-in-out infinite;
+        }
+
+        .hero-float-element.bottom-left {
+            bottom: 30px;
+            left: -40px;
+            animation: floatBadge 5s ease-in-out 1s infinite;
+        }
+
+        @keyframes floatBadge {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #34d399;
+            animation: pulse 2s ease-in-out infinite;
         }
 
         @keyframes fadeInUp {
@@ -225,6 +554,119 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .home-hero-inner {
+                grid-template-columns: 1fr;
+                gap: 60px;
+                text-align: center;
+            }
+
+            .home-hero-text {
+                order: 1;
+            }
+
+            .home-hero-visual {
+                order: 2;
+            }
+
+            .home-description {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .home-cta {
+                justify-content: center;
+            }
+
+            .home-trust {
+                justify-content: center;
+            }
+
+            .hero-app-window {
+                width: 500px;
+                margin: 0 auto;
+            }
+
+            .app-layout {
+                min-height: 300px;
+            }
+
+            .hero-float-element.top-right {
+                right: 0;
+            }
+
+            .hero-float-element.bottom-left {
+                left: 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .home-hero {
+                padding: 100px 24px 60px;
+            }
+
+            .hero-app-window {
+                width: 100%;
+                max-width: 360px;
+            }
+
+            .app-sidebar {
+                width: 50px;
+                padding: 12px 0;
+            }
+
+            .sidebar-item {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sidebar-item svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .app-main {
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .preview-card {
+                padding: 12px;
+            }
+
+            .preview-header {
+                margin-bottom: 8px;
+            }
+
+            .preview-icon {
+                width: 28px;
+                height: 28px;
+            }
+
+            .preview-title {
+                font-size: 12px;
+            }
+
+            .app-layout {
+                min-height: 260px;
+            }
+
+            .home-trust {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .hero-float-element {
+                display: none;
+            }
+
+            .hero-mockup-glow {
+                width: 400px;
+                height: 400px;
             }
         }
 
@@ -544,7 +986,7 @@
     <!-- Navigation -->
     <nav class="landing-nav">
         <a href="index.html">
-            <img src="assets/logo-svg.svg" alt="HyperDroid" class="nav-logo">
+            <img src="assets/brand_logo.png" alt="HyperDroid" class="nav-logo">
         </a>
         <div class="nav-links">
             <a href="pages/vision.html" class="nav-link">Vision</a>
@@ -562,30 +1004,188 @@
     <section class="home-hero">
         <div class="home-hero-bg">
             <div class="home-grid"></div>
-            <div class="orb orb-1"></div>
-            <div class="orb orb-2"></div>
-            <div class="orb orb-3"></div>
         </div>
 
-        <div class="home-hero-content">
-            <img src="assets/logo-svg.svg" alt="HyperDroid" class="home-logo">
-            <div class="home-tagline">Enterprise Workspace Platform</div>
-            <h1 class="home-title">
-                Everything your team needs.<br>
-                <span class="gradient-text">One unified platform.</span>
-            </h1>
-            <p class="home-description">
-                Video meetings, team chat, cloud storage, and HR management — seamlessly integrated. Built for teams that demand more.
-            </p>
-            <div class="home-cta">
-                <a href="pages/register.html" class="btn-primary">Start Free Trial</a>
-                <a href="#products" class="btn-secondary">Explore Products</a>
+        <div class="home-hero-inner">
+            <!-- Left: Text Content -->
+            <div class="home-hero-text">
+                <div class="home-badge">Enterprise Workspace Platform</div>
+                <h1 class="home-title">
+                    Everything your team needs.<br>
+                    <span class="gradient-text">One unified platform.</span>
+                </h1>
+                <p class="home-description">
+                    Video meetings, team chat, cloud storage, and HR management — seamlessly integrated. Built for teams that demand more.
+                </p>
+                <div class="home-cta">
+                    <a href="pages/register.html" class="btn-primary">Start Free Trial</a>
+                    <a href="#products" class="btn-secondary">Explore Products</a>
+                </div>
+                <div class="home-trust">
+                    <div class="trust-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span>Self-hosted</span>
+                    </div>
+                    <div class="trust-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span>End-to-end encrypted</span>
+                    </div>
+                    <div class="trust-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M2 12h20"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <span>Global CDN</span>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="scroll-indicator">
-            <div class="mouse"></div>
-            <span>Scroll to explore</span>
+            <!-- Right: Visual Showcase - App Window Mockup -->
+            <div class="home-hero-visual">
+                <!-- Ambient glow -->
+                <div class="hero-mockup-glow"></div>
+
+                <!-- Floating badges -->
+                <div class="hero-float-element badge top-right">
+                    <div class="badge-dot"></div>
+                    Live collaboration
+                </div>
+                <div class="hero-float-element badge bottom-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Enterprise secure
+                </div>
+
+                <!-- App window -->
+                <div class="hero-app-window">
+                    <div class="window-header">
+                        <span class="window-dot red"></span>
+                        <span class="window-dot yellow"></span>
+                        <span class="window-dot green"></span>
+                        <span class="window-title">HyperDroid Workspace</span>
+                        <span style="width: 52px;"></span>
+                    </div>
+
+                    <div class="app-layout">
+                        <!-- Sidebar -->
+                        <div class="app-sidebar">
+                            <a href="pages/vision.html" class="sidebar-item vision active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <polygon points="23 7 16 12 23 17 23 7"/>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                                </svg>
+                            </a>
+                            <a href="pages/chat.html" class="sidebar-item chat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </a>
+                            <a href="pages/drive.html" class="sidebar-item drive">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </a>
+                            <div class="sidebar-divider"></div>
+                            <a href="pages/hrms.html" class="sidebar-item hrms">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <!-- Main content area -->
+                        <div class="app-main">
+                            <!-- Vision preview -->
+                            <a href="pages/vision.html" class="preview-card vision">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <polygon points="23 7 16 12 23 17 23 7"/>
+                                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">Vision</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="video-tile"></div>
+                                    <div class="video-tile"></div>
+                                    <div class="video-tile"></div>
+                                    <div class="video-tile"></div>
+                                </div>
+                            </a>
+
+                            <!-- Chat preview -->
+                            <a href="pages/chat.html" class="preview-card chat">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">Chat</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="chat-bubble received"><div class="chat-bubble-bar" style="width: 70%;"></div></div>
+                                    <div class="chat-bubble sent"><div class="chat-bubble-bar" style="width: 50%;"></div></div>
+                                    <div class="chat-bubble received"><div class="chat-bubble-bar" style="width: 85%;"></div></div>
+                                </div>
+                            </a>
+
+                            <!-- Drive preview -->
+                            <a href="pages/drive.html" class="preview-card drive">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">Drive</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 70%;"></div></div>
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 55%;"></div></div>
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 80%;"></div></div>
+                                </div>
+                            </a>
+
+                            <!-- HRMS preview -->
+                            <a href="pages/hrms.html" class="preview-card hrms">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">HRMS</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="stat-row">
+                                        <div class="stat-box">
+                                            <div class="stat-value">24</div>
+                                            <div class="stat-label">Team</div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-value">3</div>
+                                            <div class="stat-label">Leave</div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-bar medium"></div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -744,7 +1344,7 @@
 
     <!-- Footer -->
     <footer class="landing-footer">
-        <img src="assets/logo-svg.svg" alt="HyperDroid" class="footer-logo">
+        <img src="assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
         <div class="footer-links">
             <a href="pages/vision.html" class="footer-link">Vision</a>
             <a href="pages/chat.html" class="footer-link">Chat</a>
