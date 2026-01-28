@@ -408,8 +408,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    margin-bottom: -20px;
+    gap: 20px;
+    margin-bottom: 10px;
 }
 
 /* Center Engine */
@@ -420,17 +420,20 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
+    position: relative;
 }
 
-/* Output Arrow */
+/* Output Arrow - Between Engine and Outputs */
 .flowchart-output-arrow {
-    grid-column: 2;
-    grid-row: 2;
-    position: absolute;
-    right: -30px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: none;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.flowchart-output-arrow svg {
+    width: 60px;
+    height: 24px;
 }
 
 /* Outputs - Right side */
@@ -438,9 +441,14 @@
     grid-column: 3;
     grid-row: 2;
     display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.flowchart-outputs-content {
+    display: flex;
     flex-direction: column;
     gap: 16px;
-    padding-left: 40px;
 }
 
 /* Input Box Styling */
@@ -558,7 +566,7 @@
 
 .flow-arrow.arrow-down svg {
     width: 24px;
-    height: 50px;
+    height: 60px;
 }
 
 /* Engine Core V2 - The Heart (Redesigned) */
