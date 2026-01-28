@@ -247,11 +247,11 @@
         </div>
     </div>
 
-    <script src="../../js/theme.js"></script>
-    <script src="../../js/toast.js"></script>
-    <script src="../../js/tenant-manager/config.js"></script>
-    <script src="../../js/tenant-manager/api.js"></script>
-    <script src="../../js/tenant-manager/navigation.js"></script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/tenant-manager/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/tenant-manager/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/tenant-manager/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         // Check authentication
         if (!api.isAuthenticated()) {

@@ -291,9 +291,9 @@
         </div>
     </div>
 
-    <script src="../../js/toast.js"></script>
-    <script src="../../js/tenant-manager/config.js"></script>
-    <script src="../../js/tenant-manager/api.js"></script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/tenant-manager/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/tenant-manager/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         // Check if already logged in
         if (api.isAuthenticated()) {

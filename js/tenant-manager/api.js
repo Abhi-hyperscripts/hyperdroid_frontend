@@ -2,7 +2,8 @@
 class TenantManagerAPI {
     constructor() {
         this.baseUrl = CONFIG.apiBaseUrl;
-        this.token = localStorage.getItem('tm_authToken');
+        this.storagePrefix = CONFIG.storagePrefix;
+        this.token = localStorage.getItem(`${this.storagePrefix}authToken`);
     }
 
     // ==================== Authentication ====================
@@ -21,8 +22,8 @@ class TenantManagerAPI {
 
         const data = await response.json();
         this.token = data.token;
-        localStorage.setItem('tm_authToken', data.token);
-        localStorage.setItem('tm_user', JSON.stringify(data.user));
+        localStorage.setItem(`${this.storagePrefix}authToken`, data.token);
+        localStorage.setItem(`${this.storagePrefix}user`, JSON.stringify(data.user));
         return data;
     }
 
@@ -48,8 +49,8 @@ class TenantManagerAPI {
 
     logout() {
         this.token = null;
-        localStorage.removeItem('tm_authToken');
-        localStorage.removeItem('tm_user');
+        localStorage.removeItem(`${this.storagePrefix}authToken`);
+        localStorage.removeItem(`${this.storagePrefix}user`);
         window.location.href = 'login.html';
     }
 
@@ -58,7 +59,7 @@ class TenantManagerAPI {
     }
 
     getUser() {
-        const userStr = localStorage.getItem('tm_user');
+        const userStr = localStorage.getItem(`${this.storagePrefix}user`);
         return userStr ? JSON.parse(userStr) : null;
     }
 
