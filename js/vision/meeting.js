@@ -1566,8 +1566,13 @@ async function toggleScreenShare() {
             }, 100);
         }
     } else {
-        await room.localParticipant.setScreenShareEnabled(true);
+        // Enable screen share with HIGH QUALITY settings for crisp text and details
+        await room.localParticipant.setScreenShareEnabled(true, {
+            resolution: LivekitClient.VideoPresets.h1080.resolution, // 1920x1080 Full HD
+            contentHint: 'detail', // Optimize encoding for text/detail (not motion)
+        });
         screenBtn.classList.add('active');
+        console.log('Screen share started with HD resolution and detail optimization');
     }
 }
 
