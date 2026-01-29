@@ -2050,12 +2050,51 @@ body:has(.auth-container)::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Gradient background with borders - visible in letterbox areas */
-    background: var(--gradient-page-bg);
+    /* Dark background with gradient mesh - matches audio-only tiles */
+    background: #050810;
     border-radius: 16px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--gray-800);
     overflow: hidden;
     position: relative;
+}
+
+/* Animated gradient mesh for screen share wrapper */
+.screen-share-video-wrapper::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 70% 20%, rgba(99, 102, 241, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse 40% 50% at 80% 70%, rgba(6, 182, 212, 0.3) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 30% at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+    animation: screenShareGradientShift 30s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Grid pattern overlay for screen share wrapper */
+.screen-share-video-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes screenShareGradientShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(3%, -2%) rotate(1deg) scale(1.02); }
+    66% { transform: translate(-2%, 3%) rotate(-1deg) scale(0.98); }
 }
 
 .screen-share-header {
@@ -2102,6 +2141,8 @@ body:has(.auth-container)::after {
     object-fit: contain;
     box-sizing: border-box;
     transition: transform 0.3s ease;
+    position: relative;
+    z-index: 2; /* Above gradient mesh and grid pattern */
     transform-origin: center center;
     user-select: none;
     -webkit-user-select: none;
