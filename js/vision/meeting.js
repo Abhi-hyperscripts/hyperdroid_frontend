@@ -202,8 +202,6 @@ async function initializeMeeting() {
             tokenData = await api.getLiveKitToken(meetingId, participantName);
         }
 
-        document.getElementById('meetingTitle').textContent = 'Meeting Room';
-
         // Connect to LiveKit
         await connectToLiveKit(tokenData.ws_url, tokenData.token);
 
