@@ -1366,8 +1366,9 @@ body:has(.auth-container)::after {
     }
 
     .small-tile {
-        width: 120px; /* Fixed smaller size for overlay */
-        aspect-ratio: 16/9;
+        width: auto;
+        height: 140px; /* Fixed height for portrait tiles */
+        aspect-ratio: 9/16; /* Portrait mode on mobile devices */
         border: 2px solid var(--white-80); /* White border for visibility */
         box-shadow: 0 4px 12px var(--overlay-medium); /* Stronger shadow for overlay */
     }
