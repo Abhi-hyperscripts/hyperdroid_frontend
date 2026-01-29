@@ -1295,9 +1295,10 @@ body:has(.auth-container)::after {
     border-radius: var(--border-radius-lg);
     overflow: hidden;
     position: relative;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     transition: all var(--transition-slow);
     z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .small-tile:hover {
