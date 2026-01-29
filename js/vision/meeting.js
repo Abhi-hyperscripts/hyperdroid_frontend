@@ -1162,6 +1162,9 @@ function attachTrack(track, publication, participant) {
             if (video) {
                 track.attach(video);
                 console.log(`Video track attached for ${participant.identity}`);
+
+                // CRITICAL: Update camera-off placeholder visibility after video track is attached
+                updateCameraOffPlaceholder(participantDiv, !track.isMuted);
             }
         } else if (track.kind === 'audio') {
             // Create or get audio element for this participant
