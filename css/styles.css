@@ -2042,8 +2042,7 @@ body:has(.auth-container)::after {
     display: flex;
     flex-direction: column;
     z-index: 10;
-    border-radius: 16px;
-    margin: 16px;
+    /* Full width - no margin or border-radius for maximum screen real estate */
 }
 
 .screen-share-header {
@@ -2056,7 +2055,7 @@ body:has(.auth-container)::after {
     font-weight: 600;
     flex-shrink: 0;
     letter-spacing: -0.01em;
-    border-radius: 16px 16px 0 0;
+    /* No border-radius - full width header */
 }
 
 #screenShareVideo {
@@ -2064,7 +2063,7 @@ body:has(.auth-container)::after {
     height: 100%;
     object-fit: contain;
     flex-grow: 1;
-    padding: 10px;
+    /* No padding - maximize screen share viewing area */
     box-sizing: border-box;
     transition: transform 0.3s ease;
     transform-origin: center center;
