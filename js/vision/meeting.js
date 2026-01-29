@@ -261,8 +261,9 @@ async function connectToLiveKit(wsUrl, token) {
                 },
                 // Screen share specific settings for MAXIMUM quality
                 screenShareEncoding: {
-                    maxBitrate: 15_000_000,  // 15 Mbps for crystal clear screen share
-                    maxFramerate: 30,
+                    maxBitrate: 25_000_000,  // 25 Mbps for ultra crisp screen share
+                    maxFramerate: 15,        // Lower framerate = more bits per frame = sharper text
+                    priority: 'high',        // High network priority
                 },
                 screenShareSimulcastLayers: [],  // DISABLE simulcast for screen share - full quality only
             }
@@ -1580,6 +1581,20 @@ async function toggleScreenShare() {
         });
         screenBtn.classList.add('active');
         console.log('Screen share started with 1440p resolution and text optimization');
+
+        // Also set contentHint directly on the MediaStreamTrack for maximum effect
+        // This tells the browser encoder to prioritize text clarity
+        setTimeout(() => {
+            room.localParticipant.videoTrackPublications.forEach((publication) => {
+                if (publication.source === 'screen_share' && publication.track) {
+                    const mediaStreamTrack = publication.track.mediaStreamTrack;
+                    if (mediaStreamTrack && 'contentHint' in mediaStreamTrack) {
+                        mediaStreamTrack.contentHint = 'text';
+                        console.log('Applied contentHint=text directly to screen share MediaStreamTrack');
+                    }
+                }
+            });
+        }, 500);
     }
 }
 

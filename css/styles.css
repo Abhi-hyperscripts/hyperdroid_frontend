@@ -2071,6 +2071,14 @@ body:has(.auth-container)::after {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
+    /* Crisp text rendering optimizations for screen share */
+    image-rendering: -webkit-optimize-contrast; /* Chrome/Safari - best for text */
+    image-rendering: crisp-edges; /* Standard - sharp edges */
+    /* GPU acceleration for smoother, cleaner rendering */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .screen-share-controls {
