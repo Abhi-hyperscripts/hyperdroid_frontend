@@ -2037,7 +2037,7 @@ body:has(.auth-container)::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--gray-900);
+    background: var(--gradient-page-bg); /* Same gradient as page background */
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -2065,7 +2065,7 @@ body:has(.auth-container)::after {
     flex-grow: 1;
     /* No padding - maximize screen share viewing area */
     box-sizing: border-box;
-    background: #000; /* Black background for letterboxing instead of white */
+    background: transparent; /* Transparent so container gradient shows through */
     transition: transform 0.3s ease;
     transform-origin: center center;
     user-select: none;
