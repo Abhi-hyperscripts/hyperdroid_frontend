@@ -2043,7 +2043,6 @@ body:has(.auth-container)::after {
     flex-direction: column;
     z-index: 10;
     padding: 16px; /* Match main tile padding */
-    padding-top: 0; /* Header handles top */
 }
 
 .screen-share-video-wrapper {
@@ -2062,16 +2061,38 @@ body:has(.auth-container)::after {
 }
 
 .screen-share-header {
-    background: var(--overlay-near-opaque);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* Pill overlay in top-left of screen share */
+    position: absolute;
+    top: 28px; /* Inside the wrapper with padding */
+    left: 28px;
+    z-index: 20;
+    background: var(--overlay-almost-opaque);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--text-inverse);
-    padding: 12px 20px;
-    margin: 0 -16px 16px -16px; /* Extend to edges, add bottom margin */
-    font-size: 14px;
-    font-weight: 600;
-    flex-shrink: 0;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
     letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.screen-share-header::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--color-success);
+    border-radius: 50%;
+    animation: sharing-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes sharing-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 #screenShareVideo {
