@@ -1367,10 +1367,8 @@ async function toggleScreenShare() {
 async function toggleRecording() {
     if (!isRecording) {
         await startRecording();
-    } else if (isPaused) {
-        resumeRecording();
     } else {
-        pauseRecording();
+        await stopRecording();
     }
 }
 
@@ -1444,8 +1442,11 @@ async function startRecording() {
 
         // Update UI
         const recordBtn = document.getElementById('recordBtn');
-        recordBtn.classList.add('active');
-        recordBtn.innerHTML = '⏸️ Pause';
+        if (recordBtn) {
+            recordBtn.classList.add('active');
+            const label = recordBtn.querySelector('.menu-label');
+            if (label) label.textContent = 'Stop Recording';
+        }
         document.getElementById('recordingStatus').style.display = 'block';
 
         // Show recording overlay on video
@@ -1472,9 +1473,15 @@ function pauseRecording() {
 
         // Update UI
         const recordBtn = document.getElementById('recordBtn');
-        recordBtn.innerHTML = '▶️ Resume';
-        document.getElementById('recordingStatus').style.color = 'var(--color-warning)';
-        document.getElementById('recordingStatus').innerHTML = '⏸️ Paused... <span id="recordingTime">00:00</span>';
+        if (recordBtn) {
+            const label = recordBtn.querySelector('.menu-label');
+            if (label) label.textContent = 'Resume';
+        }
+        const recordingStatus = document.getElementById('recordingStatus');
+        if (recordingStatus) {
+            recordingStatus.style.color = 'var(--color-warning)';
+            recordingStatus.innerHTML = '⏸️ Paused... <span id="recordingTime">00:00</span>';
+        }
 
         // Stop timer
         if (recordingTimerInterval) {
@@ -1494,9 +1501,15 @@ function resumeRecording() {
 
         // Update UI
         const recordBtn = document.getElementById('recordBtn');
-        recordBtn.innerHTML = '⏸️ Pause';
-        document.getElementById('recordingStatus').style.color = 'var(--color-danger)';
-        document.getElementById('recordingStatus').innerHTML = '🔴 Recording... <span id="recordingTime">00:00</span>';
+        if (recordBtn) {
+            const label = recordBtn.querySelector('.menu-label');
+            if (label) label.textContent = 'Pause';
+        }
+        const recordingStatus = document.getElementById('recordingStatus');
+        if (recordingStatus) {
+            recordingStatus.style.color = 'var(--color-danger)';
+            recordingStatus.innerHTML = '🔴 Recording... <span id="recordingTime">00:00</span>';
+        }
 
         // Restart timer
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
@@ -1518,9 +1531,15 @@ async function stopRecording() {
 
         // Reset UI
         const recordBtn = document.getElementById('recordBtn');
-        recordBtn.classList.remove('active');
-        recordBtn.innerHTML = '⏺️ Record';
-        document.getElementById('recordingStatus').style.display = 'none';
+        if (recordBtn) {
+            recordBtn.classList.remove('active');
+            const label = recordBtn.querySelector('.menu-label');
+            if (label) label.textContent = 'Record';
+        }
+        const recordingStatus = document.getElementById('recordingStatus');
+        if (recordingStatus) {
+            recordingStatus.style.display = 'none';
+        }
 
         // Hide recording overlay on video
         const recordingOverlay = document.getElementById('recordingOverlay');
