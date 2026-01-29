@@ -1242,6 +1242,50 @@ body:has(.auth-container)::after {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    position: relative;
+    background: #050810;
+    border-radius: var(--border-radius-lg);
+    padding: 12px;
+    overflow: hidden;
+}
+
+/* Animated gradient mesh for small tiles container - matches lobby style */
+.small-tiles-container::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(59, 130, 246, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 70% 20%, rgba(99, 102, 241, 0.3) 0%, transparent 45%),
+        radial-gradient(ellipse 40% 50% at 80% 70%, rgba(6, 182, 212, 0.25) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 30% at 20% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%);
+    animation: smallTilesGradientShift 25s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes smallTilesGradientShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(2%, -1%) rotate(0.5deg) scale(1.01); }
+    66% { transform: translate(-1%, 2%) rotate(-0.5deg) scale(0.99); }
+}
+
+/* Grid pattern overlay for small tiles container */
+.small-tiles-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .small-tile {
@@ -1253,6 +1297,7 @@ body:has(.auth-container)::after {
     position: relative;
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-slow);
+    z-index: 1;
 }
 
 .small-tile:hover {
@@ -1309,6 +1354,14 @@ body:has(.auth-container)::after {
         flex-direction: column;
         gap: 8px;
         z-index: 10; /* Above main speaker */
+        background: transparent;
+        padding: 0;
+    }
+
+    /* Hide gradient background on mobile overlay */
+    .small-tiles-container::before,
+    .small-tiles-container::after {
+        display: none;
     }
 
     .small-tile {
