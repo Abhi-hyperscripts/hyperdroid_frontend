@@ -1114,6 +1114,10 @@ function attachTrack(track, publication, participant) {
         const screenBtn = document.getElementById('screenBtn');
         const screenShareControls = document.getElementById('screenShareControls');
 
+        // Set highest quality for screen share - we want crisp text and details
+        publication.setVideoQuality(LivekitClient.VideoQuality.HIGH);
+        console.log('Screen share quality set to HIGH for best viewing experience');
+
         track.attach(screenShareVideo);
         screenShareContainer.style.display = 'flex';
         videoContainer.classList.add('minimized');
