@@ -1194,41 +1194,81 @@ function attachTrack(track, publication, participant) {
         }
     } else {
         // Participant element doesn't exist yet - race condition between track subscription and DOM creation
-        // Trigger layout refresh and retry after a short delay
-        console.warn(`Participant element not found for ${participant.identity}, triggering layout refresh...`);
+        // This happens when trackSubscribed fires before participantConnected has finished updating the layout
+        console.warn(`Participant element not found for ${participant.identity}, ensuring participant is in active speakers...`);
 
+        // CRITICAL FIX: Manually add participant to activeSpeakers if not already there
+        // This is the root cause - trackSubscribed can fire before participantConnected
         if (activeSpeakerManager) {
+            const existingInSpeakers = activeSpeakerManager.activeSpeakers.find(
+                s => s.participantSid === participant.sid || s.identity === participant.identity
+            );
+
+            if (!existingInSpeakers) {
+                console.log(`Adding ${participant.identity} to activeSpeakers (was missing)`);
+                activeSpeakerManager.activeSpeakers.push({
+                    participantSid: participant.sid,
+                    identity: participant.identity,
+                    lastActiveTime: Date.now(),
+                    isSpeaking: false
+                });
+                activeSpeakerManager.sortSpeakers();
+                activeSpeakerManager.updateMainSpeaker();
+            }
+
+            // Reset layout state to force a rebuild (bypass change detection)
+            currentLayoutState = { mainSpeakerIdentity: null, smallTileIdentities: [] };
+
             // Force layout refresh to create the participant element
             activeSpeakerManager.notifyLayoutChange();
         }
 
-        // Retry track attachment after DOM has a chance to update
-        setTimeout(() => {
-            const retryDiv = document.getElementById(`participant-${participant.identity}`);
-            if (retryDiv) {
-                if (track.kind === 'video') {
-                    const video = retryDiv.querySelector('video');
-                    if (video) {
-                        track.attach(video);
-                        console.log(`Video track attached for ${participant.identity} (retry successful)`);
+        // Use exponential backoff for retries
+        const retryAttachTrack = (retryCount, delay) => {
+            setTimeout(() => {
+                const retryDiv = document.getElementById(`participant-${participant.identity}`);
+                if (retryDiv) {
+                    if (track.kind === 'video') {
+                        const video = retryDiv.querySelector('video');
+                        if (video) {
+                            track.attach(video);
+                            console.log(`Video track attached for ${participant.identity} (retry ${retryCount} successful)`);
+
+                            // Update camera-off placeholder visibility
+                            updateCameraOffPlaceholder(retryDiv, !track.isMuted);
+                        }
+                    } else if (track.kind === 'audio') {
+                        let audio = retryDiv.querySelector('audio');
+                        if (!audio) {
+                            audio = document.createElement('audio');
+                            audio.autoplay = true;
+                            audio.playsInline = true;
+                            audio.dataset.participantId = participant.identity;
+                            retryDiv.appendChild(audio);
+                        }
+                        track.attach(audio);
+                        audio.play().catch(() => {});
+                        console.log(`Audio track attached for ${participant.identity} (retry ${retryCount} successful)`);
                     }
-                } else if (track.kind === 'audio') {
-                    let audio = retryDiv.querySelector('audio');
-                    if (!audio) {
-                        audio = document.createElement('audio');
-                        audio.autoplay = true;
-                        audio.playsInline = true;
-                        audio.dataset.participantId = participant.identity;
-                        retryDiv.appendChild(audio);
+                } else if (retryCount < 5) {
+                    // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+                    console.warn(`Element still not found for ${participant.identity}, retry ${retryCount + 1}/5 in ${delay * 2}ms`);
+
+                    // Force layout rebuild before next retry
+                    if (activeSpeakerManager) {
+                        currentLayoutState = { mainSpeakerIdentity: null, smallTileIdentities: [] };
+                        activeSpeakerManager.notifyLayoutChange();
                     }
-                    track.attach(audio);
-                    audio.play().catch(() => {});
-                    console.log(`Audio track attached for ${participant.identity} (retry successful)`);
+
+                    retryAttachTrack(retryCount + 1, delay * 2);
+                } else {
+                    console.error(`Failed to attach ${track.kind} track for ${participant.identity} after 5 retries`);
                 }
-            } else {
-                console.error(`Failed to attach track for ${participant.identity} after retry`);
-            }
-        }, 200); // 200ms delay for DOM to update
+            }, delay);
+        };
+
+        // Start retry with initial 100ms delay
+        retryAttachTrack(1, 100);
     }
 }
 
