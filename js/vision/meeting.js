@@ -259,13 +259,14 @@ async function connectToLiveKit(wsUrl, token) {
                     maxBitrate: 6_000_000,  // 6 Mbps for sharp 1080p
                     maxFramerate: 30,
                 },
-                // Screen share specific settings for MAXIMUM quality
+                // Screen share: Use VP9 codec (better for screen content) with high bitrate
                 screenShareEncoding: {
-                    maxBitrate: 25_000_000,  // 25 Mbps for ultra crisp screen share
-                    maxFramerate: 15,        // Lower framerate = more bits per frame = sharper text
-                    priority: 'high',        // High network priority
+                    maxBitrate: 30_000_000,  // 30 Mbps for maximum quality
+                    maxFramerate: 30,
                 },
-                screenShareSimulcastLayers: [],  // DISABLE simulcast for screen share - full quality only
+                screenShareSimulcastLayers: [],  // DISABLE simulcast - full quality only
+                videoCodec: 'vp9',  // VP9 is optimized for screen sharing
+                backupCodec: false, // Don't fall back to lower quality codec
             }
         };
 
@@ -1574,27 +1575,41 @@ async function toggleScreenShare() {
         }
     } else {
         // Enable screen share with MAXIMUM QUALITY settings for crisp text
-        // Use native screen resolution for pixel-perfect clarity
+        // Capture at native resolution, optimize for text/detail content
         await room.localParticipant.setScreenShareEnabled(true, {
-            resolution: { width: 2560, height: 1440 }, // 1440p for crisp text
-            contentHint: 'text', // Optimize encoding specifically for text (sharper than 'detail')
+            audio: false, // No audio - save bandwidth for video quality
+            video: {
+                displaySurface: 'monitor', // Prefer full screen capture
+            },
+            contentHint: 'text', // Optimize encoding for text clarity
+            resolution: { width: 3840, height: 2160 }, // Request 4K capture
         });
         screenBtn.classList.add('active');
-        console.log('Screen share started with 1440p resolution and text optimization');
+        console.log('Screen share started with 4K resolution and text optimization');
 
-        // Also set contentHint directly on the MediaStreamTrack for maximum effect
-        // This tells the browser encoder to prioritize text clarity
-        setTimeout(() => {
-            room.localParticipant.videoTrackPublications.forEach((publication) => {
+        // Apply contentHint and log encoding stats
+        setTimeout(async () => {
+            for (const [_, publication] of room.localParticipant.videoTrackPublications) {
                 if (publication.source === 'screen_share' && publication.track) {
                     const mediaStreamTrack = publication.track.mediaStreamTrack;
+
+                    // Set contentHint for text optimization
                     if (mediaStreamTrack && 'contentHint' in mediaStreamTrack) {
                         mediaStreamTrack.contentHint = 'text';
-                        console.log('Applied contentHint=text directly to screen share MediaStreamTrack');
+                        console.log('Applied contentHint=text to screen share track');
                     }
+
+                    // Log actual capture settings
+                    const settings = mediaStreamTrack.getSettings();
+                    console.log('Screen share capture settings:', {
+                        width: settings.width,
+                        height: settings.height,
+                        frameRate: settings.frameRate,
+                        displaySurface: settings.displaySurface
+                    });
                 }
-            });
-        }, 500);
+            }
+        }, 1000);
     }
 }
 
