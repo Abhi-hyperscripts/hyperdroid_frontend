@@ -31,6 +31,32 @@
     height: 32px;
 }
 
+/* Auth nav responsive - ensure buttons fit on mobile */
+@media (max-width: 480px) {
+    .login-page .auth-nav {
+        padding: 12px 16px;
+    }
+
+    .login-page .auth-nav .nav-logo {
+        height: 28px;
+    }
+
+    .login-page .auth-nav .nav-cta {
+        gap: 8px;
+    }
+
+    /* Hide Get Started button on mobile */
+    .login-page .auth-nav .nav-cta .btn-primary {
+        display: none;
+    }
+
+    .login-page .nav-theme-toggle {
+        width: 36px;
+        height: 36px;
+        margin-left: 0;
+    }
+}
+
 /* Hide showcase logo when nav bar is present */
 .login-page .showcase-logo {
     display: none;
