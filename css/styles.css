@@ -2050,12 +2050,10 @@ body:has(.auth-container)::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Match video-container styling exactly */
-    background: var(--white-50);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* Gradient background with borders - visible in letterbox areas */
+    background: var(--gradient-page-bg);
     border-radius: 16px;
-    border: 1px solid var(--hover-overlay-strong);
+    border: 1px solid var(--border-color);
     overflow: hidden;
     position: relative;
 }
