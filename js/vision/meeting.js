@@ -1566,13 +1566,14 @@ async function toggleScreenShare() {
             }, 100);
         }
     } else {
-        // Enable screen share with HIGH QUALITY settings for crisp text and details
+        // Enable screen share with MAXIMUM QUALITY settings for crisp text
+        // Use native screen resolution for pixel-perfect clarity
         await room.localParticipant.setScreenShareEnabled(true, {
-            resolution: LivekitClient.VideoPresets.h1080.resolution, // 1920x1080 Full HD
-            contentHint: 'detail', // Optimize encoding for text/detail (not motion)
+            resolution: { width: 2560, height: 1440 }, // 1440p for crisp text
+            contentHint: 'text', // Optimize encoding specifically for text (sharper than 'detail')
         });
         screenBtn.classList.add('active');
-        console.log('Screen share started with HD resolution and detail optimization');
+        console.log('Screen share started with 1440p resolution and text optimization');
     }
 }
 

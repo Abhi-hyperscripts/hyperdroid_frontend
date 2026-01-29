@@ -2061,10 +2061,11 @@ body:has(.auth-container)::after {
 #screenShareVideo {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Fill entire width - use zoom controls to see full content */
+    object-fit: contain; /* Preserve pixel-perfect quality - no scaling artifacts */
     flex-grow: 1;
     /* No padding - maximize screen share viewing area */
     box-sizing: border-box;
+    background: #000; /* Black background for letterboxing instead of white */
     transition: transform 0.3s ease;
     transform-origin: center center;
     user-select: none;
