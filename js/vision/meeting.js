@@ -254,11 +254,17 @@ async function connectToLiveKit(wsUrl, token) {
                 resolution: LivekitClient.VideoPresets.h1080.resolution,
             },
             publishDefaults: {
-                simulcast: true,  // Enable simulcast for adaptive quality
+                simulcast: true,  // Enable simulcast for adaptive quality (camera only)
                 videoEncoding: {
                     maxBitrate: 6_000_000,  // 6 Mbps for sharp 1080p
                     maxFramerate: 30,
                 },
+                // Screen share specific settings for MAXIMUM quality
+                screenShareEncoding: {
+                    maxBitrate: 15_000_000,  // 15 Mbps for crystal clear screen share
+                    maxFramerate: 30,
+                },
+                screenShareSimulcastLayers: [],  // DISABLE simulcast for screen share - full quality only
             }
         };
 
