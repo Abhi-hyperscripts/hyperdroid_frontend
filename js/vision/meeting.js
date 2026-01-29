@@ -295,6 +295,44 @@ async function connectToLiveKit(wsUrl, token) {
                 if (video) {
                     publication.track.attach(video);
                 }
+                // Hide placeholder when video is published
+                const localDiv = document.getElementById('local-participant');
+                if (localDiv) {
+                    updateCameraOffPlaceholder(localDiv, true);
+                }
+            }
+        });
+
+        // Handle local participant track unpublished (when camera is turned off)
+        room.on('localTrackUnpublished', (publication) => {
+            console.log('Local track unpublished:', publication.kind);
+            if (publication.kind === 'video' && publication.source === 'camera') {
+                const localDiv = document.getElementById('local-participant');
+                if (localDiv) {
+                    updateCameraOffPlaceholder(localDiv, false);
+                }
+            }
+        });
+
+        // Handle remote participant track muted (video off)
+        room.on('trackMuted', (publication, participant) => {
+            console.log('Track muted:', publication.kind, 'from', participant.identity);
+            if (publication.kind === 'video' && publication.source === 'camera') {
+                const participantDiv = document.getElementById(`participant-${participant.identity}`);
+                if (participantDiv) {
+                    updateCameraOffPlaceholder(participantDiv, false);
+                }
+            }
+        });
+
+        // Handle remote participant track unmuted (video on)
+        room.on('trackUnmuted', (publication, participant) => {
+            console.log('Track unmuted:', publication.kind, 'from', participant.identity);
+            if (publication.kind === 'video' && publication.source === 'camera') {
+                const participantDiv = document.getElementById(`participant-${participant.identity}`);
+                if (participantDiv) {
+                    updateCameraOffPlaceholder(participantDiv, true);
+                }
             }
         });
 
@@ -895,6 +933,70 @@ function updateParticipantLayout(layout) {
     }
 }
 
+// Helper function to get initials from name
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+// Helper function to create camera-off placeholder
+function createCameraOffPlaceholder(name) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'camera-off-placeholder';
+
+    const initials = getInitials(name);
+
+    placeholder.innerHTML = `
+        <div class="camera-off-avatar">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="avatar-circle">${initials}</div>
+        </div>
+        <div class="camera-off-audio-indicator">
+            <div class="audio-wave">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            <span>Audio Only</span>
+        </div>
+    `;
+
+    return placeholder;
+}
+
+// Helper function to check if participant has active video
+function hasActiveVideo(participant, isLocal) {
+    const trackPublications = isLocal
+        ? participant.videoTrackPublications
+        : participant.videoTrackPublications;
+
+    for (const [, publication] of trackPublications) {
+        if (publication.source === 'camera' && publication.track && !publication.track.isMuted) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Helper function to update camera-off placeholder visibility
+function updateCameraOffPlaceholder(participantDiv, hasVideo) {
+    const placeholder = participantDiv.querySelector('.camera-off-placeholder');
+    if (placeholder) {
+        if (hasVideo) {
+            placeholder.classList.remove('visible');
+        } else {
+            placeholder.classList.add('visible');
+        }
+    }
+}
+
 // Helper function to add participant to a container
 function addParticipantToContainer(participant, container, className, isLocal) {
     const participantDiv = document.createElement('div');
@@ -911,10 +1013,18 @@ function addParticipantToContainer(participant, container, className, isLocal) {
 
     const nameTag = document.createElement('div');
     nameTag.className = 'participant-name';
-    nameTag.textContent = isLocal ? 'You' : (participant.name || participant.identity);
+    const displayName = isLocal ? 'You' : (participant.name || participant.identity);
+    nameTag.textContent = displayName;
+
+    // Create camera-off placeholder with avatar
+    const cameraOffPlaceholder = createCameraOffPlaceholder(displayName);
 
     participantDiv.appendChild(video);
+    participantDiv.appendChild(cameraOffPlaceholder);
     participantDiv.appendChild(nameTag);
+
+    // Check initial video state
+    let hasVideo = false;
 
     // Attach tracks
     if (isLocal) {
@@ -922,6 +1032,9 @@ function addParticipantToContainer(participant, container, className, isLocal) {
         localTracks.forEach((publication) => {
             if (publication.track && publication.source === 'camera') {
                 publication.track.attach(video);
+                if (!publication.track.isMuted) {
+                    hasVideo = true;
+                }
             }
         });
     } else {
@@ -929,6 +1042,9 @@ function addParticipantToContainer(participant, container, className, isLocal) {
         participant.videoTrackPublications.forEach((publication) => {
             if (publication.track && publication.isSubscribed && publication.source === 'camera') {
                 publication.track.attach(video);
+                if (!publication.track.isMuted) {
+                    hasVideo = true;
+                }
             }
         });
 
@@ -959,6 +1075,9 @@ function addParticipantToContainer(participant, container, className, isLocal) {
             }
         });
     }
+
+    // Show placeholder if no video
+    updateCameraOffPlaceholder(participantDiv, hasVideo);
 
     container.appendChild(participantDiv);
 }
@@ -1237,6 +1356,12 @@ async function toggleCamera() {
         cameraEnabled = newState;
         camBtn.classList.toggle('active', cameraEnabled);
         console.log('Camera toggled:', cameraEnabled ? 'ON' : 'OFF');
+
+        // Update camera-off placeholder visibility
+        const localDiv = document.getElementById('local-participant');
+        if (localDiv) {
+            updateCameraOffPlaceholder(localDiv, cameraEnabled);
+        }
 
         // Re-attach video track to local video element after enabling
         if (cameraEnabled) {

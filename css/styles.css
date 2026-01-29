@@ -2900,28 +2900,158 @@ body:has(.pre-meeting-container)::after {
     object-fit: cover;
 }
 
+/* Camera Off Placeholder with Avatar and Pulse Animation */
 .camera-off-placeholder {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--gray-800);
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
     color: var(--text-inverse);
+    z-index: 1;
 }
 
-.camera-off-placeholder .placeholder-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
+.camera-off-placeholder.visible {
+    display: flex;
 }
 
-.camera-off-placeholder p {
-    font-size: 16px;
+.camera-off-avatar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-off-avatar .avatar-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-inverse);
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+}
+
+/* Pulse rings animation */
+.camera-off-avatar .pulse-ring {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid var(--brand-primary);
+    opacity: 0;
+    animation: pulse-ring 2s ease-out infinite;
+}
+
+.camera-off-avatar .pulse-ring:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.camera-off-avatar .pulse-ring:nth-child(3) {
+    animation-delay: 1s;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* Audio indicator */
+.camera-off-audio-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 8px 16px;
+    background: var(--glass-bg-dark);
+    border-radius: var(--border-radius-full);
+    font-size: 14px;
     color: var(--white-80);
+}
+
+.camera-off-audio-indicator svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-success);
+}
+
+/* Audio wave animation */
+.audio-wave {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 16px;
+}
+
+.audio-wave .wave-bar {
+    width: 3px;
+    height: 4px;
+    background: var(--color-success);
+    border-radius: 2px;
+    animation: wave-animation 0.8s ease-in-out infinite;
+}
+
+.audio-wave .wave-bar:nth-child(1) { animation-delay: 0s; }
+.audio-wave .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.audio-wave .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.audio-wave .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes wave-animation {
+    0%, 100% {
+        height: 4px;
+    }
+    50% {
+        height: 14px;
+    }
+}
+
+/* Small tile variant */
+.small-tile .camera-off-avatar .avatar-circle {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+}
+
+.small-tile .camera-off-avatar .pulse-ring {
+    width: 60px;
+    height: 60px;
+}
+
+.small-tile .camera-off-audio-indicator {
+    margin-top: 10px;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.small-tile .audio-wave .wave-bar {
+    width: 2px;
+    height: 3px;
+}
+
+@keyframes wave-animation {
+    0%, 100% {
+        height: 3px;
+    }
+    50% {
+        height: 10px;
+    }
 }
 
 .permission-request {
