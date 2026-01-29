@@ -1386,6 +1386,29 @@ body:has(.auth-container)::after {
         left: 6px;
     }
 
+    /* Adjust camera-off avatar for portrait small tiles on mobile */
+    .small-tile .camera-off-avatar .avatar-circle {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+
+    .small-tile .camera-off-avatar .pulse-ring {
+        width: 45px;
+        height: 45px;
+    }
+
+    .small-tile .camera-off-audio-indicator {
+        margin-top: 6px;
+        padding: 2px 6px;
+        font-size: 10px;
+    }
+
+    .small-tile .audio-wave .wave-bar {
+        width: 2px;
+        height: 2px;
+    }
+
     /* Hide recording status and meeting info in header on mobile */
     #recordingStatus,
     .meeting-info {
