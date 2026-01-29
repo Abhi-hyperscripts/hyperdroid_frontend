@@ -1100,6 +1100,43 @@ body {
     line-height: 1.2;
 }
 
+/* Recording indicator - compact pill style */
+.recording-indicator {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-error);
+    margin-left: 12px;
+}
+
+.recording-indicator.visible {
+    display: flex;
+}
+
+.recording-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-error);
+    border-radius: 50%;
+    animation: recording-pulse 1.5s ease-in-out infinite;
+}
+
+.recording-text {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@keyframes recording-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 .meeting-main {
     flex: 1;
     display: flex;

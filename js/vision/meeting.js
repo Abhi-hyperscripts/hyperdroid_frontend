@@ -1447,7 +1447,10 @@ async function startRecording() {
             const label = recordBtn.querySelector('.menu-label');
             if (label) label.textContent = 'Stop Recording';
         }
-        document.getElementById('recordingStatus').style.display = 'block';
+        const recordingStatus = document.getElementById('recordingStatus');
+        if (recordingStatus) {
+            recordingStatus.classList.add('visible');
+        }
 
         // Show recording overlay on video
         const recordingOverlay = document.getElementById('recordingOverlay');
@@ -1538,7 +1541,7 @@ async function stopRecording() {
         }
         const recordingStatus = document.getElementById('recordingStatus');
         if (recordingStatus) {
-            recordingStatus.style.display = 'none';
+            recordingStatus.classList.remove('visible');
         }
 
         // Hide recording overlay on video
