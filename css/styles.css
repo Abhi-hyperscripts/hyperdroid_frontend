@@ -2037,7 +2037,7 @@ body:has(.auth-container)::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--gray-800); /* Grey outer background - matches meeting area */
+    background: var(--gradient-page-bg); /* Page gradient - shows through blur */
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -2051,11 +2051,13 @@ body:has(.auth-container)::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--gradient-page-bg); /* Gradient inner area */
-    border-radius: var(--border-radius-lg);
-    border: 1px solid var(--hover-overlay-strong); /* Border like main tile */
+    /* Match video-container styling exactly */
+    background: var(--white-50);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid var(--hover-overlay-strong);
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
     position: relative;
 }
 
