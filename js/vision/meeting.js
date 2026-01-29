@@ -1161,6 +1161,7 @@ function attachTrack(track, publication, participant) {
             const video = participantDiv.querySelector('video');
             if (video) {
                 track.attach(video);
+                console.log(`Video track attached for ${participant.identity}`);
             }
         } else if (track.kind === 'audio') {
             // Create or get audio element for this participant
@@ -1191,6 +1192,43 @@ function attachTrack(track, publication, participant) {
                 });
             }
         }
+    } else {
+        // Participant element doesn't exist yet - race condition between track subscription and DOM creation
+        // Trigger layout refresh and retry after a short delay
+        console.warn(`Participant element not found for ${participant.identity}, triggering layout refresh...`);
+
+        if (activeSpeakerManager) {
+            // Force layout refresh to create the participant element
+            activeSpeakerManager.notifyLayoutChange();
+        }
+
+        // Retry track attachment after DOM has a chance to update
+        setTimeout(() => {
+            const retryDiv = document.getElementById(`participant-${participant.identity}`);
+            if (retryDiv) {
+                if (track.kind === 'video') {
+                    const video = retryDiv.querySelector('video');
+                    if (video) {
+                        track.attach(video);
+                        console.log(`Video track attached for ${participant.identity} (retry successful)`);
+                    }
+                } else if (track.kind === 'audio') {
+                    let audio = retryDiv.querySelector('audio');
+                    if (!audio) {
+                        audio = document.createElement('audio');
+                        audio.autoplay = true;
+                        audio.playsInline = true;
+                        audio.dataset.participantId = participant.identity;
+                        retryDiv.appendChild(audio);
+                    }
+                    track.attach(audio);
+                    audio.play().catch(() => {});
+                    console.log(`Audio track attached for ${participant.identity} (retry successful)`);
+                }
+            } else {
+                console.error(`Failed to attach track for ${participant.identity} after retry`);
+            }
+        }, 200); // 200ms delay for DOM to update
     }
 }
 
