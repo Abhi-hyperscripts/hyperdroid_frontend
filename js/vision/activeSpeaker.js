@@ -182,6 +182,7 @@ class ActiveSpeakerManager {
      * Update the main speaker (shown in large tile) and adjust video qualities
      * CRITICAL: Main speaker must ALWAYS have video - never show blank tile
      * CRITICAL: When screen share is active, do NOT change main speaker
+     * CRITICAL: In 1-on-1 calls (2 participants), always show the OTHER person as main speaker
      */
     updateMainSpeaker() {
         // CRITICAL: Skip main speaker changes when screen share is active
@@ -192,18 +193,35 @@ class ActiveSpeakerManager {
         }
 
         const previousMainSpeaker = this.mainSpeaker;
-        const currentlySpeaking = this.activeSpeakers.find(s => s.isSpeaking);
+        const remoteParticipantCount = this.room.remoteParticipants.size;
 
-        if (currentlySpeaking) {
-            // If someone is currently speaking, make them the main speaker
-            this.mainSpeaker = currentlySpeaking;
-        } else if (this.activeSpeakers.length > 0) {
-            // Otherwise, use the most recently active speaker
-            this.mainSpeaker = this.activeSpeakers[0];
+        // SPECIAL CASE: 1-on-1 call (only 1 remote participant)
+        // Always show the other person as main speaker, regardless of who is speaking
+        // This provides better UX - you want to see the other person, not yourself
+        if (remoteParticipantCount === 1) {
+            const remoteParticipant = this.room.remoteParticipants.values().next().value;
+            this.mainSpeaker = {
+                participantSid: remoteParticipant.sid,
+                identity: remoteParticipant.identity,
+                lastActiveTime: Date.now(),
+                isSpeaking: false
+            };
+            console.log('1-on-1 call - always showing remote participant as main:', remoteParticipant.identity);
         } else {
-            // CRITICAL: If no active speakers, pick ANY remote participant with video
-            // NEVER leave main speaker empty - this would show blank tile
-            this.mainSpeaker = this.findFirstParticipantWithVideo();
+            // NORMAL CASE: 3+ participants - use active speaker switching
+            const currentlySpeaking = this.activeSpeakers.find(s => s.isSpeaking);
+
+            if (currentlySpeaking) {
+                // If someone is currently speaking, make them the main speaker
+                this.mainSpeaker = currentlySpeaking;
+            } else if (this.activeSpeakers.length > 0) {
+                // Otherwise, use the most recently active speaker
+                this.mainSpeaker = this.activeSpeakers[0];
+            } else {
+                // CRITICAL: If no active speakers, pick ANY remote participant with video
+                // NEVER leave main speaker empty - this would show blank tile
+                this.mainSpeaker = this.findFirstParticipantWithVideo();
+            }
         }
 
         // If main speaker changed, update video qualities
