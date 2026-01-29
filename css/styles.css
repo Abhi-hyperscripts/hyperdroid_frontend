@@ -1209,16 +1209,20 @@ body {
 /* Single participant layout - full width */
 .video-container.single-participant {
     justify-content: center;
+    align-items: center;
 }
 
 .video-container.single-participant .main-speaker-container {
     max-width: 100%;
     width: 100%;
+    height: 100%;
 }
 
 .video-container.single-participant .main-speaker-tile {
-    aspect-ratio: 16/9;
-    max-height: calc(100vh - 200px);
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto; /* Let video fill available space */
+    max-height: none;
 }
 
 /* Mobile responsive layout */
