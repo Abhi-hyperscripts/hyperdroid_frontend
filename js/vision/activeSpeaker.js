@@ -355,20 +355,26 @@ class ActiveSpeakerManager {
                             : this.smallTileQuality;
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
-                        publication.setSubscribed(true);
-                        // Initial subscription - don't delay quality setting
-                        this.setVideoQualityDelayed(publication, quality, participant.identity, true);
-                        console.log(`🎥 [${role}] Subscribed to ${participant.identity}`);
+                        // Safari: Don't call setSubscribed - LiveKit auto-subscribes and calling it again causes issues
+                        if (!this.isSafari) {
+                            publication.setSubscribed(true);
+                            this.setVideoQualityDelayed(publication, quality, participant.identity, true);
+                        }
+                        console.log(`🎥 [${role}] ${this.isSafari ? 'Using auto-subscription for' : 'Subscribed to'} ${participant.identity}`);
                     }
                     else if (shouldSubscribe && publication.isSubscribed) {
-                        // Update quality if subscription exists - use delay for Safari
-                        const quality = isMainSpeaker
-                            ? this.mainSpeakerQuality
-                            : this.smallTileQuality;
-                        const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
-
-                        this.setVideoQualityDelayed(publication, quality, participant.identity, false);
-                        console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
+                        // Update quality if subscription exists
+                        // Safari: Skip quality updates entirely - they cause track restarts
+                        if (this.isSafari) {
+                            console.log(`⏭️ [Safari] Skipping quality update for ${participant.identity} - using default`);
+                        } else {
+                            const quality = isMainSpeaker
+                                ? this.mainSpeakerQuality
+                                : this.smallTileQuality;
+                            const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
+                            this.setVideoQualityDelayed(publication, quality, participant.identity, false);
+                            console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
+                        }
                     }
                     // DISABLED: Don't unsubscribe from inactive speakers - show all participant videos
                     // else if (!shouldSubscribe && publication.isSubscribed) {
@@ -574,7 +580,13 @@ class ActiveSpeakerManager {
      * @param {Object} newMain - New main speaker
      */
     updateVideoQualitiesOnSpeakerChange(previousMain, newMain) {
-        // Downgrade previous main speaker to medium quality (360p) - use delay for Safari
+        // Safari: Skip all quality changes - they cause track restarts
+        if (this.isSafari) {
+            console.log(`⏭️ [Safari] Skipping speaker change quality updates`);
+            return;
+        }
+
+        // Downgrade previous main speaker to medium quality (360p)
         if (previousMain) {
             const prevParticipant = this.room.remoteParticipants.get(previousMain.participantSid);
             if (prevParticipant) {
@@ -587,7 +599,7 @@ class ActiveSpeakerManager {
             }
         }
 
-        // Upgrade new main speaker to high quality (1080p) - use delay for Safari
+        // Upgrade new main speaker to high quality (1080p)
         if (newMain) {
             const newParticipant = this.room.remoteParticipants.get(newMain.participantSid);
             if (newParticipant) {
