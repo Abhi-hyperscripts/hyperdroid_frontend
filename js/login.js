@@ -9,8 +9,7 @@ const loginForm = document.getElementById('loginForm');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const togglePasswordBtn = document.getElementById('togglePassword');
-const swipeHandle = document.getElementById('swipeHandle');
-const swipeTrack = swipeHandle?.parentElement;
+const loginBtn = document.getElementById('loginBtn');
 const errorMessage = document.getElementById('errorMessage');
 
 // Detect browser autofill and adjust input styling
@@ -78,70 +77,6 @@ togglePasswordBtn?.addEventListener('click', () => {
     }
 });
 
-// Initialize swipe button
-if (swipeHandle && swipeTrack) {
-    let isDragging = false;
-    let startX = 0;
-    let currentX = 0;
-    const trackWidth = swipeTrack.offsetWidth;
-    const handleWidth = swipeHandle.offsetWidth;
-    const maxDistance = trackWidth - handleWidth - 4;
-    const threshold = maxDistance * 0.8;
-
-    // Mouse events
-    swipeHandle.addEventListener('mousedown', handleDragStart);
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
-
-    // Touch events
-    swipeHandle.addEventListener('touchstart', handleDragStart, { passive: false });
-    document.addEventListener('touchmove', handleDragMove, { passive: false });
-    document.addEventListener('touchend', handleDragEnd);
-
-    function handleDragStart(e) {
-        isDragging = true;
-        swipeTrack.classList.add('swiping');
-        startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-        currentX = swipeHandle.offsetLeft;
-    }
-
-    function handleDragMove(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-
-        const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-        const deltaX = clientX - startX;
-        let newX = currentX + deltaX;
-
-        newX = Math.max(2, Math.min(newX, maxDistance + 2));
-        swipeHandle.style.left = `${newX}px`;
-    }
-
-    function handleDragEnd() {
-        if (!isDragging) return;
-        isDragging = false;
-        swipeTrack.classList.remove('swiping');
-
-        const finalPosition = swipeHandle.offsetLeft;
-
-        if (finalPosition >= threshold) {
-            completeSwipe();
-        } else {
-            resetSwipe();
-        }
-    }
-
-    function completeSwipe() {
-        swipeHandle.style.left = `${maxDistance + 2}px`;
-        swipeTrack.classList.add('success');
-        setTimeout(() => handleFormSubmit(), 300);
-    }
-
-    function resetSwipe() {
-        swipeHandle.style.left = '2px';
-    }
-}
-
 // Form submission
 async function handleFormSubmit() {
     const email = emailInput.value.trim();
@@ -154,47 +89,61 @@ async function handleFormSubmit() {
     // Basic validation
     if (!email || !password) {
         Toast.error('Please enter both email and password');
-        resetSwipeButton();
         return;
     }
 
     // Show loading state
-    const handleText = swipeHandle.querySelector('.handle-text');
-    handleText.textContent = 'Signing in...';
+    setButtonLoading(true);
 
     try {
         const response = await api.login(email, password);
 
         if (response.success) {
-            handleText.textContent = 'Success!';
+            setButtonSuccess();
             setTimeout(() => {
                 window.location.href = 'home.html';
             }, 500);
         } else {
             Toast.error(response.message || 'Login failed');
-            resetSwipeButton();
+            setButtonLoading(false);
         }
     } catch (error) {
         Toast.error(error.message || 'An error occurred');
-        resetSwipeButton();
+        setButtonLoading(false);
     }
 }
 
-// Local showError removed - using unified toast.js instead
-
-function resetSwipeButton() {
-    if (swipeHandle && swipeTrack) {
-        // Use requestAnimationFrame to ensure smooth transition
-        requestAnimationFrame(() => {
-            swipeHandle.style.left = '2px';
-            swipeTrack.classList.remove('success');
-            const handleText = swipeHandle.querySelector('.handle-text');
-            handleText.textContent = 'Swipe to Sign In';
-        });
+function setButtonLoading(loading) {
+    if (loginBtn) {
+        if (loading) {
+            loginBtn.classList.add('loading');
+            loginBtn.disabled = true;
+        } else {
+            loginBtn.classList.remove('loading');
+            loginBtn.disabled = false;
+        }
     }
 }
 
-// Prevent default form submission
+function setButtonSuccess() {
+    if (loginBtn) {
+        loginBtn.classList.remove('loading');
+        loginBtn.classList.add('success');
+        const btnText = loginBtn.querySelector('.btn-text');
+        if (btnText) {
+            btnText.textContent = 'Success!';
+        }
+    }
+}
+
+// Form submission handler
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    handleFormSubmit();
+});
+
+// Also handle button click directly
+loginBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleFormSubmit();
 });

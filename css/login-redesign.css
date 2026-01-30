@@ -329,8 +329,12 @@
     transform: translateY(-2px);
 }
 
-.bento-meetings {
-    grid-column: span 2;
+/* All 4 main cards in 2x2 grid - no spanning */
+.bento-meetings,
+.bento-drive,
+.bento-hrms,
+.bento-chat {
+    grid-column: span 1;
 }
 
 .bento-icon {
@@ -704,6 +708,87 @@
 .swipe-button-track.success .swipe-button-handle {
     background: var(--gradient-success);
     box-shadow: var(--shadow-success-md);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOGIN SUBMIT BUTTON
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.login-submit-btn {
+    width: 100%;
+    height: 54px;
+    margin-top: 6px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition-all);
+    box-shadow: var(--shadow-primary-sm);
+}
+
+.login-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-md);
+}
+
+.login-submit-btn:active {
+    transform: translateY(0);
+}
+
+.login-submit-btn .btn-text {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-inverse);
+}
+
+.login-submit-btn .btn-arrow {
+    color: var(--text-inverse);
+    transition: transform 0.2s ease;
+}
+
+.login-submit-btn:hover .btn-arrow {
+    transform: translateX(4px);
+}
+
+.login-submit-btn .btn-spinner {
+    display: none;
+    color: var(--text-inverse);
+}
+
+/* Loading state */
+.login-submit-btn.loading {
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.login-submit-btn.loading .btn-text {
+    opacity: 0.7;
+}
+
+.login-submit-btn.loading .btn-arrow {
+    display: none;
+}
+
+.login-submit-btn.loading .btn-spinner {
+    display: block;
+}
+
+/* Success state */
+.login-submit-btn.success {
+    background: var(--gradient-success);
+    box-shadow: var(--shadow-success-md);
+}
+
+.login-submit-btn.success .btn-arrow {
+    display: none;
+}
+
+.login-submit-btn:disabled {
+    cursor: not-allowed;
 }
 
 /* Error message */
