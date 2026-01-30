@@ -355,12 +355,20 @@ class ActiveSpeakerManager {
                             : this.smallTileQuality;
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
-                        // Safari: Don't call setSubscribed - LiveKit auto-subscribes and calling it again causes issues
-                        if (!this.isSafari) {
+                        if (this.isSafari) {
+                            // Safari: Subscribe with delay to let connection stabilize
+                            console.log(`🎥 [${role}] [Safari] Subscribing to ${participant.identity} with 500ms delay...`);
+                            setTimeout(() => {
+                                if (!publication.isSubscribed) {
+                                    console.log(`🎥 [${role}] [Safari] Executing delayed subscription for ${participant.identity}`);
+                                    publication.setSubscribed(true);
+                                }
+                            }, 500);
+                        } else {
                             publication.setSubscribed(true);
                             this.setVideoQualityDelayed(publication, quality, participant.identity, true);
+                            console.log(`🎥 [${role}] Subscribed to ${participant.identity}`);
                         }
-                        console.log(`🎥 [${role}] ${this.isSafari ? 'Using auto-subscription for' : 'Subscribed to'} ${participant.identity}`);
                     }
                     else if (shouldSubscribe && publication.isSubscribed) {
                         // Update quality if subscription exists
