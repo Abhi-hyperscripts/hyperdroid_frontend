@@ -14,6 +14,11 @@ class ActiveSpeakerManager {
         this.mainSpeaker = null; // Currently focused speaker (large tile)
         this.screenShareActive = false; // Track if someone is screen sharing
 
+        // Safari detection - Safari has issues with rapid video quality changes
+        this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        this.qualityChangeDelay = this.isSafari ? 1500 : 0; // 1.5 second delay for Safari, immediate for others
+        this.pendingQualityChanges = new Map(); // Track pending quality change timeouts
+
         // Adaptive video quality settings
         // Note: LiveKit VideoQuality enum: LOW(0), MEDIUM(1), HIGH(2)
         // HIGH requests the highest available simulcast layer from the publisher
@@ -32,7 +37,52 @@ class ActiveSpeakerManager {
         // Participants will only be removed when they disconnect
         // this.startCleanupInterval();
 
-        console.log('ActiveSpeakerManager initialized with adaptive quality (Main: 1080p, Small: 360p)');
+        console.log(`ActiveSpeakerManager initialized with adaptive quality (Main: 1080p, Small: 360p) [Safari: ${this.isSafari}, delay: ${this.qualityChangeDelay}ms]`);
+    }
+
+    /**
+     * Set video quality with optional delay for Safari
+     * Safari has issues with rapid quality changes causing track unsubscription
+     * @param {TrackPublication} publication - The track publication to modify
+     * @param {VideoQuality} quality - The quality level to set
+     * @param {string} participantIdentity - Participant name for logging
+     * @param {boolean} isInitialSubscription - Whether this is the initial subscription (skip delay)
+     */
+    setVideoQualityDelayed(publication, quality, participantIdentity, isInitialSubscription = false) {
+        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' :
+                            quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
+
+        // For initial subscription or non-Safari browsers, apply immediately
+        // For Safari quality CHANGES (not initial), delay to allow track to stabilize
+        if (!this.isSafari || isInitialSubscription) {
+            publication.setVideoQuality(quality);
+            console.log(`🎥 Set ${participantIdentity} quality to ${qualityLabel} (immediate)`);
+            return;
+        }
+
+        // Safari with quality change - use delay
+        const pubKey = `${participantIdentity}-${publication.trackSid}`;
+
+        // Cancel any pending quality change for this publication
+        if (this.pendingQualityChanges.has(pubKey)) {
+            clearTimeout(this.pendingQualityChanges.get(pubKey));
+            console.log(`⏰ Cancelled pending quality change for ${participantIdentity}`);
+        }
+
+        // Schedule delayed quality change
+        console.log(`⏳ [Safari] Scheduling quality change for ${participantIdentity} to ${qualityLabel} in ${this.qualityChangeDelay}ms`);
+
+        const timeoutId = setTimeout(() => {
+            if (publication.isSubscribed) {
+                publication.setVideoQuality(quality);
+                console.log(`🎥 [Safari] Applied delayed quality change for ${participantIdentity} to ${qualityLabel}`);
+            } else {
+                console.log(`⚠️ [Safari] Skipped quality change for ${participantIdentity} - no longer subscribed`);
+            }
+            this.pendingQualityChanges.delete(pubKey);
+        }, this.qualityChangeDelay);
+
+        this.pendingQualityChanges.set(pubKey, timeoutId);
     }
 
     /**
@@ -297,23 +347,22 @@ class ActiveSpeakerManager {
                         const quality = isMainSpeaker
                             ? this.mainSpeakerQuality
                             : this.smallTileQuality;
-                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
                         publication.setSubscribed(true);
-                        publication.setVideoQuality(quality);
-                        console.log(`🎥 [${role}] Subscribed to ${participant.identity} at ${qualityLabel} (quality: ${quality})`);
+                        // Initial subscription - don't delay quality setting
+                        this.setVideoQualityDelayed(publication, quality, participant.identity, true);
+                        console.log(`🎥 [${role}] Subscribed to ${participant.identity}`);
                     }
                     else if (shouldSubscribe && publication.isSubscribed) {
-                        // Update quality if subscription exists
+                        // Update quality if subscription exists - use delay for Safari
                         const quality = isMainSpeaker
                             ? this.mainSpeakerQuality
                             : this.smallTileQuality;
-                        const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' : quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
                         const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
 
-                        publication.setVideoQuality(quality);
-                        console.log(`🔄 [${role}] Updated ${participant.identity} to ${qualityLabel} (quality: ${quality})`);
+                        this.setVideoQualityDelayed(publication, quality, participant.identity, false);
+                        console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
                     }
                     // DISABLED: Don't unsubscribe from inactive speakers - show all participant videos
                     // else if (!shouldSubscribe && publication.isSubscribed) {
@@ -519,27 +568,27 @@ class ActiveSpeakerManager {
      * @param {Object} newMain - New main speaker
      */
     updateVideoQualitiesOnSpeakerChange(previousMain, newMain) {
-        // Downgrade previous main speaker to medium quality (360p)
+        // Downgrade previous main speaker to medium quality (360p) - use delay for Safari
         if (previousMain) {
             const prevParticipant = this.room.remoteParticipants.get(previousMain.participantSid);
             if (prevParticipant) {
                 prevParticipant.videoTrackPublications.forEach((publication) => {
                     if (publication.source === LivekitClient.Track.Source.Camera && publication.isSubscribed) {
-                        publication.setVideoQuality(this.smallTileQuality);
-                        console.log(`Downgraded ${previousMain.identity} to ${this.smallTileQuality} (360p)`);
+                        this.setVideoQualityDelayed(publication, this.smallTileQuality, previousMain.identity, false);
+                        console.log(`⬇️ Downgrading ${previousMain.identity} to 360p (scheduled)`);
                     }
                 });
             }
         }
 
-        // Upgrade new main speaker to high quality (720p)
+        // Upgrade new main speaker to high quality (1080p) - use delay for Safari
         if (newMain) {
             const newParticipant = this.room.remoteParticipants.get(newMain.participantSid);
             if (newParticipant) {
                 newParticipant.videoTrackPublications.forEach((publication) => {
                     if (publication.source === LivekitClient.Track.Source.Camera && publication.isSubscribed) {
-                        publication.setVideoQuality(this.mainSpeakerQuality);
-                        console.log(`Upgraded ${newMain.identity} to ${this.mainSpeakerQuality} (1080p)`);
+                        this.setVideoQualityDelayed(publication, this.mainSpeakerQuality, newMain.identity, false);
+                        console.log(`⬆️ Upgrading ${newMain.identity} to 1080p (scheduled)`);
                     }
                 });
             }
