@@ -121,6 +121,31 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
             videoElement.srcObject = mediaStream;
             attached = !!videoElement.srcObject;
             console.log(`[Safari] Method 1 (srcObject): attached=${attached} for ${participantIdentity}`);
+
+            // Listen for track ending (happens during quality switches)
+            track.mediaStreamTrack.addEventListener('ended', () => {
+                console.warn(`[Safari] MediaStreamTrack ended for ${participantIdentity}`);
+            });
+
+            // CRITICAL: Listen for LiveKit track restarted event (quality change, reconnect)
+            if (track.on) {
+                track.on('restarted', () => {
+                    console.log(`[Safari] Track restarted for ${participantIdentity}, refreshing srcObject`);
+                    if (track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
+                        const newStream = new MediaStream([track.mediaStreamTrack]);
+                        videoElement.srcObject = newStream;
+                        videoElement.play().catch(e => console.warn('[Safari] Play after restart failed:', e));
+                    }
+                });
+
+                // Also listen for unmuted which happens after quality switches
+                track.on('unmuted', () => {
+                    console.log(`[Safari] Track unmuted for ${participantIdentity}, ensuring playback`);
+                    if (videoElement.paused && videoElement.srcObject) {
+                        videoElement.play().catch(e => console.warn('[Safari] Play on unmute failed:', e));
+                    }
+                });
+            }
         } catch (e) {
             console.warn(`[Safari] Method 1 failed for ${participantIdentity}:`, e);
         }
