@@ -2160,18 +2160,18 @@ body:has(.auth-container)::after {
     background: var(--overlay-almost-opaque);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     z-index: 100;
     border: 1px solid var(--white-10);
 }
 
 .control-group {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     justify-content: center;
 }
 
@@ -2179,15 +2179,15 @@ body:has(.auth-container)::after {
     background: var(--white-15);
     color: var(--text-inverse);
     border: 1px solid var(--white-20);
-    border-radius: 12px;
-    width: 48px;
-    height: 48px;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .share-control-btn:hover {
