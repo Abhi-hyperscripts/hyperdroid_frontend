@@ -52,9 +52,15 @@ class ActiveSpeakerManager {
         const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' :
                             quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
 
-        // For initial subscription or non-Safari browsers, apply immediately
-        // For Safari quality CHANGES (not initial), delay to allow track to stabilize
-        if (!this.isSafari || isInitialSubscription) {
+        // For Safari: SKIP initial quality setting entirely - let LiveKit use default
+        // Calling setVideoQuality right after setSubscribed causes track to restart
+        if (this.isSafari && isInitialSubscription) {
+            console.log(`⏭️ [Safari] Skipping initial quality setting for ${participantIdentity} - using LiveKit default`);
+            return;
+        }
+
+        // For non-Safari browsers, apply immediately on initial subscription
+        if (!this.isSafari) {
             publication.setVideoQuality(quality);
             console.log(`🎥 Set ${participantIdentity} quality to ${qualityLabel} (immediate)`);
             return;
