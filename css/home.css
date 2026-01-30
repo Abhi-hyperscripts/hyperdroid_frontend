@@ -1,5 +1,5 @@
 /* =============================================================
-   Home Page Styles - Futuristic Bento Grid
+   Home Page Styles - Sleek Compact Bento Grid
    Theme-aware with glowing effects
    ============================================================= */
 
@@ -17,9 +17,9 @@ body.dashboard::before {
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 45%);
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 45%);
     pointer-events: none;
     z-index: 0;
 }
@@ -33,9 +33,9 @@ body.dashboard::before {
 
 [data-theme="dark"] body.dashboard::before {
     background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.25) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 45%);
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
 }
 
 /* =============================================================
@@ -60,7 +60,7 @@ body.dashboard .navbar {
    ============================================================= */
 .home-content {
     min-height: calc(100vh - 60px);
-    padding: 40px 24px;
+    padding: 32px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -73,22 +73,22 @@ body.dashboard .navbar {
    ============================================================= */
 .welcome-section {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     max-width: 600px;
 }
 
 .welcome-greeting {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     font-weight: 500;
 }
 
 .welcome-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     line-height: 1.2;
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-primary) 100%);
     -webkit-background-clip: text;
@@ -98,7 +98,7 @@ body.dashboard .navbar {
 
 .welcome-subtitle {
     color: var(--text-muted);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
 [data-theme="dark"] .welcome-greeting {
@@ -117,45 +117,42 @@ body.dashboard .navbar {
 }
 
 /* =============================================================
-   BENTO GRID - Uniform Card Sizes
+   BENTO GRID - Compact Layout
    ============================================================= */
 .bento-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 12px;
     width: 100%;
-    max-width: 1000px;
-    margin-bottom: 48px;
+    max-width: 900px;
+    margin-bottom: 32px;
 }
 
 /* =============================================================
-   BENTO CARD - Base Styles
+   BENTO CARD - Compact Horizontal Style
    ============================================================= */
 .bento-card {
     position: relative;
-    border-radius: 20px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* Animated gradient border */
+/* Glow border on hover */
 .card-border {
     position: absolute;
     inset: 0;
-    border-radius: 20px;
-    padding: 1px;
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.1) 100%);
+    border-radius: 14px;
+    padding: 1.5px;
+    background: transparent;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    opacity: 0.5;
+    opacity: 0;
     transition: opacity 0.3s ease;
 }
 
@@ -163,33 +160,34 @@ body.dashboard .navbar {
 .card-content {
     position: relative;
     z-index: 1;
-    padding: 16px 20px;
+    padding: 14px 16px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    gap: 10px;
     background: var(--bg-card);
-    border-radius: 20px;
+    border-radius: 14px;
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
 }
 
 /* Light mode card styles */
 .bento-card .card-content {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Dark mode card styles */
 [data-theme="dark"] .card-content {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* =============================================================
    CARD HOVER EFFECTS
    ============================================================= */
 .bento-card:hover {
-    transform: translateY(-6px);
+    transform: translateY(-3px) scale(1.01);
 }
 
 .bento-card:hover .card-border {
@@ -202,98 +200,83 @@ body.dashboard .navbar {
 
 /* Card-specific hover glow colors */
 .bento-card.vision:hover .card-border {
-    background: linear-gradient(135deg,
-        var(--brand-accent) 0%,
-        var(--brand-secondary) 50%,
-        var(--brand-accent) 100%);
+    background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
 }
 
 .bento-card.drive:hover .card-border {
-    background: linear-gradient(135deg,
-        var(--color-success) 0%,
-        var(--color-success-light-accent) 50%,
-        var(--color-success) 100%);
+    background: linear-gradient(135deg, var(--color-success), #34d399);
 }
 
 .bento-card.chat:hover .card-border {
-    background: linear-gradient(135deg,
-        var(--color-warning) 0%,
-        var(--color-orange) 50%,
-        var(--color-warning) 100%);
+    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
 }
 
 .bento-card.hrms:hover .card-border {
-    background: linear-gradient(135deg,
-        var(--brand-primary) 0%,
-        var(--brand-accent) 50%,
-        var(--brand-primary) 100%);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
 }
 
 .bento-card.admin:hover .card-border {
-    background: linear-gradient(135deg,
-        var(--color-danger) 0%,
-        var(--color-danger-light-accent) 50%,
-        var(--color-danger) 100%);
+    background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
 
 /* Hover shadow glow */
 .bento-card.vision:hover {
-    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
 }
 
 .bento-card.drive:hover {
-    box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
 }
 
 .bento-card.chat:hover {
-    box-shadow: 0 20px 40px rgba(245, 158, 11, 0.15);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
 }
 
 .bento-card.hrms:hover {
-    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
 .bento-card.admin:hover {
-    box-shadow: 0 20px 40px rgba(239, 68, 68, 0.15);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
 }
 
 [data-theme="dark"] .bento-card.vision:hover {
-    box-shadow: 0 20px 50px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.25);
 }
 
 [data-theme="dark"] .bento-card.drive:hover {
-    box-shadow: 0 20px 50px rgba(16, 185, 129, 0.25);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);
 }
 
 [data-theme="dark"] .bento-card.chat:hover {
-    box-shadow: 0 20px 50px rgba(245, 158, 11, 0.25);
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
 }
 
 [data-theme="dark"] .bento-card.hrms:hover {
-    box-shadow: 0 20px 50px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
 }
 
 [data-theme="dark"] .bento-card.admin:hover {
-    box-shadow: 0 20px 50px rgba(239, 68, 68, 0.25);
+    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
 }
 
 /* =============================================================
-   CARD HEADER
+   CARD HEADER - Horizontal Layout
    ============================================================= */
 .card-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    gap: 12px;
 }
 
 /* =============================================================
-   APP ICONS
+   APP ICONS - Compact
    ============================================================= */
 .app-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -316,8 +299,8 @@ body.dashboard .navbar {
 }
 
 .app-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     position: relative;
     z-index: 1;
 }
@@ -331,7 +314,7 @@ body.dashboard .navbar {
 }
 
 .bento-card.drive .app-icon {
-    background: linear-gradient(135deg, var(--color-success), var(--color-success-light-accent));
+    background: linear-gradient(135deg, var(--color-success), #34d399);
 }
 
 .bento-card.drive .app-icon svg {
@@ -355,7 +338,7 @@ body.dashboard .navbar {
 }
 
 .bento-card.admin .app-icon {
-    background: linear-gradient(135deg, var(--color-danger), var(--color-danger-light-accent));
+    background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
 
 .bento-card.admin .app-icon svg {
@@ -363,20 +346,20 @@ body.dashboard .navbar {
 }
 
 /* =============================================================
-   APP STATUS INDICATORS
+   APP STATUS INDICATORS - Compact Pill
    ============================================================= */
 .app-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 5px 10px;
-    border-radius: 20px;
+    gap: 4px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
     background: var(--hover-overlay);
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .app-status.online {
@@ -410,8 +393,8 @@ body.dashboard .navbar {
 }
 
 .status-indicator {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: currentColor;
     animation: pulse 2s ease-in-out infinite;
@@ -419,29 +402,33 @@ body.dashboard .navbar {
 
 @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.9); }
+    50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 /* =============================================================
-   CARD BODY
+   CARD BODY - Compact
    ============================================================= */
 .card-body {
     flex: 1;
 }
 
 .card-body h3 {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     transition: color 0.3s ease;
 }
 
 .card-body p {
     color: var(--text-secondary);
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.75rem;
+    line-height: 1.4;
     margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 [data-theme="dark"] .card-body h3 {
@@ -449,25 +436,30 @@ body.dashboard .navbar {
 }
 
 [data-theme="dark"] .card-body p {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.55);
 }
 
 /* =============================================================
-   CARD FOOTER
+   CARD FOOTER - Minimal
    ============================================================= */
 .card-footer {
-    margin-top: 12px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .card-footer {
+    border-top-color: rgba(255, 255, 255, 0.06);
 }
 
 .app-action {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
     font-weight: 500;
     transition: all 0.3s ease;
 }
@@ -483,7 +475,7 @@ body.dashboard .navbar {
 .bento-card.admin:hover .app-action { color: var(--color-danger); }
 
 [data-theme="dark"] .app-action {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
 }
 
 [data-theme="dark"] .bento-card:hover .app-action {
@@ -491,13 +483,13 @@ body.dashboard .navbar {
 }
 
 .app-action svg {
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     transition: transform 0.3s ease;
 }
 
 .bento-card:hover .app-action svg {
-    transform: translateX(4px);
+    transform: translateX(3px);
 }
 
 /* =============================================================
@@ -514,28 +506,28 @@ body.dashboard .navbar {
 /* =============================================================
    RESPONSIVE DESIGN
    ============================================================= */
-@media (max-width: 900px) {
+@media (max-width: 800px) {
     .bento-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+        gap: 10px;
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
     .home-content {
-        padding: 24px 16px;
+        padding: 20px 12px;
     }
 
     .welcome-title {
-        font-size: 2rem;
+        font-size: 1.6rem;
     }
 
     .bento-grid {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 8px;
     }
 
     .card-content {
-        padding: 20px;
+        padding: 12px 14px;
     }
 }
