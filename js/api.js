@@ -742,6 +742,18 @@ class API {
         return this.request(`/meetings/recordings/${meetingId}`);
     }
 
+    async deleteRecording(recordingId) {
+        return this.request(`/meetings/recordings/${recordingId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async deleteAllMeetingRecordings(meetingId) {
+        return this.request(`/meetings/${meetingId}/recordings`, {
+            method: 'DELETE'
+        });
+    }
+
     // ==================== DRIVE API ====================
 
     // Folder operations

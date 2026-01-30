@@ -4829,6 +4829,66 @@ body:has(.pre-meeting-container)::after {
     background: var(--gray-600);
 }
 
+.rec-delete {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--color-error);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.rec-delete:hover {
+    background: var(--color-error);
+    color: var(--text-inverse);
+    opacity: 1;
+}
+
+.btn-delete-all-recordings {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.btn-delete-all-recordings:hover {
+    background: var(--color-error);
+    color: var(--text-inverse);
+    opacity: 1;
+}
+
+.recordings-compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border-primary);
+    margin-bottom: 4px;
+}
+
+.recordings-compact-header span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
 /* Recording action buttons (below video player) */
 .recording-actions {
     display: flex;
