@@ -60,32 +60,40 @@ function setupAudioResumeHandler() {
 setupAudioResumeHandler();
 
 // Safari-compatible video track attachment
-// Safari has issues with track.attach() - use srcObject with MediaStream instead
-// Safari also requires special handling for video playback timing
+// Uses LiveKit's native attach() but with Safari-specific autoplay handling
 function attachVideoTrackSafari(track, videoElement, participantIdentity) {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
     console.log(`[Safari] Attaching video track for ${participantIdentity}`, {
         hasMediaStreamTrack: !!track.mediaStreamTrack,
         trackKind: track.kind,
-        videoInDOM: document.body.contains(videoElement)
+        trackEnabled: track.mediaStreamTrack?.enabled,
+        trackReadyState: track.mediaStreamTrack?.readyState,
+        videoInDOM: document.body.contains(videoElement),
+        isSafari: isSafari
     });
 
     // Add Safari-specific attributes
     videoElement.setAttribute('webkit-playsinline', 'true');
     videoElement.setAttribute('x5-playsinline', 'true');
+    videoElement.setAttribute('playsinline', 'true');
 
-    // Clear any existing srcObject first
-    if (videoElement.srcObject) {
-        videoElement.srcObject = null;
-    }
+    // Ensure video is muted for autoplay
+    videoElement.muted = true;
 
-    // Function to actually play the video
+    // Function to play the video with retry logic
     const playVideo = () => {
+        if (!videoElement.srcObject) {
+            console.warn(`[Safari] No srcObject when trying to play for ${participantIdentity}`);
+            return;
+        }
+
         const playPromise = videoElement.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                console.log(`[Safari] Video playing successfully for ${participantIdentity}`);
+                console.log(`[Safari] Video playing successfully for ${participantIdentity}, readyState: ${videoElement.readyState}`);
             }).catch((err) => {
-                console.warn(`[Safari] Video autoplay blocked for ${participantIdentity}:`, err.name);
+                console.warn(`[Safari] Video autoplay blocked for ${participantIdentity}:`, err.name, err.message);
                 // Set up user interaction handlers
                 const resumeVideo = () => {
                     videoElement.play().catch(e => console.warn('[Safari] Video play retry failed:', e));
@@ -98,57 +106,74 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
         }
     };
 
-    // Use srcObject approach which works better in Safari
-    if (track.mediaStreamTrack) {
-        const mediaStream = new MediaStream([track.mediaStreamTrack]);
-
-        // Wait for loadedmetadata before playing (Safari requirement)
-        const onLoadedMetadata = () => {
-            console.log(`[Safari] Video metadata loaded for ${participantIdentity}`);
-            videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
-            playVideo();
-        };
-
-        // Check if already has metadata (can happen with fast connections)
-        if (videoElement.readyState >= 1) {
-            videoElement.srcObject = mediaStream;
-            console.log(`[Safari] Video already ready, playing immediately for ${participantIdentity}`);
-            playVideo();
-        } else {
-            videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
-            videoElement.srcObject = mediaStream;
-            console.log(`[Safari] Video srcObject set, waiting for metadata for ${participantIdentity}`);
-
-            // Fallback: if metadata doesn't load in 2 seconds, try playing anyway
-            setTimeout(() => {
-                if (videoElement.paused && videoElement.srcObject) {
-                    console.log(`[Safari] Metadata timeout, forcing play for ${participantIdentity}`);
-                    videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
-                    playVideo();
-                }
-            }, 2000);
-        }
-    } else {
-        // Fallback to track.attach() if mediaStreamTrack not available
-        console.warn(`[Safari] No mediaStreamTrack available, using track.attach() for ${participantIdentity}`);
-        track.attach(videoElement);
-
-        // Still try to play
-        setTimeout(playVideo, 100);
+    // Use LiveKit's native attach() - it handles browser quirks internally
+    // Clear any existing attachment first
+    if (videoElement.srcObject) {
+        videoElement.srcObject = null;
     }
 
-    // Safari sometimes loses video - add listener to recover
-    videoElement.addEventListener('suspend', () => {
-        console.warn(`[Safari] Video suspended for ${participantIdentity}, attempting recovery`);
-        if (videoElement.srcObject && videoElement.paused) {
+    // Use LiveKit's attach method
+    const attachedElements = track.attach(videoElement);
+    console.log(`[Safari] track.attach() called for ${participantIdentity}, returned elements:`, attachedElements?.length || 0);
+
+    // Wait for video to have data, then play
+    const onCanPlay = () => {
+        console.log(`[Safari] Video canplay event fired for ${participantIdentity}`);
+        videoElement.removeEventListener('canplay', onCanPlay);
+        playVideo();
+    };
+
+    const onLoadedData = () => {
+        console.log(`[Safari] Video loadeddata event fired for ${participantIdentity}, videoWidth: ${videoElement.videoWidth}`);
+        videoElement.removeEventListener('loadeddata', onLoadedData);
+        if (videoElement.paused) {
             playVideo();
         }
-    });
+    };
 
-    // Also handle stalled state
-    videoElement.addEventListener('stalled', () => {
-        console.warn(`[Safari] Video stalled for ${participantIdentity}`);
-    });
+    // Listen for video ready events
+    videoElement.addEventListener('canplay', onCanPlay);
+    videoElement.addEventListener('loadeddata', onLoadedData);
+
+    // If video is already ready, play immediately
+    if (videoElement.readyState >= 3) {
+        console.log(`[Safari] Video already ready (readyState=${videoElement.readyState}), playing for ${participantIdentity}`);
+        playVideo();
+    } else {
+        // Fallback: try playing after a short delay
+        setTimeout(() => {
+            if (videoElement.paused && videoElement.srcObject) {
+                console.log(`[Safari] Delayed play attempt for ${participantIdentity}, readyState: ${videoElement.readyState}`);
+                playVideo();
+            }
+        }, 500);
+
+        // Second fallback after 2 seconds
+        setTimeout(() => {
+            if (videoElement.paused && videoElement.srcObject) {
+                console.log(`[Safari] Second delayed play attempt for ${participantIdentity}, readyState: ${videoElement.readyState}, videoWidth: ${videoElement.videoWidth}`);
+                playVideo();
+            }
+        }, 2000);
+    }
+
+    // Debug: log video element state periodically for the first few seconds
+    let debugCount = 0;
+    const debugInterval = setInterval(() => {
+        debugCount++;
+        if (debugCount > 5 || !videoElement.paused) {
+            clearInterval(debugInterval);
+            return;
+        }
+        console.log(`[Safari] Debug ${participantIdentity} at ${debugCount}s:`, {
+            paused: videoElement.paused,
+            readyState: videoElement.readyState,
+            videoWidth: videoElement.videoWidth,
+            videoHeight: videoElement.videoHeight,
+            currentTime: videoElement.currentTime,
+            hasSrcObject: !!videoElement.srcObject
+        });
+    }, 1000);
 }
 
 // Global handler to resume all video elements on first user interaction (for Safari)
