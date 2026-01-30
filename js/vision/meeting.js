@@ -61,31 +61,94 @@ setupAudioResumeHandler();
 
 // Safari-compatible video track attachment
 // Safari has issues with track.attach() - use srcObject with MediaStream instead
+// Safari also requires special handling for video playback timing
 function attachVideoTrackSafari(track, videoElement, participantIdentity) {
-    // Use srcObject approach which works better in Safari
-    if (track.mediaStreamTrack) {
-        videoElement.srcObject = new MediaStream([track.mediaStreamTrack]);
-        console.log(`Video track attached via srcObject for ${participantIdentity}`);
-    } else {
-        // Fallback to track.attach() if mediaStreamTrack not available
-        track.attach(videoElement);
-        console.log(`Video track attached via track.attach() for ${participantIdentity}`);
+    console.log(`[Safari] Attaching video track for ${participantIdentity}`, {
+        hasMediaStreamTrack: !!track.mediaStreamTrack,
+        trackKind: track.kind,
+        videoInDOM: document.body.contains(videoElement)
+    });
+
+    // Add Safari-specific attributes
+    videoElement.setAttribute('webkit-playsinline', 'true');
+    videoElement.setAttribute('x5-playsinline', 'true');
+
+    // Clear any existing srcObject first
+    if (videoElement.srcObject) {
+        videoElement.srcObject = null;
     }
 
-    // Ensure video plays (Safari requires explicit play)
-    const playPromise = videoElement.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(() => {
-            console.warn('Video autoplay blocked for', participantIdentity, '- will play on user interaction');
-            const resumeVideo = () => {
-                videoElement.play().catch(err => console.warn('Video play retry failed:', err));
-                document.removeEventListener('click', resumeVideo);
-                document.removeEventListener('touchstart', resumeVideo);
-            };
-            document.addEventListener('click', resumeVideo, { once: true });
-            document.addEventListener('touchstart', resumeVideo, { once: true });
-        });
+    // Function to actually play the video
+    const playVideo = () => {
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log(`[Safari] Video playing successfully for ${participantIdentity}`);
+            }).catch((err) => {
+                console.warn(`[Safari] Video autoplay blocked for ${participantIdentity}:`, err.name);
+                // Set up user interaction handlers
+                const resumeVideo = () => {
+                    videoElement.play().catch(e => console.warn('[Safari] Video play retry failed:', e));
+                    document.removeEventListener('click', resumeVideo);
+                    document.removeEventListener('touchstart', resumeVideo);
+                };
+                document.addEventListener('click', resumeVideo, { once: true });
+                document.addEventListener('touchstart', resumeVideo, { once: true });
+            });
+        }
+    };
+
+    // Use srcObject approach which works better in Safari
+    if (track.mediaStreamTrack) {
+        const mediaStream = new MediaStream([track.mediaStreamTrack]);
+
+        // Wait for loadedmetadata before playing (Safari requirement)
+        const onLoadedMetadata = () => {
+            console.log(`[Safari] Video metadata loaded for ${participantIdentity}`);
+            videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+            playVideo();
+        };
+
+        // Check if already has metadata (can happen with fast connections)
+        if (videoElement.readyState >= 1) {
+            videoElement.srcObject = mediaStream;
+            console.log(`[Safari] Video already ready, playing immediately for ${participantIdentity}`);
+            playVideo();
+        } else {
+            videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
+            videoElement.srcObject = mediaStream;
+            console.log(`[Safari] Video srcObject set, waiting for metadata for ${participantIdentity}`);
+
+            // Fallback: if metadata doesn't load in 2 seconds, try playing anyway
+            setTimeout(() => {
+                if (videoElement.paused && videoElement.srcObject) {
+                    console.log(`[Safari] Metadata timeout, forcing play for ${participantIdentity}`);
+                    videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+                    playVideo();
+                }
+            }, 2000);
+        }
+    } else {
+        // Fallback to track.attach() if mediaStreamTrack not available
+        console.warn(`[Safari] No mediaStreamTrack available, using track.attach() for ${participantIdentity}`);
+        track.attach(videoElement);
+
+        // Still try to play
+        setTimeout(playVideo, 100);
     }
+
+    // Safari sometimes loses video - add listener to recover
+    videoElement.addEventListener('suspend', () => {
+        console.warn(`[Safari] Video suspended for ${participantIdentity}, attempting recovery`);
+        if (videoElement.srcObject && videoElement.paused) {
+            playVideo();
+        }
+    });
+
+    // Also handle stalled state
+    videoElement.addEventListener('stalled', () => {
+        console.warn(`[Safari] Video stalled for ${participantIdentity}`);
+    });
 }
 
 // Global handler to resume all video elements on first user interaction (for Safari)
@@ -357,7 +420,8 @@ async function connectToLiveKit(wsUrl, token) {
             if (publication.track && publication.kind === 'video') {
                 const video = document.querySelector('#local-participant video');
                 if (video) {
-                    publication.track.attach(video);
+                    // Use Safari-compatible method for consistency
+                    attachVideoTrackSafari(publication.track, video, 'local');
                 }
                 // Hide placeholder when video is published
                 const localDiv = document.getElementById('local-participant');
@@ -1087,15 +1151,20 @@ function addParticipantToContainer(participant, container, className, isLocal) {
     participantDiv.appendChild(cameraOffPlaceholder);
     participantDiv.appendChild(nameTag);
 
+    // CRITICAL FOR SAFARI: Add to DOM FIRST, then attach tracks
+    // Safari requires video element to be in document before srcObject works properly
+    container.appendChild(participantDiv);
+
     // Check initial video state
     let hasVideo = false;
 
-    // Attach tracks
+    // Attach tracks AFTER element is in DOM
     if (isLocal) {
         const localTracks = room.localParticipant.videoTrackPublications;
         localTracks.forEach((publication) => {
             if (publication.track && publication.source === 'camera') {
-                publication.track.attach(video);
+                // Use Safari-compatible method for local too
+                attachVideoTrackSafari(publication.track, video, 'local');
                 if (!publication.track.isMuted) {
                     hasVideo = true;
                 }
@@ -1142,8 +1211,6 @@ function addParticipantToContainer(participant, container, className, isLocal) {
 
     // Show placeholder if no video
     updateCameraOffPlaceholder(participantDiv, hasVideo);
-
-    container.appendChild(participantDiv);
 }
 
 // Add audio-only participant indicator
