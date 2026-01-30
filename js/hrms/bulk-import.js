@@ -9,7 +9,8 @@ let lookupData = {
     offices: [],
     departments: [],
     designations: [],
-    shifts: []
+    shifts: [],
+    salaryStructures: []
 };
 let importResults = {
     phase1: null, // User creation results
@@ -27,6 +28,7 @@ const TEMPLATE_COLUMNS = [
     { key: 'department_code', label: 'Department Code', required: true },
     { key: 'designation_code', label: 'Designation Code', required: true },
     { key: 'shift_code', label: 'Shift Code', required: true },
+    { key: 'salary_structure_code', label: 'Salary Structure Code', required: true },
     { key: 'date_of_joining', label: 'Date of Joining', required: true, format: 'YYYY-MM-DD' },
     { key: 'date_of_birth', label: 'Date of Birth', required: true, format: 'YYYY-MM-DD' },
     { key: 'ctc', label: 'Annual CTC', required: true },
@@ -97,23 +99,26 @@ function handleDrop(e) {
  */
 async function loadLookupData() {
     try {
-        const [offices, departments, designations, shifts] = await Promise.all([
+        const [offices, departments, designations, shifts, salaryStructures] = await Promise.all([
             api.request('/hrms/offices'),
             api.request('/hrms/departments'),
             api.request('/hrms/designations'),
-            api.request('/hrms/shifts')
+            api.request('/hrms/shifts'),
+            api.request('/hrms/payroll/structures')
         ]);
 
         lookupData.offices = offices || [];
         lookupData.departments = departments || [];
         lookupData.designations = designations || [];
         lookupData.shifts = shifts || [];
+        lookupData.salaryStructures = salaryStructures || [];
 
         console.log('[BulkImport] Lookup data loaded:', {
             offices: lookupData.offices.length,
             departments: lookupData.departments.length,
             designations: lookupData.designations.length,
-            shifts: lookupData.shifts.length
+            shifts: lookupData.shifts.length,
+            salaryStructures: lookupData.salaryStructures.length
         });
     } catch (error) {
         console.error('[BulkImport] Failed to load lookup data:', error);
@@ -132,7 +137,7 @@ function downloadTemplate() {
     const headers = TEMPLATE_COLUMNS.map(col => col.label);
     const hints = TEMPLATE_COLUMNS.map(col => col.hint || (col.required ? 'Required' : 'Optional'));
 
-    // Sample data row - uses codes for department, designation, shift
+    // Sample data row - uses codes for department, designation, shift, salary structure
     const sampleData = [
         'john.doe@company.com',
         '', // Password - leave empty
@@ -143,6 +148,7 @@ function downloadTemplate() {
         'ENG',        // Department code
         'SE',         // Designation code
         'GEN-DAY',    // Shift code
+        'MUM-STD',    // Salary structure code
         '2026-01-15',
         '1990-05-20',
         '1200000',
@@ -444,6 +450,36 @@ function validateDataLocally() {
             }
         }
 
+        // Salary structure validation - must belong to selected office
+        if (!item.salary_structure_code) {
+            item.errors.push('Salary structure code is required');
+        } else {
+            // Find salary structure by code that belongs to the selected office
+            const result = findUniqueMatch(
+                lookupData.salaryStructures,
+                s => s.structure_code?.toLowerCase() === item.salary_structure_code.toLowerCase() &&
+                     s.office_id === item.office_id,
+                'Salary Structure',
+                item.salary_structure_code
+            );
+            if (result.error) {
+                // Try finding any structure with that code for a better error message
+                const anyStructure = lookupData.salaryStructures.find(s =>
+                    s.structure_code?.toLowerCase() === item.salary_structure_code.toLowerCase()
+                );
+                if (anyStructure && item.office_id) {
+                    item.errors.push(`Salary structure '${item.salary_structure_code}' not found in office ${item.office_code}`);
+                } else if (!item.office_id) {
+                    item.errors.push(`Cannot validate salary structure - office must be valid first`);
+                } else {
+                    item.errors.push(`Salary structure not found: ${item.salary_structure_code}`);
+                }
+            } else {
+                item.salary_structure_id = result.match.id;
+                item.salary_structure_name = result.match.structure_name; // Store for display
+            }
+        }
+
         // Employee code duplicate check within file
         if (item.employee_code) {
             if (seenCodes.has(item.employee_code.toLowerCase())) {
@@ -488,8 +524,10 @@ async function validateDataWithBackend() {
                 department_id: item.department_id,
                 designation_id: item.designation_id,
                 shift_id: item.shift_id,
-                date_of_joining: item.date_of_joining,
-                date_of_birth: item.date_of_birth,
+                salary_structure_id: item.salary_structure_id,
+                salary_structure_code: item.salary_structure_code,
+                date_of_joining: item.date_of_joining || null,
+                date_of_birth: item.date_of_birth || null,
                 ctc: parseFloat(item.ctc),
                 employment_type: item.employment_type || 'full-time',
                 gender: item.gender || null,
@@ -657,7 +695,9 @@ function goToStep(step) {
 }
 
 /**
- * Start the import process
+ * Start the import process - v3.3.5: Uses unified atomic import endpoint
+ * This endpoint validates ALL data (Auth + HRMS) before creating anything,
+ * and rolls back all created users if any employee creation fails.
  */
 async function startImport() {
     // Filter valid rows only
@@ -670,17 +710,18 @@ async function startImport() {
 
     goToStep(3);
 
-    // Reset progress
+    // Reset progress - show unified import progress
     updatePhase1Progress(0, 0, 0, 'processing');
+    document.getElementById('phase1Title').textContent = 'Unified Import';
+    document.getElementById('phase1Desc').textContent = 'Creating users and employees atomically...';
     updatePhase2Progress(0, 0, 0, 'waiting');
     document.getElementById('phase2').style.opacity = '0.5';
+    document.getElementById('phase2Title').textContent = 'Validation';
+    document.getElementById('phase2Desc').textContent = 'Pre-import validation completed';
 
     try {
-        // Phase 1: Create users in Auth service
-        await executePhase1(validRows);
-
-        // Phase 2: Create employees in HRMS service
-        await executePhase2(validRows);
+        // Use unified atomic import endpoint
+        await executeUnifiedImport(validRows);
 
         // Show results
         goToStep(4);
@@ -689,6 +730,158 @@ async function startImport() {
     } catch (error) {
         console.error('[BulkImport] Import failed:', error);
         showToast('Import failed: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Execute unified atomic import - v3.3.5
+ * Creates users in Auth AND employees in HRMS in a single atomic operation.
+ * If any employee creation fails after users are created, all users are rolled back.
+ */
+async function executeUnifiedImport(validRows) {
+    console.log('[BulkImport] Starting unified atomic import...');
+    updatePhase1Progress(10, 0, 0, 'processing');
+
+    // Prepare unified import request
+    const employeesToImport = validRows.map(row => ({
+        RowNumber: row.RowNumber,
+        email: row.email,
+        password: row.password || null, // null triggers auto-generation
+        first_name: row.first_name,
+        last_name: row.last_name,
+        employee_code: row.employee_code || null,
+        office_id: row.office_id,
+        department_id: row.department_id,
+        designation_id: row.designation_id,
+        shift_id: row.shift_id,
+        salary_structure_id: row.salary_structure_id,
+        salary_structure_code: row.salary_structure_code,
+        date_of_joining: row.date_of_joining || null,
+        date_of_birth: row.date_of_birth || null,
+        ctc: parseFloat(row.ctc),
+        employment_type: row.employment_type || 'full-time',
+        gender: row.gender || null,
+        work_phone: row.work_phone
+    }));
+
+    try {
+        updatePhase1Progress(30, 0, 0, 'processing');
+
+        const response = await api.request('/hrms/employees/bulk-unified', {
+            method: 'POST',
+            body: JSON.stringify({
+                Employees: employeesToImport,
+                GeneratePasswords: true,
+                DefaultRoles: ['HRMS_USER']
+            })
+        });
+
+        console.log('[BulkImport] Unified import response:', response);
+
+        importResults.unified = response;
+        importResults.phase1 = response; // For backward compatibility with results display
+
+        // Check if validation failed (no changes made)
+        if (!response.validationSummary?.allPhasesValid) {
+            const phase1Errors = response.validationSummary?.phase1ErrorCount || 0;
+            const phase2Errors = response.validationSummary?.phase2ErrorCount || 0;
+            updatePhase1Progress(100, 0, validRows.length, 'failed');
+            updatePhase2Progress(100, 0, 0, 'completed');
+            document.getElementById('phase2').style.opacity = '1';
+            document.getElementById('phase2Status').textContent = `${phase1Errors + phase2Errors} validation errors`;
+
+            // Mark all rows as failed
+            validRows.forEach(row => {
+                row.user_created = false;
+                row.employee_created = false;
+                row.user_error = 'Validation failed - entire import rejected';
+            });
+
+            // Map specific errors to rows
+            if (response.validationErrors) {
+                response.validationErrors.forEach(err => {
+                    const match = err.match(/Row (\d+):/);
+                    if (match) {
+                        const rowNum = parseInt(match[1]);
+                        const row = validRows.find(r => r.RowNumber === rowNum);
+                        if (row) {
+                            row.user_error = err;
+                        }
+                    }
+                });
+            }
+
+            showToast('Validation failed. No changes made. Fix errors and retry.', 'error');
+            return;
+        }
+
+        // Check if rollback occurred (server error during employee creation)
+        if (response.rolledBackUsers > 0) {
+            updatePhase1Progress(100, 0, validRows.length, 'failed');
+            updatePhase2Progress(100, 0, 0, 'failed');
+            document.getElementById('phase2').style.opacity = '1';
+            document.getElementById('phase2Status').textContent = `${response.rolledBackUsers} users rolled back`;
+
+            // Mark all rows as failed/rolled back
+            validRows.forEach(row => {
+                row.user_created = false;
+                row.employee_created = false;
+                row.user_error = 'Rolled back due to employee creation failures';
+            });
+
+            showToast(`Import failed. ${response.rolledBackUsers} users were rolled back. No partial state.`, 'error');
+            return;
+        }
+
+        // Success!
+        const created = response.totalCreated || 0;
+        const failed = response.totalFailed || 0;
+
+        updatePhase1Progress(100, created, failed, created > 0 ? 'completed' : 'failed');
+        updatePhase2Progress(100, created, 0, 'completed');
+        document.getElementById('phase2').style.opacity = '1';
+        document.getElementById('phase2Status').textContent = 'All employees created';
+
+        // Map results back to our data
+        if (response.results) {
+            response.results.forEach(result => {
+                const row = validRows.find(r =>
+                    r.email?.toLowerCase() === result.email?.toLowerCase() ||
+                    r.RowNumber === result.rowNumber
+                );
+                if (row) {
+                    row.user_created = result.success;
+                    row.user_id = result.userId;
+                    row.generated_password = result.generatedPassword;
+                    row.employee_created = result.success;
+                    row.employee_id = result.employeeId;
+                    row.employee_code_result = result.employeeCode;
+                    row.user_error = result.errorMessage;
+                    row.employee_error = result.errorMessage;
+                    row.was_rolled_back = result.wasRolledBack;
+                }
+            });
+        }
+
+        console.log('[BulkImport] Unified import complete:', { created, failed });
+
+        if (created > 0) {
+            showToast(`Successfully imported ${created} employees`, 'success');
+        }
+
+    } catch (error) {
+        console.error('[BulkImport] Unified import error:', error);
+        updatePhase1Progress(100, 0, validRows.length, 'failed');
+        updatePhase2Progress(100, 0, 0, 'failed');
+        document.getElementById('phase2').style.opacity = '1';
+
+        validRows.forEach(row => {
+            row.user_created = false;
+            row.employee_created = false;
+            row.user_error = error.message;
+        });
+
+        throw error;
     }
 }
 
@@ -783,8 +976,10 @@ async function executePhase2(validRows) {
         department_id: row.department_id,
         designation_id: row.designation_id,
         shift_id: row.shift_id,
-        date_of_joining: row.date_of_joining,
-        date_of_birth: row.date_of_birth,
+        salary_structure_id: row.salary_structure_id,
+        salary_structure_code: row.salary_structure_code,
+        date_of_joining: row.date_of_joining || null,
+        date_of_birth: row.date_of_birth || null,
         ctc: parseFloat(row.ctc),
         employment_type: row.employment_type || 'full-time',
         gender: row.gender || null,
