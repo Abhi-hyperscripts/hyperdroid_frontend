@@ -60,7 +60,7 @@ function setupAudioResumeHandler() {
 setupAudioResumeHandler();
 
 // Safari-compatible video track attachment
-// Uses LiveKit's native attach() but with Safari-specific autoplay handling
+// Safari has issues with track.attach() returning empty - use srcObject directly
 function attachVideoTrackSafari(track, videoElement, participantIdentity) {
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
@@ -106,15 +106,52 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
         }
     };
 
-    // Use LiveKit's native attach() - it handles browser quirks internally
-    // Clear any existing attachment first
+    // Clear any existing srcObject first
     if (videoElement.srcObject) {
         videoElement.srcObject = null;
     }
 
-    // Use LiveKit's attach method
-    const attachedElements = track.attach(videoElement);
-    console.log(`[Safari] track.attach() called for ${participantIdentity}, returned elements:`, attachedElements?.length || 0);
+    // Try multiple attachment methods
+    let attached = false;
+
+    // Method 1: Direct srcObject assignment (works best for Safari)
+    if (track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
+        try {
+            const mediaStream = new MediaStream([track.mediaStreamTrack]);
+            videoElement.srcObject = mediaStream;
+            attached = !!videoElement.srcObject;
+            console.log(`[Safari] Method 1 (srcObject): attached=${attached} for ${participantIdentity}`);
+        } catch (e) {
+            console.warn(`[Safari] Method 1 failed for ${participantIdentity}:`, e);
+        }
+    }
+
+    // Method 2: Use track.attach() as fallback
+    if (!attached) {
+        try {
+            const attachedElements = track.attach(videoElement);
+            attached = attachedElements && attachedElements.length > 0;
+            console.log(`[Safari] Method 2 (track.attach): attached=${attached}, elements=${attachedElements?.length || 0} for ${participantIdentity}`);
+        } catch (e) {
+            console.warn(`[Safari] Method 2 failed for ${participantIdentity}:`, e);
+        }
+    }
+
+    // Method 3: Try getting MediaStream from track directly
+    if (!attached && track.mediaStream) {
+        try {
+            videoElement.srcObject = track.mediaStream;
+            attached = !!videoElement.srcObject;
+            console.log(`[Safari] Method 3 (track.mediaStream): attached=${attached} for ${participantIdentity}`);
+        } catch (e) {
+            console.warn(`[Safari] Method 3 failed for ${participantIdentity}:`, e);
+        }
+    }
+
+    if (!attached) {
+        console.error(`[Safari] All attachment methods failed for ${participantIdentity}`);
+        return;
+    }
 
     // Wait for video to have data, then play
     const onCanPlay = () => {
@@ -171,7 +208,8 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
             videoWidth: videoElement.videoWidth,
             videoHeight: videoElement.videoHeight,
             currentTime: videoElement.currentTime,
-            hasSrcObject: !!videoElement.srcObject
+            hasSrcObject: !!videoElement.srcObject,
+            srcObjectTracks: videoElement.srcObject?.getTracks()?.length || 0
         });
     }, 1000);
 }
