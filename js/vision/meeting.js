@@ -694,6 +694,21 @@ function addParticipant(participant) {
     participant.videoTrackPublications.forEach((publication) => {
         if (publication.track && publication.isSubscribed) {
             publication.track.attach(video);
+
+            // CRITICAL: Safari requires explicit play() call for video
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.warn('Video autoplay blocked for', participant.identity, '- will play on user interaction');
+                    const resumeVideo = () => {
+                        video.play().catch(err => console.warn('Video play retry failed:', err));
+                        document.removeEventListener('click', resumeVideo);
+                        document.removeEventListener('touchstart', resumeVideo);
+                    };
+                    document.addEventListener('click', resumeVideo, { once: true });
+                    document.addEventListener('touchstart', resumeVideo, { once: true });
+                });
+            }
         }
     });
 
@@ -1053,6 +1068,21 @@ function addParticipantToContainer(participant, container, className, isLocal) {
                 if (!publication.track.isMuted) {
                     hasVideo = true;
                 }
+
+                // CRITICAL: Safari requires explicit play() call for video
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        console.warn('Video autoplay blocked for', participant.identity, '(layout) - will play on user interaction');
+                        const resumeVideo = () => {
+                            video.play().catch(err => console.warn('Video play retry failed:', err));
+                            document.removeEventListener('click', resumeVideo);
+                            document.removeEventListener('touchstart', resumeVideo);
+                        };
+                        document.addEventListener('click', resumeVideo, { once: true });
+                        document.addEventListener('touchstart', resumeVideo, { once: true });
+                    });
+                }
             }
         });
 
@@ -1127,6 +1157,22 @@ function attachTrack(track, publication, participant) {
         console.log('Screen share quality set to HIGH for best viewing experience');
 
         track.attach(screenShareVideo);
+
+        // CRITICAL: Safari requires explicit play() call for video
+        const playPromise = screenShareVideo.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                console.warn('Screen share video autoplay blocked - will play on user interaction');
+                const resumeVideo = () => {
+                    screenShareVideo.play().catch(err => console.warn('Screen share play retry failed:', err));
+                    document.removeEventListener('click', resumeVideo);
+                    document.removeEventListener('touchstart', resumeVideo);
+                };
+                document.addEventListener('click', resumeVideo, { once: true });
+                document.addEventListener('touchstart', resumeVideo, { once: true });
+            });
+        }
+
         screenShareContainer.style.display = 'flex';
         videoContainer.classList.add('minimized');
         // Save chat visibility state before hiding
@@ -1174,6 +1220,22 @@ function attachTrack(track, publication, participant) {
             if (video) {
                 track.attach(video);
                 console.log(`Video track attached for ${participant.identity}`);
+
+                // CRITICAL: Safari requires explicit play() call for video
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((e) => {
+                        console.warn('Video autoplay blocked for', participant.identity, '- will play on user interaction');
+                        // Add one-time click handler to resume video on any user interaction
+                        const resumeVideo = () => {
+                            video.play().catch(err => console.warn('Video play retry failed:', err));
+                            document.removeEventListener('click', resumeVideo);
+                            document.removeEventListener('touchstart', resumeVideo);
+                        };
+                        document.addEventListener('click', resumeVideo, { once: true });
+                        document.addEventListener('touchstart', resumeVideo, { once: true });
+                    });
+                }
 
                 // CRITICAL: Update camera-off placeholder visibility after video track is attached
                 updateCameraOffPlaceholder(participantDiv, !track.isMuted);
@@ -1248,6 +1310,21 @@ function attachTrack(track, publication, participant) {
                         if (video) {
                             track.attach(video);
                             console.log(`Video track attached for ${participant.identity} (retry ${retryCount} successful)`);
+
+                            // CRITICAL: Safari requires explicit play() call for video
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => {
+                                    console.warn('Video autoplay blocked for', participant.identity, '(retry) - will play on user interaction');
+                                    const resumeVideo = () => {
+                                        video.play().catch(err => console.warn('Video play retry failed:', err));
+                                        document.removeEventListener('click', resumeVideo);
+                                        document.removeEventListener('touchstart', resumeVideo);
+                                    };
+                                    document.addEventListener('click', resumeVideo, { once: true });
+                                    document.addEventListener('touchstart', resumeVideo, { once: true });
+                                });
+                            }
 
                             // Update camera-off placeholder visibility
                             updateCameraOffPlaceholder(retryDiv, !track.isMuted);
