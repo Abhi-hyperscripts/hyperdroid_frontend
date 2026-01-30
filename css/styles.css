@@ -2155,50 +2155,53 @@ body:has(.auth-container)::after {
 
 .screen-share-controls {
     position: absolute;
-    bottom: 24px;
-    right: 24px;
-    background: var(--overlay-almost-opaque);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 12px;
-    padding: 10px;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 6px;
+    padding: 4px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
     z-index: 100;
-    border: 1px solid var(--white-10);
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+}
+
+.screen-share-controls:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.7);
 }
 
 .control-group {
     display: flex;
-    gap: 4px;
+    gap: 1px;
     justify-content: center;
 }
 
 .share-control-btn {
-    background: var(--white-15);
+    background: transparent;
     color: var(--text-inverse);
-    border: 1px solid var(--white-20);
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
+    border: none;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: background 0.15s ease;
 }
 
 .share-control-btn:hover {
-    background: var(--white-25);
-    border-color: var(--white-40);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--overlay-medium);
+    background: var(--white-20);
 }
 
 .share-control-btn:active {
-    transform: translateY(0);
+    background: var(--white-30);
 }
 
 .video-container.minimized {
