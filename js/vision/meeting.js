@@ -511,6 +511,23 @@ async function connectToLiveKit(wsUrl, token) {
         room.on('trackUnsubscribed', (track, publication, participant) => {
             console.log('Track unsubscribed:', track.kind);
             detachTrack(track, publication, participant);
+
+            // Safari: Try to re-subscribe video tracks that unexpectedly unsubscribe
+            if (isSafari && track.kind === 'video' && publication.source === LivekitClient.Track.Source.Camera) {
+                console.log(`[Safari] Video track unsubscribed for ${participant.identity}, attempting re-subscription in 500ms...`);
+                setTimeout(() => {
+                    if (!publication.isSubscribed && participant.sid) {
+                        // Check if participant is still in the room
+                        const stillInRoom = room.remoteParticipants.has(participant.sid);
+                        if (stillInRoom) {
+                            console.log(`[Safari] Re-subscribing to video track for ${participant.identity}`);
+                            publication.setSubscribed(true);
+                        } else {
+                            console.log(`[Safari] Participant ${participant.identity} no longer in room, skipping re-subscription`);
+                        }
+                    }
+                }, 500);
+            }
         });
 
         // Handle local participant track published (for camera toggle)
