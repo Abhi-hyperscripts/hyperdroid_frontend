@@ -117,11 +117,12 @@ body.dashboard .navbar {
 }
 
 /* =============================================================
-   BENTO GRID - Compact Layout
+   BENTO GRID - Compact Layout with Center Alignment
    ============================================================= */
 .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
     width: 100%;
     max-width: 900px;
@@ -139,6 +140,9 @@ body.dashboard .navbar {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    flex: 0 1 calc(33.333% - 8px);
+    min-width: 260px;
+    max-width: 300px;
 }
 
 /* Glow border on hover */
@@ -507,9 +511,9 @@ body.dashboard .navbar {
    RESPONSIVE DESIGN
    ============================================================= */
 @media (max-width: 800px) {
-    .bento-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+    .bento-card {
+        flex: 0 1 calc(50% - 6px);
+        min-width: 220px;
     }
 }
 
@@ -522,9 +526,9 @@ body.dashboard .navbar {
         font-size: 1.6rem;
     }
 
-    .bento-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+    .bento-card {
+        flex: 0 1 100%;
+        max-width: 100%;
     }
 
     .card-content {
