@@ -52,10 +52,17 @@ class ActiveSpeakerManager {
         const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' :
                             quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
 
-        // For Safari: SKIP initial quality setting entirely - let LiveKit use default
-        // Calling setVideoQuality right after setSubscribed causes track to restart
+        // For Safari: Use longer delay for initial subscription to let track stabilize
+        // VP8 codec fix means we can now safely set quality
         if (this.isSafari && isInitialSubscription) {
-            console.log(`⏭️ [Safari] Skipping initial quality setting for ${participantIdentity} - using LiveKit default`);
+            const initialDelay = 2000; // 2 second delay for initial subscription
+            console.log(`⏳ [Safari] Scheduling initial quality for ${participantIdentity} to ${qualityLabel} in ${initialDelay}ms`);
+            setTimeout(() => {
+                if (publication.isSubscribed) {
+                    publication.setVideoQuality(quality);
+                    console.log(`🎥 [Safari] Applied initial quality for ${participantIdentity} to ${qualityLabel}`);
+                }
+            }, initialDelay);
             return;
         }
 
@@ -372,17 +379,13 @@ class ActiveSpeakerManager {
                     }
                     else if (shouldSubscribe && publication.isSubscribed) {
                         // Update quality if subscription exists
-                        // Safari: Skip quality updates entirely - they cause track restarts
-                        if (this.isSafari) {
-                            console.log(`⏭️ [Safari] Skipping quality update for ${participant.identity} - using default`);
-                        } else {
-                            const quality = isMainSpeaker
-                                ? this.mainSpeakerQuality
-                                : this.smallTileQuality;
-                            const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
-                            this.setVideoQualityDelayed(publication, quality, participant.identity, false);
-                            console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
-                        }
+                        // VP8 codec fix means Safari can now handle quality changes with delay
+                        const quality = isMainSpeaker
+                            ? this.mainSpeakerQuality
+                            : this.smallTileQuality;
+                        const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
+                        this.setVideoQualityDelayed(publication, quality, participant.identity, false);
+                        console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
                     }
                     // DISABLED: Don't unsubscribe from inactive speakers - show all participant videos
                     // else if (!shouldSubscribe && publication.isSubscribed) {
@@ -588,11 +591,8 @@ class ActiveSpeakerManager {
      * @param {Object} newMain - New main speaker
      */
     updateVideoQualitiesOnSpeakerChange(previousMain, newMain) {
-        // Safari: Skip all quality changes - they cause track restarts
-        if (this.isSafari) {
-            console.log(`⏭️ [Safari] Skipping speaker change quality updates`);
-            return;
-        }
+        // VP8 codec fix means Safari can now handle quality changes with delay
+        // Safari uses delayed quality changes via setVideoQualityDelayed
 
         // Downgrade previous main speaker to medium quality (360p)
         if (previousMain) {
