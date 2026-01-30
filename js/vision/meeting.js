@@ -453,17 +453,24 @@ async function connectToLiveKit(wsUrl, token) {
             throw new Error('No ICE servers available. Cannot establish WebRTC connection.');
         }
 
+        // Safari detection - Safari has issues with adaptive streaming and simulcast
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        console.log(`[Room] Browser detected: ${isSafari ? 'Safari' : 'Other'}`);
+
         // Configure RTC options with TURN/STUN servers and simulcast
+        // Safari: Disable adaptive features that cause track subscription issues
         const roomOptions = {
-            adaptiveStream: true,
-            dynacast: true,
+            adaptiveStream: !isSafari,  // Disable for Safari - causes track unsubscription
+            dynacast: !isSafari,        // Disable for Safari - causes track issues
             videoCaptureDefaults: {
-                resolution: LivekitClient.VideoPresets.h1080.resolution,
+                resolution: isSafari
+                    ? LivekitClient.VideoPresets.h720.resolution  // Safari: Use 720p (more stable)
+                    : LivekitClient.VideoPresets.h1080.resolution,
             },
             publishDefaults: {
-                simulcast: true,  // Enable simulcast for adaptive quality (camera only)
+                simulcast: !isSafari,  // Disable simulcast for Safari - causes layer switching issues
                 videoEncoding: {
-                    maxBitrate: 6_000_000,  // 6 Mbps for sharp 1080p
+                    maxBitrate: isSafari ? 2_500_000 : 6_000_000,  // Safari: 2.5 Mbps, Others: 6 Mbps
                     maxFramerate: 30,
                 },
                 // Screen share: Use VP9 codec (better for screen content) with high bitrate
@@ -472,10 +479,14 @@ async function connectToLiveKit(wsUrl, token) {
                     maxFramerate: 30,
                 },
                 screenShareSimulcastLayers: [],  // DISABLE simulcast - full quality only
-                videoCodec: 'vp9',  // VP9 is optimized for screen sharing
-                backupCodec: false, // Don't fall back to lower quality codec
+                videoCodec: isSafari ? 'vp8' : 'vp9',  // Safari: VP8 is more compatible
+                backupCodec: isSafari ? true : false,  // Safari: Allow fallback codec
             }
         };
+
+        if (isSafari) {
+            console.log('[Room] Safari mode: adaptiveStream=OFF, dynacast=OFF, simulcast=OFF, codec=VP8');
+        }
 
         room = new LivekitClient.Room(roomOptions);
 
