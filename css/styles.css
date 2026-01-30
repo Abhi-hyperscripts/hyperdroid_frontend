@@ -2062,15 +2062,12 @@ body:has(.auth-container)::after {
 .screen-share-video-wrapper::before {
     content: '';
     position: absolute;
-    width: 150%;
-    height: 150%;
-    top: -25%;
-    left: -25%;
+    inset: 0;
     background:
-        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 60% at 70% 20%, rgba(99, 102, 241, 0.35) 0%, transparent 45%),
-        radial-gradient(ellipse 40% 50% at 80% 70%, rgba(6, 182, 212, 0.3) 0%, transparent 45%),
-        radial-gradient(ellipse 60% 30% at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 60% at 10% 10%, rgba(59, 130, 246, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 80% at 90% 15%, rgba(99, 102, 241, 0.45) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 70% at 95% 85%, rgba(6, 182, 212, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 50% at 5% 90%, rgba(59, 130, 246, 0.4) 0%, transparent 50%);
     animation: screenShareGradientShift 30s ease-in-out infinite;
     pointer-events: none;
     z-index: 0;
@@ -2092,9 +2089,8 @@ body:has(.auth-container)::after {
 }
 
 @keyframes screenShareGradientShift {
-    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    33% { transform: translate(3%, -2%) rotate(1deg) scale(1.02); }
-    66% { transform: translate(-2%, 3%) rotate(-1deg) scale(0.98); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 .screen-share-header {
