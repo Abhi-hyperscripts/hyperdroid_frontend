@@ -59,6 +59,62 @@ function setupAudioResumeHandler() {
 // Call immediately to setup the handler
 setupAudioResumeHandler();
 
+// Safari-compatible video track attachment
+// Safari has issues with track.attach() - use srcObject with MediaStream instead
+function attachVideoTrackSafari(track, videoElement, participantIdentity) {
+    // Use srcObject approach which works better in Safari
+    if (track.mediaStreamTrack) {
+        videoElement.srcObject = new MediaStream([track.mediaStreamTrack]);
+        console.log(`Video track attached via srcObject for ${participantIdentity}`);
+    } else {
+        // Fallback to track.attach() if mediaStreamTrack not available
+        track.attach(videoElement);
+        console.log(`Video track attached via track.attach() for ${participantIdentity}`);
+    }
+
+    // Ensure video plays (Safari requires explicit play)
+    const playPromise = videoElement.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(() => {
+            console.warn('Video autoplay blocked for', participantIdentity, '- will play on user interaction');
+            const resumeVideo = () => {
+                videoElement.play().catch(err => console.warn('Video play retry failed:', err));
+                document.removeEventListener('click', resumeVideo);
+                document.removeEventListener('touchstart', resumeVideo);
+            };
+            document.addEventListener('click', resumeVideo, { once: true });
+            document.addEventListener('touchstart', resumeVideo, { once: true });
+        });
+    }
+}
+
+// Global handler to resume all video elements on first user interaction (for Safari)
+let videoResumed = false;
+function setupVideoResumeHandler() {
+    const resumeAllVideo = () => {
+        if (videoResumed) return;
+        videoResumed = true;
+
+        console.log('User interaction detected - resuming all video elements');
+        document.querySelectorAll('video').forEach(video => {
+            if (video.paused && video.srcObject) {
+                video.play().catch(e => console.warn('Failed to resume video:', e));
+            }
+        });
+
+        document.removeEventListener('click', resumeAllVideo);
+        document.removeEventListener('touchstart', resumeAllVideo);
+        document.removeEventListener('keydown', resumeAllVideo);
+    };
+
+    document.addEventListener('click', resumeAllVideo);
+    document.addEventListener('touchstart', resumeAllVideo);
+    document.addEventListener('keydown', resumeAllVideo);
+}
+
+// Call immediately to setup the video handler
+setupVideoResumeHandler();
+
 // Recording state
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -690,25 +746,10 @@ function addParticipant(participant) {
     participantDiv.appendChild(zoomControls);
     videoContainer.appendChild(participantDiv);
 
-    // Attach any existing video tracks
+    // Attach any existing video tracks (using Safari-compatible method)
     participant.videoTrackPublications.forEach((publication) => {
         if (publication.track && publication.isSubscribed) {
-            publication.track.attach(video);
-
-            // CRITICAL: Safari requires explicit play() call for video
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    console.warn('Video autoplay blocked for', participant.identity, '- will play on user interaction');
-                    const resumeVideo = () => {
-                        video.play().catch(err => console.warn('Video play retry failed:', err));
-                        document.removeEventListener('click', resumeVideo);
-                        document.removeEventListener('touchstart', resumeVideo);
-                    };
-                    document.addEventListener('click', resumeVideo, { once: true });
-                    document.addEventListener('touchstart', resumeVideo, { once: true });
-                });
-            }
+            attachVideoTrackSafari(publication.track, video, participant.identity);
         }
     });
 
@@ -1061,27 +1102,12 @@ function addParticipantToContainer(participant, container, className, isLocal) {
             }
         });
     } else {
-        // Attach video track for remote participants
+        // Attach video track for remote participants (using Safari-compatible method)
         participant.videoTrackPublications.forEach((publication) => {
             if (publication.track && publication.isSubscribed && publication.source === 'camera') {
-                publication.track.attach(video);
+                attachVideoTrackSafari(publication.track, video, participant.identity);
                 if (!publication.track.isMuted) {
                     hasVideo = true;
-                }
-
-                // CRITICAL: Safari requires explicit play() call for video
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        console.warn('Video autoplay blocked for', participant.identity, '(layout) - will play on user interaction');
-                        const resumeVideo = () => {
-                            video.play().catch(err => console.warn('Video play retry failed:', err));
-                            document.removeEventListener('click', resumeVideo);
-                            document.removeEventListener('touchstart', resumeVideo);
-                        };
-                        document.addEventListener('click', resumeVideo, { once: true });
-                        document.addEventListener('touchstart', resumeVideo, { once: true });
-                    });
                 }
             }
         });
@@ -1156,22 +1182,8 @@ function attachTrack(track, publication, participant) {
         publication.setVideoQuality(LivekitClient.VideoQuality.HIGH);
         console.log('Screen share quality set to HIGH for best viewing experience');
 
-        track.attach(screenShareVideo);
-
-        // CRITICAL: Safari requires explicit play() call for video
-        const playPromise = screenShareVideo.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {
-                console.warn('Screen share video autoplay blocked - will play on user interaction');
-                const resumeVideo = () => {
-                    screenShareVideo.play().catch(err => console.warn('Screen share play retry failed:', err));
-                    document.removeEventListener('click', resumeVideo);
-                    document.removeEventListener('touchstart', resumeVideo);
-                };
-                document.addEventListener('click', resumeVideo, { once: true });
-                document.addEventListener('touchstart', resumeVideo, { once: true });
-            });
-        }
+        // Use Safari-compatible method for screen share
+        attachVideoTrackSafari(track, screenShareVideo, `${participant.identity}-screenshare`);
 
         screenShareContainer.style.display = 'flex';
         videoContainer.classList.add('minimized');
@@ -1218,24 +1230,8 @@ function attachTrack(track, publication, participant) {
         if (track.kind === 'video') {
             const video = participantDiv.querySelector('video');
             if (video) {
-                track.attach(video);
-                console.log(`Video track attached for ${participant.identity}`);
-
-                // CRITICAL: Safari requires explicit play() call for video
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch((e) => {
-                        console.warn('Video autoplay blocked for', participant.identity, '- will play on user interaction');
-                        // Add one-time click handler to resume video on any user interaction
-                        const resumeVideo = () => {
-                            video.play().catch(err => console.warn('Video play retry failed:', err));
-                            document.removeEventListener('click', resumeVideo);
-                            document.removeEventListener('touchstart', resumeVideo);
-                        };
-                        document.addEventListener('click', resumeVideo, { once: true });
-                        document.addEventListener('touchstart', resumeVideo, { once: true });
-                    });
-                }
+                // Use Safari-compatible method
+                attachVideoTrackSafari(track, video, participant.identity);
 
                 // CRITICAL: Update camera-off placeholder visibility after video track is attached
                 updateCameraOffPlaceholder(participantDiv, !track.isMuted);
@@ -1308,23 +1304,9 @@ function attachTrack(track, publication, participant) {
                     if (track.kind === 'video') {
                         const video = retryDiv.querySelector('video');
                         if (video) {
-                            track.attach(video);
+                            // Use Safari-compatible method
+                            attachVideoTrackSafari(track, video, participant.identity);
                             console.log(`Video track attached for ${participant.identity} (retry ${retryCount} successful)`);
-
-                            // CRITICAL: Safari requires explicit play() call for video
-                            const playPromise = video.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(() => {
-                                    console.warn('Video autoplay blocked for', participant.identity, '(retry) - will play on user interaction');
-                                    const resumeVideo = () => {
-                                        video.play().catch(err => console.warn('Video play retry failed:', err));
-                                        document.removeEventListener('click', resumeVideo);
-                                        document.removeEventListener('touchstart', resumeVideo);
-                                    };
-                                    document.addEventListener('click', resumeVideo, { once: true });
-                                    document.addEventListener('touchstart', resumeVideo, { once: true });
-                                });
-                            }
 
                             // Update camera-off placeholder visibility
                             updateCameraOffPlaceholder(retryDiv, !track.isMuted);
