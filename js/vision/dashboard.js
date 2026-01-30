@@ -1607,7 +1607,7 @@ async function deleteRecording(recordingId) {
                 if (recordings.length === 0) {
                     // No more recordings, close the modal and refresh page
                     closeRecordingPlayer();
-                    await loadProjects();
+                    await loadAllProjects();
                 } else {
                     // Reload the modal with remaining recordings
                     await playRecording(currentRecordingMeetingId);
@@ -1642,7 +1642,7 @@ async function deleteAllRecordings(meetingId) {
         if (result.success) {
             Toast.success(result.message || 'All recordings deleted successfully');
             closeRecordingPlayer();
-            await loadProjects();
+            await loadAllProjects();
         } else {
             Toast.error(result.message || 'Failed to delete recordings');
         }
