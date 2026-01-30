@@ -11,6 +11,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms-compliance.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -60,7 +61,25 @@
                     <h3>Compliance</h3>
                 </div>
                 <nav class="sidebar-nav">
-                    <button class="sidebar-btn active" data-tab="company-info" id="companyInfoBtn">
+                    <button class="sidebar-btn active" data-tab="country-configs" id="countryConfigsBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <span class="nav-label">Country Configs</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="statutory-registrations" id="statutoryRegistrationsBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span class="nav-label">Employer Registrations</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="company-info" id="companyInfoBtn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 21h18"></path>
                             <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
@@ -69,22 +88,14 @@
                             <path d="M14 9h1"></path>
                             <path d="M14 13h1"></path>
                         </svg>
-                        <span class="nav-label">Company Registration</span>
-                    </button>
-                    <button class="sidebar-btn" data-tab="country-configs" id="countryConfigsBtn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                        <span class="nav-label">Country Configs</span>
+                        <span class="nav-label">Company Info</span>
                     </button>
                 </nav>
             </aside>
 
             <main class="organization-content">
-                <!-- Country Configurations Tab -->
-                <div class="tab-content" id="country-configs">
+                <!-- Country Configurations Tab (Default Active) -->
+                <div class="tab-content active" id="country-configs">
                     <div class="country-configs-section">
                         <div class="configs-header">
                             <div class="configs-header-left">
@@ -130,147 +141,244 @@
                             </div>
                         </div>
 
-                        <!-- Info Box -->
-                        <div class="info-box" style="margin-top: 24px;">
-                            <div class="info-box-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </div>
+
+                    <!-- How It Works - 4 Compact Cards (Outside main card) -->
+                    <div class="config-workflow-grid">
+                        <div class="config-workflow-card">
+                            <div class="workflow-icon upload">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
                                 </svg>
                             </div>
-                            <div class="info-box-content">
-                                <h4>How Country Configuration Works</h4>
-                                <ul>
-                                    <li><strong>Upload JSON:</strong> Upload a country-specific statutory rules JSON file (e.g., India config with PF, ESI, PT rates)</li>
-                                    <li><strong>Auto-Creates Records:</strong> Countries and states are automatically created from the config</li>
-                                    <li><strong>Payroll Uses Config:</strong> Salary processing engine reads these rules for statutory deduction calculations</li>
-                                    <li><strong>Version Control:</strong> Each upload creates a new version; you can view history and download previous configs</li>
-                                </ul>
+                            <div class="workflow-text">
+                                <h5>Upload JSON</h5>
+                                <p>Upload country-specific statutory rules</p>
+                            </div>
+                        </div>
+                        <div class="config-workflow-card">
+                            <div class="workflow-icon auto">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+                                </svg>
+                            </div>
+                            <div class="workflow-text">
+                                <h5>Auto-Creates</h5>
+                                <p>Countries and states created automatically</p>
+                            </div>
+                        </div>
+                        <div class="config-workflow-card">
+                            <div class="workflow-icon payroll">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
+                            <div class="workflow-text">
+                                <h5>Payroll Engine</h5>
+                                <p>Reads rules for statutory deductions</p>
+                            </div>
+                        </div>
+                        <div class="config-workflow-card">
+                            <div class="workflow-icon version">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                            </div>
+                            <div class="workflow-text">
+                                <h5>Version Control</h5>
+                                <p>Each upload creates a new version</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Company Info Tab (Default) -->
-                <div class="tab-content active" id="company-info">
+                <!-- Employer Registrations Tab -->
+                <div class="tab-content" id="statutory-registrations">
+                    <div class="compliance-section">
+                        <!-- Schema-Driven Statutory Registrations -->
+                        <div class="statutory-registrations-section" id="statutoryRegistrationsSection">
+                            <div class="section-header">
+                                <div class="section-title-group">
+                                    <h2>Employer Registrations</h2>
+                                    <p class="section-subtitle">Configure country-specific statutory registrations (PF establishment ID, ESI code, TAN, etc.) required for government filings. Each country has different requirements.</p>
+                                </div>
+                            </div>
+
+                            <!-- Country Tabs (populated from uploaded configs) -->
+                            <div class="country-tabs" id="countryTabs">
+                                <!-- Will be populated by JavaScript based on uploaded country configs -->
+                                <div class="no-configs-message" id="noConfigsMessage">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span>No country configurations uploaded. Go to <a href="#" onclick="switchToConfigsTab()">Country Configs</a> to upload one.</span>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Registration Form (rendered from schema) -->
+                            <div class="country-registration-form" id="countryRegistrationForm" style="display: none;">
+                                <div class="registration-form-header">
+                                    <div class="country-info">
+                                        <span class="country-flag" id="selectedCountryFlag"></span>
+                                        <span class="country-name" id="selectedCountryName"></span>
+                                    </div>
+                                    <div class="validation-status" id="registrationValidationStatus"></div>
+                                </div>
+
+                                <form id="countryRegistrationsForm" onsubmit="handleRegistrationsSubmit(event)">
+                                    <!-- Dynamic fields rendered from schema -->
+                                    <div class="form-sections" id="dynamicRegistrationFields">
+                                        <!-- Populated by JavaScript from country's employer_registration_requirements -->
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-outline" onclick="validateRegistrations()">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                            </svg>
+                                            Validate
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="saveRegistrationsBtn">
+                                            <span class="btn-text">Save Registrations</span>
+                                            <span class="btn-spinner" style="display: none;">
+                                                <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"/>
+                                                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                                </svg>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Info Tab (Filing Configuration) -->
+                <div class="tab-content" id="company-info">
                     <div class="compliance-section">
                         <div class="section-header">
                             <div class="section-title-group">
-                                <h2>Company Registration Details</h2>
-                                <p class="section-subtitle">Configure your company's statutory registration information required for compliance filings.</p>
+                                <h2>Company Information</h2>
+                                <p class="section-subtitle">Configure company details, bank information, and authorized signatory for government filings.</p>
                             </div>
                         </div>
 
+                        <!-- Bento Grid Form -->
                         <form id="companyInfoForm" onsubmit="handleCompanyInfoSubmit(event)">
-                            <div class="form-sections">
-                                <!-- Country Info (Read-only from config) -->
-                                <div class="form-section" id="countryInfoSection">
-                                    <h3>Country</h3>
-                                    <div id="countryInfoDisplay" class="country-info-display">
-                                        <p class="text-muted">No country configuration uploaded yet. Please upload a country config first.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Basic Company Info -->
-                                <div class="form-section">
-                                    <h3>Basic Information</h3>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label for="companyName">Company Name *</label>
-                                            <input type="text" id="companyName" name="companyName" class="form-control" placeholder="Enter company name" required>
+                            <div class="bento-grid-compliance">
+                                <!-- Company Info Card -->
+                                <div class="bento-card-compliance company">
+                                    <div class="card-border"></div>
+                                    <div class="card-content">
+                                        <div class="card-header">
+                                            <div class="card-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 21h18"></path>
+                                                    <path d="M5 21V7l8-4v18"></path>
+                                                    <path d="M19 21V11l-6-4"></path>
+                                                    <path d="M9 9v.01"></path>
+                                                    <path d="M9 12v.01"></path>
+                                                    <path d="M9 15v.01"></path>
+                                                    <path d="M9 18v.01"></path>
+                                                </svg>
+                                            </div>
+                                            <h3 class="card-title">Company Details</h3>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="companyPan">Company PAN</label>
-                                            <input type="text" id="companyPan" name="companyPan" class="form-control" placeholder="e.g., AAACT1234C">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="companyTan">TAN Number</label>
-                                            <input type="text" id="companyTan" name="companyTan" class="form-control" placeholder="e.g., BLRT12345F">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="companyGstin">Tax Registration Number</label>
-                                            <input type="text" id="companyGstin" name="companyGstin" class="form-control" placeholder="GST/VAT/Tax ID">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Statutory Registrations -->
-                                <div class="form-section">
-                                    <h3>Statutory Registrations</h3>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label for="pfEstablishmentId">Social Security / PF Establishment ID</label>
-                                            <input type="text" id="pfEstablishmentId" name="pfEstablishmentId" class="form-control" placeholder="Provident Fund establishment code">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="esiEmployerCode">Insurance / ESI Employer Code</label>
-                                            <input type="text" id="esiEmployerCode" name="esiEmployerCode" class="form-control" placeholder="Insurance employer code">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="ptRegistration">Professional Tax Registration</label>
-                                            <input type="text" id="ptRegistration" name="ptRegistration" class="form-control" placeholder="PT registration number">
+                                        <div class="card-form">
+                                            <div class="form-row">
+                                                <label for="companyName">Company Name *</label>
+                                                <input type="text" id="companyName" name="companyName" placeholder="Enter company name" required>
+                                            </div>
+                                            <div class="form-row">
+                                                <label for="registeredAddress">Registered Address</label>
+                                                <input type="text" id="registeredAddress" name="registeredAddress" placeholder="Complete registered address">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Bank Details -->
-                                <div class="form-section">
-                                    <h3>Bank Details (for statutory payments)</h3>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label for="bankName">Bank Name</label>
-                                            <input type="text" id="bankName" name="bankName" class="form-control" placeholder="e.g., State Bank of India">
+                                <!-- Bank Details Card -->
+                                <div class="bento-card-compliance bank">
+                                    <div class="card-border"></div>
+                                    <div class="card-content">
+                                        <div class="card-header">
+                                            <div class="card-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                                    <path d="M3 9h18"></path>
+                                                    <path d="M9 21V9"></path>
+                                                </svg>
+                                            </div>
+                                            <h3 class="card-title">Bank Details</h3>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="bankAccount">Account Number</label>
-                                            <input type="text" id="bankAccount" name="bankAccount" class="form-control" placeholder="Bank account number">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="bankIfsc">Bank Code (IFSC/SWIFT)</label>
-                                            <input type="text" id="bankIfsc" name="bankIfsc" class="form-control" placeholder="e.g., SBIN0001234">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Authorized Signatory -->
-                                <div class="form-section">
-                                    <h3>Authorized Signatory</h3>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label for="signatoryName">Name</label>
-                                            <input type="text" id="signatoryName" name="signatoryName" class="form-control" placeholder="Full name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="signatoryDesignation">Designation</label>
-                                            <input type="text" id="signatoryDesignation" name="signatoryDesignation" class="form-control" placeholder="e.g., HR Manager">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="signatoryPan">PAN/Tax ID</label>
-                                            <input type="text" id="signatoryPan" name="signatoryPan" class="form-control" placeholder="Signatory's tax ID">
+                                        <div class="card-form">
+                                            <div class="form-row">
+                                                <label for="bankName">Bank Name</label>
+                                                <input type="text" id="bankName" name="bankName" placeholder="e.g., State Bank of India">
+                                            </div>
+                                            <div class="form-row">
+                                                <label for="bankAccount">Account Number</label>
+                                                <input type="text" id="bankAccount" name="bankAccount" placeholder="Bank account number">
+                                            </div>
+                                            <div class="form-row">
+                                                <label for="bankIfsc">IFSC/SWIFT Code</label>
+                                                <input type="text" id="bankIfsc" name="bankIfsc" placeholder="e.g., SBIN0001234">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Registered Address -->
-                                <div class="form-section">
-                                    <h3>Registered Address</h3>
-                                    <div class="form-group full-width">
-                                        <label for="registeredAddress">Address</label>
-                                        <textarea id="registeredAddress" name="registeredAddress" class="form-control" rows="3" placeholder="Complete registered address"></textarea>
+                                <!-- Authorized Signatory Card -->
+                                <div class="bento-card-compliance signatory">
+                                    <div class="card-border"></div>
+                                    <div class="card-content">
+                                        <div class="card-header">
+                                            <div class="card-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="12" cy="7" r="4"></circle>
+                                                </svg>
+                                            </div>
+                                            <h3 class="card-title">Authorized Signatory</h3>
+                                        </div>
+                                        <div class="card-form">
+                                            <div class="form-row">
+                                                <label for="signatoryName">Full Name</label>
+                                                <input type="text" id="signatoryName" name="signatoryName" placeholder="Full name">
+                                            </div>
+                                            <div class="form-row">
+                                                <label for="signatoryDesignation">Designation</label>
+                                                <input type="text" id="signatoryDesignation" name="signatoryDesignation" placeholder="e.g., HR Manager">
+                                            </div>
+                                            <div class="form-row">
+                                                <label for="signatoryPan">PAN/Tax ID</label>
+                                                <input type="text" id="signatoryPan" name="signatoryPan" placeholder="Signatory's tax ID">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-lg" id="saveCompanyInfoBtn">
-                                <span class="btn-text">Save Company Information</span>
-                                <span class="btn-spinner" style="display: none;">
-                                    <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"/>
-                                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
-                                    </svg>
-                                </span>
-                            </button>
+                            <div class="bento-save-area">
+                                <button type="submit" class="btn btn-primary" id="saveCompanyInfoBtn">
+                                    <span class="btn-text">Save Company Information</span>
+                                    <span class="btn-spinner" style="display: none;">
+                                        <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"/>
+                                            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -422,6 +530,7 @@
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/compliance.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

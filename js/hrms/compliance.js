@@ -339,10 +339,12 @@ async function loadCountryConfigs() {
         }
         renderCountryConfigs();
         updateCountryInfoDisplay();
+        renderCountryTabs();  // v3.3.3: Render country tabs for statutory registrations
     } catch (error) {
         console.error('Error loading country configs:', error);
         countryConfigs = [];
         renderCountryConfigs();
+        renderCountryTabs();  // v3.3.3: Also render tabs on error to show no-configs message
     }
 }
 
@@ -3203,6 +3205,863 @@ function downloadCurrentConfig() {
     URL.revokeObjectURL(url);
 
     showToast('Configuration downloaded', 'success');
+}
+
+// ==================== Schema-Driven Statutory Registrations (v3.3.4) ====================
+// v3.3.4: Multi-office support for state/establishment level registrations
+
+let selectedCountryCode = null;
+let currentRegistrationRequirements = null;
+let currentSavedRegistrations = {};  // national-level registrations
+let countryOffices = [];             // offices for selected country
+let officeRegistrations = {};        // office_id -> { key: value } mapping
+let selectedOfficeId = null;         // currently selected office for editing
+let officeSelectorDropdown = null;   // SearchableDropdown instance for office selector
+
+/**
+ * Switch to the Country Configs tab
+ */
+function switchToConfigsTab() {
+    const configsBtn = document.getElementById('countryConfigsBtn');
+    if (configsBtn) {
+        configsBtn.click();
+    }
+}
+
+/**
+ * Render country tabs for each uploaded country configuration
+ * Users can click a tab to manage that country's statutory registrations
+ */
+function renderCountryTabs() {
+    const tabsContainer = document.getElementById('countryTabs');
+    const noConfigsMessage = document.getElementById('noConfigsMessage');
+    const registrationForm = document.getElementById('countryRegistrationForm');
+
+    if (!tabsContainer) return;
+
+    // Clear existing tabs (but keep the no-configs message)
+    const existingTabs = tabsContainer.querySelectorAll('.country-tab');
+    existingTabs.forEach(tab => tab.remove());
+
+    if (!countryConfigs || countryConfigs.length === 0) {
+        if (noConfigsMessage) noConfigsMessage.style.display = 'flex';
+        if (registrationForm) registrationForm.style.display = 'none';
+        return;
+    }
+
+    // Hide no-configs message
+    if (noConfigsMessage) noConfigsMessage.style.display = 'none';
+
+    // Get unique countries from configs
+    const countries = [];
+    const seenCodes = new Set();
+    countryConfigs.forEach(config => {
+        const code = config.countryCode || config.country_code;
+        const name = config.countryName || config.country_name;
+        if (code && !seenCodes.has(code)) {
+            seenCodes.add(code);
+            countries.push({ code, name });
+        }
+    });
+
+    // Render tabs for each country
+    countries.forEach((country, index) => {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'country-tab';
+        tab.dataset.countryCode = country.code;
+        tab.innerHTML = `
+            <span class="country-flag">${getCountryFlag(country.code)}</span>
+            <span class="country-name">${escapeHtml(country.name || country.code)}</span>
+        `;
+        tab.onclick = () => selectCountryTab(country.code);
+
+        // Insert before no-configs message
+        tabsContainer.insertBefore(tab, noConfigsMessage);
+    });
+
+    // Auto-select first country if none selected
+    if (countries.length > 0 && !selectedCountryCode) {
+        selectCountryTab(countries[0].code);
+    } else if (selectedCountryCode) {
+        // Re-select current country (refresh scenario)
+        selectCountryTab(selectedCountryCode);
+    }
+}
+
+/**
+ * Select a country tab and load its registration requirements
+ */
+async function selectCountryTab(countryCode) {
+    // Update tab selection
+    const tabs = document.querySelectorAll('.country-tab');
+    tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.countryCode === countryCode);
+    });
+
+    selectedCountryCode = countryCode;
+    selectedOfficeId = null;  // Reset office selection
+
+    // Show registration form container
+    const registrationForm = document.getElementById('countryRegistrationForm');
+    if (registrationForm) registrationForm.style.display = 'block';
+
+    // Update header
+    const flagSpan = document.getElementById('selectedCountryFlag');
+    const nameSpan = document.getElementById('selectedCountryName');
+    const config = countryConfigs.find(c => (c.countryCode || c.country_code) === countryCode);
+
+    if (flagSpan) flagSpan.textContent = getCountryFlag(countryCode);
+    if (nameSpan) nameSpan.textContent = config?.countryName || config?.country_name || countryCode;
+
+    // Load requirements, offices, and saved values
+    try {
+        showLoading();
+        await Promise.all([
+            loadRegistrationRequirements(countryCode),
+            loadOfficesForCountry(countryCode),
+            loadAllRegistrations(countryCode)
+        ]);
+        renderDynamicFields(currentRegistrationRequirements, currentSavedRegistrations);
+        hideLoading();
+    } catch (error) {
+        console.error('Error loading registration data:', error);
+        showToast('Failed to load registration requirements', 'error');
+        hideLoading();
+    }
+}
+
+/**
+ * Load offices for the selected country
+ * Filters all tenant offices by country_code
+ */
+async function loadOfficesForCountry(countryCode) {
+    try {
+        const response = await api.request('/hrms/offices');
+        const allOffices = response.offices || response || [];
+
+        // Filter offices by country code (case-insensitive)
+        countryOffices = allOffices.filter(office => {
+            const officeCountry = office.country_code || office.countryCode;
+            return officeCountry && officeCountry.toUpperCase() === countryCode.toUpperCase();
+        });
+
+        // Also include offices with matching country_id if available
+        if (countryOffices.length === 0) {
+            const country = await getCountryByCode(countryCode);
+            if (country && country.id) {
+                countryOffices = allOffices.filter(office => office.country_id === country.id);
+            }
+        }
+
+        return countryOffices;
+    } catch (error) {
+        console.error('Error loading offices:', error);
+        countryOffices = [];
+        return [];
+    }
+}
+
+/**
+ * Get country by code (helper function)
+ */
+async function getCountryByCode(countryCode) {
+    try {
+        const response = await api.request(`/hrms/countries/code/${countryCode}`);
+        return response.country || response;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Load ALL registrations - national and per-office
+ * Organizes them into currentSavedRegistrations (national) and officeRegistrations (per-office)
+ */
+async function loadAllRegistrations(countryCode) {
+    try {
+        const response = await api.request(`/hrms/statutory/registrations/${countryCode}`);
+        const registrations = response.registrations || [];
+
+        // Reset storage
+        currentSavedRegistrations = {};
+        officeRegistrations = {};
+
+        registrations.forEach(reg => {
+            const values = reg.values || {};
+
+            if (reg.is_national || !reg.office_id) {
+                // National-level registration
+                currentSavedRegistrations = { ...currentSavedRegistrations, ...values };
+            } else {
+                // Office-level registration
+                officeRegistrations[reg.office_id] = values;
+            }
+        });
+
+        return { national: currentSavedRegistrations, offices: officeRegistrations };
+    } catch (error) {
+        if (error.status !== 404) {
+            console.error('Error loading registrations:', error);
+        }
+        currentSavedRegistrations = {};
+        officeRegistrations = {};
+        return { national: {}, offices: {} };
+    }
+}
+
+/**
+ * Load registration requirements from the country's schema
+ * API: GET /api/statutory/registrations/{countryCode}/requirements
+ */
+async function loadRegistrationRequirements(countryCode) {
+    try {
+        const response = await api.request(`/hrms/statutory/registrations/${countryCode}/requirements`);
+        currentRegistrationRequirements = response.requirements || response;
+        return currentRegistrationRequirements;
+    } catch (error) {
+        console.error('Error loading registration requirements:', error);
+        currentRegistrationRequirements = null;
+        throw error;
+    }
+}
+
+/**
+ * Load saved registrations for the country (kept for backward compatibility)
+ * Now delegates to loadAllRegistrations
+ */
+async function loadSavedRegistrations(countryCode) {
+    const result = await loadAllRegistrations(countryCode);
+    return result.national;
+}
+
+/**
+ * Render dynamic form fields based on the schema requirements
+ * v3.3.4: National fields in single form, establishment/state fields per-office
+ */
+function renderDynamicFields(requirements, savedValues) {
+    const fieldsContainer = document.getElementById('dynamicRegistrationFields');
+    if (!fieldsContainer) return;
+
+    fieldsContainer.innerHTML = '';
+
+    if (!requirements || Object.keys(requirements).length === 0) {
+        fieldsContainer.innerHTML = `
+            <div class="no-requirements-message">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <p>No registration requirements defined for this country.</p>
+                <p class="text-muted">The country configuration does not specify any employer registration requirements.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group fields by jurisdiction level
+    const nationalFields = [];
+    const establishmentFields = [];
+    const stateFields = [];
+
+    Object.entries(requirements).forEach(([key, req]) => {
+        const level = req.jurisdiction_level || 'national';
+        const fieldData = { key, ...req };
+
+        if (level === 'establishment') {
+            establishmentFields.push(fieldData);
+        } else if (level === 'state') {
+            stateFields.push(fieldData);
+        } else {
+            nationalFields.push(fieldData);
+        }
+    });
+
+    // Render national section (single form, no office selector)
+    if (nationalFields.length > 0) {
+        const section = createFieldSection('National Registrations', nationalFields, savedValues, null);
+        fieldsContainer.appendChild(section);
+    }
+
+    // Render establishment/state sections with office selector
+    const officeFields = [...establishmentFields, ...stateFields];
+    if (officeFields.length > 0) {
+        const officeSection = createOfficeRegistrationsSection(establishmentFields, stateFields);
+        fieldsContainer.appendChild(officeSection);
+    }
+}
+
+/**
+ * Create the office registrations section with office selector
+ * Each office in the country has its own set of state/establishment registrations
+ */
+function createOfficeRegistrationsSection(establishmentFields, stateFields) {
+    const section = document.createElement('div');
+    section.className = 'form-section office-registrations-section';
+
+    const hasOffices = countryOffices && countryOffices.length > 0;
+
+    // Build office selector container (will be populated with SearchableDropdown)
+    let officeSelectorHtml = '';
+    if (hasOffices) {
+        officeSelectorHtml = `
+            <div class="office-selector-container">
+                <label for="officeSelector">Select Office</label>
+                <div id="officeSelectorContainer" class="searchable-dropdown-wrapper"></div>
+                <small class="form-text text-muted">
+                    State-level and establishment registrations are stored per office. Select an office to configure its registrations.
+                </small>
+            </div>
+        `;
+    } else {
+        officeSelectorHtml = `
+            <div class="no-offices-message">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 21h18"></path>
+                    <path d="M9 8h1"></path><path d="M9 12h1"></path><path d="M9 16h1"></path>
+                    <path d="M14 8h1"></path><path d="M14 12h1"></path><path d="M14 16h1"></path>
+                    <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+                </svg>
+                <p>No offices configured for this country.</p>
+                <p class="text-muted">Create offices in Organization → Offices first, then configure their registrations here.</p>
+            </div>
+        `;
+    }
+
+    section.innerHTML = `
+        <h3>Office-Level Registrations</h3>
+        <p class="section-description">
+            Each office requires its own state-level registrations (GSTIN, PT, LWF) and establishment registrations (PF, ESI).
+        </p>
+        ${officeSelectorHtml}
+        <div id="officeRegistrationFields" class="office-fields-container" style="display: none;">
+            <!-- Fields will be rendered when office is selected -->
+        </div>
+    `;
+
+    // Initialize SearchableDropdown after section is added to DOM
+    if (hasOffices) {
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => initializeOfficeSelectorDropdown(), 0);
+    }
+
+    return section;
+}
+
+/**
+ * Initialize the SearchableDropdown for office selection
+ */
+function initializeOfficeSelectorDropdown() {
+    const container = document.getElementById('officeSelectorContainer');
+    if (!container) return;
+
+    // Destroy previous instance if exists
+    if (officeSelectorDropdown) {
+        officeSelectorDropdown.destroy();
+        officeSelectorDropdown = null;
+    }
+
+    // Build options from countryOffices
+    const options = countryOffices.map(office => {
+        const officeName = office.office_name || office.name;
+        const officeCode = office.office_code || office.code;
+        const stateName = office.state_name || office.state_code || '';
+        const label = stateName ? `${officeName} (${officeCode}) - ${stateName}` : `${officeName} (${officeCode})`;
+        const hasSaved = officeRegistrations[office.id] && Object.keys(officeRegistrations[office.id]).length > 0;
+        return {
+            value: office.id,
+            label: hasSaved ? `${label} ✓` : label,
+            description: hasSaved ? 'Registrations saved' : ''
+        };
+    });
+
+    // Create SearchableDropdown
+    officeSelectorDropdown = new SearchableDropdown(container, {
+        id: 'officeSelector',
+        options: options,
+        placeholder: '-- Select an office --',
+        searchPlaceholder: 'Search offices...',
+        onChange: (value, option) => {
+            selectOfficeForRegistrations(value);
+        }
+    });
+}
+
+/**
+ * Update office selector dropdown options (e.g., after saving to show checkmark)
+ */
+function updateOfficeSelectorOptions() {
+    if (!officeSelectorDropdown) return;
+
+    const options = countryOffices.map(office => {
+        const officeName = office.office_name || office.name;
+        const officeCode = office.office_code || office.code;
+        const stateName = office.state_name || office.state_code || '';
+        const label = stateName ? `${officeName} (${officeCode}) - ${stateName}` : `${officeName} (${officeCode})`;
+        const hasSaved = officeRegistrations[office.id] && Object.keys(officeRegistrations[office.id]).length > 0;
+        return {
+            value: office.id,
+            label: hasSaved ? `${label} ✓` : label,
+            description: hasSaved ? 'Registrations saved' : ''
+        };
+    });
+
+    officeSelectorDropdown.setOptions(options, true);
+}
+
+/**
+ * Handle office selection for registrations
+ */
+function selectOfficeForRegistrations(officeId) {
+    selectedOfficeId = officeId || null;
+
+    const fieldsContainer = document.getElementById('officeRegistrationFields');
+    if (!fieldsContainer) return;
+
+    if (!officeId) {
+        fieldsContainer.style.display = 'none';
+        fieldsContainer.innerHTML = '';
+        return;
+    }
+
+    // Get saved values for this office
+    const officeSavedValues = officeRegistrations[officeId] || {};
+
+    // Get establishment and state fields from requirements
+    const establishmentFields = [];
+    const stateFields = [];
+
+    if (currentRegistrationRequirements) {
+        Object.entries(currentRegistrationRequirements).forEach(([key, req]) => {
+            const level = req.jurisdiction_level || 'national';
+            const fieldData = { key, ...req };
+
+            if (level === 'establishment') {
+                establishmentFields.push(fieldData);
+            } else if (level === 'state') {
+                stateFields.push(fieldData);
+            }
+        });
+    }
+
+    // Get office info
+    const office = countryOffices.find(o => o.id === officeId);
+    const officeName = office ? (office.office_name || office.name) : 'Selected Office';
+    const stateName = office ? (office.state_name || office.state_code || '') : '';
+
+    // Render fields
+    let html = `
+        <div class="office-header">
+            <h4>${escapeHtml(officeName)}</h4>
+            ${stateName ? `<span class="office-state">State: ${escapeHtml(stateName)}</span>` : ''}
+        </div>
+    `;
+
+    if (establishmentFields.length > 0) {
+        html += `
+            <div class="form-section">
+                <h5 class="subsection-title">Establishment Registrations</h5>
+                <div class="form-grid registration-fields">
+                    ${establishmentFields.map(field => createFormFieldHtml(field, officeSavedValues[field.key] || '', officeId)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (stateFields.length > 0) {
+        html += `
+            <div class="form-section">
+                <h5 class="subsection-title">State-Level Registrations</h5>
+                <div class="form-grid registration-fields">
+                    ${stateFields.map(field => createFormFieldHtml(field, officeSavedValues[field.key] || '', officeId)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    fieldsContainer.innerHTML = html;
+    fieldsContainer.style.display = 'block';
+
+    // Add input validation listeners
+    fieldsContainer.querySelectorAll('.registration-input').forEach(input => {
+        const pattern = input.dataset.pattern;
+        if (pattern) {
+            input.addEventListener('blur', () => validateField(input, pattern));
+        }
+    });
+}
+
+/**
+ * Create form field HTML (returns string instead of element)
+ */
+function createFormFieldHtml(field, savedValue, officeId) {
+    const isRequired = field.required_for_artifacts && field.required_for_artifacts.length > 0;
+    const inputId = officeId ? `reg_${officeId}_${field.key}` : `reg_${field.key}`;
+
+    let helpHtml = '';
+    if (field.description) {
+        helpHtml += `<small class="form-text text-muted">${escapeHtml(field.description)}</small>`;
+    }
+    if (field.required_for_artifacts && field.required_for_artifacts.length > 0) {
+        helpHtml += `<small class="form-text required-for">Required for: ${field.required_for_artifacts.join(', ')}</small>`;
+    }
+
+    return `
+        <div class="form-group">
+            <label for="${inputId}">
+                ${escapeHtml(field.display_label || field.key)}${isRequired ? ' *' : ''}
+            </label>
+            <input
+                type="text"
+                id="${inputId}"
+                name="${field.key}"
+                class="form-control registration-input ${officeId ? 'office-registration' : 'national-registration'}"
+                value="${escapeHtml(savedValue)}"
+                placeholder="${escapeHtml(field.format_example || `Enter ${field.display_label}`)}"
+                ${field.format_regex ? `data-pattern="${escapeHtml(field.format_regex)}"` : ''}
+                ${isRequired ? 'data-required="true"' : ''}
+                ${officeId ? `data-office-id="${officeId}"` : ''}
+            >
+            ${helpHtml}
+        </div>
+    `;
+}
+
+/**
+ * Create a form section with fields
+ * @param officeId - null for national, or office ID for office-level
+ */
+function createFieldSection(title, fields, savedValues, officeId = null) {
+    const section = document.createElement('div');
+    section.className = 'form-section';
+
+    section.innerHTML = `
+        <h3>${escapeHtml(title)}</h3>
+        <div class="form-grid registration-fields"></div>
+    `;
+
+    const grid = section.querySelector('.form-grid');
+
+    fields.forEach(field => {
+        const formGroup = createFormField(field, savedValues[field.key] || '', officeId);
+        grid.appendChild(formGroup);
+    });
+
+    return section;
+}
+
+/**
+ * Create a single form field from a requirement definition
+ * @param officeId - null for national, or office ID for office-level
+ */
+function createFormField(field, savedValue, officeId = null) {
+    const formGroup = document.createElement('div');
+    formGroup.className = 'form-group';
+
+    // Determine if this is a required field (check if any artifact needs it)
+    const isRequired = field.required_for_artifacts && field.required_for_artifacts.length > 0;
+    const inputId = officeId ? `reg_${officeId}_${field.key}` : `reg_${field.key}`;
+    const inputClass = officeId ? 'office-registration' : 'national-registration';
+
+    // Create label with optional required indicator
+    const labelHtml = `
+        <label for="${inputId}">
+            ${escapeHtml(field.display_label || field.key)}${isRequired ? ' *' : ''}
+        </label>
+    `;
+
+    // Create input field
+    let inputHtml = `
+        <input
+            type="text"
+            id="${inputId}"
+            name="${field.key}"
+            class="form-control registration-input ${inputClass}"
+            value="${escapeHtml(savedValue)}"
+            placeholder="${escapeHtml(field.format_example || `Enter ${field.display_label}`)}"
+            ${field.format_regex ? `data-pattern="${escapeHtml(field.format_regex)}"` : ''}
+            ${isRequired ? 'data-required="true"' : ''}
+            ${officeId ? `data-office-id="${officeId}"` : ''}
+        >
+    `;
+
+    // Add help text if description available
+    let helpHtml = '';
+    if (field.description) {
+        helpHtml += `<small class="form-text text-muted">${escapeHtml(field.description)}</small>`;
+    }
+    if (field.required_for_artifacts && field.required_for_artifacts.length > 0) {
+        helpHtml += `<small class="form-text required-for">Required for: ${field.required_for_artifacts.join(', ')}</small>`;
+    }
+
+    formGroup.innerHTML = labelHtml + inputHtml + helpHtml;
+
+    // Add input validation on blur
+    const input = formGroup.querySelector('input');
+    if (input && field.format_regex) {
+        input.addEventListener('blur', () => validateField(input, field.format_regex));
+    }
+
+    return formGroup;
+}
+
+/**
+ * Validate a single field against its regex pattern
+ */
+function validateField(input, pattern) {
+    if (!input.value.trim()) {
+        input.classList.remove('is-invalid', 'is-valid');
+        return true; // Empty is valid (unless required, checked at submit)
+    }
+
+    try {
+        const regex = new RegExp(pattern);
+        const isValid = regex.test(input.value.trim());
+        input.classList.toggle('is-invalid', !isValid);
+        input.classList.toggle('is-valid', isValid);
+        return isValid;
+    } catch (e) {
+        console.warn('Invalid regex pattern:', pattern);
+        return true;
+    }
+}
+
+/**
+ * Validate all registrations against schema requirements
+ */
+async function validateRegistrations() {
+    if (!selectedCountryCode) {
+        showToast('No country selected', 'error');
+        return;
+    }
+
+    const validationStatus = document.getElementById('registrationValidationStatus');
+    const inputs = document.querySelectorAll('.registration-input');
+
+    let errors = [];
+    let warnings = [];
+
+    // Client-side validation
+    inputs.forEach(input => {
+        const key = input.name;
+        const value = input.value.trim();
+        const pattern = input.dataset.pattern;
+        const isRequired = input.dataset.required === 'true';
+
+        if (isRequired && !value) {
+            errors.push(`${key} is required for artifact generation`);
+            input.classList.add('is-invalid');
+        } else if (value && pattern) {
+            try {
+                const regex = new RegExp(pattern);
+                if (!regex.test(value)) {
+                    warnings.push(`${key} format may be invalid`);
+                    input.classList.add('is-invalid');
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                }
+            } catch (e) {
+                console.warn('Invalid regex:', pattern);
+            }
+        } else if (value) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        }
+    });
+
+    // Server-side validation
+    try {
+        const response = await api.request(`/hrms/statutory/registrations/${selectedCountryCode}/validate`);
+
+        if (response.errors && response.errors.length > 0) {
+            errors = [...errors, ...response.errors];
+        }
+        if (response.warnings && response.warnings.length > 0) {
+            warnings = [...warnings, ...response.warnings];
+        }
+    } catch (error) {
+        console.error('Server validation error:', error);
+    }
+
+    // Update validation status display
+    if (validationStatus) {
+        if (errors.length === 0 && warnings.length === 0) {
+            validationStatus.innerHTML = `
+                <span class="validation-badge success">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Valid
+                </span>
+            `;
+            showToast('All registrations are valid', 'success');
+        } else if (errors.length > 0) {
+            validationStatus.innerHTML = `
+                <span class="validation-badge error">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    ${errors.length} error${errors.length > 1 ? 's' : ''}
+                </span>
+            `;
+            showToast(errors.join('; '), 'error');
+        } else {
+            validationStatus.innerHTML = `
+                <span class="validation-badge warning">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    ${warnings.length} warning${warnings.length > 1 ? 's' : ''}
+                </span>
+            `;
+            showToast(warnings.join('; '), 'warning');
+        }
+    }
+
+    return errors.length === 0;
+}
+
+/**
+ * Handle registration form submission
+ * v3.3.4: Saves national and office-level registrations separately
+ * API: POST /api/statutory/registrations (with/without office_id)
+ */
+async function handleRegistrationsSubmit(event) {
+    event.preventDefault();
+
+    if (!selectedCountryCode) {
+        showToast('No country selected', 'error');
+        return;
+    }
+
+    const submitBtn = document.getElementById('saveRegistrationsBtn');
+    const btnText = submitBtn?.querySelector('.btn-text');
+    const btnSpinner = submitBtn?.querySelector('.btn-spinner');
+
+    try {
+        // Show loading state
+        if (submitBtn) submitBtn.disabled = true;
+        if (btnText) btnText.style.display = 'none';
+        if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+
+        // Collect national registrations (inputs without data-office-id)
+        const nationalInputs = document.querySelectorAll('.registration-input.national-registration');
+        const nationalRegistrations = {};
+
+        nationalInputs.forEach(input => {
+            const value = input.value.trim();
+            if (value) {
+                nationalRegistrations[input.name] = value;
+            }
+        });
+
+        // Collect office-level registrations (inputs with data-office-id)
+        const officeInputs = document.querySelectorAll('.registration-input.office-registration');
+        const officeRegs = {};  // office_id -> { key: value }
+
+        officeInputs.forEach(input => {
+            const officeId = input.dataset.officeId;
+            const value = input.value.trim();
+            if (officeId && value) {
+                if (!officeRegs[officeId]) {
+                    officeRegs[officeId] = {};
+                }
+                officeRegs[officeId][input.name] = value;
+            }
+        });
+
+        // Basic client-side validation for required fields
+        let hasErrors = false;
+        const allInputs = document.querySelectorAll('.registration-input');
+        allInputs.forEach(input => {
+            if (input.dataset.required === 'true' && !input.value.trim()) {
+                input.classList.add('is-invalid');
+                hasErrors = true;
+            }
+        });
+
+        if (hasErrors) {
+            showToast('Please fill in all required fields', 'error');
+            return;
+        }
+
+        // Track what we're saving for feedback
+        let savedCount = 0;
+
+        // Save national registrations (if any)
+        if (Object.keys(nationalRegistrations).length > 0) {
+            await api.request('/hrms/statutory/registrations', {
+                method: 'POST',
+                body: JSON.stringify({
+                    country_code: selectedCountryCode,
+                    registrations: nationalRegistrations
+                    // No office_id = national level
+                })
+            });
+            currentSavedRegistrations = nationalRegistrations;
+            savedCount++;
+        }
+
+        // Save office-level registrations
+        for (const [officeId, regs] of Object.entries(officeRegs)) {
+            if (Object.keys(regs).length > 0) {
+                await api.request('/hrms/statutory/registrations', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        country_code: selectedCountryCode,
+                        office_id: officeId,
+                        registrations: regs
+                    })
+                });
+                officeRegistrations[officeId] = regs;
+                savedCount++;
+            }
+        }
+
+        // Success message
+        let message = `Statutory registrations saved for ${selectedCountryCode}`;
+        if (savedCount > 1) {
+            message = `Saved national and office-level registrations for ${selectedCountryCode}`;
+        } else if (Object.keys(officeRegs).length > 0 && Object.keys(nationalRegistrations).length === 0) {
+            const officeName = countryOffices.find(o => o.id === selectedOfficeId)?.office_name || 'office';
+            message = `Saved registrations for ${officeName}`;
+        }
+
+        showToast(message, 'success');
+
+        // Update validation status
+        const validationStatus = document.getElementById('registrationValidationStatus');
+        if (validationStatus) {
+            validationStatus.innerHTML = `
+                <span class="validation-badge success">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Saved
+                </span>
+            `;
+        }
+
+        // Update office selector to show checkmark (using SearchableDropdown)
+        if (selectedOfficeId) {
+            updateOfficeSelectorOptions();
+        }
+
+    } catch (error) {
+        console.error('Error saving registrations:', error);
+        showToast(error.message || 'Failed to save registrations', 'error');
+    } finally {
+        // Reset button state
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnText) btnText.style.display = 'inline';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+    }
 }
 
 // ==================== Drag & Drop Setup ====================
