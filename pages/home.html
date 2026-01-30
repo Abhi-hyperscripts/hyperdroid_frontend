@@ -31,145 +31,160 @@
             <p class="welcome-subtitle">What would you like to do today?</p>
         </div>
 
-        <!-- Apps Grid -->
-        <div class="apps-grid">
+        <!-- Futuristic Bento Grid -->
+        <div class="bento-grid">
             <!-- Vision Card -->
-            <div class="app-card vision" onclick="navigateToModule('vision')" id="visionCard">
-                <div class="app-card-header">
-                    <div class="app-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <polygon points="23 7 16 12 23 17 23 7"/>
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                        </svg>
+            <div class="bento-card vision" onclick="navigateToModule('vision')" id="visionCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polygon points="23 7 16 12 23 17 23 7"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="visionStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
                     </div>
-                    <div class="app-status" id="visionStatus">
-                        <span class="status-indicator"></span>
-                        <span>Checking...</span>
+                    <div class="card-body">
+                        <h3>Meetings</h3>
+                        <p>Video conferencing with screen sharing, chat, and recording</p>
                     </div>
-                </div>
-                <div class="app-card-body">
-                    <h3>Meetings</h3>
-                    <p>Video conferencing with screen sharing, chat, and recording capabilities</p>
-                </div>
-                <div class="app-card-footer">
-                    <span class="app-action">
-                        Open Meetings
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                    </span>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- Drive Card -->
-            <div class="app-card drive" onclick="navigateToModule('drive')" id="driveCard">
-                <div class="app-card-header">
-                    <div class="app-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                        </svg>
+            <div class="bento-card drive" onclick="navigateToModule('drive')" id="driveCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="driveStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
                     </div>
-                    <div class="app-status" id="driveStatus">
-                        <span class="status-indicator"></span>
-                        <span>Checking...</span>
+                    <div class="card-body">
+                        <h3>Drive</h3>
+                        <p>Secure cloud storage with file sharing and organization</p>
                     </div>
-                </div>
-                <div class="app-card-body">
-                    <h3>Drive</h3>
-                    <p>Secure cloud storage with file sharing and organization tools</p>
-                </div>
-                <div class="app-card-footer">
-                    <span class="app-action">
-                        Open Drive
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                    </span>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- Chat Card -->
-            <div class="app-card chat" onclick="navigateToModule('chat')" id="chatCard">
-                <div class="app-card-header">
-                    <div class="app-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
+            <div class="bento-card chat" onclick="navigateToModule('chat')" id="chatCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="chatStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
                     </div>
-                    <div class="app-status" id="chatStatus">
-                        <span class="status-indicator"></span>
-                        <span>Checking...</span>
+                    <div class="card-body">
+                        <h3>Chat</h3>
+                        <p>Real-time messaging with direct and group conversations</p>
                     </div>
-                </div>
-                <div class="app-card-body">
-                    <h3>Chat</h3>
-                    <p>Real-time messaging with direct and group conversations</p>
-                </div>
-                <div class="app-card-footer">
-                    <span class="app-action">
-                        Open Chat
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                    </span>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- HRMS Card -->
-            <div class="app-card hrms" onclick="navigateToModule('hrms')" id="hrmsCard">
-                <div class="app-card-header">
-                    <div class="app-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
+            <div class="bento-card hrms" onclick="navigateToModule('hrms')" id="hrmsCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="hrmsStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
                     </div>
-                    <div class="app-status" id="hrmsStatus">
-                        <span class="status-indicator"></span>
-                        <span>Checking...</span>
+                    <div class="card-body">
+                        <h3>HRMS</h3>
+                        <p>Human resources with attendance, leave, and payroll</p>
                     </div>
-                </div>
-                <div class="app-card-body">
-                    <h3>HRMS</h3>
-                    <p>Human resources management with attendance, leave, and payroll</p>
-                </div>
-                <div class="app-card-footer">
-                    <span class="app-action">
-                        Open HRMS
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                    </span>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- Admin Card (SUPERADMIN only) -->
-            <div class="app-card admin" onclick="navigateToModule('admin')" id="adminCard">
-                <div class="app-card-header">
-                    <div class="app-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
-                        </svg>
+            <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                            </svg>
+                        </div>
+                        <div class="app-status admin-badge">
+                            <span class="status-indicator"></span>
+                            <span>Admin</span>
+                        </div>
                     </div>
-                    <div class="app-status online">
-                        <span class="status-indicator"></span>
-                        <span>Admin</span>
+                    <div class="card-body">
+                        <h3>Admin Panel</h3>
+                        <p>User management, service monitoring, and configuration</p>
                     </div>
-                </div>
-                <div class="app-card-body">
-                    <h3>Admin Panel</h3>
-                    <p>User management, service monitoring, and system configuration</p>
-                </div>
-                <div class="app-card-footer">
-                    <span class="app-action">
-                        Open Admin
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                    </span>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -256,7 +271,7 @@
                     const hasAccess = hasRole && isLicensed;
 
                     if (hasAccess) {
-                        card.style.display = 'block';
+                        card.style.display = 'flex';
                         if (cardId === 'adminCard') {
                             card.classList.add('visible');
                         }
