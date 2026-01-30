@@ -796,6 +796,7 @@ function addParticipant(participant) {
 
     const video = document.createElement('video');
     video.autoplay = true;
+    video.muted = true; // MUST be muted for Safari autoplay - audio is on separate element
     video.playsInline = true;
 
     const nameTag = document.createElement('div');
@@ -1133,7 +1134,7 @@ function addParticipantToContainer(participant, container, className, isLocal) {
 
     const video = document.createElement('video');
     video.autoplay = true;
-    video.muted = isLocal;
+    video.muted = true; // MUST be muted for Safari autoplay - audio is on separate element
     video.playsInline = true;
     video.style.width = '100%';
     video.style.height = '100%';
