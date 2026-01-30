@@ -512,32 +512,11 @@ async function connectToLiveKit(wsUrl, token) {
             console.log('Track unsubscribed:', track.kind);
             detachTrack(track, publication, participant);
 
-            // Safari: Try to re-subscribe video tracks that unexpectedly unsubscribe
-            if (isSafari && track.kind === 'video' && publication.source === LivekitClient.Track.Source.Camera) {
-                const participantIdentity = participant.identity;
-                console.log(`[Safari] Video track unsubscribed for ${participantIdentity}, attempting re-subscription in 1000ms...`);
-
-                setTimeout(() => {
-                    // Find participant fresh by iterating through remoteParticipants
-                    let currentParticipant = null;
-                    room.remoteParticipants.forEach((p) => {
-                        if (p.identity === participantIdentity) {
-                            currentParticipant = p;
-                        }
-                    });
-
-                    if (currentParticipant) {
-                        // Find the camera video publication
-                        currentParticipant.videoTrackPublications.forEach((pub) => {
-                            if (pub.source === LivekitClient.Track.Source.Camera && !pub.isSubscribed) {
-                                console.log(`[Safari] Re-subscribing to video track for ${participantIdentity}`);
-                                pub.setSubscribed(true);
-                            }
-                        });
-                    } else {
-                        console.log(`[Safari] Participant ${participantIdentity} no longer in room, skipping re-subscription`);
-                    }
-                }, 1000);
+            // Safari: Log video track unsubscription
+            // The video codec from Chrome (VP9/H.264 simulcast) is incompatible with Safari
+            // This is a known LiveKit issue - server needs VP8 transcoding for Safari clients
+            if (isSafari && track.kind === 'video') {
+                console.warn(`[Safari] Video track unsubscribed for ${participant.identity} - likely codec incompatibility (VP9→VP8 transcoding needed on server)`);
             }
         });
 
