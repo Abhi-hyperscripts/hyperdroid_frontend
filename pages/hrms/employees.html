@@ -612,6 +612,7 @@
                                     </div>
                                 </div>
                                 <div class="wizard-col info-col-large">
+                                    <!-- Row 1: Employee Code + Work Phone -->
                                     <div class="form-row two-col equal-width">
                                         <div class="form-group">
                                             <label>Employee Code <span class="required">*</span></label>
@@ -622,34 +623,58 @@
                                             <input type="tel" id="workPhone" placeholder="+91-9876543210" required>
                                         </div>
                                     </div>
+                                    <!-- Row 2: DOB + Gender -->
                                     <div class="form-row two-col equal-width">
                                         <div class="form-group">
                                             <label>Date of Birth <span class="required">*</span></label>
-                                            <input type="date" id="dateOfBirth" required placeholder="Select date of birth...">
+                                            <input type="date" id="dateOfBirth" required>
                                         </div>
                                         <div class="form-group">
                                             <label>Gender</label>
                                             <select id="gender" class="form-control">
-                                                <option value="">Select gender...</option>
+                                                <option value="">Select...</option>
                                                 <option value="male">Male</option>
                                                 <option value="female">Female</option>
                                                 <option value="other">Other</option>
                                             </select>
                                         </div>
                                     </div>
+                                    <!-- Row 3: Blood Group + Marital Status -->
                                     <div class="form-row two-col equal-width">
+                                        <div class="form-group">
+                                            <label>Blood Group</label>
+                                            <select id="bloodGroup" class="form-control">
+                                                <option value="">Select...</option>
+                                                <option value="A+">A+</option>
+                                                <option value="A-">A-</option>
+                                                <option value="B+">B+</option>
+                                                <option value="B-">B-</option>
+                                                <option value="AB+">AB+</option>
+                                                <option value="AB-">AB-</option>
+                                                <option value="O+">O+</option>
+                                                <option value="O-">O-</option>
+                                            </select>
+                                        </div>
                                         <div class="form-group">
                                             <label>Marital Status</label>
                                             <select id="maritalStatus" class="form-control">
-                                                <option value="">Select marital status...</option>
+                                                <option value="">Select...</option>
                                                 <option value="single">Single</option>
                                                 <option value="married">Married</option>
                                                 <option value="divorced">Divorced</option>
                                                 <option value="widowed">Widowed</option>
                                             </select>
                                         </div>
+                                    </div>
+                                    <!-- Row 4: Emergency Contact Name + Phone -->
+                                    <div class="form-row two-col equal-width">
                                         <div class="form-group">
-                                            <!-- Empty cell for alignment -->
+                                            <label>Emergency Contact Name</label>
+                                            <input type="text" id="emergencyContactName" class="form-control" placeholder="e.g., Jane Doe">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Emergency Contact Phone</label>
+                                            <input type="tel" id="emergencyContactPhone" class="form-control" placeholder="+91-9876543210">
                                         </div>
                                     </div>
                                 </div>
@@ -1445,6 +1470,36 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" onclick="confirmTerminateEmployee()">Terminate Employee</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Slide Panel -->
+    <div class="employee-panel-overlay" id="employeePanelOverlay" onclick="closeEmployeePanel()"></div>
+    <div class="employee-slide-panel" id="employeeSlidePanel">
+        <div class="panel-drag-handle"></div>
+        <div class="panel-header">
+            <h3>Employee Details</h3>
+            <button class="panel-close-btn" onclick="closeEmployeePanel()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body" id="employeePanelBody">
+            <div class="panel-loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        <div class="panel-actions" id="employeePanelActions">
+            <div class="panel-actions-card">
+                <div class="panel-actions-content">
+                    <div class="panel-actions-title">Quick Actions</div>
+                    <div class="panel-action-buttons" id="panelActionButtons">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>

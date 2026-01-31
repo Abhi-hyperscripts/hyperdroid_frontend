@@ -231,9 +231,11 @@ const Navigation = {
         dropdownPortal.innerHTML = `
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <div class="user-dropdown-header">
-                    <span class="user-dropdown-org" id="navOrgName" style="display: none;"></span>
-                    <span class="user-dropdown-name">${this.escapeHtml(displayName)}</span>
-                    <span class="user-dropdown-email">${this.escapeHtml(user.email || '')}</span>
+                    <div class="user-dropdown-header-content">
+                        <div class="tenant-badge" id="navOrgName">HyperDroid</div>
+                        <span class="user-name">${this.escapeHtml(displayName)}</span>
+                        <span class="user-email">${this.escapeHtml(user.email || '')}</span>
+                    </div>
                 </div>
                 <div class="nav-links-section">
                     ${accessibleItems.map(item => `

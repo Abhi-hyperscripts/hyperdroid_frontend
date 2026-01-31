@@ -34,6 +34,7 @@ const TEMPLATE_COLUMNS = [
     { key: 'ctc', label: 'Annual CTC', required: true },
     { key: 'employment_type', label: 'Employment Type', required: false, default: 'full-time' },
     { key: 'gender', label: 'Gender', required: false },
+    { key: 'blood_group', label: 'Blood Group', required: false, hint: 'A+, A-, B+, B-, AB+, AB-, O+, O-' },
     { key: 'work_phone', label: 'Work Phone', required: true }
 ];
 
@@ -531,6 +532,7 @@ async function validateDataWithBackend() {
                 ctc: parseFloat(item.ctc),
                 employment_type: item.employment_type || 'full-time',
                 gender: item.gender || null,
+                blood_group: item.blood_group || null,
                 work_phone: item.work_phone
             }))
         };
@@ -761,6 +763,7 @@ async function executeUnifiedImport(validRows) {
         ctc: parseFloat(row.ctc),
         employment_type: row.employment_type || 'full-time',
         gender: row.gender || null,
+        blood_group: row.blood_group || null,
         work_phone: row.work_phone
     }));
 
@@ -983,6 +986,7 @@ async function executePhase2(validRows) {
         ctc: parseFloat(row.ctc),
         employment_type: row.employment_type || 'full-time',
         gender: row.gender || null,
+        blood_group: row.blood_group || null,
         work_phone: row.work_phone
     }));
 

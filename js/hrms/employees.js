@@ -489,7 +489,7 @@ function renderEmployeesRows(filtered) {
             : `<div class="employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>`;
 
         return `
-            <tr>
+            <tr class="clickable-row" onclick="openEmployeePanel('${emp.id}')" data-employee-id="${emp.id}">
                 <td>
                     <div class="employee-info">
                         <div id="emp-photo-${emp.id}">${photoHtml}</div>
@@ -505,52 +505,14 @@ function renderEmployeesRows(filtered) {
                 <td>${managerDisplay}</td>
                 <td>${formatDate(emp.hire_date)}</td>
                 <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-btn" onclick="viewEmployee('${emp.id}')" data-tooltip="View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn" onclick="viewTransferHistory('${emp.id}')" data-tooltip="History">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                        </button>
-                        ${hrmsRoles.canEditEmployee() ? `
-                            <button class="action-btn" onclick="editEmployee('${emp.id}')" data-tooltip="Edit">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                            </button>
-                            <button class="action-btn" onclick="openTransferModal('${emp.id}')" data-tooltip="Transfer">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="15 10 20 15 15 20"/>
-                                    <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
-                                </svg>
-                            </button>
-                            <button class="action-btn" onclick="openReassignManagerModal('${emp.id}')" data-tooltip="Reassign Manager">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                            </button>
-                            ${emp.employment_status === 'active' ? `
-                            <button class="action-btn danger" onclick="showTerminateModal('${emp.id}')" data-tooltip="Terminate">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="15" y1="9" x2="9" y2="15"/>
-                                    <line x1="9" y1="9" x2="15" y2="15"/>
-                                </svg>
-                            </button>
-                            ` : ''}
-                        ` : ''}
-                    </div>
+                <td onclick="event.stopPropagation()">
+                    <button class="view-employee-btn" onclick="openEmployeePanel('${emp.id}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        View
+                    </button>
                 </td>
             </tr>
         `;
@@ -590,6 +552,13 @@ async function openCreateEmployeeModal() {
 
     // Initialize/reset marital status dropdown (using SearchableDropdown component)
     initMaritalStatusDropdown();
+
+    // Initialize/reset blood group dropdown (using SearchableDropdown component)
+    initBloodGroupDropdown();
+
+    // Clear emergency contact fields
+    document.getElementById('emergencyContactName').value = '';
+    document.getElementById('emergencyContactPhone').value = '';
 
     // Load available users
     try {
@@ -815,6 +784,15 @@ async function editEmployee(id) {
     initMaritalStatusDropdown();
     setMaritalStatusValue(emp.marital_status || '');
 
+    // Initialize and set blood group dropdown (using SearchableDropdown component)
+    initBloodGroupDropdown();
+    const personalInfo = emp.personal_info || emp;
+    setBloodGroupValue(personalInfo.blood_group || '');
+
+    // Set emergency contact fields (from personal_info if available)
+    document.getElementById('emergencyContactName').value = personalInfo.emergency_contact_name || '';
+    document.getElementById('emergencyContactPhone').value = personalInfo.emergency_contact_phone || '';
+
     // Initialize and set employment type dropdown (using SearchableDropdown component)
     initEmploymentTypeDropdown();
     setEmploymentTypeValue(emp.employment_type || 'full_time');
@@ -822,15 +800,15 @@ async function editEmployee(id) {
     setDatePickerValue('probationEndDate', emp.probation_end_date);
     document.getElementById('enableGeofenceAttendance').checked = emp.enable_geofence_attendance || false;
 
-    // Set attendance exempt override dropdown
+    // Initialize and set attendance exempt override dropdown (using SearchableDropdown component)
+    initAttendanceExemptDropdown();
     // null = "Use Designation Default", true = "Exempt", false = "Required"
-    const attendanceExemptSelect = document.getElementById('attendanceExemptOverride');
     if (emp.attendance_exempt_override === true) {
-        attendanceExemptSelect.value = 'true';
+        setAttendanceExemptValue('true');
     } else if (emp.attendance_exempt_override === false) {
-        attendanceExemptSelect.value = 'false';
+        setAttendanceExemptValue('false');
     } else {
-        attendanceExemptSelect.value = ''; // Use designation default
+        setAttendanceExemptValue(''); // Use designation default
     }
 
     // Set searchable dropdown values for Step 2 Employment
@@ -924,6 +902,16 @@ async function saveEmployeeAtomic() {
     const maritalStatus = getMaritalStatusValue();
     if (maritalStatus) formData.append('marital_status', maritalStatus);
 
+    const bloodGroup = getBloodGroupValue();
+    if (bloodGroup) formData.append('blood_group', bloodGroup);
+
+    // Emergency contact (optional)
+    const emergencyContactName = document.getElementById('emergencyContactName')?.value;
+    if (emergencyContactName) formData.append('emergency_contact_name', emergencyContactName);
+
+    const emergencyContactPhone = document.getElementById('emergencyContactPhone')?.value;
+    if (emergencyContactPhone) formData.append('emergency_contact_phone', emergencyContactPhone);
+
     const departmentId = document.getElementById('departmentId').value;
     if (departmentId) formData.append('department_id', departmentId);
 
@@ -951,7 +939,7 @@ async function saveEmployeeAtomic() {
     formData.append('enable_geofence_attendance', document.getElementById('enableGeofenceAttendance').checked);
 
     // Attendance exempt override: "" (null/use default), "true", or "false"
-    const attendanceExemptValue = document.getElementById('attendanceExemptOverride').value;
+    const attendanceExemptValue = getAttendanceExemptValue();
     if (attendanceExemptValue !== '') {
         formData.append('attendance_exempt_override', attendanceExemptValue === 'true');
     }
@@ -1033,6 +1021,9 @@ async function saveEmployeeEdit(id) {
         date_of_birth: document.getElementById('dateOfBirth').value,
         gender: getGenderValue() || null,
         marital_status: getMaritalStatusValue() || null,
+        blood_group: getBloodGroupValue() || null,
+        emergency_contact_name: document.getElementById('emergencyContactName')?.value || null,
+        emergency_contact_phone: document.getElementById('emergencyContactPhone')?.value || null,
         department_id: document.getElementById('departmentId').value,
         designation_id: document.getElementById('designationId').value,
         office_id: document.getElementById('officeId').value,
@@ -1044,7 +1035,7 @@ async function saveEmployeeEdit(id) {
         enable_geofence_attendance: document.getElementById('enableGeofenceAttendance').checked,
         // Attendance exempt override: null (use designation default), true (exempt), or false (required)
         attendance_exempt_override: (() => {
-            const val = document.getElementById('attendanceExemptOverride').value;
+            const val = getAttendanceExemptValue();
             return val === '' ? null : val === 'true';
         })()
     };
@@ -1214,6 +1205,299 @@ function editFromView() {
         editEmployee(currentViewEmployee.id);
     }
 }
+
+// =============================================================
+// EMPLOYEE SLIDE PANEL
+// =============================================================
+
+let currentPanelEmployeeId = null;
+
+async function openEmployeePanel(id) {
+    const panel = document.getElementById('employeeSlidePanel');
+    const overlay = document.getElementById('employeePanelOverlay');
+    const body = document.getElementById('employeePanelBody');
+    const actionsContainer = document.getElementById('panelActionButtons');
+
+    // Show panel with loading state
+    body.innerHTML = '<div class="panel-loading"><div class="spinner"></div></div>';
+    actionsContainer.innerHTML = '';
+
+    panel.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    currentPanelEmployeeId = id;
+
+    try {
+        const emp = await api.getHrmsEmployee(id);
+        currentViewEmployee = emp;
+
+        const dept = departments.find(d => d.id === emp.department_id);
+        const desig = designations.find(d => d.id === emp.designation_id);
+        const office = offices.find(o => o.id === emp.office_id);
+        const shift = shifts.find(s => s.id === emp.shift_id);
+        const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
+
+        // Get photo
+        let photoHtml = `<div class="panel-employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>`;
+        if (employeePhotoCache[id]) {
+            photoHtml = `<div class="panel-employee-avatar"><img src="${employeePhotoCache[id]}" alt="${emp.first_name}" onerror="this.parentElement.innerHTML='${getInitials(emp.first_name, emp.last_name)}'"></div>`;
+        } else {
+            // Try to fetch photo
+            try {
+                const documents = await api.getEmployeeDocuments(id);
+                const photoDoc = documents.find(d => d.document_type === 'profile_photo');
+                if (photoDoc) {
+                    const downloadUrl = await api.getEmployeeDocumentDownloadUrl(id, photoDoc.id);
+                    const photoUrl = downloadUrl.url || downloadUrl;
+                    employeePhotoCache[id] = photoUrl;
+                    photoHtml = `<div class="panel-employee-avatar"><img src="${photoUrl}" alt="${emp.first_name}" onerror="this.parentElement.innerHTML='${getInitials(emp.first_name, emp.last_name)}'"></div>`;
+                }
+            } catch (e) {
+                console.log('Could not load photo:', e);
+            }
+        }
+
+        body.innerHTML = `
+            <div class="panel-employee-header">
+                ${photoHtml}
+                <div class="panel-employee-info">
+                    <h2 class="panel-employee-name">${emp.first_name} ${emp.last_name}</h2>
+                    <div class="panel-employee-meta">
+                        <span>${emp.employee_code || '-'}</span>
+                        <span>•</span>
+                        <span>${desig?.designation_name || '-'}</span>
+                        <span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-header">
+                    <div class="panel-section-icon personal">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <h4 class="panel-section-title">Personal Information</h4>
+                </div>
+                <div class="panel-info-grid">
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Email</span>
+                        <span class="panel-info-value">${emp.work_email || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Phone</span>
+                        <span class="panel-info-value">${emp.work_phone || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Date of Birth</span>
+                        <span class="panel-info-value">${formatDate(emp.date_of_birth) || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Gender</span>
+                        <span class="panel-info-value">${capitalizeFirst(emp.gender) || '-'}</span>
+                    </div>
+                    ${(emp.personal_info?.blood_group || emp.blood_group) ? `
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Blood Group</span>
+                        <span class="panel-info-value">${emp.personal_info?.blood_group || emp.blood_group}</span>
+                    </div>
+                    ` : ''}
+                    ${(emp.personal_info?.marital_status || emp.marital_status) ? `
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Marital Status</span>
+                        <span class="panel-info-value">${capitalizeFirst(emp.personal_info?.marital_status || emp.marital_status)}</span>
+                    </div>
+                    ` : ''}
+                    ${(emp.personal_info?.emergency_contact_name || emp.emergency_contact_name) ? `
+                    <div class="panel-info-item panel-info-item-full">
+                        <span class="panel-info-label">Emergency Contact</span>
+                        <span class="panel-info-value">${emp.personal_info?.emergency_contact_name || emp.emergency_contact_name || '-'}${(emp.personal_info?.emergency_contact_phone || emp.emergency_contact_phone) ? ` • ${emp.personal_info?.emergency_contact_phone || emp.emergency_contact_phone}` : ''}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-header">
+                    <div class="panel-section-icon employment">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                    </div>
+                    <h4 class="panel-section-title">Employment Details</h4>
+                </div>
+                <div class="panel-info-grid">
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Department</span>
+                        <span class="panel-info-value">${dept?.department_name || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Designation</span>
+                        <span class="panel-info-value">${desig?.designation_name || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Office</span>
+                        <span class="panel-info-value">${office?.office_name || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Shift</span>
+                        <span class="panel-info-value">${shift?.shift_name || 'Default'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Manager</span>
+                        <span class="panel-info-value">${manager ? `${manager.first_name} ${manager.last_name}` : '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Joining Date</span>
+                        <span class="panel-info-value">${formatDate(emp.hire_date)}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Employment Type</span>
+                        <span class="panel-info-value">${capitalizeFirst(emp.employment_type?.replace('_', ' ')) || '-'}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Probation End</span>
+                        <span class="panel-info-value">${formatDate(emp.probation_end_date) || '-'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render action buttons
+        renderPanelActions(emp);
+
+    } catch (error) {
+        console.error('Error loading employee:', error);
+        body.innerHTML = '<div class="empty-state"><p>Error loading employee details</p></div>';
+    }
+}
+
+function renderPanelActions(emp) {
+    const container = document.getElementById('panelActionButtons');
+    const canEdit = hrmsRoles.canEditEmployee();
+
+    let actionsHtml = `
+        <button class="panel-action-btn" onclick="viewTransferHistoryFromPanel()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            View History
+        </button>
+    `;
+
+    if (canEdit) {
+        actionsHtml += `
+            <button class="panel-action-btn" onclick="editEmployeeFromPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit Details
+            </button>
+            <button class="panel-action-btn" onclick="transferFromPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 10 20 15 15 20"/>
+                    <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
+                </svg>
+                Transfer
+            </button>
+            <button class="panel-action-btn" onclick="reassignManagerFromPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Reassign Manager
+            </button>
+        `;
+
+        if (emp.employment_status === 'active') {
+            actionsHtml += `
+                <button class="panel-action-btn danger full-width" onclick="terminateFromPanel()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    Terminate Employee
+                </button>
+            `;
+        }
+    }
+
+    container.innerHTML = actionsHtml;
+}
+
+function closeEmployeePanel() {
+    const panel = document.getElementById('employeeSlidePanel');
+    const overlay = document.getElementById('employeePanelOverlay');
+
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+
+    currentPanelEmployeeId = null;
+}
+
+// Panel action handlers - close panel and call original function
+// IMPORTANT: Save employeeId BEFORE calling closeEmployeePanel() because it resets currentPanelEmployeeId to null
+function viewTransferHistoryFromPanel() {
+    if (currentPanelEmployeeId) {
+        const employeeId = currentPanelEmployeeId;
+        closeEmployeePanel();
+        viewTransferHistory(employeeId);
+    }
+}
+
+function editEmployeeFromPanel() {
+    if (currentPanelEmployeeId) {
+        const employeeId = currentPanelEmployeeId;
+        closeEmployeePanel();
+        editEmployee(employeeId);
+    }
+}
+
+function transferFromPanel() {
+    if (currentPanelEmployeeId) {
+        const employeeId = currentPanelEmployeeId;
+        closeEmployeePanel();
+        openTransferModal(employeeId);
+    }
+}
+
+function reassignManagerFromPanel() {
+    if (currentPanelEmployeeId) {
+        const employeeId = currentPanelEmployeeId;
+        closeEmployeePanel();
+        openReassignManagerModal(employeeId);
+    }
+}
+
+function terminateFromPanel() {
+    if (currentPanelEmployeeId) {
+        const employeeId = currentPanelEmployeeId;
+        closeEmployeePanel();
+        showTerminateModal(employeeId);
+    }
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('employeeSlidePanel');
+        if (panel && panel.classList.contains('active')) {
+            closeEmployeePanel();
+        }
+    }
+});
+
+// =============================================================
 
 // Utility functions
 function getInitials(firstName, lastName) {
@@ -3546,6 +3830,67 @@ function getMaritalStatusValue() {
     }
 }
 
+// Blood Group dropdown instance (using SearchableDropdown component)
+let bloodGroupDropdown = null;
+
+/**
+ * Initialize blood group dropdown using SearchableDropdown component
+ */
+function initBloodGroupDropdown() {
+    // Check if already converted
+    const existingContainer = document.getElementById('bloodGroup-searchable-container');
+    if (existingContainer) {
+        // Already converted, just reset
+        if (bloodGroupDropdown) {
+            bloodGroupDropdown.setValue(null);
+        }
+        return;
+    }
+
+    // Convert native select to searchable dropdown
+    bloodGroupDropdown = convertSelectToSearchable('bloodGroup', {
+        placeholder: 'Select blood group...',
+        searchPlaceholder: 'Search...',
+        compact: true
+    });
+}
+
+/**
+ * Reset blood group dropdown to default state
+ */
+function resetBloodGroupDropdown() {
+    if (bloodGroupDropdown) {
+        bloodGroupDropdown.setValue(null);
+    } else {
+        const select = document.getElementById('bloodGroup');
+        if (select) select.value = '';
+    }
+}
+
+/**
+ * Set blood group dropdown value
+ */
+function setBloodGroupValue(value) {
+    if (bloodGroupDropdown) {
+        bloodGroupDropdown.setValue(value);
+    } else {
+        const select = document.getElementById('bloodGroup');
+        if (select) select.value = value || '';
+    }
+}
+
+/**
+ * Get blood group dropdown value
+ */
+function getBloodGroupValue() {
+    if (bloodGroupDropdown) {
+        return bloodGroupDropdown.getValue();
+    } else {
+        const select = document.getElementById('bloodGroup');
+        return select ? select.value : '';
+    }
+}
+
 // Employment Type dropdown instance (using SearchableDropdown component)
 let employmentTypeDropdown = null;
 
@@ -3592,6 +3937,55 @@ function setEmploymentTypeValue(value) {
     } else {
         const select = document.getElementById('employmentType');
         if (select) select.value = value || '';
+    }
+}
+
+// Attendance Exempt Override dropdown instance (using SearchableDropdown component)
+let attendanceExemptDropdown = null;
+
+/**
+ * Initialize attendance exempt dropdown using SearchableDropdown component
+ */
+function initAttendanceExemptDropdown() {
+    // Check if already converted
+    const existingContainer = document.getElementById('attendanceExemptOverride-searchable-container');
+    if (existingContainer) {
+        // Already converted, just reset
+        if (attendanceExemptDropdown) {
+            attendanceExemptDropdown.setValue(null);
+        }
+        return;
+    }
+
+    // Convert native select to searchable dropdown
+    attendanceExemptDropdown = convertSelectToSearchable('attendanceExemptOverride', {
+        placeholder: 'Select exemption setting...',
+        searchPlaceholder: 'Search...',
+        compact: true
+    });
+}
+
+/**
+ * Set attendance exempt dropdown value
+ */
+function setAttendanceExemptValue(value) {
+    if (attendanceExemptDropdown) {
+        attendanceExemptDropdown.setValue(value);
+    } else {
+        const select = document.getElementById('attendanceExemptOverride');
+        if (select) select.value = value || '';
+    }
+}
+
+/**
+ * Get attendance exempt dropdown value
+ */
+function getAttendanceExemptValue() {
+    if (attendanceExemptDropdown) {
+        return attendanceExemptDropdown.getValue();
+    } else {
+        const select = document.getElementById('attendanceExemptOverride');
+        return select ? select.value : '';
     }
 }
 
@@ -4106,6 +4500,9 @@ function populateSearchableManagerDropdown(excludeEmployeeId = null) {
 function initializeEmploymentDropdowns() {
     // Initialize employment type dropdown
     initEmploymentTypeDropdown();
+
+    // Initialize attendance exempt dropdown
+    initAttendanceExemptDropdown();
 
     // Populate offices dropdown
     const officeItems = offices.map(o => ({
