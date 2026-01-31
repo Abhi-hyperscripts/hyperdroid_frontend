@@ -3643,7 +3643,14 @@ async function loadMeetingDevices() {
             searchPlaceholder: 'Search cameras...',
             compact: true,
             onChange: (value) => {
-                if (value) switchCameraById(value);
+                if (value) {
+                    switchCameraById(value);
+                    // Auto-close panel after selection
+                    setTimeout(() => {
+                        const panel = document.getElementById('deviceSettingsPanel');
+                        if (panel) panel.style.display = 'none';
+                    }, 300);
+                }
             }
         });
 
@@ -3668,7 +3675,14 @@ async function loadMeetingDevices() {
             searchPlaceholder: 'Search microphones...',
             compact: true,
             onChange: (value) => {
-                if (value) switchMicrophoneById(value);
+                if (value) {
+                    switchMicrophoneById(value);
+                    // Auto-close panel after selection
+                    setTimeout(() => {
+                        const panel = document.getElementById('deviceSettingsPanel');
+                        if (panel) panel.style.display = 'none';
+                    }, 300);
+                }
             }
         });
 
@@ -3693,7 +3707,14 @@ async function loadMeetingDevices() {
             searchPlaceholder: 'Search speakers...',
             compact: true,
             onChange: (value) => {
-                if (value) switchSpeakerById(value);
+                if (value) {
+                    switchSpeakerById(value);
+                    // Auto-close panel after selection
+                    setTimeout(() => {
+                        const panel = document.getElementById('deviceSettingsPanel');
+                        if (panel) panel.style.display = 'none';
+                    }, 300);
+                }
             }
         });
 
