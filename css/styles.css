@@ -1931,15 +1931,7 @@ body.dashboard:not(.chat-page) > *:not(.navbar):not(.employee-panel-overlay):not
     animation: fadeInUp 0.2s ease-out;
 }
 
-/* Dark mode support for settings menu */
-@media (prefers-color-scheme: dark) {
-    .settings-menu {
-        background: rgba(30, 35, 50, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-}
-
-/* When body has dark theme class */
+/* Dark mode support for settings menu - controlled by app theme, not system preference */
 body.dark-theme .settings-menu,
 .dark .settings-menu {
     background: rgba(30, 35, 50, 0.95);
