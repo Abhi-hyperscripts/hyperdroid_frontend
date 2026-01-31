@@ -212,15 +212,29 @@ body:has(.auth-container)::after {
 }
 
 .auth-card {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 24px;
     border-radius: var(--border-radius-2xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--glass-border);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 0 80px rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     width: 100%;
     animation: fadeInUp 0.6s ease-out 0.2s backwards;
+    transition: all 0.3s ease;
+}
+
+.auth-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--brand-primary);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 8px 32px rgba(59, 130, 246, 0.25),
+        0 0 0 1px rgba(59, 130, 246, 0.3);
 }
 
 .auth-card h2 {
