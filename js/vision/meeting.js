@@ -705,6 +705,9 @@ async function connectToLiveKit(wsUrl, token) {
         // Start periodic cleanup of stale participant tiles (helps on mobile)
         startStaleParticipantCleanup();
 
+        // Setup keyboard shortcut for unpinning (Escape key)
+        setupPinKeyboardShortcuts();
+
         console.log('Connected to LiveKit room with Active Speaker Detection (Main: 1080p, Small: 360p)');
     } catch (error) {
         console.error('Error connecting to LiveKit:', error);
@@ -1046,7 +1049,8 @@ function stopStaleParticipantCleanup() {
 // Track current layout state to avoid unnecessary rebuilds
 let currentLayoutState = {
     mainSpeakerIdentity: null,
-    smallTileIdentities: []
+    smallTileIdentities: [],
+    isPinned: false
 };
 
 // Update participant layout based on active speaker detection
@@ -1055,6 +1059,7 @@ function updateParticipantLayout(layout) {
     const videoContainer = document.getElementById('videoContainer');
     const mainSpeaker = layout.mainSpeaker;
     const videoParticipants = layout.videoParticipants || [];
+    const isPinned = !!layout.pinnedParticipantSid;
 
     // Determine what the new layout should be
     let newMainSpeakerIdentity = null;
@@ -1098,11 +1103,12 @@ function updateParticipantLayout(layout) {
         }
     });
 
-    // Check if layout actually changed
+    // Check if layout actually changed (including pin state)
     const mainSpeakerChanged = currentLayoutState.mainSpeakerIdentity !== newMainSpeakerIdentity;
     const smallTilesChanged = currentLayoutState.smallTileIdentities.length !== newSmallTileIdentities.length ||
         !currentLayoutState.smallTileIdentities.every((id, i) => id === newSmallTileIdentities[i]);
-    const layoutChanged = mainSpeakerChanged || smallTilesChanged;
+    const pinStateChanged = currentLayoutState.isPinned !== isPinned;
+    const layoutChanged = mainSpeakerChanged || smallTilesChanged || pinStateChanged;
 
     if (!layoutChanged) {
         // Layout hasn't changed - skip rebuild to prevent flickering
@@ -1112,7 +1118,8 @@ function updateParticipantLayout(layout) {
     // Update current layout state
     currentLayoutState = {
         mainSpeakerIdentity: newMainSpeakerIdentity,
-        smallTileIdentities: [...newSmallTileIdentities]
+        smallTileIdentities: [...newSmallTileIdentities],
+        isPinned: isPinned
     };
 
     // Clear video container
@@ -1135,22 +1142,23 @@ function updateParticipantLayout(layout) {
 
     // Add main speaker
     if (newMainSpeakerIdentity === 'local') {
-        addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true);
+        addParticipantToContainer(room.localParticipant, mainSpeakerContainer, 'main-speaker-tile', true, false);
     } else {
         const mainParticipant = room.remoteParticipants.get(newMainSpeakerIdentity);
         if (mainParticipant) {
-            addParticipantToContainer(mainParticipant, mainSpeakerContainer, 'main-speaker-tile', false);
+            // Pass isPinned to show the pinned badge on main speaker tile
+            addParticipantToContainer(mainParticipant, mainSpeakerContainer, 'main-speaker-tile', false, isPinned);
         }
     }
 
     // Add small tiles
     newSmallTileIdentities.forEach((identity) => {
         if (identity === 'local') {
-            addParticipantToContainer(room.localParticipant, smallTilesContainer, 'small-tile', true);
+            addParticipantToContainer(room.localParticipant, smallTilesContainer, 'small-tile', true, false);
         } else {
             const participant = room.remoteParticipants.get(identity);
             if (participant) {
-                addParticipantToContainer(participant, smallTilesContainer, 'small-tile', false);
+                addParticipantToContainer(participant, smallTilesContainer, 'small-tile', false, false);
             }
         }
     });
@@ -1232,11 +1240,89 @@ function updateCameraOffPlaceholder(participantDiv, hasVideo) {
     }
 }
 
+// Helper function to create pin button for small tiles
+function createPinButton(participantSid, participantIdentity) {
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'pin-btn';
+    pinBtn.title = `Pin ${participantIdentity} to main view`;
+    pinBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+        </svg>
+    `;
+
+    pinBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent tile click events
+        togglePinParticipant(participantSid, participantIdentity);
+    });
+
+    return pinBtn;
+}
+
+// Helper function to create pinned badge for main speaker tile
+function createPinnedBadge() {
+    const badge = document.createElement('div');
+    badge.className = 'pinned-badge';
+    badge.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+        </svg>
+        <span>Pinned</span>
+    `;
+    badge.title = 'Click or press Escape to unpin';
+
+    badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        unpinParticipant();
+    });
+
+    return badge;
+}
+
+// Toggle pin state for a participant
+function togglePinParticipant(participantSid, participantIdentity) {
+    if (!activeSpeakerManager) return;
+
+    if (activeSpeakerManager.getPinnedParticipant() === participantSid) {
+        // Already pinned - unpin
+        activeSpeakerManager.unpinParticipant();
+        console.log(`📌 Unpinned ${participantIdentity}`);
+    } else {
+        // Pin this participant
+        activeSpeakerManager.pinParticipant(participantSid);
+        console.log(`📌 Pinned ${participantIdentity}`);
+    }
+}
+
+// Unpin the current pinned participant
+function unpinParticipant() {
+    if (!activeSpeakerManager) return;
+    activeSpeakerManager.unpinParticipant();
+}
+
+// Setup keyboard shortcuts for pin functionality
+function setupPinKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Escape key to unpin
+        if (e.key === 'Escape' && activeSpeakerManager?.isPinned()) {
+            console.log('📌 Escape pressed - unpinning');
+            unpinParticipant();
+        }
+    });
+}
+
 // Helper function to add participant to a container
-function addParticipantToContainer(participant, container, className, isLocal) {
+function addParticipantToContainer(participant, container, className, isLocal, isPinned = false) {
     const participantDiv = document.createElement('div');
     participantDiv.className = `video-participant ${className}`;
     participantDiv.id = isLocal ? 'local-participant' : `participant-${participant.identity}`;
+
+    // Store participant SID for pin functionality
+    if (!isLocal) {
+        participantDiv.dataset.participantSid = participant.sid;
+    }
 
     const video = document.createElement('video');
     video.autoplay = true;
@@ -1257,6 +1343,18 @@ function addParticipantToContainer(participant, container, className, isLocal) {
     participantDiv.appendChild(video);
     participantDiv.appendChild(cameraOffPlaceholder);
     participantDiv.appendChild(nameTag);
+
+    // Add pin button for small tiles (remote participants only)
+    if (className === 'small-tile' && !isLocal) {
+        const pinBtn = createPinButton(participant.sid, participant.identity);
+        participantDiv.appendChild(pinBtn);
+    }
+
+    // Add pinned badge for main speaker tile when pinned
+    if (className === 'main-speaker-tile' && isPinned && !isLocal) {
+        const pinnedBadge = createPinnedBadge();
+        participantDiv.appendChild(pinnedBadge);
+    }
 
     // CRITICAL FOR SAFARI: Add to DOM FIRST, then attach tracks
     // Safari requires video element to be in document before srcObject works properly

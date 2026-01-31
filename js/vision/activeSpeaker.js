@@ -26,6 +26,23 @@ class ActiveSpeakerManager {
         this.mainSpeakerQuality = LivekitClient.VideoQuality.HIGH;      // 1080p for main speaker (highest layer)
         this.smallTileQuality = LivekitClient.VideoQuality.MEDIUM;      // 360p for small tiles (reduces bandwidth and recording load)
 
+        // === ACTIVE SPEAKER SWITCHING IMPROVEMENTS ===
+        // Sustained speaking detection - prevents switching on brief noises
+        this.sustainedSpeakingDuration = 1500;    // 1.5 seconds required before switching
+        this.speakerCandidateTimer = null;        // Timer for sustained check
+        this.speakerCandidate = null;             // Potential new speaker {sid, identity}
+        this.speakerCandidateStartTime = null;    // When they started speaking
+
+        // Cooldown period - prevents rapid switching after a change
+        this.switchCooldownPeriod = 4000;         // 4 seconds cooldown after switch
+        this.lastSwitchTime = 0;                  // Timestamp of last switch
+
+        // Pin/Lock feature - manually lock a participant to main view
+        this.pinnedParticipant = null;            // SID of pinned participant
+
+        // Callback for pin state changes
+        this.onPinStateChange = null;
+
         // Callbacks for UI updates
         this.onLayoutChange = null;
         this.onSpeakerUpdate = null;
@@ -38,6 +55,7 @@ class ActiveSpeakerManager {
         // this.startCleanupInterval();
 
         console.log(`ActiveSpeakerManager initialized with adaptive quality (Main: 1080p, Small: 360p) [Safari: ${this.isSafari}, delay: ${this.qualityChangeDelay}ms]`);
+        console.log(`Speaker switching: sustained=${this.sustainedSpeakingDuration}ms, cooldown=${this.switchCooldownPeriod}ms`);
     }
 
     /**
@@ -135,6 +153,9 @@ class ActiveSpeakerManager {
      */
     handleActiveSpeakersChange(speakers) {
         const now = Date.now();
+        const previouslySpeakingSids = new Set(
+            this.activeSpeakers.filter(s => s.isSpeaking).map(s => s.participantSid)
+        );
 
         speakers.forEach(participant => {
             const existingSpeaker = this.activeSpeakers.find(s => s.participantSid === participant.sid);
@@ -158,7 +179,14 @@ class ActiveSpeakerManager {
         // Mark non-speaking participants
         this.activeSpeakers.forEach(speaker => {
             if (!speakers.find(s => s.sid === speaker.participantSid)) {
+                const wasSpeaking = speaker.isSpeaking;
                 speaker.isSpeaking = false;
+
+                // If this was our speaker candidate and they stopped speaking, cancel the check
+                if (wasSpeaking && this.speakerCandidate?.sid === speaker.participantSid) {
+                    console.log(`🎤 Speaker candidate ${speaker.identity} stopped speaking`);
+                    this.cancelSustainedSpeakingCheck();
+                }
             }
         });
 
@@ -246,6 +274,11 @@ class ActiveSpeakerManager {
      * CRITICAL: Main speaker must ALWAYS have video - never show blank tile
      * CRITICAL: When screen share is active, do NOT change main speaker
      * CRITICAL: In 1-on-1 calls (2 participants), always show the OTHER person as main speaker
+     *
+     * IMPROVEMENTS (3+ video participants):
+     * - Sustained speaking: Only switch after 1.5s of continuous speaking
+     * - Cooldown: Don't switch again for 4s after a switch
+     * - Pin: If a participant is pinned, keep them as main speaker
      */
     updateMainSpeaker() {
         // CRITICAL: Skip main speaker changes when screen share is active
@@ -264,23 +297,78 @@ class ActiveSpeakerManager {
         const localParticipantSid = this.room.localParticipant?.sid;
         const remoteSpeakers = this.activeSpeakers.filter(s => s.participantSid !== localParticipantSid);
 
+        // Count remote participants with video enabled
+        const remoteParticipantsWithVideo = this.countRemoteParticipantsWithVideo();
+
+        // === PIN CHECK ===
+        // If a participant is pinned and still in meeting with video, keep them as main
+        if (this.pinnedParticipant) {
+            const pinnedStillValid = this.validatePinnedParticipant();
+            if (pinnedStillValid) {
+                const pinnedSpeaker = remoteSpeakers.find(s => s.participantSid === this.pinnedParticipant);
+                if (pinnedSpeaker) {
+                    this.mainSpeaker = pinnedSpeaker;
+                    console.log('📌 Pinned participant as main:', pinnedSpeaker.identity);
+
+                    // Update video qualities if changed
+                    if (previousMainSpeaker?.participantSid !== this.mainSpeaker?.participantSid) {
+                        this.updateVideoQualitiesOnSpeakerChange(previousMainSpeaker, this.mainSpeaker);
+                    }
+
+                    if (this.onSpeakerUpdate) {
+                        this.onSpeakerUpdate(this.mainSpeaker);
+                    }
+                    return; // Skip all auto-switching logic
+                }
+            } else {
+                // Pinned participant left or turned off video - auto-unpin
+                console.log('📌 Pinned participant no longer valid - auto-unpinning');
+                this.unpinParticipant();
+            }
+        }
+
         // Find currently speaking remote participant
         const currentlySpeakingRemote = remoteSpeakers.find(s => s.isSpeaking);
 
-        if (currentlySpeakingRemote) {
-            // If a remote participant is currently speaking, make them the main speaker
-            this.mainSpeaker = currentlySpeakingRemote;
-            console.log('Remote participant speaking - showing as main:', currentlySpeakingRemote.identity);
-        } else if (remoteSpeakers.length > 0) {
-            // Otherwise, use the most recently active remote speaker
-            this.mainSpeaker = remoteSpeakers[0];
-            console.log('Most recent remote speaker as main:', remoteSpeakers[0].identity);
+        // === 2 PARTICIPANTS EXCEPTION ===
+        // With only 1-2 video participants, use immediate switching (current behavior)
+        if (remoteParticipantsWithVideo <= 2) {
+            if (currentlySpeakingRemote) {
+                this.mainSpeaker = currentlySpeakingRemote;
+                console.log('Remote participant speaking (<=2 video) - immediate switch:', currentlySpeakingRemote.identity);
+            } else if (remoteSpeakers.length > 0) {
+                this.mainSpeaker = remoteSpeakers[0];
+            } else {
+                this.mainSpeaker = this.findFirstParticipantWithVideo();
+            }
         } else {
-            // CRITICAL: If no active remote speakers, pick ANY remote participant with video
-            // NEVER leave main speaker empty - this would show blank tile
-            this.mainSpeaker = this.findFirstParticipantWithVideo();
-            if (this.mainSpeaker) {
-                console.log('Fallback - first remote participant with video as main:', this.mainSpeaker.identity);
+            // === 3+ PARTICIPANTS: SUSTAINED SPEAKING + COOLDOWN ===
+
+            if (currentlySpeakingRemote) {
+                // Check if this is a NEW speaker candidate
+                if (!this.speakerCandidate || this.speakerCandidate.sid !== currentlySpeakingRemote.participantSid) {
+                    // New speaker detected - start sustained speaking check
+                    this.startSustainedSpeakingCheck(currentlySpeakingRemote);
+                }
+                // If same candidate, timer is already running - do nothing
+
+                // Don't change main speaker here - wait for sustained timer to complete
+            } else {
+                // No one speaking - cancel any pending speaker candidate
+                this.cancelSustainedSpeakingCheck();
+
+                // Keep current main speaker (don't switch to most recent if no one is actively speaking)
+                if (!this.mainSpeaker && remoteSpeakers.length > 0) {
+                    this.mainSpeaker = remoteSpeakers[0];
+                }
+            }
+
+            // If no main speaker at all, use fallback
+            if (!this.mainSpeaker) {
+                this.mainSpeaker = this.findFirstParticipantWithVideo();
+                if (this.mainSpeaker) {
+                    console.log('Fallback - first remote participant with video as main:', this.mainSpeaker.identity);
+                }
             }
         }
 
@@ -288,11 +376,189 @@ class ActiveSpeakerManager {
         if (previousMainSpeaker?.participantSid !== this.mainSpeaker?.participantSid) {
             console.log('Main speaker changed, updating video qualities');
             this.updateVideoQualitiesOnSpeakerChange(previousMainSpeaker, this.mainSpeaker);
+            this.lastSwitchTime = Date.now(); // Update cooldown timer on actual switch
         }
 
         if (this.onSpeakerUpdate) {
             this.onSpeakerUpdate(this.mainSpeaker);
         }
+    }
+
+    /**
+     * Count remote participants with video enabled
+     * @returns {number} Number of remote participants with active video
+     */
+    countRemoteParticipantsWithVideo() {
+        let count = 0;
+        this.room.remoteParticipants.forEach((participant) => {
+            const hasVideo = Array.from(participant.videoTrackPublications.values())
+                .some(pub => pub.track && pub.source === LivekitClient.Track.Source.Camera && !pub.track.isMuted);
+            if (hasVideo) count++;
+        });
+        return count;
+    }
+
+    /**
+     * Start sustained speaking check for a new speaker candidate
+     * Only switch to them if they keep speaking for sustainedSpeakingDuration
+     * @param {Object} speaker - The speaker object {participantSid, identity, ...}
+     */
+    startSustainedSpeakingCheck(speaker) {
+        // Cancel any existing timer
+        this.cancelSustainedSpeakingCheck();
+
+        this.speakerCandidate = {
+            sid: speaker.participantSid,
+            identity: speaker.identity
+        };
+        this.speakerCandidateStartTime = Date.now();
+
+        console.log(`🎤 New speaker candidate: ${speaker.identity} - checking sustained speaking...`);
+
+        this.speakerCandidateTimer = setTimeout(() => {
+            // Check if still speaking after sustained duration
+            const candidateSpeaker = this.activeSpeakers.find(s => s.participantSid === this.speakerCandidate?.sid);
+
+            if (candidateSpeaker && candidateSpeaker.isSpeaking) {
+                // Check cooldown
+                const now = Date.now();
+                const cooldownActive = (now - this.lastSwitchTime) < this.switchCooldownPeriod;
+
+                if (cooldownActive) {
+                    console.log(`⏳ Cooldown active - skipping switch to ${candidateSpeaker.identity} (${Math.ceil((this.switchCooldownPeriod - (now - this.lastSwitchTime)) / 1000)}s remaining)`);
+                } else {
+                    // Sustained speaking confirmed - switch main speaker
+                    console.log(`✅ Sustained speaking confirmed for ${candidateSpeaker.identity} - switching`);
+                    const previousMainSpeaker = this.mainSpeaker;
+                    this.mainSpeaker = candidateSpeaker;
+                    this.lastSwitchTime = now;
+
+                    // Update video qualities
+                    this.updateVideoQualitiesOnSpeakerChange(previousMainSpeaker, this.mainSpeaker);
+
+                    if (this.onSpeakerUpdate) {
+                        this.onSpeakerUpdate(this.mainSpeaker);
+                    }
+
+                    this.notifyLayoutChange();
+                }
+            } else {
+                console.log(`❌ Speaker candidate ${this.speakerCandidate?.identity} stopped speaking - no switch`);
+            }
+
+            // Clear candidate
+            this.speakerCandidate = null;
+            this.speakerCandidateStartTime = null;
+            this.speakerCandidateTimer = null;
+        }, this.sustainedSpeakingDuration);
+    }
+
+    /**
+     * Cancel sustained speaking check
+     */
+    cancelSustainedSpeakingCheck() {
+        if (this.speakerCandidateTimer) {
+            clearTimeout(this.speakerCandidateTimer);
+            this.speakerCandidateTimer = null;
+        }
+        if (this.speakerCandidate) {
+            console.log(`🚫 Cancelled speaker candidate: ${this.speakerCandidate.identity}`);
+        }
+        this.speakerCandidate = null;
+        this.speakerCandidateStartTime = null;
+    }
+
+    /**
+     * Pin a participant to always show in main view
+     * @param {string} participantSid - SID of participant to pin
+     */
+    pinParticipant(participantSid) {
+        // Find the participant to verify they exist
+        const participant = this.room.remoteParticipants.get(participantSid) ||
+            Array.from(this.room.remoteParticipants.values()).find(p => p.sid === participantSid);
+
+        if (!participant) {
+            console.warn('Cannot pin - participant not found:', participantSid);
+            return false;
+        }
+
+        this.pinnedParticipant = participantSid;
+        console.log(`📌 Pinned participant: ${participant.identity}`);
+
+        // Cancel any pending speaker candidate
+        this.cancelSustainedSpeakingCheck();
+
+        // Immediately update main speaker to pinned participant
+        this.updateMainSpeaker();
+        this.notifyLayoutChange();
+
+        // Notify UI of pin state change
+        if (this.onPinStateChange) {
+            this.onPinStateChange(participantSid, participant.identity);
+        }
+
+        return true;
+    }
+
+    /**
+     * Unpin the currently pinned participant
+     */
+    unpinParticipant() {
+        if (this.pinnedParticipant) {
+            console.log(`📌 Unpinned participant`);
+            this.pinnedParticipant = null;
+
+            // Notify UI of pin state change
+            if (this.onPinStateChange) {
+                this.onPinStateChange(null, null);
+            }
+
+            // Resume normal speaker detection
+            this.updateMainSpeaker();
+            this.notifyLayoutChange();
+        }
+    }
+
+    /**
+     * Check if any participant is pinned
+     * @returns {boolean}
+     */
+    isPinned() {
+        return this.pinnedParticipant !== null;
+    }
+
+    /**
+     * Get the pinned participant SID
+     * @returns {string|null}
+     */
+    getPinnedParticipant() {
+        return this.pinnedParticipant;
+    }
+
+    /**
+     * Validate that pinned participant is still in meeting and has video
+     * @returns {boolean}
+     */
+    validatePinnedParticipant() {
+        if (!this.pinnedParticipant) return false;
+
+        // Find the participant
+        let participant = null;
+        this.room.remoteParticipants.forEach((p) => {
+            if (p.sid === this.pinnedParticipant) {
+                participant = p;
+            }
+        });
+
+        if (!participant) {
+            return false; // Participant left
+        }
+
+        // Check if they have video (camera) - if not, auto-unpin
+        const hasVideo = Array.from(participant.videoTrackPublications.values())
+            .some(pub => pub.track && pub.source === LivekitClient.Track.Source.Camera);
+
+        return hasVideo;
     }
 
     /**
@@ -478,6 +744,17 @@ class ActiveSpeakerManager {
             this.activeSpeakers.splice(index, 1);
             console.log(`Removed participant ${participantSid} from active speakers`);
 
+            // If pinned participant left, auto-unpin
+            if (this.pinnedParticipant === participantSid) {
+                console.log('📌 Pinned participant left - auto-unpinning');
+                this.unpinParticipant();
+            }
+
+            // If speaker candidate left, cancel the check
+            if (this.speakerCandidate?.sid === participantSid) {
+                this.cancelSustainedSpeakingCheck();
+            }
+
             this.updateMainSpeaker();
             this.updateVideoSubscriptions();
             this.notifyLayoutChange();
@@ -564,10 +841,16 @@ class ActiveSpeakerManager {
                 console.log('🔇 Audio-Only Participants:', audioOnlyParticipants.map(p => p.identity));
             }
 
+            if (this.pinnedParticipant) {
+                const pinnedIdentity = this.mainSpeaker?.identity || 'unknown';
+                console.log(`📌 Pinned: ${pinnedIdentity}`);
+            }
+
             this.onLayoutChange({
                 mainSpeaker: this.mainSpeaker,
                 videoParticipants: videoParticipants,
-                audioOnlyParticipants: audioOnlyParticipants
+                audioOnlyParticipants: audioOnlyParticipants,
+                pinnedParticipantSid: this.pinnedParticipant
             });
         }
     }
