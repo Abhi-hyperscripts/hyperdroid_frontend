@@ -1964,48 +1964,77 @@ async function toggleRecording() {
     }
 }
 
-// Start recording
+// Store the display stream for cleanup
+let displayStream = null;
+
+// Start recording - captures the entire meeting view (all participants)
 async function startRecording() {
     try {
-        // Get all audio and video tracks from the meeting
-        const tracks = [];
+        // Use getDisplayMedia to capture the browser tab/window
+        // This records exactly what the user sees - all participants in the layout
+        const displayMediaOptions = {
+            video: {
+                displaySurface: 'browser', // Prefer browser tab
+                frameRate: 30,
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            },
+            audio: true, // Capture system/tab audio
+            preferCurrentTab: true, // Chrome 109+: prefer current tab
+            selfBrowserSurface: 'include', // Allow selecting current tab
+            systemAudio: 'include', // Include system audio if available
+            surfaceSwitching: 'exclude' // Don't allow switching during recording
+        };
 
-        // Add local participant tracks
-        room.localParticipant.audioTrackPublications.forEach((pub) => {
-            if (pub.track) tracks.push(pub.track.mediaStreamTrack);
-        });
-        room.localParticipant.videoTrackPublications.forEach((pub) => {
-            if (pub.track && pub.source === 'camera') {
-                tracks.push(pub.track.mediaStreamTrack);
-            }
-        });
+        // Request screen/tab capture
+        displayStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
 
-        // Add remote participant tracks
-        room.remoteParticipants.forEach((participant) => {
-            participant.audioTrackPublications.forEach((pub) => {
-                if (pub.track && pub.isSubscribed) {
-                    tracks.push(pub.track.mediaStreamTrack);
-                }
-            });
-            participant.videoTrackPublications.forEach((pub) => {
-                if (pub.track && pub.isSubscribed && pub.source === 'camera') {
-                    tracks.push(pub.track.mediaStreamTrack);
-                }
-            });
-        });
-
-        if (tracks.length === 0) {
-            Toast.warning('No tracks available to record. Please enable your camera or microphone.');
+        // Check if we got video
+        const videoTracks = displayStream.getVideoTracks();
+        if (videoTracks.length === 0) {
+            Toast.error('No video source selected for recording.');
             return;
         }
 
-        // Create a MediaStream from all tracks
-        const stream = new MediaStream(tracks);
+        // Get meeting audio from all participants
+        const audioTracks = [];
+
+        // Add local participant audio
+        room.localParticipant.audioTrackPublications.forEach((pub) => {
+            if (pub.track && pub.track.mediaStreamTrack) {
+                audioTracks.push(pub.track.mediaStreamTrack);
+            }
+        });
+
+        // Add remote participant audio
+        room.remoteParticipants.forEach((participant) => {
+            participant.audioTrackPublications.forEach((pub) => {
+                if (pub.track && pub.isSubscribed && pub.track.mediaStreamTrack) {
+                    audioTracks.push(pub.track.mediaStreamTrack);
+                }
+            });
+        });
+
+        // Combine display video with meeting audio
+        const combinedStream = new MediaStream();
+
+        // Add video track from screen capture
+        videoTracks.forEach(track => combinedStream.addTrack(track));
+
+        // If display capture included audio, add it
+        displayStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+
+        // Also mix in the meeting audio tracks
+        // Note: If tab audio is captured, we might get echo. User can mute tab audio in picker if needed.
+        if (audioTracks.length > 0 && displayStream.getAudioTracks().length === 0) {
+            // Only add meeting audio if display capture didn't include audio
+            audioTracks.forEach(track => combinedStream.addTrack(track));
+        }
 
         // Create MediaRecorder
         const options = {
             mimeType: 'video/webm;codecs=vp8,opus',
-            videoBitsPerSecond: 2500000 // 2.5 Mbps
+            videoBitsPerSecond: 4000000 // 4 Mbps for better quality screen recording
         };
 
         // Fallback to default if codec not supported
@@ -2013,7 +2042,7 @@ async function startRecording() {
             options.mimeType = 'video/webm';
         }
 
-        mediaRecorder = new MediaRecorder(stream, options);
+        mediaRecorder = new MediaRecorder(combinedStream, options);
         recordedChunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -2024,6 +2053,19 @@ async function startRecording() {
 
         mediaRecorder.onstop = () => {
             downloadRecording();
+            // Clean up display stream
+            if (displayStream) {
+                displayStream.getTracks().forEach(track => track.stop());
+                displayStream = null;
+            }
+        };
+
+        // Handle user stopping the screen share via browser UI
+        videoTracks[0].onended = () => {
+            if (isRecording) {
+                console.log('Screen share stopped by user');
+                stopRecording();
+            }
         };
 
         mediaRecorder.start(1000); // Collect data every second
@@ -2053,10 +2095,21 @@ async function startRecording() {
         // Start timer
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
 
-        console.log('Recording started');
+        Toast.success('Recording started - capturing entire meeting view');
+        console.log('Recording started with screen capture');
     } catch (error) {
         console.error('Error starting recording:', error);
-        Toast.error('Failed to start recording: ' + error.message);
+        // Clean up any partial streams
+        if (displayStream) {
+            displayStream.getTracks().forEach(track => track.stop());
+            displayStream = null;
+        }
+        // User cancelled the screen share picker
+        if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+            Toast.info('Recording cancelled - no screen selected');
+        } else {
+            Toast.error('Failed to start recording: ' + error.message);
+        }
     }
 }
 
@@ -2122,6 +2175,12 @@ async function stopRecording() {
         if (recordingTimerInterval) {
             clearInterval(recordingTimerInterval);
             recordingTimerInterval = null;
+        }
+
+        // Clean up display stream (screen capture)
+        if (displayStream) {
+            displayStream.getTracks().forEach(track => track.stop());
+            displayStream = null;
         }
 
         // Reset UI
