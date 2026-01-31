@@ -4226,6 +4226,16 @@ body:has(.pre-meeting-container)::after {
 
 .project-accordion-item.expanded {
     z-index: 100;
+    border-color: var(--brand-primary);
+    box-shadow:
+        0 8px 24px rgba(var(--brand-primary-rgb), 0.12),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .project-accordion-item.expanded {
+    box-shadow:
+        0 8px 30px rgba(var(--brand-primary-rgb), 0.2),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.4);
 }
 
 .project-accordion-header {
@@ -4322,6 +4332,12 @@ body:has(.pre-meeting-container)::after {
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
+    border-top: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+    margin-top: 0;
+}
+
+[data-theme="dark"] .meetings-list {
+    border-top-color: rgba(var(--brand-primary-rgb), 0.25);
 }
 
 /* New Meeting Card Design - Compact & Mobile-Friendly */
