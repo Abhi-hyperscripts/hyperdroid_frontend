@@ -4185,25 +4185,97 @@ body:has(.pre-meeting-container)::after {
 .projects-accordion {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .project-accordion-item {
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px var(--hover-overlay);
+    position: relative;
+    border-radius: 14px;
     overflow: visible;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+}
+
+/* Glow border element for bento effect */
+.project-accordion-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    padding: 1.5px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+/* Inner content wrapper for project accordion */
+.project-accordion-item > .project-accordion-header,
+.project-accordion-item > .project-accordion-body {
     position: relative;
     z-index: 1;
 }
 
+.project-accordion-item .project-accordion-header {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px var(--hover-overlay);
+    transition: all 0.3s ease;
+}
+
+.project-accordion-item.expanded .project-accordion-header {
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+}
+
+.project-accordion-item .project-accordion-body {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+}
+
+/* Hover effects - bento style */
 .project-accordion-item:hover {
-    box-shadow: 0 4px 12px var(--hover-overlay-strong);
-    border-color: var(--border-color);
+    transform: translateY(-2px);
+}
+
+.project-accordion-item:hover::before {
+    opacity: 1;
+}
+
+.project-accordion-item:hover .project-accordion-header {
+    border-color: transparent;
+    box-shadow: 0 8px 24px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.project-accordion-item:hover .project-accordion-body {
+    border-color: transparent;
+}
+
+/* Dark mode enhancements */
+[data-theme="dark"] .project-accordion-item .project-accordion-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .project-accordion-item .project-accordion-body {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .project-accordion-item:hover .project-accordion-header {
+    box-shadow: 0 8px 30px rgba(var(--brand-primary-rgb), 0.25);
 }
 
 .project-accordion-item.expanded {
@@ -4304,7 +4376,6 @@ body:has(.pre-meeting-container)::after {
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
-    border-top: 1px solid var(--border-color-light);
 }
 
 /* New Meeting Card Design - Compact & Mobile-Friendly */
