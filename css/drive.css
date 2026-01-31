@@ -102,8 +102,31 @@
 .drive-item:hover {
     transform: translateY(-4px);
     border-color: var(--brand-primary);
-    box-shadow: var(--shadow-lg);
+    box-shadow:
+        0 8px 24px rgba(var(--brand-primary-rgb), 0.15),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.2);
     background: var(--bg-card-hover);
+}
+
+/* Folder-specific bento glow (orange/warning color to match folder icon) */
+.drive-item.folder:hover {
+    border-color: var(--color-warning);
+    box-shadow:
+        0 8px 24px rgba(245, 158, 11, 0.2),
+        0 0 0 1px rgba(245, 158, 11, 0.3);
+}
+
+/* Dark mode enhanced glow */
+[data-theme="dark"] .drive-item:hover {
+    box-shadow:
+        0 8px 30px rgba(var(--brand-primary-rgb), 0.25),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.3);
+}
+
+[data-theme="dark"] .drive-item.folder:hover {
+    box-shadow:
+        0 8px 30px rgba(245, 158, 11, 0.3),
+        0 0 0 1px rgba(245, 158, 11, 0.4);
 }
 
 .drive-item-icon {
