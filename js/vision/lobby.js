@@ -16,6 +16,11 @@ let selectedMicrophoneId = null;
 let selectedSpeakerId = null;
 let meetingData = null; // Store meeting details
 
+// Searchable dropdown instances
+let cameraDropdown = null;
+let microphoneDropdown = null;
+let speakerDropdown = null;
+
 // Get meeting ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 meetingId = urlParams.get('id');
@@ -423,63 +428,154 @@ function monitorAudioLevel() {
     requestAnimationFrame(monitorAudioLevel);
 }
 
-// Populate device lists
+// Populate device lists with searchable dropdowns
 async function populateDeviceList() {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
 
-        const cameraSelect = document.getElementById('cameraSelect');
-        const microphoneSelect = document.getElementById('microphoneSelect');
-        const speakerSelect = document.getElementById('speakerSelect');
-
-        // Clear existing options (except first)
-        cameraSelect.innerHTML = '<option value="">Select Camera</option>';
-        microphoneSelect.innerHTML = '<option value="">Select Microphone</option>';
-        speakerSelect.innerHTML = '<option value="">Select Speaker</option>';
+        const cameraOptions = [{ value: '', label: 'Select Camera' }];
+        const microphoneOptions = [{ value: '', label: 'Select Microphone' }];
+        const speakerOptions = [{ value: '', label: 'Select Speaker' }];
 
         let cameraCount = 0;
         let micCount = 0;
         let speakerCount = 0;
 
+        let currentCameraId = null;
+        let currentMicId = null;
+        let currentSpeakerId = null;
+
         devices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-
             if (device.kind === 'videoinput') {
-                option.text = device.label || `Camera ${++cameraCount}`;
-                cameraSelect.appendChild(option);
+                const label = device.label || `Camera ${++cameraCount}`;
+                cameraOptions.push({ value: device.deviceId, label: label });
 
-                // Select current camera
+                // Track current camera
                 if (localStream) {
                     const videoTrack = localStream.getVideoTracks()[0];
                     if (videoTrack && videoTrack.getSettings().deviceId === device.deviceId) {
-                        cameraSelect.value = device.deviceId;
+                        currentCameraId = device.deviceId;
                         selectedCameraId = device.deviceId;
                     }
                 }
             } else if (device.kind === 'audioinput') {
-                option.text = device.label || `Microphone ${++micCount}`;
-                microphoneSelect.appendChild(option);
+                const label = device.label || `Microphone ${++micCount}`;
+                microphoneOptions.push({ value: device.deviceId, label: label });
 
-                // Select current microphone
+                // Track current microphone
                 if (localStream) {
                     const audioTrack = localStream.getAudioTracks()[0];
                     if (audioTrack && audioTrack.getSettings().deviceId === device.deviceId) {
-                        microphoneSelect.value = device.deviceId;
+                        currentMicId = device.deviceId;
                         selectedMicrophoneId = device.deviceId;
                     }
                 }
             } else if (device.kind === 'audiooutput') {
-                option.text = device.label || `Speaker ${++speakerCount}`;
-                speakerSelect.appendChild(option);
+                const label = device.label || `Speaker ${++speakerCount}`;
+                speakerOptions.push({ value: device.deviceId, label: label });
 
-                // Select default speaker
-                if (!selectedSpeakerId && device.deviceId === 'default') {
-                    speakerSelect.value = device.deviceId;
+                // Track default speaker
+                if (!currentSpeakerId && device.deviceId === 'default') {
+                    currentSpeakerId = device.deviceId;
                     selectedSpeakerId = device.deviceId;
                 }
             }
         });
+
+        // Create or update camera dropdown
+        const cameraContainer = document.getElementById('cameraSelect').parentElement;
+        if (!cameraDropdown) {
+            // Hide native select
+            document.getElementById('cameraSelect').style.display = 'none';
+
+            // Create container for searchable dropdown
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.id = 'cameraDropdownContainer';
+            dropdownContainer.className = 'searchable-dropdown-wrapper';
+            cameraContainer.appendChild(dropdownContainer);
+
+            cameraDropdown = new SearchableDropdown(dropdownContainer, {
+                id: 'cameraDropdown',
+                options: cameraOptions,
+                value: currentCameraId || '',
+                placeholder: 'Select Camera',
+                searchPlaceholder: 'Search cameras...',
+                compact: true,
+                onChange: (value) => {
+                    if (value) {
+                        selectedCameraId = value;
+                        changeCamera();
+                    }
+                }
+            });
+        } else {
+            cameraDropdown.setOptions(cameraOptions);
+            if (currentCameraId) {
+                cameraDropdown.setValue(currentCameraId);
+            }
+        }
+
+        // Create or update microphone dropdown
+        const micContainer = document.getElementById('microphoneSelect').parentElement;
+        if (!microphoneDropdown) {
+            document.getElementById('microphoneSelect').style.display = 'none';
+
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.id = 'microphoneDropdownContainer';
+            dropdownContainer.className = 'searchable-dropdown-wrapper';
+            micContainer.appendChild(dropdownContainer);
+
+            microphoneDropdown = new SearchableDropdown(dropdownContainer, {
+                id: 'microphoneDropdown',
+                options: microphoneOptions,
+                value: currentMicId || '',
+                placeholder: 'Select Microphone',
+                searchPlaceholder: 'Search microphones...',
+                compact: true,
+                onChange: (value) => {
+                    if (value) {
+                        selectedMicrophoneId = value;
+                        changeMicrophone();
+                    }
+                }
+            });
+        } else {
+            microphoneDropdown.setOptions(microphoneOptions);
+            if (currentMicId) {
+                microphoneDropdown.setValue(currentMicId);
+            }
+        }
+
+        // Create or update speaker dropdown
+        const speakerContainer = document.getElementById('speakerSelect').parentElement;
+        if (!speakerDropdown) {
+            document.getElementById('speakerSelect').style.display = 'none';
+
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.id = 'speakerDropdownContainer';
+            dropdownContainer.className = 'searchable-dropdown-wrapper';
+            speakerContainer.appendChild(dropdownContainer);
+
+            speakerDropdown = new SearchableDropdown(dropdownContainer, {
+                id: 'speakerDropdown',
+                options: speakerOptions,
+                value: currentSpeakerId || '',
+                placeholder: 'Select Speaker',
+                searchPlaceholder: 'Search speakers...',
+                compact: true,
+                onChange: (value) => {
+                    if (value) {
+                        selectedSpeakerId = value;
+                        changeSpeaker();
+                    }
+                }
+            });
+        } else {
+            speakerDropdown.setOptions(speakerOptions);
+            if (currentSpeakerId) {
+                speakerDropdown.setValue(currentSpeakerId);
+            }
+        }
     } catch (error) {
         console.error('Error populating device list:', error);
     }
@@ -586,8 +682,10 @@ async function toggleMicrophone() {
 
 // Change camera
 async function changeCamera() {
-    const select = document.getElementById('cameraSelect');
-    selectedCameraId = select.value;
+    // Get value from dropdown if available, otherwise use stored value
+    if (cameraDropdown) {
+        selectedCameraId = cameraDropdown.getValue();
+    }
 
     if (!selectedCameraId) return;
 
@@ -631,8 +729,10 @@ async function changeCamera() {
 
 // Change microphone
 async function changeMicrophone() {
-    const select = document.getElementById('microphoneSelect');
-    selectedMicrophoneId = select.value;
+    // Get value from dropdown if available, otherwise use stored value
+    if (microphoneDropdown) {
+        selectedMicrophoneId = microphoneDropdown.getValue();
+    }
 
     if (!selectedMicrophoneId) return;
 
@@ -678,8 +778,10 @@ async function changeMicrophone() {
 
 // Change speaker
 async function changeSpeaker() {
-    const select = document.getElementById('speakerSelect');
-    selectedSpeakerId = select.value;
+    // Get value from dropdown if available, otherwise use stored value
+    if (speakerDropdown) {
+        selectedSpeakerId = speakerDropdown.getValue();
+    }
 
     if (!selectedSpeakerId) return;
 
