@@ -19,6 +19,38 @@ td.text-right strong,
 }
 
 /* =============================================================
+   GRADIENT BACKGROUND EFFECT - Reusable blue ambient gradient
+   Use class .gradient-bg-ambient on any container
+   ============================================================= */
+.gradient-bg-ambient {
+    position: relative;
+}
+
+.gradient-bg-ambient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 100% 60% at 80% 20%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 80% at 20% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Dark mode - higher opacity for visibility */
+[data-theme="dark"] .gradient-bg-ambient::before {
+    background:
+        radial-gradient(ellipse 100% 60% at 80% 20%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 80% at 20% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
+}
+
+/* Ensure content stays above gradient */
+.gradient-bg-ambient > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* =============================================================
    SECTION DIVIDER - For form section separation
    ============================================================= */
 .section-divider {
