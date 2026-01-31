@@ -3201,25 +3201,18 @@ body.dark-theme .settings-menu,
     transform: translateX(-50%);
     width: 340px;
     max-height: calc(100vh - 160px);
-    /* Glassy transparent background */
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.1) 100%
-    );
-    /* Strong blur for frosted glass effect */
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    /* Very transparent - video shows through */
+    background: rgba(0, 0, 0, 0.3);
+    /* Blur for frosted glass - lower value = more visibility */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 20px;
-    /* Layered shadows for depth + glow */
+    /* Subtle shadow and glow */
     box-shadow:
-        0 25px 50px -12px rgba(0, 0, 0, 0.35),
-        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
-        0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
-        0 0 60px rgba(59, 130, 246, 0.2);
-    /* Subtle border for definition */
-    border: 1px solid rgba(255, 255, 255, 0.25);
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(59, 130, 246, 0.1);
+    /* Light border for glass edge definition */
+    border: 1px solid rgba(255, 255, 255, 0.12);
     z-index: 1001;
     display: flex;
     flex-direction: column;
@@ -3260,8 +3253,8 @@ body.dark-theme .settings-menu,
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
 }
 
 .device-settings-header h3 {
@@ -3336,6 +3329,65 @@ body.dark-theme .settings-menu,
     padding: 8px 14px;
     font-size: 12px;
     border-radius: 6px;
+}
+
+/* Glass-style overrides for dropdowns inside device settings */
+.device-settings-panel .searchable-dropdown-trigger {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.device-settings-panel .searchable-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.device-settings-panel .searchable-dropdown-trigger:focus,
+.device-settings-panel .searchable-dropdown.open .searchable-dropdown-trigger {
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.device-settings-panel .searchable-dropdown-text {
+    color: #fff;
+}
+
+.device-settings-panel .searchable-dropdown-text.placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.device-settings-panel .searchable-dropdown-arrow {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.device-settings-panel .searchable-dropdown-menu {
+    background: rgba(30, 30, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.device-settings-panel .searchable-dropdown-option {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.device-settings-panel .searchable-dropdown-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.device-settings-panel .searchable-dropdown-option.selected {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+.device-settings-panel .searchable-dropdown-search input {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.device-settings-panel .searchable-dropdown-search input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 @media (max-width: 768px) {
