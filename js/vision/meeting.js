@@ -3518,6 +3518,228 @@ function toggleParticipantsPanel() {
     }
 }
 
+// ==========================================
+// Device Settings Functions
+// ==========================================
+
+// Toggle device settings panel
+function toggleDeviceSettings() {
+    const panel = document.getElementById('deviceSettingsPanel');
+    if (!panel) return;
+
+    const isVisible = panel.style.display === 'block';
+
+    if (isVisible) {
+        panel.style.display = 'none';
+    } else {
+        panel.style.display = 'block';
+        // Load available devices when opening
+        loadMeetingDevices();
+    }
+}
+
+// Load available devices for the settings panel
+async function loadMeetingDevices() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+
+        const cameraSelect = document.getElementById('meetingCameraSelect');
+        const micSelect = document.getElementById('meetingMicSelect');
+        const speakerSelect = document.getElementById('meetingSpeakerSelect');
+
+        // Get current device IDs from LiveKit
+        let currentCameraId = '';
+        let currentMicId = '';
+
+        if (room && room.localParticipant) {
+            room.localParticipant.videoTrackPublications.forEach(pub => {
+                if (pub.track && pub.source === 'camera') {
+                    const settings = pub.track.mediaStreamTrack?.getSettings();
+                    if (settings?.deviceId) currentCameraId = settings.deviceId;
+                }
+            });
+            room.localParticipant.audioTrackPublications.forEach(pub => {
+                if (pub.track && pub.source === 'microphone') {
+                    const settings = pub.track.mediaStreamTrack?.getSettings();
+                    if (settings?.deviceId) currentMicId = settings.deviceId;
+                }
+            });
+        }
+
+        // Clear existing options
+        if (cameraSelect) cameraSelect.innerHTML = '';
+        if (micSelect) micSelect.innerHTML = '';
+        if (speakerSelect) speakerSelect.innerHTML = '';
+
+        // Populate device lists
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `${device.kind} (${device.deviceId.slice(0, 8)}...)`;
+
+            if (device.kind === 'videoinput' && cameraSelect) {
+                if (device.deviceId === currentCameraId) option.selected = true;
+                cameraSelect.appendChild(option);
+            } else if (device.kind === 'audioinput' && micSelect) {
+                if (device.deviceId === currentMicId) option.selected = true;
+                micSelect.appendChild(option);
+            } else if (device.kind === 'audiooutput' && speakerSelect) {
+                speakerSelect.appendChild(option);
+            }
+        });
+
+        // Add "No camera" option
+        if (cameraSelect && cameraSelect.options.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.text = 'No camera detected';
+            cameraSelect.appendChild(option);
+        }
+
+        // Add "No microphone" option
+        if (micSelect && micSelect.options.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.text = 'No microphone detected';
+            micSelect.appendChild(option);
+        }
+
+        // Add default speaker option if none detected
+        if (speakerSelect && speakerSelect.options.length === 0) {
+            const option = document.createElement('option');
+            option.value = 'default';
+            option.text = 'Default Speaker';
+            speakerSelect.appendChild(option);
+        }
+
+        console.log('Meeting devices loaded:', {
+            cameras: cameraSelect?.options.length || 0,
+            microphones: micSelect?.options.length || 0,
+            speakers: speakerSelect?.options.length || 0
+        });
+    } catch (error) {
+        console.error('Error loading meeting devices:', error);
+        Toast.error('Failed to load devices');
+    }
+}
+
+// Switch camera during meeting
+async function switchCamera() {
+    const select = document.getElementById('meetingCameraSelect');
+    if (!select || !room || !room.localParticipant) return;
+
+    const newDeviceId = select.value;
+    if (!newDeviceId) return;
+
+    try {
+        Toast.info('Switching camera...');
+
+        // Use LiveKit's switchActiveDevice method
+        await room.switchActiveDevice('videoinput', newDeviceId);
+
+        Toast.success('Camera switched successfully');
+        console.log('Switched camera to:', newDeviceId);
+    } catch (error) {
+        console.error('Error switching camera:', error);
+        Toast.error('Failed to switch camera: ' + error.message);
+    }
+}
+
+// Switch microphone during meeting
+async function switchMicrophone() {
+    const select = document.getElementById('meetingMicSelect');
+    if (!select || !room || !room.localParticipant) return;
+
+    const newDeviceId = select.value;
+    if (!newDeviceId) return;
+
+    try {
+        Toast.info('Switching microphone...');
+
+        // Use LiveKit's switchActiveDevice method
+        await room.switchActiveDevice('audioinput', newDeviceId);
+
+        Toast.success('Microphone switched successfully');
+        console.log('Switched microphone to:', newDeviceId);
+    } catch (error) {
+        console.error('Error switching microphone:', error);
+        Toast.error('Failed to switch microphone: ' + error.message);
+    }
+}
+
+// Switch speaker/audio output during meeting
+async function switchSpeaker() {
+    const select = document.getElementById('meetingSpeakerSelect');
+    if (!select) return;
+
+    const newDeviceId = select.value;
+    if (!newDeviceId) return;
+
+    try {
+        // Switch speaker using LiveKit if available
+        if (room && room.switchActiveDevice) {
+            await room.switchActiveDevice('audiooutput', newDeviceId);
+            Toast.success('Speaker switched successfully');
+            console.log('Switched speaker to:', newDeviceId);
+        } else {
+            // Fallback: Set sinkId on all audio elements
+            const audioElements = document.querySelectorAll('audio, video');
+            let switched = false;
+
+            for (const el of audioElements) {
+                if (typeof el.setSinkId === 'function') {
+                    await el.setSinkId(newDeviceId);
+                    switched = true;
+                }
+            }
+
+            if (switched) {
+                Toast.success('Speaker switched successfully');
+                console.log('Switched speaker to:', newDeviceId);
+            } else {
+                Toast.warning('Speaker switching not supported in this browser');
+            }
+        }
+    } catch (error) {
+        console.error('Error switching speaker:', error);
+        Toast.error('Failed to switch speaker: ' + error.message);
+    }
+}
+
+// Test speaker with a short tone
+function testSpeaker() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+
+        // Create a simple beep tone
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.frequency.value = 440; // A4 note
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+
+        Toast.info('Playing test sound...');
+
+        // Clean up after sound finishes
+        setTimeout(() => {
+            audioCtx.close();
+        }, 600);
+    } catch (error) {
+        console.error('Error playing test sound:', error);
+        Toast.error('Failed to play test sound');
+    }
+}
+
 // Filter participants by search query
 function filterParticipants(searchQuery) {
     const participantItems = document.querySelectorAll('.participant-item');

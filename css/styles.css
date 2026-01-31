@@ -3175,6 +3175,115 @@ body.dashboard:not(.chat-page) > *:not(.navbar):not(.employee-panel-overlay):not
     margin-left: 4px;
 }
 
+/* Device Settings Panel */
+.device-settings-panel {
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    width: 300px;
+    max-height: calc(100vh - 160px);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--border-color-strong);
+    border: 1px solid var(--border-color);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.device-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.device-settings-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.device-settings-content {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.device-setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.device-setting-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.device-setting-group label svg {
+    opacity: 0.7;
+}
+
+.device-setting-group select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.device-setting-group select:hover {
+    border-color: var(--brand-primary);
+}
+
+.device-setting-group select:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.device-setting-group select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 8px;
+}
+
+.device-setting-group .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .device-settings-panel {
+        right: 10px;
+        left: 10px;
+        top: auto;
+        bottom: 70px;
+        width: auto;
+        max-height: calc(100vh - 150px);
+    }
+}
+
 /* Pre-Meeting Device Testing Page - Blue/Cyan Animated Background */
 body:has(.pre-meeting-container) {
     display: flex;
