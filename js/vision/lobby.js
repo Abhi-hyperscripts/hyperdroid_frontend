@@ -482,6 +482,13 @@ async function populateDeviceList() {
             }
         });
 
+        // Check if SearchableDropdown is available
+        if (typeof SearchableDropdown === 'undefined') {
+            // Fall back to native selects
+            populateNativeSelects(devices, cameraOptions, microphoneOptions, speakerOptions, currentCameraId, currentMicId, currentSpeakerId);
+            return;
+        }
+
         // Create or update camera dropdown
         const cameraContainer = document.getElementById('cameraSelect').parentElement;
         if (!cameraDropdown) {
@@ -579,6 +586,28 @@ async function populateDeviceList() {
     } catch (error) {
         console.error('Error populating device list:', error);
     }
+}
+
+// Fallback function to populate native selects (when SearchableDropdown is not available)
+function populateNativeSelects(devices, cameraOptions, microphoneOptions, speakerOptions, currentCameraId, currentMicId, currentSpeakerId) {
+    const cameraSelect = document.getElementById('cameraSelect');
+    const microphoneSelect = document.getElementById('microphoneSelect');
+    const speakerSelect = document.getElementById('speakerSelect');
+
+    // Clear and populate camera select
+    cameraSelect.innerHTML = cameraOptions.map(opt =>
+        `<option value="${opt.value}" ${opt.value === currentCameraId ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+
+    // Clear and populate microphone select
+    microphoneSelect.innerHTML = microphoneOptions.map(opt =>
+        `<option value="${opt.value}" ${opt.value === currentMicId ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+
+    // Clear and populate speaker select
+    speakerSelect.innerHTML = speakerOptions.map(opt =>
+        `<option value="${opt.value}" ${opt.value === currentSpeakerId ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
 }
 
 // Toggle camera
