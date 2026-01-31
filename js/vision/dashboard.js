@@ -1125,7 +1125,7 @@ async function permanentDeleteMeeting(meetingId) {
 // ============================================
 
 function joinMeeting(meetingId) {
-    window.location.href = `lobby.html?id=${meetingId}`;
+    window.open(`lobby.html?id=${meetingId}`, '_blank');
 }
 
 function copyMeetingLink(meetingId) {
