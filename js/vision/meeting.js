@@ -3522,6 +3522,11 @@ function toggleParticipantsPanel() {
 // Device Settings Functions
 // ==========================================
 
+// Searchable dropdown instances for device settings
+let meetingCameraDropdown = null;
+let meetingMicDropdown = null;
+let meetingSpeakerDropdown = null;
+
 // Toggle device settings panel
 function toggleDeviceSettings() {
     const panel = document.getElementById('deviceSettingsPanel');
@@ -3543,13 +3548,10 @@ async function loadMeetingDevices() {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
 
-        const cameraSelect = document.getElementById('meetingCameraSelect');
-        const micSelect = document.getElementById('meetingMicSelect');
-        const speakerSelect = document.getElementById('meetingSpeakerSelect');
-
         // Get current device IDs from LiveKit
         let currentCameraId = '';
         let currentMicId = '';
+        let currentSpeakerId = '';
 
         if (room && room.localParticipant) {
             room.localParticipant.videoTrackPublications.forEach(pub => {
@@ -3566,56 +3568,94 @@ async function loadMeetingDevices() {
             });
         }
 
-        // Clear existing options
-        if (cameraSelect) cameraSelect.innerHTML = '';
-        if (micSelect) micSelect.innerHTML = '';
-        if (speakerSelect) speakerSelect.innerHTML = '';
+        // Build options arrays
+        const cameraOptions = [];
+        const microphoneOptions = [];
+        const speakerOptions = [];
 
-        // Populate device lists
         devices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.text = device.label || `${device.kind} (${device.deviceId.slice(0, 8)}...)`;
+            const option = {
+                value: device.deviceId,
+                label: device.label || `${device.kind} (${device.deviceId.slice(0, 8)}...)`
+            };
 
-            if (device.kind === 'videoinput' && cameraSelect) {
-                if (device.deviceId === currentCameraId) option.selected = true;
-                cameraSelect.appendChild(option);
-            } else if (device.kind === 'audioinput' && micSelect) {
-                if (device.deviceId === currentMicId) option.selected = true;
-                micSelect.appendChild(option);
-            } else if (device.kind === 'audiooutput' && speakerSelect) {
-                speakerSelect.appendChild(option);
+            if (device.kind === 'videoinput') {
+                cameraOptions.push(option);
+            } else if (device.kind === 'audioinput') {
+                microphoneOptions.push(option);
+            } else if (device.kind === 'audiooutput') {
+                speakerOptions.push(option);
             }
         });
 
-        // Add "No camera" option
-        if (cameraSelect && cameraSelect.options.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.text = 'No camera detected';
-            cameraSelect.appendChild(option);
+        // Add fallback options if none detected
+        if (cameraOptions.length === 0) {
+            cameraOptions.push({ value: '', label: 'No camera detected' });
+        }
+        if (microphoneOptions.length === 0) {
+            microphoneOptions.push({ value: '', label: 'No microphone detected' });
+        }
+        if (speakerOptions.length === 0) {
+            speakerOptions.push({ value: 'default', label: 'Default Speaker' });
         }
 
-        // Add "No microphone" option
-        if (micSelect && micSelect.options.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.text = 'No microphone detected';
-            micSelect.appendChild(option);
+        // Check if SearchableDropdown is available
+        if (typeof SearchableDropdown === 'undefined') {
+            // Fallback to native selects
+            populateMeetingNativeSelects(cameraOptions, microphoneOptions, speakerOptions, currentCameraId, currentMicId);
+            return;
         }
 
-        // Add default speaker option if none detected
-        if (speakerSelect && speakerSelect.options.length === 0) {
-            const option = document.createElement('option');
-            option.value = 'default';
-            option.text = 'Default Speaker';
-            speakerSelect.appendChild(option);
-        }
+        // Destroy existing dropdowns if they exist
+        if (meetingCameraDropdown) meetingCameraDropdown.destroy();
+        if (meetingMicDropdown) meetingMicDropdown.destroy();
+        if (meetingSpeakerDropdown) meetingSpeakerDropdown.destroy();
 
-        console.log('Meeting devices loaded:', {
-            cameras: cameraSelect?.options.length || 0,
-            microphones: micSelect?.options.length || 0,
-            speakers: speakerSelect?.options.length || 0
+        // Create SearchableDropdown for Camera
+        meetingCameraDropdown = new SearchableDropdown({
+            container: document.getElementById('meetingCameraSelect').parentElement,
+            options: cameraOptions,
+            value: currentCameraId || cameraOptions[0]?.value,
+            placeholder: 'Select Camera',
+            searchPlaceholder: 'Search cameras...',
+            onChange: (value) => {
+                switchCameraById(value);
+            }
+        });
+
+        // Create SearchableDropdown for Microphone
+        meetingMicDropdown = new SearchableDropdown({
+            container: document.getElementById('meetingMicSelect').parentElement,
+            options: microphoneOptions,
+            value: currentMicId || microphoneOptions[0]?.value,
+            placeholder: 'Select Microphone',
+            searchPlaceholder: 'Search microphones...',
+            onChange: (value) => {
+                switchMicrophoneById(value);
+            }
+        });
+
+        // Create SearchableDropdown for Speaker
+        meetingSpeakerDropdown = new SearchableDropdown({
+            container: document.getElementById('meetingSpeakerSelect').parentElement,
+            options: speakerOptions,
+            value: currentSpeakerId || speakerOptions[0]?.value,
+            placeholder: 'Select Speaker',
+            searchPlaceholder: 'Search speakers...',
+            onChange: (value) => {
+                switchSpeakerById(value);
+            }
+        });
+
+        // Hide the native selects
+        document.getElementById('meetingCameraSelect').style.display = 'none';
+        document.getElementById('meetingMicSelect').style.display = 'none';
+        document.getElementById('meetingSpeakerSelect').style.display = 'none';
+
+        console.log('Meeting devices loaded with SearchableDropdown:', {
+            cameras: cameraOptions.length,
+            microphones: microphoneOptions.length,
+            speakers: speakerOptions.length
         });
     } catch (error) {
         console.error('Error loading meeting devices:', error);
@@ -3623,13 +3663,57 @@ async function loadMeetingDevices() {
     }
 }
 
-// Switch camera during meeting
+// Fallback: Populate native selects if SearchableDropdown not available
+function populateMeetingNativeSelects(cameraOptions, microphoneOptions, speakerOptions, currentCameraId, currentMicId) {
+    const cameraSelect = document.getElementById('meetingCameraSelect');
+    const micSelect = document.getElementById('meetingMicSelect');
+    const speakerSelect = document.getElementById('meetingSpeakerSelect');
+
+    if (cameraSelect) {
+        cameraSelect.innerHTML = '';
+        cameraOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.text = opt.label;
+            if (opt.value === currentCameraId) option.selected = true;
+            cameraSelect.appendChild(option);
+        });
+    }
+
+    if (micSelect) {
+        micSelect.innerHTML = '';
+        microphoneOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.text = opt.label;
+            if (opt.value === currentMicId) option.selected = true;
+            micSelect.appendChild(option);
+        });
+    }
+
+    if (speakerSelect) {
+        speakerSelect.innerHTML = '';
+        speakerOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.text = opt.label;
+            speakerSelect.appendChild(option);
+        });
+    }
+
+    console.log('Meeting devices loaded with native selects');
+}
+
+// Switch camera during meeting (called from native select)
 async function switchCamera() {
     const select = document.getElementById('meetingCameraSelect');
-    if (!select || !room || !room.localParticipant) return;
+    if (!select) return;
+    await switchCameraById(select.value);
+}
 
-    const newDeviceId = select.value;
-    if (!newDeviceId) return;
+// Switch camera by device ID (called from SearchableDropdown)
+async function switchCameraById(newDeviceId) {
+    if (!newDeviceId || !room || !room.localParticipant) return;
 
     try {
         Toast.info('Switching camera...');
@@ -3645,13 +3729,16 @@ async function switchCamera() {
     }
 }
 
-// Switch microphone during meeting
+// Switch microphone during meeting (called from native select)
 async function switchMicrophone() {
     const select = document.getElementById('meetingMicSelect');
-    if (!select || !room || !room.localParticipant) return;
+    if (!select) return;
+    await switchMicrophoneById(select.value);
+}
 
-    const newDeviceId = select.value;
-    if (!newDeviceId) return;
+// Switch microphone by device ID (called from SearchableDropdown)
+async function switchMicrophoneById(newDeviceId) {
+    if (!newDeviceId || !room || !room.localParticipant) return;
 
     try {
         Toast.info('Switching microphone...');
@@ -3667,12 +3754,15 @@ async function switchMicrophone() {
     }
 }
 
-// Switch speaker/audio output during meeting
+// Switch speaker during meeting (called from native select)
 async function switchSpeaker() {
     const select = document.getElementById('meetingSpeakerSelect');
     if (!select) return;
+    await switchSpeakerById(select.value);
+}
 
-    const newDeviceId = select.value;
+// Switch speaker by device ID (called from SearchableDropdown)
+async function switchSpeakerById(newDeviceId) {
     if (!newDeviceId) return;
 
     try {
