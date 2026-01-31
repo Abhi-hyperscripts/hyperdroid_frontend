@@ -959,6 +959,11 @@ body:has(.auth-container)::after {
 body.dashboard:not(.chat-page) {
     position: relative;
     min-height: 100vh;
+    background: var(--bg-body);
+}
+
+[data-theme="dark"] body.dashboard:not(.chat-page) {
+    background: #0a0f1a;
 }
 
 body.dashboard:not(.chat-page)::before {
