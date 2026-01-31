@@ -52,13 +52,18 @@ document.getElementById('guestJoinForm').addEventListener('submit', async (e) =>
     e.preventDefault();
 
     const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
+    let lastName = document.getElementById('lastName').value.trim();
     const errorMessage = document.getElementById('errorMessage');
 
-    if (!firstName || !lastName) {
-        errorMessage.textContent = 'Please enter both first and last name';
+    if (!firstName) {
+        errorMessage.textContent = 'Please enter your first name';
         errorMessage.style.display = 'block';
         return;
+    }
+
+    // If last name is not provided, use first name
+    if (!lastName) {
+        lastName = firstName;
     }
 
     try {
