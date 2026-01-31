@@ -954,13 +954,14 @@ body:has(.auth-container)::after {
 
 /* =============================================================
    VISION DASHBOARD AMBIENT BACKGROUND
+   Excludes chat-page which has its own layout requirements
    ============================================================= */
-body.dashboard {
+body.dashboard:not(.chat-page) {
     position: relative;
     min-height: 100vh;
 }
 
-body.dashboard::before {
+body.dashboard:not(.chat-page)::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -972,14 +973,14 @@ body.dashboard::before {
     z-index: 0;
 }
 
-[data-theme="dark"] body.dashboard::before {
+[data-theme="dark"] body.dashboard:not(.chat-page)::before {
     background:
         radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
         radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
         radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
 }
 
-body.dashboard > * {
+body.dashboard:not(.chat-page) > * {
     position: relative;
     z-index: 1;
 }
