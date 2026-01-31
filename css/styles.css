@@ -3168,10 +3168,20 @@ body:has(.pre-meeting-container) {
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    padding: 10px;
+    padding: 20px 10px;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: #050810 !important;
+}
+
+/* When content is too tall (e.g., high zoom), align to start to allow scrolling */
+@media (max-height: 700px) {
+    body:has(.pre-meeting-container) {
+        align-items: flex-start;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
 }
 
 /* Animated gradient mesh background - Vision Landing Page Style */
