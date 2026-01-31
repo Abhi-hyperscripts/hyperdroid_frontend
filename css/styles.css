@@ -3426,10 +3426,11 @@ body.dark-theme .settings-menu,
     border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Glass-style searchable dropdown - trigger focus/open state */
 .device-settings-panel .searchable-dropdown-trigger:focus,
 .device-settings-panel .searchable-dropdown.open .searchable-dropdown-trigger {
-    border-color: rgba(59, 130, 246, 0.6);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
 }
 
 .device-settings-panel .searchable-dropdown-text {
@@ -3444,33 +3445,60 @@ body.dark-theme .settings-menu,
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Glass-style dropdown menu */
 .device-settings-panel .searchable-dropdown-menu {
-    background: rgba(30, 30, 40, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(25, 25, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
-.device-settings-panel .searchable-dropdown-option {
-    color: rgba(255, 255, 255, 0.9);
+/* Glass-style search container */
+.device-settings-panel .searchable-dropdown-search {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.device-settings-panel .searchable-dropdown-option:hover {
-    background: rgba(255, 255, 255, 0.1);
+.device-settings-panel .searchable-dropdown-search-icon {
+    color: rgba(255, 255, 255, 0.5);
 }
 
-.device-settings-panel .searchable-dropdown-option.selected {
-    background: rgba(59, 130, 246, 0.3);
-}
-
+/* Glass-style search input */
 .device-settings-panel .searchable-dropdown-search input {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #fff;
+    border-radius: 6px;
+}
+
+.device-settings-panel .searchable-dropdown-search input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+    outline: none;
 }
 
 .device-settings-panel .searchable-dropdown-search input::placeholder {
     color: rgba(255, 255, 255, 0.4);
+}
+
+/* Glass-style options */
+.device-settings-panel .searchable-dropdown-option {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.device-settings-panel .searchable-dropdown-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Selected option - neutral highlight instead of blue */
+.device-settings-panel .searchable-dropdown-option.selected {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+/* Checkmark icon - white instead of blue */
+.device-settings-panel .searchable-dropdown-check {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 @media (max-width: 768px) {
