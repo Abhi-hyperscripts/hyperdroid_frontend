@@ -3193,7 +3193,7 @@ body.dark-theme .settings-menu,
     margin-left: 4px;
 }
 
-/* Device Settings Panel - Bento Glass Effect - Positioned above control bar */
+/* Device Settings Panel - Clean Glass Effect - Positioned above control bar */
 .device-settings-panel {
     position: fixed;
     bottom: 80px;
@@ -3201,18 +3201,16 @@ body.dark-theme .settings-menu,
     transform: translateX(-50%);
     width: 340px;
     max-height: calc(100vh - 160px);
-    /* Very transparent - video shows through */
-    background: rgba(0, 0, 0, 0.3);
-    /* Blur for frosted glass - lower value = more visibility */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
-    /* Subtle shadow and glow */
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 30px rgba(59, 130, 246, 0.1);
-    /* Light border for glass edge definition */
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    /* Neutral dark glass - no color tint */
+    background: rgba(20, 20, 25, 0.75);
+    /* Strong blur for frosted glass effect */
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border-radius: 16px;
+    /* Clean shadow without color tint */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    /* Subtle white border for glass edge */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 1001;
     display: flex;
     flex-direction: column;
@@ -3258,11 +3256,36 @@ body.dark-theme .settings-menu,
 }
 
 .device-settings-header h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.3px;
+}
+
+/* Glass-style close button for device settings */
+.device-settings-header .close-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.device-settings-header .close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.device-settings-header .close-btn svg {
+    stroke: currentColor;
 }
 
 .device-settings-content {
@@ -3294,6 +3317,66 @@ body.dark-theme .settings-menu,
     stroke: rgba(255, 255, 255, 0.9);
 }
 
+/* Glass-style select inside device settings panel */
+.device-settings-panel .device-setting-group select {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.device-settings-panel .device-setting-group select:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.device-settings-panel .device-setting-group select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.device-settings-panel .device-setting-group select option {
+    background: #1a1a24;
+    color: #fff;
+    padding: 10px;
+}
+
+/* Glass-style button inside device settings panel */
+.device-settings-panel .device-setting-group .btn-sm,
+.device-settings-panel .device-setting-group .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.device-settings-panel .device-setting-group .btn-sm:hover,
+.device-settings-panel .device-setting-group .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Fallback for non-panel usage */
 .device-setting-group select {
     width: 100%;
     padding: 10px 12px;
