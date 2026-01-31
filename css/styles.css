@@ -3290,7 +3290,7 @@ body.dark-theme .settings-menu,
 
 .device-settings-content {
     padding: 20px;
-    overflow-y: auto;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     gap: 18px;
