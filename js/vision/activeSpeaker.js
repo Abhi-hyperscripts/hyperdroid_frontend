@@ -350,22 +350,8 @@ class ActiveSpeakerManager {
             return; // Exit early - no switching for 1-on-1 calls
         }
 
-        // === 2 REMOTE PARTICIPANTS (3 total) ===
-        // Use immediate switching between the 2 remote participants
-        if (remoteParticipantCount === 2) {
-            if (currentlySpeakingRemote) {
-                this.mainSpeaker = currentlySpeakingRemote;
-                console.log('Remote participant speaking (2 remote) - immediate switch:', currentlySpeakingRemote.identity);
-            } else if (remoteSpeakers.length > 0) {
-                // Keep current main speaker if no one is speaking, or use first remote
-                if (!this.mainSpeaker || !remoteSpeakers.find(s => s.participantSid === this.mainSpeaker.participantSid)) {
-                    this.mainSpeaker = remoteSpeakers[0];
-                }
-            } else {
-                this.mainSpeaker = this.findFirstParticipantWithVideo();
-            }
-        } else {
-            // === 3+ REMOTE PARTICIPANTS (4+ total): SUSTAINED SPEAKING + COOLDOWN ===
+        // === 2+ REMOTE PARTICIPANTS (3+ total): SUSTAINED SPEAKING + COOLDOWN + PIN ===
+        if (remoteParticipantCount >= 2) {
 
             if (currentlySpeakingRemote) {
                 // Check if this is a NEW speaker candidate
