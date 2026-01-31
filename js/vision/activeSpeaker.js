@@ -330,19 +330,42 @@ class ActiveSpeakerManager {
         // Find currently speaking remote participant
         const currentlySpeakingRemote = remoteSpeakers.find(s => s.isSpeaking);
 
-        // === 2 PARTICIPANTS EXCEPTION ===
-        // With only 1-2 video participants, use immediate switching (current behavior)
-        if (remoteParticipantsWithVideo <= 2) {
-            if (currentlySpeakingRemote) {
-                this.mainSpeaker = currentlySpeakingRemote;
-                console.log('Remote participant speaking (<=2 video) - immediate switch:', currentlySpeakingRemote.identity);
-            } else if (remoteSpeakers.length > 0) {
+        // === 1-ON-1 CALL (2 participants total) ===
+        // With only 1 remote participant, NEVER switch - always show them as main speaker
+        // Each person always sees the other in main tile, themselves in small tile
+        if (remoteParticipantCount === 1) {
+            // Always use the single remote participant as main speaker
+            if (remoteSpeakers.length > 0) {
                 this.mainSpeaker = remoteSpeakers[0];
             } else {
                 this.mainSpeaker = this.findFirstParticipantWithVideo();
             }
+            // Skip all switching logic - no speaker detection needed for 1-on-1
+            if (previousMainSpeaker?.participantSid !== this.mainSpeaker?.participantSid) {
+                this.updateVideoQualitiesOnSpeakerChange(previousMainSpeaker, this.mainSpeaker);
+            }
+            if (this.onSpeakerUpdate) {
+                this.onSpeakerUpdate(this.mainSpeaker);
+            }
+            return; // Exit early - no switching for 1-on-1 calls
+        }
+
+        // === 2 REMOTE PARTICIPANTS (3 total) ===
+        // Use immediate switching between the 2 remote participants
+        if (remoteParticipantCount === 2) {
+            if (currentlySpeakingRemote) {
+                this.mainSpeaker = currentlySpeakingRemote;
+                console.log('Remote participant speaking (2 remote) - immediate switch:', currentlySpeakingRemote.identity);
+            } else if (remoteSpeakers.length > 0) {
+                // Keep current main speaker if no one is speaking, or use first remote
+                if (!this.mainSpeaker || !remoteSpeakers.find(s => s.participantSid === this.mainSpeaker.participantSid)) {
+                    this.mainSpeaker = remoteSpeakers[0];
+                }
+            } else {
+                this.mainSpeaker = this.findFirstParticipantWithVideo();
+            }
         } else {
-            // === 3+ PARTICIPANTS: SUSTAINED SPEAKING + COOLDOWN ===
+            // === 3+ REMOTE PARTICIPANTS (4+ total): SUSTAINED SPEAKING + COOLDOWN ===
 
             if (currentlySpeakingRemote) {
                 // Check if this is a NEW speaker candidate
