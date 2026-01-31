@@ -18,7 +18,7 @@ function returnToDashboard() {
         window.close();
     } else {
         // Direct access - redirect to dashboard
-        returnToDashboard();
+        window.location.href = 'dashboard.html';
     }
 }
 
