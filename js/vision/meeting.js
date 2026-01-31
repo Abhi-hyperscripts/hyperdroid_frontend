@@ -11,6 +11,17 @@ let chatWasVisibleBeforeScreenShare = false; // Track chat visibility before scr
 let activeSpeakerManager = null; // Active speaker detection manager
 let audioResumed = false; // Track if we've already handled audio resume
 
+// Helper function to return to dashboard - closes tab if opened from dashboard, otherwise redirects
+function returnToDashboard() {
+    if (window.opener) {
+        // Opened from dashboard - close this tab
+        window.close();
+    } else {
+        // Direct access - redirect to dashboard
+        returnToDashboard();
+    }
+}
+
 // Global handler to resume all audio elements on first user interaction
 // This is needed for mobile Safari which blocks autoplay until user gesture
 function setupAudioResumeHandler() {
@@ -350,7 +361,7 @@ async function initializeMeeting() {
 
         if (!meetingStatus) {
             Toast.error('Meeting not found');
-            window.location.href = 'dashboard.html';
+            returnToDashboard();
             return;
         }
 
@@ -436,7 +447,7 @@ async function initializeMeeting() {
             sessionStorage.clear();
             window.location.href = `guest-join.html?id=${meetingId}`;
         } else {
-            window.location.href = 'dashboard.html';
+            returnToDashboard();
         }
     }
 }
@@ -835,7 +846,7 @@ function setupSignalREventHandlers() {
                 sessionStorage.clear();
                 window.location.href = '../login.html';
             } else {
-                window.location.href = 'dashboard.html';
+                returnToDashboard();
             }
         } else {
             // Another participant was removed - clean up their UI elements immediately
@@ -2582,7 +2593,7 @@ async function leaveMeeting() {
                 sessionStorage.clear();
                 window.location.href = '../login.html';
             } else {
-                window.location.href = 'dashboard.html';
+                returnToDashboard();
             }
         } catch (error) {
             console.error('Error leaving meeting:', error);
@@ -2591,7 +2602,7 @@ async function leaveMeeting() {
                 sessionStorage.clear();
                 window.location.href = '../login.html';
             } else {
-                window.location.href = 'dashboard.html';
+                returnToDashboard();
             }
         }
     }
