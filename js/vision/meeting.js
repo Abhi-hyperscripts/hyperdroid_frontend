@@ -3607,50 +3607,95 @@ async function loadMeetingDevices() {
         }
 
         // Destroy existing dropdowns if they exist
-        if (meetingCameraDropdown) meetingCameraDropdown.destroy();
-        if (meetingMicDropdown) meetingMicDropdown.destroy();
-        if (meetingSpeakerDropdown) meetingSpeakerDropdown.destroy();
+        if (meetingCameraDropdown) {
+            meetingCameraDropdown.destroy();
+            meetingCameraDropdown = null;
+        }
+        if (meetingMicDropdown) {
+            meetingMicDropdown.destroy();
+            meetingMicDropdown = null;
+        }
+        if (meetingSpeakerDropdown) {
+            meetingSpeakerDropdown.destroy();
+            meetingSpeakerDropdown = null;
+        }
 
-        // Create SearchableDropdown for Camera
-        meetingCameraDropdown = new SearchableDropdown({
-            container: document.getElementById('meetingCameraSelect').parentElement,
+        // Camera dropdown
+        const cameraSelect = document.getElementById('meetingCameraSelect');
+        const cameraContainer = cameraSelect.parentElement;
+        cameraSelect.style.display = 'none';
+
+        // Remove old dropdown container if exists
+        const oldCameraContainer = document.getElementById('meetingCameraDropdownContainer');
+        if (oldCameraContainer) oldCameraContainer.remove();
+
+        // Create new dropdown container
+        const cameraDropdownContainer = document.createElement('div');
+        cameraDropdownContainer.id = 'meetingCameraDropdownContainer';
+        cameraDropdownContainer.className = 'searchable-dropdown-wrapper';
+        cameraContainer.appendChild(cameraDropdownContainer);
+
+        meetingCameraDropdown = new SearchableDropdown(cameraDropdownContainer, {
+            id: 'meetingCameraDropdown',
             options: cameraOptions,
-            value: currentCameraId || cameraOptions[0]?.value,
+            value: currentCameraId || cameraOptions[0]?.value || '',
             placeholder: 'Select Camera',
             searchPlaceholder: 'Search cameras...',
+            compact: true,
             onChange: (value) => {
-                switchCameraById(value);
+                if (value) switchCameraById(value);
             }
         });
 
-        // Create SearchableDropdown for Microphone
-        meetingMicDropdown = new SearchableDropdown({
-            container: document.getElementById('meetingMicSelect').parentElement,
+        // Microphone dropdown
+        const micSelect = document.getElementById('meetingMicSelect');
+        const micContainer = micSelect.parentElement;
+        micSelect.style.display = 'none';
+
+        const oldMicContainer = document.getElementById('meetingMicDropdownContainer');
+        if (oldMicContainer) oldMicContainer.remove();
+
+        const micDropdownContainer = document.createElement('div');
+        micDropdownContainer.id = 'meetingMicDropdownContainer';
+        micDropdownContainer.className = 'searchable-dropdown-wrapper';
+        micContainer.appendChild(micDropdownContainer);
+
+        meetingMicDropdown = new SearchableDropdown(micDropdownContainer, {
+            id: 'meetingMicDropdown',
             options: microphoneOptions,
-            value: currentMicId || microphoneOptions[0]?.value,
+            value: currentMicId || microphoneOptions[0]?.value || '',
             placeholder: 'Select Microphone',
             searchPlaceholder: 'Search microphones...',
+            compact: true,
             onChange: (value) => {
-                switchMicrophoneById(value);
+                if (value) switchMicrophoneById(value);
             }
         });
 
-        // Create SearchableDropdown for Speaker
-        meetingSpeakerDropdown = new SearchableDropdown({
-            container: document.getElementById('meetingSpeakerSelect').parentElement,
+        // Speaker dropdown
+        const speakerSelect = document.getElementById('meetingSpeakerSelect');
+        const speakerContainer = speakerSelect.parentElement;
+        speakerSelect.style.display = 'none';
+
+        const oldSpeakerContainer = document.getElementById('meetingSpeakerDropdownContainer');
+        if (oldSpeakerContainer) oldSpeakerContainer.remove();
+
+        const speakerDropdownContainer = document.createElement('div');
+        speakerDropdownContainer.id = 'meetingSpeakerDropdownContainer';
+        speakerDropdownContainer.className = 'searchable-dropdown-wrapper';
+        speakerContainer.appendChild(speakerDropdownContainer);
+
+        meetingSpeakerDropdown = new SearchableDropdown(speakerDropdownContainer, {
+            id: 'meetingSpeakerDropdown',
             options: speakerOptions,
-            value: currentSpeakerId || speakerOptions[0]?.value,
+            value: currentSpeakerId || speakerOptions[0]?.value || '',
             placeholder: 'Select Speaker',
             searchPlaceholder: 'Search speakers...',
+            compact: true,
             onChange: (value) => {
-                switchSpeakerById(value);
+                if (value) switchSpeakerById(value);
             }
         });
-
-        // Hide the native selects
-        document.getElementById('meetingCameraSelect').style.display = 'none';
-        document.getElementById('meetingMicSelect').style.display = 'none';
-        document.getElementById('meetingSpeakerSelect').style.display = 'none';
 
         console.log('Meeting devices loaded with SearchableDropdown:', {
             cameras: cameraOptions.length,
