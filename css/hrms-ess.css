@@ -11,11 +11,13 @@
 
 .ess-container {
     max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
     padding: 32px 24px;
     padding-top: 100px; /* Account for fixed navbar */
     background: var(--gradient-page-bg);
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .ess-container .page-title {
@@ -2027,6 +2029,13 @@
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.directory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
     margin-bottom: 20px;
 }
 
