@@ -686,7 +686,6 @@
 /* Video Player Bento Card - Enhanced with glow */
 .recording-player-section {
     padding: 2px;
-    overflow: hidden;
     background: linear-gradient(135deg,
         rgba(var(--brand-primary-rgb), 0.6),
         rgba(139, 92, 246, 0.4),
@@ -707,6 +706,12 @@
     overflow: hidden;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+}
+
+/* Video wrapper for rounded corners */
+.recording-player-section .recording-video-wrapper {
+    overflow: hidden;
+    border-radius: 14px 14px 0 0;
 }
 
 /* Glow animation on hover */
