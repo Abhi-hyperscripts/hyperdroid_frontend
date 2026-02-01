@@ -483,18 +483,44 @@ const Confirm = (function() {
 
             .confirm-modal {
                 background: var(--bg-card, #1e293b) !important;
-                border-radius: var(--border-radius-lg, 12px) !important;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+                border-radius: 16px !important;
                 max-width: 380px;
                 width: 90%;
                 transform: scale(0.95);
-                transition: transform 200ms ease;
+                transition: transform 200ms ease, box-shadow 200ms ease;
                 overflow: hidden;
-                border: 1px solid var(--border-color-light, rgba(255,255,255,0.1)) !important;
+                border: 2px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+                box-shadow:
+                    0 0 30px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+                    0 0 60px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+                    0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+
+            .confirm-overlay[style*="opacity: 1"] .confirm-modal {
+                box-shadow:
+                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.35),
+                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                    0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
             }
 
             .confirm-content {
                 padding: 20px 20px 16px 20px;
+                position: relative;
+            }
+
+            /* Subtle gradient glow at top */
+            .confirm-content::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 60px;
+                background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%, transparent 100%);
+                pointer-events: none;
+                border-radius: 14px 14px 0 0;
             }
 
             .confirm-body {
@@ -564,59 +590,67 @@ const Confirm = (function() {
             }
 
             .confirm-btn {
-                padding: 7px 14px;
+                padding: 9px 18px;
                 font-size: 13px;
                 font-weight: 500;
-                border-radius: var(--border-radius-sm);
+                border-radius: 10px;
                 cursor: pointer;
-                transition: var(--transition-fast);
+                transition: all 0.2s ease;
             }
 
             .confirm-btn-cancel {
-                border: 1px solid var(--border-color);
-                background: var(--bg-card);
+                border: 1px solid var(--border-color-light, rgba(255,255,255,0.15));
+                background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08);
                 color: var(--text-primary);
             }
 
             .confirm-btn-cancel:hover {
-                background: var(--bg-card-hover);
+                background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15);
+                border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
+                transform: translateY(-1px);
             }
 
             .confirm-btn-ok {
                 border: none;
-                color: var(--text-inverse);
+                color: var(--text-inverse, white);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .confirm-btn-ok:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
             }
 
             .confirm-btn-ok.danger {
-                background: var(--color-danger);
+                background: linear-gradient(135deg, var(--color-danger, #ef4444), var(--color-danger-dark, #dc2626));
             }
 
             .confirm-btn-ok.danger:hover {
-                background: var(--color-danger-dark);
+                box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
             }
 
             .confirm-btn-ok.warning {
-                background: var(--color-warning);
+                background: linear-gradient(135deg, var(--color-warning, #f59e0b), var(--color-warning-dark, #d97706));
             }
 
             .confirm-btn-ok.warning:hover {
-                background: var(--color-warning-dark);
+                box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
             }
 
             .confirm-btn-ok.info {
-                background: var(--color-info);
+                background: linear-gradient(135deg, var(--color-info, #3b82f6), var(--color-info-dark, #2563eb));
             }
 
             .confirm-btn-ok.info:hover {
-                background: var(--color-info-dark);
+                box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
             }
 
             .confirm-btn-ok.success {
-                background: var(--color-success);
+                background: linear-gradient(135deg, var(--color-success, #10b981), var(--color-success-dark, #059669));
             }
 
             .confirm-btn-ok.success:hover {
-                background: var(--color-success-dark);
+                box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
             }
         `;
         document.head.appendChild(style);
