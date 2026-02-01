@@ -1434,94 +1434,115 @@ let currentRecordingMeetingId = null;
 async function playRecording(meetingId) {
     try {
         currentRecordingMeetingId = meetingId;
+
+        // Show panel with loading state
+        const panel = document.getElementById('recordingSlidePanel');
+        const overlay = document.getElementById('recordingPanelOverlay');
+        const panelBody = document.getElementById('recordingPanelBody');
+
+        panelBody.innerHTML = '<div class="panel-loading"><div class="spinner"></div></div>';
+        panel.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
         const recordings = await api.getMeetingRecordings(meetingId);
 
         if (!recordings || recordings.length === 0) {
             Toast.info('No recordings found for this meeting');
+            closeRecordingPlayer();
             return;
         }
 
-        const modal = document.getElementById('recordingPlayerModal');
-        const playerContainer = document.getElementById('recordingPlayerContainer');
-        const listContainer = document.getElementById('recordingsListContainer');
-
         const firstRecording = recordings[0];
-        if (firstRecording.recording_url) {
-            playerContainer.innerHTML = `
-                <video controls class="recording-video-player" id="recordingPlayer">
-                    <source src="${firstRecording.recording_url}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-                <div class="recording-actions">
-                    <button class="btn-copy-url" onclick="copyRecordingUrl('${firstRecording.recording_url}')" title="Copy recording URL">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        Copy URL
-                    </button>
-                    <a class="btn-download" href="${firstRecording.recording_url}" download title="Download recording">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                        Download
-                    </a>
-                </div>
-            `;
-        } else {
-            playerContainer.innerHTML = `<p class="recording-unavailable">Recording URL not available</p>`;
-        }
 
-        listContainer.innerHTML = `
-            <div class="recordings-compact-list">
-                <div class="recordings-compact-header">
-                    <span>${recordings.length} RECORDING${recordings.length > 1 ? 'S' : ''}</span>
-                    <button class="btn-delete-all-recordings" onclick="confirmDeleteAllRecordings('${meetingId}')" title="Delete all recordings">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                        </svg>
-                        Delete All
-                    </button>
-                </div>
-                ${recordings.map((rec, index) => {
-                    const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
-                    const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
-                    const duration = rec.duration_seconds ? `${Math.floor(rec.duration_seconds / 60)}:${String(rec.duration_seconds % 60).padStart(2, '0')}` : '--:--';
-                    return `
-                    <div class="rec-item ${index === 0 ? 'playing' : ''}" data-recording-id="${rec.id}" onclick="loadRecording('${rec.recording_url}', ${index})">
-                        <span class="rec-num">${index + 1}</span>
-                        <div class="rec-details">
-                            <span class="rec-date">${date} ${time}</span>
-                            <span class="rec-dur">${duration}</span>
-                        </div>
-                        <button class="rec-copy" onclick="event.stopPropagation(); copyRecordingUrl('${rec.recording_url}')" title="Copy URL">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        // Build the panel content
+        let videoPlayerHtml = '';
+        if (firstRecording.recording_url) {
+            videoPlayerHtml = `
+                <div class="panel-section recording-player-section">
+                    <video controls class="recording-video-player" id="recordingPlayer">
+                        <source src="${firstRecording.recording_url}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="recording-actions">
+                        <button class="btn-copy-url" onclick="copyRecordingUrl('${firstRecording.recording_url}')" title="Copy recording URL">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                             </svg>
+                            Copy URL
                         </button>
-                        <button class="rec-delete" onclick="event.stopPropagation(); confirmDeleteRecording('${rec.id}')" title="Delete recording">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <a class="btn-download" href="${firstRecording.recording_url}" download title="Download recording">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Download
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            videoPlayerHtml = `
+                <div class="panel-section">
+                    <p class="recording-unavailable">Recording URL not available</p>
+                </div>
+            `;
+        }
+
+        const recordingsListHtml = `
+            <div class="panel-section recordings-list-section">
+                <div class="recordings-compact-list">
+                    <div class="recordings-compact-header">
+                        <span>${recordings.length} RECORDING${recordings.length > 1 ? 'S' : ''}</span>
+                        <button class="btn-delete-all-recordings" onclick="confirmDeleteAllRecordings('${meetingId}')" title="Delete all recordings">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
                             </svg>
+                            Delete All
                         </button>
-                        <button class="rec-play" onclick="event.stopPropagation(); loadRecording('${rec.recording_url}', ${index})">▶</button>
                     </div>
-                `;
-                }).join('')}
+                    ${recordings.map((rec, index) => {
+                        const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
+                        const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
+                        const duration = rec.duration_seconds ? `${Math.floor(rec.duration_seconds / 60)}:${String(rec.duration_seconds % 60).padStart(2, '0')}` : '--:--';
+                        return `
+                        <div class="rec-item ${index === 0 ? 'playing' : ''}" data-recording-id="${rec.id}" onclick="loadRecording('${rec.recording_url}', ${index})">
+                            <span class="rec-num">${index + 1}</span>
+                            <div class="rec-details">
+                                <span class="rec-date">${date} ${time}</span>
+                                <span class="rec-dur">${duration}</span>
+                            </div>
+                            <button class="rec-copy" onclick="event.stopPropagation(); copyRecordingUrl('${rec.recording_url}')" title="Copy URL">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                            <button class="rec-delete" onclick="event.stopPropagation(); confirmDeleteRecording('${rec.id}')" title="Delete recording">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                            <button class="rec-play" onclick="event.stopPropagation(); loadRecording('${rec.recording_url}', ${index})">▶</button>
+                        </div>
+                    `;
+                    }).join('')}
+                </div>
             </div>
         `;
 
-        modal.classList.add('active');
+        panelBody.innerHTML = videoPlayerHtml + recordingsListHtml;
+
     } catch (error) {
         console.error('Error loading recordings:', error);
         Toast.error('Failed to load recordings: ' + error.message);
+        closeRecordingPlayer();
     }
 }
 
@@ -1571,16 +1592,29 @@ function copyRecordingUrl(url) {
 }
 
 function closeRecordingPlayer() {
-    const modal = document.getElementById('recordingPlayerModal');
+    const panel = document.getElementById('recordingSlidePanel');
+    const overlay = document.getElementById('recordingPanelOverlay');
     const player = document.getElementById('recordingPlayer');
 
     if (player) {
         player.pause();
     }
 
-    modal.classList.remove('active');
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
     currentRecordingMeetingId = null;
 }
+
+// Close recording panel on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('recordingSlidePanel');
+        if (panel && panel.classList.contains('active')) {
+            closeRecordingPlayer();
+        }
+    }
+});
 
 async function confirmDeleteRecording(recordingId) {
     const confirmed = await Confirm.show({

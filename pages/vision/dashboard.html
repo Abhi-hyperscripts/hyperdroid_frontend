@@ -8,6 +8,7 @@
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -302,22 +303,22 @@
         </div>
     </div>
 
-    <!-- Recording Player Modal -->
-    <div id="recordingPlayerModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Meeting Recording</h5>
-                    <button class="close-btn" onclick="closeRecordingPlayer()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <div id="recordingPlayerContainer" style="margin-top: 20px;">
-                        <!-- Video player will be inserted here -->
-                    </div>
-                    <div id="recordingsListContainer" style="margin-top: 20px; max-height: 200px; overflow-y: auto;">
-                        <!-- List of recordings will be inserted here -->
-                    </div>
-                </div>
+    <!-- Recording Slide Panel -->
+    <div class="slide-panel-overlay" id="recordingPanelOverlay" onclick="closeRecordingPlayer()"></div>
+    <div class="slide-panel" id="recordingSlidePanel" style="--panel-width: 480px;">
+        <div class="panel-drag-handle"></div>
+        <div class="panel-header">
+            <h3 class="panel-title">Meeting Recordings</h3>
+            <button class="panel-close-btn" onclick="closeRecordingPlayer()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body" id="recordingPanelBody">
+            <div class="panel-loading">
+                <div class="spinner"></div>
             </div>
         </div>
     </div>
@@ -441,6 +442,7 @@
             }
         });
     </script>
+    <script>document.write('<script src="../../js/slide-panel.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/vision/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>
