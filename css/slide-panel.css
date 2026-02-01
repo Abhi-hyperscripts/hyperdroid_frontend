@@ -683,50 +683,80 @@
    RECORDING PLAYER PANEL STYLES - Bento Glassy Design
    ============================================================= */
 
-/* Video Player Bento Card */
+/* Video Player Bento Card - Enhanced with glow */
 .recording-player-section {
     padding: 0;
     overflow: hidden;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color-light);
-    border-radius: 14px;
+    background: rgba(var(--brand-primary-rgb), 0.03);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+    border-radius: 16px;
     position: relative;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.1),
+        0 4px 24px rgba(0, 0, 0, 0.15),
+        0 0 40px rgba(var(--brand-primary-rgb), 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Glassy glow effect */
+/* Glassy glow border effect */
 .recording-player-section::before {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 1px;
     background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.3),
-        rgba(139, 92, 246, 0.2),
-        transparent 60%);
+        rgba(var(--brand-primary-rgb), 0.5),
+        rgba(139, 92, 246, 0.3),
+        rgba(var(--brand-primary-rgb), 0.2),
+        transparent 70%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
+    z-index: 1;
+}
+
+/* Inner glow overlay */
+.recording-player-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: 16px;
+    z-index: 0;
 }
 
 .recording-player-section .recording-video-player {
     width: 100%;
-    max-height: 260px;
+    height: 280px;
+    min-height: 240px;
     background: #000;
-    border-radius: 13px 13px 0 0;
+    border-radius: 15px 15px 0 0;
     display: block;
+    position: relative;
+    z-index: 2;
+    object-fit: contain;
 }
 
 .recording-player-section .recording-actions {
-    padding: 14px 16px;
-    background: transparent;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.2);
     display: flex;
     gap: 10px;
     justify-content: center;
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .recording-player-section .btn-copy-url,
@@ -771,13 +801,17 @@
 /* Recordings List Bento Card */
 .recordings-list-section {
     padding: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color-light);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 14px;
     overflow: hidden;
     position: relative;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 70px - 400px); /* Panel height minus header and video player */
+    min-height: 150px;
 }
 
 /* Subtle inner glow */
@@ -787,12 +821,13 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 80px;
+    height: 50px;
     background: linear-gradient(180deg,
-        rgba(var(--brand-primary-rgb), 0.05) 0%,
+        rgba(var(--brand-primary-rgb), 0.06) 0%,
         transparent 100%);
     pointer-events: none;
     border-radius: 14px 14px 0 0;
+    z-index: 0;
 }
 
 .recordings-list-section .recordings-compact-list {
@@ -800,133 +835,192 @@
     margin-top: 0;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Scrollable container for recording items */
+.recordings-list-section .recordings-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--brand-primary-rgb), 0.3) transparent;
+}
+
+.recordings-list-section .recordings-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.recordings-list-section .recordings-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.recordings-list-section .recordings-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(var(--brand-primary-rgb), 0.3);
+    border-radius: 3px;
+}
+
+.recordings-list-section .recordings-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--brand-primary-rgb), 0.5);
 }
 
 .recordings-list-section .recordings-compact-header {
-    padding: 14px 16px;
+    padding: 10px 14px;
     margin-bottom: 0;
-    background: transparent;
-    border-bottom: 1px solid var(--border-color-light);
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
 }
 
 .recordings-list-section .recordings-compact-header span {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
 }
 
 .recordings-list-section .btn-delete-all-recordings {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 11px;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
     font-weight: 500;
     background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.15);
     color: var(--color-danger, #ef4444);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.recordings-list-section .btn-delete-all-recordings:hover {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: rgba(239, 68, 68, 0.4);
+.recordings-list-section .btn-delete-all-recordings svg {
+    width: 12px;
+    height: 12px;
 }
 
+.recordings-list-section .btn-delete-all-recordings:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Compact recording item */
 .recordings-list-section .rec-item {
     border-radius: 0;
     border: none;
-    border-bottom: 1px solid var(--border-color-light);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     margin: 0;
-    padding: 12px 16px;
+    padding: 8px 12px;
     background: transparent;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
 }
 
 .recordings-list-section .rec-item:last-child {
     border-bottom: none;
-    border-radius: 0;
 }
 
 .recordings-list-section .rec-item:hover {
-    background: rgba(var(--brand-primary-rgb), 0.05);
+    background: rgba(var(--brand-primary-rgb), 0.06);
 }
 
 .recordings-list-section .rec-item.playing {
-    background: rgba(var(--brand-primary-rgb), 0.1);
-    border-left: 3px solid var(--brand-primary);
-    padding-left: 13px;
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    border-left: 2px solid var(--brand-primary);
+    padding-left: 10px;
 }
 
+/* Compact number badge */
 .recordings-list-section .rec-item .rec-num {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 5px;
     background: rgba(var(--brand-primary-rgb), 0.1);
     color: var(--brand-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
 }
 
 .recordings-list-section .rec-item.playing .rec-num {
     background: var(--brand-primary);
     color: white;
-    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.4);
+    box-shadow: 0 2px 6px rgba(var(--brand-primary-rgb), 0.35);
 }
 
+/* Compact details - single line */
 .recordings-list-section .rec-item .rec-details {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
 }
 
 .recordings-list-section .rec-item .rec-date {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-primary);
+    white-space: nowrap;
 }
 
 .recordings-list-section .rec-item .rec-dur {
-    font-size: 11px;
-    color: var(--text-secondary);
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
+/* Compact action buttons */
 .recordings-list-section .rec-item .rec-copy,
 .recordings-list-section .rec-item .rec-delete,
 .recordings-list-section .rec-item .rec-play {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+}
+
+.recordings-list-section .rec-item .rec-copy svg,
+.recordings-list-section .rec-item .rec-delete svg {
+    width: 12px;
+    height: 12px;
 }
 
 .recordings-list-section .rec-item .rec-copy:hover {
-    background: rgba(var(--brand-primary-rgb), 0.1);
+    background: rgba(var(--brand-primary-rgb), 0.15);
     border-color: rgba(var(--brand-primary-rgb), 0.3);
     color: var(--brand-primary);
 }
 
 .recordings-list-section .rec-item .rec-delete:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.25);
     color: var(--color-danger, #ef4444);
 }
 
@@ -934,7 +1028,7 @@
     background: var(--brand-primary);
     border-color: var(--brand-primary);
     color: white;
-    font-size: 10px;
+    font-size: 9px;
 }
 
 .recordings-list-section .rec-item .rec-play:hover {
@@ -942,24 +1036,35 @@
     transform: scale(1.05);
 }
 
-/* Dark theme enhancements */
+/* Dark theme enhancements - Enhanced glassy effects */
 [data-theme="dark"] .recording-player-section {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(var(--brand-primary-rgb), 0.05);
+    border-color: rgba(var(--brand-primary-rgb), 0.2);
+    box-shadow:
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.15),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 60px rgba(var(--brand-primary-rgb), 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .recording-player-section::before {
     background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.4),
-        rgba(139, 92, 246, 0.3),
-        transparent 60%);
+        rgba(var(--brand-primary-rgb), 0.6),
+        rgba(139, 92, 246, 0.4),
+        rgba(var(--brand-primary-rgb), 0.25),
+        transparent 70%);
+}
+
+[data-theme="dark"] .recording-player-section::after {
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(var(--brand-primary-rgb), 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
 }
 
 [data-theme="dark"] .recordings-list-section {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
     border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] .recordings-list-section::after {
@@ -969,23 +1074,29 @@
 }
 
 [data-theme="dark"] .recordings-list-section .recordings-compact-header {
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .recordings-list-section .rec-item {
-    border-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.03);
 }
 
 [data-theme="dark"] .recordings-list-section .rec-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
 [data-theme="dark"] .recordings-list-section .rec-item.playing {
     background: rgba(var(--brand-primary-rgb), 0.15);
+    border-left-color: var(--brand-primary);
 }
 
 [data-theme="dark"] .recordings-list-section .rec-item .rec-copy,
 [data-theme="dark"] .recordings-list-section .rec-item .rec-delete,
 [data-theme="dark"] .recordings-list-section .rec-item .rec-play {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .recordings-list-section .rec-item .rec-dur {
+    background: rgba(255, 255, 255, 0.06);
 }

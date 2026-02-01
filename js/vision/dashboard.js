@@ -1497,42 +1497,42 @@ async function playRecording(meetingId) {
                     <div class="recordings-compact-header">
                         <span>${recordings.length} RECORDING${recordings.length > 1 ? 'S' : ''}</span>
                         <button class="btn-delete-all-recordings" onclick="confirmDeleteAllRecordings('${meetingId}')" title="Delete all recordings">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                <line x1="10" y1="11" x2="10" y2="17"/>
-                                <line x1="14" y1="11" x2="14" y2="17"/>
                             </svg>
                             Delete All
                         </button>
                     </div>
-                    ${recordings.map((rec, index) => {
-                        const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
-                        const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
-                        const duration = rec.duration_seconds ? `${Math.floor(rec.duration_seconds / 60)}:${String(rec.duration_seconds % 60).padStart(2, '0')}` : '--:--';
-                        return `
-                        <div class="rec-item ${index === 0 ? 'playing' : ''}" data-recording-id="${rec.id}" onclick="loadRecording('${rec.recording_url}', ${index})">
-                            <span class="rec-num">${index + 1}</span>
-                            <div class="rec-details">
-                                <span class="rec-date">${date} ${time}</span>
-                                <span class="rec-dur">${duration}</span>
+                    <div class="recordings-scroll-container">
+                        ${recordings.map((rec, index) => {
+                            const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
+                            const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
+                            const duration = rec.duration_seconds ? `${Math.floor(rec.duration_seconds / 60)}:${String(rec.duration_seconds % 60).padStart(2, '0')}` : '--:--';
+                            return `
+                            <div class="rec-item ${index === 0 ? 'playing' : ''}" data-recording-id="${rec.id}" onclick="loadRecording('${rec.recording_url}', ${index})">
+                                <span class="rec-num">${index + 1}</span>
+                                <div class="rec-details">
+                                    <span class="rec-date">${date} ${time}</span>
+                                    <span class="rec-dur">${duration}</span>
+                                </div>
+                                <button class="rec-copy" onclick="event.stopPropagation(); copyRecordingUrl('${rec.recording_url}')" title="Copy URL">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                </button>
+                                <button class="rec-delete" onclick="event.stopPropagation(); confirmDeleteRecording('${rec.id}')" title="Delete recording">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                                <button class="rec-play" onclick="event.stopPropagation(); loadRecording('${rec.recording_url}', ${index})">▶</button>
                             </div>
-                            <button class="rec-copy" onclick="event.stopPropagation(); copyRecordingUrl('${rec.recording_url}')" title="Copy URL">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                </svg>
-                            </button>
-                            <button class="rec-delete" onclick="event.stopPropagation(); confirmDeleteRecording('${rec.id}')" title="Delete recording">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"/>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                </svg>
-                            </button>
-                            <button class="rec-play" onclick="event.stopPropagation(); loadRecording('${rec.recording_url}', ${index})">▶</button>
-                        </div>
-                    `;
-                    }).join('')}
+                        `;
+                        }).join('')}
+                    </div>
                 </div>
             </div>
         `;
