@@ -516,7 +516,7 @@ class TranscriptionService {
             language: 'auto',
             isFinal: true,
             timestamp: new Date().toISOString(),
-            synced: false
+            synced: 0  // Use 0/1 instead of false/true for IndexedDB compatibility
         };
 
         // Add to buffer
@@ -559,7 +559,7 @@ class TranscriptionService {
             const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
             const store = transaction.objectStore(this.STORE_NAME);
             const index = store.index('synced');
-            const request = index.getAll(IDBKeyRange.only(false));
+            const request = index.getAll(IDBKeyRange.only(0));  // 0 = not synced
 
             request.onsuccess = () => {
                 const results = request.result.filter(t => t.meetingId === this.meetingId);
@@ -583,7 +583,7 @@ class TranscriptionService {
             request.onsuccess = () => {
                 const record = request.result;
                 if (record) {
-                    record.synced = true;
+                    record.synced = 1;  // 1 = synced
                     store.put(record);
                 }
             };
