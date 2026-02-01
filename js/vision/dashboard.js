@@ -1472,14 +1472,14 @@ async function playRecording(meetingId) {
                             </svg>
                             Copy URL
                         </button>
-                        <a class="btn-download" href="${firstRecording.recording_url}" download title="Download recording">
+                        <button class="btn-download" onclick="downloadRecording('${firstRecording.recording_url}')" title="Download recording">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
                             Download
-                        </a>
+                        </button>
                     </div>
                 </div>
             `;
@@ -1563,7 +1563,7 @@ function loadRecording(url, index) {
             copyBtn.onclick = () => copyRecordingUrl(url);
         }
         if (downloadBtn) {
-            downloadBtn.href = url;
+            downloadBtn.onclick = () => downloadRecording(url);
         }
     }
 }
@@ -1589,6 +1589,69 @@ function copyRecordingUrl(url) {
         console.error('Failed to copy URL:', err);
         Toast.error('Failed to copy URL. Please copy manually: ' + url);
     });
+}
+
+async function downloadRecording(url) {
+    const btn = event?.target?.closest('button');
+    const originalHTML = btn?.innerHTML;
+
+    try {
+        // Show loading state
+        if (btn) {
+            btn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+                    <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/>
+                </svg>
+                Downloading...
+            `;
+            btn.disabled = true;
+        }
+
+        // Fetch the video as blob
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Download failed');
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        // Extract filename from URL or use default
+        const urlParts = url.split('/');
+        const filename = urlParts[urlParts.length - 1].split('?')[0] || 'recording.mp4';
+
+        // Create temporary link and click it
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up blob URL
+        window.URL.revokeObjectURL(blobUrl);
+
+        // Show success
+        if (btn) {
+            btn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Downloaded!
+            `;
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Download failed:', err);
+        Toast.error('Download failed. Opening in new tab instead.');
+        window.open(url, '_blank');
+
+        if (btn) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    }
 }
 
 function closeRecordingPlayer() {

@@ -763,6 +763,22 @@
     box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.3);
 }
 
+.recording-player-section .btn-download:disabled {
+    opacity: 0.8;
+    cursor: wait;
+    transform: none;
+}
+
+.recording-player-section .btn-download .spin,
+.recording-player-section .btn-copy-url .spin {
+    animation: recording-spin 1s linear infinite;
+}
+
+@keyframes recording-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Recordings List Bento Card */
 .recordings-list-section {
     padding: 0;
