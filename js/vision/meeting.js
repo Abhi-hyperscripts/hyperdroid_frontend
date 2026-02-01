@@ -10,6 +10,7 @@ let isAnyoneScreenSharing = false; // Track if anyone is sharing screen
 let chatWasVisibleBeforeScreenShare = false; // Track chat visibility before screen share
 let activeSpeakerManager = null; // Active speaker detection manager
 let audioResumed = false; // Track if we've already handled audio resume
+let transcriptionService = null; // Transcription service instance - auto-starts for all meetings
 
 // Helper function to return to dashboard - closes tab if opened from dashboard, otherwise redirects
 function returnToDashboard() {
@@ -425,6 +426,9 @@ async function initializeMeeting() {
 
         // Connect to SignalR chat (for both authenticated users and guests)
         await connectToSignalR(participantName);
+
+        // Initialize and start transcription automatically for all meetings
+        await initializeTranscription(participantName, user);
 
         // Check if recording is already in progress when joining
         if (tokenData.meeting && tokenData.meeting.is_recording) {
@@ -2628,6 +2632,9 @@ async function leaveMeeting() {
     });
     if (confirmed) {
         try {
+            // Stop transcription first (syncs remaining transcripts to server)
+            await stopTranscription();
+
             // Stop recording if active
             if (isRecording) {
                 await stopRecording();
@@ -2663,6 +2670,63 @@ async function leaveMeeting() {
             } else {
                 returnToDashboard();
             }
+        }
+    }
+}
+
+// Initialize and start transcription service
+async function initializeTranscription(participantName, user) {
+    // Check if TranscriptionService is available
+    if (typeof TranscriptionService === 'undefined') {
+        console.warn('[Transcription] TranscriptionService not loaded');
+        return;
+    }
+
+    try {
+        transcriptionService = new TranscriptionService();
+
+        const speakerId = user ? user.userId : `guest_${Date.now()}`;
+        const speakerEmail = user ? user.email : null;
+
+        const initResult = await transcriptionService.initialize({
+            meetingId: meetingId,
+            speakerId: speakerId,
+            speakerName: participantName,
+            speakerEmail: speakerEmail,
+            signalRConnection: signalRConnection,
+            onTranscript: (segment) => {
+                // Log transcripts to console (can add UI display later)
+                console.log(`[Transcript] ${segment.speakerName}: ${segment.text}`);
+            },
+            onStateChange: (state) => {
+                console.log('[Transcription] State changed:', state);
+            }
+        });
+
+        if (initResult.available) {
+            // Auto-start transcription
+            const started = transcriptionService.start();
+            if (started) {
+                console.log(`[Transcription] Started automatically using ${initResult.engine}`);
+            } else {
+                console.warn('[Transcription] Failed to start - STT not available in this browser');
+            }
+        } else {
+            console.warn('[Transcription] Not available in this browser');
+        }
+    } catch (error) {
+        console.error('[Transcription] Failed to initialize:', error);
+    }
+}
+
+// Stop transcription service
+async function stopTranscription() {
+    if (transcriptionService) {
+        try {
+            await transcriptionService.stop();
+            console.log('[Transcription] Stopped');
+        } catch (error) {
+            console.error('[Transcription] Error stopping:', error);
         }
     }
 }
