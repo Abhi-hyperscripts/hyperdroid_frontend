@@ -4,7 +4,7 @@
  * Architecture:
  * - Each participant transcribes ONLY their own mic locally
  * - Chrome/Edge: Use native Web Speech API (Google STT)
- * - Safari/Firefox: Fall back to Whisper tiny WASM
+ * - Safari/Firefox: Fall back to Whisper WASM via transformers.js
  * - Batches transcripts locally in IndexedDB
  * - Syncs to server every 2 minutes via SignalR
  * - Perfect speaker attribution (no diarization needed)
@@ -20,36 +20,41 @@ class TranscriptionService {
         this.speakerEmail = null;
         this.meetingId = null;
         this.recognition = null;
-        this.whisperWorker = null;
         this.useNativeSTT = false;
+        this.useWhisper = false;
         this.onTranscript = null;
         this.onStateChange = null;
+        this.onLoadProgress = null;
         this.restartTimeout = null;
+        this.signalRConnection = null;
+
+        // Whisper WASM
+        this.whisperPipeline = null;
+        this.whisperLoading = false;
+        this.whisperReady = false;
         this.audioContext = null;
         this.mediaStream = null;
-        this.signalRConnection = null;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.chunkIntervalMs = 10000; // 10 second chunks for Whisper
+        this.chunkTimer = null;
+        this.processingChunk = false;
 
         // Batching configuration
         this.transcriptBuffer = [];
         this.batchNumber = 0;
         this.syncIntervalMs = 120000;  // 2 minutes
         this.syncTimer = null;
-        this.timeDrift = 0;
 
         // IndexedDB
         this.db = null;
         this.DB_NAME = 'VisionTranscripts';
         this.DB_VERSION = 1;
         this.STORE_NAME = 'transcripts';
-
-        // Whisper WASM chunking
-        this.audioBuffer = [];
-        this.chunkIntervalMs = 15000;
-        this.chunkTimer = null;
     }
 
     /**
-     * Detect if native STT is available
+     * Detect if native STT is available (Chrome/Edge)
      */
     detectNativeSTT() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -59,10 +64,19 @@ class TranscriptionService {
             return false;
         }
 
+        // Check if it's actually working (Safari has the API but it doesn't work)
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+
+        if (isSafari || isFirefox) {
+            console.log('[Transcription] Safari/Firefox detected - will use Whisper WASM');
+            return false;
+        }
+
         try {
             const testRecognition = new SpeechRecognition();
             testRecognition.abort();
-            console.log('[Transcription] Native STT available');
+            console.log('[Transcription] Native STT available (Chrome/Edge)');
             return true;
         } catch (e) {
             console.log('[Transcription] Native STT detection failed:', e);
@@ -114,8 +128,8 @@ class TranscriptionService {
         this.meetingId = options.meetingId;
         this.onTranscript = options.onTranscript;
         this.onStateChange = options.onStateChange;
+        this.onLoadProgress = options.onLoadProgress;
         this.signalRConnection = options.signalRConnection;
-        this.mediaStream = options.mediaStream;
 
         // Initialize IndexedDB
         await this._initIndexedDB();
@@ -138,16 +152,300 @@ class TranscriptionService {
 
         if (this.useNativeSTT) {
             this._initNativeSTT();
+            console.log('[Transcription] Initialized with Native Web Speech API');
+            return {
+                engine: 'Native Web Speech API',
+                available: true
+            };
+        } else {
+            // Will use Whisper WASM
+            this.useWhisper = true;
+            console.log('[Transcription] Will use Whisper WASM (whisper-base multilingual)');
+            return {
+                engine: 'Whisper WASM',
+                available: true,
+                requiresLoading: true
+            };
         }
-        // Note: Whisper WASM initialization would go here for Safari/Firefox
-        // For now, we'll show a message that transcription is not available
+    }
 
-        console.log(`[Transcription] Initialized with ${this.useNativeSTT ? 'Native STT' : 'Whisper WASM (not implemented)'}`);
+    /**
+     * Load Whisper model from Hugging Face CDN via transformers.js
+     */
+    async _loadWhisperModel() {
+        if (this.whisperReady || this.whisperLoading) {
+            return this.whisperReady;
+        }
 
-        return {
-            engine: this.useNativeSTT ? 'Native Web Speech API' : 'Whisper WASM',
-            available: this.useNativeSTT  // Only native STT is available for now
+        this.whisperLoading = true;
+        console.log('[Transcription] Loading Whisper model...');
+
+        if (this.onStateChange) {
+            this.onStateChange({ loading: true, progress: 0, message: 'Loading transcription model...' });
+        }
+
+        try {
+            // Dynamically import transformers.js from CDN
+            const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+
+            // Create the automatic speech recognition pipeline
+            this.whisperPipeline = await pipeline(
+                'automatic-speech-recognition',
+                'Xenova/whisper-base',
+                {
+                    progress_callback: (progress) => {
+                        if (progress.status === 'progress' && progress.progress) {
+                            const percent = Math.round(progress.progress);
+                            console.log(`[Transcription] Loading model: ${percent}%`);
+                            if (this.onStateChange) {
+                                this.onStateChange({
+                                    loading: true,
+                                    progress: percent,
+                                    message: `Downloading transcription model... ${percent}%`
+                                });
+                            }
+                            if (this.onLoadProgress) {
+                                this.onLoadProgress(percent);
+                            }
+                        }
+                    }
+                }
+            );
+
+            this.whisperReady = true;
+            this.whisperLoading = false;
+            console.log('[Transcription] Whisper model loaded successfully');
+
+            if (this.onStateChange) {
+                this.onStateChange({ loading: false, ready: true, message: 'Transcription ready' });
+            }
+
+            return true;
+        } catch (error) {
+            this.whisperLoading = false;
+            console.error('[Transcription] Failed to load Whisper model:', error);
+
+            if (this.onStateChange) {
+                this.onStateChange({ loading: false, error: error.message });
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Initialize audio capture for Whisper
+     */
+    async _initWhisperAudio() {
+        try {
+            // Get microphone access
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 16000
+                }
+            });
+
+            // Create AudioContext for processing
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+
+            console.log('[Transcription] Audio capture initialized for Whisper');
+            return true;
+        } catch (error) {
+            console.error('[Transcription] Failed to initialize audio:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Start recording audio chunks for Whisper
+     */
+    _startWhisperRecording() {
+        if (!this.mediaStream) {
+            console.error('[Transcription] No media stream available');
+            return;
+        }
+
+        // Use MediaRecorder to capture audio chunks
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : 'audio/webm';
+
+        this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType });
+        this.audioChunks = [];
+
+        this.mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                this.audioChunks.push(event.data);
+            }
         };
+
+        this.mediaRecorder.onstop = async () => {
+            if (this.audioChunks.length > 0 && this.isRunning) {
+                await this._processWhisperChunk();
+            }
+        };
+
+        // Start recording
+        this.mediaRecorder.start();
+        console.log('[Transcription] Whisper recording started');
+
+        // Set up chunk timer - process every N seconds
+        this.chunkTimer = setInterval(() => {
+            if (this.mediaRecorder && this.mediaRecorder.state === 'recording' && !this.processingChunk) {
+                this.mediaRecorder.stop();
+                // Restart recording immediately
+                setTimeout(() => {
+                    if (this.isRunning && this.mediaRecorder) {
+                        this.audioChunks = [];
+                        this.mediaRecorder.start();
+                    }
+                }, 100);
+            }
+        }, this.chunkIntervalMs);
+    }
+
+    /**
+     * Process audio chunk with Whisper
+     */
+    async _processWhisperChunk() {
+        if (this.processingChunk || !this.whisperPipeline || this.audioChunks.length === 0) {
+            return;
+        }
+
+        this.processingChunk = true;
+        const chunkStartTime = Date.now();
+
+        try {
+            // Combine audio chunks into a single blob
+            const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+
+            // Convert to array buffer
+            const arrayBuffer = await audioBlob.arrayBuffer();
+
+            // Decode audio data
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+            // Get audio data as Float32Array (mono, 16kHz)
+            const audioData = this._getAudioData(audioBuffer);
+
+            if (audioData.length < 1600) { // Less than 0.1 seconds
+                console.log('[Transcription] Audio chunk too short, skipping');
+                this.processingChunk = false;
+                return;
+            }
+
+            // Run Whisper transcription
+            const result = await this.whisperPipeline(audioData, {
+                language: null, // Auto-detect language
+                task: 'transcribe',
+                chunk_length_s: 30,
+                stride_length_s: 5
+            });
+
+            if (result && result.text && result.text.trim()) {
+                const text = result.text.trim();
+
+                // Filter out common Whisper hallucinations
+                if (!this._isHallucination(text)) {
+                    this._handleTranscript(text, null, 'whisper');
+                } else {
+                    console.log('[Transcription] Filtered hallucination:', text);
+                }
+            }
+
+        } catch (error) {
+            console.error('[Transcription] Whisper processing error:', error);
+        } finally {
+            this.processingChunk = false;
+        }
+    }
+
+    /**
+     * Extract audio data from AudioBuffer as Float32Array
+     */
+    _getAudioData(audioBuffer) {
+        // Get mono channel (mix down if stereo)
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const length = audioBuffer.length;
+        const sampleRate = audioBuffer.sampleRate;
+
+        let audioData;
+
+        if (numberOfChannels === 1) {
+            audioData = audioBuffer.getChannelData(0);
+        } else {
+            // Mix down to mono
+            audioData = new Float32Array(length);
+            for (let i = 0; i < numberOfChannels; i++) {
+                const channelData = audioBuffer.getChannelData(i);
+                for (let j = 0; j < length; j++) {
+                    audioData[j] += channelData[j] / numberOfChannels;
+                }
+            }
+        }
+
+        // Resample to 16kHz if necessary
+        if (sampleRate !== 16000) {
+            const ratio = sampleRate / 16000;
+            const newLength = Math.round(length / ratio);
+            const resampled = new Float32Array(newLength);
+            for (let i = 0; i < newLength; i++) {
+                resampled[i] = audioData[Math.round(i * ratio)];
+            }
+            return resampled;
+        }
+
+        return audioData;
+    }
+
+    /**
+     * Check if text is a common Whisper hallucination
+     */
+    _isHallucination(text) {
+        const hallucinations = [
+            'thank you',
+            'thanks for watching',
+            'subscribe',
+            'like and subscribe',
+            'see you next time',
+            'goodbye',
+            'bye bye',
+            'music',
+            'applause',
+            'laughter',
+            '[music]',
+            '[applause]',
+            '...',
+            'you',
+            'the',
+            'uh',
+            'um'
+        ];
+
+        const lowerText = text.toLowerCase().trim();
+
+        // Check exact matches for short hallucinations
+        if (lowerText.length < 5) {
+            return hallucinations.includes(lowerText);
+        }
+
+        // Check if it's just repeated characters or words
+        if (/^(.)\1+$/.test(lowerText.replace(/\s/g, ''))) {
+            return true;
+        }
+
+        // Check common hallucination patterns
+        for (const h of hallucinations) {
+            if (lowerText === h || lowerText === h + '.') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -170,7 +468,7 @@ class TranscriptionService {
                 const confidence = result[0].confidence;
 
                 if (transcript && isFinal) {
-                    this._handleTranscript(transcript, confidence);
+                    this._handleTranscript(transcript, confidence, 'native');
                 }
             }
         };
@@ -199,10 +497,10 @@ class TranscriptionService {
     /**
      * Handle a transcript from STT
      */
-    _handleTranscript(text, confidence = null) {
+    _handleTranscript(text, confidence = null, source = 'native') {
         const now = Date.now();
         const endMs = now - this.meetingStartEpoch;
-        const startMs = endMs - 3000;  // Estimate 3 seconds for the utterance
+        const startMs = endMs - (source === 'whisper' ? this.chunkIntervalMs : 3000);
 
         const segment = {
             id: `${this.speakerId}_${now}`,
@@ -214,8 +512,8 @@ class TranscriptionService {
             startMs: Math.max(0, startMs),
             endMs: endMs,
             confidence: confidence,
-            source: 'native',
-            language: 'en',
+            source: source,
+            language: 'auto',
             isFinal: true,
             timestamp: new Date().toISOString(),
             synced: false
@@ -232,7 +530,7 @@ class TranscriptionService {
             this.onTranscript(segment);
         }
 
-        console.log('[Transcription]', segment.speakerName + ':', segment.text);
+        console.log(`[Transcription:${source}]`, segment.speakerName + ':', segment.text);
     }
 
     /**
@@ -345,6 +643,12 @@ class TranscriptionService {
         if (!text) return '';
 
         text = text.trim();
+
+        // Remove leading/trailing punctuation artifacts
+        text = text.replace(/^[,.\s]+|[,.\s]+$/g, '').trim();
+
+        if (!text) return '';
+
         text = text.charAt(0).toUpperCase() + text.slice(1);
 
         if (!/[.!?]$/.test(text)) {
@@ -380,19 +684,43 @@ class TranscriptionService {
     /**
      * Start transcription
      */
-    start() {
-        if (this.isRunning) return;
-        if (!this.useNativeSTT) {
-            console.warn('[Transcription] No STT engine available');
-            return false;
-        }
+    async start() {
+        if (this.isRunning) return true;
 
         this.isRunning = true;
         this.isEnabled = true;
 
         console.log('[Transcription] Starting...');
 
-        this._startNativeSTT();
+        if (this.useNativeSTT) {
+            this._startNativeSTT();
+        } else if (this.useWhisper) {
+            // Load Whisper model if not already loaded
+            const modelLoaded = await this._loadWhisperModel();
+            if (!modelLoaded) {
+                this.isRunning = false;
+                this.isEnabled = false;
+                console.error('[Transcription] Failed to load Whisper model');
+                return false;
+            }
+
+            // Initialize audio capture
+            const audioReady = await this._initWhisperAudio();
+            if (!audioReady) {
+                this.isRunning = false;
+                this.isEnabled = false;
+                console.error('[Transcription] Failed to initialize audio');
+                return false;
+            }
+
+            // Start recording
+            this._startWhisperRecording();
+        } else {
+            console.warn('[Transcription] No STT engine available');
+            this.isRunning = false;
+            this.isEnabled = false;
+            return false;
+        }
 
         // Start periodic sync
         this.syncTimer = setInterval(() => {
@@ -400,7 +728,7 @@ class TranscriptionService {
         }, this.syncIntervalMs);
 
         if (this.onStateChange) {
-            this.onStateChange({ enabled: true });
+            this.onStateChange({ enabled: true, engine: this.useNativeSTT ? 'native' : 'whisper' });
         }
 
         return true;
@@ -433,10 +761,35 @@ class TranscriptionService {
             clearInterval(this.syncTimer);
         }
 
+        if (this.chunkTimer) {
+            clearInterval(this.chunkTimer);
+        }
+
         if (this.useNativeSTT && this.recognition) {
             try {
                 this.recognition.stop();
             } catch (e) {}
+        }
+
+        if (this.useWhisper) {
+            // Stop media recorder
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                try {
+                    this.mediaRecorder.stop();
+                } catch (e) {}
+            }
+
+            // Stop media stream tracks
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Close audio context
+            if (this.audioContext && this.audioContext.state !== 'closed') {
+                try {
+                    await this.audioContext.close();
+                } catch (e) {}
+            }
         }
 
         // Final sync
@@ -453,12 +806,25 @@ class TranscriptionService {
      * Get STT engine info
      */
     getEngineInfo() {
+        if (this.useNativeSTT) {
+            return {
+                engine: 'Native Web Speech API',
+                available: true,
+                privacyNote: 'Audio processed by Google (Chrome) or Microsoft (Edge)'
+            };
+        } else if (this.useWhisper) {
+            return {
+                engine: 'Whisper WASM (whisper-base)',
+                available: true,
+                privacyNote: 'Audio processed locally in your browser - no data sent to external servers',
+                modelSize: '~145MB',
+                languages: 'Multilingual (99 languages)'
+            };
+        }
         return {
-            engine: this.useNativeSTT ? 'Native Web Speech API' : 'Not available',
-            available: this.useNativeSTT,
-            privacyNote: this.useNativeSTT
-                ? 'Audio processed by Google (Chrome) or Microsoft (Edge)'
-                : 'Transcription not available in this browser'
+            engine: 'None',
+            available: false,
+            privacyNote: 'Transcription not available'
         };
     }
 
@@ -466,7 +832,14 @@ class TranscriptionService {
      * Check if transcription is available
      */
     isAvailable() {
-        return this.useNativeSTT;
+        return this.useNativeSTT || this.useWhisper;
+    }
+
+    /**
+     * Check if Whisper model is loaded
+     */
+    isWhisperReady() {
+        return this.whisperReady;
     }
 
     /**
@@ -476,7 +849,9 @@ class TranscriptionService {
         return {
             isRunning: this.isRunning,
             isEnabled: this.isEnabled,
-            engine: this.useNativeSTT ? 'native' : 'none',
+            engine: this.useNativeSTT ? 'native' : (this.useWhisper ? 'whisper' : 'none'),
+            whisperReady: this.whisperReady,
+            whisperLoading: this.whisperLoading,
             bufferedCount: this.transcriptBuffer.length,
             batchNumber: this.batchNumber
         };

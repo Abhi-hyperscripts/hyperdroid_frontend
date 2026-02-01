@@ -2700,12 +2700,24 @@ async function initializeTranscription(participantName, user) {
             },
             onStateChange: (state) => {
                 console.log('[Transcription] State changed:', state);
+                // Handle loading state for Whisper model
+                if (state.loading) {
+                    showTranscriptionLoadingIndicator(state.progress, state.message);
+                } else if (state.ready || state.enabled) {
+                    hideTranscriptionLoadingIndicator();
+                } else if (state.error) {
+                    hideTranscriptionLoadingIndicator();
+                    console.error('[Transcription] Error:', state.error);
+                }
+            },
+            onLoadProgress: (percent) => {
+                updateTranscriptionLoadingProgress(percent);
             }
         });
 
         if (initResult.available) {
-            // Auto-start transcription
-            const started = transcriptionService.start();
+            // Auto-start transcription (async for Whisper)
+            const started = await transcriptionService.start();
             if (started) {
                 console.log(`[Transcription] Started automatically using ${initResult.engine}`);
             } else {
@@ -2716,6 +2728,96 @@ async function initializeTranscription(participantName, user) {
         }
     } catch (error) {
         console.error('[Transcription] Failed to initialize:', error);
+        hideTranscriptionLoadingIndicator();
+    }
+}
+
+// Show transcription loading indicator (for Whisper model download)
+function showTranscriptionLoadingIndicator(progress = 0, message = 'Loading transcription...') {
+    let indicator = document.getElementById('transcriptionLoadingIndicator');
+
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'transcriptionLoadingIndicator';
+        indicator.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary, rgba(0, 0, 0, 0.8));
+            color: var(--text-primary, white);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        `;
+        indicator.innerHTML = `
+            <div class="transcription-spinner" style="
+                width: 20px;
+                height: 20px;
+                border: 2px solid rgba(255,255,255,0.3);
+                border-top-color: var(--brand-primary, #6366f1);
+                border-radius: 50%;
+                animation: transcription-spin 1s linear infinite;
+            "></div>
+            <div>
+                <div id="transcriptionLoadingMessage">${message}</div>
+                <div id="transcriptionLoadingProgress" style="
+                    height: 4px;
+                    background: rgba(255,255,255,0.2);
+                    border-radius: 2px;
+                    margin-top: 6px;
+                    overflow: hidden;
+                ">
+                    <div id="transcriptionLoadingBar" style="
+                        width: ${progress}%;
+                        height: 100%;
+                        background: var(--brand-primary, #6366f1);
+                        transition: width 0.3s ease;
+                    "></div>
+                </div>
+            </div>
+        `;
+
+        // Add spinner animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes transcription-spin {
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(indicator);
+    } else {
+        document.getElementById('transcriptionLoadingMessage').textContent = message;
+        document.getElementById('transcriptionLoadingBar').style.width = `${progress}%`;
+    }
+}
+
+// Update transcription loading progress
+function updateTranscriptionLoadingProgress(percent) {
+    const bar = document.getElementById('transcriptionLoadingBar');
+    const message = document.getElementById('transcriptionLoadingMessage');
+    if (bar) {
+        bar.style.width = `${percent}%`;
+    }
+    if (message) {
+        message.textContent = `Downloading transcription model... ${percent}%`;
+    }
+}
+
+// Hide transcription loading indicator
+function hideTranscriptionLoadingIndicator() {
+    const indicator = document.getElementById('transcriptionLoadingIndicator');
+    if (indicator) {
+        indicator.style.opacity = '0';
+        indicator.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => indicator.remove(), 300);
     }
 }
 
