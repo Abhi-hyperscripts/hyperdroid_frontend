@@ -686,49 +686,18 @@
 /* Video Player Bento Card - Enhanced with glow */
 .recording-player-section {
     background: rgba(10, 15, 30, 0.95);
-    border: 2px solid transparent;
+    border: 2px solid rgba(var(--brand-primary-rgb), 0.5);
     border-radius: 16px;
     position: relative;
-    overflow: hidden;
-    background-clip: padding-box;
     box-shadow:
         0 0 20px rgba(var(--brand-primary-rgb), 0.3),
         0 0 40px rgba(var(--brand-primary-rgb), 0.15),
         0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Gradient border using pseudo-element */
-.recording-player-section::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.7),
-        rgba(139, 92, 246, 0.5),
-        rgba(var(--brand-primary-rgb), 0.4),
-        rgba(99, 102, 241, 0.3));
-    border-radius: 18px;
-    z-index: -1;
-}
-
 /* Glow animation on hover */
 .recording-player-section:hover {
-    box-shadow:
-        0 0 30px rgba(var(--brand-primary-rgb), 0.4),
-        0 0 60px rgba(var(--brand-primary-rgb), 0.2),
-        0 4px 32px rgba(0, 0, 0, 0.25);
-}
-
-.recording-player-section:hover::before {
-    background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.85),
-        rgba(139, 92, 246, 0.65),
-        rgba(var(--brand-primary-rgb), 0.5),
-        rgba(99, 102, 241, 0.4));
-}
-
-/* Glow animation on hover */
-.recording-player-section:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.7);
     box-shadow:
         0 0 30px rgba(var(--brand-primary-rgb), 0.4),
         0 0 60px rgba(var(--brand-primary-rgb), 0.2),
@@ -741,15 +710,17 @@
     background: #000;
     display: block;
     object-fit: contain;
+    border-radius: 14px 14px 0 0;
 }
 
 .recording-player-section .recording-actions {
-    padding: 10px 12px;
+    padding: 12px 14px;
     background: rgba(0, 0, 0, 0.3);
     display: flex;
     gap: 10px;
     justify-content: center;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 14px 14px;
 }
 
 .recording-player-section .btn-copy-url,
@@ -1032,33 +1003,19 @@
 /* Dark theme enhancements - Enhanced glassy effects */
 [data-theme="dark"] .recording-player-section {
     background: rgba(10, 15, 30, 0.97);
+    border-color: rgba(var(--brand-primary-rgb), 0.6);
     box-shadow:
         0 0 25px rgba(var(--brand-primary-rgb), 0.4),
         0 0 50px rgba(var(--brand-primary-rgb), 0.2),
         0 4px 32px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .recording-player-section::before {
-    background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.8),
-        rgba(139, 92, 246, 0.6),
-        rgba(var(--brand-primary-rgb), 0.5),
-        rgba(99, 102, 241, 0.4));
-}
-
 [data-theme="dark"] .recording-player-section:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.8);
     box-shadow:
         0 0 35px rgba(var(--brand-primary-rgb), 0.5),
         0 0 70px rgba(var(--brand-primary-rgb), 0.25),
         0 4px 40px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .recording-player-section:hover::before {
-    background: linear-gradient(135deg,
-        rgba(var(--brand-primary-rgb), 0.95),
-        rgba(139, 92, 246, 0.75),
-        rgba(var(--brand-primary-rgb), 0.6),
-        rgba(99, 102, 241, 0.5));
 }
 
 [data-theme="dark"] .recordings-list-section {
