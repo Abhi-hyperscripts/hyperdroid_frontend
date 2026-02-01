@@ -482,32 +482,46 @@ const Confirm = (function() {
             }
 
             .confirm-modal {
-                background: var(--bg-card, #1e293b) !important;
+                background: rgba(15, 23, 42, 0.6) !important;
                 border-radius: 16px !important;
                 max-width: 380px;
                 width: 90%;
                 transform: scale(0.95);
                 transition: transform 200ms ease, box-shadow 200ms ease;
                 overflow: hidden;
-                border: 2px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
                 box-shadow:
-                    0 0 30px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
-                    0 0 60px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
+                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+                    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(24px) saturate(150%);
+                -webkit-backdrop-filter: blur(24px) saturate(150%);
+            }
+
+            /* Light theme adjustments */
+            [data-theme="light"] .confirm-modal {
+                background: rgba(255, 255, 255, 0.7) !important;
+                border: 1px solid rgba(0, 0, 0, 0.06) !important;
+                box-shadow:
+                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+                    0 25px 50px -12px rgba(0, 0, 0, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
             }
 
             .confirm-overlay[style*="opacity: 1"] .confirm-modal {
                 box-shadow:
-                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.35),
-                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+                    0 0 50px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.35),
+                    0 0 100px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
             }
 
             .confirm-content {
                 padding: 20px 20px 16px 20px;
                 position: relative;
+                background: transparent;
             }
 
             /* Subtle gradient glow at top */
@@ -517,8 +531,8 @@ const Confirm = (function() {
                 top: 0;
                 left: 0;
                 right: 0;
-                height: 60px;
-                background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%, transparent 100%);
+                height: 80px;
+                background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
                 pointer-events: none;
                 border-radius: 14px 14px 0 0;
             }
@@ -584,9 +598,14 @@ const Confirm = (function() {
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
-                padding: 12px 20px;
-                background: var(--bg-secondary, var(--gray-50, #f9fafb));
-                border-top: 1px solid var(--border-color-light, rgba(255,255,255,0.1));
+                padding: 14px 20px;
+                background: rgba(0, 0, 0, 0.15);
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+            }
+
+            [data-theme="light"] .confirm-actions {
+                background: rgba(0, 0, 0, 0.03);
+                border-top: 1px solid rgba(0, 0, 0, 0.06);
             }
 
             .confirm-btn {
