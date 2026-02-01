@@ -689,6 +689,7 @@
     border: 2px solid rgba(var(--brand-primary-rgb), 0.5);
     border-radius: 16px;
     position: relative;
+    overflow: visible !important;
     box-shadow:
         0 0 20px rgba(var(--brand-primary-rgb), 0.3),
         0 0 40px rgba(var(--brand-primary-rgb), 0.15),
