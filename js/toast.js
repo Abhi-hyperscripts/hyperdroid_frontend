@@ -487,35 +487,36 @@ const Confirm = (function() {
                 max-width: 380px;
                 width: 90%;
                 transform: scale(0.95);
-                transition: transform 200ms ease, box-shadow 200ms ease;
+                transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
                 overflow: hidden;
                 border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                box-shadow:
-                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
-                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.4),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
                 backdrop-filter: blur(24px) saturate(150%);
                 -webkit-backdrop-filter: blur(24px) saturate(150%);
+            }
+
+            /* Glow effect on hover only */
+            .confirm-modal:hover {
+                border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+                box-shadow:
+                    0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+                    0 8px 24px rgba(0, 0, 0, 0.2) !important;
             }
 
             /* Light theme adjustments */
             [data-theme="light"] .confirm-modal {
                 background: rgba(255, 255, 255, 0.7) !important;
                 border: 1px solid rgba(0, 0, 0, 0.06) !important;
-                box-shadow:
-                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
-                    0 0 80px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.1),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
             }
 
-            .confirm-overlay[style*="opacity: 1"] .confirm-modal {
+            [data-theme="light"] .confirm-modal:hover {
+                border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
                 box-shadow:
-                    0 0 50px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.35),
-                    0 0 100px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.4),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                    0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                    0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+                    0 8px 24px rgba(0, 0, 0, 0.08) !important;
             }
 
             .confirm-content {
