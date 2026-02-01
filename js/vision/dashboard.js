@@ -1617,17 +1617,16 @@ document.addEventListener('keydown', function(e) {
 });
 
 async function confirmDeleteRecording(recordingId) {
-    const confirmed = await Confirm.show({
+    await Confirm.show({
         title: 'Delete Recording',
         message: 'Are you sure you want to delete this recording? This action cannot be undone.',
         type: 'danger',
         confirmText: 'Delete',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        onConfirm: async () => {
+            await deleteRecording(recordingId);
+        }
     });
-
-    if (confirmed) {
-        await deleteRecording(recordingId);
-    }
 }
 
 async function deleteRecording(recordingId) {
@@ -1657,17 +1656,16 @@ async function deleteRecording(recordingId) {
 }
 
 async function confirmDeleteAllRecordings(meetingId) {
-    const confirmed = await Confirm.show({
+    await Confirm.show({
         title: 'Delete All Recordings',
         message: 'Are you sure you want to delete ALL recordings for this meeting? This action cannot be undone.',
         type: 'danger',
         confirmText: 'Delete All',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        onConfirm: async () => {
+            await deleteAllRecordings(meetingId);
+        }
     });
-
-    if (confirmed) {
-        await deleteAllRecordings(meetingId);
-    }
 }
 
 async function deleteAllRecordings(meetingId) {

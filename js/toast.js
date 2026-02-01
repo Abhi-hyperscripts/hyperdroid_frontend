@@ -672,6 +672,39 @@ const Confirm = (function() {
             .confirm-btn-ok.success:hover {
                 box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
             }
+
+            /* Loading spinner */
+            .confirm-btn-ok.loading {
+                pointer-events: none;
+                opacity: 0.8;
+            }
+
+            .confirm-btn-ok .btn-spinner {
+                display: none;
+                width: 14px;
+                height: 14px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-top-color: white;
+                border-radius: 50%;
+                animation: confirm-spin 0.8s linear infinite;
+            }
+
+            .confirm-btn-ok.loading .btn-spinner {
+                display: inline-block;
+            }
+
+            .confirm-btn-ok.loading .btn-text {
+                display: none;
+            }
+
+            @keyframes confirm-spin {
+                to { transform: rotate(360deg); }
+            }
+
+            .confirm-btn-cancel:disabled {
+                opacity: 0.5;
+                pointer-events: none;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -722,7 +755,9 @@ const Confirm = (function() {
             type = 'info',
             confirmText = 'Confirm',
             cancelText = 'Cancel',
-            showCancel = true
+            showCancel = true,
+            onConfirm = null,  // Async function to run on confirm
+            loadingText = 'Processing...'
         } = options;
 
         const icon = ICONS[type] || ICONS.info;
@@ -755,7 +790,10 @@ const Confirm = (function() {
                 </div>
                 <div class="confirm-actions">
                     ${showCancel ? `<button class="confirm-btn confirm-btn-cancel">${escapeHtml(cancelText)}</button>` : ''}
-                    <button class="confirm-btn confirm-btn-ok ${type}">${escapeHtml(confirmText)}</button>
+                    <button class="confirm-btn confirm-btn-ok ${type}">
+                        <span class="btn-text">${escapeHtml(confirmText)}</span>
+                        <span class="btn-spinner"></span>
+                    </button>
                 </div>
             `;
 
@@ -786,11 +824,42 @@ const Confirm = (function() {
                 }, CONFIG.animationDuration);
             }
 
+            // Set loading state
+            function setLoading(loading) {
+                if (loading) {
+                    okBtn.classList.add('loading');
+                    if (cancelBtn) cancelBtn.disabled = true;
+                } else {
+                    okBtn.classList.remove('loading');
+                    if (cancelBtn) cancelBtn.disabled = false;
+                }
+            }
+
             // Event handlers
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', () => close(false));
             }
-            okBtn.addEventListener('click', () => close(true));
+
+            okBtn.addEventListener('click', async () => {
+                if (onConfirm) {
+                    // If onConfirm callback provided, run it with loading state
+                    setLoading(true);
+                    try {
+                        await onConfirm();
+                        close(true);
+                    } catch (error) {
+                        setLoading(false);
+                        console.error('Confirm action failed:', error);
+                        // Optionally show error toast
+                        if (typeof Toast !== 'undefined') {
+                            Toast.error(error.message || 'Action failed');
+                        }
+                    }
+                } else {
+                    // Default behavior: just close and resolve
+                    close(true);
+                }
+            });
 
             // Close on overlay click
             overlay.addEventListener('click', (e) => {
