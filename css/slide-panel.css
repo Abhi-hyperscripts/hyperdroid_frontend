@@ -712,11 +712,12 @@
 }
 
 .recording-player-section .recording-actions {
-    padding: 10px 12px;
+    padding: 8px 12px;
     background: var(--bg-secondary);
     display: flex;
     gap: 8px;
     justify-content: center;
+    align-items: center;
     border-top: 1px solid var(--border-color-light);
     border-radius: 0 0 14px 14px;
 }
