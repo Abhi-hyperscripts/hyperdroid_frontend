@@ -467,29 +467,30 @@ const Confirm = (function() {
         const style = document.createElement('style');
         style.textContent = `
             .confirm-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: var(--overlay-dark);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 999999999;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                background: var(--overlay-dark, rgba(0, 0, 0, 0.5)) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 2147483647 !important;
                 opacity: 0;
                 transition: opacity 200ms ease;
             }
 
             .confirm-modal {
-                background: var(--bg-card);
-                border-radius: var(--border-radius-lg);
-                box-shadow: var(--shadow-xl);
+                background: var(--bg-card, #1e293b) !important;
+                border-radius: var(--border-radius-lg, 12px) !important;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
                 max-width: 380px;
                 width: 90%;
                 transform: scale(0.95);
                 transition: transform 200ms ease;
                 overflow: hidden;
+                border: 1px solid var(--border-color-light, rgba(255,255,255,0.1)) !important;
             }
 
             .confirm-content {
@@ -558,8 +559,8 @@ const Confirm = (function() {
                 justify-content: flex-end;
                 gap: 10px;
                 padding: 12px 20px;
-                background: var(--gray-50);
-                border-top: 1px solid var(--border-color);
+                background: var(--bg-secondary, var(--gray-50, #f9fafb));
+                border-top: 1px solid var(--border-color-light, rgba(255,255,255,0.1));
             }
 
             .confirm-btn {
