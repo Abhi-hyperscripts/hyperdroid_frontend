@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS for Startups | Simple Payroll & HR Software | HyperDroid</title>
+    <meta name="description" content="HRMS built for startups. Automated payroll, leave tracking, attendance, and compliance without enterprise complexity. Stop using spreadsheets. Start scaling your team.">
+
+    <meta name="keywords" content="hrms for startups, startup hr software, small business payroll, startup payroll software, hr software for small teams, affordable hrms, startup employee management, seed stage hr, series a hr software, payroll automation startups">
+    <meta name="author" content="HyperDroid">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://hyperdroid.io/pages/use-cases/startups.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HyperDroid">
+    <meta property="og:url" content="https://hyperdroid.io/pages/use-cases/startups.html">
+    <meta property="og:title" content="HRMS Built for Startups - Not Enterprises">
+    <meta property:description" content="Payroll, attendance, leaves. No 8-month implementation. No $500K hidden fees.">
+    <meta property="og:image" content="https://hyperdroid.io/assets/og-startups-hrms.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HRMS for Startups - HyperDroid">
+    <meta name="twitter:description" content="Stop using spreadsheets for HR. Automated payroll, leave tracking, compliance.">
+
+    <meta name="theme-color" content="#050810">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "HRMS for Startups",
+        "description": "Human resource management system designed specifically for startups and small businesses.",
+        "url": "https://hyperdroid.io/pages/use-cases/startups.html",
+        "mainEntity": {
+            "@type": "SoftwareApplication",
+            "name": "HyperDroid HRMS",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "offers": {
+                "@type": "Offer",
+                "price": "12",
+                "priceCurrency": "USD"
+            }
+        }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(16, 185, 129, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(139, 92, 246, 0.1), transparent); }
+        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; position: relative; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
+        .startup-stage-visual { display: flex; flex-direction: column; gap: 16px; }
+        .stage-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; transition: all 0.3s ease; }
+        .stage-item.active { border-color: #34d399; background: rgba(16, 185, 129, 0.05); }
+        .stage-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .stage-icon.seed { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .stage-icon.series-a { background: linear-gradient(135deg, #10b981, #34d399); }
+        .stage-icon.scale { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .stage-content { flex: 1; }
+        .stage-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+        .stage-range { font-size: 12px; color: var(--text-tertiary); }
+        .stage-check { width: 24px; height: 24px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; }
+        .stage-check svg { width: 14px; height: 14px; color: #fff; }
+
+        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
+        .pain-points-content { max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
+        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .pain-icon svg { width: 24px; height: 24px; }
+        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
+        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
+
+        .enterprise-vs { padding: 80px 60px; }
+        .enterprise-vs-content { max-width: 1000px; margin: 0 auto; }
+        .comparison-table { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; overflow: hidden; }
+        .comparison-header { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg-tertiary); padding: 20px 24px; font-weight: 700; font-size: 14px; }
+        .comparison-header span:first-child { color: var(--text-tertiary); }
+        .comparison-header span:nth-child(2) { color: #ef4444; text-align: center; }
+        .comparison-header span:nth-child(3) { color: #10b981; text-align: center; }
+        .comparison-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 16px 24px; border-top: 1px solid var(--border-secondary); }
+        .comparison-row span { font-size: 14px; color: var(--text-secondary); }
+        .comparison-row span:first-child { color: var(--text-primary); font-weight: 500; }
+        .comparison-row span:nth-child(2), .comparison-row span:nth-child(3) { text-align: center; }
+        .comparison-row .bad { color: #ef4444; }
+        .comparison-row .good { color: #10b981; }
+
+        .solutions { padding: 80px 60px; background: var(--bg-secondary); }
+        .solutions-content { max-width: 1200px; margin: 0 auto; }
+        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .solution-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .icon-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .solution-card ul { list-style: none; padding: 0; margin: 0; }
+        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .solution-card ul li:first-child { border-top: none; }
+        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
+
+        .growth-stages { padding: 80px 60px; }
+        .growth-content { max-width: 1200px; margin: 0 auto; }
+        .stages-timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 40px; }
+        .stage-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; position: relative; }
+        .stage-card::before { content: ''; position: absolute; top: 50%; right: -24px; width: 24px; height: 2px; background: var(--border-primary); }
+        .stage-card:last-child::before { display: none; }
+        .stage-number { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+        .stage-card h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .stage-card .team-size { font-size: 13px; color: #10b981; font-weight: 600; margin-bottom: 12px; }
+        .stage-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+        .stats-banner { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(139, 92, 246, 0.05)); padding: 60px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
+        .stat-item { }
+        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+
+        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16, 185, 129, 0.1), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .usecase-hero-content { grid-template-columns: 1fr; }
+            .pain-grid { grid-template-columns: 1fr; }
+            .solutions-grid { grid-template-columns: 1fr; }
+            .stages-timeline { grid-template-columns: repeat(2, 1fr); }
+            .stage-card::before { display: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .comparison-header, .comparison-row { grid-template-columns: 2fr 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .usecase-hero { padding: 100px 20px 60px; }
+            .pain-points, .solutions, .enterprise-vs, .growth-stages, .usecase-cta { padding: 60px 20px; }
+            .stages-timeline { grid-template-columns: 1fr; }
+            .hero-stats { gap: 20px; }
+            .cta-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <nav class="landing-nav">
+        <a href="../../index.html">
+            <img src="../../assets/brand_logo.png" alt="HyperDroid" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="../vision.html" class="nav-link">Video</a>
+            <a href="../chat.html" class="nav-link">Chat</a>
+            <a href="../drive.html" class="nav-link">Drive</a>
+            <a href="../hrms.html" class="nav-link">HRMS</a>
+            <a href="../activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="../login.html" class="btn-secondary">Sign In</a>
+            <a href="../register.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <section class="usecase-hero">
+        <div class="usecase-hero-content">
+            <div class="usecase-hero-text">
+                <div class="usecase-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    For Startups
+                </div>
+                <h1>HRMS That Grows <span class="highlight">With You</span></h1>
+                <p>51% of small businesses still use spreadsheets for payroll. Enterprise HRMS costs $500K+ and takes 8 months to deploy. There's a better way.</p>
+                <div class="cta-buttons">
+                    <a href="../register.html" class="btn-primary">Start Free Trial</a>
+                    <a href="../hrms.html" class="btn-secondary">Explore HRMS</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">84%</div>
+                        <div class="hero-stat-label">Time Saved on Payroll</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">$0</div>
+                        <div class="hero-stat-label">Implementation Fee</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">1 Day</div>
+                        <div class="hero-stat-label">Setup Time</div>
+                    </div>
+                </div>
+            </div>
+            <div class="usecase-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="startup-stage-visual">
+                        <div class="stage-item">
+                            <div class="stage-icon seed">S</div>
+                            <div class="stage-content">
+                                <div class="stage-name">Pre-Seed / Seed</div>
+                                <div class="stage-range">1-30 employees</div>
+                            </div>
+                            <div class="stage-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="stage-item active">
+                            <div class="stage-icon series-a">A</div>
+                            <div class="stage-content">
+                                <div class="stage-name">Series A</div>
+                                <div class="stage-range">30-80 employees</div>
+                            </div>
+                            <div class="stage-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="stage-item">
+                            <div class="stage-icon scale">B+</div>
+                            <div class="stage-content">
+                                <div class="stage-name">Scale-Up</div>
+                                <div class="stage-range">80-500+ employees</div>
+                            </div>
+                            <div class="stage-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pain-points">
+        <div class="pain-points-content">
+            <div class="section-header">
+                <h2 class="section-title">Startup HR Pain Points We Solve</h2>
+                <p class="section-desc">Small businesses spend 80% more per employee on compliance than large companies. We fix that.</p>
+            </div>
+            <div class="pain-grid">
+                <div class="pain-card">
+                    <div class="pain-icon red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </div>
+                    <h4>Spreadsheet Hell</h4>
+                    <p>Managing payroll in Excel leads to 1-8% error rate. Each error costs $291 to fix.</p>
+                    <div class="pain-stat">51%</div>
+                    <div class="pain-stat-label">still use spreadsheets</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
+                    <h4>Compliance Fines</h4>
+                    <p>30% of employers have misclassified at least one employee. Fines can reach $55,000.</p>
+                    <div class="pain-stat">$10K</div>
+                    <div class="pain-stat-label">avg annual loss</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon yellow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <h4>Time Drain</h4>
+                    <p>Recruiters spend 45% of time on admin. HR teams lose 14 hours per week to manual processes.</p>
+                    <div class="pain-stat">6+ hrs</div>
+                    <div class="pain-stat-label">monthly on payroll alone</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="enterprise-vs">
+        <div class="enterprise-vs-content">
+            <div class="section-header">
+                <h2 class="section-title">Enterprise HRMS vs. HyperDroid</h2>
+                <p class="section-desc">Why Oracle, Workday, and SAP don't work for startups.</p>
+            </div>
+            <div class="comparison-table">
+                <div class="comparison-header">
+                    <span>Factor</span>
+                    <span>Enterprise HRMS</span>
+                    <span>HyperDroid</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Implementation Time</span>
+                    <span class="bad">8-12 months</span>
+                    <span class="good">1 day</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Hidden Implementation Costs</span>
+                    <span class="bad">$500K+</span>
+                    <span class="good">$0</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Minimum Company Size</span>
+                    <span class="bad">500+ employees</span>
+                    <span class="good">1 employee</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Technical Expertise Required</span>
+                    <span class="bad">Dedicated IT team</span>
+                    <span class="good">None</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Feature Bloat</span>
+                    <span class="bad">70% unused features</span>
+                    <span class="good">What you need</span>
+                </div>
+                <div class="comparison-row">
+                    <span>Contract Length</span>
+                    <span class="bad">Multi-year lock-in</span>
+                    <span class="good">Month-to-month</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="solutions">
+        <div class="solutions-content">
+            <div class="section-header">
+                <h2 class="section-title">Everything Startups Actually Need</h2>
+                <p class="section-desc">The basics that work, without the enterprise complexity.</p>
+            </div>
+            <div class="solutions-grid">
+                <div class="solution-card">
+                    <div class="solution-icon icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <h3>Automated Payroll</h3>
+                    <p>Cut payroll processing from 15 hours to 2 hours. Auto-calculate taxes, deductions, and compliance.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Multi-country support</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Auto statutory compliance</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Detailed payslips</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <h3>Simple Onboarding</h3>
+                    <p>58% of companies admit onboarding is just paperwork. We automate the 41-54 admin tasks new hires face.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Document collection</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Digital signatures</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> 16% better retention</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-cyan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <h3>Leave & Attendance</h3>
+                    <p>No more WhatsApp leave requests or spreadsheet attendance. Self-service for employees, approval workflows for managers.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Geofenced check-in</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Leave balance tracking</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Manager approvals</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    </div>
+                    <h3>Compliance Built-In</h3>
+                    <p>53% of companies incur payroll penalties. We auto-calculate PF, ESI, PT, TDS based on your country's rules.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> India, USA, UK, UAE</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Auto tax calculations</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Audit-ready reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="growth-stages">
+        <div class="growth-content">
+            <div class="section-header">
+                <h2 class="section-title">Grows With Every Stage</h2>
+                <p class="section-desc">From your first hire to your 500th. Same platform, no migration needed.</p>
+            </div>
+            <div class="stages-timeline">
+                <div class="stage-card">
+                    <div class="stage-number">1</div>
+                    <h4>Pre-Seed</h4>
+                    <div class="team-size">1-10 employees</div>
+                    <p>Founders handle HR. Get the basics right from day one instead of fixing it later.</p>
+                </div>
+                <div class="stage-card">
+                    <div class="stage-number">2</div>
+                    <h4>Seed Stage</h4>
+                    <div class="team-size">10-30 employees</div>
+                    <p>Systematic hiring begins. Set up onboarding, payroll, and attendance before chaos sets in.</p>
+                </div>
+                <div class="stage-card">
+                    <div class="stage-number">3</div>
+                    <h4>Series A</h4>
+                    <div class="team-size">30-80 employees</div>
+                    <p>Hire your first HR person at employee 30, not 50. They'll thank you for the system already in place.</p>
+                </div>
+                <div class="stage-card">
+                    <div class="stage-number">4</div>
+                    <h4>Scale-Up</h4>
+                    <div class="team-size">80-500+ employees</div>
+                    <p>Multi-office, multi-country expansion. Same platform scales with you.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-banner">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">84%</div>
+                <div class="stat-label">Less time on payroll</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">16%</div>
+                <div class="stat-label">Better retention</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">$10K</div>
+                <div class="stat-label">Compliance savings/year</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">14 hrs</div>
+                <div class="stat-label">Saved weekly</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="usecase-cta">
+        <h2 class="cta-title">Stop Using Spreadsheets</h2>
+        <p class="cta-desc">Join startups who've automated HR without enterprise complexity or enterprise prices.</p>
+        <div class="cta-buttons">
+            <a href="../register.html" class="btn-primary">Start Free Trial</a>
+            <a href="../activate.html" class="btn-secondary">View Pricing</a>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <img src="../../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="../vision.html" class="footer-link">Vision</a>
+            <a href="../chat.html" class="footer-link">Chat</a>
+            <a href="../drive.html" class="footer-link">Drive</a>
+            <a href="../hrms.html" class="footer-link">HRMS</a>
+            <a href="../login.html" class="footer-link">Sign In</a>
+            <a href="../terms.html" class="footer-link">Terms</a>
+            <a href="../privacy.html" class="footer-link">Privacy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+</body>
+</html>

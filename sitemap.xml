@@ -295,4 +295,87 @@
     <priority>0.3</priority>
   </url>
 
+  <!-- ==================== COMPARISON PAGES (SEO) ==================== -->
+
+  <url>
+    <loc>https://hyperdroid.io/pages/compare/hyperdroid-vs-zoom.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/compare/hyperdroid-vs-slack.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/compare/hyperdroid-vs-teams.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/compare/hyperdroid-vs-google-workspace.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== FEATURE PAGES (SEO) ==================== -->
+
+  <url>
+    <loc>https://hyperdroid.io/pages/features/video-conferencing.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/features/team-chat.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/features/cloud-storage.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/features/hrms-payroll.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== USE CASE PAGES (SEO) ==================== -->
+
+  <url>
+    <loc>https://hyperdroid.io/pages/use-cases/remote-teams.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/use-cases/startups.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hyperdroid.io/pages/use-cases/agencies.html</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
 </urlset>

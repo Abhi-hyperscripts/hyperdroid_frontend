@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conferencing for Remote Teams | Async-Friendly Meetings | HyperDroid</title>
+    <meta name="description" content="Built for distributed teams. HD video meetings with recording for async viewing, unlimited duration, screen sharing, and integrated chat. No timezone barriers. 52% of global workforce works remotely.">
+
+    <meta name="keywords" content="remote team video conferencing, distributed team meetings, async video meetings, remote work collaboration, timezone-friendly meetings, remote team communication, video calls for remote teams, work from home video conferencing, hybrid team meetings, remote workforce tools">
+    <meta name="author" content="HyperDroid">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://hyperdroid.io/pages/use-cases/remote-teams.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HyperDroid">
+    <meta property="og:url" content="https://hyperdroid.io/pages/use-cases/remote-teams.html">
+    <meta property="og:title" content="Video Conferencing Built for Remote Teams">
+    <meta property="og:description" content="HD meetings with recording, unlimited duration, integrated chat. No timezone barriers.">
+    <meta property="og:image" content="https://hyperdroid.io/assets/og-remote-teams.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Video Conferencing for Remote Teams - HyperDroid">
+    <meta name="twitter:description" content="Built for distributed teams. Async-friendly with recording, no time limits.">
+
+    <meta name="theme-color" content="#050810">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Video Conferencing for Remote Teams",
+        "description": "Enterprise video conferencing built specifically for distributed and remote teams with async-friendly features.",
+        "url": "https://hyperdroid.io/pages/use-cases/remote-teams.html",
+        "mainEntity": {
+            "@type": "SoftwareApplication",
+            "name": "HyperDroid",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "offers": {
+                "@type": "Offer",
+                "price": "12",
+                "priceCurrency": "USD"
+            }
+        }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(6, 182, 212, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(139, 92, 246, 0.1), transparent); }
+        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #06b6d4, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #22d3ee; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; position: relative; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .timezone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 20px; width: 100%; }
+        .timezone-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 12px; text-align: center; }
+        .timezone-card.active { border-color: #22d3ee; background: rgba(6, 182, 212, 0.1); }
+        .timezone-time { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .timezone-city { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+        .timezone-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #8b5cf6); margin: 8px auto 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; font-weight: 600; }
+
+        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
+        .pain-points-content { max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
+        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .pain-icon svg { width: 24px; height: 24px; }
+        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
+        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
+
+        .solutions { padding: 80px 60px; }
+        .solutions-content { max-width: 1200px; margin: 0 auto; }
+        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .solution-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .solution-card ul { list-style: none; padding: 0; margin: 0; }
+        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .solution-card ul li:first-child { border-top: none; }
+        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
+
+        .async-highlight { background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(139, 92, 246, 0.05)); padding: 80px 60px; }
+        .async-content { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .async-text h2 { font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .async-text p { font-size: 16px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
+        .async-benefits { display: flex; flex-direction: column; gap: 12px; }
+        .async-benefit { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 10px; }
+        .async-benefit svg { width: 20px; height: 20px; color: #22d3ee; flex-shrink: 0; }
+        .async-benefit span { font-size: 14px; color: var(--text-primary); }
+        .async-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; }
+        .recording-timeline { display: flex; flex-direction: column; gap: 16px; }
+        .timeline-item { display: flex; align-items: center; gap: 16px; }
+        .timeline-time { font-size: 12px; color: var(--text-tertiary); width: 60px; flex-shrink: 0; }
+        .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22d3ee; flex-shrink: 0; }
+        .timeline-content { flex: 1; padding: 12px 16px; background: var(--bg-tertiary); border-radius: 8px; }
+        .timeline-content strong { font-size: 13px; color: var(--text-primary); display: block; }
+        .timeline-content span { font-size: 12px; color: var(--text-tertiary); }
+
+        .stats-banner { background: var(--bg-secondary); padding: 60px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
+        .stat-item { }
+        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #06b6d4, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+
+        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(6, 182, 212, 0.1), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .usecase-hero-content { grid-template-columns: 1fr; }
+            .pain-grid { grid-template-columns: 1fr; }
+            .solutions-grid { grid-template-columns: 1fr; }
+            .async-content { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .timezone-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .usecase-hero { padding: 100px 20px 60px; }
+            .pain-points, .solutions, .async-highlight, .usecase-cta { padding: 60px 20px; }
+            .hero-stats { gap: 20px; }
+            .cta-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <nav class="landing-nav">
+        <a href="../../index.html">
+            <img src="../../assets/brand_logo.png" alt="HyperDroid" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="../vision.html" class="nav-link">Video</a>
+            <a href="../chat.html" class="nav-link">Chat</a>
+            <a href="../drive.html" class="nav-link">Drive</a>
+            <a href="../hrms.html" class="nav-link">HRMS</a>
+            <a href="../activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="../login.html" class="btn-secondary">Sign In</a>
+            <a href="../register.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <section class="usecase-hero">
+        <div class="usecase-hero-content">
+            <div class="usecase-hero-text">
+                <div class="usecase-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    For Remote Teams
+                </div>
+                <h1>Meetings That Work Across <span class="highlight">Every Timezone</span></h1>
+                <p>52% of the global workforce now works remotely. Your video conferencing should work for distributed teams with async-friendly features, unlimited recordings, and no time limits.</p>
+                <div class="cta-buttons">
+                    <a href="../register.html" class="btn-primary">Start Free Trial</a>
+                    <a href="../vision.html" class="btn-secondary">Explore Features</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">52%</div>
+                        <div class="hero-stat-label">Global Remote Workers</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">0</div>
+                        <div class="hero-stat-label">Time Limits</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">100%</div>
+                        <div class="hero-stat-label">Recording Included</div>
+                    </div>
+                </div>
+            </div>
+            <div class="usecase-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="timezone-grid">
+                        <div class="timezone-card active">
+                            <div class="timezone-time">9:00 AM</div>
+                            <div class="timezone-city">New York</div>
+                            <div class="timezone-avatar">JD</div>
+                        </div>
+                        <div class="timezone-card active">
+                            <div class="timezone-time">2:00 PM</div>
+                            <div class="timezone-city">London</div>
+                            <div class="timezone-avatar">SK</div>
+                        </div>
+                        <div class="timezone-card">
+                            <div class="timezone-time">7:30 PM</div>
+                            <div class="timezone-city">Mumbai</div>
+                            <div class="timezone-avatar">AR</div>
+                        </div>
+                        <div class="timezone-card">
+                            <div class="timezone-time">11:00 PM</div>
+                            <div class="timezone-city">Singapore</div>
+                            <div class="timezone-avatar">LW</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pain-points">
+        <div class="pain-points-content">
+            <div class="section-header">
+                <h2 class="section-title">Remote Work Challenges We Solve</h2>
+                <p class="section-desc">78% of workers say meetings prevent them from doing actual work. Here's how we're different.</p>
+            </div>
+            <div class="pain-grid">
+                <div class="pain-card">
+                    <div class="pain-icon red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <h4>Timezone Nightmares</h4>
+                    <p>Coordinating meetings across timezones means someone always gets the 6 AM slot.</p>
+                    <div class="pain-stat">42%</div>
+                    <div class="pain-stat-label">struggle with collaboration</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                    <h4>Meeting Fatigue</h4>
+                    <p>30% of remote workers spend 2-3 hours daily in video meetings. It's exhausting.</p>
+                    <div class="pain-stat">78%</div>
+                    <div class="pain-stat-label">have too many meetings</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon yellow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
+                    <h4>Tool Sprawl</h4>
+                    <p>Video in Zoom, chat in Slack, files in Drive. Context switching kills productivity.</p>
+                    <div class="pain-stat">75%</div>
+                    <div class="pain-stat-label">need better tools</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="solutions">
+        <div class="solutions-content">
+            <div class="section-header">
+                <h2 class="section-title">Built for Distributed Teams</h2>
+                <p class="section-desc">Every feature designed with remote-first principles in mind.</p>
+            </div>
+            <div class="solutions-grid">
+                <div class="solution-card">
+                    <div class="solution-icon icon-cyan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                    </div>
+                    <h3>Recording for Async Viewing</h3>
+                    <p>Every meeting can be recorded and shared. Team members in different timezones catch up when it works for them.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Auto-recording option</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Recordings saved to Drive</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Share with secure links</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <h3>Integrated Chat History</h3>
+                    <p>Meeting chat persists after the call. No more "what was that link someone shared?" moments.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlimited message history</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> File sharing in chat</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Search all conversations</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </div>
+                    <h3>No Time Limits Ever</h3>
+                    <p>40-minute cutoffs during important discussions? Not here. Meet as long as you need.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlimited meeting duration</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> 100+ participants</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> HD video quality</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <h3>All-in-One Platform</h3>
+                    <p>Video, chat, and file storage in one place. Stop context switching between 7+ different tools.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Video + Chat + Drive</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Single sign-on</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Unified notifications</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="async-highlight">
+        <div class="async-content">
+            <div class="async-text">
+                <h2>Async-First Communication</h2>
+                <p>The best remote teams balance synchronous and asynchronous work. Record meetings for those who can't attend live, and let your team watch at 1.5x speed during their productive hours.</p>
+                <div class="async-benefits">
+                    <div class="async-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Watch recordings at your own pace</span>
+                    </div>
+                    <div class="async-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>No more 6 AM calls for someone</span>
+                    </div>
+                    <div class="async-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Searchable chat replaces status meetings</span>
+                    </div>
+                    <div class="async-benefit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Files shared and accessible anytime</span>
+                    </div>
+                </div>
+            </div>
+            <div class="async-visual">
+                <div class="recording-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">9:00 AM</div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <strong>Team Standup Recorded</strong>
+                            <span>New York team leads the call</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">2:30 PM</div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <strong>London Team Reviews</strong>
+                            <span>Watches at 1.5x, adds comments</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">8:00 PM</div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <strong>Mumbai Team Catches Up</strong>
+                            <span>Reviews and responds in chat</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Next Day</div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <strong>Everyone Aligned</strong>
+                            <span>No one missed anything important</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-banner">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">52%</div>
+                <div class="stat-label">Global workforce remote</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">98%</div>
+                <div class="stat-label">Want remote options</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">23%</div>
+                <div class="stat-label">Week lost to app switching</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">57%</div>
+                <div class="stat-label">Would quit without remote</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="usecase-cta">
+        <h2 class="cta-title">Your Team Deserves Better</h2>
+        <p class="cta-desc">Join thousands of remote teams who've eliminated tool sprawl and timezone chaos.</p>
+        <div class="cta-buttons">
+            <a href="../register.html" class="btn-primary">Start Free Trial</a>
+            <a href="../activate.html" class="btn-secondary">View Pricing</a>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <img src="../../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="../vision.html" class="footer-link">Vision</a>
+            <a href="../chat.html" class="footer-link">Chat</a>
+            <a href="../drive.html" class="footer-link">Drive</a>
+            <a href="../hrms.html" class="footer-link">HRMS</a>
+            <a href="../login.html" class="footer-link">Sign In</a>
+            <a href="../terms.html" class="footer-link">Terms</a>
+            <a href="../privacy.html" class="footer-link">Privacy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+</body>
+</html>
