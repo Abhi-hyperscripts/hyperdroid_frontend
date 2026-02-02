@@ -1906,7 +1906,7 @@ body.modal-open {
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 2147483647;
-    padding: 100px 24px 24px 24px;
+    padding: 24px;
 }
 
 .summary-modal-overlay.active {
