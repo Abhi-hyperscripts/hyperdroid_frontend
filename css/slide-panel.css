@@ -1521,16 +1521,16 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-    z-index: 2000;
+    z-index: 99999 !important;
 }
 
 .modal-overlay.active {
@@ -1543,16 +1543,24 @@ body.modal-open {
 }
 
 .modal-container {
-    background: var(--bg-body);
+    background: #ffffff;
     border-radius: 16px;
     width: 90%;
     max-width: 520px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
     transform: scale(0.95) translateY(20px);
     transition: transform 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 100000 !important;
+}
+
+[data-theme="dark"] .modal-container {
+    background: #1a1f2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-overlay.active .modal-container {
@@ -1775,11 +1783,6 @@ body.modal-open {
 }
 
 /* Dark theme for modal */
-[data-theme="dark"] .modal-container {
-    background: #0a0f1a;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
 [data-theme="dark"] .participant-role-item {
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.06);
