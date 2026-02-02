@@ -40,6 +40,20 @@ class TranscriptionService {
         this.chunkTimer = null;
         this.processingChunk = false;
 
+        // VAD (Voice Activity Detection) settings
+        this.vadEnabled = true;
+        this.vadThreshold = 0.01;        // RMS threshold for speech detection
+        this.vadMinSpeechMs = 300;       // Minimum speech duration in ms
+        this.vadSilenceMs = 500;         // Silence duration to consider end of speech
+        this.vadAnalyser = null;
+        this.vadSpeechDetected = false;
+        this.vadSpeechStartTime = null;
+        this.vadLastSpeechTime = null;
+
+        // Repetition filter settings
+        this.maxWordRepetitions = 5;     // Max allowed consecutive word repeats
+        this.maxCharRepetitions = 10;    // Max allowed character repeats
+
         // Batching configuration
         this.transcriptBuffer = [];
         this.batchNumber = 0;
@@ -234,7 +248,7 @@ class TranscriptionService {
     }
 
     /**
-     * Initialize audio capture for Whisper
+     * Initialize audio capture for Whisper with VAD
      */
     async _initWhisperAudio() {
         try {
@@ -252,12 +266,105 @@ class TranscriptionService {
                 sampleRate: 16000
             });
 
-            console.log('[Transcription] Audio capture initialized for Whisper');
+            // Initialize VAD analyser
+            if (this.vadEnabled) {
+                this._initVAD();
+            }
+
+            console.log('[Transcription] Audio capture initialized for Whisper with VAD');
             return true;
         } catch (error) {
             console.error('[Transcription] Failed to initialize audio:', error);
             return false;
         }
+    }
+
+    /**
+     * Initialize Voice Activity Detection (VAD)
+     */
+    _initVAD() {
+        if (!this.audioContext || !this.mediaStream) return;
+
+        const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+        this.vadAnalyser = this.audioContext.createAnalyser();
+        this.vadAnalyser.fftSize = 2048;
+        this.vadAnalyser.smoothingTimeConstant = 0.8;
+        source.connect(this.vadAnalyser);
+
+        console.log('[Transcription] VAD initialized');
+    }
+
+    /**
+     * Check if there's speech activity in the current audio
+     */
+    _detectSpeech() {
+        if (!this.vadAnalyser) return true; // If no VAD, assume speech
+
+        const dataArray = new Float32Array(this.vadAnalyser.fftSize);
+        this.vadAnalyser.getFloatTimeDomainData(dataArray);
+
+        // Calculate RMS (Root Mean Square) energy
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i] * dataArray[i];
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+
+        const isSpeech = rms > this.vadThreshold;
+        const now = Date.now();
+
+        if (isSpeech) {
+            if (!this.vadSpeechDetected) {
+                this.vadSpeechDetected = true;
+                this.vadSpeechStartTime = now;
+            }
+            this.vadLastSpeechTime = now;
+        } else {
+            // Check if silence has lasted long enough to end speech segment
+            if (this.vadSpeechDetected && this.vadLastSpeechTime) {
+                const silenceDuration = now - this.vadLastSpeechTime;
+                if (silenceDuration > this.vadSilenceMs) {
+                    this.vadSpeechDetected = false;
+                }
+            }
+        }
+
+        return isSpeech;
+    }
+
+    /**
+     * Check if audio chunk contains enough speech
+     */
+    _hasEnoughSpeech(audioData) {
+        if (!this.vadEnabled) return true;
+
+        // Calculate RMS for the entire chunk
+        let sum = 0;
+        let speechSamples = 0;
+        const sampleRate = 16000;
+        const windowSize = Math.floor(sampleRate * 0.02); // 20ms windows
+
+        for (let i = 0; i < audioData.length; i += windowSize) {
+            let windowSum = 0;
+            const windowEnd = Math.min(i + windowSize, audioData.length);
+            for (let j = i; j < windowEnd; j++) {
+                windowSum += audioData[j] * audioData[j];
+            }
+            const windowRms = Math.sqrt(windowSum / (windowEnd - i));
+            if (windowRms > this.vadThreshold) {
+                speechSamples += windowEnd - i;
+            }
+        }
+
+        // Calculate speech duration in ms
+        const speechDurationMs = (speechSamples / sampleRate) * 1000;
+        const hasEnough = speechDurationMs >= this.vadMinSpeechMs;
+
+        if (!hasEnough) {
+            console.log(`[Transcription] VAD: Insufficient speech (${speechDurationMs.toFixed(0)}ms < ${this.vadMinSpeechMs}ms)`);
+        }
+
+        return hasEnough;
     }
 
     /**
@@ -276,6 +383,8 @@ class TranscriptionService {
 
         this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType });
         this.audioChunks = [];
+        this.vadSpeechDetected = false;
+        this.vadLastSpeechTime = null;
 
         this.mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
@@ -291,7 +400,12 @@ class TranscriptionService {
 
         // Start recording
         this.mediaRecorder.start();
-        console.log('[Transcription] Whisper recording started');
+        console.log('[Transcription] Whisper recording started with VAD');
+
+        // Start VAD monitoring
+        if (this.vadEnabled) {
+            this._startVADMonitoring();
+        }
 
         // Set up chunk timer - process every N seconds
         this.chunkTimer = setInterval(() => {
@@ -301,6 +415,7 @@ class TranscriptionService {
                 setTimeout(() => {
                     if (this.isRunning && this.mediaRecorder) {
                         this.audioChunks = [];
+                        this.vadSpeechDetected = false;
                         this.mediaRecorder.start();
                     }
                 }, 100);
@@ -309,7 +424,23 @@ class TranscriptionService {
     }
 
     /**
-     * Process audio chunk with Whisper
+     * Start VAD monitoring loop
+     */
+    _startVADMonitoring() {
+        if (!this.vadAnalyser) return;
+
+        const checkVAD = () => {
+            if (!this.isRunning) return;
+            this._detectSpeech();
+            requestAnimationFrame(checkVAD);
+        };
+
+        requestAnimationFrame(checkVAD);
+        console.log('[Transcription] VAD monitoring started');
+    }
+
+    /**
+     * Process audio chunk with Whisper (with VAD pre-filtering)
      */
     async _processWhisperChunk() {
         if (this.processingChunk || !this.whisperPipeline || this.audioChunks.length === 0) {
@@ -338,6 +469,13 @@ class TranscriptionService {
                 return;
             }
 
+            // VAD: Check if chunk contains enough speech
+            if (!this._hasEnoughSpeech(audioData)) {
+                console.log('[Transcription] VAD: Dropping silent chunk');
+                this.processingChunk = false;
+                return;
+            }
+
             // Run Whisper transcription
             const result = await this.whisperPipeline(audioData, {
                 language: null, // Auto-detect language
@@ -347,13 +485,15 @@ class TranscriptionService {
             });
 
             if (result && result.text && result.text.trim()) {
-                const text = result.text.trim();
+                let text = result.text.trim();
 
-                // Filter out common Whisper hallucinations
-                if (!this._isHallucination(text)) {
+                // Apply repetition filter first
+                text = this._filterRepetitions(text);
+
+                if (text && !this._isHallucination(text)) {
                     this._handleTranscript(text, null, 'whisper');
                 } else {
-                    console.log('[Transcription] Filtered hallucination:', text);
+                    console.log('[Transcription] Filtered output:', result.text.trim().substring(0, 50) + '...');
                 }
             }
 
@@ -403,9 +543,145 @@ class TranscriptionService {
     }
 
     /**
+     * Filter repetitive content from Whisper output
+     * Returns cleaned text or null if entirely repetitive
+     */
+    _filterRepetitions(text) {
+        if (!text) return null;
+
+        // Split into words
+        const words = text.split(/\s+/);
+        if (words.length === 0) return null;
+
+        // Detect and remove consecutive word repetitions
+        const filteredWords = [];
+        let lastWord = null;
+        let repeatCount = 0;
+
+        for (const word of words) {
+            const normalizedWord = word.toLowerCase().replace(/[.,!?;:]/g, '');
+
+            if (normalizedWord === lastWord) {
+                repeatCount++;
+                if (repeatCount < this.maxWordRepetitions) {
+                    filteredWords.push(word);
+                }
+                // Skip if too many repeats
+            } else {
+                repeatCount = 1;
+                lastWord = normalizedWord;
+                filteredWords.push(word);
+            }
+        }
+
+        // If we removed too much, the entire chunk was repetitive
+        if (filteredWords.length < words.length * 0.3) {
+            console.log(`[Transcription] Repetition filter: Discarded (${filteredWords.length}/${words.length} words kept)`);
+            return null;
+        }
+
+        let result = filteredWords.join(' ').trim();
+
+        // Check for character-level repetition patterns (e.g., "oh, oh, oh, oh")
+        const charPattern = result.replace(/\s+/g, '');
+        if (this._hasCharacterRepetition(charPattern)) {
+            console.log('[Transcription] Repetition filter: Character-level repetition detected');
+            return null;
+        }
+
+        // Check for phrase-level repetition (e.g., "in the middle of the middle of the middle")
+        result = this._removePhraseRepetition(result);
+
+        return result && result.length > 3 ? result : null;
+    }
+
+    /**
+     * Check for excessive character-level repetition
+     */
+    _hasCharacterRepetition(text) {
+        if (!text || text.length < 10) return false;
+
+        // Check for repeated patterns like "ohohohoh" or "hellohelohello"
+        for (let patternLen = 1; patternLen <= 10; patternLen++) {
+            const pattern = text.substring(0, patternLen);
+            let repeats = 0;
+            let pos = 0;
+
+            while (pos + patternLen <= text.length) {
+                if (text.substring(pos, pos + patternLen).toLowerCase() === pattern.toLowerCase()) {
+                    repeats++;
+                    pos += patternLen;
+                } else {
+                    break;
+                }
+            }
+
+            // If a short pattern repeats many times, it's repetitive
+            if (repeats > this.maxCharRepetitions) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Remove phrase-level repetitions
+     */
+    _removePhraseRepetition(text) {
+        const words = text.split(/\s+/);
+        if (words.length < 6) return text;
+
+        // Try to find repeated phrases of different lengths
+        for (let phraseLen = 2; phraseLen <= Math.floor(words.length / 3); phraseLen++) {
+            let i = 0;
+            let foundRepetition = false;
+
+            while (i + phraseLen * 2 <= words.length) {
+                const phrase1 = words.slice(i, i + phraseLen).join(' ').toLowerCase();
+                const phrase2 = words.slice(i + phraseLen, i + phraseLen * 2).join(' ').toLowerCase();
+
+                if (phrase1 === phrase2) {
+                    // Count how many times this phrase repeats
+                    let repeatCount = 1;
+                    let j = i + phraseLen;
+                    while (j + phraseLen <= words.length) {
+                        const nextPhrase = words.slice(j, j + phraseLen).join(' ').toLowerCase();
+                        if (nextPhrase === phrase1) {
+                            repeatCount++;
+                            j += phraseLen;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (repeatCount >= 3) {
+                        // Remove repeated phrases, keep only first occurrence
+                        console.log(`[Transcription] Phrase repetition detected: "${phrase1}" x${repeatCount}`);
+                        const before = words.slice(0, i + phraseLen);
+                        const after = words.slice(j);
+                        return [...before, ...after].join(' ');
+                    }
+                }
+                i++;
+            }
+        }
+
+        return text;
+    }
+
+    /**
      * Check if text is a common Whisper hallucination
      */
     _isHallucination(text) {
+        if (!text) return true;
+
+        const lowerText = text.toLowerCase().trim();
+
+        // Very short outputs are suspicious
+        if (lowerText.length < 3) return true;
+
+        // Known hallucination phrases
         const hallucinations = [
             'thank you',
             'thanks for watching',
@@ -414,35 +690,60 @@ class TranscriptionService {
             'see you next time',
             'goodbye',
             'bye bye',
+            'bye',
             'music',
             'applause',
             'laughter',
             '[music]',
             '[applause]',
+            '[silence]',
+            '[click]',
+            '[s]',
             '...',
             'you',
             'the',
             'uh',
-            'um'
+            'um',
+            'nd',
+            'silence'
         ];
 
-        const lowerText = text.toLowerCase().trim();
-
-        // Check exact matches for short hallucinations
-        if (lowerText.length < 5) {
-            return hallucinations.includes(lowerText);
-        }
-
-        // Check if it's just repeated characters or words
-        if (/^(.)\1+$/.test(lowerText.replace(/\s/g, ''))) {
+        // Check exact matches
+        const cleanText = lowerText.replace(/[.\[\]]/g, '').trim();
+        if (hallucinations.includes(cleanText)) {
             return true;
         }
 
-        // Check common hallucination patterns
-        for (const h of hallucinations) {
-            if (lowerText === h || lowerText === h + '.') {
+        // Check if it starts/ends with hallucination markers
+        if (/^\[.*\]\.?$/.test(lowerText)) {
+            return true; // Entire text is just [something]
+        }
+
+        // Check for excessive repetition of single words/sounds
+        const words = lowerText.split(/[\s,]+/).filter(w => w.length > 0);
+        if (words.length > 0) {
+            const uniqueWords = new Set(words.map(w => w.replace(/[.,!?]/g, '')));
+            const repetitionRatio = uniqueWords.size / words.length;
+
+            // If more than 80% of words are the same word repeated
+            if (repetitionRatio < 0.2 && words.length > 5) {
                 return true;
             }
+        }
+
+        // Check for "Hello Hello Hello..." pattern
+        if (/^(hello\s*)+\.?$/i.test(lowerText)) {
+            return true;
+        }
+
+        // Check for "oh, oh, oh..." pattern
+        if (/^(oh[,\s]*)+\.?$/i.test(lowerText)) {
+            return true;
+        }
+
+        // Check for "[S] [S] [S]..." pattern
+        if (/^(\[s\]\s*)+\.?$/i.test(lowerText)) {
+            return true;
         }
 
         return false;
