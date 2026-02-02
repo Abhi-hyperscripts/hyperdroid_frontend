@@ -2182,12 +2182,17 @@ async function confirmDeleteSession(sessionId, sessionNumber) {
         return;
     }
 
+    // Find the session item and add loading state
+    const sessionItem = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
+    if (sessionItem) {
+        sessionItem.classList.add('loading');
+    }
+
     try {
         await api.deleteSession(sessionId);
         Toast.success(`Session #${sessionNumber} deleted`);
 
         // Remove the session item from the DOM
-        const sessionItem = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
         if (sessionItem) {
             sessionItem.remove();
         }
@@ -2210,6 +2215,10 @@ async function confirmDeleteSession(sessionId, sessionNumber) {
     } catch (error) {
         console.error('Error deleting session:', error);
         Toast.error('Failed to delete session: ' + error.message);
+        // Remove loading state on error
+        if (sessionItem) {
+            sessionItem.classList.remove('loading');
+        }
     }
 }
 
