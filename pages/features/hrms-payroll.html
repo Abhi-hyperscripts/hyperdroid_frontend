@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS & Payroll Features | Automated Payroll, Attendance, Leave Management | HyperDroid</title>
+    <meta name="description" content="Complete HRMS with automated payroll processing, attendance tracking with geofencing, leave management, and statutory compliance. Multi-country support. Process payroll in minutes.">
+
+    <meta name="keywords" content="hrms features, payroll software features, automated payroll, attendance tracking, leave management, employee self-service, statutory compliance, multi-country payroll, geofencing attendance, payroll processing">
+    <meta name="author" content="HyperDroid">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://hyperdroid.io/pages/features/hrms-payroll.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HyperDroid">
+    <meta property="og:url" content="https://hyperdroid.io/pages/features/hrms-payroll.html">
+    <meta property="og:title" content="HRMS & Payroll Features - HyperDroid">
+    <meta property="og:description" content="Automated payroll, attendance tracking, leave management, statutory compliance.">
+    <meta property="og:image" content="https://hyperdroid.io/assets/og-hrms-features.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HyperDroid HRMS",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Complete HRMS with automated payroll, attendance tracking, leave management, and statutory compliance.",
+        "url": "https://hyperdroid.io/pages/features/hrms-payroll.html",
+        "featureList": ["Automated Payroll", "Attendance Tracking", "Leave Management", "Statutory Compliance", "Multi-Country Support", "Employee Self-Service", "Geofencing", "Loan Management"]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .feature-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .feature-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(16, 185, 129, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(6, 182, 212, 0.1), transparent); }
+        .feature-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .feature-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .feature-hero-text h1 .highlight { background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .feature-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .feature-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .feature-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
+        .payroll-summary { margin-bottom: 20px; }
+        .payroll-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .payroll-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .payroll-badge { padding: 4px 10px; background: rgba(16, 185, 129, 0.2); border-radius: 100px; font-size: 11px; font-weight: 600; color: #34d399; }
+        .payroll-amount { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; }
+        .payroll-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .breakdown-item { background: var(--bg-secondary); border-radius: 8px; padding: 12px; text-align: center; }
+        .breakdown-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .breakdown-value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+        .breakdown-value.earnings { color: #10b981; }
+        .breakdown-value.deductions { color: #ef4444; }
+        .employee-row { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+        .employee-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+        .employee-info { flex: 1; }
+        .employee-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .employee-role { font-size: 11px; color: var(--text-tertiary); }
+        .employee-status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .employee-status.processed { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .employee-status.pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+        .features-deep { padding: 80px 60px; max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+
+        .feature-deep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .feature-deep-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .feature-deep-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .feature-deep-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .feature-deep-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .icon-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .icon-pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .feature-deep-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .feature-deep-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .feature-deep-card ul { list-style: none; padding: 0; margin: 0; }
+        .feature-deep-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .feature-deep-card ul li:first-child { border-top: none; }
+        .feature-deep-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
+
+        .countries-section { background: var(--bg-secondary); padding: 60px; margin-top: 40px; border-radius: 20px; border: 1px solid var(--border-primary); }
+        .countries-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; text-align: center; }
+        .countries-desc { font-size: 16px; color: var(--text-secondary); text-align: center; margin-bottom: 32px; }
+        .countries-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+        .country-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px 32px; text-align: center; }
+        .country-flag { font-size: 32px; margin-bottom: 8px; }
+        .country-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .country-features { font-size: 12px; color: var(--text-tertiary); }
+
+        .statutory-highlight { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(6, 182, 212, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; padding: 40px; margin-top: 40px; }
+        .statutory-highlight h3 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+        .statutory-highlight h3 svg { width: 28px; height: 28px; color: #10b981; }
+        .statutory-highlight p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .statutory-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .statutory-feature { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 10px; }
+        .statutory-feature svg { width: 18px; height: 18px; color: #10b981; flex-shrink: 0; }
+        .statutory-feature span { font-size: 14px; color: var(--text-primary); }
+
+        .feature-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .feature-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16, 185, 129, 0.1), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .feature-hero-content { grid-template-columns: 1fr; }
+            .feature-deep-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .feature-hero { padding: 100px 24px 60px; }
+            .features-deep { padding: 60px 24px; }
+            .feature-cta { padding: 60px 24px; }
+            .hero-stats { flex-wrap: wrap; gap: 20px; }
+            .countries-section { padding: 40px 24px; }
+            .statutory-highlight { padding: 24px; }
+            .payroll-breakdown { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <nav class="landing-nav">
+        <a href="../../index.html"><img src="../../assets/brand_logo.png" alt="HyperDroid" class="nav-logo"></a>
+        <div class="nav-links">
+            <a href="../../index.html" class="nav-link">Home</a>
+            <a href="../vision.html" class="nav-link">Vision</a>
+            <a href="../chat.html" class="nav-link">Chat</a>
+            <a href="../drive.html" class="nav-link">Drive</a>
+            <a href="../hrms.html" class="nav-link active">HRMS</a>
+        </div>
+        <div class="nav-cta">
+            <a href="../login.html" class="btn-secondary">Sign In</a>
+            <a href="../activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <section class="feature-hero">
+        <div class="feature-hero-content">
+            <div class="feature-hero-text">
+                <div class="feature-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    HRMS & Payroll
+                </div>
+                <h1>HR that runs itself,<br><span class="highlight">payroll in minutes.</span></h1>
+                <p>Complete HR management with automated payroll, attendance tracking with geofencing, leave management, and statutory compliance—all built into the same platform as your video, chat, and files.</p>
+                <div class="cta-buttons">
+                    <a href="../activate.html" class="btn-primary">Start Free Trial</a>
+                    <a href="../compare/hyperdroid-vs-google-workspace.html" class="btn-secondary">Why Google Lacks This</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">62</div>
+                        <div class="hero-stat-label">Database Tables</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">100%</div>
+                        <div class="hero-stat-label">Compliant</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Multi</div>
+                        <div class="hero-stat-label">Country</div>
+                    </div>
+                </div>
+            </div>
+            <div class="feature-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="payroll-summary">
+                        <div class="payroll-header">
+                            <span class="payroll-title">January 2026 Payroll</span>
+                            <span class="payroll-badge">Processed</span>
+                        </div>
+                        <div class="payroll-amount">$248,450</div>
+                        <div class="payroll-breakdown">
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">Gross</div>
+                                <div class="breakdown-value earnings">$312,500</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">Deductions</div>
+                                <div class="breakdown-value deductions">$64,050</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-label">Employees</div>
+                                <div class="breakdown-value">16</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="employee-row">
+                        <div class="employee-avatar">JD</div>
+                        <div class="employee-info">
+                            <div class="employee-name">John Doe</div>
+                            <div class="employee-role">Engineering Manager</div>
+                        </div>
+                        <span class="employee-status processed">Processed</span>
+                    </div>
+                    <div class="employee-row">
+                        <div class="employee-avatar">AS</div>
+                        <div class="employee-info">
+                            <div class="employee-name">Alice Smith</div>
+                            <div class="employee-role">Software Engineer</div>
+                        </div>
+                        <span class="employee-status processed">Processed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-deep">
+        <div class="section-header">
+            <h2 class="section-title">Complete HR management</h2>
+            <p class="section-desc">Everything you need to manage employees, from onboarding to payroll</p>
+        </div>
+
+        <div class="feature-deep-grid">
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                </div>
+                <h3>Automated Payroll</h3>
+                <p>Process payroll in minutes, not days. Automatic tax calculations, statutory deductions, and compliance reports.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Auto-calculate PF, ESI, TDS, PT</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Salary structure versioning</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Multi-location proration</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h3>Attendance Tracking</h3>
+                <p>Track attendance with mobile check-in, geofencing, and NFC cards. Know exactly who's working where.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> GPS geofencing validation</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> NFC card support</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Regularization workflows</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <h3>Leave Management</h3>
+                <p>8+ configurable leave types with carryforward policies, encashment, and approval workflows.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Configurable leave types</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Carryforward & encashment</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Manager approval workflows</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3>Employee Management</h3>
+                <p>Complete employee lifecycle from onboarding to separation. Document management, org charts, and more.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Employee database with 10 tables</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Document verification</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Org chart visualization</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>Statutory Compliance</h3>
+                <p>Country-agnostic compliance system. Upload country config and statutory deductions calculate automatically.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> JSONB-based tax config</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Auto-generated compliance reports</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ECR, Form 24Q generation</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M7 15h0M11 15h2"/></svg>
+                </div>
+                <h3>Loans & Advances</h3>
+                <p>Employee loan management with EMI calculations, automatic salary deductions, and repayment tracking.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Personal, home, vehicle loans</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Auto-deduct from payroll</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Multi-level approval workflow</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Countries Section -->
+        <div class="countries-section">
+            <h3 class="countries-title">Works for Any Country</h3>
+            <p class="countries-desc">Country-agnostic payroll system. Upload your country's tax configuration and HyperDroid handles the rest.</p>
+            <div class="countries-grid">
+                <div class="country-card">
+                    <div class="country-flag">🇮🇳</div>
+                    <div class="country-name">India</div>
+                    <div class="country-features">PF, ESI, PT, TDS</div>
+                </div>
+                <div class="country-card">
+                    <div class="country-flag">🇺🇸</div>
+                    <div class="country-name">USA</div>
+                    <div class="country-features">FICA, Medicare, State Tax</div>
+                </div>
+                <div class="country-card">
+                    <div class="country-flag">🇬🇧</div>
+                    <div class="country-name">UK</div>
+                    <div class="country-features">NI, PAYE, Pension</div>
+                </div>
+                <div class="country-card">
+                    <div class="country-flag">🇦🇪</div>
+                    <div class="country-name">UAE</div>
+                    <div class="country-features">No Income Tax, GPSSA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statutory Compliance -->
+        <div class="statutory-highlight">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Mathematical Rigor Built-In
+            </h3>
+            <p>7+ mathematical invariants ensure your payroll is always accurate. Automatic validation catches errors before they happen.</p>
+            <div class="statutory-features">
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Net pay ≥ 0 always</span>
+                </div>
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Proration sums to 1.0</span>
+                </div>
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Gross = sum of earnings</span>
+                </div>
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>YTD tracking per component</span>
+                </div>
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Calculation proofs in JSON</span>
+                </div>
+                <div class="statutory-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Arrears chain-collapsing</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-cta">
+        <h2 class="cta-title">Ready to simplify your HR?</h2>
+        <p class="cta-desc">Get HRMS with payroll built into the same platform as your video, chat, and files.</p>
+        <div class="cta-buttons">
+            <a href="../activate.html" class="btn-primary">Start Free Trial</a>
+            <a href="../hrms.html" class="btn-secondary">Learn More</a>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <img src="../../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="../vision.html" class="footer-link">Vision</a>
+            <a href="../chat.html" class="footer-link">Chat</a>
+            <a href="../drive.html" class="footer-link">Drive</a>
+            <a href="../hrms.html" class="footer-link">HRMS</a>
+            <a href="../login.html" class="footer-link">Sign In</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Storage Features | Secure File Sharing, 5GB Uploads | HyperDroid Drive</title>
+    <meta name="description" content="Enterprise cloud storage with 5GB file uploads, password-protected sharing, download limits, and full audit logging. Dropbox alternative with built-in video and chat.">
+
+    <meta name="keywords" content="cloud storage features, secure file sharing, business file storage, 5GB file upload, password protected sharing, file audit logging, dropbox alternative features, enterprise file storage, team file sharing">
+    <meta name="author" content="HyperDroid">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://hyperdroid.io/pages/features/cloud-storage.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HyperDroid">
+    <meta property="og:url" content="https://hyperdroid.io/pages/features/cloud-storage.html">
+    <meta property="og:title" content="Cloud Storage Features - HyperDroid Drive">
+    <meta property="og:description" content="5GB uploads, password-protected sharing, audit logging. Dropbox alternative.">
+    <meta property="og:image" content="https://hyperdroid.io/assets/og-drive-features.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .feature-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .feature-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(6, 182, 212, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(16, 185, 129, 0.1), transparent); }
+        .feature-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .feature-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .feature-hero-text h1 .highlight { background: linear-gradient(135deg, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .feature-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .feature-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #22d3ee; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .feature-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
+        .folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+        .folder-item { background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 12px; padding: 16px; text-align: center; }
+        .folder-icon { width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .folder-icon svg { width: 20px; height: 20px; color: #fff; }
+        .folder-icon.cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .folder-icon.green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .folder-icon.purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .folder-icon.orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .folder-name { font-size: 11px; color: var(--text-secondary); }
+        .file-list { display: flex; flex-direction: column; gap: 8px; }
+        .file-item { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 8px; padding: 12px; }
+        .file-icon { width: 32px; height: 32px; background: rgba(6, 182, 212, 0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .file-icon svg { width: 16px; height: 16px; color: #22d3ee; }
+        .file-info { flex: 1; }
+        .file-name { font-size: 13px; color: var(--text-primary); }
+        .file-meta { font-size: 11px; color: var(--text-tertiary); }
+
+        .features-deep { padding: 80px 60px; max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+
+        .feature-deep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .feature-deep-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .feature-deep-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .feature-deep-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .feature-deep-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .icon-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .icon-pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .feature-deep-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .feature-deep-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .feature-deep-card ul { list-style: none; padding: 0; margin: 0; }
+        .feature-deep-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .feature-deep-card ul li:first-child { border-top: none; }
+        .feature-deep-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
+
+        .security-highlight { background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 20px; padding: 40px; margin-top: 40px; }
+        .security-highlight h3 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+        .security-highlight h3 svg { width: 28px; height: 28px; color: #10b981; }
+        .security-highlight p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .security-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .security-feature { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 10px; }
+        .security-feature svg { width: 18px; height: 18px; color: #10b981; flex-shrink: 0; }
+        .security-feature span { font-size: 14px; color: var(--text-primary); }
+
+        .feature-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .feature-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(6, 182, 212, 0.1), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .feature-hero-content { grid-template-columns: 1fr; }
+            .feature-deep-grid { grid-template-columns: 1fr; }
+            .folder-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .feature-hero { padding: 100px 24px 60px; }
+            .features-deep { padding: 60px 24px; }
+            .feature-cta { padding: 60px 24px; }
+            .hero-stats { flex-wrap: wrap; gap: 20px; }
+            .security-highlight { padding: 24px; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <nav class="landing-nav">
+        <a href="../../index.html"><img src="../../assets/brand_logo.png" alt="HyperDroid" class="nav-logo"></a>
+        <div class="nav-links">
+            <a href="../../index.html" class="nav-link">Home</a>
+            <a href="../vision.html" class="nav-link">Vision</a>
+            <a href="../chat.html" class="nav-link">Chat</a>
+            <a href="../drive.html" class="nav-link active">Drive</a>
+            <a href="../hrms.html" class="nav-link">HRMS</a>
+        </div>
+        <div class="nav-cta">
+            <a href="../login.html" class="btn-secondary">Sign In</a>
+            <a href="../activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <section class="feature-hero">
+        <div class="feature-hero-content">
+            <div class="feature-hero-text">
+                <div class="feature-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Cloud Storage
+                </div>
+                <h1>Files stored securely,<br><span class="highlight">shared intelligently.</span></h1>
+                <p>Upload large files, organize with folders, and share securely—with password protection, expiry dates, and download limits. Know exactly who accessed what.</p>
+                <div class="cta-buttons">
+                    <a href="../activate.html" class="btn-primary">Start Uploading Free</a>
+                    <a href="../compare/hyperdroid-vs-google-workspace.html" class="btn-secondary">Compare to Google</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">5GB</div>
+                        <div class="hero-stat-label">Per File</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">E2E</div>
+                        <div class="hero-stat-label">Encrypted</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Full</div>
+                        <div class="hero-stat-label">Audit Trail</div>
+                    </div>
+                </div>
+            </div>
+            <div class="feature-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="folder-grid">
+                        <div class="folder-item">
+                            <div class="folder-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                            <div class="folder-name">Projects</div>
+                        </div>
+                        <div class="folder-item">
+                            <div class="folder-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                            <div class="folder-name">Contracts</div>
+                        </div>
+                        <div class="folder-item">
+                            <div class="folder-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                            <div class="folder-name">Marketing</div>
+                        </div>
+                        <div class="folder-item">
+                            <div class="folder-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                            <div class="folder-name">HR Docs</div>
+                        </div>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item">
+                            <div class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <div class="file-info">
+                                <div class="file-name">Q1_Report_Final.pdf</div>
+                                <div class="file-meta">2.4 MB · Shared with 3 people</div>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <div class="file-info">
+                                <div class="file-name">Product_Demo_4K.mp4</div>
+                                <div class="file-meta">1.2 GB · Password protected</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-deep">
+        <div class="section-header">
+            <h2 class="section-title">Enterprise storage, simple interface</h2>
+            <p class="section-desc">All the features you need for secure file management</p>
+        </div>
+
+        <div class="feature-deep-grid">
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <h3>Large File Uploads</h3>
+                <p>Upload files up to 5GB without breaking a sweat. Slow connection? Uploads resume where they left off.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 5GB per file limit</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Resumable uploads</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Chunked upload for reliability</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </div>
+                <h3>Secure Sharing</h3>
+                <p>Share files with anyone—inside or outside your organization. Add security controls for sensitive documents.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Password protection</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Expiry dates</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Download limits</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3>Folder Organization</h3>
+                <p>Create folders, nest them however you like, and always know where things are. Clean and simple.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Nested folders</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Breadcrumb navigation</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Drag & drop organization</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>Full Audit Trail</h3>
+                <p>See who viewed, downloaded, or shared every file. Perfect for compliance and peace of mind.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> View, download, share tracking</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> IP address logging</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Timestamp for every action</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+                <h3>Flexible Storage Backend</h3>
+                <p>Works with AWS S3, Wasabi, or your own storage. Keep your files wherever makes sense.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> S3-compatible storage</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Wasabi support</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Self-hosted option</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <h3>Real-Time Sync</h3>
+                <p>Changes sync instantly across your team. When someone uploads a file, everyone sees it right away.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> SignalR live updates</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Instant notifications</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Storage quota updates</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="security-highlight">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Enterprise-Grade Security
+            </h3>
+            <p>Your files are protected at every step—in transit and at rest. Unlike Google Drive, you can add password protection to any shared link.</p>
+            <div class="security-features">
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>TLS encryption in transit</span>
+                </div>
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>AES-256 at rest</span>
+                </div>
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Password-protected links</span>
+                </div>
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>BCrypt password hashing</span>
+                </div>
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Secure token generation</span>
+                </div>
+                <div class="security-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Path traversal protection</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-cta">
+        <h2 class="cta-title">Ready to upgrade your file storage?</h2>
+        <p class="cta-desc">Secure cloud storage that works with your video calls and chat. Free to start.</p>
+        <div class="cta-buttons">
+            <a href="../activate.html" class="btn-primary">Start Uploading Free</a>
+            <a href="../drive.html" class="btn-secondary">Learn More</a>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <img src="../../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="../vision.html" class="footer-link">Vision</a>
+            <a href="../chat.html" class="footer-link">Chat</a>
+            <a href="../drive.html" class="footer-link">Drive</a>
+            <a href="../hrms.html" class="footer-link">HRMS</a>
+            <a href="../login.html" class="footer-link">Sign In</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+</body>
+</html>
