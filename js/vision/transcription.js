@@ -15,6 +15,8 @@ class TranscriptionService {
         this.isRunning = false;
         this.isEnabled = false;
         this.meetingStartEpoch = null;
+        this.sessionId = null;        // Session-based transcription
+        this.sessionNumber = null;    // Session number for display
         this.speakerId = null;
         this.speakerName = null;
         this.speakerEmail = null;
@@ -148,13 +150,23 @@ class TranscriptionService {
         // Initialize IndexedDB
         await this._initIndexedDB();
 
-        // Get meeting start epoch from server
+        // Get session info from server (session-based transcription)
         if (this.signalRConnection) {
             try {
-                this.meetingStartEpoch = await this.signalRConnection.invoke('GetMeetingStartEpoch', this.meetingId);
-                console.log('[Transcription] Meeting start epoch:', this.meetingStartEpoch);
+                const sessionInfo = await this.signalRConnection.invoke('GetMeetingStartEpoch', this.meetingId);
+                // New format returns { epoch, sessionId, sessionNumber }
+                if (typeof sessionInfo === 'object' && sessionInfo.epoch) {
+                    this.meetingStartEpoch = sessionInfo.epoch;
+                    this.sessionId = sessionInfo.sessionId;
+                    this.sessionNumber = sessionInfo.sessionNumber;
+                    console.log(`[Transcription] Session #${this.sessionNumber} started, epoch: ${this.meetingStartEpoch}, sessionId: ${this.sessionId}`);
+                } else {
+                    // Backward compatibility: old format returned just the epoch number
+                    this.meetingStartEpoch = sessionInfo;
+                    console.log('[Transcription] Meeting start epoch (legacy):', this.meetingStartEpoch);
+                }
             } catch (e) {
-                console.warn('[Transcription] Could not get meeting epoch, using local time:', e);
+                console.warn('[Transcription] Could not get session info, using local time:', e);
                 this.meetingStartEpoch = Date.now();
             }
         } else {

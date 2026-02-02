@@ -7,6 +7,8 @@ class TranscriptionHub {
     constructor(hubConnection) {
         this.hub = hubConnection;  // Existing SignalR connection from meeting.js
         this.meetingId = null;
+        this.sessionId = null;      // Session-based transcription
+        this.sessionNumber = null;  // Session number for display
         this.onMergedTranscript = null;
         this.onSummaryGenerated = null;
         this.syncInterval = null;
@@ -45,14 +47,26 @@ class TranscriptionHub {
     }
 
     /**
-     * Join transcription for a meeting
+     * Join transcription for a meeting (session-based)
      */
     async joinMeeting(meetingId) {
         this.meetingId = meetingId;
 
-        // Get meeting start epoch from server
-        const startEpoch = await this.hub.invoke('GetMeetingStartEpoch', meetingId);
-        console.log('[TranscriptionHub] Meeting start epoch:', startEpoch);
+        // Get session info from server (session-based transcription)
+        const sessionInfo = await this.hub.invoke('GetMeetingStartEpoch', meetingId);
+
+        let startEpoch;
+        // New format returns { epoch, sessionId, sessionNumber }
+        if (typeof sessionInfo === 'object' && sessionInfo.epoch) {
+            startEpoch = sessionInfo.epoch;
+            this.sessionId = sessionInfo.sessionId;
+            this.sessionNumber = sessionInfo.sessionNumber;
+            console.log(`[TranscriptionHub] Session #${this.sessionNumber} started, epoch: ${startEpoch}, sessionId: ${this.sessionId}`);
+        } else {
+            // Backward compatibility: old format returned just the epoch number
+            startEpoch = sessionInfo;
+            console.log('[TranscriptionHub] Meeting start epoch (legacy):', startEpoch);
+        }
 
         // Start periodic time sync (every 30 seconds)
         this.syncInterval = setInterval(() => {
