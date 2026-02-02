@@ -2170,7 +2170,15 @@ document.addEventListener('keydown', function(e) {
 // ============================================
 
 async function confirmDeleteSession(sessionId, sessionNumber) {
-    if (!confirm(`Are you sure you want to delete Session #${sessionNumber}?\n\nThis will permanently delete:\n- All transcript segments\n- The session summary/minutes (if any)\n\nThis action cannot be undone.`)) {
+    const confirmed = await Confirm.show({
+        title: `Delete Session #${sessionNumber}?`,
+        message: 'This will permanently delete:\n• All transcript segments\n• The session summary/minutes (if any)\n\nThis action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
         return;
     }
 
