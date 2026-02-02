@@ -200,6 +200,8 @@ function createMeetingItemHTML(meeting) {
     const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
     const participantCount = meeting.participant_count || 0;
     const type = meeting.meeting_type || 'regular';
+    const isStarted = meeting.is_started || false;
+    const isRecording = meeting.is_recording || false;
 
     const dateStr = meeting.start_time
         ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -211,11 +213,17 @@ function createMeetingItemHTML(meeting) {
     // Guest link badge (clickable when guests are allowed and not participant-controlled)
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
 
+    // LIVE indicator for meetings in progress
+    const liveIndicator = isStarted
+        ? `<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>`
+        : `<span class="meeting-live-indicator" style="display: none;"><span class="live-dot"></span>LIVE</span>`;
+
     return `
-        <div class="meeting-card" id="meeting-${meeting.id}">
+        <div class="meeting-card" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
             <div class="meeting-card-header">
                 <div class="meeting-card-title">
-                    <h4>${meeting.meeting_name}</h4>
+                    <h4 class="meeting-name">${meeting.meeting_name}</h4>
+                    ${liveIndicator}
                     <div class="meeting-card-badges">
                         ${typeBadge}
                         ${dateStr ? `<span class="badge badge-date">${dateStr}</span>` : ''}
@@ -233,8 +241,8 @@ function createMeetingItemHTML(meeting) {
                         </svg>
                     </button>
                     <span class="auto-rec-label">Auto Rec</span>
-                    <label class="toggle-auto-rec" title="Auto Recording">
-                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
+                    <label class="toggle-auto-rec auto-rec-container ${isStarted ? 'toggle-disabled' : ''}" title="${isStarted ? 'Cannot change while meeting is in progress' : 'Auto Recording'}">
+                        <input type="checkbox" class="meeting-auto-rec-toggle" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''} ${isStarted ? 'disabled' : ''}
                                onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
@@ -278,6 +286,8 @@ function createHostedMeetingItemHTML(meeting) {
     const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
     const participantCount = meeting.participant_count || 0;
     const type = meeting.meeting_type || 'regular';
+    const isStarted = meeting.is_started || false;
+    const isRecording = meeting.is_recording || false;
 
     const dateStr = meeting.start_time
         ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -286,11 +296,17 @@ function createHostedMeetingItemHTML(meeting) {
     const typeBadge = getTypeBadgeHTML(type);
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
 
+    // LIVE indicator for meetings in progress
+    const liveIndicator = isStarted
+        ? `<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>`
+        : `<span class="meeting-live-indicator" style="display: none;"><span class="live-dot"></span>LIVE</span>`;
+
     return `
-        <div class="meeting-card hosted-meeting-card" id="meeting-${meeting.id}">
+        <div class="meeting-card hosted-meeting-card" id="meeting-${meeting.id}" data-hosted-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
             <div class="meeting-card-header">
                 <div class="meeting-card-title">
-                    <h4>${meeting.meeting_name}</h4>
+                    <h4 class="meeting-name">${meeting.meeting_name}</h4>
+                    ${liveIndicator}
                     <div class="meeting-card-badges">
                         ${typeBadge}
                         <span class="badge badge-project" title="From project: ${meeting.project_name || 'Unknown'}">📁 ${meeting.project_name || 'Unknown Project'}</span>
@@ -309,8 +325,8 @@ function createHostedMeetingItemHTML(meeting) {
                         </svg>
                     </button>
                     <span class="auto-rec-label">Auto Rec</span>
-                    <label class="toggle-auto-rec" title="Auto Recording">
-                        <input type="checkbox" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''}
+                    <label class="toggle-auto-rec auto-rec-container ${isStarted ? 'toggle-disabled' : ''}" title="${isStarted ? 'Cannot change while meeting is in progress' : 'Auto Recording'}">
+                        <input type="checkbox" class="meeting-auto-rec-toggle" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''} ${isStarted ? 'disabled' : ''}
                                onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
@@ -2710,6 +2726,72 @@ async function saveMeetingSettings() {
 }
 
 // ============================================
+// REAL-TIME MEETING STATUS UPDATES
+// ============================================
+
+/**
+ * Update a specific meeting card's status without full page reload.
+ * This is called when receiving MeetingStatusChanged SignalR event.
+ */
+function updateMeetingCardStatus(meetingId, isStarted, isRecording) {
+    // Find the meeting card
+    const meetingItem = document.querySelector(`[data-meeting-id="${meetingId}"]`);
+    if (!meetingItem) {
+        console.log(`Meeting card not found for ${meetingId}, might be in hosted section`);
+        // Try hosted meetings section
+        const hostedItem = document.querySelector(`[data-hosted-meeting-id="${meetingId}"]`);
+        if (hostedItem) {
+            updateMeetingCardStatusElement(hostedItem, meetingId, isStarted, isRecording);
+        }
+        return;
+    }
+    updateMeetingCardStatusElement(meetingItem, meetingId, isStarted, isRecording);
+}
+
+function updateMeetingCardStatusElement(meetingItem, meetingId, isStarted, isRecording) {
+    // Update or add LIVE indicator
+    let liveIndicator = meetingItem.querySelector('.meeting-live-indicator');
+    if (isStarted) {
+        if (!liveIndicator) {
+            liveIndicator = document.createElement('span');
+            liveIndicator.className = 'meeting-live-indicator';
+            liveIndicator.innerHTML = '<span class="live-dot"></span>LIVE';
+            // Insert after meeting name
+            const meetingName = meetingItem.querySelector('.meeting-name');
+            if (meetingName) {
+                meetingName.parentNode.insertBefore(liveIndicator, meetingName.nextSibling);
+            }
+        }
+        liveIndicator.style.display = 'inline-flex';
+    } else if (liveIndicator) {
+        liveIndicator.style.display = 'none';
+    }
+
+    // Update auto-recording toggle state
+    const autoRecToggle = meetingItem.querySelector('.meeting-auto-rec-toggle');
+    if (autoRecToggle) {
+        autoRecToggle.disabled = isStarted;
+        autoRecToggle.title = isStarted ? 'Cannot change while meeting is in progress' : 'Auto Recording';
+
+        // Add/remove visual disabled state
+        const toggleContainer = autoRecToggle.closest('.auto-rec-container');
+        if (toggleContainer) {
+            if (isStarted) {
+                toggleContainer.classList.add('toggle-disabled');
+            } else {
+                toggleContainer.classList.remove('toggle-disabled');
+            }
+        }
+    }
+
+    // Store current status on the element for reference
+    meetingItem.dataset.isStarted = isStarted;
+    meetingItem.dataset.isRecording = isRecording;
+
+    console.log(`Updated meeting ${meetingId}: started=${isStarted}, recording=${isRecording}`);
+}
+
+// ============================================
 // SIGNALR FOR REAL-TIME HOST CHANGE NOTIFICATIONS
 // ============================================
 
@@ -2738,6 +2820,21 @@ async function initDashboardSignalR() {
         dashboardConnection.on('HostAddedToMeeting', (data) => {
             console.log('Host added to meeting:', data);
             loadAllProjects();
+        });
+
+        // Real-time meeting status updates (non-intrusive)
+        dashboardConnection.on('MeetingStatusChanged', (data) => {
+            console.log('Meeting status changed:', data);
+            const currentUser = api.getUser();
+            if (!currentUser) return;
+
+            // Role-based filtering: only update if user is project owner or host
+            const isProjectOwner = data.projectOwnerId === currentUser.userId;
+            const isHost = data.hostUserId === currentUser.userId;
+
+            if (isProjectOwner || isHost) {
+                updateMeetingCardStatus(data.meetingId, data.isStarted, data.isRecording);
+            }
         });
 
         await dashboardConnection.start();
