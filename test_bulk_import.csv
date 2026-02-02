@@ -1,0 +1,4 @@
+email,first_name,last_name,employee_code,office_code,department_code,designation_code,shift_code,salary_structure_code,date_of_joining,date_of_birth,ctc,employment_type,gender,work_phone
+test.user1@example.com,Test,User One,TEST-001,MUM-HQ,ENG-MUM,SE-MUM,GDS-MUM,MUM-STD,2026-02-01,1995-05-15,1200000,full-time,male,+919876543001
+test.user2@example.com,Test,User Two,TEST-002,MUM-HQ,ENG-MUM,SE-MUM,GDS-MUM,MUM-STD,2026-02-01,1996-08-22,1000000,full-time,female,+919876543002
+test.user3@example.com,Test,User Three,TEST-003,MUM-HQ,ENG-MUM,SE-MUM,GDS-MUM,MUM-STD,2026-02-01,1994-03-10,1500000,full-time,male,+919876543003

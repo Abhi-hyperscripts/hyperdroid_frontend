@@ -2876,12 +2876,13 @@ class API {
     }
 
     /**
-     * Bulk update roles for multiple speakers in a meeting.
-     * @param {string} meetingId - Meeting UUID
+     * Bulk update roles for speakers in a session.
+     * Updates speaker_role in meeting_transcripts for all segments by each speaker.
+     * @param {string} sessionId - Session UUID
      * @param {Array<{speaker_name: string, speaker_id: string|null, participant_role: string|null}>} updates
      */
-    async bulkUpdateSpeakerRoles(meetingId, updates) {
-        return this.request(`/meetings/meetings/${meetingId}/speakers/roles`, {
+    async bulkUpdateSpeakerRoles(sessionId, updates) {
+        return this.request(`/meetings/sessions/${sessionId}/speakers/roles`, {
             method: 'PUT',
             body: JSON.stringify({ updates })
         });

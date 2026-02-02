@@ -3584,10 +3584,10 @@ async function saveSpeakerRoles() {
 
         Toast.info('Saving roles...');
 
-        const response = await api.bulkUpdateSpeakerRoles(currentRolesMeetingId, updates);
+        const response = await api.bulkUpdateSpeakerRoles(currentRolesSessionId, updates);
 
         if (response.success) {
-            Toast.success(`Updated ${response.affectedRows} speaker role(s)`);
+            Toast.success(`Updated ${response.affectedRows} transcript segment(s)`);
             closeSpeakerRolesModal();
         } else {
             throw new Error(response.message || 'Failed to save roles');
