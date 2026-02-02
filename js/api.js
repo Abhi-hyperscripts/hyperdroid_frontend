@@ -784,11 +784,10 @@ class API {
         const formData = new FormData();
         formData.append('file', file);
 
-        const token = this.getToken();
         const response = await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/summary/upload`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`
+                ...(this.token && { 'Authorization': `Bearer ${this.token}` })
             },
             body: formData
         });
