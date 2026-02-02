@@ -2826,6 +2826,42 @@ class API {
             body: JSON.stringify(settings)
         });
     }
+
+    // ==================== Participant Roles API ====================
+
+    /**
+     * Get all participants for a meeting with their assigned roles
+     * @param {string} meetingId - Meeting UUID
+     * @returns {Promise<{success: boolean, participants: Array, suggestedRoles: Array}>}
+     */
+    async getParticipantsWithRoles(meetingId) {
+        return this.request(`/meetings/${meetingId}/participants/roles`);
+    }
+
+    /**
+     * Update the role for a specific participant
+     * @param {string} meetingId - Meeting UUID
+     * @param {string} participantId - Participant UUID
+     * @param {string|null} role - Role to assign (null to clear/reset to "Participant")
+     */
+    async updateParticipantRole(meetingId, participantId, role) {
+        return this.request(`/meetings/${meetingId}/participants/${participantId}/role`, {
+            method: 'PUT',
+            body: JSON.stringify({ participant_role: role || null })
+        });
+    }
+
+    /**
+     * Bulk update roles for multiple participants
+     * @param {string} meetingId - Meeting UUID
+     * @param {Array<{participant_id: string, participant_role: string|null}>} updates - Array of role updates
+     */
+    async bulkUpdateParticipantRoles(meetingId, updates) {
+        return this.request(`/meetings/${meetingId}/participants/roles`, {
+            method: 'PUT',
+            body: JSON.stringify({ updates })
+        });
+    }
 }
 
 // Export singleton instance

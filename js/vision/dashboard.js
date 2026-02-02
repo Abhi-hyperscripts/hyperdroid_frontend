@@ -1946,6 +1946,15 @@ async function showSessionTranscript(sessionId) {
                     Back
                 </button>
                 <div class="transcript-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="showParticipantRolesPanel('${currentTranscriptsMeetingId}')" title="Manage Participant Roles">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        Roles
+                    </button>
                     <button class="btn btn-secondary btn-sm" onclick="exportTranscript('${sessionId}', 'text')" title="Export as Text">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -3071,6 +3080,263 @@ async function initDashboardSignalR() {
     } catch (error) {
         console.error('Failed to connect to dashboard SignalR:', error);
     }
+}
+
+// ============================================
+// PARTICIPANT ROLE MANAGEMENT
+// ============================================
+
+let currentRolesMeetingId = null;
+let participantRolesData = null;
+
+async function showParticipantRolesPanel(meetingId) {
+    try {
+        currentRolesMeetingId = meetingId;
+
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('participantRolesModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'participantRolesModal';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-container participant-roles-modal">
+                    <div class="modal-header">
+                        <h3>Manage Participant Roles</h3>
+                        <button class="btn-icon btn-close" onclick="closeParticipantRolesModal()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="participantRolesBody">
+                        <div class="loading-spinner">Loading participants...</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeParticipantRolesModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveParticipantRoles()">Save Changes</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.classList.add('modal-open');
+
+        // Load participants
+        const response = await api.getParticipantsWithRoles(meetingId);
+
+        if (!response.success) {
+            throw new Error(response.message || 'Failed to load participants');
+        }
+
+        participantRolesData = {
+            participants: response.participants,
+            suggestedRoles: response.suggestedRoles
+        };
+
+        renderParticipantRolesList();
+
+    } catch (error) {
+        console.error('Error loading participant roles:', error);
+        Toast.error('Failed to load participants: ' + error.message);
+        closeParticipantRolesModal();
+    }
+}
+
+function renderParticipantRolesList() {
+    const body = document.getElementById('participantRolesBody');
+    if (!body || !participantRolesData) return;
+
+    const { participants, suggestedRoles } = participantRolesData;
+
+    if (!participants || participants.length === 0) {
+        body.innerHTML = `
+            <div class="empty-state">
+                <p>No participants found for this meeting.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Build role options HTML
+    const roleOptionsHtml = suggestedRoles.map(role =>
+        `<option value="${role}">${capitalizeFirst(role)}</option>`
+    ).join('');
+
+    let html = `
+        <div class="roles-info">
+            <p>Assign roles to participants for better transcript analysis. Participants without a role will be labeled as "Participant".</p>
+        </div>
+        <div class="participants-role-list">
+    `;
+
+    participants.forEach(p => {
+        const displayName = p.display_name || p.guest_name || p.user_id || 'Unknown';
+        const currentRole = p.participant_role || '';
+        const isCustomRole = currentRole && !suggestedRoles.includes(currentRole);
+
+        html += `
+            <div class="participant-role-item" data-participant-id="${p.id}">
+                <div class="participant-info">
+                    <span class="participant-avatar">${getInitials(displayName)}</span>
+                    <div class="participant-details">
+                        <span class="participant-name">${escapeHtml(displayName)}</span>
+                        ${p.email ? `<span class="participant-email">${escapeHtml(p.email)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="participant-role-select">
+                    <select class="role-dropdown" data-participant-id="${p.id}" onchange="onRoleChange(this)">
+                        <option value="">Participant (Default)</option>
+                        ${roleOptionsHtml}
+                        ${isCustomRole ? `<option value="${currentRole}" selected>${capitalizeFirst(currentRole)}</option>` : ''}
+                        <option value="__custom__">+ Custom Role...</option>
+                    </select>
+                    <input type="text"
+                           class="role-custom-input"
+                           data-participant-id="${p.id}"
+                           placeholder="Enter custom role"
+                           style="display: none;"
+                           onkeyup="onCustomRoleInput(this)"
+                           onblur="onCustomRoleBlur(this)">
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    body.innerHTML = html;
+
+    // Set current values
+    participants.forEach(p => {
+        const select = body.querySelector(`select[data-participant-id="${p.id}"]`);
+        if (select && p.participant_role) {
+            const option = select.querySelector(`option[value="${p.participant_role}"]`);
+            if (option) {
+                select.value = p.participant_role;
+            }
+        }
+    });
+}
+
+function onRoleChange(selectElement) {
+    const participantId = selectElement.dataset.participantId;
+    const customInput = document.querySelector(`.role-custom-input[data-participant-id="${participantId}"]`);
+
+    if (selectElement.value === '__custom__') {
+        selectElement.style.display = 'none';
+        customInput.style.display = 'block';
+        customInput.focus();
+    }
+}
+
+function onCustomRoleInput(inputElement) {
+    // Allow typing, will commit on blur or enter
+    if (event.key === 'Enter') {
+        inputElement.blur();
+    }
+}
+
+function onCustomRoleBlur(inputElement) {
+    const participantId = inputElement.dataset.participantId;
+    const selectElement = document.querySelector(`select[data-participant-id="${participantId}"]`);
+    const customRole = inputElement.value.trim().toLowerCase();
+
+    if (customRole) {
+        // Add custom option to select
+        const customOption = document.createElement('option');
+        customOption.value = customRole;
+        customOption.textContent = capitalizeFirst(customRole);
+        customOption.selected = true;
+
+        // Insert before the "Custom Role" option
+        const customTrigger = selectElement.querySelector('option[value="__custom__"]');
+        selectElement.insertBefore(customOption, customTrigger);
+    }
+
+    // Show select, hide input
+    selectElement.style.display = 'block';
+    inputElement.style.display = 'none';
+    inputElement.value = '';
+}
+
+async function saveParticipantRoles() {
+    try {
+        const body = document.getElementById('participantRolesBody');
+        const selects = body.querySelectorAll('.role-dropdown');
+
+        const updates = [];
+        selects.forEach(select => {
+            const participantId = select.dataset.participantId;
+            const role = select.value === '__custom__' ? null : (select.value || null);
+
+            // Find original role
+            const original = participantRolesData.participants.find(p => p.id === participantId);
+            const originalRole = original?.participant_role || null;
+
+            // Only include if changed
+            if (role !== originalRole) {
+                updates.push({
+                    participant_id: participantId,
+                    participant_role: role
+                });
+            }
+        });
+
+        if (updates.length === 0) {
+            Toast.info('No changes to save');
+            closeParticipantRolesModal();
+            return;
+        }
+
+        Toast.info('Saving roles...');
+
+        const response = await api.bulkUpdateParticipantRoles(currentRolesMeetingId, updates);
+
+        if (response.success) {
+            Toast.success(`Updated ${response.affectedRows} participant role(s)`);
+            closeParticipantRolesModal();
+        } else {
+            throw new Error(response.message || 'Failed to save roles');
+        }
+
+    } catch (error) {
+        console.error('Error saving participant roles:', error);
+        Toast.error('Failed to save roles: ' + error.message);
+    }
+}
+
+function closeParticipantRolesModal() {
+    const modal = document.getElementById('participantRolesModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+    }
+    currentRolesMeetingId = null;
+    participantRolesData = null;
+}
+
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.split(/[\s@]+/);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ============================================
