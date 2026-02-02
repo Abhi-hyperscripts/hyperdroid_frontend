@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | HyperDroid</title>
+    <meta name="description" content="HyperDroid Privacy Policy. Learn how we collect, use, and protect your personal data across our enterprise workspace platform.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        /* Legal page specific styles - Compact Hero */
+        .legal-header {
+            padding: 100px 60px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legal-header-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .legal-header-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .legal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .legal-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #34d399;
+        }
+
+        .legal-header-text {
+            flex: 1;
+        }
+
+        .legal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: #34d399;
+        }
+
+        .legal-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 400;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            margin: 0 0 6px 0;
+            color: #ffffff;
+        }
+
+        .legal-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0;
+        }
+
+        .legal-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .legal-date {
+            text-align: right;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .legal-date strong {
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Content Section */
+        .legal-content {
+            padding: 40px 60px 120px;
+            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
+        }
+
+        .legal-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .legal-section {
+            margin-bottom: 48px;
+            padding: 32px 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .legal-section:hover {
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .legal-section h2 {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 20px 0;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .legal-section h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #34d399, #10b981);
+            border-radius: 2px;
+        }
+
+        .legal-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 24px 0 12px 0;
+        }
+
+        .legal-section p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0 0 16px 0;
+        }
+
+        .legal-section ul, .legal-section ol {
+            margin: 0 0 16px 0;
+            padding-left: 24px;
+        }
+
+        .legal-section li {
+            font-size: 15px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+
+        .legal-section a {
+            color: #34d399;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .legal-section a:hover {
+            color: #6ee7b7;
+            text-decoration: underline;
+        }
+
+        .legal-effective-date {
+            text-align: center;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            margin-bottom: 48px;
+        }
+
+        .legal-effective-date p {
+            margin: 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .legal-effective-date strong {
+            color: #34d399;
+        }
+
+        /* Table of Contents */
+        .legal-toc {
+            margin-bottom: 48px;
+            padding: 28px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+
+        .legal-toc h3 {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0 0 16px 0;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .legal-toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 24px;
+        }
+
+        .legal-toc li {
+            margin: 0;
+        }
+
+        .legal-toc a {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legal-toc a::before {
+            content: '→';
+            color: rgba(16, 185, 129, 0.5);
+            transition: color 0.2s ease;
+        }
+
+        .legal-toc a:hover {
+            color: #34d399;
+        }
+
+        .legal-toc a:hover::before {
+            color: #34d399;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .data-table th {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .data-table td {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .legal-header {
+                padding: 90px 24px 0;
+            }
+
+            .legal-header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+            }
+
+            .legal-meta {
+                margin-left: 0;
+                margin-top: 8px;
+            }
+
+            .legal-date {
+                text-align: center;
+            }
+
+            .legal-content {
+                padding: 32px 24px 80px;
+            }
+
+            .legal-section {
+                padding: 24px;
+            }
+
+            .legal-toc ul {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 13px;
+            }
+
+            .data-table th, .data-table td {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="../index.html">
+            <img src="../assets/brand_logo.png" alt="HyperDroid" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="../index.html" class="nav-link">Home</a>
+            <a href="vision.html" class="nav-link">Vision</a>
+            <a href="chat.html" class="nav-link">Chat</a>
+            <a href="drive.html" class="nav-link">Drive</a>
+            <a href="hrms.html" class="nav-link">HRMS</a>
+        </div>
+        <div class="nav-cta">
+            <a href="login.html" class="btn-secondary">Sign In</a>
+            <a href="activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Compact Header -->
+    <header class="legal-header">
+        <div class="legal-header-bg"></div>
+        <div class="legal-header-content">
+            <div class="legal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div class="legal-header-text">
+                <div class="legal-badge">Data Protection</div>
+                <h1 class="legal-title">Privacy Policy</h1>
+                <p class="legal-subtitle">How we collect, use, and protect your personal information</p>
+            </div>
+            <div class="legal-meta">
+                <div class="legal-date">
+                    <strong>Effective</strong>
+                    Feb 1, 2026
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Section -->
+    <section class="legal-content">
+        <div class="legal-container">
+            <nav class="legal-toc">
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#data-collection">Data We Collect</a></li>
+                    <li><a href="#data-use">How We Use Your Data</a></li>
+                    <li><a href="#data-sharing">Data Sharing</a></li>
+                    <li><a href="#data-storage">Data Storage & Security</a></li>
+                    <li><a href="#data-retention">Data Retention</a></li>
+                    <li><a href="#your-rights">Your Rights</a></li>
+                    <li><a href="#cookies">Cookies & Tracking</a></li>
+                    <li><a href="#children">Children's Privacy</a></li>
+                    <li><a href="#international">International Transfers</a></li>
+                    <li><a href="#changes">Policy Changes</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+
+            <div class="legal-section" id="introduction">
+                <h2>1. Introduction</h2>
+                <p>HyperDroid ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our enterprise workspace platform, including Vision, Chat, Drive, and HRMS services.</p>
+                <p>By using our services, you consent to the data practices described in this policy. If you do not agree with these practices, please do not use our services.</p>
+            </div>
+
+            <div class="legal-section" id="data-collection">
+                <h2>2. Data We Collect</h2>
+
+                <h3>2.1 Information You Provide</h3>
+                <ul>
+                    <li><strong>Account Information:</strong> Name, email address, password, organization name</li>
+                    <li><strong>Profile Data:</strong> Job title, department, phone number, profile picture</li>
+                    <li><strong>Payment Information:</strong> Billing address, payment method details (processed by secure payment providers)</li>
+                    <li><strong>Communications:</strong> Messages, files, and content shared through our services</li>
+                    <li><strong>HRMS Data:</strong> Employee records, payroll information, attendance data, leave records (as provided by your organization)</li>
+                </ul>
+
+                <h3>2.2 Information Collected Automatically</h3>
+                <ul>
+                    <li><strong>Device Information:</strong> Device type, operating system, browser type, unique device identifiers</li>
+                    <li><strong>Usage Data:</strong> Features used, time spent, actions taken within the platform</li>
+                    <li><strong>Log Data:</strong> IP address, access times, pages viewed, referring URLs</li>
+                    <li><strong>Location Data:</strong> General location based on IP address (for geofencing features in attendance)</li>
+                </ul>
+
+                <h3>2.3 Information from Third Parties</h3>
+                <ul>
+                    <li>Single Sign-On (SSO) providers if configured by your organization</li>
+                    <li>Integration partners when you connect third-party services</li>
+                </ul>
+            </div>
+
+            <div class="legal-section" id="data-use">
+                <h2>3. How We Use Your Data</h2>
+                <p>We use your information to:</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Purpose</th>
+                            <th>Legal Basis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Provide and maintain our services</td>
+                            <td>Contract performance</td>
+                        </tr>
+                        <tr>
+                            <td>Process payments and billing</td>
+                            <td>Contract performance</td>
+                        </tr>
+                        <tr>
+                            <td>Send service notifications</td>
+                            <td>Contract performance</td>
+                        </tr>
+                        <tr>
+                            <td>Improve and personalize services</td>
+                            <td>Legitimate interest</td>
+                        </tr>
+                        <tr>
+                            <td>Provide customer support</td>
+                            <td>Contract performance</td>
+                        </tr>
+                        <tr>
+                            <td>Ensure security and prevent fraud</td>
+                            <td>Legitimate interest</td>
+                        </tr>
+                        <tr>
+                            <td>Comply with legal obligations</td>
+                            <td>Legal requirement</td>
+                        </tr>
+                        <tr>
+                            <td>Send marketing communications</td>
+                            <td>Consent (opt-in)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="legal-section" id="data-sharing">
+                <h2>4. Data Sharing</h2>
+                <p>We do not sell your personal information. We may share data with:</p>
+
+                <h3>4.1 Service Providers</h3>
+                <p>Third-party vendors who assist in operating our services (hosting, payment processing, analytics). These providers are bound by confidentiality agreements.</p>
+
+                <h3>4.2 Your Organization</h3>
+                <p>If you use our services through an organization, administrators may access your data according to their organizational policies.</p>
+
+                <h3>4.3 Legal Requirements</h3>
+                <p>We may disclose data when required by law, court order, or government request, or to protect our rights and safety.</p>
+
+                <h3>4.4 Business Transfers</h3>
+                <p>In the event of a merger, acquisition, or sale of assets, your data may be transferred. We will notify you of any such change.</p>
+            </div>
+
+            <div class="legal-section" id="data-storage">
+                <h2>5. Data Storage & Security</h2>
+                <p>We implement industry-standard security measures to protect your data:</p>
+                <ul>
+                    <li><strong>Encryption:</strong> Data encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
+                    <li><strong>Access Controls:</strong> Role-based access with multi-factor authentication</li>
+                    <li><strong>Infrastructure:</strong> Secure cloud infrastructure with SOC 2 compliance</li>
+                    <li><strong>Monitoring:</strong> 24/7 security monitoring and intrusion detection</li>
+                    <li><strong>Backups:</strong> Regular encrypted backups with disaster recovery</li>
+                </ul>
+                <p>For self-hosted deployments, data security is managed according to your organization's infrastructure and policies.</p>
+            </div>
+
+            <div class="legal-section" id="data-retention">
+                <h2>6. Data Retention</h2>
+                <p>We retain your data as follows:</p>
+                <ul>
+                    <li><strong>Active Accounts:</strong> Data retained while your account is active</li>
+                    <li><strong>Deleted Accounts:</strong> Data deleted within 30 days of account closure</li>
+                    <li><strong>Backups:</strong> Removed from backups within 90 days</li>
+                    <li><strong>Legal Requirements:</strong> Some data may be retained longer if required by law</li>
+                    <li><strong>Aggregated Data:</strong> Anonymized analytics may be retained indefinitely</li>
+                </ul>
+            </div>
+
+            <div class="legal-section" id="your-rights">
+                <h2>7. Your Rights</h2>
+                <p>Depending on your jurisdiction, you may have the following rights:</p>
+                <ul>
+                    <li><strong>Access:</strong> Request a copy of your personal data</li>
+                    <li><strong>Correction:</strong> Request correction of inaccurate data</li>
+                    <li><strong>Deletion:</strong> Request deletion of your data ("right to be forgotten")</li>
+                    <li><strong>Portability:</strong> Receive your data in a portable format</li>
+                    <li><strong>Restriction:</strong> Request limitation of data processing</li>
+                    <li><strong>Objection:</strong> Object to certain processing activities</li>
+                    <li><strong>Withdraw Consent:</strong> Withdraw previously given consent</li>
+                </ul>
+                <p>To exercise these rights, contact us at <a href="mailto:privacy@hyperdroid.io">privacy@hyperdroid.io</a>. We will respond within 30 days.</p>
+            </div>
+
+            <div class="legal-section" id="cookies">
+                <h2>8. Cookies & Tracking</h2>
+                <p>We use cookies and similar technologies to:</p>
+                <ul>
+                    <li>Remember your login and preferences</li>
+                    <li>Understand how you use our services</li>
+                    <li>Improve performance and user experience</li>
+                </ul>
+
+                <h3>Types of Cookies</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Purpose</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Essential</td>
+                            <td>Required for basic functionality</td>
+                            <td>Session</td>
+                        </tr>
+                        <tr>
+                            <td>Functional</td>
+                            <td>Remember preferences</td>
+                            <td>1 year</td>
+                        </tr>
+                        <tr>
+                            <td>Analytics</td>
+                            <td>Usage statistics</td>
+                            <td>2 years</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>You can manage cookies through your browser settings. Disabling cookies may affect functionality.</p>
+            </div>
+
+            <div class="legal-section" id="children">
+                <h2>9. Children's Privacy</h2>
+                <p>Our services are not intended for children under 18 years of age. We do not knowingly collect personal information from children. If we discover that we have collected data from a child, we will delete it promptly.</p>
+                <p>If you believe a child has provided us with personal information, please contact us immediately.</p>
+            </div>
+
+            <div class="legal-section" id="international">
+                <h2>10. International Data Transfers</h2>
+                <p>Your data may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place:</p>
+                <ul>
+                    <li>Standard Contractual Clauses (SCCs) for EU data transfers</li>
+                    <li>Data Processing Agreements with all service providers</li>
+                    <li>Compliance with applicable data protection laws</li>
+                </ul>
+                <p>For self-hosted deployments, data remains within your chosen infrastructure.</p>
+            </div>
+
+            <div class="legal-section" id="changes">
+                <h2>11. Policy Changes</h2>
+                <p>We may update this Privacy Policy periodically. Changes will be communicated through:</p>
+                <ul>
+                    <li>Updated "Last Modified" date on this page</li>
+                    <li>Email notification for material changes</li>
+                    <li>In-app notification when you next log in</li>
+                </ul>
+                <p>We encourage you to review this policy regularly.</p>
+            </div>
+
+            <div class="legal-section" id="contact">
+                <h2>12. Contact Us</h2>
+                <p>For privacy-related inquiries or to exercise your rights:</p>
+                <ul>
+                    <li><strong>Privacy Team:</strong> <a href="mailto:privacy@hyperdroid.io">privacy@hyperdroid.io</a></li>
+                    <li><strong>Data Protection Officer:</strong> <a href="mailto:dpo@hyperdroid.io">dpo@hyperdroid.io</a></li>
+                    <li><strong>General Support:</strong> <a href="mailto:support@hyperdroid.io">support@hyperdroid.io</a></li>
+                    <li><strong>Website:</strong> <a href="https://hyperdroid.io">https://hyperdroid.io</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <img src="../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="vision.html" class="footer-link">Vision</a>
+            <a href="chat.html" class="footer-link">Chat</a>
+            <a href="drive.html" class="footer-link">Drive</a>
+            <a href="hrms.html" class="footer-link">HRMS</a>
+            <a href="terms.html" class="footer-link">Terms</a>
+            <a href="privacy.html" class="footer-link">Privacy</a>
+            <a href="refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

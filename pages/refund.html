@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment and Refund Policy | HyperDroid</title>
+    <meta name="description" content="HyperDroid Payment and Refund Policy. Learn about our billing practices, subscription terms, cancellation policy, and refund procedures.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        /* Legal page specific styles - Compact Hero */
+        .legal-header {
+            padding: 100px 60px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legal-header-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .legal-header-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .legal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .legal-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #60a5fa;
+        }
+
+        .legal-header-text {
+            flex: 1;
+        }
+
+        .legal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: #60a5fa;
+        }
+
+        .legal-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 400;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            margin: 0 0 6px 0;
+            color: #ffffff;
+        }
+
+        .legal-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0;
+        }
+
+        .legal-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .legal-date {
+            text-align: right;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .legal-date strong {
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Content Section */
+        .legal-content {
+            padding: 40px 60px 120px;
+            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
+        }
+
+        .legal-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .legal-section {
+            margin-bottom: 48px;
+            padding: 32px 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .legal-section:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .legal-section h2 {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 20px 0;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .legal-section h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #60a5fa, #3b82f6);
+            border-radius: 2px;
+        }
+
+        .legal-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 24px 0 12px 0;
+        }
+
+        .legal-section p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0 0 16px 0;
+        }
+
+        .legal-section ul, .legal-section ol {
+            margin: 0 0 16px 0;
+            padding-left: 24px;
+        }
+
+        .legal-section li {
+            font-size: 15px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+
+        .legal-section a {
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .legal-section a:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        .legal-effective-date {
+            text-align: center;
+            padding: 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            margin-bottom: 48px;
+        }
+
+        .legal-effective-date p {
+            margin: 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .legal-effective-date strong {
+            color: #60a5fa;
+        }
+
+        /* Table of Contents */
+        .legal-toc {
+            margin-bottom: 48px;
+            padding: 28px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+
+        .legal-toc h3 {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0 0 16px 0;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .legal-toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 24px;
+        }
+
+        .legal-toc li {
+            margin: 0;
+        }
+
+        .legal-toc a {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legal-toc a::before {
+            content: '→';
+            color: rgba(59, 130, 246, 0.5);
+            transition: color 0.2s ease;
+        }
+
+        .legal-toc a:hover {
+            color: #60a5fa;
+        }
+
+        .legal-toc a:hover::before {
+            color: #60a5fa;
+        }
+
+        /* Pricing Table */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .pricing-table th, .pricing-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .pricing-table th {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .pricing-table td {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .pricing-table .highlight {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            padding: 20px 24px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            margin: 24px 0;
+        }
+
+        .highlight-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .highlight-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .highlight-box p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .highlight-box strong {
+            color: #60a5fa;
+        }
+
+        .highlight-box.warning strong {
+            color: #fbbf24;
+        }
+
+        .highlight-box.success strong {
+            color: #34d399;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .legal-header {
+                padding: 90px 24px 0;
+            }
+
+            .legal-header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+            }
+
+            .legal-meta {
+                margin-left: 0;
+                margin-top: 8px;
+            }
+
+            .legal-date {
+                text-align: center;
+            }
+
+            .legal-content {
+                padding: 32px 24px 80px;
+            }
+
+            .legal-section {
+                padding: 24px;
+            }
+
+            .legal-toc ul {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-table {
+                font-size: 13px;
+            }
+
+            .pricing-table th, .pricing-table td {
+                padding: 12px 14px;
+            }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="../index.html">
+            <img src="../assets/brand_logo.png" alt="HyperDroid" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="../index.html" class="nav-link">Home</a>
+            <a href="vision.html" class="nav-link">Vision</a>
+            <a href="chat.html" class="nav-link">Chat</a>
+            <a href="drive.html" class="nav-link">Drive</a>
+            <a href="hrms.html" class="nav-link">HRMS</a>
+        </div>
+        <div class="nav-cta">
+            <a href="login.html" class="btn-secondary">Sign In</a>
+            <a href="activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <header class="legal-header">
+        <div class="legal-header-bg"></div>
+        <div class="legal-header-content">
+            <div class="legal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+            </div>
+            <div class="legal-header-text">
+                <div class="legal-badge">Billing Information</div>
+                <h1 class="legal-title">Payment & Refund Policy</h1>
+                <p class="legal-subtitle">Our billing practices, cancellation terms, and refund procedures</p>
+            </div>
+            <div class="legal-meta">
+                <div class="legal-date">
+                    <strong>Effective</strong>
+                    Feb 1, 2026
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content Section -->
+    <section class="legal-content">
+        <div class="legal-container">
+
+            <nav class="legal-toc">
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#pricing">Pricing & Plans</a></li>
+                    <li><a href="#billing-cycle">Billing Cycle</a></li>
+                    <li><a href="#payment-methods">Payment Methods</a></li>
+                    <li><a href="#free-trial">Free Trial</a></li>
+                    <li><a href="#upgrades">Upgrades & Downgrades</a></li>
+                    <li><a href="#cancellation">Cancellation Policy</a></li>
+                    <li><a href="#refunds">Refund Policy</a></li>
+                    <li><a href="#failed-payments">Failed Payments</a></li>
+                    <li><a href="#taxes">Taxes</a></li>
+                    <li><a href="#enterprise">Enterprise & Self-Hosted</a></li>
+                    <li><a href="#contact">Contact Billing Support</a></li>
+                </ul>
+            </nav>
+
+            <div class="legal-section" id="overview">
+                <h2>1. Overview</h2>
+                <p>This Payment and Refund Policy governs all financial transactions related to HyperDroid services, including Vision, Chat, Drive, and HRMS. By subscribing to our services, you agree to these terms.</p>
+                <div class="highlight-box success">
+                    <p><strong>Our Commitment:</strong> We believe in transparent pricing with no hidden fees. What you see is what you pay.</p>
+                </div>
+            </div>
+
+            <div class="legal-section" id="pricing">
+                <h2>2. Pricing & Plans</h2>
+                <p>HyperDroid offers flexible pricing to meet various organizational needs:</p>
+
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Plan</th>
+                            <th>Best For</th>
+                            <th>Billing</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="highlight">Starter</span></td>
+                            <td>Small teams (up to 10 users)</td>
+                            <td>Monthly or Annual</td>
+                        </tr>
+                        <tr>
+                            <td><span class="highlight">Professional</span></td>
+                            <td>Growing businesses (up to 50 users)</td>
+                            <td>Monthly or Annual</td>
+                        </tr>
+                        <tr>
+                            <td><span class="highlight">Enterprise</span></td>
+                            <td>Large organizations (unlimited users)</td>
+                            <td>Annual (custom pricing)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="highlight">Self-Hosted</span></td>
+                            <td>Organizations requiring data sovereignty</td>
+                            <td>One-time + Annual support</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Current pricing is available at <a href="activate.html">our pricing page</a>. Prices are subject to change with 30 days notice.</p>
+            </div>
+
+            <div class="legal-section" id="billing-cycle">
+                <h2>3. Billing Cycle</h2>
+                <h3>3.1 Monthly Billing</h3>
+                <ul>
+                    <li>Charged on the same date each month</li>
+                    <li>Access continues until the end of the billing period</li>
+                    <li>Can cancel anytime with no long-term commitment</li>
+                </ul>
+
+                <h3>3.2 Annual Billing</h3>
+                <ul>
+                    <li>Charged once per year on your subscription anniversary</li>
+                    <li>Includes discount compared to monthly billing (typically 20% savings)</li>
+                    <li>Full year access from purchase date</li>
+                </ul>
+
+                <div class="highlight-box">
+                    <p><strong>Pro Tip:</strong> Annual billing saves you money and ensures uninterrupted service. Consider upgrading for the best value.</p>
+                </div>
+            </div>
+
+            <div class="legal-section" id="payment-methods">
+                <h2>4. Payment Methods</h2>
+                <p>We accept the following payment methods:</p>
+                <ul>
+                    <li><strong>Credit/Debit Cards:</strong> Visa, Mastercard, American Express, Discover</li>
+                    <li><strong>Digital Wallets:</strong> PayPal, Google Pay, Apple Pay</li>
+                    <li><strong>Bank Transfer:</strong> Wire transfer for Enterprise plans (minimum $5,000)</li>
+                    <li><strong>Invoice:</strong> NET-30 terms available for qualified Enterprise customers</li>
+                </ul>
+                <p>All payments are processed securely through PCI-compliant payment processors. We do not store your full credit card details.</p>
+            </div>
+
+            <div class="legal-section" id="free-trial">
+                <h2>5. Free Trial</h2>
+                <p>We offer a free trial to help you evaluate our services:</p>
+                <ul>
+                    <li><strong>Duration:</strong> 14 days for all new accounts</li>
+                    <li><strong>Features:</strong> Full access to all features in Professional plan</li>
+                    <li><strong>No Credit Card Required:</strong> Start your trial without payment information</li>
+                    <li><strong>Automatic Expiration:</strong> Trial ends automatically if not converted</li>
+                </ul>
+
+                <div class="highlight-box warning">
+                    <p><strong>Important:</strong> After your trial ends, you will need to select a paid plan to continue using our services. Your data will be retained for 30 days after trial expiration.</p>
+                </div>
+            </div>
+
+            <div class="legal-section" id="upgrades">
+                <h2>6. Upgrades & Downgrades</h2>
+                <h3>6.1 Upgrading Your Plan</h3>
+                <ul>
+                    <li>Upgrades take effect immediately</li>
+                    <li>You'll be charged a prorated amount for the remainder of your billing period</li>
+                    <li>Additional features become available instantly</li>
+                </ul>
+
+                <h3>6.2 Downgrading Your Plan</h3>
+                <ul>
+                    <li>Downgrades take effect at the start of your next billing period</li>
+                    <li>You retain access to higher-tier features until then</li>
+                    <li>No prorated refunds for downgrades</li>
+                    <li>Ensure your usage fits within the new plan's limits before downgrading</li>
+                </ul>
+
+                <h3>6.3 Adding or Removing Users</h3>
+                <ul>
+                    <li>Additional users can be added anytime (prorated billing)</li>
+                    <li>Removed users are credited to your account for future billing</li>
+                </ul>
+            </div>
+
+            <div class="legal-section" id="cancellation">
+                <h2>7. Cancellation Policy</h2>
+                <h3>7.1 How to Cancel</h3>
+                <p>You can cancel your subscription at any time through:</p>
+                <ul>
+                    <li>Account Settings → Billing → Cancel Subscription</li>
+                    <li>Contacting our support team at <a href="mailto:billing@hyperdroid.io">billing@hyperdroid.io</a></li>
+                </ul>
+
+                <h3>7.2 What Happens When You Cancel</h3>
+                <ul>
+                    <li>Your account remains active until the end of your current billing period</li>
+                    <li>You can continue using all features until the subscription ends</li>
+                    <li>After cancellation, your account will be downgraded to limited access</li>
+                    <li>Your data will be retained for 30 days, then permanently deleted</li>
+                </ul>
+
+                <h3>7.3 Data Export</h3>
+                <p>Before cancellation, we recommend exporting your data. You can export:</p>
+                <ul>
+                    <li>Files and documents from Drive</li>
+                    <li>Chat history and messages</li>
+                    <li>Meeting recordings</li>
+                    <li>HRMS reports and employee data</li>
+                </ul>
+            </div>
+
+            <div class="legal-section" id="refunds">
+                <h2>8. Refund Policy</h2>
+                <h3>8.1 Refund Eligibility</h3>
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Refund Available</th>
+                            <th>Conditions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>First-time annual subscription</td>
+                            <td><span class="highlight">30-day money-back guarantee</span></td>
+                            <td>Request within 30 days of purchase</td>
+                        </tr>
+                        <tr>
+                            <td>Monthly subscriptions</td>
+                            <td>No refunds</td>
+                            <td>Cancel to stop future charges</td>
+                        </tr>
+                        <tr>
+                            <td>Service outage (our fault)</td>
+                            <td>Prorated credit</td>
+                            <td>Outage >24 hours, verified by us</td>
+                        </tr>
+                        <tr>
+                            <td>Duplicate charges</td>
+                            <td>Full refund</td>
+                            <td>Contact support within 60 days</td>
+                        </tr>
+                        <tr>
+                            <td>Unauthorized charges</td>
+                            <td>Full refund</td>
+                            <td>Report immediately, investigation required</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>8.2 How to Request a Refund</h3>
+                <ol>
+                    <li>Email <a href="mailto:billing@hyperdroid.io">billing@hyperdroid.io</a> with subject "Refund Request"</li>
+                    <li>Include your account email and reason for the refund</li>
+                    <li>We will respond within 2 business days</li>
+                    <li>Approved refunds are processed within 5-10 business days</li>
+                </ol>
+
+                <h3>8.3 Non-Refundable Items</h3>
+                <ul>
+                    <li>Partial months of service</li>
+                    <li>Setup fees for Enterprise or Self-Hosted deployments</li>
+                    <li>Custom development or integration work</li>
+                    <li>Training and onboarding services</li>
+                    <li>Third-party add-ons or integrations</li>
+                </ul>
+
+                <div class="highlight-box success">
+                    <p><strong>Our Promise:</strong> If you're not satisfied within the first 30 days of your annual subscription, we'll refund your payment in full. No questions asked.</p>
+                </div>
+            </div>
+
+            <div class="legal-section" id="failed-payments">
+                <h2>9. Failed Payments</h2>
+                <p>If a payment fails, we will:</p>
+                <ol>
+                    <li><strong>Notify you immediately</strong> via email about the failed payment</li>
+                    <li><strong>Retry automatically</strong> after 3 days, then again after 7 days</li>
+                    <li><strong>Provide a grace period</strong> of 14 days to update payment information</li>
+                    <li><strong>Suspend account</strong> if payment is not received after the grace period</li>
+                </ol>
+
+                <div class="highlight-box warning">
+                    <p><strong>Avoid Disruption:</strong> Keep your payment information up to date. You can update your payment method anytime in Account Settings → Billing.</p>
+                </div>
+            </div>
+
+            <div class="legal-section" id="taxes">
+                <h2>10. Taxes</h2>
+                <ul>
+                    <li>Prices displayed may not include applicable taxes</li>
+                    <li>Sales tax, VAT, or GST will be added based on your location</li>
+                    <li>Tax-exempt organizations can provide documentation for exemption</li>
+                    <li>Tax receipts are available in your billing history</li>
+                </ul>
+                <p>For tax-related questions, contact <a href="mailto:billing@hyperdroid.io">billing@hyperdroid.io</a>.</p>
+            </div>
+
+            <div class="legal-section" id="enterprise">
+                <h2>11. Enterprise & Self-Hosted</h2>
+                <h3>11.1 Enterprise Plans</h3>
+                <ul>
+                    <li>Custom pricing based on organization size and requirements</li>
+                    <li>Annual billing with NET-30 payment terms available</li>
+                    <li>Dedicated account manager and SLA guarantees</li>
+                    <li>Volume discounts for large deployments</li>
+                </ul>
+
+                <h3>11.2 Self-Hosted Deployments</h3>
+                <ul>
+                    <li>One-time license fee plus annual support and updates</li>
+                    <li>License is perpetual; support renewal is optional</li>
+                    <li>Refunds available within 30 days if not deployed</li>
+                    <li>No refunds after software has been deployed in production</li>
+                </ul>
+
+                <p>For Enterprise or Self-Hosted inquiries, contact <a href="mailto:sales@hyperdroid.io">sales@hyperdroid.io</a>.</p>
+            </div>
+
+            <div class="legal-section" id="contact">
+                <h2>12. Contact Billing Support</h2>
+                <p>For billing questions, refund requests, or payment issues:</p>
+                <ul>
+                    <li><strong>Email:</strong> <a href="mailto:billing@hyperdroid.io">billing@hyperdroid.io</a></li>
+                    <li><strong>Response Time:</strong> Within 24 hours on business days</li>
+                    <li><strong>Phone:</strong> Available for Enterprise customers</li>
+                </ul>
+                <p>Please include your account email and relevant transaction details in all correspondence.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <img src="../assets/brand_logo.png" alt="HyperDroid" class="footer-logo">
+        <div class="footer-links">
+            <a href="vision.html" class="footer-link">Vision</a>
+            <a href="chat.html" class="footer-link">Chat</a>
+            <a href="drive.html" class="footer-link">Drive</a>
+            <a href="hrms.html" class="footer-link">HRMS</a>
+            <a href="terms.html" class="footer-link">Terms</a>
+            <a href="privacy.html" class="footer-link">Privacy</a>
+            <a href="refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 HyperDroid. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

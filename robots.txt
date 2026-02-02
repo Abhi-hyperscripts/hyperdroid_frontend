@@ -1,0 +1,17 @@
+# HyperDroid.io Robots.txt
+# https://hyperdroid.io
+
+# Allow all crawlers
+User-agent: *
+
+# Allow all pages except admin areas
+Allow: /
+
+# Block tenant manager (admin panel)
+Disallow: /pages/tenant-manager/
+
+# Block API-only paths (if any)
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://hyperdroid.io/sitemap.xml
