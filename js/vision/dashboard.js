@@ -2376,6 +2376,11 @@ function openSummaryModal() {
         return;
     }
 
+    // Close slide panel first to ensure modal appears on top
+    if (typeof closeTranscriptsPanel === 'function') {
+        closeTranscriptsPanel();
+    }
+
     // Create modal if it doesn't exist
     let modal = document.getElementById('summaryModal');
     if (!modal) {
