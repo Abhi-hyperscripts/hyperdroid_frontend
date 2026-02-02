@@ -2216,6 +2216,12 @@ async function loadSessionSummary(sessionId) {
         const response = await api.getSessionSummary(sessionId);
         const hasSummary = response.hasSummary && response.summaryText;
 
+        // Store the full summary text for the modal
+        if (hasSummary) {
+            window.currentSummaryText = response.summaryText;
+            window.currentSummaryUpdatedAt = response.uploadedAt;
+        }
+
         summaryContainer.innerHTML = `
             <div class="summary-content">
                 ${hasSummary ? `
@@ -2231,6 +2237,16 @@ async function loadSessionSummary(sessionId) {
                     </div>
                 `}
                 <div class="summary-actions">
+                    ${hasSummary ? `
+                    <button class="btn btn-secondary btn-sm" onclick="openSummaryModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h6v6"/>
+                            <path d="M10 14L21 3"/>
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        </svg>
+                        View Full
+                    </button>
+                    ` : ''}
                     <button class="btn btn-secondary btn-sm" onclick="showSummaryEditor('${sessionId}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -2340,6 +2356,79 @@ async function uploadSummaryFile(sessionId, input) {
         Toast.error('Failed to upload summary: ' + error.message);
     } finally {
         input.value = '';
+    }
+}
+
+// ============================================
+// SUMMARY MODAL
+// ============================================
+
+function openSummaryModal() {
+    const summaryText = window.currentSummaryText || '';
+    const updatedAt = window.currentSummaryUpdatedAt;
+
+    if (!summaryText) {
+        Toast.error('No summary to display');
+        return;
+    }
+
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('summaryModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'summaryModal';
+        modal.className = 'summary-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="summary-modal-content glass-effect">
+            <div class="summary-modal-header">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Summary / Minutes
+                </h3>
+                <button class="summary-modal-close" onclick="closeSummaryModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="summary-modal-body">
+                <pre>${escapeHtml(summaryText)}</pre>
+            </div>
+            <div class="summary-modal-footer">
+                <small>Last updated: ${updatedAt ? new Date(updatedAt).toLocaleString() : 'N/A'}</small>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Close on escape key
+    modal.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeSummaryModal();
+    });
+
+    // Close on backdrop click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeSummaryModal();
+    });
+}
+
+function closeSummaryModal() {
+    const modal = document.getElementById('summaryModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
 }
 
