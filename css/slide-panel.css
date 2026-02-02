@@ -1208,6 +1208,11 @@
     border: 1px solid var(--border-color-light);
     border-radius: 12px;
     padding: 14px;
+    margin-bottom: 16px;
+}
+
+.speaker-group:last-child {
+    margin-bottom: 0;
 }
 
 .speaker-header {
@@ -1223,6 +1228,12 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.speaker-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .badge-whisper {

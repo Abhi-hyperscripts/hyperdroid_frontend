@@ -2043,8 +2043,10 @@ async function showSessionTranscript(sessionId) {
                     <div class="speaker-group">
                         <div class="speaker-header">
                             <span class="speaker-name">${segment.speakerName || 'Unknown'}</span>
-                            ${roleBadge}
-                            <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${segment.source}</span>
+                            <div class="speaker-badges">
+                                ${roleBadge}
+                                <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${segment.source}</span>
+                            </div>
                         </div>
                 `;
                 currentSpeaker = segment.speakerName;
@@ -3588,7 +3590,12 @@ async function saveSpeakerRoles() {
 
         if (response.success) {
             Toast.success(`Updated ${response.affectedRows} transcript segment(s)`);
+            const sessionId = currentRolesSessionId;
             closeSpeakerRolesModal();
+            // Reload transcript to show updated role badges
+            if (sessionId) {
+                await showSessionTranscript(sessionId);
+            }
         } else {
             throw new Error(response.message || 'Failed to save roles');
         }
