@@ -3138,14 +3138,13 @@ let speakerRoleDropdowns = new Map();
         .speaker-roles-modal {
             background: rgba(15, 23, 42, 0.6) !important;
             border-radius: 16px !important;
-            max-width: 500px;
+            max-width: 520px;
             width: 90%;
-            max-height: 80vh;
             display: flex;
             flex-direction: column;
             transform: scale(0.95);
             transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
-            overflow: hidden;
+            overflow: visible;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
             backdrop-filter: blur(24px) saturate(150%);
@@ -3225,8 +3224,7 @@ let speakerRoleDropdowns = new Map();
         }
         .speaker-roles-body {
             padding: 16px 20px;
-            overflow-y: auto;
-            flex: 1;
+            overflow: visible;
         }
         .speaker-roles-info {
             font-size: 13px;
@@ -3292,8 +3290,20 @@ let speakerRoleDropdowns = new Map();
             text-overflow: ellipsis;
         }
         .speaker-role-dropdown-container {
-            width: 160px;
+            width: 180px;
             flex-shrink: 0;
+        }
+        .speaker-role-dropdown-container .searchable-dropdown-trigger {
+            min-width: unset !important;
+        }
+        .speaker-role-dropdown-container .searchable-dropdown-menu {
+            z-index: 2147483647 !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        .speaker-role-dropdown-container .searchable-dropdown-options {
+            max-height: 200px;
+            overflow-y: auto;
         }
         .speaker-roles-footer {
             display: flex;
