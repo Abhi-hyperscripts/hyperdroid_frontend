@@ -2363,6 +2363,10 @@ async function uploadSummaryFile(sessionId, input) {
 // SUMMARY MODAL
 // ============================================
 
+// Event handler references for cleanup
+let summaryModalKeyHandler = null;
+let summaryModalClickHandler = null;
+
 function openSummaryModal() {
     const summaryText = window.currentSummaryText || '';
     const updatedAt = window.currentSummaryUpdatedAt;
@@ -2410,25 +2414,46 @@ function openSummaryModal() {
         </div>
     `;
 
-    modal.style.display = 'flex';
+    // Show modal using class
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    // Close on escape key
-    modal.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeSummaryModal();
-    });
+    // Remove old event listeners if they exist
+    if (summaryModalKeyHandler) {
+        document.removeEventListener('keydown', summaryModalKeyHandler);
+    }
+    if (summaryModalClickHandler) {
+        modal.removeEventListener('click', summaryModalClickHandler);
+    }
 
-    // Close on backdrop click
-    modal.addEventListener('click', function(e) {
+    // Create new event handlers
+    summaryModalKeyHandler = function(e) {
+        if (e.key === 'Escape') closeSummaryModal();
+    };
+    summaryModalClickHandler = function(e) {
         if (e.target === modal) closeSummaryModal();
-    });
+    };
+
+    // Add event listeners
+    document.addEventListener('keydown', summaryModalKeyHandler);
+    modal.addEventListener('click', summaryModalClickHandler);
 }
 
 function closeSummaryModal() {
     const modal = document.getElementById('summaryModal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('active');
         document.body.style.overflow = '';
+
+        // Clean up event listeners
+        if (summaryModalKeyHandler) {
+            document.removeEventListener('keydown', summaryModalKeyHandler);
+            summaryModalKeyHandler = null;
+        }
+        if (summaryModalClickHandler) {
+            modal.removeEventListener('click', summaryModalClickHandler);
+            summaryModalClickHandler = null;
+        }
     }
 }
 
