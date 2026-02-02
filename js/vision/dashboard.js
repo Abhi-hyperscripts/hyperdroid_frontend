@@ -1936,6 +1936,22 @@ async function showSessionTranscript(sessionId) {
 
         panelTitle.textContent = `${transcript.meetingName || 'Meeting'} - Transcript`;
 
+        // Deduplicate consecutive identical segments from same speaker (fixes repeated native transcription chunks)
+        const deduplicatedTimeline = [];
+        let prevSegment = null;
+        for (const segment of transcript.timeline) {
+            // Skip if this is an exact duplicate of previous segment (same speaker, same text, same timestamp)
+            if (prevSegment &&
+                segment.speakerName === prevSegment.speakerName &&
+                segment.text === prevSegment.text &&
+                segment.startMs === prevSegment.startMs) {
+                continue; // Skip duplicate
+            }
+            deduplicatedTimeline.push(segment);
+            prevSegment = segment;
+        }
+        const displayedSegmentCount = deduplicatedTimeline.length;
+
         // Build transcript view
         let transcriptHtml = `
             <div class="transcript-header">
@@ -1975,7 +1991,7 @@ async function showSessionTranscript(sessionId) {
             </div>
             <div class="transcript-summary">
                 <div class="summary-stat">
-                    <span class="stat-value">${transcript.totalSegments}</span>
+                    <span class="stat-value">${displayedSegmentCount}</span>
                     <span class="stat-label">Segments</span>
                 </div>
                 <div class="summary-stat">
@@ -2011,7 +2027,7 @@ async function showSessionTranscript(sessionId) {
 
         // Group consecutive segments by speaker for better readability
         let currentSpeaker = null;
-        transcript.timeline.forEach((segment, index) => {
+        deduplicatedTimeline.forEach((segment, index) => {
             const timestamp = formatTimestamp(segment.startMs);
             const isNewSpeaker = segment.speakerName !== currentSpeaker;
 
