@@ -748,6 +748,27 @@ class API {
         });
     }
 
+    // Transcripts API
+    async getMeetingSessions(meetingId) {
+        return this.request(`/transcripts/${meetingId}/sessions`);
+    }
+
+    async getSessionTranscript(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}`);
+    }
+
+    async exportSessionTranscriptText(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}/export/text`, {
+            responseType: 'blob'
+        });
+    }
+
+    async exportSessionTranscriptJson(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}/export/json`, {
+            responseType: 'blob'
+        });
+    }
+
     async deleteAllMeetingRecordings(meetingId) {
         return this.request(`/meetings/${meetingId}/recordings`, {
             method: 'DELETE'

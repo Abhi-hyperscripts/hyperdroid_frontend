@@ -244,6 +244,15 @@ function createMeetingItemHTML(meeting) {
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                         </svg>
                     </button>
+                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </button>
                     <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -309,6 +318,15 @@ function createHostedMeetingItemHTML(meeting) {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
                         </svg>
                     </button>
                     <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
@@ -1746,6 +1764,320 @@ async function deleteAllRecordings(meetingId) {
         Toast.error('Failed to delete recordings: ' + error.message);
     }
 }
+
+// ============================================
+// TRANSCRIPTS PANEL
+// ============================================
+
+let currentTranscriptsMeetingId = null;
+let currentSessionId = null;
+
+async function showTranscriptsPanel(meetingId) {
+    try {
+        currentTranscriptsMeetingId = meetingId;
+
+        // Show panel with loading state
+        const panel = document.getElementById('transcriptsSlidePanel');
+        const overlay = document.getElementById('transcriptsPanelOverlay');
+        const panelBody = document.getElementById('transcriptsPanelBody');
+        const panelTitle = document.getElementById('transcriptsPanelTitle');
+
+        panelTitle.textContent = 'Meeting Transcripts';
+        panelBody.innerHTML = '<div class="panel-loading"><div class="spinner"></div></div>';
+        panel.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        const sessions = await api.getMeetingSessions(meetingId);
+
+        if (!sessions || sessions.length === 0) {
+            panelBody.innerHTML = `
+                <div class="panel-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <p>No transcripts available</p>
+                    <small>Transcripts will appear here after meetings with transcription enabled</small>
+                </div>
+            `;
+            return;
+        }
+
+        // Build sessions list
+        const meetingName = sessions[0].meetingName || 'Meeting';
+        panelTitle.textContent = `Transcripts - ${meetingName}`;
+
+        let sessionsHtml = `
+            <div class="panel-section">
+                <div class="sessions-list">
+        `;
+
+        sessions.forEach((session, index) => {
+            const startDate = new Date(session.startedAt);
+            const dateStr = startDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const isActive = !session.endedAt;
+
+            sessionsHtml += `
+                <div class="session-item ${isActive ? 'session-active' : ''}" onclick="showSessionTranscript('${session.id}')">
+                    <div class="session-info">
+                        <div class="session-header">
+                            <span class="session-number">Session #${session.sessionNumber}</span>
+                            ${isActive ? '<span class="badge badge-live">LIVE</span>' : ''}
+                        </div>
+                        <div class="session-meta">
+                            <span class="session-date">${dateStr}</span>
+                            <span class="session-duration">${session.durationFormatted || '--:--:--'}</span>
+                        </div>
+                        <div class="session-stats">
+                            <span class="stat-item">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                ${session.transcriptCount} segments
+                            </span>
+                            <span class="stat-item">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                ${session.participantCount || '?'} participants
+                            </span>
+                        </div>
+                    </div>
+                    <div class="session-arrow">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+            `;
+        });
+
+        sessionsHtml += `
+                </div>
+            </div>
+        `;
+
+        panelBody.innerHTML = sessionsHtml;
+
+    } catch (error) {
+        console.error('Error loading transcripts:', error);
+        Toast.error('Failed to load transcripts: ' + error.message);
+        closeTranscriptsPanel();
+    }
+}
+
+async function showSessionTranscript(sessionId) {
+    try {
+        currentSessionId = sessionId;
+
+        const panelBody = document.getElementById('transcriptsPanelBody');
+        const panelTitle = document.getElementById('transcriptsPanelTitle');
+
+        panelBody.innerHTML = '<div class="panel-loading"><div class="spinner"></div></div>';
+
+        const transcript = await api.getSessionTranscript(sessionId);
+
+        if (!transcript || !transcript.timeline || transcript.timeline.length === 0) {
+            panelBody.innerHTML = `
+                <div class="panel-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <p>No transcript content</p>
+                    <button class="btn btn-secondary btn-sm" onclick="showTranscriptsPanel('${currentTranscriptsMeetingId}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Back to Sessions
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        panelTitle.textContent = `${transcript.meetingName || 'Meeting'} - Transcript`;
+
+        // Build transcript view
+        let transcriptHtml = `
+            <div class="transcript-header">
+                <button class="btn btn-secondary btn-sm" onclick="showTranscriptsPanel('${currentTranscriptsMeetingId}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Back
+                </button>
+                <div class="transcript-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="exportTranscript('${sessionId}', 'text')" title="Export as Text">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        TXT
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportTranscript('${sessionId}', 'json')" title="Export as JSON">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        JSON
+                    </button>
+                </div>
+            </div>
+            <div class="transcript-summary">
+                <div class="summary-stat">
+                    <span class="stat-value">${transcript.totalSegments}</span>
+                    <span class="stat-label">Segments</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-value">${transcript.totalSpeakers}</span>
+                    <span class="stat-label">Speakers</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-value">${formatDuration(transcript.totalDurationMs)}</span>
+                    <span class="stat-label">Duration</span>
+                </div>
+            </div>
+            <div class="transcript-timeline">
+        `;
+
+        // Group consecutive segments by speaker for better readability
+        let currentSpeaker = null;
+        transcript.timeline.forEach((segment, index) => {
+            const timestamp = formatTimestamp(segment.startMs);
+            const isNewSpeaker = segment.speakerName !== currentSpeaker;
+
+            if (isNewSpeaker) {
+                if (currentSpeaker !== null) {
+                    transcriptHtml += `</div>`; // Close previous speaker group
+                }
+                transcriptHtml += `
+                    <div class="speaker-group">
+                        <div class="speaker-header">
+                            <span class="speaker-name">${segment.speakerName || 'Unknown'}</span>
+                            <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${segment.source}</span>
+                        </div>
+                `;
+                currentSpeaker = segment.speakerName;
+            }
+
+            transcriptHtml += `
+                <div class="transcript-segment">
+                    <span class="segment-time">${timestamp}</span>
+                    <span class="segment-text">${segment.text}</span>
+                </div>
+            `;
+        });
+
+        if (currentSpeaker !== null) {
+            transcriptHtml += `</div>`; // Close last speaker group
+        }
+
+        transcriptHtml += `
+            </div>
+        `;
+
+        panelBody.innerHTML = transcriptHtml;
+
+    } catch (error) {
+        console.error('Error loading session transcript:', error);
+        Toast.error('Failed to load transcript: ' + error.message);
+    }
+}
+
+function formatTimestamp(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function formatDuration(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+}
+
+async function exportTranscript(sessionId, format) {
+    try {
+        Toast.info(`Exporting transcript as ${format.toUpperCase()}...`);
+
+        const response = format === 'json'
+            ? await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/export/json`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('hyperdroid_authToken')}` }
+              })
+            : await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/export/text`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('hyperdroid_authToken')}` }
+              });
+
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `transcript.${format === 'json' ? 'json' : 'txt'}`;
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match) filename = match[1];
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        Toast.success('Transcript exported successfully');
+    } catch (error) {
+        console.error('Error exporting transcript:', error);
+        Toast.error('Failed to export transcript');
+    }
+}
+
+function closeTranscriptsPanel() {
+    const panel = document.getElementById('transcriptsSlidePanel');
+    const overlay = document.getElementById('transcriptsPanelOverlay');
+
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    currentTranscriptsMeetingId = null;
+    currentSessionId = null;
+}
+
+// Close transcripts panel on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('transcriptsSlidePanel');
+        if (panel && panel.classList.contains('active')) {
+            closeTranscriptsPanel();
+        }
+    }
+});
 
 // ============================================
 // MEETING SETTINGS MODAL
