@@ -2183,9 +2183,8 @@ async function confirmDeleteSession(sessionId, sessionNumber) {
     }
 
     try {
-        Toast.info('Deleting session...');
         await api.deleteSession(sessionId);
-        Toast.success(`Session #${sessionNumber} deleted successfully`);
+        Toast.success(`Session #${sessionNumber} deleted`);
 
         // Remove the session item from the DOM
         const sessionItem = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
