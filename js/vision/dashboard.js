@@ -1843,11 +1843,12 @@ async function showTranscriptsPanel(meetingId) {
             const isActive = !session.endedAt;
 
             sessionsHtml += `
-                <div class="session-item ${isActive ? 'session-active' : ''}" onclick="showSessionTranscript('${session.id}')">
-                    <div class="session-info">
+                <div class="session-item ${isActive ? 'session-active' : ''}" data-session-id="${session.id}">
+                    <div class="session-info" onclick="showSessionTranscript('${session.id}')">
                         <div class="session-header">
                             <span class="session-number">Session #${session.sessionNumber}</span>
                             ${isActive ? '<span class="badge badge-live">LIVE</span>' : ''}
+                            ${session.hasSummary ? '<span class="badge badge-summary" title="Has summary/minutes">SUMMARY</span>' : ''}
                         </div>
                         <div class="session-meta">
                             <span class="session-date">${dateStr}</span>
@@ -1866,14 +1867,24 @@ async function showTranscriptsPanel(meetingId) {
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                     <circle cx="12" cy="7" r="4"/>
                                 </svg>
-                                ${session.participantCount || '?'} participants
+                                ${session.participantCount || '?'} speakers
                             </span>
                         </div>
                     </div>
-                    <div class="session-arrow">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                    <div class="session-actions">
+                        <button class="btn-icon btn-secondary btn-sm" onclick="event.stopPropagation(); showSessionTranscript('${session.id}')" title="View Transcript">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                        ${!isActive ? `
+                        <button class="btn-icon btn-danger btn-sm" onclick="event.stopPropagation(); confirmDeleteSession('${session.id}', ${session.sessionNumber})" title="Delete Session">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1967,6 +1978,25 @@ async function showSessionTranscript(sessionId) {
                     <span class="stat-label">Duration</span>
                 </div>
             </div>
+            <div class="transcript-section summary-section">
+                <div class="section-header" onclick="toggleSummarySection()">
+                    <h4>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        Summary / Minutes
+                    </h4>
+                    <svg class="section-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+                <div class="section-content" id="sessionSummaryContainer">
+                    <div class="spinner-small"></div>
+                </div>
+            </div>
             <div class="transcript-timeline">
         `;
 
@@ -2008,9 +2038,19 @@ async function showSessionTranscript(sessionId) {
 
         panelBody.innerHTML = transcriptHtml;
 
+        // Load summary section
+        loadSessionSummary(sessionId);
+
     } catch (error) {
         console.error('Error loading session transcript:', error);
         Toast.error('Failed to load transcript: ' + error.message);
+    }
+}
+
+function toggleSummarySection() {
+    const section = document.querySelector('.summary-section');
+    if (section) {
+        section.classList.toggle('collapsed');
     }
 }
 
@@ -2094,6 +2134,191 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+async function confirmDeleteSession(sessionId, sessionNumber) {
+    if (!confirm(`Are you sure you want to delete Session #${sessionNumber}?\n\nThis will permanently delete:\n- All transcript segments\n- The session summary/minutes (if any)\n\nThis action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        Toast.info('Deleting session...');
+        await api.deleteSession(sessionId);
+        Toast.success(`Session #${sessionNumber} deleted successfully`);
+
+        // Remove the session item from the DOM
+        const sessionItem = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
+        if (sessionItem) {
+            sessionItem.remove();
+        }
+
+        // Check if no sessions left
+        const remainingSessions = document.querySelectorAll('.session-item');
+        if (remainingSessions.length === 0) {
+            const panelBody = document.getElementById('transcriptsPanelBody');
+            panelBody.innerHTML = `
+                <div class="panel-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <p>No transcripts available</p>
+                    <small>Transcripts will appear here after meetings with transcription enabled</small>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        Toast.error('Failed to delete session: ' + error.message);
+    }
+}
+
+async function loadSessionSummary(sessionId) {
+    try {
+        const summaryContainer = document.getElementById('sessionSummaryContainer');
+        if (!summaryContainer) return;
+
+        summaryContainer.innerHTML = '<div class="spinner-small"></div>';
+
+        const response = await api.getSessionSummary(sessionId);
+        const hasSummary = response.hasSummary && response.summaryText;
+
+        summaryContainer.innerHTML = `
+            <div class="summary-content">
+                ${hasSummary ? `
+                    <div class="summary-text-display" id="summaryTextDisplay">
+                        <pre>${escapeHtml(response.summaryText)}</pre>
+                    </div>
+                    <div class="summary-meta">
+                        <small>Last updated: ${response.uploadedAt ? new Date(response.uploadedAt).toLocaleString() : 'N/A'}</small>
+                    </div>
+                ` : `
+                    <div class="summary-empty">
+                        <p>No summary/minutes for this session yet.</p>
+                    </div>
+                `}
+                <div class="summary-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="showSummaryEditor('${sessionId}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        ${hasSummary ? 'Edit Summary' : 'Add Summary'}
+                    </button>
+                    <label class="btn btn-secondary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Upload File
+                        <input type="file" accept=".txt,.md,.text" style="display: none;" onchange="uploadSummaryFile('${sessionId}', this)">
+                    </label>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading session summary:', error);
+        const summaryContainer = document.getElementById('sessionSummaryContainer');
+        if (summaryContainer) {
+            summaryContainer.innerHTML = '<p class="text-error">Failed to load summary</p>';
+        }
+    }
+}
+
+function showSummaryEditor(sessionId) {
+    const summaryContainer = document.getElementById('sessionSummaryContainer');
+    if (!summaryContainer) return;
+
+    const existingText = document.querySelector('#summaryTextDisplay pre')?.textContent || '';
+
+    summaryContainer.innerHTML = `
+        <div class="summary-editor">
+            <textarea id="summaryTextarea" rows="10" placeholder="Enter meeting summary or minutes...">${escapeHtml(existingText)}</textarea>
+            <div class="summary-editor-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveSummary('${sessionId}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="loadSessionSummary('${sessionId}')">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Focus the textarea
+    document.getElementById('summaryTextarea')?.focus();
+}
+
+async function saveSummary(sessionId) {
+    try {
+        const textarea = document.getElementById('summaryTextarea');
+        if (!textarea) return;
+
+        const summaryText = textarea.value.trim();
+        Toast.info('Saving summary...');
+
+        await api.updateSessionSummary(sessionId, summaryText);
+        Toast.success('Summary saved successfully');
+
+        // Reload the summary section
+        await loadSessionSummary(sessionId);
+    } catch (error) {
+        console.error('Error saving summary:', error);
+        Toast.error('Failed to save summary: ' + error.message);
+    }
+}
+
+async function uploadSummaryFile(sessionId, input) {
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+
+    // Validate file type
+    const allowedTypes = ['.txt', '.md', '.text'];
+    const extension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(extension)) {
+        Toast.error('Only text files (.txt, .md) are allowed');
+        input.value = '';
+        return;
+    }
+
+    // Validate file size (1MB max)
+    if (file.size > 1024 * 1024) {
+        Toast.error('File size must be less than 1MB');
+        input.value = '';
+        return;
+    }
+
+    try {
+        Toast.info('Uploading summary...');
+        await api.uploadSessionSummary(sessionId, file);
+        Toast.success('Summary uploaded successfully');
+
+        // Reload the summary section
+        await loadSessionSummary(sessionId);
+    } catch (error) {
+        console.error('Error uploading summary:', error);
+        Toast.error('Failed to upload summary: ' + error.message);
+    } finally {
+        input.value = '';
+    }
+}
+
+// Helper to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // ============================================
 // MEETING SETTINGS MODAL

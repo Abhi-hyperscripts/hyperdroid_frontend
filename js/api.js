@@ -769,6 +769,44 @@ class API {
         });
     }
 
+    async getSessionSummary(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}/summary`);
+    }
+
+    async updateSessionSummary(sessionId, summaryText) {
+        return this.request(`/transcripts/sessions/${sessionId}/summary`, {
+            method: 'PUT',
+            body: JSON.stringify({ summaryText })
+        });
+    }
+
+    async uploadSessionSummary(sessionId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const token = this.getToken();
+        const response = await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/summary/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to upload summary');
+        }
+
+        return response.json();
+    }
+
+    async deleteSession(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+    }
+
     async deleteAllMeetingRecordings(meetingId) {
         return this.request(`/meetings/${meetingId}/recordings`, {
             method: 'DELETE'

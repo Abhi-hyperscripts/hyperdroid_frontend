@@ -1299,3 +1299,214 @@
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.06);
 }
+
+/* Session Actions */
+.session-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+}
+
+.session-actions .btn-icon {
+    padding: 6px;
+    border-radius: 6px;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+}
+
+.session-item:hover .session-actions .btn-icon {
+    opacity: 1;
+}
+
+.session-actions .btn-danger {
+    background: transparent;
+    color: var(--color-error);
+    border: 1px solid transparent;
+}
+
+.session-actions .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Summary Badge */
+.badge-summary {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+}
+
+/* Summary Section */
+.summary-section {
+    margin-top: 16px;
+    margin-bottom: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+}
+
+.summary-section .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.summary-section .section-header:hover {
+    background: rgba(var(--brand-primary-rgb), 0.05);
+}
+
+.summary-section .section-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.summary-section .section-toggle {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+}
+
+.summary-section.collapsed .section-toggle {
+    transform: rotate(-90deg);
+}
+
+.summary-section .section-content {
+    padding: 16px;
+    border-top: 1px solid var(--border-color-light);
+    transition: all 0.2s ease;
+}
+
+.summary-section.collapsed .section-content {
+    display: none;
+}
+
+/* Summary Content */
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-text-display {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.summary-text-display pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.summary-meta {
+    color: var(--text-muted);
+}
+
+.summary-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+}
+
+.summary-empty p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.summary-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.summary-actions label.btn {
+    cursor: pointer;
+}
+
+/* Summary Editor */
+.summary-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-editor textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.summary-editor textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.summary-editor-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Small Spinner */
+.spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color-light);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 10px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Dark theme for summary section */
+[data-theme="dark"] .summary-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .summary-text-display {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .summary-editor textarea {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
