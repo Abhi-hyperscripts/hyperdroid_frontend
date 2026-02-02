@@ -1946,7 +1946,7 @@ async function showSessionTranscript(sessionId) {
                     Back
                 </button>
                 <div class="transcript-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="showParticipantRolesPanel('${currentTranscriptsMeetingId}')" title="Manage Participant Roles">
+                    <button class="btn btn-secondary btn-sm" onclick="showSpeakerRolesPanel('${currentSessionId}', '${currentTranscriptsMeetingId}')" title="Manage Speaker Roles">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
@@ -2019,10 +2019,15 @@ async function showSessionTranscript(sessionId) {
                 if (currentSpeaker !== null) {
                     transcriptHtml += `</div>`; // Close previous speaker group
                 }
+                const roleClass = segment.speakerRole ? `badge-role-${segment.speakerRole.toLowerCase().replace(/[^a-z]/g, '')}` : '';
+                const roleBadge = segment.speakerRole
+                    ? `<span class="speaker-role badge badge-role ${roleClass}">${capitalizeFirst(segment.speakerRole)}</span>`
+                    : '';
                 transcriptHtml += `
                     <div class="speaker-group">
                         <div class="speaker-header">
                             <span class="speaker-name">${segment.speakerName || 'Unknown'}</span>
+                            ${roleBadge}
                             <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${segment.source}</span>
                         </div>
                 `;
@@ -3087,122 +3092,396 @@ async function initDashboardSignalR() {
 // ============================================
 
 let currentRolesMeetingId = null;
-let participantRolesData = null;
+let currentRolesSessionId = null;
+let speakerRolesData = null;
+let speakerRoleDropdowns = new Map();
 
-async function showParticipantRolesPanel(meetingId) {
+// Inject glassy modal styles
+(function injectSpeakerRolesModalStyles() {
+    if (document.getElementById('speaker-roles-modal-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'speaker-roles-modal-styles';
+    style.textContent = `
+        .speaker-roles-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: var(--overlay-dark, rgba(0, 0, 0, 0.5)) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 2147483647 !important;
+            opacity: 0;
+            transition: opacity 200ms ease;
+        }
+        .speaker-roles-overlay.active {
+            opacity: 1;
+        }
+        .speaker-roles-modal {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-radius: 16px !important;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+        }
+        .speaker-roles-overlay.active .speaker-roles-modal {
+            transform: scale(1);
+        }
+        .speaker-roles-modal:hover {
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+            box-shadow:
+                0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+                0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+                0 8px 24px rgba(0, 0, 0, 0.2) !important;
+        }
+        [data-theme="light"] .speaker-roles-modal {
+            background: rgba(255, 255, 255, 0.7) !important;
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+        }
+        [data-theme="light"] .speaker-roles-modal:hover {
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+            box-shadow:
+                0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+                0 8px 24px rgba(0, 0, 0, 0.08) !important;
+        }
+        .speaker-roles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            background: transparent;
+        }
+        .speaker-roles-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
+            pointer-events: none;
+            border-radius: 14px 14px 0 0;
+        }
+        [data-theme="light"] .speaker-roles-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .speaker-roles-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+        }
+        .speaker-roles-close {
+            background: var(--brand-primary);
+            border: none;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            cursor: pointer;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .speaker-roles-close:hover {
+            opacity: 0.9;
+        }
+        .speaker-roles-body {
+            padding: 16px 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .speaker-roles-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .speakers-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .speaker-role-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        [data-theme="light"] .speaker-role-item {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .speaker-role-item:hover {
+            background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08);
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.2);
+        }
+        .speaker-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary, #8b5cf6));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .speaker-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .speaker-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .speaker-email {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .speaker-role-dropdown-container {
+            width: 160px;
+            flex-shrink: 0;
+        }
+        .speaker-roles-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="light"] .speaker-roles-footer {
+            background: rgba(0, 0, 0, 0.03);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .speaker-roles-btn {
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .speaker-roles-btn-cancel {
+            border: 1px solid var(--border-color-light, rgba(255,255,255,0.15));
+            background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08);
+            color: var(--text-primary);
+        }
+        .speaker-roles-btn-cancel:hover {
+            background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15);
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
+            transform: translateY(-1px);
+        }
+        .speaker-roles-btn-save {
+            border: none;
+            background: linear-gradient(135deg, var(--brand-primary, #6366f1), var(--brand-secondary, #8b5cf6));
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .speaker-roles-btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+        }
+        .speaker-roles-empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
+        }
+        .speaker-roles-empty svg {
+            opacity: 0.5;
+            margin-bottom: 12px;
+        }
+        .speaker-roles-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        .speaker-roles-loading .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.2);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+async function showSpeakerRolesPanel(sessionId, meetingId) {
     try {
+        currentRolesSessionId = sessionId;
         currentRolesMeetingId = meetingId;
 
-        // Create modal if it doesn't exist
-        let modal = document.getElementById('participantRolesModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'participantRolesModal';
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-container participant-roles-modal">
-                    <div class="modal-header">
-                        <h3>Manage Participant Roles</h3>
-                        <button class="btn-icon btn-close" onclick="closeParticipantRolesModal()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="modal-body" id="participantRolesBody">
-                        <div class="loading-spinner">Loading participants...</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="closeParticipantRolesModal()">Cancel</button>
-                        <button class="btn btn-primary" onclick="saveParticipantRoles()">Save Changes</button>
+        // Remove existing modal if any
+        let existingModal = document.getElementById('speakerRolesOverlay');
+        if (existingModal) existingModal.remove();
+
+        // Create glassy modal
+        const overlay = document.createElement('div');
+        overlay.id = 'speakerRolesOverlay';
+        overlay.className = 'speaker-roles-overlay';
+        overlay.innerHTML = `
+            <div class="speaker-roles-modal">
+                <div class="speaker-roles-header">
+                    <h3>Manage Speaker Roles</h3>
+                    <button class="speaker-roles-close" onclick="closeSpeakerRolesModal()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="speaker-roles-body" id="speakerRolesBody">
+                    <div class="speaker-roles-loading">
+                        <div class="spinner"></div>
+                        <span>Loading speakers...</span>
                     </div>
                 </div>
-            `;
-            document.body.appendChild(modal);
-        }
+                <div class="speaker-roles-footer">
+                    <button class="speaker-roles-btn speaker-roles-btn-cancel" onclick="closeSpeakerRolesModal()">Cancel</button>
+                    <button class="speaker-roles-btn speaker-roles-btn-save" onclick="saveSpeakerRoles()">Save Changes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
 
-        // Show modal
-        modal.classList.add('active');
-        document.body.classList.add('modal-open');
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeSpeakerRolesModal();
+        });
 
-        // Load participants
-        const response = await api.getParticipantsWithRoles(meetingId);
+        // Close on Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeSpeakerRolesModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+        });
+
+        // Load speakers from session
+        const response = await api.getSessionSpeakersWithRoles(sessionId);
 
         if (!response.success) {
-            throw new Error(response.message || 'Failed to load participants');
+            throw new Error(response.message || 'Failed to load speakers');
         }
 
-        participantRolesData = {
-            participants: response.participants,
+        speakerRolesData = {
+            speakers: response.speakers,
             suggestedRoles: response.suggestedRoles
         };
 
-        renderParticipantRolesList();
+        renderSpeakerRolesList();
 
     } catch (error) {
-        console.error('Error loading participant roles:', error);
-        Toast.error('Failed to load participants: ' + error.message);
-        closeParticipantRolesModal();
+        console.error('Error loading speaker roles:', error);
+        Toast.error('Failed to load speakers: ' + error.message);
+        closeSpeakerRolesModal();
     }
 }
 
-function renderParticipantRolesList() {
-    const body = document.getElementById('participantRolesBody');
-    if (!body || !participantRolesData) return;
+function renderSpeakerRolesList() {
+    const body = document.getElementById('speakerRolesBody');
+    if (!body || !speakerRolesData) return;
 
-    const { participants, suggestedRoles } = participantRolesData;
+    const { speakers, suggestedRoles } = speakerRolesData;
 
-    if (!participants || participants.length === 0) {
+    if (!speakers || speakers.length === 0) {
         body.innerHTML = `
-            <div class="empty-state">
-                <p>No participants found for this meeting.</p>
+            <div class="speaker-roles-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                </svg>
+                <p>No speakers found for this session.</p>
             </div>
         `;
         return;
     }
 
-    // Build role options HTML
-    const roleOptionsHtml = suggestedRoles.map(role =>
-        `<option value="${role}">${capitalizeFirst(role)}</option>`
-    ).join('');
+    // Build role options for SearchableDropdown
+    const roleOptions = [
+        { value: '', label: 'Participant (Default)', description: 'No specific role assigned' },
+        ...suggestedRoles.map(role => ({
+            value: role,
+            label: capitalizeFirst(role),
+            description: ''
+        }))
+    ];
 
     let html = `
-        <div class="roles-info">
-            <p>Assign roles to participants for better transcript analysis. Participants without a role will be labeled as "Participant".</p>
+        <div class="speaker-roles-info">
+            Assign roles to speakers for better transcript analysis. Roles help the AI understand context like interviews, sales calls, or training sessions.
         </div>
-        <div class="participants-role-list">
+        <div class="speakers-list">
     `;
 
-    participants.forEach(p => {
-        const displayName = p.display_name || p.guest_name || p.user_id || 'Unknown';
-        const currentRole = p.participant_role || '';
-        const isCustomRole = currentRole && !suggestedRoles.includes(currentRole);
+    speakers.forEach((speaker, index) => {
+        const displayName = speaker.display_name || speaker.guest_name || speaker.user_id || 'Unknown';
+        const containerId = `speaker-role-dropdown-${index}`;
 
         html += `
-            <div class="participant-role-item" data-participant-id="${p.id}">
-                <div class="participant-info">
-                    <span class="participant-avatar">${getInitials(displayName)}</span>
-                    <div class="participant-details">
-                        <span class="participant-name">${escapeHtml(displayName)}</span>
-                        ${p.email ? `<span class="participant-email">${escapeHtml(p.email)}</span>` : ''}
-                    </div>
+            <div class="speaker-role-item"
+                 data-speaker-name="${escapeHtml(speaker.display_name || speaker.guest_name || '')}"
+                 data-speaker-id="${speaker.user_id || ''}"
+                 data-original-role="${speaker.participant_role || ''}">
+                <div class="speaker-avatar">${getInitials(displayName)}</div>
+                <div class="speaker-info">
+                    <span class="speaker-name">${escapeHtml(displayName)}</span>
+                    ${speaker.email ? `<span class="speaker-email">${escapeHtml(speaker.email)}</span>` : ''}
                 </div>
-                <div class="participant-role-select">
-                    <select class="role-dropdown" data-participant-id="${p.id}" onchange="onRoleChange(this)">
-                        <option value="">Participant (Default)</option>
-                        ${roleOptionsHtml}
-                        ${isCustomRole ? `<option value="${currentRole}" selected>${capitalizeFirst(currentRole)}</option>` : ''}
-                        <option value="__custom__">+ Custom Role...</option>
-                    </select>
-                    <input type="text"
-                           class="role-custom-input"
-                           data-participant-id="${p.id}"
-                           placeholder="Enter custom role"
-                           style="display: none;"
-                           onkeyup="onCustomRoleInput(this)"
-                           onblur="onCustomRoleBlur(this)">
-                </div>
+                <div class="speaker-role-dropdown-container" id="${containerId}"></div>
             </div>
         `;
     });
@@ -3210,113 +3489,113 @@ function renderParticipantRolesList() {
     html += `</div>`;
     body.innerHTML = html;
 
-    // Set current values
-    participants.forEach(p => {
-        const select = body.querySelector(`select[data-participant-id="${p.id}"]`);
-        if (select && p.participant_role) {
-            const option = select.querySelector(`option[value="${p.participant_role}"]`);
-            if (option) {
-                select.value = p.participant_role;
-            }
+    // Initialize SearchableDropdowns
+    speakerRoleDropdowns.clear();
+    speakers.forEach((speaker, index) => {
+        const containerId = `speaker-role-dropdown-${index}`;
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        // Add custom role if not in suggested list
+        const currentRole = speaker.participant_role || '';
+        let options = [...roleOptions];
+        if (currentRole && !suggestedRoles.includes(currentRole)) {
+            options.splice(1, 0, {
+                value: currentRole,
+                label: capitalizeFirst(currentRole),
+                description: 'Custom role'
+            });
         }
+
+        const dropdown = new SearchableDropdown(container, {
+            options: options,
+            value: currentRole,
+            placeholder: 'Select role',
+            searchPlaceholder: 'Search roles...',
+            compact: true,
+            onChange: (value) => {
+                // Store the new value
+                const item = container.closest('.speaker-role-item');
+                if (item) {
+                    item.dataset.currentRole = value || '';
+                }
+            }
+        });
+
+        speakerRoleDropdowns.set(index, dropdown);
     });
 }
 
-function onRoleChange(selectElement) {
-    const participantId = selectElement.dataset.participantId;
-    const customInput = document.querySelector(`.role-custom-input[data-participant-id="${participantId}"]`);
-
-    if (selectElement.value === '__custom__') {
-        selectElement.style.display = 'none';
-        customInput.style.display = 'block';
-        customInput.focus();
-    }
-}
-
-function onCustomRoleInput(inputElement) {
-    // Allow typing, will commit on blur or enter
-    if (event.key === 'Enter') {
-        inputElement.blur();
-    }
-}
-
-function onCustomRoleBlur(inputElement) {
-    const participantId = inputElement.dataset.participantId;
-    const selectElement = document.querySelector(`select[data-participant-id="${participantId}"]`);
-    const customRole = inputElement.value.trim().toLowerCase();
-
-    if (customRole) {
-        // Add custom option to select
-        const customOption = document.createElement('option');
-        customOption.value = customRole;
-        customOption.textContent = capitalizeFirst(customRole);
-        customOption.selected = true;
-
-        // Insert before the "Custom Role" option
-        const customTrigger = selectElement.querySelector('option[value="__custom__"]');
-        selectElement.insertBefore(customOption, customTrigger);
-    }
-
-    // Show select, hide input
-    selectElement.style.display = 'block';
-    inputElement.style.display = 'none';
-    inputElement.value = '';
-}
-
-async function saveParticipantRoles() {
+async function saveSpeakerRoles() {
     try {
-        const body = document.getElementById('participantRolesBody');
-        const selects = body.querySelectorAll('.role-dropdown');
-
+        const items = document.querySelectorAll('.speaker-role-item');
         const updates = [];
-        selects.forEach(select => {
-            const participantId = select.dataset.participantId;
-            const role = select.value === '__custom__' ? null : (select.value || null);
 
-            // Find original role
-            const original = participantRolesData.participants.find(p => p.id === participantId);
-            const originalRole = original?.participant_role || null;
+        items.forEach((item, index) => {
+            const speakerName = item.dataset.speakerName;
+            const speakerId = item.dataset.speakerId || null;
+            const originalRole = item.dataset.originalRole || null;
+
+            // Get current role from dropdown
+            const dropdown = speakerRoleDropdowns.get(index);
+            const currentRole = dropdown ? (dropdown.getValue() || null) : null;
 
             // Only include if changed
-            if (role !== originalRole) {
+            if (currentRole !== originalRole) {
                 updates.push({
-                    participant_id: participantId,
-                    participant_role: role
+                    speaker_name: speakerName,
+                    speaker_id: speakerId,
+                    participant_role: currentRole
                 });
             }
         });
 
         if (updates.length === 0) {
             Toast.info('No changes to save');
-            closeParticipantRolesModal();
+            closeSpeakerRolesModal();
             return;
         }
 
         Toast.info('Saving roles...');
 
-        const response = await api.bulkUpdateParticipantRoles(currentRolesMeetingId, updates);
+        const response = await api.bulkUpdateSpeakerRoles(currentRolesMeetingId, updates);
 
         if (response.success) {
-            Toast.success(`Updated ${response.affectedRows} participant role(s)`);
-            closeParticipantRolesModal();
+            Toast.success(`Updated ${response.affectedRows} speaker role(s)`);
+            closeSpeakerRolesModal();
         } else {
             throw new Error(response.message || 'Failed to save roles');
         }
 
     } catch (error) {
-        console.error('Error saving participant roles:', error);
+        console.error('Error saving speaker roles:', error);
         Toast.error('Failed to save roles: ' + error.message);
     }
 }
 
-function closeParticipantRolesModal() {
-    const modal = document.getElementById('participantRolesModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.classList.remove('modal-open');
+function closeSpeakerRolesModal() {
+    const overlay = document.getElementById('speakerRolesOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 200);
     }
     currentRolesMeetingId = null;
-    participantRolesData = null;
+    currentRolesSessionId = null;
+    speakerRolesData = null;
+    speakerRoleDropdowns.clear();
+}
+
+// Keep old function as alias for backwards compatibility
+async function showParticipantRolesPanel(meetingId) {
+    // For backwards compatibility, try to use the current session if available
+    if (currentSessionId) {
+        return showSpeakerRolesPanel(currentSessionId, meetingId);
+    }
+    Toast.error('Please open a session transcript first');
+}
+
+function closeParticipantRolesModal() {
+    closeSpeakerRolesModal();
 }
 
 function getInitials(name) {

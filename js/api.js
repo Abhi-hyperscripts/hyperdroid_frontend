@@ -2862,6 +2862,30 @@ class API {
             body: JSON.stringify({ updates })
         });
     }
+
+    // ==================== Session Speaker Roles ====================
+
+    /**
+     * Get speakers from a specific session with their assigned roles.
+     * This shows only people who actually spoke during the session.
+     * @param {string} sessionId - Session UUID
+     * @returns {Promise<{success: boolean, speakers: Array, suggestedRoles: Array}>}
+     */
+    async getSessionSpeakersWithRoles(sessionId) {
+        return this.request(`/meetings/sessions/${sessionId}/speakers/roles`);
+    }
+
+    /**
+     * Bulk update roles for multiple speakers in a meeting.
+     * @param {string} meetingId - Meeting UUID
+     * @param {Array<{speaker_name: string, speaker_id: string|null, participant_role: string|null}>} updates
+     */
+    async bulkUpdateSpeakerRoles(meetingId, updates) {
+        return this.request(`/meetings/meetings/${meetingId}/speakers/roles`, {
+            method: 'PUT',
+            body: JSON.stringify({ updates })
+        });
+    }
 }
 
 // Export singleton instance
