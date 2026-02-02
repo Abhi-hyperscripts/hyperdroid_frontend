@@ -13,6 +13,16 @@
     min-height: 100vh;
     overflow-x: hidden;
     color: var(--text-inverse);
+
+    /* Override theme variables for dark landing pages */
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    --bg-primary: #050810;
+    --bg-secondary: rgba(255, 255, 255, 0.03);
+    --bg-tertiary: rgba(255, 255, 255, 0.06);
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
