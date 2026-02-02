@@ -1896,7 +1896,7 @@ body.modal-open {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     display: none;
@@ -1905,7 +1905,7 @@ body.modal-open {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-    z-index: 99999;
+    z-index: 2147483647;
     padding: 100px 24px 24px 24px;
 }
 
@@ -1925,6 +1925,8 @@ body.modal-open {
     transform: scale(0.95) translateY(20px);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     overflow: hidden;
+    position: relative;
+    z-index: 2147483647;
 }
 
 .summary-modal-overlay.active .summary-modal-content {
