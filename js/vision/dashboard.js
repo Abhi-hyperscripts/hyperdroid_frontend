@@ -2360,12 +2360,206 @@ async function uploadSummaryFile(sessionId, input) {
 }
 
 // ============================================
-// SUMMARY MODAL
+// SUMMARY MODAL - Using same pattern as speaker-roles-modal
 // ============================================
 
-// Event handler references for cleanup
-let summaryModalKeyHandler = null;
-let summaryModalClickHandler = null;
+// Inject styles once (same pattern as speaker-roles-modal)
+(function injectSummaryModalStyles() {
+    if (document.getElementById('summary-modal-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'summary-modal-styles';
+    style.textContent = `
+        .summary-modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: var(--overlay-dark, rgba(0, 0, 0, 0.5)) !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            z-index: 2147483647 !important;
+            opacity: 0;
+            transition: opacity 200ms ease;
+            padding-top: 80px;
+            box-sizing: border-box;
+        }
+        .summary-modal-overlay.active {
+            opacity: 1;
+        }
+        .summary-modal {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-radius: 16px !important;
+            max-width: 1400px;
+            width: calc(100% - 48px);
+            height: calc(100vh - 120px);
+            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+        }
+        .summary-modal-overlay.active .summary-modal {
+            transform: scale(1);
+        }
+        .summary-modal:hover {
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+            box-shadow:
+                0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+                0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+                0 8px 24px rgba(0, 0, 0, 0.2) !important;
+        }
+        [data-theme="light"] .summary-modal {
+            background: rgba(255, 255, 255, 0.7) !important;
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+        }
+        [data-theme="light"] .summary-modal:hover {
+            border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+            box-shadow:
+                0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+                0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+                0 8px 24px rgba(0, 0, 0, 0.08) !important;
+        }
+        .summary-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            background: transparent;
+        }
+        .summary-modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
+            pointer-events: none;
+            border-radius: 14px 14px 0 0;
+        }
+        [data-theme="light"] .summary-modal-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .summary-modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .summary-modal-header h3 svg {
+            color: var(--brand-primary);
+        }
+        .summary-modal-close {
+            background: var(--brand-primary);
+            border: none;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            cursor: pointer;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .summary-modal-close:hover {
+            opacity: 0.9;
+        }
+        .summary-modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .summary-modal-body pre {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .summary-modal-footer {
+            padding: 14px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="light"] .summary-modal-footer {
+            background: rgba(0, 0, 0, 0.03);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .summary-modal-footer small {
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .summary-modal {
+                width: calc(100% - 24px);
+                height: calc(100vh - 48px);
+                max-height: calc(100vh - 48px);
+                border-radius: 12px !important;
+            }
+            .summary-modal-header {
+                padding: 14px 16px;
+            }
+            .summary-modal-header h3 {
+                font-size: 15px;
+            }
+            .summary-modal-body {
+                padding: 16px;
+                font-size: 14px;
+            }
+            .summary-modal-footer {
+                padding: 12px 16px;
+            }
+        }
+        @media (max-width: 480px) {
+            .summary-modal {
+                width: calc(100% - 16px);
+                height: calc(100vh - 32px);
+                max-height: calc(100vh - 32px);
+                border-radius: 10px !important;
+            }
+            .summary-modal-header {
+                padding: 12px 14px;
+            }
+            .summary-modal-header h3 {
+                font-size: 14px;
+            }
+            .summary-modal-body {
+                padding: 14px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+            .summary-modal-footer {
+                padding: 10px 14px;
+            }
+            .summary-modal-footer small {
+                font-size: 11px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+})();
 
 function openSummaryModal() {
     const summaryText = window.currentSummaryText || '';
@@ -2376,22 +2570,17 @@ function openSummaryModal() {
         return;
     }
 
-    // Close slide panel first to ensure modal appears on top
-    if (typeof closeTranscriptsPanel === 'function') {
-        closeTranscriptsPanel();
-    }
+    // Remove existing overlay if any
+    const existingOverlay = document.getElementById('summaryModalOverlay');
+    if (existingOverlay) existingOverlay.remove();
 
-    // Create modal if it doesn't exist
-    let modal = document.getElementById('summaryModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'summaryModal';
-        modal.className = 'summary-modal-overlay';
-        document.body.appendChild(modal);
-    }
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'summaryModalOverlay';
+    overlay.className = 'summary-modal-overlay';
 
-    modal.innerHTML = `
-        <div class="summary-modal-content glass-effect">
+    overlay.innerHTML = `
+        <div class="summary-modal">
             <div class="summary-modal-header">
                 <h3>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2404,7 +2593,7 @@ function openSummaryModal() {
                     Summary / Minutes
                 </h3>
                 <button class="summary-modal-close" onclick="closeSummaryModal()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
                         <line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -2419,46 +2608,35 @@ function openSummaryModal() {
         </div>
     `;
 
-    // Show modal using class
-    modal.classList.add('active');
+    document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
 
-    // Remove old event listeners if they exist
-    if (summaryModalKeyHandler) {
-        document.removeEventListener('keydown', summaryModalKeyHandler);
-    }
-    if (summaryModalClickHandler) {
-        modal.removeEventListener('click', summaryModalClickHandler);
-    }
+    // Animate in
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+    });
 
-    // Create new event handlers
-    summaryModalKeyHandler = function(e) {
-        if (e.key === 'Escape') closeSummaryModal();
-    };
-    summaryModalClickHandler = function(e) {
-        if (e.target === modal) closeSummaryModal();
-    };
+    // Close on backdrop click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeSummaryModal();
+    });
 
-    // Add event listeners
-    document.addEventListener('keydown', summaryModalKeyHandler);
-    modal.addEventListener('click', summaryModalClickHandler);
+    // Close on escape
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeSummaryModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 
 function closeSummaryModal() {
-    const modal = document.getElementById('summaryModal');
-    if (modal) {
-        modal.classList.remove('active');
+    const overlay = document.getElementById('summaryModalOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
         document.body.style.overflow = '';
-
-        // Clean up event listeners
-        if (summaryModalKeyHandler) {
-            document.removeEventListener('keydown', summaryModalKeyHandler);
-            summaryModalKeyHandler = null;
-        }
-        if (summaryModalClickHandler) {
-            modal.removeEventListener('click', summaryModalClickHandler);
-            summaryModalClickHandler = null;
-        }
+        setTimeout(() => overlay.remove(), 200);
     }
 }
 
