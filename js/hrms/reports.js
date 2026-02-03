@@ -783,7 +783,7 @@ function exportToPDF(columns, data, title) {
                 { align: 'center' }
             );
             doc.text(
-                'HyperDroid HRMS',
+                'Ragenaizer HRMS',
                 14,
                 doc.internal.pageSize.getHeight() - 10
             );

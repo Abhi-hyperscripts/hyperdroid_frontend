@@ -232,7 +232,7 @@ const Navigation = {
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <div class="user-dropdown-header">
                     <div class="user-dropdown-header-content">
-                        <div class="tenant-badge" id="navOrgName">HyperDroid</div>
+                        <div class="tenant-badge" id="navOrgName">Ragenaizer</div>
                         <span class="user-name">${this.escapeHtml(displayName)}</span>
                         <span class="user-email">${this.escapeHtml(user.email || '')}</span>
                     </div>

@@ -1,5 +1,5 @@
 /**
- * HYPERDROID THEME SYSTEM
+ * RAGENAIZER THEME SYSTEM
  * =======================
  * Dynamic theme configuration for white-label customization.
  *
@@ -30,7 +30,7 @@ const BRAND_CONFIG = {
     accent: '#6366f1',          // Indigo
 
     // Brand name for display
-    brandName: 'HyperDroid',
+    brandName: 'Ragenaizer',
 
     // Optional: Override specific colors (leave null for auto-generation)
     overrides: {
@@ -492,7 +492,7 @@ const Theme = {
      * Get system color scheme preference
      */
     getSystemPreference() {
-        // Default to dark mode for HyperDroid (ignore system preference)
+        // Default to dark mode for Ragenaizer (ignore system preference)
         return 'dark';
     },
 
@@ -653,55 +653,55 @@ const Theme = {
             primary: '#3b82f6',
             secondary: '#8b5cf6',
             accent: '#6366f1',
-            brandName: 'HyperDroid Blue'
+            brandName: 'Ragenaizer Blue'
         },
         green: {
             primary: '#10b981',
             secondary: '#14b8a6',
             accent: '#059669',
-            brandName: 'HyperDroid Green'
+            brandName: 'Ragenaizer Green'
         },
         purple: {
             primary: '#8b5cf6',
             secondary: '#a855f7',
             accent: '#7c3aed',
-            brandName: 'HyperDroid Purple'
+            brandName: 'Ragenaizer Purple'
         },
         red: {
             primary: '#ef4444',
             secondary: '#f97316',
             accent: '#dc2626',
-            brandName: 'HyperDroid Red'
+            brandName: 'Ragenaizer Red'
         },
         orange: {
             primary: '#f97316',
             secondary: '#fb923c',
             accent: '#ea580c',
-            brandName: 'HyperDroid Orange'
+            brandName: 'Ragenaizer Orange'
         },
         teal: {
             primary: '#14b8a6',
             secondary: '#06b6d4',
             accent: '#0d9488',
-            brandName: 'HyperDroid Teal'
+            brandName: 'Ragenaizer Teal'
         },
         indigo: {
             primary: '#6366f1',
             secondary: '#818cf8',
             accent: '#4f46e5',
-            brandName: 'HyperDroid Indigo'
+            brandName: 'Ragenaizer Indigo'
         },
         pink: {
             primary: '#ec4899',
             secondary: '#f472b6',
             accent: '#db2777',
-            brandName: 'HyperDroid Pink'
+            brandName: 'Ragenaizer Pink'
         },
         slate: {
             primary: '#475569',
             secondary: '#64748b',
             accent: '#334155',
-            brandName: 'HyperDroid Slate'
+            brandName: 'Ragenaizer Slate'
         }
     },
 

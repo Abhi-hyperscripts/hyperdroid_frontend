@@ -1,5 +1,5 @@
 /**
- * Unified Toast Notification System for HyperDroid
+ * Unified Toast Notification System for Ragenaizer
  *
  * Usage:
  *   Toast.success('Operation completed successfully');
@@ -431,7 +431,7 @@ function showToast(message, type = 'success') {
 }
 
 /**
- * Unified Confirmation Dialog System for HyperDroid
+ * Unified Confirmation Dialog System for Ragenaizer
  * Uses CSS variables from theme.css for full theme awareness
  *
  * Usage:

@@ -1,5 +1,5 @@
 /**
- * Unified Payslip Modal Component for HyperDroid HRMS
+ * Unified Payslip Modal Component for Ragenaizer HRMS
  *
  * A reusable payslip viewing component with calculation proof support.
  * Used across payroll.js, self-service.js, and any page that needs to display payslips.
@@ -1901,7 +1901,7 @@ const PayslipModal = (function() {
                                 <div class="footer-info">
                                     <span>Generated: ${new Date(proof.generatedAt || Date.now()).toLocaleString()}</span>
                                     <span>•</span>
-                                    <span>HyperDroid HRMS ${proof.taxCalculation?.engineVersion || 'v3.0'}</span>
+                                    <span>Ragenaizer HRMS ${proof.taxCalculation?.engineVersion || 'v3.0'}</span>
                                     ${proof.countryConfigVersion ? `<span>•</span><span>Config: ${proof.countryConfigVersion}</span>` : ''}
                                 </div>
                             </div>

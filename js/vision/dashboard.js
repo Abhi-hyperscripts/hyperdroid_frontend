@@ -2109,10 +2109,10 @@ async function exportTranscript(sessionId, format) {
 
         const response = format === 'json'
             ? await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/export/json`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('hyperdroid_authToken')}` }
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('ragenaizer_authToken')}` }
               })
             : await fetch(`${CONFIG.visionApiBaseUrl}/transcripts/sessions/${sessionId}/export/text`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('hyperdroid_authToken')}` }
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('ragenaizer_authToken')}` }
               });
 
         if (!response.ok) {

@@ -1,12 +1,12 @@
 /**
- * Cookie Consent Manager for HyperDroid
+ * Cookie Consent Manager for Ragenaizer
  * GDPR/CCPA compliant cookie consent
  */
 
 (function() {
     'use strict';
 
-    const CONSENT_KEY = 'hyperdroid_cookie_consent';
+    const CONSENT_KEY = 'ragenaizer_cookie_consent';
     const CONSENT_VERSION = '1.0';
 
     // Check if consent was already given

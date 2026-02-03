@@ -5984,7 +5984,7 @@ async function downloadPayslipById(payslipId) {
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('HyperDroid', margin, 18);
+        doc.text('Ragenaizer', margin, 18);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.text('HUMAN RESOURCE MANAGEMENT', margin, 25);
@@ -6185,7 +6185,7 @@ async function downloadPayslipById(payslipId) {
         const genDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         doc.text(`Generated on ${genDate}`, margin, y + 5);
         doc.setFont('helvetica', 'bold');
-        doc.text('HyperDroid HRMS', pageWidth - margin, y + 3, { align: 'right' });
+        doc.text('Ragenaizer HRMS', pageWidth - margin, y + 3, { align: 'right' });
 
         // Save PDF
         doc.save(`payslip_${payslip.payslip_number || payslipId}.pdf`);
@@ -6252,7 +6252,7 @@ function generatePayslipPdfContent(payslip) {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="vertical-align: middle;">
-                                    <div style="color: white; font-size: 24px; font-weight: bold; margin: 0;">HyperDroid</div>
+                                    <div style="color: white; font-size: 24px; font-weight: bold; margin: 0;">Ragenaizer</div>
                                     <div style="color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Human Resource Management</div>
                                 </td>
                                 <td style="text-align: right; vertical-align: middle;">
@@ -6391,7 +6391,7 @@ function generatePayslipPdfContent(payslip) {
                         <div style="color: #94a3b8; font-size: 9px; margin-top: 4px;">Generated on ${generatedDate}</div>
                     </td>
                     <td style="padding: 15px 25px; text-align: right;">
-                        <div style="color: #94a3b8; font-size: 11px; font-weight: bold;">HyperDroid HRMS</div>
+                        <div style="color: #94a3b8; font-size: 11px; font-weight: bold;">Ragenaizer HRMS</div>
                     </td>
                 </tr>
             </table>

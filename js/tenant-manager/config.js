@@ -11,7 +11,7 @@ const TM_ENVIRONMENTS = {
         tenantManager: 'http://localhost:5108'
     },
     production: {
-        tenantManager: 'https://tenant.hyperdroid.io'
+        tenantManager: 'https://tenant.ragenaizer.com'
     }
 };
 
@@ -28,7 +28,7 @@ const currentTMEnv = detectTMEnvironment();
 console.log(`[TenantManager CONFIG] Environment: ${currentTMEnv}`);
 
 // Storage key prefix to match main app pattern
-const TM_STORAGE_PREFIX = 'hyperdroid_tm_';
+const TM_STORAGE_PREFIX = 'ragenaizer_tm_';
 
 const CONFIG = {
     // Current environment

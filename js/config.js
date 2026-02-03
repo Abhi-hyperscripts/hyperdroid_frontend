@@ -36,7 +36,7 @@ const currentEnv = detectEnvironment();
 console.log(`[CONFIG] Environment: ${currentEnv}`);
 
 // Storage key prefix to avoid conflicts with other apps
-const STORAGE_PREFIX = 'hyperdroid_';
+const STORAGE_PREFIX = 'ragenaizer_';
 
 const CONFIG = {
     // Current environment

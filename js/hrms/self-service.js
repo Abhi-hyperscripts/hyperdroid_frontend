@@ -4898,7 +4898,7 @@ function buildCalculationProofUIESS(proof, response) {
                             <div class="footer-info">
                                 <span>Generated: ${new Date(proof.generatedAt || Date.now()).toLocaleString()}</span>
                                 <span>•</span>
-                                <span>HyperDroid HRMS ${proof.taxCalculation?.engineVersion || 'v3.0.51'}</span>
+                                <span>Ragenaizer HRMS ${proof.taxCalculation?.engineVersion || 'v3.0.51'}</span>
                                 ${proof.countryConfigVersion ? `<span>•</span><span>Config: ${proof.countryConfigVersion}</span>` : ''}
                             </div>
                         </div>

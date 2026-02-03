@@ -1,5 +1,5 @@
 /**
- * Searchable Dropdown Component for HyperDroid
+ * Searchable Dropdown Component for Ragenaizer
  * A reusable searchable dropdown with virtual scroll support
  *
  * Usage:
