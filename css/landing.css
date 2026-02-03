@@ -2752,10 +2752,24 @@
     justify-content: space-between;
 }
 
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .footer-logo {
     height: 32px;
     filter: invert(1);
     opacity: 0.8;
+}
+
+.pronunciation-guide {
+    font-size: var(--font-size-xs, 12px);
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+    margin-left: 8px;
+    letter-spacing: 0.02em;
 }
 
 .footer-links {
@@ -2943,6 +2957,15 @@
         gap: 24px;
         text-align: center;
         padding: 32px 24px;
+    }
+
+    .footer-brand {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pronunciation-guide {
+        margin-left: 0;
     }
 
     .footer-links {
