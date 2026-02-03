@@ -1,5 +1,5 @@
 /**
- * HyperVision Frontend Configuration
+ * Ragenaizer Frontend Configuration
  *
  * Centralized endpoint configuration for easy environment switching.
  * Auto-detects environment based on hostname.

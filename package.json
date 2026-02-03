@@ -1,7 +1,7 @@
 {
-  "name": "hypervision-frontend",
+  "name": "ragenaizer-frontend",
   "version": "1.0.0",
-  "description": "HyperVision/HyperDroid Frontend - Vanilla JS SPA",
+  "description": "Ragenaizer Frontend - Vanilla JS SPA",
   "scripts": {
     "test": "npx playwright test",
     "test:hrms": "npx playwright test tests/hrms/",
@@ -19,6 +19,6 @@
     "video-conferencing",
     "webrtc"
   ],
-  "author": "HyperVision Team",
+  "author": "Ragenaizer Team",
   "license": "MIT"
 }
