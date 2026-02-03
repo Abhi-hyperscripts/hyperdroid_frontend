@@ -128,7 +128,7 @@ body.shared-page::after {
    SHARED HEADER
    ============================================================= */
 .shared-logo {
-    height: 50px;
+    height: 32px;
     margin-bottom: 24px;
     filter: invert(1);
 }
@@ -503,7 +503,7 @@ body.shared-page::after {
     }
 
     .shared-logo {
-        height: 40px;
+        height: 32px;
         margin-bottom: 16px;
     }
 
@@ -603,7 +603,7 @@ body.shared-page::after {
     }
 
     .shared-logo {
-        height: 36px;
+        height: 32px;
     }
 
     .shared-icon-svg {
