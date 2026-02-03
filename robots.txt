@@ -1,5 +1,5 @@
-# HyperDroid.io Robots.txt
-# https://hyperdroid.io
+# Ragenaizer.com Robots.txt
+# https://ragenaizer.com
 
 # Allow all crawlers
 User-agent: *
@@ -14,4 +14,4 @@ Disallow: /pages/tenant-manager/
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://hyperdroid.io/sitemap.xml
+Sitemap: https://ragenaizer.com/sitemap.xml

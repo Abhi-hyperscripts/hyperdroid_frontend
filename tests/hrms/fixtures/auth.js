@@ -10,7 +10,7 @@ const AUTH_API_URL = 'http://localhost:5098';
  */
 const TEST_USERS = {
     superAdmin: {
-        email: 'admin@hypervision.app',
+        email: 'admin@ragenaizer.com',
         password: 'SuperAdmin@123',
         roles: ['SUPERADMIN'],
         description: 'Super admin with full access'

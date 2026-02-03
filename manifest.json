@@ -1,6 +1,6 @@
 {
-  "name": "HyperDroid",
-  "short_name": "HyperDroid",
+  "name": "Ragenaizer",
+  "short_name": "Ragenaizer",
   "description": "Enterprise Workspace Platform - Video, Chat, Drive, HRMS",
   "start_url": "/",
   "display": "standalone",
@@ -37,7 +37,7 @@
       "src": "/assets/og-image.png",
       "sizes": "1200x630",
       "type": "image/png",
-      "label": "HyperDroid Enterprise Workspace"
+      "label": "Ragenaizer Enterprise Workspace"
     }
   ]
 }
