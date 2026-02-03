@@ -15,11 +15,11 @@ const ENVIRONMENTS = {
         hrms: 'http://localhost:5104'
     },
     production: {
-        auth: 'https://auth.hyperdroid.io',
-        vision: 'https://vision.hyperdroid.io',
-        drive: 'https://drive.hyperdroid.io',
-        chat: 'https://chat.hyperdroid.io',
-        hrms: 'https://hrms.hyperdroid.io'
+        auth: 'https://auth.ragenaizer.com',
+        vision: 'https://vision.ragenaizer.com',
+        drive: 'https://drive.ragenaizer.com',
+        chat: 'https://chat.ragenaizer.com',
+        hrms: 'https://hrms.ragenaizer.com'
     }
 };
 
