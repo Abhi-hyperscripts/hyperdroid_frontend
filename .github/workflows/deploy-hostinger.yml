@@ -18,7 +18,7 @@ jobs:
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
         server: 91.108.108.161
-        username: u986141572.hyperdroid.io
+        username: u986141572.ragenaizer.com
         password: ${{ secrets.FTP_PASSWORD }}
         port: 21
         server-dir: /public_html/
