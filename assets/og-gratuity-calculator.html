@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+        .og-card {
+            width: 1200px; height: 630px;
+            background: linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%);
+            position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .og-card::before {
+            content: ''; position: absolute; width: 800px; height: 800px; top: -200px; left: -200px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 60%);
+        }
+        .og-card::after {
+            content: ''; position: absolute; width: 600px; height: 600px; bottom: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, transparent 60%);
+        }
+        .grid-pattern {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px; opacity: 0.5;
+        }
+        .content { position: relative; z-index: 10; text-align: center; padding: 60px; }
+        .logo { margin-bottom: 40px; display: flex; align-items: center; justify-content: center; }
+        .logo img { height: 60px; width: auto; filter: brightness(0) invert(1); }
+        .badge {
+            display: inline-block; padding: 12px 28px; background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 100px;
+            font-size: 16px; font-weight: 600; color: #fbbf24; text-transform: uppercase;
+            letter-spacing: 0.1em; margin-bottom: 32px;
+        }
+        .title { font-size: 58px; font-weight: 800; color: #ffffff; line-height: 1.1; margin-bottom: 24px; }
+        .title .highlight {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { font-size: 28px; color: rgba(255,255,255,0.7); font-weight: 500; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="og-card">
+        <div class="grid-pattern"></div>
+        <div class="content">
+            <div class="logo">
+                <img src="brand_logo.png" alt="Ragenaizer">
+            </div>
+            <div class="badge">Free Calculator</div>
+            <h1 class="title"><span class="highlight">Gratuity Calculator</span><br>India 2026</h1>
+            <p class="subtitle">Calculate Retirement Benefit & Tax Exemption</p>
+        </div>
+    </div>
+</body>
+</html>
