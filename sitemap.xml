@@ -195,6 +195,27 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://ragenaizer.com/pages/blog/pf-complete-guide.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/blog/esi-complete-guide.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/blog/video-conferencing-technology.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- ==================== USE CASE PAGES (SEO - Intent-Based) ==================== -->
 
   <url>

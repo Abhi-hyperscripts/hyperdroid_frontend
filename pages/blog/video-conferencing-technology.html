@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+    <title>How Enterprise Video Conferencing Works | SFU Architecture, Cloud Recording & WebRTC | Ragenaizer</title>
+    <meta name="description" content="Deep dive into enterprise video conferencing technology. Learn how SFU (Selective Forwarding Unit) architecture, cloud recording, WebRTC, and TURN servers deliver crystal-clear video meetings at scale.">
+    <meta name="keywords" content="video conferencing technology, SFU architecture, webrtc video, cloud recording, turn server, video streaming architecture, enterprise video calls, media server, video egress">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/blog/video-conferencing-technology.html">
+
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/blog/video-conferencing-technology.html">
+    <meta property="og:title" content="How Enterprise Video Conferencing Works - The Technology Explained">
+    <meta property="og:description" content="Understanding SFU architecture, cloud recording, and the technology behind crystal-clear video meetings.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-vision.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Enterprise Video Conferencing Technology Explained">
+    <meta name="twitter:description" content="SFU architecture, WebRTC, cloud recording - how modern video conferencing delivers quality at scale.">
+
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ragenaizer.com/"},
+            {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ragenaizer.com/pages/blog/"},
+            {"@type": "ListItem", "position": 3, "name": "Video Conferencing Technology", "item": "https://ragenaizer.com/pages/blog/video-conferencing-technology.html"}
+        ]
+    }
+    </script>
+
+    <!-- Schema: Article -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "How Enterprise Video Conferencing Works: The Technology Behind Crystal-Clear Meetings",
+        "description": "Deep dive into video conferencing architecture including SFU, WebRTC, cloud recording, and network optimization.",
+        "author": {"@type": "Organization", "name": "Ragenaizer"},
+        "publisher": {"@type": "Organization", "name": "Ragenaizer", "logo": {"@type": "ImageObject", "url": "https://ragenaizer.com/assets/brand_logo.png"}},
+        "datePublished": "2026-02-04",
+        "dateModified": "2026-02-04",
+        "mainEntityOfPage": "https://ragenaizer.com/pages/blog/video-conferencing-technology.html"
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .article-page { min-height: 100vh; background: var(--bg-primary); }
+        .article-header { padding: 120px 60px 60px; max-width: 800px; margin: 0 auto; }
+        .article-meta { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .article-category { padding: 6px 14px; background: rgba(99, 102, 241, 0.1); border-radius: 100px; font-size: 13px; font-weight: 600; color: #818cf8; }
+        .article-date { font-size: 14px; color: var(--text-tertiary); }
+        .article-header h1 { font-size: clamp(32px, 4vw, 44px); font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-bottom: 20px; }
+        .article-header .lead { font-size: 20px; color: var(--text-secondary); line-height: 1.6; }
+
+        .article-content { max-width: 800px; margin: 0 auto; padding: 0 60px 80px; }
+        .article-content h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 48px 0 20px; }
+        .article-content h3 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 36px 0 16px; }
+        .article-content p { font-size: 17px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { color: var(--text-secondary); margin: 0 0 24px 24px; line-height: 1.8; font-size: 17px; }
+        .article-content li { margin-bottom: 8px; }
+        .article-content strong { color: var(--text-primary); }
+
+        .tech-box { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin: 24px 0; }
+        .tech-box h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .tech-box h4 svg { color: #818cf8; }
+        .tech-box p { margin-bottom: 12px; }
+        .tech-box p:last-child { margin-bottom: 0; }
+
+        .architecture-diagram { background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 32px; margin: 32px 0; text-align: center; }
+        .architecture-diagram h4 { font-size: 14px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 24px; }
+        .diagram-flow { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .diagram-node { background: var(--bg-secondary); border: 2px solid var(--border-primary); border-radius: 12px; padding: 16px 24px; min-width: 120px; }
+        .diagram-node.primary { border-color: #818cf8; background: rgba(99, 102, 241, 0.1); }
+        .diagram-node h5 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .diagram-node p { font-size: 12px; color: var(--text-tertiary); margin: 0; }
+        .diagram-arrow { color: #818cf8; font-size: 24px; }
+
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; }
+        .feature-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; }
+        .feature-card h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .feature-card h4 svg { width: 20px; height: 20px; color: #818cf8; }
+        .feature-card p { font-size: 14px; color: var(--text-tertiary); margin: 0; line-height: 1.6; }
+
+        .comparison-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+        .comparison-table th, .comparison-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-primary); }
+        .comparison-table th { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; font-size: 14px; }
+        .comparison-table td { color: var(--text-secondary); font-size: 14px; }
+        .comparison-table td:first-child { color: var(--text-primary); font-weight: 500; }
+
+        .info-callout { background: rgba(99, 102, 241, 0.1); border-left: 4px solid #818cf8; padding: 20px 24px; margin: 24px 0; border-radius: 0 12px 12px 0; }
+        .info-callout p { margin: 0; color: var(--text-secondary); }
+
+        .cta-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin: 48px 0; }
+        .cta-box h3 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
+        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
+        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; }
+
+        .related-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 48px; }
+        .related-link { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        .related-link:hover { border-color: #818cf8; }
+        .related-link h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .related-link p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
+
+        @media (max-width: 768px) {
+            .article-header, .article-content { padding-left: 24px; padding-right: 24px; }
+            .diagram-flow { flex-direction: column; }
+            .diagram-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body class="landing-page article-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/"><img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo"></a>
+        <div class="nav-links">
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Products<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Resources<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator</a>
+                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator</a>
+                    <a href="/pages/calculators/tds-calculator.html" class="nav-dropdown-item">TDS Calculator</a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Article Header -->
+    <header class="article-header">
+        <div class="article-meta">
+            <span class="article-category">Technology</span>
+            <span class="article-date">February 4, 2026 • 15 min read</span>
+        </div>
+        <h1>How Enterprise Video Conferencing Works: The Technology Behind Crystal-Clear Meetings</h1>
+        <p class="lead">A deep dive into the architecture that powers modern video conferencing—from SFU media servers to cloud recording and network optimization.</p>
+    </header>
+
+    <!-- Article Content -->
+    <article class="article-content">
+        <p>Have you ever wondered how platforms like Ragenaizer Vision deliver HD video to hundreds of participants simultaneously, record meetings to the cloud, and maintain quality even on poor networks? The answer lies in sophisticated real-time communication architecture that has evolved dramatically over the past decade.</p>
+
+        <p>In this article, we'll explore the core technologies that power enterprise video conferencing, explain why certain architectural choices matter, and show you what makes Ragenaizer's approach different.</p>
+
+        <h2>The Three Architectures of Video Conferencing</h2>
+        <p>Not all video conferencing systems are built the same. There are three fundamental architectures, each with different trade-offs:</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg> Mesh (P2P)</h4>
+                <p>Every participant connects directly to every other participant. Works for 2-4 people but bandwidth explodes with more participants.</p>
+            </div>
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg> MCU (Mixing)</h4>
+                <p>A central server receives all streams, mixes them into one composite video, and sends it back. High server cost, limited flexibility.</p>
+            </div>
+            <div class="feature-card" style="border-color: #818cf8; background: rgba(99, 102, 241, 0.05);">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg> SFU (Selective Forwarding)</h4>
+                <p><strong>Industry standard.</strong> Server intelligently routes streams without mixing. Scales to hundreds of participants with optimal bandwidth.</p>
+            </div>
+        </div>
+
+        <h2>Understanding SFU Architecture</h2>
+        <p>Ragenaizer Vision uses a <strong>Selective Forwarding Unit (SFU)</strong> architecture—the gold standard for enterprise video conferencing. Here's how it works:</p>
+
+        <div class="architecture-diagram">
+            <h4>SFU Data Flow</h4>
+            <div class="diagram-flow">
+                <div class="diagram-node">
+                    <h5>Participant A</h5>
+                    <p>Sends 1 stream</p>
+                </div>
+                <span class="diagram-arrow">→</span>
+                <div class="diagram-node primary">
+                    <h5>SFU Server</h5>
+                    <p>Routes streams intelligently</p>
+                </div>
+                <span class="diagram-arrow">→</span>
+                <div class="diagram-node">
+                    <h5>Participant B, C, D...</h5>
+                    <p>Receives relevant streams</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg> Why SFU is Superior</h4>
+            <p><strong>Bandwidth Efficiency:</strong> Each participant uploads their stream only once, regardless of meeting size. The SFU handles distribution.</p>
+            <p><strong>Adaptive Quality:</strong> The server can send different quality levels to different participants based on their network conditions.</p>
+            <p><strong>Selective Subscription:</strong> Participants only receive streams they're actually viewing (e.g., active speaker mode).</p>
+            <p><strong>Low Latency:</strong> No mixing delay—streams are forwarded in real-time with minimal processing overhead.</p>
+        </div>
+
+        <h2>Simulcast: Multi-Quality Streaming</h2>
+        <p>One of the most powerful features of modern video conferencing is <strong>simulcast</strong>—the ability to send multiple quality levels of the same video stream simultaneously.</p>
+
+        <p>When you're in a Ragenaizer Vision meeting, your camera actually sends three streams:</p>
+        <ul>
+            <li><strong>High quality</strong> (720p/1080p) — For participants viewing you in large/gallery view</li>
+            <li><strong>Medium quality</strong> (360p) — For participants viewing you in smaller tiles</li>
+            <li><strong>Low quality</strong> (180p) — For participants on poor networks or viewing thumbnails</li>
+        </ul>
+
+        <p>The SFU intelligently selects which quality to forward to each participant based on:</p>
+        <ul>
+            <li>Their available bandwidth</li>
+            <li>The size of your video tile on their screen</li>
+            <li>Whether they're actively viewing or in a different tab</li>
+        </ul>
+
+        <div class="info-callout">
+            <p><strong>Real-world impact:</strong> A participant on fiber internet sees you in 1080p. A colleague on hotel WiFi automatically receives 360p. Neither experiences buffering, and both have a smooth call.</p>
+        </div>
+
+        <h2>Cloud Recording & Egress</h2>
+        <p>Recording a video meeting isn't as simple as hitting "record." Enterprise-grade recording requires a sophisticated <strong>egress pipeline</strong>.</p>
+
+        <div class="tech-box">
+            <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> How Cloud Recording Works</h4>
+            <p><strong>1. Room Composite Egress:</strong> The server creates a composite view of all participants (like what you see in gallery view) and streams it to a recorder.</p>
+            <p><strong>2. Encoding:</strong> The composite is encoded in real-time to H.264/VP8 for maximum compatibility.</p>
+            <p><strong>3. Cloud Upload:</strong> As the meeting progresses, chunks are uploaded to secure cloud storage.</p>
+            <p><strong>4. Post-Processing:</strong> After the meeting, the recording is finalized and made available for download or sharing.</p>
+        </div>
+
+        <h3>Recording Options in Ragenaizer Vision</h3>
+        <ul>
+            <li><strong>Auto-Recording:</strong> Automatically start recording when the meeting begins</li>
+            <li><strong>On-Demand Recording:</strong> Host can start/stop recording at any time</li>
+            <li><strong>Composite Layout:</strong> Grid view of all participants with active speaker highlighting</li>
+            <li><strong>Audio-Only:</strong> Lightweight recording option for audio-only meetings</li>
+        </ul>
+
+        <h2>Network Resilience: TURN Servers</h2>
+        <p>One of the biggest challenges in video conferencing is NAT traversal—getting through corporate firewalls and restrictive networks. This is where <strong>TURN servers</strong> come in.</p>
+
+        <div class="tech-box">
+            <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> STUN vs TURN</h4>
+            <p><strong>STUN (Session Traversal Utilities for NAT):</strong> Helps discover your public IP address. Works 80% of the time when both parties have "normal" NAT.</p>
+            <p><strong>TURN (Traversal Using Relays around NAT):</strong> When direct connection fails, TURN servers relay all media traffic. Works through even the most restrictive corporate firewalls.</p>
+        </div>
+
+        <p>Ragenaizer deploys TURN servers globally to ensure:</p>
+        <ul>
+            <li>Connections work through corporate firewalls</li>
+            <li>Symmetric NAT (common in enterprises) is handled</li>
+            <li>Fallback is seamless—users never know the difference</li>
+            <li>Traffic stays encrypted end-to-end even when relayed</li>
+        </ul>
+
+        <h2>Active Speaker Detection</h2>
+        <p>When you're in a meeting with 20 people, you don't want to manually switch views to see who's talking. <strong>Active speaker detection</strong> solves this automatically.</p>
+
+        <p>Our system analyzes audio levels from all participants in real-time and:</p>
+        <ul>
+            <li>Automatically highlights the current speaker</li>
+            <li>Prioritizes their video stream quality</li>
+            <li>Updates the UI to show who's speaking</li>
+            <li>Maintains smooth transitions between speakers</li>
+        </ul>
+
+        <h2>Virtual Backgrounds & Real-Time Processing</h2>
+        <p>Virtual backgrounds require running machine learning models directly in your browser—no easy feat. Here's what happens when you enable a virtual background in Ragenaizer Vision:</p>
+
+        <ol>
+            <li><strong>Segmentation Model:</strong> A neural network (running on your GPU via WebGL) identifies which pixels are "you" vs "background"</li>
+            <li><strong>Mask Generation:</strong> Creates a real-time mask updated 30 times per second</li>
+            <li><strong>Background Replacement:</strong> Composites your image over the chosen background</li>
+            <li><strong>Edge Smoothing:</strong> Applies feathering to prevent harsh cutout edges</li>
+        </ol>
+
+        <div class="info-callout">
+            <p><strong>Privacy First:</strong> All virtual background processing happens locally on your device. Your raw camera feed never leaves your computer—only the processed video is transmitted.</p>
+        </div>
+
+        <h2>Comparison: Consumer vs Enterprise Architecture</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Consumer Platforms</th>
+                    <th>Ragenaizer Vision</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Architecture</td>
+                    <td>Often MCU or hybrid</td>
+                    <td>Pure SFU with simulcast</td>
+                </tr>
+                <tr>
+                    <td>Max Participants</td>
+                    <td>100-300 (degraded quality)</td>
+                    <td>Unlimited (quality maintained)</td>
+                </tr>
+                <tr>
+                    <td>Recording</td>
+                    <td>Client-side or limited cloud</td>
+                    <td>Server-side composite egress</td>
+                </tr>
+                <tr>
+                    <td>NAT Traversal</td>
+                    <td>Basic STUN</td>
+                    <td>STUN + Global TURN network</td>
+                </tr>
+                <tr>
+                    <td>Adaptive Bitrate</td>
+                    <td>Basic</td>
+                    <td>Per-participant simulcast selection</td>
+                </tr>
+                <tr>
+                    <td>End-to-End Encryption</td>
+                    <td>Sometimes</td>
+                    <td>Always (SRTP/DTLS)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>What This Means for Your Meetings</h2>
+        <p>All this technology translates to tangible benefits in your daily work:</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Reliable Connections</h4>
+                <p>TURN fallback ensures calls work even through restrictive corporate firewalls.</p>
+            </div>
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg> HD Quality</h4>
+                <p>Simulcast ensures you see the highest quality your network can handle.</p>
+            </div>
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Instant Recordings</h4>
+                <p>Cloud egress means recordings are available immediately after meetings end.</p>
+            </div>
+            <div class="feature-card">
+                <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Scale Without Limits</h4>
+                <p>SFU architecture handles meetings of any size without quality degradation.</p>
+            </div>
+        </div>
+
+        <h2>Security Built Into the Architecture</h2>
+        <p>Enterprise video conferencing requires security at every layer:</p>
+        <ul>
+            <li><strong>DTLS (Datagram Transport Layer Security):</strong> Encrypts all signaling traffic</li>
+            <li><strong>SRTP (Secure Real-time Transport Protocol):</strong> Encrypts all media streams</li>
+            <li><strong>Lobby System:</strong> Hosts can verify participants before admitting them</li>
+            <li><strong>Participant Controls:</strong> Whitelist who can join, control who can present</li>
+            <li><strong>Recording Permissions:</strong> Only authorized users can record meetings</li>
+        </ul>
+
+        <!-- CTA Box -->
+        <div class="cta-box">
+            <h3>Experience Enterprise-Grade Video Conferencing</h3>
+            <p>See the difference SFU architecture makes. Crystal-clear video, reliable connections, instant recordings—all integrated with your workspace.</p>
+            <a href="/pages/vision.html">Explore Ragenaizer Vision <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <!-- Related Links -->
+        <h2>Related Resources</h2>
+        <div class="related-links">
+            <a href="/pages/vision.html" class="related-link">
+                <h4>Ragenaizer Vision</h4>
+                <p>Enterprise video conferencing</p>
+            </a>
+            <a href="/pages/compare/ragenaizer-vs-zoom.html" class="related-link">
+                <h4>Vision vs Zoom</h4>
+                <p>Feature comparison</p>
+            </a>
+            <a href="/pages/features/video-conferencing.html" class="related-link">
+                <h4>Video Features</h4>
+                <p>Complete feature list</p>
+            </a>
+            <a href="/pages/register.html" class="related-link">
+                <h4>Get Started</h4>
+                <p>Try Vision for free</p>
+            </a>
+        </div>
+    </article>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
+            <span class="pronunciation-guide">(ray-gen-izer)</span>
+        </div>
+        <div class="footer-links">
+            <a href="/pages/vision.html" class="footer-link">Vision</a>
+            <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/drive.html" class="footer-link">Drive</a>
+            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/login.html" class="footer-link">Sign In</a>
+            <a href="/pages/terms.html" class="footer-link">Terms</a>
+            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
+    </footer>
+</body>
+</html>
