@@ -729,64 +729,8 @@
     </style>
 </head>
 <body class="landing-page compare-page">
-    <!-- Navigation (matching index.html structure) -->
-    <nav class="landing-nav">
-        <a href="/">
-            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
-        </a>
-        <div class="nav-links">
-            <!-- Products Dropdown -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Products
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
-                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
-                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
-                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
-                </div>
-            </div>
-            <!-- Compare Dropdown -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Compare
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="/pages/compare/ragenaizer-vs-enterprise.html" class="nav-dropdown-item">vs Enterprise <span>SAP, Oracle, Workday</span></a>
-                    <a href="/pages/compare/ragenaizer-vs-deel.html" class="nav-dropdown-item">vs Deel <span>Global Payroll</span></a>
-                    <a href="/pages/compare/ragenaizer-vs-zoho.html" class="nav-dropdown-item">vs Zoho People</a>
-                    <a href="/pages/compare/ragenaizer-vs-greythr.html" class="nav-dropdown-item">vs greytHR</a>
-                    <a href="/pages/compare/ragenaizer-vs-bamboohr.html" class="nav-dropdown-item">vs BambooHR</a>
-                </div>
-            </div>
-            <!-- Resources -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Resources
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator <span>Free Tool</span></a>
-                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>Insights & Tips</span></a>
-                    <a href="/KnowledgeBase/HRMS/Organization-Setup.html" class="nav-dropdown-item">Knowledge Base</a>
-                </div>
-            </div>
-            <a href="/pages/activate.html" class="nav-link">Pricing</a>
-        </div>
-        <div class="nav-cta">
-            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
-            <a href="/pages/register.html" class="btn-primary">Start Free</a>
-        </div>
-    </nav>
+    <!-- Navigation -->
+    <div id="navbar"></div>
 
     <!-- Hero Section -->
     <section class="compare-hero">
@@ -1123,22 +1067,10 @@
     </section>
 
     <!-- Footer -->
-    <footer class="landing-footer">
-        <div class="footer-brand">
-            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
-            <span class="pronunciation-guide">(ray-gen-izer)</span>
-        </div>
-        <div class="footer-links">
-            <a href="/pages/vision.html" class="footer-link">Vision</a>
-            <a href="/pages/chat.html" class="footer-link">Chat</a>
-            <a href="/pages/drive.html" class="footer-link">Drive</a>
-            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
-            <a href="/pages/login.html" class="footer-link">Sign In</a>
-            <a href="/pages/terms.html" class="footer-link">Terms</a>
-            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
-            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
-        </div>
-        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
-    </footer>
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
 </body>
 </html>

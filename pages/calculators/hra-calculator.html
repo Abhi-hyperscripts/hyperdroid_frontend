@@ -131,56 +131,7 @@
 </head>
 <body class="landing-page calc-page">
     <!-- Navigation -->
-    <nav class="landing-nav">
-        <a href="/"><img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo"></a>
-        <div class="nav-links">
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">Products<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                <div class="nav-dropdown-menu">
-                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
-                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
-                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
-                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
-                </div>
-            </div>
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">Resources<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                <div class="nav-dropdown-menu">
-                    <!-- Blog Submenu -->
-                    <div class="nav-submenu">
-                        <div class="nav-submenu-trigger">
-                            Blog
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                        </div>
-                        <div class="nav-submenu-content">
-                            <div class="nav-dropdown-label">Communications</div>
-                            <a href="/pages/blog/video-conferencing-technology.html" class="nav-dropdown-item">Video Conferencing Tech</a>
-                            <div class="nav-dropdown-divider"></div>
-                            <div class="nav-dropdown-label">HRMS & Payroll</div>
-                            <a href="/pages/blog/pf-complete-guide.html" class="nav-dropdown-item">PF Complete Guide</a>
-                            <a href="/pages/blog/esi-complete-guide.html" class="nav-dropdown-item">ESI Complete Guide</a>
-                            <div class="nav-dropdown-divider"></div>
-                            <a href="/pages/blog/" class="nav-dropdown-item">View All Articles →</a>
-                        </div>
-                    </div>
-                    <div class="nav-dropdown-divider"></div>
-                    <div class="nav-dropdown-label">Calculators</div>
-                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator</a>
-                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator</a>
-                    <a href="/pages/calculators/tds-calculator.html" class="nav-dropdown-item">TDS Calculator</a>
-                    <a href="/pages/calculators/hra-calculator.html" class="nav-dropdown-item">HRA Calculator</a>
-                    <a href="/pages/calculators/ctc-calculator.html" class="nav-dropdown-item">CTC Calculator</a>
-                    <a href="/pages/calculators/gratuity-calculator.html" class="nav-dropdown-item">Gratuity Calculator</a>
-                    <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item">Professional Tax</a>
-                </div>
-            </div>
-            <a href="/pages/activate.html" class="nav-link">Pricing</a>
-        </div>
-        <div class="nav-cta">
-            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
-            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
-        </div>
-    </nav>
+    <div id="navbar"></div>
 
     <!-- Hero -->
     <section class="calc-hero">
@@ -340,23 +291,11 @@
     </div>
 
     <!-- Footer -->
-    <footer class="landing-footer">
-        <div class="footer-brand">
-            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
-            <span class="pronunciation-guide">(ray-gen-izer)</span>
-        </div>
-        <div class="footer-links">
-            <a href="/pages/vision.html" class="footer-link">Vision</a>
-            <a href="/pages/chat.html" class="footer-link">Chat</a>
-            <a href="/pages/drive.html" class="footer-link">Drive</a>
-            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
-            <a href="/pages/login.html" class="footer-link">Sign In</a>
-            <a href="/pages/terms.html" class="footer-link">Terms</a>
-            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
-            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
-        </div>
-        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
-    </footer>
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
 
     <script>
         function calculateHRA() {

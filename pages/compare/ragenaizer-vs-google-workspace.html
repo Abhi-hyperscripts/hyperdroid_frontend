@@ -122,67 +122,7 @@
 </head>
 <body class="landing-page">
     <!-- Navigation -->
-    <nav class="landing-nav">
-        <a href="../../index.html">
-            <img src="../../assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
-        </a>
-        <div class="nav-links">
-            <!-- Products Dropdown -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Products
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="../vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
-                    <a href="../chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
-                    <a href="../drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
-                    <a href="../hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
-                </div>
-            </div>
-            <!-- Features Dropdown -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Features
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="../features/video-conferencing.html" class="nav-dropdown-item">Video Conferencing <span>HD meetings & screen share</span></a>
-                    <a href="../features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
-                    <a href="../features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
-                    <a href="../features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
-                </div>
-            </div>
-            <!-- Solutions Dropdown -->
-            <div class="nav-dropdown">
-                <span class="nav-dropdown-trigger">
-                    Solutions
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </span>
-                <div class="nav-dropdown-menu">
-                    <a href="../use-cases/remote-teams.html" class="nav-dropdown-item">Remote Teams <span>Async-first collaboration</span></a>
-                    <a href="../use-cases/startups.html" class="nav-dropdown-item">Startups <span>Scale without complexity</span></a>
-                    <a href="../use-cases/agencies.html" class="nav-dropdown-item">Agencies <span>Client collaboration</span></a>
-                    <div class="nav-dropdown-divider"></div>
-                    <a href="../compare/ragenaizer-vs-zoom.html" class="nav-dropdown-item">vs Zoom</a>
-                    <a href="../compare/ragenaizer-vs-slack.html" class="nav-dropdown-item">vs Slack</a>
-                    <a href="../compare/ragenaizer-vs-teams.html" class="nav-dropdown-item">vs Microsoft Teams</a>
-                    <a href="../compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item">vs Google Workspace</a>
-                </div>
-            </div>
-            <a href="../activate.html" class="nav-link">Pricing</a>
-        </div>
-        <div class="nav-cta">
-            <a href="../login.html" class="btn-secondary">Sign In</a>
-            <a href="../activate.html" class="btn-primary">Get Started</a>
-        </div>
-    </nav>
+    <div id="navbar"></div>
 
     <!-- Hero Section -->
     <section class="compare-hero">
@@ -430,21 +370,10 @@
     </section>
 
     <!-- Footer -->
-    <footer class="landing-footer">
-        <div class="footer-brand">
-        <img src="../../assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
-            <span class="pronunciation-guide">(ray-gen-izer)</span>
-        </div>
-        <div class="footer-links">
-            <a href="../vision.html" class="footer-link">Vision</a>
-            <a href="../chat.html" class="footer-link">Chat</a>
-            <a href="../drive.html" class="footer-link">Drive</a>
-            <a href="../hrms.html" class="footer-link">HRMS</a>
-            <a href="../login.html" class="footer-link">Sign In</a>
-            <a href="../terms.html" class="footer-link">Terms</a>
-            <a href="../privacy.html" class="footer-link">Privacy</a>
-        </div>
-        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
-    </footer>
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
 </body>
 </html>
