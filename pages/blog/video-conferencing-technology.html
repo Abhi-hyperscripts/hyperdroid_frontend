@@ -59,76 +59,523 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Russo+One&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
     <style>
-        .article-page { min-height: 100vh; background: var(--bg-primary); }
-        .article-header { padding: 120px 60px 60px; max-width: 800px; margin: 0 auto; }
-        .article-meta { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .article-category { padding: 6px 14px; background: rgba(99, 102, 241, 0.1); border-radius: 100px; font-size: 13px; font-weight: 600; color: #818cf8; }
-        .article-date { font-size: 14px; color: var(--text-tertiary); }
-        .article-header h1 { font-size: clamp(32px, 4vw, 44px); font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-bottom: 20px; }
-        .article-header .lead { font-size: 20px; color: var(--text-secondary); line-height: 1.6; }
+        /* Hero colors for this article */
+        :root {
+            --hero-color-1: rgba(99, 102, 241, 0.4);
+            --hero-color-2: rgba(139, 92, 246, 0.35);
+            --hero-color-3: rgba(6, 182, 212, 0.25);
+            --hero-accent: #818cf8;
+        }
 
-        .article-content { max-width: 800px; margin: 0 auto; padding: 0 60px 80px; }
-        .article-content h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 48px 0 20px; }
-        .article-content h3 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 36px 0 16px; }
-        .article-content p { font-size: 17px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; }
-        .article-content ul, .article-content ol { color: var(--text-secondary); margin: 0 0 24px 24px; line-height: 1.8; font-size: 17px; }
-        .article-content li { margin-bottom: 8px; }
+        /* Article Hero */
+        .article-hero {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 140px 60px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .article-hero .hero-bg {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .article-hero .hero-gradient {
+            position: absolute;
+            inset: 0;
+        }
+
+        .article-hero .hero-gradient::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            background:
+                radial-gradient(ellipse 60% 40% at 30% 30%, var(--hero-color-1) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 70% 20%, var(--hero-color-2) 0%, transparent 45%),
+                radial-gradient(ellipse 40% 50% at 80% 70%, var(--hero-color-3) 0%, transparent 45%);
+            animation: heroGradientShift 30s ease-in-out infinite;
+        }
+
+        @keyframes heroGradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            33% { transform: translate(3%, -2%) rotate(1deg) scale(1.02); }
+            66% { transform: translate(-2%, 3%) rotate(-1deg) scale(0.98); }
+        }
+
+        .article-hero .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 80px 80px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+        }
+
+        .article-hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .article-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            color: var(--hero-accent);
+        }
+
+        .article-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--hero-accent);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        .article-hero h1 {
+            font-family: 'Russo One', sans-serif;
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 400;
+            line-height: 1.15;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            margin: 0 0 24px 0;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .article-hero h1 .highlight {
+            background: linear-gradient(135deg, var(--hero-accent) 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .article-hero .lead {
+            font-size: 20px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0 0 32px 0;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .article-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .article-meta svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.6;
+        }
+
+        /* Article Content */
+        .article-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 80px 60px;
+        }
+
+        .article-content h2 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 64px 0 24px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .article-content h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 4px;
+            background: linear-gradient(180deg, var(--hero-accent), #a78bfa);
+            border-radius: 2px;
+        }
+
+        .article-content h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 40px 0 16px;
+        }
+
+        .article-content p {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .article-content ul, .article-content ol {
+            color: var(--text-secondary);
+            margin: 0 0 24px 24px;
+            line-height: 1.8;
+            font-size: 17px;
+        }
+
+        .article-content li { margin-bottom: 10px; }
         .article-content strong { color: var(--text-primary); }
 
-        .tech-box { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin: 24px 0; }
-        .tech-box h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-        .tech-box h4 svg { width: 24px; height: 24px; flex-shrink: 0; color: #818cf8; }
-        .tech-box p { margin-bottom: 12px; }
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 32px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+
+        .feature-card.highlighted {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border-color: var(--hero-accent);
+        }
+
+        .feature-card h4 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-card h4 svg {
+            width: 22px;
+            height: 22px;
+            color: var(--hero-accent);
+            flex-shrink: 0;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--text-tertiary);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* Tech Box */
+        .tech-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 20px;
+            padding: 28px;
+            margin: 32px 0;
+        }
+
+        .tech-box h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tech-box h4 svg {
+            width: 26px;
+            height: 26px;
+            color: var(--hero-accent);
+            flex-shrink: 0;
+        }
+
+        .tech-box p {
+            margin-bottom: 14px;
+            font-size: 16px;
+        }
+
         .tech-box p:last-child { margin-bottom: 0; }
 
-        .architecture-diagram { background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 32px; margin: 32px 0; text-align: center; }
-        .architecture-diagram h4 { font-size: 14px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 24px; }
-        .diagram-flow { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
-        .diagram-node { background: var(--bg-secondary); border: 2px solid var(--border-primary); border-radius: 12px; padding: 16px 24px; min-width: 120px; }
-        .diagram-node.primary { border-color: #818cf8; background: rgba(99, 102, 241, 0.1); }
-        .diagram-node h5 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .diagram-node p { font-size: 12px; color: var(--text-tertiary); margin: 0; }
-        .diagram-arrow { color: #818cf8; font-size: 24px; }
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            text-align: center;
+        }
 
-        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; }
-        .feature-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; }
-        .feature-card h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .feature-card h4 svg { width: 20px; height: 20px; min-width: 20px; flex-shrink: 0; color: #818cf8; }
-        .feature-card p { font-size: 14px; color: var(--text-tertiary); margin: 0; line-height: 1.6; }
+        .architecture-diagram h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--hero-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 28px;
+        }
 
-        .comparison-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
-        .comparison-table th, .comparison-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-primary); }
-        .comparison-table th { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; font-size: 14px; }
-        .comparison-table td { color: var(--text-secondary); font-size: 14px; }
-        .comparison-table td:first-child { color: var(--text-primary); font-weight: 500; }
+        .diagram-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
 
-        .info-callout { background: rgba(99, 102, 241, 0.1); border-left: 4px solid #818cf8; padding: 20px 24px; margin: 24px 0; border-radius: 0 12px 12px 0; }
-        .info-callout p { margin: 0; color: var(--text-secondary); }
+        .diagram-node {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-primary);
+            border-radius: 14px;
+            padding: 18px 28px;
+            min-width: 140px;
+        }
 
-        .cta-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin: 48px 0; }
-        .cta-box h3 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
-        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
-        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; }
+        .diagram-node.primary {
+            border-color: var(--hero-accent);
+            background: rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+        }
 
-        .related-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 48px; }
-        .related-link { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-        .related-link:hover { border-color: #818cf8; }
-        .related-link h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .related-link p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
+        .diagram-node h5 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .diagram-node p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin: 0;
+        }
+
+        .diagram-arrow {
+            color: var(--hero-accent);
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        /* Info Callout */
+        .info-callout {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+            border-left: 4px solid var(--hero-accent);
+            padding: 24px 28px;
+            margin: 32px 0;
+            border-radius: 0 16px 16px 0;
+        }
+
+        .info-callout p {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 32px 0;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .comparison-table td {
+            color: var(--text-secondary);
+            font-size: 14px;
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table td:first-child {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* CTA Box */
+        .cta-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            margin: 64px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+            animation: ctaPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ctaPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+
+        .cta-box h3 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            position: relative;
+            font-size: 17px;
+        }
+
+        .cta-box a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .cta-box a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+        }
+
+        .cta-box a svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Related Links */
+        .related-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 48px;
+        }
+
+        .related-link {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.04));
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 14px;
+            padding: 22px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .related-link:hover {
+            border-color: var(--hero-accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .related-link h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .related-link p {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin: 0;
+        }
 
         @media (max-width: 768px) {
-            .article-header, .article-content { padding-left: 24px; padding-right: 24px; }
+            .article-hero { padding: 120px 24px 60px; }
+            .article-content { padding: 60px 24px; }
             .diagram-flow { flex-direction: column; }
             .diagram-arrow { transform: rotate(90deg); }
+            .cta-box { padding: 32px 24px; }
         }
     </style>
 </head>
-<body class="landing-page article-page">
+<body class="landing-page">
     <!-- Navigation -->
     <nav class="landing-nav">
         <a href="/"><img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo"></a>
@@ -161,14 +608,27 @@
         </div>
     </nav>
 
-    <!-- Article Header -->
-    <header class="article-header">
-        <div class="article-meta">
-            <span class="article-category">Technology</span>
-            <span class="article-date">February 4, 2026 • 15 min read</span>
+    <!-- Article Hero -->
+    <header class="article-hero">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
         </div>
-        <h1>How Enterprise Video Conferencing Works: The Technology Behind Crystal-Clear Meetings</h1>
-        <p class="lead">A deep dive into the architecture that powers modern video conferencing—from SFU media servers to cloud recording and network optimization.</p>
+        <div class="article-hero-content">
+            <span class="article-badge">Video Technology</span>
+            <h1>How Enterprise Video Conferencing <span class="highlight">Actually Works</span></h1>
+            <p class="lead">A deep dive into the architecture that powers modern video conferencing—from SFU media servers to cloud recording, simulcast streaming, and network optimization.</p>
+            <div class="article-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    February 4, 2026
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    15 min read
+                </span>
+            </div>
+        </div>
     </header>
 
     <!-- Article Content -->
@@ -189,7 +649,7 @@
                 <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg> MCU (Mixing)</h4>
                 <p>A central server receives all streams, mixes them into one composite video, and sends it back. High server cost, limited flexibility.</p>
             </div>
-            <div class="feature-card" style="border-color: #818cf8; background: rgba(99, 102, 241, 0.05);">
+            <div class="feature-card highlighted">
                 <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg> SFU (Selective Forwarding)</h4>
                 <p><strong>Industry standard.</strong> Server intelligently routes streams without mixing. Scales to hundreds of participants with optimal bandwidth.</p>
             </div>
@@ -208,12 +668,12 @@
                 <span class="diagram-arrow">→</span>
                 <div class="diagram-node primary">
                     <h5>SFU Server</h5>
-                    <p>Routes streams intelligently</p>
+                    <p>Routes intelligently</p>
                 </div>
                 <span class="diagram-arrow">→</span>
                 <div class="diagram-node">
-                    <h5>Participant B, C, D...</h5>
-                    <p>Receives relevant streams</p>
+                    <h5>Participants B, C, D...</h5>
+                    <p>Receive relevant streams</p>
                 </div>
             </div>
         </div>
@@ -387,7 +847,7 @@
         <div class="cta-box">
             <h3>Experience Enterprise-Grade Video Conferencing</h3>
             <p>See the difference SFU architecture makes. Crystal-clear video, reliable connections, instant recordings—all integrated with your workspace.</p>
-            <a href="/pages/vision.html">Explore Ragenaizer Vision <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a href="/pages/vision.html">Explore Ragenaizer Vision <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <!-- Related Links -->
