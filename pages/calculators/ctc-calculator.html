@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+    <title>CTC to In-Hand Salary Calculator 2026 | Take Home Pay Calculator | Ragenaizer</title>
+    <meta name="description" content="Free CTC to In-Hand Salary Calculator. Convert your CTC to take-home salary instantly. See detailed breakdown of PF, ESI, PT, TDS deductions. Calculate net salary from gross CTC for India 2026.">
+    <meta name="keywords" content="ctc to in hand calculator, take home salary calculator, ctc calculator, net salary calculator, gross to net salary, salary breakup calculator, in hand salary from ctc, ctc breakdown calculator india">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/calculators/ctc-calculator.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/calculators/ctc-calculator.html">
+    <meta property="og:title" content="CTC to In-Hand Salary Calculator 2026">
+    <meta property="og:description" content="Convert CTC to take-home salary. See PF, ESI, PT, TDS deductions breakdown.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-ctc-calculator.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://ragenaizer.com/"},
+            {"@type": "ListItem", "position": 2, "name": "Calculators", "item": "https://ragenaizer.com/pages/blog/"},
+            {"@type": "ListItem", "position": 3, "name": "CTC Calculator", "item": "https://ragenaizer.com/pages/calculators/ctc-calculator.html"}
+        ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .calc-page { min-height: 100vh; background: var(--bg-primary); }
+        .calc-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
+        .calc-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168, 85, 247, 0.12), transparent); pointer-events: none; }
+        .calc-hero h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .calc-hero h1 .highlight { background: linear-gradient(135deg, #a855f7, #9333ea); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .calc-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 12px; position: relative; }
+        .calc-hero .update-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 100px; font-size: 13px; color: #c084fc; margin-bottom: 20px; }
+
+        .calc-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+        .calculator-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .calculator-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .calculator-card h2 svg { color: #a855f7; }
+
+        .calc-input-group { margin-bottom: 20px; }
+        .calc-input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .calc-input-group input, .calc-input-group select { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 16px; color: var(--text-primary); transition: all 0.2s; }
+        .calc-input-group input:focus, .calc-input-group select:focus { outline: none; border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1); }
+        .calc-input-group .input-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .checkbox-group input { width: 18px; height: 18px; accent-color: #a855f7; }
+        .checkbox-group label { font-size: 14px; color: var(--text-secondary); cursor: pointer; }
+
+        .calc-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #a855f7, #9333ea); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; margin-top: 16px; }
+        .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3); }
+
+        .results-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .results-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
+
+        .salary-visual { text-align: center; margin-bottom: 24px; padding: 24px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.1)); border-radius: 16px; }
+        .salary-visual .ctc { font-size: 14px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .salary-visual .ctc-amount { font-size: 28px; font-weight: 800; color: var(--text-primary); }
+        .salary-visual .arrow { font-size: 24px; color: #a855f7; margin: 12px 0; }
+        .salary-visual .inhand { font-size: 14px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .salary-visual .inhand-amount { font-size: 36px; font-weight: 800; color: #22c55e; }
+        .salary-visual .monthly { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+
+        .breakdown-section { margin-top: 24px; }
+        .breakdown-section h3 { font-size: 14px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+        .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); }
+        .result-row:last-child { border-bottom: none; }
+        .result-row .label { color: var(--text-secondary); font-size: 14px; }
+        .result-row .value { color: var(--text-primary); font-weight: 600; font-size: 14px; }
+        .result-row.deduction .value { color: #ef4444; }
+        .result-row.earning .value { color: #22c55e; }
+        .result-row.total { background: var(--bg-tertiary); margin: 8px -16px 0; padding: 12px 16px; border-radius: 8px; }
+        .result-row.total .label { font-weight: 600; color: var(--text-primary); }
+        .result-row.total .value { font-size: 16px; }
+
+        .info-section { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 40px; margin-top: 40px; grid-column: 1 / -1; }
+        .info-section h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .info-section p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+        .info-section h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 24px 0 12px; }
+        .info-section ul { color: var(--text-secondary); margin-left: 20px; line-height: 1.8; }
+
+        .cta-box { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.1)); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin-top: 40px; grid-column: 1 / -1; }
+        .cta-box h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
+        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
+        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #a855f7, #9333ea); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; transition: all 0.2s; }
+
+        .other-calcs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; grid-column: 1 / -1; }
+        .other-calc-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        .other-calc-card:hover { border-color: #a855f7; transform: translateY(-2px); }
+        .other-calc-card h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .other-calc-card p { font-size: 13px; color: var(--text-tertiary); }
+
+        @media (max-width: 900px) {
+            .calc-hero { padding: 100px 24px 60px; }
+            .calc-container { padding: 0 24px 80px; grid-template-columns: 1fr; }
+            .other-calcs { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="landing-page calc-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/"><img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo"></a>
+        <div class="nav-links">
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Products<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Resources<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator</a>
+                    <a href="/pages/calculators/tds-calculator.html" class="nav-dropdown-item">TDS Calculator</a>
+                    <a href="/pages/calculators/ctc-calculator.html" class="nav-dropdown-item">CTC Calculator</a>
+                    <a href="/pages/calculators/hra-calculator.html" class="nav-dropdown-item">HRA Calculator</a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="calc-hero">
+        <div class="update-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            CTC → In-Hand | Includes PF, ESI, PT, TDS
+        </div>
+        <h1><span class="highlight">CTC to In-Hand</span> Salary Calculator</h1>
+        <p>Convert your CTC to actual take-home salary. See complete breakdown of all deductions and net pay.</p>
+    </section>
+
+    <!-- Calculator -->
+    <div class="calc-container">
+        <div class="calculator-card">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                Enter CTC Details
+            </h2>
+            <div class="calc-input-group">
+                <label>Annual CTC (₹)</label>
+                <input type="number" id="annualCTC" value="1200000" min="0">
+                <div class="input-hint">Your total Cost to Company per year</div>
+            </div>
+            <div class="calc-input-group">
+                <label>Basic Salary (% of CTC)</label>
+                <select id="basicPercent">
+                    <option value="40">40% (Common)</option>
+                    <option value="50" selected>50% (Standard)</option>
+                    <option value="60">60%</option>
+                </select>
+                <div class="input-hint">Basic salary component percentage</div>
+            </div>
+            <div class="calc-input-group">
+                <label>State</label>
+                <select id="state">
+                    <option value="maharashtra">Maharashtra</option>
+                    <option value="karnataka">Karnataka</option>
+                    <option value="tamil_nadu">Tamil Nadu</option>
+                    <option value="delhi">Delhi (No PT)</option>
+                    <option value="other">Other</option>
+                </select>
+                <div class="input-hint">For Professional Tax calculation</div>
+            </div>
+            
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-primary);">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="pfApplicable" checked>
+                    <label for="pfApplicable">PF Applicable (12% deduction)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="esiApplicable">
+                    <label for="esiApplicable">ESI Applicable (if gross ≤ ₹21,000/month)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="includeTDS" checked>
+                    <label for="includeTDS">Include estimated TDS (New Regime)</label>
+                </div>
+            </div>
+
+            <button class="calc-btn" onclick="calculateCTC()">Calculate In-Hand Salary →</button>
+        </div>
+
+        <div class="results-card">
+            <h2>Salary Breakdown</h2>
+            
+            <div class="salary-visual">
+                <div class="ctc">Annual CTC</div>
+                <div class="ctc-amount" id="visCTC">₹12,00,000</div>
+                <div class="arrow">↓</div>
+                <div class="inhand">Annual In-Hand</div>
+                <div class="inhand-amount" id="visInHand">₹9,50,000</div>
+                <div class="monthly">Monthly: <strong id="visMonthly">₹79,167</strong></div>
+            </div>
+
+            <div class="breakdown-section">
+                <h3>Earnings (Annual)</h3>
+                <div class="result-row earning">
+                    <span class="label">Basic Salary</span>
+                    <span class="value" id="resBasic">₹6,00,000</span>
+                </div>
+                <div class="result-row earning">
+                    <span class="label">HRA</span>
+                    <span class="value" id="resHRA">₹3,00,000</span>
+                </div>
+                <div class="result-row earning">
+                    <span class="label">Special Allowance</span>
+                    <span class="value" id="resSpecial">₹1,92,000</span>
+                </div>
+                <div class="result-row total earning">
+                    <span class="label">Gross Salary</span>
+                    <span class="value" id="resGross">₹10,92,000</span>
+                </div>
+            </div>
+
+            <div class="breakdown-section">
+                <h3>Deductions (Annual)</h3>
+                <div class="result-row deduction">
+                    <span class="label">Employee PF (12%)</span>
+                    <span class="value" id="resPF">- ₹72,000</span>
+                </div>
+                <div class="result-row deduction">
+                    <span class="label">ESI (0.75%)</span>
+                    <span class="value" id="resESI">- ₹0</span>
+                </div>
+                <div class="result-row deduction">
+                    <span class="label">Professional Tax</span>
+                    <span class="value" id="resPT">- ₹2,500</span>
+                </div>
+                <div class="result-row deduction">
+                    <span class="label">TDS (Income Tax)</span>
+                    <span class="value" id="resTDS">- ₹67,500</span>
+                </div>
+                <div class="result-row total deduction">
+                    <span class="label">Total Deductions</span>
+                    <span class="value" id="resTotalDed">- ₹1,42,000</span>
+                </div>
+            </div>
+
+            <div class="breakdown-section">
+                <h3>Employer Contributions (Not in Hand)</h3>
+                <div class="result-row">
+                    <span class="label">Employer PF (12%)</span>
+                    <span class="value" id="resEmpPF">₹72,000</span>
+                </div>
+                <div class="result-row">
+                    <span class="label">Employer ESI (3.25%)</span>
+                    <span class="value" id="resEmpESI">₹0</span>
+                </div>
+                <div class="result-row">
+                    <span class="label">Gratuity (4.81%)</span>
+                    <span class="value" id="resGratuity">₹36,000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <h2>Understanding CTC vs In-Hand Salary</h2>
+            <p><strong>CTC (Cost to Company)</strong> is the total amount a company spends on an employee, including salary, benefits, and employer contributions. <strong>In-Hand Salary</strong> (Take-Home Pay) is what you actually receive after all deductions.</p>
+
+            <h3>Typical CTC Breakup</h3>
+            <ul>
+                <li><strong>Basic Salary:</strong> 40-50% of CTC (PF calculated on this)</li>
+                <li><strong>HRA:</strong> 40-50% of Basic (for rent exemption)</li>
+                <li><strong>Special Allowance:</strong> Remaining taxable amount</li>
+                <li><strong>Employer PF:</strong> 12% of Basic (not in your hand)</li>
+                <li><strong>Gratuity:</strong> 4.81% of Basic (paid after 5 years)</li>
+            </ul>
+
+            <h3>Common Deductions from Salary</h3>
+            <ul>
+                <li><strong>Employee PF:</strong> 12% of Basic (max ₹1,800/month if Basic ≤ ₹15,000)</li>
+                <li><strong>ESI:</strong> 0.75% of Gross (only if Gross ≤ ₹21,000/month)</li>
+                <li><strong>Professional Tax:</strong> ₹200/month (varies by state, max ₹2,500/year)</li>
+                <li><strong>TDS:</strong> Based on tax slab and declarations</li>
+            </ul>
+
+            <h3>Why is In-Hand Lower than CTC?</h3>
+            <p>Your CTC includes employer contributions (PF, ESI, Gratuity) that you don't receive directly. Additionally, employee deductions (PF, ESI, PT, TDS) are subtracted from your gross salary. The remaining amount is your in-hand salary.</p>
+        </div>
+
+        <!-- Related Calculators -->
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 20px; grid-column: 1 / -1;">Related Calculators</h2>
+        <div class="other-calcs">
+            <a href="/pages/calculators/tds-calculator.html" class="other-calc-card">
+                <h3>TDS Calculator</h3>
+                <p>Compare Old vs New Tax Regime</p>
+            </a>
+            <a href="/pages/calculators/pf-calculator.html" class="other-calc-card">
+                <h3>PF Calculator</h3>
+                <p>Calculate EPF contribution</p>
+            </a>
+            <a href="/pages/calculators/hra-calculator.html" class="other-calc-card">
+                <h3>HRA Calculator</h3>
+                <p>Calculate HRA tax exemption</p>
+            </a>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-box">
+            <h2>Automate Salary Processing with Ragenaizer HRMS</h2>
+            <p>Generate accurate payslips with all statutory deductions. PF, ESI, PT, TDS - automatically calculated and compliant.</p>
+            <a href="/pages/register.html">Start Free Trial <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
+            <span class="pronunciation-guide">(ray-gen-izer)</span>
+        </div>
+        <div class="footer-links">
+            <a href="/pages/vision.html" class="footer-link">Vision</a>
+            <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/drive.html" class="footer-link">Drive</a>
+            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/login.html" class="footer-link">Sign In</a>
+            <a href="/pages/terms.html" class="footer-link">Terms</a>
+            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function calculateCTC() {
+            const ctc = parseFloat(document.getElementById('annualCTC').value) || 0;
+            const basicPercent = parseFloat(document.getElementById('basicPercent').value) / 100;
+            const state = document.getElementById('state').value;
+            const pfApplicable = document.getElementById('pfApplicable').checked;
+            const esiApplicable = document.getElementById('esiApplicable').checked;
+            const includeTDS = document.getElementById('includeTDS').checked;
+
+            // Calculate components
+            const basic = ctc * basicPercent;
+            const hra = basic * 0.5;
+            const employerPF = pfApplicable ? Math.min(basic * 0.12, 21600) : 0;
+            const gratuity = basic * 0.0481;
+            const employerESI = esiApplicable ? (ctc - employerPF - gratuity) * 0.0325 : 0;
+            
+            // Gross = CTC - Employer contributions
+            const grossSalary = ctc - employerPF - gratuity - employerESI;
+            const special = grossSalary - basic - hra;
+
+            // Employee deductions
+            const empPF = pfApplicable ? Math.min(basic * 0.12, 21600) : 0;
+            const monthlyGross = grossSalary / 12;
+            const empESI = (esiApplicable && monthlyGross <= 21000) ? grossSalary * 0.0075 : 0;
+            
+            // Professional Tax (annual)
+            let pt = 0;
+            if (state === 'maharashtra' || state === 'karnataka') pt = 2500;
+            else if (state === 'tamil_nadu') pt = 2400;
+            else if (state !== 'delhi') pt = 2500;
+
+            // TDS (simplified - New Regime)
+            let tds = 0;
+            if (includeTDS) {
+                const taxableIncome = grossSalary - 75000; // Standard deduction
+                if (taxableIncome > 1500000) tds = 187500 + (taxableIncome - 1500000) * 0.30;
+                else if (taxableIncome > 1200000) tds = 127500 + (taxableIncome - 1200000) * 0.20;
+                else if (taxableIncome > 1000000) tds = 97500 + (taxableIncome - 1000000) * 0.15;
+                else if (taxableIncome > 700000) tds = 67500 + (taxableIncome - 700000) * 0.10;
+                else if (taxableIncome > 300000) tds = (taxableIncome - 300000) * 0.05;
+                if (taxableIncome <= 700000) tds = 0; // Rebate
+                tds = Math.round(tds * 1.04); // Add cess
+            }
+
+            const totalDeductions = empPF + empESI + pt + tds;
+            const inHand = grossSalary - totalDeductions;
+
+            // Update UI
+            document.getElementById('visCTC').textContent = '₹' + ctc.toLocaleString('en-IN');
+            document.getElementById('visInHand').textContent = '₹' + Math.round(inHand).toLocaleString('en-IN');
+            document.getElementById('visMonthly').textContent = '₹' + Math.round(inHand / 12).toLocaleString('en-IN');
+
+            document.getElementById('resBasic').textContent = '₹' + Math.round(basic).toLocaleString('en-IN');
+            document.getElementById('resHRA').textContent = '₹' + Math.round(hra).toLocaleString('en-IN');
+            document.getElementById('resSpecial').textContent = '₹' + Math.round(special).toLocaleString('en-IN');
+            document.getElementById('resGross').textContent = '₹' + Math.round(grossSalary).toLocaleString('en-IN');
+
+            document.getElementById('resPF').textContent = '- ₹' + Math.round(empPF).toLocaleString('en-IN');
+            document.getElementById('resESI').textContent = '- ₹' + Math.round(empESI).toLocaleString('en-IN');
+            document.getElementById('resPT').textContent = '- ₹' + pt.toLocaleString('en-IN');
+            document.getElementById('resTDS').textContent = '- ₹' + Math.round(tds).toLocaleString('en-IN');
+            document.getElementById('resTotalDed').textContent = '- ₹' + Math.round(totalDeductions).toLocaleString('en-IN');
+
+            document.getElementById('resEmpPF').textContent = '₹' + Math.round(employerPF).toLocaleString('en-IN');
+            document.getElementById('resEmpESI').textContent = '₹' + Math.round(employerESI).toLocaleString('en-IN');
+            document.getElementById('resGratuity').textContent = '₹' + Math.round(gratuity).toLocaleString('en-IN');
+        }
+
+        // Calculate on page load
+        calculateCTC();
+    </script>
+</body>
+</html>
