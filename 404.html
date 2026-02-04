@@ -1,189 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Cookie Consent & Analytics -->
-    <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page Not Found - Ragenaizer</title>
-    <meta name="description" content="The page you're looking for doesn't exist. Return to Ragenaizer homepage.">
-    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%);
+    <title>Page Not Found | Ragenaizer</title>
+    <meta name="description" content="The page you're looking for doesn't exist. Find your way back to Ragenaizer's unified workspace platform.">
+    <meta name="robots" content="noindex, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:title" content="Page Not Found | Ragenaizer">
+    <meta property="og:description" content="The page you're looking for doesn't exist.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <style>
+        .error-page {
             min-height: 100vh;
+            background: var(--bg-primary);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            overflow: hidden;
+            flex-direction: column;
         }
 
-        .container {
+        .error-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
             text-align: center;
-            padding: 40px;
-            max-width: 600px;
+            position: relative;
+        }
+
+        .error-content::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+            pointer-events: none;
         }
 
         .error-code {
-            font-size: 150px;
+            font-size: clamp(120px, 20vw, 200px);
             font-weight: 800;
             background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             line-height: 1;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            position: relative;
         }
 
         .error-title {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #fff;
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            position: relative;
         }
 
         .error-message {
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
+            max-width: 500px;
             margin-bottom: 40px;
-            line-height: 1.6;
+            position: relative;
         }
 
-        .actions {
+        .error-actions {
             display: flex;
             gap: 16px;
-            justify-content: center;
             flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 60px;
+            position: relative;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 28px;
+        .error-actions .btn-primary {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border: none;
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
+            color: #fff;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-            color: #fff;
-        }
-
-        .btn-primary:hover {
+        .error-actions .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
         }
 
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .error-actions .btn-secondary {
+            padding: 14px 32px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.2s;
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+        .error-actions .btn-secondary:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
         }
 
-        .logo {
-            margin-bottom: 40px;
+        .helpful-links {
+            position: relative;
+            max-width: 800px;
+            width: 100%;
         }
 
-        .logo img {
+        .helpful-links h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 24px;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .link-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .link-card:hover {
+            border-color: #8b5cf6;
+            transform: translateY(-2px);
+        }
+
+        .link-card-icon {
+            width: 40px;
             height: 40px;
-            filter: brightness(0) invert(1);
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
         }
 
-        /* Decorative elements */
-        .bg-glow {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.3;
-            pointer-events: none;
+        .link-card-icon svg {
+            width: 20px;
+            height: 20px;
+            color: #a78bfa;
         }
 
-        .bg-glow-1 {
-            width: 400px;
-            height: 400px;
-            background: #8b5cf6;
-            top: -100px;
-            left: -100px;
+        .link-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
         }
 
-        .bg-glow-2 {
-            width: 300px;
-            height: 300px;
-            background: #06b6d4;
-            bottom: -50px;
-            right: -50px;
+        .link-card-desc {
+            font-size: 13px;
+            color: var(--text-tertiary);
         }
 
-        @media (max-width: 480px) {
-            .error-code {
-                font-size: 100px;
-            }
-            .error-title {
-                font-size: 22px;
-            }
-            .error-message {
-                font-size: 16px;
-            }
-            .actions {
+        @media (max-width: 600px) {
+            .error-actions {
                 flex-direction: column;
-            }
-            .btn {
                 width: 100%;
-                justify-content: center;
+                max-width: 300px;
+            }
+
+            .error-actions a {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
 </head>
-<body>
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
-
-    <div class="container">
-        <div class="logo">
-            <a href="/">
-                <img src="/assets/brand_logo.png" alt="Ragenaizer">
-            </a>
+<body class="landing-page error-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <!-- Products Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Products
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <!-- Resources Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Resources
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator <span>India Provident Fund</span></a>
+                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator <span>State Insurance</span></a>
+                    <a href="/pages/calculators/gratuity-calculator.html" class="nav-dropdown-item">Gratuity Calculator <span>Retirement benefit</span></a>
+                    <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item">Professional Tax <span>State-wise PT</span></a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
         </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
 
+    <!-- Error Content -->
+    <main class="error-content">
         <div class="error-code">404</div>
         <h1 class="error-title">Page Not Found</h1>
-        <p class="error-message">
-            The page you're looking for doesn't exist or has been moved.
-            Let's get you back on track.
-        </p>
+        <p class="error-message">The page you're looking for doesn't exist or has been moved. Let's get you back on track.</p>
 
-        <div class="actions">
-            <a href="/" class="btn btn-primary">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                Go Home
-            </a>
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Go Back
-            </a>
+        <div class="error-actions">
+            <a href="/" class="btn-primary">Go to Homepage</a>
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
         </div>
-    </div>
+
+        <div class="helpful-links">
+            <h2>Helpful Links</h2>
+            <div class="links-grid">
+                <a href="/pages/hrms.html" class="link-card">
+                    <div class="link-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="link-card-title">HRMS</div>
+                    <div class="link-card-desc">HR & Payroll Management</div>
+                </a>
+                <a href="/pages/vision.html" class="link-card">
+                    <div class="link-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <div class="link-card-title">Vision</div>
+                    <div class="link-card-desc">Video Conferencing</div>
+                </a>
+                <a href="/pages/blog/" class="link-card">
+                    <div class="link-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                    </div>
+                    <div class="link-card-title">Blog</div>
+                    <div class="link-card-desc">HR insights & tips</div>
+                </a>
+                <a href="/pages/calculators/pf-calculator.html" class="link-card">
+                    <div class="link-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="2" width="16" height="20" rx="2"/>
+                            <line x1="8" y1="6" x2="16" y2="6"/>
+                            <line x1="8" y1="10" x2="16" y2="10"/>
+                            <line x1="8" y1="14" x2="12" y2="14"/>
+                        </svg>
+                    </div>
+                    <div class="link-card-title">Calculators</div>
+                    <div class="link-card-desc">PF, ESI, Gratuity & more</div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
+            <span class="pronunciation-guide">(ray-gen-izer)</span>
+        </div>
+        <div class="footer-links">
+            <a href="/pages/vision.html" class="footer-link">Vision</a>
+            <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/drive.html" class="footer-link">Drive</a>
+            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/login.html" class="footer-link">Sign In</a>
+            <a href="/pages/terms.html" class="footer-link">Terms</a>
+            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
+    </footer>
 </body>
 </html>
