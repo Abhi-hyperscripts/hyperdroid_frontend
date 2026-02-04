@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+    <title>ESI Calculator India 2026 | Calculate ESIC Contribution Online Free | Ragenaizer</title>
+    <meta name="description" content="Free ESI Calculator for India 2026. Calculate your Employee State Insurance contribution instantly. See employee (0.75%) and employer (3.25%) ESI contributions. Updated with latest ESIC rates and eligibility criteria.">
+    <meta name="keywords" content="esi calculator, esic calculator, employee state insurance calculator, esi contribution calculator india, esic contribution rates 2026, esi calculation formula, how to calculate esi, esi eligibility, esi calculator online">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/calculators/esi-calculator.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/calculators/esi-calculator.html">
+    <meta property="og:title" content="ESI Calculator India 2026 - Calculate ESIC Contribution Free">
+    <meta property="og:description" content="Free online ESI calculator. Calculate employee and employer ESIC contributions instantly.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-esi-calculator.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="ESI Calculator India 2026 - Free ESIC Calculator">
+    <meta name="twitter:description" content="Calculate your ESI contribution instantly. Updated for 2026 with current ESIC rates.">
+
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Calculator Tool -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ESI Calculator India",
+        "url": "https://ragenaizer.com/pages/calculators/esi-calculator.html",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "description": "Free online ESI calculator to calculate Employee State Insurance contributions in India. Calculate employee and employer ESI contributions based on gross salary.",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+        },
+        "provider": {
+            "@type": "Organization",
+            "name": "Ragenaizer",
+            "url": "https://ragenaizer.com"
+        }
+    }
+    </script>
+
+    <!-- Schema: FAQ -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is the current ESI contribution rate in India?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "The current ESI contribution rate is 4% of gross salary - employees contribute 0.75% and employers contribute 3.25%."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is the ESI salary limit for 2026?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "ESI is applicable for employees earning up to ₹21,000 gross salary per month. Employees earning above this limit are not covered under ESI."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is ESI mandatory for all employees?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "ESI is mandatory for employees earning up to ₹21,000 per month in establishments with 10 or more employees (20 in some states)."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What benefits are covered under ESI?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "ESI covers medical benefits, sickness benefits, maternity benefits, disablement benefits, dependent's benefits, and unemployment allowance."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .calc-page { min-height: 100vh; background: var(--bg-primary); }
+        .calc-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
+        .calc-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.12), transparent); pointer-events: none; }
+        .calc-hero h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .calc-hero h1 .highlight { background: linear-gradient(135deg, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .calc-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 12px; position: relative; }
+        .calc-hero .update-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 100px; font-size: 13px; color: #60a5fa; margin-bottom: 20px; }
+
+        .calc-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+        .calculator-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .calculator-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .calculator-card h2 svg { color: #3b82f6; }
+
+        .calc-input-group { margin-bottom: 20px; }
+        .calc-input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .calc-input-group input { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 16px; color: var(--text-primary); transition: all 0.2s; }
+        .calc-input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .calc-input-group .input-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+
+        .calc-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+        .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
+
+        .results-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .results-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
+
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-primary); }
+        .result-row:last-child { border-bottom: none; }
+        .result-label { font-size: 14px; color: var(--text-secondary); }
+        .result-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .result-value.green { color: #10b981; }
+        .result-value.blue { color: #3b82f6; }
+
+        .result-total { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1)); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; }
+        .result-total-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+        .result-total-value { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .eligibility-status { margin-top: 20px; padding: 16px; border-radius: 12px; text-align: center; }
+        .eligibility-status.eligible { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .eligibility-status.not-eligible { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .eligibility-status .status-text { font-size: 14px; font-weight: 600; }
+        .eligibility-status.eligible .status-text { color: #10b981; }
+        .eligibility-status.not-eligible .status-text { color: #ef4444; }
+
+        .yearly-projection { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-primary); }
+        .yearly-projection h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
+        .projection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .projection-item { background: var(--bg-tertiary); border-radius: 10px; padding: 16px; text-align: center; }
+        .projection-item .label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .projection-item .value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+
+        /* Content Section */
+        .content-section { max-width: 900px; margin: 0 auto; padding: 60px; }
+        .content-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 40px 0 20px; }
+        .content-section h2:first-child { margin-top: 0; }
+        .content-section h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; }
+        .content-section p { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; }
+        .content-section ul, .content-section ol { margin: 16px 0; padding-left: 24px; }
+        .content-section li { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 8px; }
+        .content-section strong { color: var(--text-primary); }
+
+        .formula-box { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; margin: 24px 0; }
+        .formula-box code { font-family: 'Monaco', 'Consolas', monospace; font-size: 15px; color: #3b82f6; }
+
+        .example-box { background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(6, 182, 212, 0.05)); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; padding: 24px; margin: 24px 0; }
+        .example-box h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+        .info-table th, .info-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-primary); }
+        .info-table th { background: var(--bg-secondary); font-weight: 700; color: var(--text-primary); font-size: 14px; }
+        .info-table td { font-size: 14px; color: var(--text-secondary); }
+
+        .benefits-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
+        .benefit-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; }
+        .benefit-card h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .benefit-card p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+        .faq-section { margin-top: 40px; }
+        .faq-item { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+        .faq-question { padding: 20px 24px; font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .faq-question:hover { background: var(--bg-tertiary); }
+        .faq-answer { padding: 0 24px 20px; font-size: 15px; color: var(--text-secondary); line-height: 1.7; display: none; }
+        .faq-item.active .faq-answer { display: block; }
+        .faq-item.active .faq-icon { transform: rotate(180deg); }
+        .faq-icon { transition: transform 0.2s; }
+
+        .cta-section { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 20px; padding: 48px; text-align: center; margin-top: 60px; }
+        .cta-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .cta-section p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; text-decoration: none; transition: all 0.2s; }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
+
+        @media (max-width: 900px) {
+            .calc-container { grid-template-columns: 1fr; padding: 0 24px 60px; }
+            .calc-hero { padding: 80px 24px 40px; }
+            .content-section { padding: 40px 24px; }
+            .benefits-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="landing-page calc-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <!-- Products Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Products
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <!-- Features Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Features
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/features/video-conferencing.html" class="nav-dropdown-item">Video Conferencing <span>HD meetings & screen share</span></a>
+                    <a href="/pages/features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
+                    <a href="/pages/features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
+                    <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
+                </div>
+            </div>
+            <!-- Solutions Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Solutions
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/use-cases/remote-teams.html" class="nav-dropdown-item">Remote Teams <span>Async-first collaboration</span></a>
+                    <a href="/pages/use-cases/startups.html" class="nav-dropdown-item">Startups <span>Scale without complexity</span></a>
+                    <a href="/pages/use-cases/agencies.html" class="nav-dropdown-item">Agencies <span>Client collaboration</span></a>
+                </div>
+            </div>
+            <!-- Compare Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Compare
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Communication</div>
+                    <a href="/pages/compare/ragenaizer-vs-zoom.html" class="nav-dropdown-item">vs Zoom <span>Video</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-slack.html" class="nav-dropdown-item">vs Slack <span>Chat</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-teams.html" class="nav-dropdown-item">vs Microsoft Teams</a>
+                    <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item">vs Google Workspace</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">HRMS & Payroll</div>
+                    <a href="/pages/compare/ragenaizer-vs-enterprise.html" class="nav-dropdown-item">vs Enterprise <span>SAP, Oracle, Workday</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-deel.html" class="nav-dropdown-item">vs Deel <span>Global Payroll</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-zoho.html" class="nav-dropdown-item">vs Zoho People</a>
+                    <a href="/pages/compare/ragenaizer-vs-greythr.html" class="nav-dropdown-item">vs greytHR</a>
+                    <a href="/pages/compare/ragenaizer-vs-bamboohr.html" class="nav-dropdown-item">vs BambooHR</a>
+                </div>
+            </div>
+            <!-- Resources Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Resources
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator <span>India Provident Fund</span></a>
+                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator <span>State Insurance</span></a>
+                    <a href="/pages/calculators/gratuity-calculator.html" class="nav-dropdown-item">Gratuity Calculator <span>Retirement benefit</span></a>
+                    <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item">Professional Tax <span>State-wise PT</span></a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="calc-hero">
+        <span class="update-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Updated for 2026 | Wage Limit: ₹21,000
+        </span>
+        <h1>Free <span class="highlight">ESI Calculator</span> India 2026</h1>
+        <p>Calculate your Employee State Insurance (ESIC) contribution instantly. See employee and employer contributions with eligibility check.</p>
+    </section>
+
+    <!-- Calculator Section -->
+    <div class="calc-container">
+        <!-- Input Card -->
+        <div class="calculator-card">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                Enter Your Salary Details
+            </h2>
+
+            <div class="calc-input-group">
+                <label for="grossSalary">Gross Salary (₹)</label>
+                <input type="number" id="grossSalary" placeholder="e.g., 18000" value="18000">
+                <div class="input-hint">Your total monthly gross salary</div>
+            </div>
+
+            <button class="calc-btn" onclick="calculateESI()">
+                Calculate ESI Contribution →
+            </button>
+        </div>
+
+        <!-- Results Card -->
+        <div class="results-card">
+            <h2>Your ESI Calculation Results</h2>
+
+            <div id="eligibilityStatus" class="eligibility-status eligible">
+                <span class="status-text">✓ Eligible for ESI (Salary ≤ ₹21,000)</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Gross Salary</span>
+                <span class="result-value" id="grossDisplay">₹18,000</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Employee Contribution (0.75%)</span>
+                <span class="result-value green" id="employeeContrib">₹135</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Employer Contribution (3.25%)</span>
+                <span class="result-value blue" id="employerContrib">₹585</span>
+            </div>
+
+            <div class="result-total">
+                <div class="result-total-label">Total Monthly ESI Contribution</div>
+                <div class="result-total-value" id="totalMonthly">₹720</div>
+            </div>
+
+            <div class="yearly-projection">
+                <h3>Yearly Projection (12 months)</h3>
+                <div class="projection-grid">
+                    <div class="projection-item">
+                        <div class="label">Your Contribution</div>
+                        <div class="value" id="yearlyEmployee">₹1,620</div>
+                    </div>
+                    <div class="projection-item">
+                        <div class="label">Employer's Contribution</div>
+                        <div class="value" id="yearlyEmployer">₹7,020</div>
+                    </div>
+                    <div class="projection-item">
+                        <div class="label">Total ESI (Year)</div>
+                        <div class="value" id="yearlyTotal">₹8,640</div>
+                    </div>
+                    <div class="projection-item">
+                        <div class="label">Your Take Home Impact</div>
+                        <div class="value" id="takeHomeImpact">-₹135/month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Content Section -->
+    <section class="content-section">
+        <h2>What is ESI (Employee State Insurance)?</h2>
+        <p>The <strong>Employee State Insurance (ESI)</strong> scheme is a self-financing social security and health insurance scheme for Indian workers. It is managed by the Employees' State Insurance Corporation (ESIC), an autonomous body under the Ministry of Labour and Employment.</p>
+
+        <p>ESI provides comprehensive medical care and cash benefits to employees and their dependents in case of sickness, maternity, disablement, or death due to employment injury.</p>
+
+        <h3>ESI Contribution Rates 2026</h3>
+        <div class="formula-box">
+            <p><strong>Employee Contribution:</strong></p>
+            <code>Employee ESI = 0.75% × Gross Salary</code>
+            <br><br>
+            <p><strong>Employer Contribution:</strong></p>
+            <code>Employer ESI = 3.25% × Gross Salary</code>
+            <br><br>
+            <p><strong>Total ESI:</strong></p>
+            <code>Total ESI = 4% × Gross Salary</code>
+        </div>
+
+        <h3>Example: ESI Calculation for ₹18,000 Gross Salary</h3>
+        <div class="example-box">
+            <h4>Calculation Breakdown</h4>
+            <p><strong>Gross Salary:</strong> ₹18,000</p>
+            <p><strong>Employee Contribution (0.75%):</strong> ₹18,000 × 0.75% = <strong>₹135</strong></p>
+            <p><strong>Employer Contribution (3.25%):</strong> ₹18,000 × 3.25% = <strong>₹585</strong></p>
+            <p><strong>Total Monthly ESI:</strong> ₹135 + ₹585 = <strong>₹720</strong></p>
+        </div>
+
+        <h2>ESI Eligibility Criteria 2026</h2>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Criteria</th>
+                    <th>Requirement</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Salary Limit</td>
+                    <td>Gross salary up to <strong>₹21,000/month</strong></td>
+                </tr>
+                <tr>
+                    <td>Establishment Size</td>
+                    <td>10+ employees (20+ in some states)</td>
+                </tr>
+                <tr>
+                    <td>Coverage</td>
+                    <td>Employee + dependents (spouse, children, parents)</td>
+                </tr>
+                <tr>
+                    <td>Contribution Period</td>
+                    <td>Two 6-month periods: Apr-Sep, Oct-Mar</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>ESI Benefits</h2>
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <h4>🏥 Medical Benefits</h4>
+                <p>Full medical care for insured person and family members at ESI hospitals and dispensaries</p>
+            </div>
+            <div class="benefit-card">
+                <h4>💊 Sickness Benefits</h4>
+                <p>70% of wages for up to 91 days in a year during certified sickness</p>
+            </div>
+            <div class="benefit-card">
+                <h4>👶 Maternity Benefits</h4>
+                <p>100% of wages for 26 weeks for childbirth, miscarriage, or medical termination</p>
+            </div>
+            <div class="benefit-card">
+                <h4>🦽 Disablement Benefits</h4>
+                <p>90% of wages for temporary disablement; pension for permanent disablement</p>
+            </div>
+            <div class="benefit-card">
+                <h4>👨‍👩‍👧 Dependent's Benefits</h4>
+                <p>90% of wages as monthly payment to dependents if insured dies</p>
+            </div>
+            <div class="benefit-card">
+                <h4>💼 Unemployment Allowance</h4>
+                <p>50% of wages for up to 1 year if employment is lost involuntarily</p>
+            </div>
+        </div>
+
+        <h2>ESI vs PF: Key Differences</h2>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>ESI</th>
+                    <th>PF</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Purpose</td>
+                    <td>Health insurance & social security</td>
+                    <td>Retirement savings</td>
+                </tr>
+                <tr>
+                    <td>Employee Rate</td>
+                    <td>0.75%</td>
+                    <td>12%</td>
+                </tr>
+                <tr>
+                    <td>Employer Rate</td>
+                    <td>3.25%</td>
+                    <td>12%</td>
+                </tr>
+                <tr>
+                    <td>Salary Limit</td>
+                    <td>₹21,000 gross</td>
+                    <td>No limit (mandatory up to ₹15,000 basic)</td>
+                </tr>
+                <tr>
+                    <td>Calculated On</td>
+                    <td>Gross salary</td>
+                    <td>Basic + DA</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item active">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What is the current ESI contribution rate?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    The current ESI contribution rate is 4% of gross salary - employees contribute 0.75% and employers contribute 3.25%. This rate has been effective since July 2019.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What is the ESI salary limit for 2026?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    ESI is applicable for employees earning up to ₹21,000 gross salary per month. If your salary exceeds this limit, you are not covered under ESI. However, once covered, you remain covered for the entire contribution period even if salary increases.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Is ESI mandatory for all employees?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    ESI is mandatory for employees earning up to ₹21,000 per month working in establishments with 10 or more employees (20 or more in some states). The employer cannot opt out of providing ESI coverage to eligible employees.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What happens if salary crosses ₹21,000?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    If your salary crosses ₹21,000 during a contribution period, you continue to be covered under ESI for the remaining period. ESI coverage is evaluated at the start of each contribution period (April and October).
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How do I claim ESI benefits?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    ESI benefits can be claimed through the ESIC portal or by visiting the nearest ESI dispensary/hospital. You'll need your ESI card and relevant documents. Medical benefits are available directly at ESI facilities.
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>Automate Your ESI Compliance with Ragenaizer</h2>
+            <p>Ragenaizer HRMS automatically calculates ESI, PF, PT, and TDS for all your employees. Generate compliant payslips, file returns, and ensure 100% statutory compliance.</p>
+            <a href="/pages/register.html" class="cta-btn">
+                Start Free Trial
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
+            <span class="pronunciation-guide">(ray-gen-izer)</span>
+        </div>
+        <div class="footer-links">
+            <a href="/pages/vision.html" class="footer-link">Vision</a>
+            <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/drive.html" class="footer-link">Drive</a>
+            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/login.html" class="footer-link">Sign In</a>
+            <a href="/pages/terms.html" class="footer-link">Terms</a>
+            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ESI Calculator Logic
+        function calculateESI() {
+            const grossSalary = parseFloat(document.getElementById('grossSalary').value) || 0;
+            const esiLimit = 21000;
+
+            const isEligible = grossSalary <= esiLimit;
+            const eligibilityDiv = document.getElementById('eligibilityStatus');
+
+            if (isEligible) {
+                eligibilityDiv.className = 'eligibility-status eligible';
+                eligibilityDiv.innerHTML = '<span class="status-text">✓ Eligible for ESI (Salary ≤ ₹21,000)</span>';
+
+                // Employee contribution (0.75%)
+                const employeeContrib = grossSalary * 0.0075;
+                // Employer contribution (3.25%)
+                const employerContrib = grossSalary * 0.0325;
+                // Total
+                const totalMonthly = employeeContrib + employerContrib;
+
+                // Yearly projections
+                const yearlyEmployee = employeeContrib * 12;
+                const yearlyEmployer = employerContrib * 12;
+                const yearlyTotal = totalMonthly * 12;
+
+                // Update UI
+                document.getElementById('grossDisplay').textContent = formatCurrency(grossSalary);
+                document.getElementById('employeeContrib').textContent = formatCurrency(employeeContrib);
+                document.getElementById('employerContrib').textContent = formatCurrency(employerContrib);
+                document.getElementById('totalMonthly').textContent = formatCurrency(totalMonthly);
+
+                document.getElementById('yearlyEmployee').textContent = formatCurrency(yearlyEmployee);
+                document.getElementById('yearlyEmployer').textContent = formatCurrency(yearlyEmployer);
+                document.getElementById('yearlyTotal').textContent = formatCurrency(yearlyTotal);
+                document.getElementById('takeHomeImpact').textContent = '-' + formatCurrency(employeeContrib) + '/month';
+            } else {
+                eligibilityDiv.className = 'eligibility-status not-eligible';
+                eligibilityDiv.innerHTML = '<span class="status-text">✗ Not Eligible for ESI (Salary > ₹21,000)</span>';
+
+                // Clear values
+                document.getElementById('grossDisplay').textContent = formatCurrency(grossSalary);
+                document.getElementById('employeeContrib').textContent = '₹0';
+                document.getElementById('employerContrib').textContent = '₹0';
+                document.getElementById('totalMonthly').textContent = '₹0';
+                document.getElementById('yearlyEmployee').textContent = '₹0';
+                document.getElementById('yearlyEmployer').textContent = '₹0';
+                document.getElementById('yearlyTotal').textContent = '₹0';
+                document.getElementById('takeHomeImpact').textContent = '₹0/month';
+            }
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + Math.round(amount).toLocaleString('en-IN');
+        }
+
+        // FAQ Toggle
+        function toggleFaq(element) {
+            const faqItem = element.parentElement;
+            faqItem.classList.toggle('active');
+        }
+
+        // Calculate on page load
+        document.addEventListener('DOMContentLoaded', calculateESI);
+
+        // Calculate on input change
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculateESI);
+        });
+    </script>
+</body>
+</html>

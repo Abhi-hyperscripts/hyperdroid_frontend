@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+    <title>Blog | HRMS, Payroll & Unified Workspace Insights | Ragenaizer</title>
+    <meta name="description" content="Expert insights on HRMS, payroll compliance, global workforce management, and unified workspace solutions. Learn about PF, ESI, TDS calculations, remote team management, and more.">
+    <meta name="keywords" content="hrms blog, payroll blog, pf calculation guide, esi contribution, unified workspace, remote team tools, global payroll insights, hr technology blog">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/blog/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/blog/">
+    <meta property="og:title" content="Ragenaizer Blog - HRMS & Unified Workspace Insights">
+    <meta property="og:description" content="Expert insights on HRMS, payroll compliance, and unified workspace solutions.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-blog.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Blog -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "Ragenaizer Blog",
+        "description": "Expert insights on HRMS, payroll compliance, global workforce management, and unified workspace solutions.",
+        "url": "https://ragenaizer.com/pages/blog/",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Ragenaizer",
+            "url": "https://ragenaizer.com",
+            "logo": "https://ragenaizer.com/assets/brand_logo.png"
+        }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .blog-page { min-height: 100vh; background: var(--bg-primary); }
+
+        .blog-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
+        .blog-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.12), transparent); pointer-events: none; }
+        .blog-hero h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .blog-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; position: relative; }
+
+        .blog-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; }
+
+        /* Category Filter */
+        .category-filter { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+        .category-btn { padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 100px; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+        .category-btn:hover, .category-btn.active { background: linear-gradient(135deg, #10b981, #059669); border-color: transparent; color: #fff; }
+
+        /* Featured Post */
+        .featured-post { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; margin-bottom: 48px; }
+        .featured-image { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2)); border-radius: 12px; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+        .featured-image svg { width: 80px; height: 80px; color: #10b981; opacity: 0.5; }
+        .featured-content { display: flex; flex-direction: column; justify-content: center; }
+        .featured-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(16, 185, 129, 0.1); border-radius: 100px; font-size: 12px; font-weight: 600; color: #10b981; margin-bottom: 16px; width: fit-content; }
+        .featured-content h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; line-height: 1.3; }
+        .featured-content h2 a { color: inherit; text-decoration: none; }
+        .featured-content h2 a:hover { color: #10b981; }
+        .featured-content p { font-size: 16px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .featured-meta { display: flex; gap: 16px; font-size: 13px; color: var(--text-tertiary); }
+
+        /* Blog Grid */
+        .blog-section-title { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px; }
+        .blog-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; overflow: hidden; transition: all 0.3s; }
+        .blog-card:hover { border-color: #10b981; transform: translateY(-4px); }
+        .blog-card-image { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; }
+        .blog-card-image svg { width: 48px; height: 48px; color: var(--text-tertiary); opacity: 0.5; }
+        .blog-card-content { padding: 20px; }
+        .blog-card-category { font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .blog-card-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; line-height: 1.4; }
+        .blog-card-title a { color: inherit; text-decoration: none; }
+        .blog-card-title a:hover { color: #10b981; }
+        .blog-card-excerpt { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
+        .blog-card-meta { font-size: 12px; color: var(--text-tertiary); }
+
+        /* Calculator Cards */
+        .calculator-section { background: var(--bg-secondary); border-radius: 20px; padding: 40px; margin-bottom: 48px; }
+        .calculator-section h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; text-align: center; }
+        .calculator-section p { font-size: 16px; color: var(--text-secondary); text-align: center; margin-bottom: 32px; }
+        .calculator-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .calc-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-align: center; text-decoration: none; transition: all 0.2s; }
+        .calc-card:hover { border-color: #10b981; transform: translateY(-2px); }
+        .calc-card .icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+        .calc-card .icon svg { width: 24px; height: 24px; color: #fff; }
+        .calc-card h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .calc-card p { font-size: 12px; color: var(--text-tertiary); }
+
+        /* Newsletter */
+        .newsletter-section { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; padding: 48px; text-align: center; }
+        .newsletter-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
+        .newsletter-section p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .newsletter-form { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; }
+        .newsletter-form input { flex: 1; padding: 14px 18px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 15px; color: var(--text-primary); }
+        .newsletter-form input:focus { outline: none; border-color: #10b981; }
+        .newsletter-form button { padding: 14px 28px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; }
+        .newsletter-form button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+
+        @media (max-width: 900px) {
+            .blog-hero, .blog-container { padding-left: 24px; padding-right: 24px; }
+            .featured-post { grid-template-columns: 1fr; }
+            .blog-grid { grid-template-columns: 1fr; }
+            .calculator-grid { grid-template-columns: repeat(2, 1fr); }
+            .newsletter-form { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="landing-page blog-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <!-- Products Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Products
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <!-- Features Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Features
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/features/video-conferencing.html" class="nav-dropdown-item">Video Conferencing <span>HD meetings & screen share</span></a>
+                    <a href="/pages/features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
+                    <a href="/pages/features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
+                    <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
+                </div>
+            </div>
+            <!-- Solutions Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Solutions
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/use-cases/remote-teams.html" class="nav-dropdown-item">Remote Teams <span>Async-first collaboration</span></a>
+                    <a href="/pages/use-cases/startups.html" class="nav-dropdown-item">Startups <span>Scale without complexity</span></a>
+                    <a href="/pages/use-cases/agencies.html" class="nav-dropdown-item">Agencies <span>Client collaboration</span></a>
+                </div>
+            </div>
+            <!-- Compare Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Compare
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Communication</div>
+                    <a href="/pages/compare/ragenaizer-vs-zoom.html" class="nav-dropdown-item">vs Zoom <span>Video</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-slack.html" class="nav-dropdown-item">vs Slack <span>Chat</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-teams.html" class="nav-dropdown-item">vs Microsoft Teams</a>
+                    <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item">vs Google Workspace</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">HRMS & Payroll</div>
+                    <a href="/pages/compare/ragenaizer-vs-enterprise.html" class="nav-dropdown-item">vs Enterprise <span>SAP, Oracle, Workday</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-deel.html" class="nav-dropdown-item">vs Deel <span>Global Payroll</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-zoho.html" class="nav-dropdown-item">vs Zoho People</a>
+                    <a href="/pages/compare/ragenaizer-vs-greythr.html" class="nav-dropdown-item">vs greytHR</a>
+                    <a href="/pages/compare/ragenaizer-vs-bamboohr.html" class="nav-dropdown-item">vs BambooHR</a>
+                </div>
+            </div>
+            <!-- Resources Dropdown -->
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">
+                    Resources
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator <span>India Provident Fund</span></a>
+                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator <span>State Insurance</span></a>
+                    <a href="/pages/calculators/gratuity-calculator.html" class="nav-dropdown-item">Gratuity Calculator <span>Retirement benefit</span></a>
+                    <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item">Professional Tax <span>State-wise PT</span></a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="blog-hero">
+        <h1>Ragenaizer Blog</h1>
+        <p>Expert insights on HRMS, payroll compliance, global workforce management, and building unified workspaces.</p>
+    </section>
+
+    <!-- Main Content -->
+    <div class="blog-container">
+        <!-- Category Filter -->
+        <div class="category-filter">
+            <button class="category-btn active">All</button>
+            <button class="category-btn">Payroll & Compliance</button>
+            <button class="category-btn">HRMS</button>
+            <button class="category-btn">Remote Work</button>
+            <button class="category-btn">Product Updates</button>
+            <button class="category-btn">Comparisons</button>
+        </div>
+
+        <!-- Featured Post -->
+        <article class="featured-post">
+            <div class="featured-image">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <div class="featured-content">
+                <span class="featured-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Featured
+                </span>
+                <h2><a href="#">Why Unified Workspace Software is the Future of Business Operations</a></h2>
+                <p>Companies are spending 4x more on fragmented SaaS tools than they need to. Learn how a unified platform combining HRMS, video conferencing, chat, and storage can cut costs by 60% while improving productivity.</p>
+                <div class="featured-meta">
+                    <span>February 4, 2026</span>
+                    <span>•</span>
+                    <span>8 min read</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- Calculator Section -->
+        <section class="calculator-section">
+            <h2>Free Payroll Calculators</h2>
+            <p>Calculate PF, ESI, gratuity, and more with our free online tools</p>
+            <div class="calculator-grid">
+                <a href="/pages/calculators/pf-calculator.html" class="calc-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+                    </div>
+                    <h3>PF Calculator</h3>
+                    <p>EPF contribution 2026</p>
+                </a>
+                <a href="/pages/calculators/esi-calculator.html" class="calc-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <h3>ESI Calculator</h3>
+                    <p>ESIC contribution rates</p>
+                </a>
+                <a href="/pages/calculators/gratuity-calculator.html" class="calc-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                    </div>
+                    <h3>Gratuity Calculator</h3>
+                    <p>Calculate gratuity amount</p>
+                </a>
+                <a href="/pages/calculators/professional-tax-calculator.html" class="calc-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <h3>Professional Tax</h3>
+                    <p>State-wise PT slabs</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Payroll & Compliance Section -->
+        <h2 class="blog-section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+            Payroll & Compliance
+        </h2>
+        <div class="blog-grid">
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Payroll</span>
+                    <h3 class="blog-card-title"><a href="/pages/calculators/pf-calculator.html">How to Calculate PF on Salary in India 2026</a></h3>
+                    <p class="blog-card-excerpt">Complete guide to calculating Employee Provident Fund with examples, formulas, and current rates.</p>
+                    <span class="blog-card-meta">Feb 4, 2026 • 10 min read</span>
+                </div>
+            </article>
+
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Compliance</span>
+                    <h3 class="blog-card-title"><a href="#">ESI Contribution Rates 2026: Complete Guide</a></h3>
+                    <p class="blog-card-excerpt">Everything you need to know about ESI contributions, eligibility, and benefits for employees and employers.</p>
+                    <span class="blog-card-meta">Feb 3, 2026 • 8 min read</span>
+                </div>
+            </article>
+
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Tax</span>
+                    <h3 class="blog-card-title"><a href="#">Professional Tax Slabs 2026: State-by-State Guide</a></h3>
+                    <p class="blog-card-excerpt">Complete professional tax slab rates for Maharashtra, Karnataka, Gujarat, Tamil Nadu, and more.</p>
+                    <span class="blog-card-meta">Feb 2, 2026 • 6 min read</span>
+                </div>
+            </article>
+        </div>
+
+        <!-- Comparisons Section -->
+        <h2 class="blog-section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Product Comparisons
+        </h2>
+        <div class="blog-grid">
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Comparison</span>
+                    <h3 class="blog-card-title"><a href="/pages/compare/ragenaizer-vs-deel.html">Ragenaizer vs Deel: Global Payroll Comparison</a></h3>
+                    <p class="blog-card-excerpt">Transparent calculation proofs vs per-employee pricing. Which global payroll platform is right for you?</p>
+                    <span class="blog-card-meta">Feb 4, 2026 • 12 min read</span>
+                </div>
+            </article>
+
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Comparison</span>
+                    <h3 class="blog-card-title"><a href="/pages/compare/ragenaizer-vs-zoom.html">Ragenaizer vs Zoom: Video Conferencing Comparison</a></h3>
+                    <p class="blog-card-excerpt">Integrated workspace vs standalone video. Compare features, pricing, and use cases.</p>
+                    <span class="blog-card-meta">Feb 1, 2026 • 8 min read</span>
+                </div>
+            </article>
+
+            <article class="blog-card">
+                <div class="blog-card-image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="blog-card-content">
+                    <span class="blog-card-category">Comparison</span>
+                    <h3 class="blog-card-title"><a href="/pages/compare/ragenaizer-vs-slack.html">Ragenaizer vs Slack: Team Chat Comparison</a></h3>
+                    <p class="blog-card-excerpt">Built-in team chat with HRMS integration vs standalone messaging platform.</p>
+                    <span class="blog-card-meta">Jan 30, 2026 • 7 min read</span>
+                </div>
+            </article>
+        </div>
+
+        <!-- Newsletter Section -->
+        <section class="newsletter-section">
+            <h2>Stay Updated</h2>
+            <p>Get the latest insights on HRMS, payroll compliance, and unified workspace trends.</p>
+            <form class="newsletter-form" onsubmit="return false;">
+                <input type="email" placeholder="Enter your email" required>
+                <button type="submit">Subscribe</button>
+            </form>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <img src="/assets/brand_logo.png" alt="Ragenaizer" height="28">
+                <p>All-in-one business software: Video conferencing, team chat, cloud storage, and HRMS.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Products</h4>
+                    <a href="/pages/vision.html">Vision</a>
+                    <a href="/pages/chat.html">Chat</a>
+                    <a href="/pages/drive.html">Drive</a>
+                    <a href="/pages/hrms.html">HRMS</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Compare</h4>
+                    <a href="/pages/compare/ragenaizer-vs-deel.html">vs Deel</a>
+                    <a href="/pages/compare/ragenaizer-vs-zoom.html">vs Zoom</a>
+                    <a href="/pages/compare/ragenaizer-vs-slack.html">vs Slack</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Resources</h4>
+                    <a href="/pages/calculators/pf-calculator.html">PF Calculator</a>
+                    <a href="/pages/blog/">Blog</a>
+                    <a href="/KnowledgeBase/HRMS/Organization-Setup.html">Knowledge Base</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <a href="/pages/terms.html">Terms</a>
+                    <a href="/pages/privacy.html">Privacy</a>
+                    <a href="/pages/refund.html">Refund</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Ragenaizer. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

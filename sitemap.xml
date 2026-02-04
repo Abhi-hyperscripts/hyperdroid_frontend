@@ -1,381 +1,271 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
-  <!-- ==================== PUBLIC PAGES (High Priority) ==================== -->
+  <!-- ==================== HIGH PRIORITY: HOMEPAGE ==================== -->
 
-  <!-- Landing Page -->
   <url>
     <loc>https://ragenaizer.com/</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Authentication Pages -->
-  <url>
-    <loc>https://ragenaizer.com/pages/login.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
+  <!-- ==================== PRODUCT LANDING PAGES (Public Marketing) ==================== -->
 
   <url>
-    <loc>https://ragenaizer.com/pages/register.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- Guest Meeting Join (Public Access) -->
-  <url>
-    <loc>https://ragenaizer.com/pages/vision/guest-join.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- ==================== LEGAL PAGES ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/terms.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/privacy.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/refund.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- ==================== KNOWLEDGE BASE (SEO Content) ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Organization-Setup.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Payroll-Calculations.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Payroll-Management.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- ==================== MODULE ENTRY PAGES ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/home.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/hrms.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/vision.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/drive.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/chat.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- ==================== VISION MODULE ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/vision/dashboard.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.9</priority>
   </url>
 
-  <url>
-    <loc>https://ragenaizer.com/pages/vision/lobby.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
+  <!-- ==================== FEATURE PAGES (SEO - High Value) ==================== -->
 
   <url>
-    <loc>https://ragenaizer.com/pages/vision/meeting.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/vision/pre-meeting.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <!-- ==================== DRIVE MODULE ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/drive/drive.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/features/hrms-payroll.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/drive/shared.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <!-- ==================== HRMS MODULE ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/dashboard.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/features/video-conferencing.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/hrms/organization.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/employees.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/features/team-chat.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/hrms/attendance.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/features/cloud-storage.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.9</priority>
   </url>
 
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/leave.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/payroll.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/reports.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/compliance.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/self-service.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/directory.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/org-chart.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/my-profile.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/announcements.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/notifications.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.3</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/hrms/bulk-import.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-
-  <!-- ==================== CHAT MODULE ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/chat/chat.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- ==================== AUTH/USER PAGES ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/auth/dashboard.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://ragenaizer.com/pages/activate.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-
-  <!-- ==================== COMPARISON PAGES (SEO) ==================== -->
+  <!-- ==================== COMPARISON PAGES (SEO - Competitive Keywords) ==================== -->
 
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-zoom.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-slack.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-teams.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-google-workspace.html</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- ==================== FEATURE PAGES (SEO) ==================== -->
-
-  <url>
-    <loc>https://ragenaizer.com/pages/features/video-conferencing.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/features/team-chat.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-deel.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/features/cloud-storage.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-enterprise.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://ragenaizer.com/pages/features/hrms-payroll.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-zoho.html</loc>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- ==================== USE CASE PAGES (SEO) ==================== -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-greythr.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-bamboohr.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== CALCULATOR PAGES (SEO - High Value Tools) ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/pages/calculators/pf-calculator.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/calculators/esi-calculator.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/calculators/gratuity-calculator.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/calculators/professional-tax-calculator.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- ==================== BLOG ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/pages/blog/</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== USE CASE PAGES (SEO - Intent-Based) ==================== -->
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/remote-teams.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/startups.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/agencies.html</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== KNOWLEDGE BASE (SEO - Educational Content) ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Organization-Setup.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Payroll-Calculations.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/KnowledgeBase/HRMS/Payroll-Management.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ==================== AUTHENTICATION PAGES (Public Entry Points) ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/pages/login.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/register.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- ==================== GUEST ACCESS (Public) ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/pages/vision/guest-join.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- ==================== LEGAL PAGES ==================== -->
+
+  <url>
+    <loc>https://ragenaizer.com/pages/terms.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/privacy.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/refund.html</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>

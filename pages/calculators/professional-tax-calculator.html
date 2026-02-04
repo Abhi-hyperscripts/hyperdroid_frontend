@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+    <title>Professional Tax Calculator India 2026 | State-wise PT Slabs | Ragenaizer</title>
+    <meta name="description" content="Free Professional Tax Calculator for India 2026. Calculate PT based on your state and salary. State-wise PT slabs for Maharashtra, Karnataka, Gujarat, Tamil Nadu, West Bengal, Andhra Pradesh and more.">
+    <meta name="keywords" content="professional tax calculator, pt calculator, professional tax slabs, maharashtra professional tax, karnataka professional tax, professional tax 2026, pt deduction, state wise professional tax">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/calculators/professional-tax-calculator.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/calculators/professional-tax-calculator.html">
+    <meta property="og:title" content="Professional Tax Calculator India 2026 - State-wise PT Slabs">
+    <meta property="og:description" content="Calculate professional tax based on state and salary. Updated PT slabs for all Indian states.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-pt-calculator.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Professional Tax Calculator 2026 - State-wise PT Slabs">
+    <meta name="twitter:description" content="Calculate your professional tax instantly. State-wise PT slabs for Maharashtra, Karnataka, Gujarat, and more.">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .calc-page { min-height: 100vh; background: var(--bg-primary); }
+        .calc-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
+        .calc-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.12), transparent); pointer-events: none; }
+        .calc-hero h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .calc-hero h1 .highlight { background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .calc-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 12px; position: relative; }
+        .calc-hero .update-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 100px; font-size: 13px; color: #a78bfa; margin-bottom: 20px; }
+
+        .calc-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+        .calculator-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .calculator-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .calculator-card h2 svg { color: #8b5cf6; }
+
+        .calc-input-group { margin-bottom: 20px; }
+        .calc-input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .calc-input-group input, .calc-input-group select { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 16px; color: var(--text-primary); transition: all 0.2s; }
+        .calc-input-group input:focus, .calc-input-group select:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
+        .calc-input-group .input-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+
+        .calc-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+        .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); }
+
+        .results-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .results-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
+
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-primary); }
+        .result-row:last-child { border-bottom: none; }
+        .result-label { font-size: 14px; color: var(--text-secondary); }
+        .result-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .result-value.purple { color: #8b5cf6; }
+
+        .result-total { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.1)); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; }
+        .result-total-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+        .result-total-value { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .yearly-projection { margin-top: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; display: flex; justify-content: space-between; }
+        .yearly-projection .item { text-align: center; }
+        .yearly-projection .label { font-size: 12px; color: var(--text-tertiary); }
+        .yearly-projection .value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+
+        /* Content Section */
+        .content-section { max-width: 900px; margin: 0 auto; padding: 60px; }
+        .content-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 40px 0 20px; }
+        .content-section h2:first-child { margin-top: 0; }
+        .content-section h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; }
+        .content-section p { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; }
+        .content-section ul, .content-section ol { margin: 16px 0; padding-left: 24px; }
+        .content-section li { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 8px; }
+        .content-section strong { color: var(--text-primary); }
+
+        .info-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+        .info-table th, .info-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-primary); }
+        .info-table th { background: var(--bg-secondary); font-weight: 700; color: var(--text-primary); font-size: 14px; }
+        .info-table td { font-size: 14px; color: var(--text-secondary); }
+
+        .state-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .state-tab { padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+        .state-tab:hover, .state-tab.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: transparent; color: #fff; }
+
+        .faq-section { margin-top: 40px; }
+        .faq-item { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+        .faq-question { padding: 20px 24px; font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .faq-question:hover { background: var(--bg-tertiary); }
+        .faq-answer { padding: 0 24px 20px; font-size: 15px; color: var(--text-secondary); line-height: 1.7; display: none; }
+        .faq-item.active .faq-answer { display: block; }
+        .faq-item.active .faq-icon { transform: rotate(180deg); }
+        .faq-icon { transition: transform 0.2s; }
+
+        .cta-section { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.1)); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 20px; padding: 48px; text-align: center; margin-top: 60px; }
+        .cta-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .cta-section p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; text-decoration: none; transition: all 0.2s; }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); }
+
+        @media (max-width: 900px) {
+            .calc-container { grid-template-columns: 1fr; padding: 0 24px 60px; }
+            .calc-hero { padding: 80px 24px 40px; }
+            .content-section { padding: 40px 24px; }
+        }
+    </style>
+</head>
+<body class="landing-page calc-page">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Products<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/vision.html" class="nav-dropdown-item">Vision <span>Video Conferencing</span></a>
+                    <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
+                    <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Features<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/features/video-conferencing.html" class="nav-dropdown-item">Video Conferencing <span>HD meetings & screen share</span></a>
+                    <a href="/pages/features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
+                    <a href="/pages/features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
+                    <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Solutions<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/use-cases/remote-teams.html" class="nav-dropdown-item">Remote Teams <span>Async-first collaboration</span></a>
+                    <a href="/pages/use-cases/startups.html" class="nav-dropdown-item">Startups <span>Scale without complexity</span></a>
+                    <a href="/pages/use-cases/agencies.html" class="nav-dropdown-item">Agencies <span>Client collaboration</span></a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Compare<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Communication</div>
+                    <a href="/pages/compare/ragenaizer-vs-zoom.html" class="nav-dropdown-item">vs Zoom <span>Video</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-slack.html" class="nav-dropdown-item">vs Slack <span>Chat</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-teams.html" class="nav-dropdown-item">vs Microsoft Teams</a>
+                    <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item">vs Google Workspace</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">HRMS & Payroll</div>
+                    <a href="/pages/compare/ragenaizer-vs-enterprise.html" class="nav-dropdown-item">vs Enterprise <span>SAP, Oracle, Workday</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-deel.html" class="nav-dropdown-item">vs Deel <span>Global Payroll</span></a>
+                    <a href="/pages/compare/ragenaizer-vs-zoho.html" class="nav-dropdown-item">vs Zoho People</a>
+                    <a href="/pages/compare/ragenaizer-vs-greythr.html" class="nav-dropdown-item">vs greytHR</a>
+                    <a href="/pages/compare/ragenaizer-vs-bamboohr.html" class="nav-dropdown-item">vs BambooHR</a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <span class="nav-dropdown-trigger">Resources<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                <div class="nav-dropdown-menu">
+                    <a href="/pages/blog/" class="nav-dropdown-item">Blog <span>HR insights & tips</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Calculators</div>
+                    <a href="/pages/calculators/pf-calculator.html" class="nav-dropdown-item">PF Calculator <span>India Provident Fund</span></a>
+                    <a href="/pages/calculators/esi-calculator.html" class="nav-dropdown-item">ESI Calculator <span>State Insurance</span></a>
+                    <a href="/pages/calculators/gratuity-calculator.html" class="nav-dropdown-item">Gratuity Calculator <span>Retirement benefit</span></a>
+                    <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item">Professional Tax <span>State-wise PT</span></a>
+                </div>
+            </div>
+            <a href="/pages/activate.html" class="nav-link">Pricing</a>
+        </div>
+        <div class="nav-cta">
+            <a href="/pages/login.html" class="btn-secondary">Sign In</a>
+            <a href="/pages/activate.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="calc-hero">
+        <span class="update-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Updated for FY 2025-26 | State-wise PT Slabs
+        </span>
+        <h1>Free <span class="highlight">Professional Tax</span> Calculator 2026</h1>
+        <p>Calculate your Professional Tax (PT) based on state and monthly salary. View state-wise PT slabs for all Indian states.</p>
+    </section>
+
+    <!-- Calculator Section -->
+    <div class="calc-container">
+        <!-- Input Card -->
+        <div class="calculator-card">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Enter Your Details
+            </h2>
+
+            <div class="calc-input-group">
+                <label for="state">Select State</label>
+                <select id="state">
+                    <option value="maharashtra">Maharashtra</option>
+                    <option value="karnataka">Karnataka</option>
+                    <option value="gujarat">Gujarat</option>
+                    <option value="tamil_nadu">Tamil Nadu</option>
+                    <option value="west_bengal">West Bengal</option>
+                    <option value="andhra_pradesh">Andhra Pradesh</option>
+                    <option value="telangana">Telangana</option>
+                    <option value="kerala">Kerala</option>
+                    <option value="madhya_pradesh">Madhya Pradesh</option>
+                    <option value="odisha">Odisha</option>
+                    <option value="assam">Assam</option>
+                    <option value="no_pt">Other States (No PT)</option>
+                </select>
+                <div class="input-hint">PT rates vary by state - select your work location</div>
+            </div>
+
+            <div class="calc-input-group">
+                <label for="monthlyGross">Monthly Gross Salary (₹)</label>
+                <input type="number" id="monthlyGross" placeholder="e.g., 50000" value="50000">
+                <div class="input-hint">Your total monthly gross salary</div>
+            </div>
+
+            <button class="calc-btn" onclick="calculatePT()">
+                Calculate Professional Tax →
+            </button>
+        </div>
+
+        <!-- Results Card -->
+        <div class="results-card">
+            <h2>Your PT Calculation Results</h2>
+
+            <div class="result-row">
+                <span class="result-label">State</span>
+                <span class="result-value" id="stateDisplay">Maharashtra</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Monthly Gross Salary</span>
+                <span class="result-value" id="salaryDisplay">₹50,000</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Applicable Slab</span>
+                <span class="result-value purple" id="slabDisplay">Above ₹10,000</span>
+            </div>
+
+            <div class="result-total">
+                <div class="result-total-label">Monthly Professional Tax</div>
+                <div class="result-total-value" id="monthlyPT">₹200</div>
+            </div>
+
+            <div class="yearly-projection">
+                <div class="item">
+                    <div class="label">Monthly PT</div>
+                    <div class="value" id="monthlyPTSmall">₹200</div>
+                </div>
+                <div class="item">
+                    <div class="label">Annual PT</div>
+                    <div class="value" id="yearlyPT">₹2,500</div>
+                </div>
+                <div class="item">
+                    <div class="label">Max Annual Limit</div>
+                    <div class="value">₹2,500</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Content Section -->
+    <section class="content-section">
+        <h2>What is Professional Tax (PT)?</h2>
+        <p><strong>Professional Tax</strong> is a state-level tax levied on individuals earning income through employment, profession, or trade. It is collected by state governments in India and is deducted from the employee's salary by the employer.</p>
+
+        <p>The maximum Professional Tax that can be levied is <strong>₹2,500 per year</strong> as per the Constitution of India. Different states have different PT slabs and rules.</p>
+
+        <h2>State-wise Professional Tax Slabs 2026</h2>
+
+        <h3>Maharashtra Professional Tax</h3>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Monthly Salary (₹)</th>
+                    <th>PT per Month (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Up to 7,500</td><td>Nil</td></tr>
+                <tr><td>7,501 - 10,000</td><td>175</td></tr>
+                <tr><td>Above 10,000</td><td>200 (₹300 in Feb)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Karnataka Professional Tax</h3>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Monthly Salary (₹)</th>
+                    <th>PT per Month (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Up to 15,000</td><td>Nil</td></tr>
+                <tr><td>Above 15,000</td><td>200</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Gujarat Professional Tax</h3>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Monthly Salary (₹)</th>
+                    <th>PT per Month (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Up to 5,999</td><td>Nil</td></tr>
+                <tr><td>6,000 - 8,999</td><td>80</td></tr>
+                <tr><td>9,000 - 11,999</td><td>150</td></tr>
+                <tr><td>Above 12,000</td><td>200</td></tr>
+            </tbody>
+        </table>
+
+        <h3>West Bengal Professional Tax</h3>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>Monthly Salary (₹)</th>
+                    <th>PT per Month (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Up to 10,000</td><td>Nil</td></tr>
+                <tr><td>10,001 - 15,000</td><td>110</td></tr>
+                <tr><td>15,001 - 25,000</td><td>130</td></tr>
+                <tr><td>25,001 - 40,000</td><td>150</td></tr>
+                <tr><td>Above 40,000</td><td>200</td></tr>
+            </tbody>
+        </table>
+
+        <h2>States Without Professional Tax</h2>
+        <p>The following states/UTs do not levy Professional Tax:</p>
+        <ul>
+            <li>Delhi</li>
+            <li>Haryana</li>
+            <li>Punjab</li>
+            <li>Rajasthan</li>
+            <li>Uttar Pradesh</li>
+            <li>Uttarakhand</li>
+            <li>Himachal Pradesh</li>
+            <li>Jammu & Kashmir</li>
+            <li>Union Territories</li>
+        </ul>
+
+        <h2>PT Deduction under Income Tax</h2>
+        <p>Professional Tax paid is <strong>fully deductible</strong> from your gross salary while calculating taxable income under Section 16(iii) of the Income Tax Act. This means PT reduces your tax liability.</p>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item active">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What is the maximum Professional Tax in India?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    As per Article 276 of the Constitution of India, the maximum Professional Tax that can be levied is ₹2,500 per year. No state can charge more than this limit.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Who is liable to pay Professional Tax?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    Professional Tax is applicable to salaried employees, self-employed professionals, and traders in states where PT is levied. For salaried employees, the employer deducts PT from salary and deposits it with the state government.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Is Professional Tax deductible for income tax?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    Yes, Professional Tax paid is fully deductible from your gross salary under Section 16(iii) of the Income Tax Act. This deduction is available under both old and new tax regimes.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What happens if PT is not deducted?
+                    <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="faq-answer">
+                    If an employer fails to deduct and deposit PT, they may face penalties including interest on delayed payment. Employers are responsible for compliance and timely deposit of PT with the state government.
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>Automate Professional Tax Compliance</h2>
+            <p>Ragenaizer HRMS automatically calculates PT based on employee location and handles multi-state compliance. No manual tracking needed.</p>
+            <a href="/pages/register.html" class="cta-btn">
+                Start Free Trial
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo">
+            <span class="pronunciation-guide">(ray-gen-izer)</span>
+        </div>
+        <div class="footer-links">
+            <a href="/pages/vision.html" class="footer-link">Vision</a>
+            <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/drive.html" class="footer-link">Drive</a>
+            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/login.html" class="footer-link">Sign In</a>
+            <a href="/pages/terms.html" class="footer-link">Terms</a>
+            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        </div>
+        <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // PT Slabs by State
+        const ptSlabs = {
+            maharashtra: {
+                name: 'Maharashtra',
+                slabs: [
+                    { min: 0, max: 7500, pt: 0, label: 'Up to ₹7,500' },
+                    { min: 7501, max: 10000, pt: 175, label: '₹7,501 - ₹10,000' },
+                    { min: 10001, max: Infinity, pt: 200, label: 'Above ₹10,000' }
+                ],
+                febExtra: 100 // February has ₹300 instead of ₹200
+            },
+            karnataka: {
+                name: 'Karnataka',
+                slabs: [
+                    { min: 0, max: 15000, pt: 0, label: 'Up to ₹15,000' },
+                    { min: 15001, max: Infinity, pt: 200, label: 'Above ₹15,000' }
+                ]
+            },
+            gujarat: {
+                name: 'Gujarat',
+                slabs: [
+                    { min: 0, max: 5999, pt: 0, label: 'Up to ₹5,999' },
+                    { min: 6000, max: 8999, pt: 80, label: '₹6,000 - ₹8,999' },
+                    { min: 9000, max: 11999, pt: 150, label: '₹9,000 - ₹11,999' },
+                    { min: 12000, max: Infinity, pt: 200, label: 'Above ₹12,000' }
+                ]
+            },
+            tamil_nadu: {
+                name: 'Tamil Nadu',
+                slabs: [
+                    { min: 0, max: 21000, pt: 0, label: 'Up to ₹21,000' },
+                    { min: 21001, max: 30000, pt: 135, label: '₹21,001 - ₹30,000' },
+                    { min: 30001, max: 45000, pt: 315, label: '₹30,001 - ₹45,000' },
+                    { min: 45001, max: 60000, pt: 690, label: '₹45,001 - ₹60,000' },
+                    { min: 60001, max: 75000, pt: 1025, label: '₹60,001 - ₹75,000' },
+                    { min: 75001, max: Infinity, pt: 1250, label: 'Above ₹75,000' }
+                ],
+                isHalfYearly: true
+            },
+            west_bengal: {
+                name: 'West Bengal',
+                slabs: [
+                    { min: 0, max: 10000, pt: 0, label: 'Up to ₹10,000' },
+                    { min: 10001, max: 15000, pt: 110, label: '₹10,001 - ₹15,000' },
+                    { min: 15001, max: 25000, pt: 130, label: '₹15,001 - ₹25,000' },
+                    { min: 25001, max: 40000, pt: 150, label: '₹25,001 - ₹40,000' },
+                    { min: 40001, max: Infinity, pt: 200, label: 'Above ₹40,000' }
+                ]
+            },
+            andhra_pradesh: {
+                name: 'Andhra Pradesh',
+                slabs: [
+                    { min: 0, max: 15000, pt: 0, label: 'Up to ₹15,000' },
+                    { min: 15001, max: 20000, pt: 150, label: '₹15,001 - ₹20,000' },
+                    { min: 20001, max: Infinity, pt: 200, label: 'Above ₹20,000' }
+                ]
+            },
+            telangana: {
+                name: 'Telangana',
+                slabs: [
+                    { min: 0, max: 15000, pt: 0, label: 'Up to ₹15,000' },
+                    { min: 15001, max: 20000, pt: 150, label: '₹15,001 - ₹20,000' },
+                    { min: 20001, max: Infinity, pt: 200, label: 'Above ₹20,000' }
+                ]
+            },
+            kerala: {
+                name: 'Kerala',
+                slabs: [
+                    { min: 0, max: 11999, pt: 0, label: 'Up to ₹11,999' },
+                    { min: 12000, max: Infinity, pt: 200, label: 'Above ₹12,000' }
+                ]
+            },
+            madhya_pradesh: {
+                name: 'Madhya Pradesh',
+                slabs: [
+                    { min: 0, max: 18750, pt: 0, label: 'Up to ₹18,750' },
+                    { min: 18751, max: Infinity, pt: 208, label: 'Above ₹18,750' }
+                ]
+            },
+            odisha: {
+                name: 'Odisha',
+                slabs: [
+                    { min: 0, max: 15000, pt: 0, label: 'Up to ₹15,000' },
+                    { min: 15001, max: Infinity, pt: 200, label: 'Above ₹15,000' }
+                ]
+            },
+            assam: {
+                name: 'Assam',
+                slabs: [
+                    { min: 0, max: 10000, pt: 0, label: 'Up to ₹10,000' },
+                    { min: 10001, max: 15000, pt: 150, label: '₹10,001 - ₹15,000' },
+                    { min: 15001, max: Infinity, pt: 200, label: 'Above ₹15,000' }
+                ]
+            },
+            no_pt: {
+                name: 'No PT State',
+                slabs: [
+                    { min: 0, max: Infinity, pt: 0, label: 'Not Applicable' }
+                ]
+            }
+        };
+
+        function calculatePT() {
+            const state = document.getElementById('state').value;
+            const monthlyGross = parseFloat(document.getElementById('monthlyGross').value) || 0;
+
+            const stateData = ptSlabs[state];
+            let monthlyPT = 0;
+            let slabLabel = '';
+
+            // Find applicable slab
+            for (const slab of stateData.slabs) {
+                if (monthlyGross >= slab.min && monthlyGross <= slab.max) {
+                    monthlyPT = slab.pt;
+                    slabLabel = slab.label;
+                    break;
+                }
+            }
+
+            // Calculate yearly PT
+            let yearlyPT = monthlyPT * 12;
+
+            // Tamil Nadu is half-yearly
+            if (stateData.isHalfYearly) {
+                yearlyPT = monthlyPT * 2; // Semi-annual
+                monthlyPT = Math.round(yearlyPT / 12);
+            }
+
+            // Maharashtra February adjustment
+            if (state === 'maharashtra' && monthlyGross > 10000) {
+                yearlyPT = (monthlyPT * 11) + (monthlyPT + 100); // Feb is ₹300
+            }
+
+            // Cap at ₹2500
+            yearlyPT = Math.min(yearlyPT, 2500);
+
+            // Update UI
+            document.getElementById('stateDisplay').textContent = stateData.name;
+            document.getElementById('salaryDisplay').textContent = formatCurrency(monthlyGross);
+            document.getElementById('slabDisplay').textContent = slabLabel;
+            document.getElementById('monthlyPT').textContent = formatCurrency(monthlyPT);
+            document.getElementById('monthlyPTSmall').textContent = formatCurrency(monthlyPT);
+            document.getElementById('yearlyPT').textContent = formatCurrency(yearlyPT);
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + Math.round(amount).toLocaleString('en-IN');
+        }
+
+        // FAQ Toggle
+        function toggleFaq(element) {
+            const faqItem = element.parentElement;
+            faqItem.classList.toggle('active');
+        }
+
+        // Calculate on page load
+        document.addEventListener('DOMContentLoaded', calculatePT);
+
+        // Calculate on input change
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('input', calculatePT);
+            input.addEventListener('change', calculatePT);
+        });
+    </script>
+</body>
+</html>
