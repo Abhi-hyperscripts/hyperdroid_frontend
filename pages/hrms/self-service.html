@@ -149,6 +149,19 @@
                     </button>
                 </div>
 
+                <!-- Meetings Section -->
+                <div class="ess-nav-group">
+                    <div class="ess-nav-group-title">Meetings</div>
+                    <button class="ess-nav-btn" data-panel="panel-meetings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                        <span>My Meetings</span>
+                        <span class="ess-nav-badge" id="meetingsBadge" style="display:none">0</span>
+                    </button>
+                </div>
+
                 <!-- Payroll Section -->
                 <div class="ess-nav-group">
                     <div class="ess-nav-group-title">Payroll</div>
@@ -768,6 +781,21 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- My Meetings Panel -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-meetings">
+                <div class="ess-panel-header">
+                    <h2>My Meetings</h2>
+                </div>
+                <div id="meetingsContent">
+                    <div class="ess-loading">
+                        <div class="ess-spinner"></div>
+                        <p>Loading meetings...</p>
+                    </div>
                 </div>
             </div>
 

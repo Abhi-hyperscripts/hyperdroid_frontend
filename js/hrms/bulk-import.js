@@ -714,12 +714,17 @@ async function startImport() {
 
     // Reset progress - show unified import progress
     updatePhase1Progress(0, 0, 0, 'processing');
-    document.getElementById('phase1Title').textContent = 'Unified Import';
-    document.getElementById('phase1Desc').textContent = 'Creating users and employees atomically...';
+    const phase1Title = document.getElementById('phase1Title');
+    if (phase1Title) phase1Title.textContent = 'Unified Import';
+    const phase1Desc = document.getElementById('phase1Desc');
+    if (phase1Desc) phase1Desc.textContent = 'Creating users and employees atomically...';
     updatePhase2Progress(0, 0, 0, 'waiting');
-    document.getElementById('phase2').style.opacity = '0.5';
-    document.getElementById('phase2Title').textContent = 'Validation';
-    document.getElementById('phase2Desc').textContent = 'Pre-import validation completed';
+    const phase2El = document.getElementById('phase2');
+    if (phase2El) phase2El.style.opacity = '0.5';
+    const phase2Title = document.getElementById('phase2Title');
+    if (phase2Title) phase2Title.textContent = 'Validation';
+    const phase2Desc = document.getElementById('phase2Desc');
+    if (phase2Desc) phase2Desc.textContent = 'Pre-import validation completed';
 
     try {
         // Use unified atomic import endpoint

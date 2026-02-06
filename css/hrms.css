@@ -896,6 +896,8 @@ td.text-right strong,
     background: var(--overlay-dark);
     z-index: 9999;
     overflow: hidden;
+    opacity: 0;
+    transition: opacity 200ms ease;
 }
 
 .modal-backdrop {
@@ -920,6 +922,14 @@ td.text-right strong,
     align-items: center;
     justify-content: center;
     padding: 80px 20px 20px 20px; /* Top padding to account for navbar height */
+    opacity: 1;
+}
+
+.modal.gm-animating {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px 20px 20px;
 }
 
 .modal-dialog {
@@ -945,25 +955,82 @@ td.text-right strong,
     max-width: 960px;
 }
 
+/* Glassmorphic modal content — dark (default) */
 .modal-content {
-    background: var(--bg-card) !important;
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     max-height: calc(100vh - 100px) !important;
     width: 100%;
+    transform: scale(0.95);
+    transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
 }
 
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Glassmorphic modal — light theme */
+[data-theme="light"] .modal-content {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Modal header — transparent with gradient tint */
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 14px 16px;
-    border-bottom: 1px solid var(--border-color-light);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
-    background: var(--bg-card);
+    background: transparent;
+    position: relative;
+}
+
+.modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+[data-theme="light"] .modal-header {
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+[data-theme="light"] .modal-header::before {
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
 }
 
 .modal-header h3,
@@ -973,6 +1040,8 @@ td.text-right strong,
     font-weight: 600;
     margin: 0;
     color: var(--text-primary);
+    position: relative;
+    z-index: 1;
 }
 
 .close-btn,
@@ -990,6 +1059,8 @@ td.text-right strong,
     width: 32px;
     height: 32px;
     box-shadow: var(--shadow-sm);
+    position: relative;
+    z-index: 1;
 }
 
 .close-btn svg,
@@ -1014,6 +1085,8 @@ td.text-right strong,
     gap: 12px;
     flex: 1;
     min-width: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .modal-title-row h2,
@@ -1025,15 +1098,17 @@ td.text-right strong,
     color: var(--text-primary);
 }
 
+/* Modal body — transparent to let glass show through */
 .modal-body {
     padding: 12px 16px;
     overflow-y: auto !important;
     flex: 1 1 auto;
     min-height: 0;
     max-height: calc(100vh - 200px) !important;
-    background: var(--bg-card);
+    background: transparent;
 }
 
+/* Modal footer — subtle glass tint */
 .modal-footer {
     display: flex;
     flex-direction: row;
@@ -1042,9 +1117,14 @@ td.text-right strong,
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--border-color-light);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
-    background: var(--bg-card);
+    background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .modal-footer {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.03);
+    border-top: 1px solid var(--border-color-light);
 }
 
 .modal-footer .btn {
@@ -10523,8 +10603,6 @@ input:checked + .slider:before {
 .modal-compact {
     border-radius: 12px;
     overflow: visible !important;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-xl);
 }
 
 .modal-compact .modal-body,
@@ -10537,10 +10615,8 @@ input:checked + .slider:before {
     overflow: visible !important;
 }
 
-/* Ensure modal-compact has proper background and allows overflow */
+/* Ensure modal-compact allows overflow for dropdowns */
 .modal-content.modal-compact {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
     overflow: visible !important;
 }
 
@@ -11003,15 +11079,11 @@ input:checked + .slider:before {
     font-size: 0.8rem;
 }
 
-/* Dark mode adjustments for compact modal */
-[data-theme="dark"] .modal-compact {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-}
+/* Dark mode adjustments for compact modal — inherits glassmorphic from .modal-content */
 
 [data-theme="dark"] .compact-header {
-    background: var(--bg-elevated);
-    border-bottom-color: var(--border-color);
+    background: transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .header-with-employee h4 {
@@ -11027,7 +11099,7 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .compact-body {
-    background: var(--bg-card);
+    background: transparent;
 }
 
 [data-theme="dark"] .compact-group label {
@@ -11035,8 +11107,8 @@ input:checked + .slider:before {
 }
 
 [data-theme="dark"] .compact-footer {
-    background: var(--bg-elevated);
-    border-top-color: var(--border-color);
+    background: rgba(0, 0, 0, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .dropdown-search {
@@ -23968,4 +24040,6 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--brand-primary);
 }
+
+/* Employee Meetings Modal styles moved to glassmorphic-modal.css (.gm-* classes) */
 

@@ -1381,6 +1381,13 @@ function renderPanelActions(emp) {
     const canEdit = hrmsRoles.canEditEmployee();
 
     let actionsHtml = `
+        <button class="panel-action-btn" onclick="openMeetingsModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            Meetings
+        </button>
         <button class="panel-action-btn" onclick="viewTransferHistoryFromPanel()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -1487,9 +1494,253 @@ function terminateFromPanel() {
     }
 }
 
-// Close panel on Escape key
+// ===== Employee Meetings Modal =====
+
+async function openMeetingsModal() {
+    if (!currentPanelEmployeeId) return;
+    const employeeId = currentPanelEmployeeId;
+    const emp = employees.find(e => e.id === employeeId);
+    const empName = emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code : 'Employee';
+
+    // Remove existing modal if any
+    const existing = document.getElementById('meetingsModalOverlay');
+    if (existing) existing.remove();
+
+    // Create modal HTML
+    const overlay = document.createElement('div');
+    overlay.id = 'meetingsModalOverlay';
+    overlay.className = 'gm-overlay';
+    overlay.innerHTML = `
+        <div class="gm-modal" onclick="event.stopPropagation()">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Meetings</h3>
+                        <p class="gm-subtitle">${empName}</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeMeetingsModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" id="meetingsModalBody">
+                <div class="gm-loading">
+                    <div class="gm-spinner"></div>
+                    <span style="font-size: 13px;">Loading meetings...</span>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button class="gm-btn gm-btn-primary gm-btn-block" id="meetingsCreateBtn" onclick="handleCreateNewMeeting('${employeeId}', '${empName.replace(/'/g, "\\'")}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Create New Meeting
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    // Click overlay to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeMeetingsModal();
+    });
+
+    // Animate in
+    requestAnimationFrame(() => overlay.classList.add('active'));
+
+    // Fetch meetings
+    try {
+        const result = await api.getEmployeeMeetings(employeeId);
+        if (result && result.success) {
+            renderMeetingsList(result.meetings || [], employeeId, empName);
+        } else {
+            renderMeetingsList([], employeeId, empName);
+        }
+    } catch (err) {
+        console.error('Error loading meetings:', err);
+        const body = document.getElementById('meetingsModalBody');
+        if (body) {
+            body.innerHTML = `<div class="gm-empty"><p>Failed to load meetings</p></div>`;
+        }
+    }
+}
+
+function closeMeetingsModal() {
+    const overlay = document.getElementById('meetingsModalOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => overlay.remove(), 200);
+}
+
+function renderMeetingsList(meetings, employeeId, empName) {
+    const body = document.getElementById('meetingsModalBody');
+    if (!body) return;
+
+    if (!meetings || meetings.length === 0) {
+        body.innerHTML = `
+            <div class="gm-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M16.5 10.5V6.5a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h3"/>
+                    <line x1="17" y1="14" x2="23" y2="14" stroke-dasharray="2 2"/>
+                    <polygon points="23 11 18 14 23 17 23 11" opacity="0.4"/>
+                </svg>
+                <p>No meetings yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort: scheduled first, then by created_at desc
+    const sorted = [...meetings].sort((a, b) => {
+        if (a.status === 'scheduled' && b.status !== 'scheduled') return -1;
+        if (b.status === 'scheduled' && a.status !== 'scheduled') return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    const baseUrl = window.location.origin;
+    body.innerHTML = sorted.map(m => {
+        const date = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const time = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+        const lobbyUrl = `${baseUrl}/pages/vision/lobby.html?meetingId=${m.vision_meeting_id}`;
+        const statusClass = (m.status || 'scheduled').toLowerCase();
+        const isCancelled = statusClass === 'cancelled';
+
+        const badgeVariant = statusClass === 'scheduled' ? 'gm-badge-info' :
+                              statusClass === 'completed' ? 'gm-badge-success' :
+                              statusClass === 'cancelled' ? 'gm-badge-muted' : 'gm-badge-info';
+
+        return `
+            <div class="gm-card">
+                <div class="gm-card-info">
+                    <div class="gm-card-title" title="${m.meeting_name || ''}">${m.meeting_name || 'Untitled Meeting'}</div>
+                    <div class="gm-card-meta">
+                        <span>${date} ${time}</span>
+                        ${m.created_by_name ? `<span>by ${m.created_by_name}</span>` : ''}
+                        <span class="gm-badge ${badgeVariant}">${m.status || 'scheduled'}</span>
+                    </div>
+                </div>
+                <div class="gm-card-actions">
+                    <button class="gm-btn gm-btn-secondary" onclick="copyMeetingLink(this, '${lobbyUrl}')" title="Copy link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                    ${!isCancelled ? `
+                    <button class="gm-btn gm-btn-primary" onclick="window.open('${lobbyUrl}', '_blank')" title="Join meeting">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                        Join
+                    </button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function copyMeetingLink(btn, url) {
+    navigator.clipboard.writeText(url).then(() => {
+        btn.classList.add('gm-btn-success');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Copied!
+        `;
+        setTimeout(() => {
+            btn.classList.remove('gm-btn-success');
+            btn.innerHTML = originalHTML;
+        }, 1500);
+    }).catch(() => {
+        showToast('Failed to copy link', 'error');
+    });
+}
+
+async function handleCreateNewMeeting(employeeId, empName) {
+    const confirmed = await Confirm.show({
+        title: 'Create Meeting',
+        message: `Create a new video meeting with ${empName}?`,
+        type: 'info',
+        confirmText: 'Create Meeting',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        const createBtn = document.getElementById('meetingsCreateBtn');
+        if (createBtn) {
+            createBtn.disabled = true;
+            createBtn.innerHTML = `<div class="gm-spinner" style="width:16px;height:16px;border-width:2px;"></div> Creating...`;
+        }
+
+        const result = await api.createEmployeeMeeting(employeeId);
+
+        if (result && result.success) {
+            showToast(`Meeting created with ${empName}`, 'success');
+            // Re-fetch and re-render the list
+            const listResult = await api.getEmployeeMeetings(employeeId);
+            if (listResult && listResult.success) {
+                renderMeetingsList(listResult.meetings || [], employeeId, empName);
+            }
+        } else {
+            showToast(result?.error || 'Failed to create meeting', 'error');
+        }
+
+        if (createBtn) {
+            createBtn.disabled = false;
+            createBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create New Meeting
+            `;
+        }
+    } catch (err) {
+        console.error('Error creating meeting:', err);
+        showToast('Failed to create meeting. Please try again.', 'error');
+        const createBtn = document.getElementById('meetingsCreateBtn');
+        if (createBtn) {
+            createBtn.disabled = false;
+            createBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create New Meeting
+            `;
+        }
+    }
+}
+
+// Close panel/modal on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+        // Close meetings modal first if open
+        const modal = document.getElementById('meetingsModalOverlay');
+        if (modal && modal.classList.contains('active')) {
+            closeMeetingsModal();
+            return;
+        }
         const panel = document.getElementById('employeeSlidePanel');
         if (panel && panel.classList.contains('active')) {
             closeEmployeePanel();
@@ -1619,11 +1870,19 @@ function onDepartmentChange() {
 }
 
 function openModal(id) {
-    document.getElementById(id).classList.add('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Local showToast removed - using unified toast.js instead

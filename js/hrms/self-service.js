@@ -25,6 +25,7 @@ const panelTitles = {
     'panel-leaves': 'My Leaves',
     'panel-leave-balance': 'Leave Balance',
     'panel-holidays': 'Holidays',
+    'panel-meetings': 'My Meetings',
     'panel-payslips': 'My Payslips',
     'panel-salary': 'Salary Details',
     'panel-loans': 'Loans & Advances',
@@ -267,6 +268,9 @@ function loadPanelData(panelId) {
             break;
         case 'panel-holidays':
             loadHolidays();
+            break;
+        case 'panel-meetings':
+            loadMeetings();
             break;
         case 'panel-profile':
             loadMyProfile();
@@ -1819,6 +1823,98 @@ async function loadHolidays() {
     } catch (error) {
         console.error('Error loading holidays:', error);
         container.innerHTML = `<div class="ess-error-state"><p>Failed to load holidays</p></div>`;
+    }
+}
+
+// ==========================================
+// MY MEETINGS
+// ==========================================
+
+/**
+ * Load meetings scheduled for this employee
+ */
+async function loadMeetings() {
+    const container = document.getElementById('meetingsContent');
+    if (!container) return;
+
+    container.innerHTML = `<div class="ess-loading"><div class="ess-spinner"></div><p>Loading meetings...</p></div>`;
+
+    try {
+        const response = await api.getMyMeetings();
+        const meetings = response?.meetings || [];
+
+        // Update badge
+        const badge = document.getElementById('meetingsBadge');
+        if (badge) {
+            const scheduled = meetings.filter(m => m.status === 'scheduled').length;
+            if (scheduled > 0) {
+                badge.textContent = scheduled;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        if (meetings.length === 0) {
+            container.innerHTML = `
+                <div class="ess-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                    <h3>No meetings scheduled</h3>
+                    <p>When HR schedules a meeting with you, it will appear here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="ess-meetings-list">';
+        for (const meeting of meetings) {
+            const scheduledDate = meeting.scheduled_at
+                ? new Date(meeting.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : null;
+            const createdDate = new Date(meeting.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            const statusClass = meeting.status === 'scheduled' ? 'status-active' : 'status-inactive';
+            const statusLabel = meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1);
+
+            html += `
+                <div class="ess-meeting-card">
+                    <div class="ess-meeting-info">
+                        <div class="ess-meeting-name">${escapeHtml(meeting.meeting_name)}</div>
+                        <div class="ess-meeting-meta">
+                            <span>Scheduled by: <strong>${escapeHtml(meeting.created_by_name || 'HR')}</strong></span>
+                            ${scheduledDate ? `<span>Date: <strong>${scheduledDate}</strong></span>` : `<span>Created: ${createdDate}</span>`}
+                        </div>
+                        ${meeting.notes ? `<div class="ess-meeting-notes">${escapeHtml(meeting.notes)}</div>` : ''}
+                    </div>
+                    <div class="ess-meeting-actions">
+                        <span class="ess-status-badge ${statusClass}">${statusLabel}</span>
+                        ${meeting.status === 'scheduled' ? `
+                            <a href="/pages/vision/lobby.html?meetingId=${meeting.vision_meeting_id}" target="_blank" class="btn btn-primary btn-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="23 7 16 12 23 17 23 7"/>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                                </svg>
+                                Join Meeting
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error loading meetings:', error);
+        container.innerHTML = `
+            <div class="ess-empty-state">
+                <p>Failed to load meetings. Please try again.</p>
+                <button class="btn btn-outline" onclick="loadMeetings()">Retry</button>
+            </div>
+        `;
     }
 }
 

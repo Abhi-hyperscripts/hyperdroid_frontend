@@ -1305,6 +1305,29 @@ class API {
         return this.request(`/hrms/reports/dashboard/exits?days=${days}`);
     }
 
+    // --- Employee Meetings (ESS) ---
+    async getMyMeetings() {
+        return this.request('/hrms/self-service/my-meetings');
+    }
+
+    // --- Employee Meetings (HR) ---
+    async createEmployeeMeeting(employeeId, scheduledAt, notes) {
+        return this.request(`/hrms/meetings/employee/${employeeId}`, {
+            method: 'POST',
+            body: JSON.stringify({ scheduled_at: scheduledAt || null, notes: notes || null })
+        });
+    }
+
+    async getEmployeeMeetings(employeeId) {
+        return this.request(`/hrms/meetings/employee/${employeeId}`);
+    }
+
+    async cancelEmployeeMeeting(meetingId) {
+        return this.request(`/hrms/meetings/${meetingId}/cancel`, {
+            method: 'POST'
+        });
+    }
+
     // ==================== HRMS Admin/Manager APIs ====================
 
     // --- Offices ---
