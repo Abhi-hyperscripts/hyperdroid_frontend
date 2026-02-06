@@ -86,14 +86,34 @@ async function connectSignalR() {
             showToast('Reconnecting...', 'info');
         });
 
-        signalRConnection.onreconnected(() => {
+        signalRConnection.onreconnected(async () => {
             console.log('SignalR reconnected');
             showToast('Connected', 'success');
-            loadConversations();
+            hideDisconnectedBanner();
+            await loadConversations();
+            // Rejoin the active conversation group so messages are delivered
+            if (currentConversationId) {
+                try {
+                    await signalRConnection.invoke('JoinConversation', currentConversationId);
+                    console.log('Rejoined conversation group:', currentConversationId);
+                    // Reload messages to catch any missed while disconnected
+                    await loadMessages(currentConversationId);
+                } catch (err) {
+                    console.error('Error rejoining conversation after reconnect:', err);
+                }
+            }
         });
 
-        signalRConnection.onclose(() => {
-            console.log('SignalR disconnected');
+        signalRConnection.onclose(async () => {
+            console.log('SignalR connection closed');
+            showDisconnectedBanner();
+            // Attempt manual reconnect after a delay
+            setTimeout(() => {
+                if (!signalRConnection || signalRConnection.state === signalR.HubConnectionState.Disconnected) {
+                    console.log('Attempting manual SignalR reconnect...');
+                    reconnectSignalR();
+                }
+            }, 5000);
         });
 
         await signalRConnection.start();
@@ -342,6 +362,13 @@ async function selectConversation(conversationId) {
     // Show chat area
     document.getElementById('chatEmptyState').style.display = 'none';
     document.getElementById('chatActive').style.display = 'flex';
+
+    // Ensure we're in the SignalR group for this conversation
+    if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+        signalRConnection.invoke('JoinConversation', conversationId).catch(err => {
+            console.error('Error joining conversation group:', err);
+        });
+    }
 
     // Load conversation details and messages
     await loadConversationDetails(conversationId);
@@ -1190,6 +1217,86 @@ function updateUserStatusUI(userId, status) {
         }
     }
 }
+
+// ============================================
+// SignalR Reconnection & Visibility Handling
+// ============================================
+
+async function reconnectSignalR() {
+    if (signalRConnection && signalRConnection.state !== signalR.HubConnectionState.Disconnected) {
+        return; // Already connected or connecting
+    }
+
+    try {
+        console.log('Reconnecting SignalR...');
+        showToast('Reconnecting...', 'info');
+        await signalRConnection.start();
+        console.log('SignalR manually reconnected');
+        showToast('Connected', 'success');
+        hideDisconnectedBanner();
+
+        // Reload conversations and rejoin active group
+        await loadConversations();
+        if (currentConversationId) {
+            try {
+                await signalRConnection.invoke('JoinConversation', currentConversationId);
+                await loadMessages(currentConversationId);
+                await loadConversationDetails(currentConversationId);
+            } catch (err) {
+                console.error('Error rejoining after manual reconnect:', err);
+            }
+        }
+    } catch (error) {
+        console.error('Manual reconnect failed:', error);
+        // Retry after exponential backoff (capped at 30s)
+        setTimeout(() => reconnectSignalR(), 15000);
+    }
+}
+
+function showDisconnectedBanner() {
+    let banner = document.getElementById('chatDisconnectedBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'chatDisconnectedBanner';
+        banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;background:var(--color-error,#ef4444);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+        banner.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#fff;opacity:0.7;animation:pulse 1.5s infinite;"></span> Disconnected — trying to reconnect...';
+        document.body.appendChild(banner);
+    }
+    banner.style.display = 'flex';
+}
+
+function hideDisconnectedBanner() {
+    const banner = document.getElementById('chatDisconnectedBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+// Handle mobile browser tab backgrounding / foregrounding
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+
+    console.log('Page became visible — checking SignalR state');
+
+    if (!signalRConnection) return;
+
+    const state = signalRConnection.state;
+    if (state === signalR.HubConnectionState.Disconnected) {
+        // Connection died while backgrounded — restart
+        await reconnectSignalR();
+    } else if (state === signalR.HubConnectionState.Connected) {
+        // Connection survived but we may have missed messages
+        await loadConversations();
+        if (currentConversationId) {
+            try {
+                await signalRConnection.invoke('JoinConversation', currentConversationId);
+                await loadMessages(currentConversationId);
+                await loadConversationDetails(currentConversationId);
+            } catch (err) {
+                console.error('Error refreshing after visibility change:', err);
+            }
+        }
+    }
+    // If Connecting or Reconnecting, let the built-in handlers deal with it
+});
 
 // ============================================
 // Responsive Handling
