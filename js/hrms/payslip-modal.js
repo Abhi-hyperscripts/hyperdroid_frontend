@@ -142,23 +142,25 @@ const PayslipModal = (function() {
     }
 
     /**
-     * Open a modal by ID
+     * Open a modal by ID — two-phase animation via glassmorphic-modal.css
      */
     function openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('active');
-        }
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.add('gm-animating');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => el.classList.add('active'));
+        });
     }
 
     /**
-     * Close a modal by ID
+     * Close a modal by ID — two-phase animation via glassmorphic-modal.css
      */
     function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('active');
-        }
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.remove('active');
+        setTimeout(() => el.classList.remove('gm-animating'), 200);
     }
 
     // ==========================================

@@ -1040,11 +1040,19 @@ function capitalizeFirst(str) {
 }
 
 function openModal(id) {
-    document.getElementById(id).classList.add('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Local showToast removed - using unified toast.js instead

@@ -671,11 +671,19 @@ class MonthPicker {
 
 // Modal utility functions
 function openModal(id) {
-    document.getElementById(id).classList.add('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Modal should only be closed via the close button, not by clicking on backdrop
@@ -3949,7 +3957,7 @@ async function showCreateStructureModal() {
     // Show empty state for components
     updateComponentsEmptyState();
 
-    document.getElementById('structureModal').classList.add('active');
+    openModal('structureModal');
 }
 
 /**
@@ -4197,7 +4205,7 @@ async function editSalaryStructure(structureId) {
         updateComponentsEmptyState();
 
         document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
-        document.getElementById('structureModal').classList.add('active');
+        openModal('structureModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading structure:', error);
@@ -4588,7 +4596,7 @@ function showCreateComponentModal() {
     const isActiveCheckbox = document.getElementById('componentIsActive');
     if (isActiveCheckbox) isActiveCheckbox.checked = true;
 
-    document.getElementById('componentModal').classList.add('active');
+    openModal('componentModal');
     // Reset percentage fields visibility based on calculation type
     togglePercentageFields();
 }
@@ -4629,12 +4637,10 @@ function showCreateLoanModal() {
     document.getElementById('loanForm').reset();
     document.getElementById('loanId').value = '';
     document.getElementById('loanModalTitle').textContent = 'Apply for Loan';
-    document.getElementById('loanModal').classList.add('active');
+    openModal('loanModal');
 }
 
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
+// closeModal is already defined above — no duplicate needed
 
 // Check if component code is reserved (used by compliance components)
 function isReservedComponentCode(code) {
@@ -4914,7 +4920,7 @@ async function viewLoan(loanId) {
 
         document.getElementById('loanActionsFooter').innerHTML = actionsHtml;
 
-        document.getElementById('viewLoanModal').classList.add('active');
+        openModal('viewLoanModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading loan details:', error);
@@ -4951,7 +4957,7 @@ function showRejectLoanModal(loanId) {
     document.getElementById('rejectLoanId').value = loanId;
     document.getElementById('rejectionReason').value = '';
     closeModal('viewLoanModal');
-    document.getElementById('rejectLoanModal').classList.add('active');
+    openModal('rejectLoanModal');
 }
 
 async function confirmRejectLoan() {
@@ -4982,7 +4988,7 @@ function showDisburseLoanModal(loanId) {
     document.getElementById('disbursementMode').value = '';
     document.getElementById('disbursementReference').value = '';
     closeModal('viewLoanModal');
-    document.getElementById('disburseLoanModal').classList.add('active');
+    openModal('disburseLoanModal');
 }
 
 async function confirmDisburseLoan() {
@@ -5036,7 +5042,7 @@ async function showEditLoanModal(loanId) {
         document.getElementById('editCurrentEmi').value = formatCurrency(loan.emi_amount, null, loan.currency_symbol);
 
         closeModal('viewLoanModal');
-        document.getElementById('editLoanModal').classList.add('active');
+        openModal('editLoanModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading loan for edit:', error);
@@ -5718,7 +5724,7 @@ async function viewPayslip(payslipId) {
         const canFinalize = payslipStatus !== 'finalized' && payslipStatus !== 'paid' && hrmsRoles.isHRAdmin();
         finalizeBtn.style.display = canFinalize ? 'inline-flex' : 'none';
 
-        document.getElementById('payslipModal').classList.add('active');
+        openModal('payslipModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading payslip:', error);
@@ -6472,7 +6478,7 @@ function editComponent(componentId) {
     togglePercentageFields();
 
     document.getElementById('componentModalTitle').textContent = 'Edit Salary Component';
-    document.getElementById('componentModal').classList.add('active');
+    openModal('componentModal');
 }
 
 async function deleteComponent(componentId) {
@@ -7860,7 +7866,7 @@ async function viewPayrollRun(runId) {
         }
 
         // Show the modal
-        document.getElementById('payrollRunDetailsModal').classList.add('active');
+        openModal('payrollRunDetailsModal');
 
         // Initialize virtual scroll if we have payslips
         if (payslips.length > 0) {
@@ -12154,7 +12160,7 @@ function showCreateVDTypeModal() {
     document.getElementById('vdTypeForm').reset();
     document.getElementById('vdTypeId').value = '';
     document.getElementById('vdTypeIsActive').value = 'true';
-    document.getElementById('vdTypeModal').classList.add('active');
+    openModal('vdTypeModal');
 }
 
 // Edit VD type
@@ -12169,7 +12175,7 @@ function editVDType(typeId) {
     document.getElementById('vdTypeDescription').value = type.description || '';
     document.getElementById('vdTypeDefaultAmount').value = type.default_amount || '';
     document.getElementById('vdTypeIsActive').value = type.is_active ? 'true' : 'false';
-    document.getElementById('vdTypeModal').classList.add('active');
+    openModal('vdTypeModal');
 }
 
 // Close VD type modal
@@ -12452,7 +12458,7 @@ async function showCreateVDEnrollmentModal() {
     // Load employees
     await loadEmployeesForVDEnrollment();
 
-    document.getElementById('vdEnrollmentModal').classList.add('active');
+    openModal('vdEnrollmentModal');
 }
 
 // Load employees for VD enrollment dropdown with searchable dropdown
@@ -12602,7 +12608,7 @@ async function viewVDEnrollment(enrollmentId) {
         footer.innerHTML = `<button type="button" class="btn btn-secondary" onclick="closeVDViewModal()">Close</button>`;
     }
 
-    document.getElementById('vdViewModal').classList.add('active');
+    openModal('vdViewModal');
 }
 
 // Get status class for VD badge
@@ -12653,7 +12659,7 @@ async function approveVDEnrollment(enrollmentId) {
 function showRejectVDModal(enrollmentId) {
     document.getElementById('vdRejectId').value = enrollmentId;
     document.getElementById('vdRejectReason').value = '';
-    document.getElementById('vdRejectModal').classList.add('active');
+    openModal('vdRejectModal');
 }
 
 // Close VD reject modal
@@ -12706,7 +12712,7 @@ function showEditVDModal(enrollmentId) {
     document.getElementById('vdEditNewAmount').value = enrollment.amount || '';
     document.getElementById('vdEditEffectiveDate').value = '';
     document.getElementById('vdEditReason').value = '';
-    document.getElementById('vdEditModal').classList.add('active');
+    openModal('vdEditModal');
 }
 
 // Close edit modal
@@ -12774,7 +12780,7 @@ function showOptOutModal(enrollmentId) {
     document.getElementById('vdOptOutTypeName').textContent = enrollment.deduction_type_name || '';
     document.getElementById('vdOptOutEmployeeName').textContent = employeeName;
     document.getElementById('vdOptOutDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('vdOptOutModal').classList.add('active');
+    openModal('vdOptOutModal');
 }
 
 // Close opt-out modal

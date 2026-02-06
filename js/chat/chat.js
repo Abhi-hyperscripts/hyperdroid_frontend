@@ -606,7 +606,12 @@ function handleTyping() {
 // ============================================
 
 function showNewChatModal() {
-    document.getElementById('newChatModal').classList.add('active');
+    const el = document.getElementById('newChatModal');
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
     selectedUsers = [];
     conversationType = 'direct';
     document.getElementById('userSearch').value = '';
@@ -617,7 +622,10 @@ function showNewChatModal() {
 }
 
 function closeNewChatModal() {
-    document.getElementById('newChatModal').classList.remove('active');
+    const el = document.getElementById('newChatModal');
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 function setConversationType(type) {
@@ -982,11 +990,20 @@ function showChatInfo() {
         leaveBtn.style.display = 'none';
     }
 
-    document.getElementById('chatInfoModal').classList.add('active');
+    const infoEl = document.getElementById('chatInfoModal');
+    if (infoEl) {
+        infoEl.classList.add('gm-animating');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => infoEl.classList.add('active'));
+        });
+    }
 }
 
 function closeChatInfoModal() {
-    document.getElementById('chatInfoModal').classList.remove('active');
+    const el = document.getElementById('chatInfoModal');
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 async function leaveConversation() {

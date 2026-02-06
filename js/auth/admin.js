@@ -1514,17 +1514,25 @@ function switchTab(tabName) {
 // ==================== Modal Helpers ====================
 
 function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Close modal on outside click
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
-        e.target.classList.remove('active');
+        closeModal(e.target.id);
     }
 });
 

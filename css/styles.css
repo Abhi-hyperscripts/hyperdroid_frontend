@@ -967,20 +967,51 @@ body:has(.auth-container)::after {
 }
 
 /* =============================================================
-   VISION DASHBOARD AMBIENT BACKGROUND
-   Excludes chat-page which has its own layout requirements
+   GRADIENT BACKGROUND EFFECT - Reusable blue ambient gradient
+   Use class .gradient-bg-ambient on any container (sidebar, panel, etc.)
    ============================================================= */
-body.dashboard:not(.chat-page) {
+.gradient-bg-ambient {
+    position: relative;
+}
+
+.gradient-bg-ambient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 100% 60% at 80% 20%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 80% at 20% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+[data-theme="dark"] .gradient-bg-ambient::before {
+    background:
+        radial-gradient(ellipse 100% 60% at 80% 20%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 80% at 20% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
+}
+
+.gradient-bg-ambient > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* =============================================================
+   DASHBOARD AMBIENT BACKGROUND
+   Radial gradient applied to all dashboard pages
+   ============================================================= */
+body.dashboard {
     position: relative;
     min-height: 100vh;
     background: var(--bg-body);
 }
 
-[data-theme="dark"] body.dashboard:not(.chat-page) {
+[data-theme="dark"] body.dashboard {
     background: #0a0f1a;
 }
 
-body.dashboard:not(.chat-page)::before {
+body.dashboard::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -992,14 +1023,14 @@ body.dashboard:not(.chat-page)::before {
     z-index: 0;
 }
 
-[data-theme="dark"] body.dashboard:not(.chat-page)::before {
+[data-theme="dark"] body.dashboard::before {
     background:
         radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
         radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
         radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
 }
 
-body.dashboard:not(.chat-page) > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide-panel):not(.slide-panel-overlay):not(.slide-panel):not(.modal):not(.toast-container):not(.gm-overlay) {
+body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide-panel):not(.slide-panel-overlay):not(.slide-panel):not(.modal):not(.toast-container):not(.gm-overlay):not(.chat-modal) {
     position: relative;
     z-index: 1;
 }
@@ -1078,157 +1109,7 @@ body.dashboard:not(.chat-page) > *:not(.navbar):not(.employee-panel-overlay):not
     transition: all 0.3s ease;
 }
 
-/* Modal - Custom Styling on Bootstrap 5 (Visual Only) */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    background: var(--overlay-dark);
-}
-
-.modal.active {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Bootstrap 5 vertical centering - ensure it works with our styles */
-.modal-dialog.modal-dialog-centered {
-    display: flex;
-    align-items: center;
-    min-height: calc(100% - 1rem);
-    margin: 0.5rem auto;
-}
-
-.modal-dialog {
-    width: 100%;
-    max-width: 500px;
-    max-height: calc(100vh - 1.5rem);
-    overflow: visible;
-}
-
-/* Prevent any horizontal overflow in modals */
-.modal-content,
-.modal-body,
-.modal-body * {
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.modal-content {
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px var(--hover-overlay-darker);
-    border: 1px solid var(--border-color);
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: visible;
-}
-
-.modal-header {
-    border-bottom: 1px solid var(--border-color-light);
-}
-
-.modal-body {
-    padding: 0.75rem;
-    overflow: visible;
-    flex: 1;
-    min-height: 0;
-}
-
-.modal-title {
-    font-weight: 600;
-    font-size: 1.125rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    line-height: 1;
-}
-
-.modal-title .meeting-type-display {
-    display: inline-flex;
-    align-items: center;
-}
-
-.modal-title .badge {
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    vertical-align: middle;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border-color-light);
-}
-
-.modal-header h3 {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 1.125rem;
-    letter-spacing: -0.02em;
-    margin: 0;
-}
-
-.close-btn {
-    background: var(--brand-primary);
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: var(--text-inverse);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-slow);
-    box-shadow: var(--shadow-primary-sm);
-    line-height: 1;
-    padding: 0;
-    text-align: center;
-    font-family: Arial, sans-serif;
-}
-
-.close-btn:hover {
-    background: var(--brand-primary-dark);
-    box-shadow: var(--shadow-primary-md);
-    transform: scale(1.05);
-}
-
-/* Override for modal close buttons - brand colored button with white X */
-.modal-header .close-btn {
-    background: var(--brand-primary);
-    border: none;
-    color: var(--text-inverse);
-    box-shadow: var(--shadow-primary-sm);
-}
-
-.modal-header .close-btn:hover {
-    background: var(--brand-primary-dark);
-    color: var(--text-inverse);
-    box-shadow: var(--shadow-primary-md);
-    transform: scale(1.05);
-}
-
-/* SVG icon styling for close buttons - white X on brand button */
-.close-btn svg,
-.modal-header .close-btn svg {
-    display: block;
-    stroke: #ffffff;
-    width: 14px;
-    height: 14px;
-}
+/* Modal — layout only. Visual styling in glassmorphic-modal.css */
 
 @keyframes fadeIn {
     from {

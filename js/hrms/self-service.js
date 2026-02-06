@@ -166,6 +166,14 @@ function setupSidebar() {
         });
     });
 
+    // Collapsible nav groups
+    document.querySelectorAll('.ess-nav-group-title').forEach(title => {
+        title.addEventListener('click', () => {
+            const group = title.closest('.ess-nav-group');
+            group.classList.toggle('collapsed');
+        });
+    });
+
     // Handle ESC key to close sidebar
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -2677,25 +2685,25 @@ function updateMyPayslipsTable(payslips) {
 // ==========================================
 
 /**
- * Open modal
+ * Open modal — two-phase animation via glassmorphic-modal.css
  */
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-    }
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 /**
- * Close modal
- * v3.0.130: Also set display:none for modals using style.display
+ * Close modal — two-phase animation via glassmorphic-modal.css
  */
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-        modal.style.display = 'none';
-    }
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 /**

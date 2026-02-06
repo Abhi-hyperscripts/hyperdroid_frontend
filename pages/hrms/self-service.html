@@ -23,6 +23,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -73,142 +74,171 @@
             <nav class="ess-nav">
                 <!-- Main Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Main</div>
-                    <button class="ess-nav-btn active" data-panel="panel-dashboard">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"/>
-                            <rect x="14" y="3" width="7" height="7"/>
-                            <rect x="14" y="14" width="7" height="7"/>
-                            <rect x="3" y="14" width="7" height="7"/>
-                        </svg>
-                        <span>Dashboard</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-profile">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <span>My Profile</span>
-                    </button>
+                    <div class="ess-nav-group-title">
+                        <span>Main</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
+                        <button class="ess-nav-btn active" data-panel="panel-dashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            <span>Dashboard</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-profile">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <span>My Profile</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Time & Attendance Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Time & Attendance</div>
-                    <button class="ess-nav-btn" data-panel="panel-attendance">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        <span>My Attendance</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-regularization">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="12" y1="18" x2="12" y2="12"/>
-                            <line x1="9" y1="15" x2="15" y2="15"/>
-                        </svg>
-                        <span>Regularization</span>
-                        <span class="ess-nav-badge" id="regPendingBadge" style="display: none;">0</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-overtime">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 16"/>
-                        </svg>
-                        <span>Overtime</span>
-                        <span class="ess-nav-badge" id="otPendingBadge" style="display: none;">0</span>
-                    </button>
+                    <div class="ess-nav-group-title">
+                        <span>Time & Attendance</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
+                        <button class="ess-nav-btn" data-panel="panel-attendance">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <span>My Attendance</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-regularization">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="12" y1="18" x2="12" y2="12"/>
+                                <line x1="9" y1="15" x2="15" y2="15"/>
+                            </svg>
+                            <span>Regularization</span>
+                            <span class="ess-nav-badge" id="regPendingBadge" style="display: none;">0</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-overtime">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 16"/>
+                            </svg>
+                            <span>Overtime</span>
+                            <span class="ess-nav-badge" id="otPendingBadge" style="display: none;">0</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Leaves Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Leaves</div>
-                    <button class="ess-nav-btn" data-panel="panel-leaves">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        <span>My Leaves</span>
-                        <span class="ess-nav-badge" id="leavePendingBadge" style="display: none;">0</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-leave-balance">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        <span>Leave Balance</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-holidays">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
-                        <span>Holidays</span>
-                    </button>
+                    <div class="ess-nav-group-title">
+                        <span>Leaves</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
+                        <button class="ess-nav-btn" data-panel="panel-leaves">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            <span>My Leaves</span>
+                            <span class="ess-nav-badge" id="leavePendingBadge" style="display: none;">0</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-leave-balance">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            <span>Leave Balance</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-holidays">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                            <span>Holidays</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Meetings Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Meetings</div>
-                    <button class="ess-nav-btn" data-panel="panel-meetings">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="23 7 16 12 23 17 23 7"/>
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                        </svg>
-                        <span>My Meetings</span>
-                        <span class="ess-nav-badge" id="meetingsBadge" style="display:none">0</span>
-                    </button>
+                    <div class="ess-nav-group-title">
+                        <span>Meetings</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
+                        <button class="ess-nav-btn" data-panel="panel-meetings">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="23 7 16 12 23 17 23 7"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                            </svg>
+                            <span>My Meetings</span>
+                            <span class="ess-nav-badge" id="meetingsBadge" style="display:none">0</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Payroll Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Payroll</div>
-                    <button class="ess-nav-btn" data-panel="panel-payslips">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                            <line x1="1" y1="10" x2="23" y2="10"/>
-                        </svg>
-                        <span>My Payslips</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-salary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="1" x2="12" y2="23"/>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                        </svg>
-                        <span>Salary Details</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-loans">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                        </svg>
-                        <span>Loans & Advances</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-reimbursements">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                        </svg>
-                        <span>Reimbursements</span>
-                    </button>
-                    <button class="ess-nav-btn" data-panel="panel-declarations">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                            <rect x="9" y="3" width="6" height="4" rx="1"/>
-                            <path d="M9 12h6"/>
-                            <path d="M9 16h6"/>
-                        </svg>
-                        <span>Tax Declarations</span>
-                    </button>
+                    <div class="ess-nav-group-title">
+                        <span>Payroll</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
+                        <button class="ess-nav-btn" data-panel="panel-payslips">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                            </svg>
+                            <span>My Payslips</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-salary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"/>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            <span>Salary Details</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-loans">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                            <span>Loans & Advances</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-reimbursements">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                            <span>Reimbursements</span>
+                        </button>
+                        <button class="ess-nav-btn" data-panel="panel-declarations">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                <path d="M9 12h6"/>
+                                <path d="M9 16h6"/>
+                            </svg>
+                            <span>Tax Declarations</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Company Section -->
                 <div class="ess-nav-group">
-                    <div class="ess-nav-group-title">Company</div>
+                    <div class="ess-nav-group-title">
+                        <span>Company</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
                     <a href="directory.html" class="ess-nav-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -248,11 +278,16 @@
                         </svg>
                         <span>Policies</span>
                     </button>
+                    </div>
                 </div>
 
                 <!-- Admin Link (shown only for HR/Admin roles) -->
                 <div class="ess-nav-group ess-nav-admin" id="adminNavGroup" style="display: none;">
-                    <div class="ess-nav-group-title">Administration</div>
+                    <div class="ess-nav-group-title">
+                        <span>Administration</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="ess-nav-group-items">
                     <a href="dashboard.html" class="ess-nav-btn ess-nav-admin-link">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>
@@ -260,6 +295,7 @@
                         </svg>
                         <span>Admin Dashboard</span>
                     </a>
+                    </div>
                 </div>
             </nav>
         </aside>

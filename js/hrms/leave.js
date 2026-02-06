@@ -1364,7 +1364,7 @@ function selectEmployee(employeeId) {
 function showApplyLeaveModal() {
     document.getElementById('applyLeaveForm').reset();
     document.getElementById('leaveDays').value = '0';
-    document.getElementById('applyLeaveModal').classList.add('active');
+    openModal('applyLeaveModal');
 }
 
 function showCreateLeaveTypeModal() {
@@ -1383,7 +1383,7 @@ function showCreateLeaveTypeModal() {
         leaveTypeModalCountryDropdown.setValue(countries[0].id);
     }
 
-    document.getElementById('leaveTypeModal').classList.add('active');
+    openModal('leaveTypeModal');
 }
 
 function editLeaveType(id) {
@@ -1421,13 +1421,13 @@ function editLeaveType(id) {
     });
 
     document.getElementById('leaveTypeModalTitle').textContent = 'Edit Leave Type';
-    document.getElementById('leaveTypeModal').classList.add('active');
+    openModal('leaveTypeModal');
 }
 
 function showAllocateLeaveModal() {
     document.getElementById('allocateLeaveForm').reset();
     resetEmployeeDropdown();
-    document.getElementById('allocateLeaveModal').classList.add('active');
+    openModal('allocateLeaveModal');
 }
 
 function showApproveModal(requestId) {
@@ -1437,7 +1437,7 @@ function showApproveModal(requestId) {
     document.getElementById('confirmActionBtn').className = 'btn btn-primary';
     document.getElementById('confirmActionBtn').textContent = 'Approve';
     document.getElementById('actionComments').value = '';
-    document.getElementById('leaveActionModal').classList.add('active');
+    openModal('leaveActionModal');
 }
 
 function showRejectModal(requestId) {
@@ -1447,11 +1447,23 @@ function showRejectModal(requestId) {
     document.getElementById('confirmActionBtn').className = 'btn btn-danger';
     document.getElementById('confirmActionBtn').textContent = 'Reject';
     document.getElementById('actionComments').value = '';
-    document.getElementById('leaveActionModal').classList.add('active');
+    openModal('leaveActionModal');
+}
+
+function openModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Calculate leave days
@@ -1817,7 +1829,7 @@ async function viewLeaveDetails(requestId) {
             footer.style.display = 'none';
         }
 
-        document.getElementById('viewLeaveModal').classList.add('active');
+        openModal('viewLeaveModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading leave details:', error);
@@ -1894,7 +1906,7 @@ async function viewLeaveCalculationBreakdown(requestId) {
 
         // Close the details modal and open the calculation modal
         closeModal('viewLeaveModal');
-        document.getElementById('leaveCalculationModal').classList.add('active');
+        openModal('leaveCalculationModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading calculation breakdown:', error);
@@ -2010,7 +2022,7 @@ async function viewEmployeeBalance(employeeId) {
             </div>
         `;
 
-        document.getElementById('viewEmployeeBalanceModal').classList.add('active');
+        openModal('viewEmployeeBalanceModal');
         hideLoading();
     } catch (error) {
         console.error('Error loading employee balance:', error);

@@ -1083,17 +1083,19 @@ function canEditOrganization() {
 
 // Modal helper functions
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-    }
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 // Convert time string from "9:00 AM" or "09:00 AM" format to "HH:mm:ss" (24-hour TimeSpan format)
@@ -2401,7 +2403,7 @@ function showCreateOfficeModal() {
     document.getElementById('officeEnableGeofence').checked = false;
     document.getElementById('officeIsActive').checked = true;
 
-    document.getElementById('officeModal').classList.add('active');
+    openModal('officeModal');
 }
 
 function editOffice(id) {
@@ -2443,7 +2445,7 @@ function editOffice(id) {
     document.getElementById('officeIsActive').checked = office.is_active !== false;
 
     document.getElementById('officeModalTitle').textContent = 'Edit Office';
-    document.getElementById('officeModal').classList.add('active');
+    openModal('officeModal');
 }
 
 function showCreateDepartmentModal() {
@@ -2460,7 +2462,7 @@ function showCreateDepartmentModal() {
     populateOfficeSelects();
 
     document.getElementById('departmentModalTitle').textContent = 'Create Department';
-    document.getElementById('departmentModal').classList.add('active');
+    openModal('departmentModal');
 }
 
 function editDepartment(id) {
@@ -2479,7 +2481,7 @@ function editDepartment(id) {
     document.getElementById('departmentIsActive').checked = dept.is_active !== false;
 
     document.getElementById('departmentModalTitle').textContent = 'Edit Department';
-    document.getElementById('departmentModal').classList.add('active');
+    openModal('departmentModal');
 }
 
 function showCreateDesignationModal() {
@@ -2509,7 +2511,7 @@ function showCreateDesignationModal() {
     document.getElementById('designationAttendanceExempt').checked = false;
 
     document.getElementById('designationModalTitle').textContent = 'Create Designation';
-    document.getElementById('designationModal').classList.add('active');
+    openModal('designationModal');
 }
 
 // Reset department dropdown to initial state (requires office selection)
@@ -2907,7 +2909,7 @@ function editDesignation(id) {
     document.getElementById('designationIsActive').checked = desig.is_active !== false;
 
     document.getElementById('designationModalTitle').textContent = 'Edit Designation';
-    document.getElementById('designationModal').classList.add('active');
+    openModal('designationModal');
 }
 
 function showCreateShiftModal() {
@@ -2921,7 +2923,7 @@ function showCreateShiftModal() {
     document.getElementById('shiftId').value = '';
     document.getElementById('shiftEnableGeofence').checked = false;
     document.getElementById('shiftModalTitle').textContent = 'Create Shift';
-    document.getElementById('shiftModal').classList.add('active');
+    openModal('shiftModal');
 
     // Populate the office dropdown
     populateOfficeSelects();
@@ -2962,7 +2964,7 @@ function editShift(id) {
     });
 
     document.getElementById('shiftModalTitle').textContent = 'Edit Shift';
-    document.getElementById('shiftModal').classList.add('active');
+    openModal('shiftModal');
 
     // Populate office dropdown then set the value
     populateOfficeSelects();
@@ -2986,7 +2988,7 @@ function showCreateHolidayModal() {
     document.getElementById('holidayForm').reset();
     document.getElementById('holidayId').value = '';
     document.getElementById('holidayModalTitle').textContent = 'Create Holiday';
-    document.getElementById('holidayModal').classList.add('active');
+    openModal('holidayModal');
 }
 
 function editHoliday(id) {
@@ -3004,7 +3006,7 @@ function editHoliday(id) {
     officeSelect.value = holiday.office_id || '';
 
     document.getElementById('holidayModalTitle').textContent = 'Edit Holiday';
-    document.getElementById('holidayModal').classList.add('active');
+    openModal('holidayModal');
 }
 
 function showCreateRosterModal() {
@@ -3034,7 +3036,7 @@ function showCreateRosterModal() {
     document.getElementById('rosterStartDate').value = new Date().toISOString().split('T')[0];
 
     document.getElementById('rosterModalTitle').textContent = 'Assign Shift Roster';
-    document.getElementById('rosterModal').classList.add('active');
+    openModal('rosterModal');
 }
 
 function editRoster(id) {
@@ -3055,7 +3057,7 @@ function editRoster(id) {
     document.getElementById('rosterIsActive').checked = roster.is_active !== false;
 
     document.getElementById('rosterModalTitle').textContent = 'Edit Shift Roster';
-    document.getElementById('rosterModal').classList.add('active');
+    openModal('rosterModal');
 }
 
 function populateRosterEmployeeSelect() {
@@ -3108,9 +3110,7 @@ function populateRosterShiftSelect() {
     }
 }
 
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
+// closeModal is already defined above — no duplicate needed
 
 // Save functions
 async function saveOffice() {

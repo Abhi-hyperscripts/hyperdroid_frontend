@@ -15,7 +15,7 @@
     margin: 0 auto;
     padding: 32px 24px;
     padding-top: 100px; /* Account for fixed navbar */
-    background: var(--gradient-page-bg);
+    background: transparent;
     min-height: 100vh;
     box-sizing: border-box;
 }
@@ -36,7 +36,7 @@
     min-height: calc(100vh - 70px);
     margin-top: 70px;
     position: relative;
-    background: var(--gradient-page-bg);
+    background: transparent;
 }
 
 /* =============================================================
@@ -222,6 +222,7 @@
 .ess-nav-group-title {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     padding: 10px 16px;
     font-size: 11px;
@@ -229,7 +230,27 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-tertiary);
-    cursor: default;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.ess-nav-group-title:hover {
+    color: var(--brand-primary);
+}
+
+.ess-nav-group-title .chevron {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+    opacity: 0.6;
+}
+
+.ess-nav-group.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.ess-nav-group.collapsed .ess-nav-group-items {
+    display: none;
 }
 
 /* Navigation Button */
@@ -331,7 +352,7 @@
     padding: 24px;
     transition: margin-left 0.3s ease;
     min-height: calc(100vh - 60px);
-    background: var(--gradient-page-bg);
+    background: transparent;
 }
 
 @media (min-width: 1024px) {
@@ -524,11 +545,19 @@
     justify-content: space-between;
     gap: 24px;
     padding: 20px 24px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
     margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .ess-clock-widget {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .ess-clock-display {
@@ -709,17 +738,35 @@
     align-items: flex-start;
     gap: 14px;
     padding: 18px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
 }
 
 .ess-stat-card:hover {
-    border-color: var(--brand-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+}
+
+[data-theme="light"] .ess-stat-card {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ess-stat-card:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .ess-stat-icon {
@@ -889,19 +936,37 @@
     flex-direction: column;
     align-items: center;
     padding: 20px 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .ess-action-card:hover {
-    border-color: var(--brand-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+}
+
+[data-theme="light"] .ess-action-card {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ess-action-card:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .ess-action-icon {
@@ -995,18 +1060,36 @@
 }
 
 .ess-upcoming-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
     padding: 18px;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
 }
 
 .ess-upcoming-card:hover {
-    border-color: var(--brand-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+}
+
+[data-theme="light"] .ess-upcoming-card {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ess-upcoming-card:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .ess-upcoming-card h4 {
@@ -1140,17 +1223,31 @@
     display: flex;
     gap: 14px;
     padding: 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .ess-announcement-item:hover {
-    border-color: var(--brand-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+}
+
+[data-theme="light"] .ess-announcement-item {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ess-announcement-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.3);
 }
 
 .ess-announcement-icon {
@@ -4134,15 +4231,15 @@
 /* Page container */
 /* ESS Layout dark mode backgrounds - use gradient like main dashboard */
 [data-theme="dark"] .ess-layout {
-    background: var(--gradient-page-bg);
+    background: transparent;
 }
 
 [data-theme="dark"] .ess-main {
-    background: var(--gradient-page-bg);
+    background: transparent;
 }
 
 [data-theme="dark"] .ess-container {
-    background: var(--gradient-page-bg);
+    background: transparent;
 }
 
 /* Directory cards */

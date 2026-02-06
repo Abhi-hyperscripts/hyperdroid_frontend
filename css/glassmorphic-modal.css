@@ -501,3 +501,524 @@
         justify-content: center;
     }
 }
+
+
+/* =================================================================
+   =================================================================
+   STANDARD MODAL OVERRIDES (.modal / .chat-modal)
+   Applies the same glassmorphic effect to all standard modals
+   across Vision, Drive, Chat, Auth, and HRMS.
+   Single source of truth — edit here to update all services.
+   =================================================================
+   ================================================================= */
+
+/* =================================================================
+   OVERLAY — .modal / .modal-overlay
+   ================================================================= */
+
+.modal,
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--overlay-dark);
+    z-index: 9999;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.modal.active,
+.modal-overlay.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px 20px 20px;
+    opacity: 1;
+}
+
+/* Two-phase animation: gm-animating enables display, active fades in */
+.modal.gm-animating {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px 20px 20px;
+}
+
+/* =================================================================
+   MODAL BACKDROP (click-to-close layer)
+   ================================================================= */
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* =================================================================
+   MODAL DIALOG — layout wrapper
+   ================================================================= */
+
+.modal-dialog {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 100px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    overflow: visible;
+}
+
+.modal-dialog.modal-dialog-centered {
+    min-height: auto !important;
+    margin: 0 !important;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 720px;
+}
+
+.modal-dialog.modal-xl {
+    max-width: 960px;
+}
+
+/* =================================================================
+   MODAL CONTENT — Glassmorphic Dark (default)
+   ================================================================= */
+
+.modal-content {
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    max-height: calc(100vh - 100px) !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    width: 100%;
+    transform: scale(0.95);
+    transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Prevent any horizontal overflow in modals */
+.modal-body,
+.modal-body * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* =================================================================
+   MODAL CONTENT — Glassmorphic Light theme
+   ================================================================= */
+
+[data-theme="light"] .modal-content {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* =================================================================
+   MODAL HEADER — transparent with gradient tint
+   ================================================================= */
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    background: transparent;
+    position: relative;
+}
+
+.modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+[data-theme="light"] .modal-header {
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+[data-theme="light"] .modal-header::before {
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
+}
+
+.modal-header h3,
+.modal-header h5,
+.modal-header .modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 1;
+}
+
+/* Modal title row - for headers with title + badge */
+.modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.modal-title-row h2,
+.modal-title-row h3,
+.modal-title-row h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* =================================================================
+   MODAL BODY — transparent to let glass show through
+   ================================================================= */
+
+.modal-body {
+    padding: 12px 16px;
+    overflow-y: auto !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: calc(100vh - 200px) !important;
+    background: transparent;
+}
+
+/* =================================================================
+   MODAL FOOTER — subtle glass tint
+   ================================================================= */
+
+.modal-footer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .modal-footer {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.03);
+    border-top: 1px solid var(--border-color-light);
+}
+
+.modal-footer .btn {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* =================================================================
+   CLOSE BUTTON — brand circular button
+   ================================================================= */
+
+.close-btn,
+.modal-header .close-btn {
+    background: var(--brand-primary) !important;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-inverse) !important;
+    width: 32px;
+    height: 32px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    z-index: 1;
+    font-size: 1.25rem;
+    line-height: 1;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+.close-btn svg,
+.modal-header .close-btn svg {
+    display: block;
+    stroke: var(--text-inverse) !important;
+    width: 14px;
+    height: 14px;
+}
+
+.close-btn:hover,
+.modal-header .close-btn:hover {
+    background: var(--brand-primary-dark) !important;
+    box-shadow: var(--shadow-md);
+    transform: scale(1.05);
+}
+
+/* =================================================================
+   MODAL TITLE (from styles.css)
+   ================================================================= */
+
+.modal-title {
+    font-weight: 600;
+    font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1;
+}
+
+.modal-title .meeting-type-display {
+    display: inline-flex;
+    align-items: center;
+}
+
+.modal-title .badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    vertical-align: middle;
+}
+
+/* =================================================================
+   CHAT MODAL OVERRIDES (.chat-modal)
+   Same glassmorphic treatment for chat modals.
+   ================================================================= */
+
+.chat-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--overlay-dark);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.chat-modal.active {
+    display: flex !important;
+    opacity: 1;
+}
+
+.chat-modal.gm-animating {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Chat modal content — glassmorphic dark */
+.chat-modal-content {
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
+}
+
+.chat-modal.active .chat-modal-content {
+    transform: scale(1);
+}
+
+.chat-modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.5) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Chat modal — light theme */
+[data-theme="light"] .chat-modal-content {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .chat-modal-content:hover {
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4) !important;
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15),
+        0 0 40px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Chat modal header — transparent with gradient tint */
+.chat-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    position: relative;
+}
+
+.chat-modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+[data-theme="light"] .chat-modal-header {
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+[data-theme="light"] .chat-modal-header::before {
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06) 0%, transparent 100%);
+}
+
+.chat-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Chat close button — brand circular */
+.chat-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--brand-primary) !important;
+    color: var(--text-inverse) !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 1;
+    box-shadow: var(--shadow-sm);
+}
+
+.chat-modal-close:hover {
+    background: var(--brand-primary-dark) !important;
+    box-shadow: var(--shadow-md);
+    transform: scale(1.05);
+}
+
+/* Chat modal body — transparent */
+.chat-modal-body {
+    padding: 24px;
+    overflow-y: visible;
+    overflow-x: visible;
+    flex: 1;
+    background: transparent;
+}
+
+/* Chat modal footer — glass tint */
+.chat-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .chat-modal-footer {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.03);
+    border-top: 1px solid var(--border-color-light);
+}
+
+.chat-modal-footer .btn {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* =================================================================
+   KEYFRAMES
+   ================================================================= */
+
+@keyframes modalShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+/* =================================================================
+   RESPONSIVE — Standard modals
+   ================================================================= */
+
+@media (max-width: 480px) {
+    .modal-dialog {
+        max-width: 100%;
+    }
+
+    .chat-modal-content {
+        max-width: 100%;
+    }
+}

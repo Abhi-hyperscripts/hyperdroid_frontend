@@ -416,7 +416,7 @@ function toggleProject(projectId) {
 // ============================================
 
 function showCreateProjectModal() {
-    document.getElementById('createProjectModal').classList.add('active');
+    openModal('createProjectModal');
 }
 
 document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
@@ -797,7 +797,10 @@ async function showCreateMeetingModalForProject(projectId) {
     // Show allow guests toggle (modal opens with 'regular' type by default)
     document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
 
-    modal.classList.add('active');
+    modal.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => modal.classList.add('active'));
+    });
     await fetchAndPopulateUsers();
 }
 
@@ -1210,7 +1213,7 @@ let currentFilter = 'all';
 
 async function manageParticipants(meetingId) {
     currentMeetingId = meetingId;
-    document.getElementById('manageParticipantsModal').classList.add('active');
+    openModal('manageParticipantsModal');
     await loadAllowedParticipants(meetingId);
     await loadRegisteredUsers();
 }
@@ -1431,8 +1434,20 @@ async function handleParticipantToggle(checkbox) {
 // MODAL FUNCTIONS
 // ============================================
 
+function openModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.add('gm-animating');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => el.classList.add('active'));
+    });
+}
+
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const el = document.getElementById(modalId);
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
 window.onclick = function(event) {
@@ -2743,7 +2758,10 @@ async function showMeetingSettingsModal(meetingId, type) {
             if (saveBtn) saveBtn.disabled = false;
         }
 
-        modal.classList.add('active');
+        modal.classList.add('gm-animating');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => modal.classList.add('active'));
+        });
 
     } catch (error) {
         console.error('Error loading meeting settings:', error);
