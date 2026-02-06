@@ -1090,50 +1090,45 @@ async function confirmDeleteProject(projectId) {
         return;
     }
 
-    const confirmed = await Confirm.show({
+    await Confirm.show({
         title: 'Delete Project',
         message: 'Are you sure you want to delete this project?',
         type: 'danger',
         confirmText: 'Delete',
-        cancelText: 'Cancel'
-    });
-
-    if (confirmed) {
-        try {
+        cancelText: 'Cancel',
+        onConfirm: async () => {
             await api.deleteProject(projectId);
             loadAllProjects();
-        } catch (error) {
-            Toast.error('Failed to delete project: ' + error.message);
         }
-    }
+    });
 }
 
 async function confirmDeleteMeeting(meetingId) {
-    const confirmed = await Confirm.show({
+    await Confirm.show({
         title: 'Delete Meeting',
         message: 'This will permanently delete this meeting, all recordings, and transcripts. This cannot be undone.\n\nAre you sure?',
         type: 'danger',
         confirmText: 'Delete',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        onConfirm: async () => {
+            await api.permanentDeleteMeeting(meetingId);
+            loadAllProjects();
+        }
     });
-
-    if (confirmed) {
-        permanentDeleteMeeting(meetingId);
-    }
 }
 
 async function confirmPermanentDeleteMeeting(meetingId) {
-    const confirmed = await Confirm.show({
+    await Confirm.show({
         title: 'Permanent Delete',
         message: 'WARNING: This will PERMANENTLY delete this meeting and all associated recordings. This action cannot be undone!\n\nAre you sure you want to permanently delete this meeting?',
         type: 'danger',
         confirmText: 'Delete Forever',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        onConfirm: async () => {
+            await api.permanentDeleteMeeting(meetingId);
+            loadAllProjects();
+        }
     });
-
-    if (confirmed) {
-        permanentDeleteMeeting(meetingId);
-    }
 }
 
 async function deleteMeeting(meetingId) {
