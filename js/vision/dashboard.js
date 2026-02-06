@@ -1084,15 +1084,9 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
 // ============================================
 
 async function confirmDeleteProject(projectId) {
-    const meetings = await api.getProjectMeetings(projectId);
-    if (meetings && meetings.length > 0) {
-        Toast.warning(`Cannot delete project. Please delete all ${meetings.length} meeting(s) individually first.`);
-        return;
-    }
-
     await Confirm.show({
         title: 'Delete Project',
-        message: 'Are you sure you want to delete this project?',
+        message: 'This will permanently delete this project, all its meetings, recordings, and transcripts. This cannot be undone.\n\nAre you sure?',
         type: 'danger',
         confirmText: 'Delete',
         cancelText: 'Cancel',
