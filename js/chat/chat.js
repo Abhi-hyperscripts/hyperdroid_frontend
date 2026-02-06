@@ -243,11 +243,19 @@ function renderConversations(convos) {
         const time = conv.last_message ? formatTime(conv.last_message.created_at) : '';
         const unread = conv.unread_count || 0;
 
+        // Presence status for direct chats
+        let statusAttr = '';
+        if (!isGroup) {
+            const otherUser = conv.participants?.find(p => p.user_id !== currentUser.userId);
+            const status = otherUser?.user_status?.toLowerCase() || 'offline';
+            statusAttr = ` data-status="${status}"`;
+        }
+
         return `
             <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}"
                  onclick="selectConversation('${conv.id}')"
                  data-conversation-id="${conv.id}">
-                <div class="conversation-avatar ${isGroup ? 'group' : ''}">
+                <div class="conversation-avatar ${isGroup ? 'group' : ''}"${statusAttr}>
                     ${initials}
                 </div>
                 <div class="conversation-info">
@@ -372,10 +380,12 @@ async function loadConversationDetails(conversationId) {
 
         if (isGroup) {
             const memberCount = conv.participants?.length || 0;
-            document.getElementById('chatHeaderStatus').textContent = `${memberCount} members`;
+            document.getElementById('chatHeaderStatus').innerHTML = `${memberCount} members`;
         } else {
             const otherUser = conv.participants?.find(p => p.user_id !== currentUser.userId);
-            document.getElementById('chatHeaderStatus').textContent = otherUser?.user_status || 'Offline';
+            const status = otherUser?.user_status || 'Offline';
+            const statusClass = status.toLowerCase() === 'online' ? 'online' : status.toLowerCase() === 'away' ? 'away' : '';
+            document.getElementById('chatHeaderStatus').innerHTML = `<span class="status-dot ${statusClass}"></span>${escapeHtml(status)}`;
         }
     } catch (error) {
         console.error('Error loading conversation details:', error);
@@ -577,7 +587,7 @@ function handleMessageKeydown(event) {
 
 function autoResizeTextarea(textarea) {
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
 }
 
 function handleTyping() {
@@ -1146,13 +1156,17 @@ function updateUserStatusUI(userId, status) {
         }
     });
 
+    // Re-render conversation list to update presence dots
+    renderConversations(showingArchived ? archivedConversations : conversations);
+
     // Update header if current conversation
     if (currentConversationId) {
         const conv = conversations.find(c => c.id === currentConversationId);
         if (conv && conv.conversation_type === 'direct') {
             const other = conv.participants?.find(p => p.user_id === userId);
             if (other) {
-                document.getElementById('chatHeaderStatus').textContent = status;
+                const statusClass = status.toLowerCase() === 'online' ? 'online' : status.toLowerCase() === 'away' ? 'away' : '';
+                document.getElementById('chatHeaderStatus').innerHTML = `<span class="status-dot ${statusClass}"></span>${escapeHtml(status)}`;
             }
         }
     }
@@ -1397,3 +1411,62 @@ document.addEventListener('click', (e) => {
         searchResults.classList.remove('show');
     }
 });
+
+// ============================================
+// Drag & Drop File Upload
+// ============================================
+
+(function initDragDrop() {
+    const chatMain = document.getElementById('chatMain');
+    const overlay = document.getElementById('chatDragOverlay');
+    if (!chatMain || !overlay) return;
+
+    let dragCounter = 0;
+
+    chatMain.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+        if (currentConversationId) {
+            overlay.classList.add('active');
+        }
+    });
+
+    chatMain.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+        if (dragCounter <= 0) {
+            dragCounter = 0;
+            overlay.classList.remove('active');
+        }
+    });
+
+    chatMain.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    chatMain.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        overlay.classList.remove('active');
+
+        if (!currentConversationId) {
+            showToast('Select a conversation first', 'error');
+            return;
+        }
+
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.size > MAX_FILE_SIZE) {
+                showToast('File size exceeds 100MB limit', 'error');
+                return;
+            }
+            showFilePreview(file);
+            uploadFile(file);
+        }
+    });
+})();

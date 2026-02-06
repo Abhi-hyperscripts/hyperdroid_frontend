@@ -8,11 +8,11 @@
 // Environment configurations
 const ENVIRONMENTS = {
     local: {
-        auth: 'http://localhost:5098',
-        vision: 'http://localhost:5099',
-        drive: 'http://localhost:5100',
-        chat: 'http://localhost:5102',
-        hrms: 'http://localhost:5104'
+        auth: 'https://localhost:5098',
+        vision: 'https://localhost:5099',
+        drive: 'https://localhost:5100',
+        chat: 'https://localhost:5102',
+        hrms: 'https://localhost:5104'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',

@@ -4,7 +4,7 @@
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
 
     <!-- Favicons -->
@@ -75,13 +75,66 @@
 
         <!-- Main Chat Area -->
         <div class="chat-main" id="chatMain">
+            <!-- Drag & Drop Overlay -->
+            <div class="chat-drag-overlay" id="chatDragOverlay">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Drop file to upload</span>
+            </div>
+
             <!-- Empty State (shown when no conversation selected) -->
             <div class="chat-empty-state" id="chatEmptyState">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <h3>Welcome to Chat</h3>
-                <p>Select a conversation or start a new one</p>
+                <!-- Ambient glow orbs -->
+                <div class="empty-state-orb empty-state-orb-1"></div>
+                <div class="empty-state-orb empty-state-orb-2"></div>
+
+                <!-- Bento grid -->
+                <div class="empty-state-bento">
+                    <!-- Main card -->
+                    <div class="bento-card bento-card-main">
+                        <div class="bento-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <h3>Welcome to Chat</h3>
+                        <p>Select a conversation or start a new one</p>
+                    </div>
+
+                    <!-- Feature cards row -->
+                    <div class="bento-row">
+                        <div class="bento-card bento-card-sm">
+                            <div class="bento-card-sm-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                            </div>
+                            <span>Direct & Group</span>
+                        </div>
+                        <div class="bento-card bento-card-sm">
+                            <div class="bento-card-sm-icon bento-icon-purple">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                                </svg>
+                            </div>
+                            <span>Share Files</span>
+                        </div>
+                        <div class="bento-card bento-card-sm">
+                            <div class="bento-card-sm-icon bento-icon-green">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                            </div>
+                            <span>Encrypted</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Active Chat (hidden by default) -->
