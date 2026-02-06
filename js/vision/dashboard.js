@@ -1111,14 +1111,14 @@ async function confirmDeleteProject(projectId) {
 async function confirmDeleteMeeting(meetingId) {
     const confirmed = await Confirm.show({
         title: 'Delete Meeting',
-        message: 'Are you sure you want to delete this meeting? (This will mark it as inactive)',
+        message: 'This will permanently delete this meeting, all recordings, and transcripts. This cannot be undone.\n\nAre you sure?',
         type: 'danger',
         confirmText: 'Delete',
         cancelText: 'Cancel'
     });
 
     if (confirmed) {
-        deleteMeeting(meetingId);
+        permanentDeleteMeeting(meetingId);
     }
 }
 
@@ -1138,7 +1138,7 @@ async function confirmPermanentDeleteMeeting(meetingId) {
 
 async function deleteMeeting(meetingId) {
     try {
-        await api.deleteMeeting(meetingId);
+        await api.permanentDeleteMeeting(meetingId);
         loadAllProjects();
     } catch (error) {
         Toast.error('Failed to delete meeting: ' + error.message);
