@@ -1009,8 +1009,8 @@ body.chat-page::after {
     gap: 10px;
     max-width: 70%;
     min-width: 0;
+    flex-shrink: 0;
     animation: messageSlideIn 0.25s ease-out;
-    overflow: hidden;
 }
 
 @keyframes messageSlideIn {
@@ -1959,18 +1959,20 @@ body.chat-page::after {
 
 .conversations-list::-webkit-scrollbar,
 .chat-messages::-webkit-scrollbar {
-    width: 5px;
+    width: 8px;
 }
 
 .conversations-list::-webkit-scrollbar-track,
 .chat-messages::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
 }
 
 .conversations-list::-webkit-scrollbar-thumb,
 .chat-messages::-webkit-scrollbar-thumb {
     background: var(--border-color);
-    border-radius: 3px;
+    border-radius: 4px;
+    min-height: 40px;
 }
 
 .conversations-list::-webkit-scrollbar-thumb:hover,
@@ -2084,7 +2086,7 @@ body.chat-page::after {
     .chat-container {
         flex-direction: column;
         height: calc(100vh - 70px);
-        margin: 70px 0 0 0;
+        margin: 0;
         gap: 0;
         border-radius: 0;
     }
@@ -2251,6 +2253,7 @@ body.chat-page::after {
         display: block !important;
         min-width: 44px;
         min-height: 44px;
+        color: var(--text-primary);
     }
 
     .chat-sidebar-header {
@@ -2445,5 +2448,105 @@ body.chat-page::after {
     .chat-container {
         gap: var(--space-4);
         margin: 82px var(--space-4) var(--space-4) var(--space-4);
+    }
+}
+
+/* ============================================
+   Meeting Card Styles
+   ============================================ */
+
+.meeting-card-message .message-content {
+    overflow: visible;
+}
+
+.chat-messages .meeting-card {
+    display: block;
+    width: 280px;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    margin-top: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: none;
+    position: static;
+    z-index: auto;
+}
+
+.chat-messages .meeting-card:hover {
+    border-color: #4a9eff;
+    background: transparent;
+    box-shadow:
+        0 0 12px rgba(74, 158, 255, 0.4),
+        0 0 30px rgba(74, 158, 255, 0.15);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.meeting-card-banner {
+    width: 100%;
+    line-height: 0;
+    font-size: 0;
+}
+
+.meeting-card-banner-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 7px 7px 0 0;
+}
+
+.meeting-card-join-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 10px;
+    background: var(--gradient-primary, linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)));
+    color: var(--text-inverse);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    border-radius: 0 0 7px 7px;
+}
+
+.meeting-card-join-btn svg {
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+/* Own message meeting card */
+.chat-messages .message.own .meeting-card {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.chat-messages .message.own .meeting-card:hover {
+    border-color: #4a9eff;
+    box-shadow:
+        0 0 12px rgba(74, 158, 255, 0.4),
+        0 0 30px rgba(74, 158, 255, 0.15);
+}
+
+/* Video call button loading state */
+.chat-header-actions button.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.chat-header-actions button.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .meeting-card {
+        width: 260px;
     }
 }

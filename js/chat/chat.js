@@ -15,6 +15,9 @@ let currentUser = null;
 let showingArchived = false;
 let pendingFileAttachment = null; // Stores file info while uploading/pending send
 
+// Video Call from Chat
+const MEETING_CARD_PREFIX = '::meeting_card::';
+
 // ============================================
 // Initialization
 // ============================================
@@ -239,7 +242,10 @@ function renderConversations(convos) {
         const isGroup = conv.conversation_type === 'group';
         const displayName = isGroup ? conv.group_name : getOtherParticipantName(conv);
         const initials = getInitials(displayName);
-        const preview = conv.last_message?.content || 'No messages yet';
+        let preview = conv.last_message?.content || 'No messages yet';
+        if (preview.startsWith(MEETING_CARD_PREFIX)) {
+            preview = '';
+        }
         const time = conv.last_message ? formatTime(conv.last_message.created_at) : '';
         const unread = conv.unread_count || 0;
 
@@ -439,6 +445,17 @@ function renderMessage(msg) {
                 <span>${escapeHtml(msg.content)}</span>
             </div>
         `;
+    }
+
+    // Detect meeting card messages
+    if (msg.content && msg.content.startsWith(MEETING_CARD_PREFIX)) {
+        try {
+            const cardJson = msg.content.substring(MEETING_CARD_PREFIX.length);
+            const cardData = JSON.parse(cardJson);
+            return renderMeetingCard(msg, cardData, isOwn, senderName, time);
+        } catch (e) {
+            // Parse failed — fall through to normal text rendering
+        }
     }
 
     // Render file attachment if present
@@ -986,6 +1003,7 @@ function showChatInfo() {
             </div>
         `;
         leaveBtn.style.display = 'block';
+        leaveBtn.closest('.chat-modal-footer').style.display = '';
     } else {
         const otherUser = conv.participants?.find(p => p.user_id !== currentUser.userId);
         content.innerHTML = `
@@ -998,6 +1016,7 @@ function showChatInfo() {
             </div>
         `;
         leaveBtn.style.display = 'none';
+        leaveBtn.closest('.chat-modal-footer').style.display = 'none';
     }
 
     const infoEl = document.getElementById('chatInfoModal');
@@ -1196,6 +1215,102 @@ function goBackToList() {
 window.addEventListener('resize', handleResponsive);
 
 // Local showToast removed - using unified toast.js instead
+
+// ============================================
+// Video Call from Chat
+// ============================================
+
+async function startVideoCall() {
+    if (!currentConversationId) {
+        showToast('Select a conversation first', 'error');
+        return;
+    }
+
+    const conv = conversations.find(c => c.id === currentConversationId);
+    if (!conv || !conv.participants || conv.participants.length === 0) {
+        showToast('Conversation not loaded yet', 'error');
+        return;
+    }
+
+    if (!signalRConnection || signalRConnection.state !== signalR.HubConnectionState.Connected) {
+        showToast('Not connected to chat server', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('startVideoCallBtn');
+    if (!btn || btn.classList.contains('loading')) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+        // Call Chat backend to create meeting via Vision gRPC
+        const result = await api.request(`/chat/conversations/${currentConversationId}/video-call`, {
+            method: 'POST'
+        });
+
+        if (!result.success || !result.meeting_id) {
+            throw new Error(result.error || 'Failed to create video call');
+        }
+
+        // Build full join link and send meeting card via SignalR
+        const meetingLink = `${window.location.origin}${result.meeting_link}`;
+
+        const cardData = {
+            meetingId: result.meeting_id,
+            meetingName: result.meeting_name,
+            meetingLink: meetingLink,
+            createdByName: currentUser.firstName
+                ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim()
+                : currentUser.email
+        };
+
+        const messageContent = MEETING_CARD_PREFIX + JSON.stringify(cardData);
+        await signalRConnection.invoke('SendMessage', currentConversationId, messageContent, 'text', null, null, null, null, null);
+
+    } catch (error) {
+        console.error('Error starting video call:', error);
+        if (error.status === 403) {
+            showToast('You don\'t have access to video calls', 'error');
+        } else {
+            showToast('Failed to start video call', 'error');
+        }
+    } finally {
+        if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+}
+
+function renderMeetingCard(msg, cardData, isOwn, senderName, time) {
+    const initials = getInitials(senderName);
+    const meetingLink = escapeHtml(cardData.meetingLink || '#');
+    const meetingName = escapeHtml(cardData.meetingName || 'Video Call');
+    const createdBy = escapeHtml(cardData.createdByName || senderName);
+
+    return `
+        <div class="message meeting-card-message ${isOwn ? 'own' : ''}" data-message-id="${msg.id}">
+            <div class="message-avatar">${initials}</div>
+            <div class="message-content">
+                <span class="message-sender">${escapeHtml(senderName)}</span>
+                <a href="${meetingLink}" target="_blank" rel="noopener noreferrer" class="meeting-card">
+                    <div class="meeting-card-banner">
+                        <img src="/assets/og-vision.png" alt="Ragenaizer Video Call" class="meeting-card-banner-img">
+                    </div>
+                    <div class="meeting-card-join-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                        Join Meeting
+                    </div>
+                </a>
+                <span class="message-time">${time}</span>
+            </div>
+        </div>
+    `;
+}
 
 // ============================================
 // File Attachment Handling
