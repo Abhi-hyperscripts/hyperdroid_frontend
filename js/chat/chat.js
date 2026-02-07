@@ -45,6 +45,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Connect to SignalR
     await connectSignalR();
 
+    // Auto-select conversation from URL parameter (e.g., from push notification click)
+    const urlParams = new URLSearchParams(window.location.search);
+    const conversationParam = urlParams.get('conversation');
+    if (conversationParam) {
+        await selectConversation(conversationParam);
+        // Clean up URL without reloading
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+
     // Handle responsive back button
     handleResponsive();
 });

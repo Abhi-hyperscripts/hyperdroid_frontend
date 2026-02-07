@@ -45,15 +45,28 @@ self.addEventListener('notificationclick', (event) => {
 
     // Navigate to the app or specific page based on notification data
     const urlToOpen = event.notification.data?.url || '/pages/home.html';
+    const isChatNotification = event.notification.data?.notification_type === 'chat_message';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // If a window is already open, focus it
+            // For chat notifications, try to find an existing chat tab and navigate it
+            if (isChatNotification) {
+                for (const client of clientList) {
+                    if (client.url.includes('/pages/chat/chat.html') && 'focus' in client) {
+                        client.navigate(self.location.origin + urlToOpen);
+                        return client.focus();
+                    }
+                }
+            }
+
+            // Try to find any existing app tab and navigate it
             for (const client of clientList) {
                 if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    client.navigate(self.location.origin + urlToOpen);
                     return client.focus();
                 }
             }
+
             // Otherwise open a new window
             return clients.openWindow(urlToOpen);
         })
