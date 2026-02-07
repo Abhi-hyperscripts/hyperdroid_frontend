@@ -322,22 +322,36 @@ const Navigation = {
     _showSwVersion() {
         if (!('serviceWorker' in navigator)) return;
 
-        const handler = (event) => {
+        const updateEl = (version) => {
+            const el = document.getElementById('navSwVersion');
+            if (el) el.textContent = 'v' + version;
+        };
+
+        // Use MessageChannel for reliable two-way comms (works even when page is uncontrolled)
+        const askVersion = (sw) => {
+            const channel = new MessageChannel();
+            channel.port1.onmessage = (event) => {
+                if (event.data?.type === 'SW_VERSION') {
+                    updateEl(event.data.version);
+                }
+            };
+            sw.postMessage('GET_VERSION', [channel.port2]);
+        };
+
+        // Also listen for broadcast responses (fallback)
+        navigator.serviceWorker.addEventListener('message', function handler(event) {
             if (event.data?.type === 'SW_VERSION') {
                 navigator.serviceWorker.removeEventListener('message', handler);
-                const el = document.getElementById('navSwVersion');
-                if (el) el.textContent = 'v' + event.data.version;
+                updateEl(event.data.version);
             }
-        };
-        navigator.serviceWorker.addEventListener('message', handler);
+        });
 
         const sw = navigator.serviceWorker.controller;
         if (sw) {
-            sw.postMessage('GET_VERSION');
+            askVersion(sw);
         } else {
-            // SW not yet controlling — wait for it
             navigator.serviceWorker.ready.then((reg) => {
-                if (reg.active) reg.active.postMessage('GET_VERSION');
+                if (reg.active) askVersion(reg.active);
             });
         }
     },

@@ -234,10 +234,28 @@ async function checkForUpdate() {
 // ── Handle messages from clients ──
 self.addEventListener('message', (event) => {
     if (event.data === 'GET_VERSION') {
-        event.source.postMessage({
-            type: 'SW_VERSION',
-            version: APP_VERSION
-        });
+        // Use MessageChannel port if available (works for uncontrolled clients)
+        if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({
+                type: 'SW_VERSION',
+                version: APP_VERSION
+            });
+        } else if (event.source) {
+            event.source.postMessage({
+                type: 'SW_VERSION',
+                version: APP_VERSION
+            });
+        } else {
+            // Broadcast to all clients as last resort
+            self.clients.matchAll({ type: 'window' }).then((clients) => {
+                clients.forEach((client) => {
+                    client.postMessage({
+                        type: 'SW_VERSION',
+                        version: APP_VERSION
+                    });
+                });
+            });
+        }
     }
 
     if (event.data === 'SKIP_WAITING') {
