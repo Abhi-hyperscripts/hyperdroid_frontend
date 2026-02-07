@@ -265,22 +265,39 @@ firebase.initializeApp({
     measurementId: "G-60658KXB0N"
 });
 
-const messaging = firebase.messaging();
+// NOTE: We intentionally do NOT use firebase.messaging().onBackgroundMessage()
+// because when FCM payload includes a "notification" field, the browser
+// auto-displays it AND onBackgroundMessage fires, causing DUPLICATE notifications.
+// Instead, we use a raw "push" event listener to handle all push messages ourselves.
 
-// Handle background messages (when page is not focused or closed)
-messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Background message received:', payload);
+self.addEventListener('push', (event) => {
+    // If no data, skip
+    if (!event.data) return;
+
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        console.error('[SW] Failed to parse push data:', e);
+        return;
+    }
+
+    console.log('[SW] Push received:', payload);
 
     const notificationTitle = payload.notification?.title || payload.data?.title || 'Ragenaizer';
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || '',
         icon: '/assets/notification-icon.png',
         badge: '/assets/favicon-32x32.png',
-        tag: payload.data?.tag || 'ragenaizer-notification',
+        tag: payload.data?.tag || payload.fcmMessageId || 'ragenaizer-notification',
+        renotify: false,
         data: payload.data || {}
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    // Show exactly one notification
+    event.waitUntil(
+        self.registration.showNotification(notificationTitle, notificationOptions)
+    );
 });
 
 // Handle notification click
