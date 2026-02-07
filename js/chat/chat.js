@@ -84,11 +84,17 @@ async function connectSignalR() {
 
         signalRConnection = new signalR.HubConnectionBuilder()
             .withUrl(hubUrl, {
-                accessTokenFactory: () => getAuthToken()
+                accessTokenFactory: () => getAuthToken(),
+                // Allow fallback to Long Polling when WebSocket is killed (iOS PWA)
+                transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
             })
-            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+            .withAutomaticReconnect([0, 1000, 2000, 5000, 5000, 10000, 10000, 30000])
             .configureLogging(signalR.LogLevel.Warning)
             .build();
+
+        // Lower timeouts so dead connections are detected faster (defaults: 30s/15s)
+        signalRConnection.serverTimeoutInMilliseconds = 15000;
+        signalRConnection.keepAliveIntervalInMilliseconds = 5000;
 
         // Event handlers
         signalRConnection.on('MessageReceived', handleMessageReceived);
@@ -127,13 +133,13 @@ async function connectSignalR() {
         signalRConnection.onclose(async () => {
             console.log('SignalR connection closed');
             showDisconnectedBanner();
-            // Attempt manual reconnect after a delay
+            // Attempt manual reconnect quickly (auto-reconnect already exhausted)
             setTimeout(() => {
                 if (!signalRConnection || signalRConnection.state === signalR.HubConnectionState.Disconnected) {
                     console.log('Attempting manual SignalR reconnect...');
                     reconnectSignalR();
                 }
-            }, 5000);
+            }, 1000);
         });
 
         await signalRConnection.start();
@@ -1271,8 +1277,7 @@ async function reconnectSignalR() {
         }
     } catch (error) {
         console.error('Manual reconnect failed:', error);
-        // Retry after exponential backoff (capped at 30s)
-        setTimeout(() => reconnectSignalR(), 15000);
+        setTimeout(() => reconnectSignalR(), 5000);
     }
 }
 
@@ -1294,28 +1299,41 @@ function hideDisconnectedBanner() {
 }
 
 // Handle mobile browser tab backgrounding / foregrounding
+// iOS Safari aggressively kills WebSocket connections when PWA is backgrounded.
+// The connection state may still report "Connected" even though the socket is dead.
+// We must actively probe the connection to detect this.
 document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible') return;
 
-    console.log('Page became visible — checking SignalR state');
+    console.log('[Chat] Page became visible — checking SignalR state');
 
     if (!signalRConnection) return;
 
     const state = signalRConnection.state;
     if (state === signalR.HubConnectionState.Disconnected) {
-        // Connection died while backgrounded — restart
         await reconnectSignalR();
-    } else if (state === signalR.HubConnectionState.Connected) {
-        // Connection survived but we may have missed messages
-        await loadConversations();
-        if (currentConversationId) {
-            try {
+        return;
+    }
+
+    if (state === signalR.HubConnectionState.Connected) {
+        // Probe the connection — if the socket is dead this will fail fast
+        try {
+            await Promise.race([
+                signalRConnection.invoke('Ping'),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Ping timeout')), 3000))
+            ]);
+            // Connection is alive — just refresh data we may have missed
+            await loadConversations();
+            if (currentConversationId) {
                 await signalRConnection.invoke('JoinConversation', currentConversationId);
                 await loadMessages(currentConversationId);
                 await loadConversationDetails(currentConversationId);
-            } catch (err) {
-                console.error('Error refreshing after visibility change:', err);
             }
+        } catch (err) {
+            console.warn('[Chat] Connection appears dead after background, forcing reconnect:', err.message);
+            // Stop the dead connection and reconnect
+            try { await signalRConnection.stop(); } catch (_) {}
+            await reconnectSignalR();
         }
     }
     // If Connecting or Reconnecting, let the built-in handlers deal with it
