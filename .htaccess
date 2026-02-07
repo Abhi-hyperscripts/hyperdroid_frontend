@@ -9,7 +9,7 @@
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
 
-    # JSON files (version.json, manifest.json) - never cache
+    # JSON files (manifest.json) - never cache
     <FilesMatch "\.(json)$">
         Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     </FilesMatch>

@@ -317,18 +317,15 @@ const Navigation = {
     },
 
     /**
-     * Fetch app version from version.json and display it in the nav dropdown
+     * Display SW_VERSION from config.js in the nav dropdown.
+     * config.js is loaded as a script tag on every page, so SW_VERSION is a global.
      */
     _showSwVersion() {
         const el = document.getElementById('navSwVersion');
         if (!el) return;
-
-        fetch('/version.json?_=' + Date.now(), { cache: 'no-store' })
-            .then((res) => res.ok ? res.json() : null)
-            .then((data) => {
-                if (data?.version) el.textContent = 'v' + data.version;
-            })
-            .catch(() => { /* offline — leave as v-- */ });
+        if (typeof SW_VERSION !== 'undefined') {
+            el.textContent = 'v' + SW_VERSION;
+        }
     },
 
     /**

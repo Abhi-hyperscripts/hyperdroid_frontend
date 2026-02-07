@@ -4,9 +4,11 @@
 // ============================================================
 
 // ── App Version ──
-// INCREMENT THIS on every deploy that changes JS/CSS/HTML files.
-// The SW will detect the version change and refresh all caches.
-const APP_VERSION = '1.0.0';
+// This MUST match SW_VERSION in /js/config.js.
+// When you deploy, increment SW_VERSION in config.js AND here.
+// The SW fetches config.js every 30s to detect mismatches.
+// SW_VERSION_MARKER: v1
+const APP_VERSION = 1;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
@@ -27,6 +29,7 @@ const PRECACHE_ASSETS = [
     '/js/cache-buster.js',
     '/js/firebase-init.js',
     '/js/cookie-consent.js',
+    '/js/sw-update.js',
     '/assets/brand_logo.png',
     '/assets/notification-icon.png',
     '/assets/favicon-32x32.png',
@@ -41,7 +44,6 @@ const NO_CACHE_PATTERNS = [
     /googleapis\.com/,   // Google APIs
     /gstatic\.com/,      // Firebase SDK (let browser handle)
     /cdn\.jsdelivr/,     // CDN resources (let browser handle)
-    /version\.json/,     // Always fetch fresh
     /chrome-extension/,  // Browser extensions
 ];
 
@@ -179,7 +181,7 @@ function stripVersionQuery(request) {
 }
 
 // ============================================================
-// VERSION CHECK — Poll /version.json every 30 seconds
+// VERSION CHECK — Fetch /js/config.js every 30 seconds, parse SW_VERSION
 // ============================================================
 function startVersionCheckLoop() {
     if (versionCheckTimer) clearInterval(versionCheckTimer);
@@ -194,15 +196,18 @@ function startVersionCheckLoop() {
 
 async function checkForUpdate() {
     try {
-        const response = await fetch('/version.json?_=' + Date.now(), {
+        const response = await fetch('/js/config.js?_=' + Date.now(), {
             cache: 'no-store',
             headers: { 'Cache-Control': 'no-cache' }
         });
 
         if (!response.ok) return;
 
-        const data = await response.json();
-        const serverVersion = data.version;
+        const text = await response.text();
+        const match = text.match(/const\s+SW_VERSION\s*=\s*(\d+)/);
+        if (!match) return;
+
+        const serverVersion = parseInt(match[1], 10);
 
         if (serverVersion && serverVersion !== APP_VERSION) {
             console.log(`[SW] New version detected! Current: ${APP_VERSION}, Server: ${serverVersion}`);
@@ -233,31 +238,6 @@ async function checkForUpdate() {
 
 // ── Handle messages from clients ──
 self.addEventListener('message', (event) => {
-    if (event.data === 'GET_VERSION') {
-        // Use MessageChannel port if available (works for uncontrolled clients)
-        if (event.ports && event.ports[0]) {
-            event.ports[0].postMessage({
-                type: 'SW_VERSION',
-                version: APP_VERSION
-            });
-        } else if (event.source) {
-            event.source.postMessage({
-                type: 'SW_VERSION',
-                version: APP_VERSION
-            });
-        } else {
-            // Broadcast to all clients as last resort
-            self.clients.matchAll({ type: 'window' }).then((clients) => {
-                clients.forEach((client) => {
-                    client.postMessage({
-                        type: 'SW_VERSION',
-                        version: APP_VERSION
-                    });
-                });
-            });
-        }
-    }
-
     if (event.data === 'SKIP_WAITING') {
         self.skipWaiting();
     }
