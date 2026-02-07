@@ -329,7 +329,7 @@ async function setupForegroundMessageHandler(callback) {
             if (Notification.permission === 'granted') {
                 new Notification(title, {
                     body: body,
-                    icon: '/assets/notification-icon.png',
+                    icon: '/assets/notification-icon-v2.png',
                     tag: 'ragenaizer-foreground',
                     data: payload.data || {}
                 });

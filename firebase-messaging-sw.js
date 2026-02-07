@@ -7,8 +7,8 @@
 // This MUST match SW_VERSION in /js/config.js.
 // When you deploy, increment SW_VERSION in config.js AND here.
 // The SW fetches config.js every 30s to detect mismatches.
-// SW_VERSION_MARKER: v3
-const APP_VERSION = 3;
+// SW_VERSION_MARKER: v4
+const APP_VERSION = 4;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
@@ -32,7 +32,7 @@ const PRECACHE_ASSETS = [
     '/js/sw-update.js',
     '/js/pwa-install-prompt.js',
     '/assets/brand_logo.png',
-    '/assets/notification-icon.png',
+    '/assets/notification-icon-v2.png',
     '/assets/favicon-32x32.png',
     '/assets/favicon-16x16.png',
     '/manifest.json'
@@ -278,7 +278,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.data?.title || 'Ragenaizer';
     const notificationOptions = {
         body: payload.data?.body || '',
-        icon: payload.data?.icon || '/assets/notification-icon.png',
+        icon: payload.data?.icon || '/assets/notification-icon-v2.png',
         badge: '/assets/favicon-32x32.png',
         tag: payload.data?.tag || 'ragenaizer-notification',
         data: payload.data || {}
