@@ -7,8 +7,8 @@
 // This MUST match SW_VERSION in /js/config.js.
 // When you deploy, increment SW_VERSION in config.js AND here.
 // The SW fetches config.js every 30s to detect mismatches.
-// SW_VERSION_MARKER: v5
-const APP_VERSION = 5;
+// SW_VERSION_MARKER: v6
+const APP_VERSION = 6;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
