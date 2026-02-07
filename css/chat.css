@@ -57,12 +57,14 @@ body.chat-page::after {
     max-width: 340px;
     display: flex;
     flex-direction: column;
-    background: var(--glass-bg-strong);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-radius: var(--border-radius-xl);
-    border: 1px solid var(--border-color-light);
-    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: hidden;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
@@ -81,10 +83,6 @@ body.chat-page::after {
     font-weight: var(--font-weight-bold);
     margin: 0;
     color: var(--text-primary);
-    background: var(--gradient-card-highlight);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .chat-sidebar-header.archived-view h2 {
@@ -213,7 +211,6 @@ body.chat-page::after {
 .conversations-list {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-2);
 }
 
 /* Conversation Item — Bento Card Hover */
@@ -233,8 +230,19 @@ body.chat-page::after {
 .conversation-item:hover {
     background: var(--hover-overlay);
     transform: translateX(4px);
-    border-color: var(--border-color-light);
     box-shadow: var(--shadow-xs);
+}
+
+@media (max-width: 768px) {
+    .conversation-item:hover {
+        transform: none;
+        box-shadow: none;
+        background: none;
+    }
+
+    .conversation-item.active {
+        border-color: transparent;
+    }
 }
 
 .conversation-item.active {
@@ -2115,7 +2123,9 @@ body.chat-page::after {
         right: 0 !important;
         bottom: auto !important;
         z-index: 10;
-        background: var(--bg-card);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
         transform: translateX(0);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -2317,8 +2327,8 @@ body.chat-page::after {
    ============================================ */
 
 [data-theme="dark"] .chat-sidebar {
-    background: var(--glass-bg-strong);
-    border-color: var(--border-color);
+    background: rgba(30, 41, 59, 0.35);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .chat-main {
@@ -2438,7 +2448,7 @@ body.chat-page::after {
 /* Mobile dark mode sidebar fix */
 @media (max-width: 768px) {
     [data-theme="dark"] .chat-sidebar {
-        background: var(--bg-body);
+        background: rgba(30, 41, 59, 0.35);
     }
 }
 
