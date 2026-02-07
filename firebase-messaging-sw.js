@@ -259,11 +259,6 @@ self.addEventListener('message', (event) => {
 self.addEventListener('push', (event) => {
     console.log('[SW] Push event received');
 
-    // CRITICAL: Stop Firebase's internal push handler from running.
-    // Without this, Firebase's handler sees data-only messages, does nothing,
-    // and Chrome shows "This site has been updated in the background".
-    event.stopImmediatePropagation();
-
     let title = 'Ragenaizer';
     let body = '';
     let icon = '/assets/notification-icon-v2.png';
@@ -317,12 +312,23 @@ firebase.initializeApp({
 // Required for getToken() on the main page.
 const messaging = firebase.messaging();
 
-// Register a no-op background handler so Firebase doesn't trigger Chrome's
-// default "This site has been updated in the background" notification.
-// The actual notification display is handled by the standard push listener above.
-messaging.onBackgroundMessage(() => {
-    // No-op — our push event listener (registered above) already showed the notification.
-    return Promise.resolve();
+// Firebase's internal push handler calls this for data-only messages.
+// If we don't show a notification here, Chrome shows its default
+// "This site has been updated in the background" notification.
+// Using the same tag as our push handler so it REPLACES (not duplicates).
+messaging.onBackgroundMessage((payload) => {
+    const d = payload.data || {};
+    const n = payload.notification || {};
+    return self.registration.showNotification(
+        d.title || n.title || 'Ragenaizer',
+        {
+            body: d.body || n.body || '',
+            icon: d.icon || n.icon || '/assets/notification-icon-v2.png',
+            badge: '/assets/favicon-32x32.png',
+            tag: d.tag || 'ragenaizer-notification',
+            data: d
+        }
+    );
 });
 
 // Handle notification click
