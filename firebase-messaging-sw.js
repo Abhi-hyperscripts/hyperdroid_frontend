@@ -30,6 +30,7 @@ const PRECACHE_ASSETS = [
     '/js/firebase-init.js',
     '/js/cookie-consent.js',
     '/js/sw-update.js',
+    '/js/pwa-install-prompt.js',
     '/assets/brand_logo.png',
     '/assets/notification-icon.png',
     '/assets/favicon-32x32.png',
