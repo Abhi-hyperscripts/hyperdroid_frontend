@@ -2108,11 +2108,11 @@ body.chat-page::after {
 
     body.chat-page .chat-container {
         flex-direction: column !important;
-        height: calc(100vh - 70px) !important;
-        height: calc(100dvh - 70px) !important; /* Dynamic viewport for mobile address bar */
+        height: calc(100vh - var(--chat-navbar-height, 70px)) !important;
+        height: calc(100dvh - var(--chat-navbar-height, 70px)) !important;
         width: 100% !important;
         max-width: 100vw !important;
-        margin: 70px 0 0 0 !important; /* Top margin to clear fixed navbar */
+        margin: var(--chat-navbar-height, 70px) 0 0 0 !important;
         gap: 0 !important;
         border-radius: 0;
         overflow: hidden !important;

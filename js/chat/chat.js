@@ -51,7 +51,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initializeUserUI() {
     // Navigation is now handled by Navigation.init() in navigation.js
-    // This function is kept for any chat-specific UI initialization
+    // Dynamically measure navbar height and set CSS custom property
+    // so chat container positions correctly on all devices
+    adjustChatForNavbar();
+    window.addEventListener('resize', adjustChatForNavbar);
+}
+
+function adjustChatForNavbar() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    const navbarHeight = navbar.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--chat-navbar-height', navbarHeight + 'px');
 }
 
 // ============================================
