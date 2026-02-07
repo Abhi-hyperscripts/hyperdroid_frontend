@@ -259,6 +259,11 @@ self.addEventListener('message', (event) => {
 self.addEventListener('push', (event) => {
     console.log('[SW] Push event received');
 
+    // CRITICAL: Stop Firebase's internal push handler from running.
+    // Without this, Firebase's handler sees data-only messages, does nothing,
+    // and Chrome shows "This site has been updated in the background".
+    event.stopImmediatePropagation();
+
     let title = 'Ragenaizer';
     let body = '';
     let icon = '/assets/notification-icon-v2.png';
