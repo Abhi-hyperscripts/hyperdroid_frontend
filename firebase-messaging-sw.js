@@ -289,8 +289,24 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(
         self.registration.showNotification(title, { body, icon, badge, tag, data })
+            .then(() => cleanupAutoNotification())
     );
 });
+
+// Chrome WebAPK sometimes generates a phantom "This site has been updated in
+// the background" notification (tag: user_visible_auto_notification) alongside
+// our real notification. Proactively close it.
+async function cleanupAutoNotification() {
+    // Short delay to let Chrome create the auto-notification first
+    await new Promise((r) => setTimeout(r, 100));
+    const notifications = await self.registration.getNotifications();
+    for (const n of notifications) {
+        if (n.tag && n.tag.includes('user_visible_auto')) {
+            console.log('[SW] Closing Chrome auto-notification:', n.tag);
+            n.close();
+        }
+    }
+}
 
 // ============================================================
 // FIREBASE — Intentionally NOT imported in Service Worker
