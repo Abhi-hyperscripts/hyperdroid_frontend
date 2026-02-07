@@ -223,9 +223,16 @@
             showAccessibleModules();
 
             // Initialize Firebase push notifications
-            if (typeof requestNotificationPermission === 'function') {
-                requestNotificationPermission();
+            // Use ensureFcmTokenRegistered (checks localStorage first, no-op if already done)
+            if (typeof ensureFcmTokenRegistered === 'function') {
+                ensureFcmTokenRegistered();
                 setupForegroundMessageHandler();
+            } else if (typeof requestNotificationPermission === 'function') {
+                // Fallback for backward compatibility
+                requestNotificationPermission();
+                if (typeof setupForegroundMessageHandler === 'function') {
+                    setupForegroundMessageHandler();
+                }
             }
         });
 

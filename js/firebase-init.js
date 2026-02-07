@@ -1,14 +1,27 @@
 /**
  * Firebase Cloud Messaging (FCM) initialization for web push notifications.
  *
- * Dependencies: config.js (FIREBASE_CONFIG, FIREBASE_VAPID_KEY), api.js (api instance)
- * Loaded after api.js on authenticated pages.
+ * Dependencies: config.js (FIREBASE_CONFIG, FIREBASE_VAPID_KEY, STORAGE_PREFIX), api.js (api instance)
+ * Loaded after api.js on authenticated pages (login.html, home.html).
+ * Other pages bootstrap FCM via navigation.js dynamic loading.
  */
 
-// State
+// ==================== localStorage Keys ====================
+const _FCM_KEYS = {
+    token: `${STORAGE_PREFIX}fcm_token`,
+    registered: `${STORAGE_PREFIX}fcm_registered`,
+    permission: `${STORAGE_PREFIX}fcm_permission`,
+    failCount: `${STORAGE_PREFIX}fcm_fail_count`
+};
+
+// ==================== In-memory State ====================
 let _firebaseApp = null;
 let _messaging = null;
 let _currentFcmToken = null;
+let _fcmRegistrationInProgress = false;
+
+// Restore cached token from localStorage on load
+_currentFcmToken = localStorage.getItem(_FCM_KEYS.token) || null;
 
 /**
  * Load Firebase SDK scripts from CDN.
@@ -97,33 +110,106 @@ async function _registerServiceWorker() {
     }
 }
 
+// ==================== NEW: Split Functions ====================
+
 /**
- * Request notification permission and get FCM token.
- * Call this after login.
- * @returns {string|null} The FCM token, or null if permission denied or error.
+ * Request notification permission ONLY — no Firebase loading, no token.
+ * This is fast enough to await during login (just a browser dialog).
+ * @returns {string} 'granted', 'denied', or 'default'
  */
-async function requestNotificationPermission() {
+async function requestNotificationPermissionOnly() {
     try {
-        // Check if browser supports notifications
         if (!('Notification' in window)) {
             console.warn('[FCM] Notifications not supported in this browser');
+            return 'denied';
+        }
+
+        // Check if VAPID key is configured
+        if (!FIREBASE_VAPID_KEY || FIREBASE_VAPID_KEY === 'PASTE_YOUR_VAPID_KEY_HERE') {
+            console.warn('[FCM] VAPID key not configured. Skipping notification permission.');
+            return 'default';
+        }
+
+        // If already decided, return cached result without prompting
+        const current = Notification.permission;
+        if (current !== 'default') {
+            localStorage.setItem(_FCM_KEYS.permission, current);
+            console.log(`[FCM] Permission already ${current}`);
+            return current;
+        }
+
+        // Show the browser permission dialog
+        console.log('[FCM] Requesting notification permission...');
+        const permission = await Notification.requestPermission();
+        localStorage.setItem(_FCM_KEYS.permission, permission);
+        console.log(`[FCM] Permission result: ${permission}`);
+        return permission;
+    } catch (err) {
+        console.error('[FCM] Error requesting permission:', err);
+        return 'default';
+    }
+}
+
+/**
+ * Ensure FCM token is registered with the backend.
+ * Checks localStorage first — no-op if already registered (unless force=true).
+ * Does NOT prompt for permission — only proceeds if permission is 'granted'.
+ *
+ * @param {boolean} [force=false] - Force re-registration even if already registered
+ * @returns {string|null} The FCM token, or null if not registered
+ */
+async function ensureFcmTokenRegistered(force = false) {
+    try {
+        // Prevent concurrent registration attempts
+        if (_fcmRegistrationInProgress) {
+            console.log('[FCM] Registration already in progress, skipping');
+            return _currentFcmToken;
+        }
+
+        // Check if browser supports notifications
+        if (!('Notification' in window)) {
+            console.warn('[FCM] Notifications not supported');
             return null;
         }
 
         // Check if VAPID key is configured
         if (!FIREBASE_VAPID_KEY || FIREBASE_VAPID_KEY === 'PASTE_YOUR_VAPID_KEY_HERE') {
-            console.warn('[FCM] VAPID key not configured. Skipping push notification setup.');
+            console.warn('[FCM] VAPID key not configured');
             return null;
         }
 
-        // Request permission
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            console.log('[FCM] Notification permission denied');
+        // Check if already registered (fast path)
+        if (!force && localStorage.getItem(_FCM_KEYS.registered) === 'true' && _currentFcmToken) {
+            console.log('[FCM] Already registered, using cached token');
+            return _currentFcmToken;
+        }
+
+        // Check permission — don't prompt from random pages
+        const permission = Notification.permission;
+        if (permission === 'default') {
+            console.log('[FCM] Permission not yet requested, skipping (will prompt at login)');
+            return null;
+        }
+        if (permission === 'denied') {
+            console.log('[FCM] Permission denied, skipping');
             return null;
         }
 
-        console.log('[FCM] Notification permission granted');
+        // Check if user is authenticated
+        if (typeof api === 'undefined' || !api || !api.isAuthenticated()) {
+            console.warn('[FCM] Not authenticated, skipping registration');
+            return null;
+        }
+
+        // Check failure backoff (max 3 failures per session)
+        const failCount = parseInt(localStorage.getItem(_FCM_KEYS.failCount) || '0', 10);
+        if (failCount >= 3 && !force) {
+            console.warn(`[FCM] Too many failures (${failCount}), backing off`);
+            return null;
+        }
+
+        _fcmRegistrationInProgress = true;
+        console.log('[FCM] Starting full token registration...');
 
         // Initialize Firebase
         const messaging = await _initFirebase();
@@ -141,18 +227,49 @@ async function requestNotificationPermission() {
         if (token) {
             console.log('[FCM] Token acquired:', token.substring(0, 20) + '...');
             _currentFcmToken = token;
+            localStorage.setItem(_FCM_KEYS.token, token);
 
             // Register with backend
             await registerTokenWithBackend(token);
+
+            // Mark as registered
+            localStorage.setItem(_FCM_KEYS.registered, 'true');
+            localStorage.setItem(_FCM_KEYS.failCount, '0');
+            console.log('[FCM] Token registered successfully');
             return token;
         } else {
             console.warn('[FCM] No token received');
+            _incrementFailCount();
             return null;
         }
     } catch (err) {
-        console.error('[FCM] Error requesting notification permission:', err);
+        console.error('[FCM] Error during token registration:', err);
+        _incrementFailCount();
+        return null;
+    } finally {
+        _fcmRegistrationInProgress = false;
+    }
+}
+
+/**
+ * Increment the failure counter in localStorage.
+ */
+function _incrementFailCount() {
+    const current = parseInt(localStorage.getItem(_FCM_KEYS.failCount) || '0', 10);
+    localStorage.setItem(_FCM_KEYS.failCount, String(current + 1));
+}
+
+/**
+ * Request notification permission and get FCM token.
+ * BACKWARD-COMPATIBLE wrapper — calls both new functions.
+ * @returns {string|null} The FCM token, or null if permission denied or error.
+ */
+async function requestNotificationPermission() {
+    const permission = await requestNotificationPermissionOnly();
+    if (permission !== 'granted') {
         return null;
     }
+    return await ensureFcmTokenRegistered(true);
 }
 
 /**
@@ -170,6 +287,7 @@ async function registerTokenWithBackend(fcmToken) {
         console.log('[FCM] Token registered with backend:', result);
     } catch (err) {
         console.error('[FCM] Failed to register token with backend:', err);
+        throw err; // Re-throw so ensureFcmTokenRegistered can track the failure
     }
 }
 
@@ -216,17 +334,34 @@ async function setupForegroundMessageHandler(callback) {
 
 /**
  * Deactivate the current FCM token on the backend (call before logout).
+ * Also clears localStorage FCM state.
  */
 async function deactivateCurrentFcmToken() {
     try {
-        if (_currentFcmToken && api && api.isAuthenticated()) {
-            await api.deactivateDeviceToken(_currentFcmToken);
+        const tokenToDeactivate = _currentFcmToken || localStorage.getItem(_FCM_KEYS.token);
+        if (tokenToDeactivate && api && api.isAuthenticated()) {
+            await api.deactivateDeviceToken(tokenToDeactivate);
             console.log('[FCM] Token deactivated on backend');
         }
     } catch (err) {
         console.error('[FCM] Error deactivating token:', err);
     }
     _currentFcmToken = null;
+    // Clear localStorage FCM state
+    clearFcmState();
+}
+
+/**
+ * Clear all FCM-related localStorage keys.
+ * Called on logout so next login starts fresh.
+ */
+function clearFcmState() {
+    localStorage.removeItem(_FCM_KEYS.token);
+    localStorage.removeItem(_FCM_KEYS.registered);
+    localStorage.removeItem(_FCM_KEYS.permission);
+    localStorage.removeItem(_FCM_KEYS.failCount);
+    _currentFcmToken = null;
+    console.log('[FCM] State cleared');
 }
 
 /**

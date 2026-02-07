@@ -303,6 +303,10 @@ function clearAuthData() {
     if (typeof deactivateCurrentFcmToken === 'function') {
         deactivateCurrentFcmToken().catch(() => {});
     }
+    // Clear FCM localStorage state so next login starts fresh
+    if (typeof clearFcmState === 'function') {
+        clearFcmState();
+    }
     removeAuthToken();
     removeRefreshToken();
     removeTokenExpiry();

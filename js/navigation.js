@@ -98,6 +98,9 @@ const Navigation = {
                 this.updateOrganizationDisplay(orgInfo);
             }
         });
+
+        // Bootstrap FCM on all authenticated pages
+        this._ensureFcmInitialized(basePath);
     },
 
     /**
@@ -307,6 +310,73 @@ const Navigation = {
             clearAuthData();
             window.location.href = '/index.html';
         }
+    },
+
+    /**
+     * Bootstrap FCM token registration on any authenticated page.
+     * If firebase-init.js is already loaded (login.html, home.html), uses it directly.
+     * Otherwise dynamically loads the script first.
+     * Calls ensureFcmTokenRegistered() which is a no-op if already registered (localStorage check).
+     * @param {string} basePath - Base path for script URLs
+     */
+    async _ensureFcmInitialized(basePath = '') {
+        try {
+            // If ensureFcmTokenRegistered is already available, use it directly
+            if (typeof ensureFcmTokenRegistered === 'function') {
+                await ensureFcmTokenRegistered();
+                // Also set up foreground handler if available
+                if (typeof setupForegroundMessageHandler === 'function') {
+                    setupForegroundMessageHandler();
+                }
+                return;
+            }
+
+            // firebase-init.js not loaded — dynamically load it
+            // It depends on config.js (for FIREBASE_CONFIG, FIREBASE_VAPID_KEY, STORAGE_PREFIX)
+            // and api.js (for api instance), which should already be loaded on authenticated pages
+            if (typeof FIREBASE_CONFIG === 'undefined' || typeof api === 'undefined') {
+                console.log('[Nav/FCM] Prerequisites not loaded, skipping FCM init');
+                return;
+            }
+
+            // Use absolute path to avoid relative path resolution issues in subdirectories
+            const scriptPath = '/js/firebase-init.js';
+            await this._loadScript(scriptPath);
+
+            // Now the functions should be available
+            if (typeof ensureFcmTokenRegistered === 'function') {
+                await ensureFcmTokenRegistered();
+                if (typeof setupForegroundMessageHandler === 'function') {
+                    setupForegroundMessageHandler();
+                }
+            }
+        } catch (err) {
+            // Non-blocking — FCM failure should never break page functionality
+            console.warn('[Nav/FCM] Failed to initialize FCM:', err);
+        }
+    },
+
+    /**
+     * Dynamically load a script and return a promise that resolves when loaded.
+     * @param {string} src - Script URL
+     * @returns {Promise<void>}
+     */
+    _loadScript(src) {
+        return new Promise((resolve, reject) => {
+            // Avoid loading the same script twice
+            const existing = document.querySelector(`script[src*="${src.split('?')[0]}"]`);
+            if (existing) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            // Append cache buster if available
+            script.src = window.CACHE_VERSION ? `${src}?v=${CACHE_VERSION}` : src;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+            document.head.appendChild(script);
+        });
     },
 
     /**

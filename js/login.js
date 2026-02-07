@@ -100,13 +100,23 @@ async function handleFormSubmit() {
 
         if (response.success) {
             setButtonSuccess();
-            // Request notification permission after login (non-blocking)
-            if (typeof requestNotificationPermission === 'function') {
-                requestNotificationPermission().catch(() => {});
+
+            // Request notification permission before redirect.
+            // This ONLY shows the browser prompt — no Firebase loading.
+            // Race with 5s timeout as safety net.
+            if (typeof requestNotificationPermissionOnly === 'function') {
+                try {
+                    await Promise.race([
+                        requestNotificationPermissionOnly(),
+                        new Promise(resolve => setTimeout(resolve, 5000))
+                    ]);
+                } catch (e) {
+                    console.warn('[Login] Notification permission request failed:', e);
+                }
             }
-            setTimeout(() => {
-                window.location.href = 'home.html';
-            }, 500);
+
+            // Redirect immediately — full FCM registration happens on home.html / navigation.js
+            window.location.href = 'home.html';
         } else {
             Toast.error(response.message || 'Login failed');
             setButtonLoading(false);
