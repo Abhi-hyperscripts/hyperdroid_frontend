@@ -262,7 +262,7 @@
         wrapper.innerHTML = '<div class="pwa-install-prompt" id="pwaInstallPrompt">' +
             '<div class="pwa-install-content">' +
                 '<div class="pwa-install-icon-cell">' +
-                    '<img class="pwa-install-icon" src="/assets/android-chrome-192x192.png" alt="Ragenaizer">' +
+                    '<img class="pwa-install-icon" src="/assets/android-chrome-192x192-v2.png" alt="Ragenaizer">' +
                 '</div>' +
                 '<div class="pwa-install-text-cell">' +
                     '<strong>' + config.title + '</strong>' +
