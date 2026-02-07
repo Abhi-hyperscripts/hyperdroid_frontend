@@ -295,6 +295,19 @@ self.addEventListener('push', (event) => {
 // ============================================================
 // FIREBASE CLOUD MESSAGING (token management only)
 // ============================================================
+// Block Firebase from registering its own 'push' event listener.
+// Firebase's internal handler causes Chrome to show "This site has been
+// updated in the background" for data-only messages. Our push handler
+// above already handles everything.
+const _origAddEventListener = self.addEventListener.bind(self);
+self.addEventListener = function(type, fn, opts) {
+    if (type === 'push') {
+        console.log('[SW] Blocked Firebase internal push handler registration');
+        return;
+    }
+    return _origAddEventListener(type, fn, opts);
+};
+
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
@@ -312,24 +325,8 @@ firebase.initializeApp({
 // Required for getToken() on the main page.
 const messaging = firebase.messaging();
 
-// Firebase's internal push handler calls this for data-only messages.
-// If we don't show a notification here, Chrome shows its default
-// "This site has been updated in the background" notification.
-// Using the same tag as our push handler so it REPLACES (not duplicates).
-messaging.onBackgroundMessage((payload) => {
-    const d = payload.data || {};
-    const n = payload.notification || {};
-    return self.registration.showNotification(
-        d.title || n.title || 'Ragenaizer',
-        {
-            body: d.body || n.body || '',
-            icon: d.icon || n.icon || '/assets/notification-icon-v2.png',
-            badge: '/assets/favicon-32x32.png',
-            tag: d.tag || 'ragenaizer-notification',
-            data: d
-        }
-    );
-});
+// Restore original addEventListener now that Firebase is initialized.
+self.addEventListener = _origAddEventListener;
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {

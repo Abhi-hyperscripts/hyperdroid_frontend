@@ -10,7 +10,7 @@
 // this line via regex to detect updates. Without it, they can NEVER update.
 // The SW itself reads from /js/sw-version.js via importScripts.
 // IMPORTANT: Keep this value in sync with /js/sw-version.js!
-const SW_VERSION = 12;
+const SW_VERSION = 13;
 
 // Environment configurations
 const ENVIRONMENTS = {
