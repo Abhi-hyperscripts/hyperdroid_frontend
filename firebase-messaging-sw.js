@@ -247,7 +247,53 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================================
-// FIREBASE CLOUD MESSAGING
+// PUSH NOTIFICATIONS — Standard Web Push handler
+// ============================================================
+// CRITICAL: This listener MUST be registered BEFORE Firebase imports.
+// firebase.messaging() registers its own internal push handler. For
+// data-only messages it does nothing (no notification shown). iOS Safari
+// counts that as a "silent push" and revokes the push subscription
+// after 3 silent pushes. By registering our handler first, we guarantee
+// showNotification() is called via event.waitUntil() before Firebase's
+// handler runs, so iOS never considers it silent.
+self.addEventListener('push', (event) => {
+    console.log('[SW] Push event received');
+
+    let title = 'Ragenaizer';
+    let body = '';
+    let icon = '/assets/notification-icon-v2.png';
+    let badge = '/assets/favicon-32x32.png';
+    let tag = 'ragenaizer-notification';
+    let data = {};
+
+    try {
+        if (event.data) {
+            const payload = event.data.json();
+            console.log('[SW] Push payload:', JSON.stringify(payload));
+
+            // FCM data-only messages: payload.data contains our custom fields
+            const d = payload.data || {};
+            // FCM notification messages: payload.notification has title/body
+            const n = payload.notification || {};
+
+            title = d.title || n.title || title;
+            body  = d.body  || n.body  || body;
+            icon  = d.icon  || n.icon  || icon;
+            tag   = d.tag   || tag;
+            data  = d;
+        }
+    } catch (err) {
+        console.warn('[SW] Failed to parse push data:', err);
+        try { body = event.data?.text() || ''; } catch (_) {}
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(title, { body, icon, badge, tag, data })
+    );
+});
+
+// ============================================================
+// FIREBASE CLOUD MESSAGING (token management only)
 // ============================================================
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
@@ -263,27 +309,8 @@ firebase.initializeApp({
     measurementId: "G-60658KXB0N"
 });
 
+// Required for getToken() on the main page — do NOT call onBackgroundMessage()
 const messaging = firebase.messaging();
-
-// Handle background push notifications.
-// IMPORTANT: FCM messages MUST be sent as data-only (no "notification" field).
-// If "notification" field is present, the browser auto-displays it AND this
-// handler fires, causing DUPLICATE notifications. Data-only messages only
-// trigger this handler.
-messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Background message received:', payload);
-
-    const notificationTitle = payload.data?.title || 'Ragenaizer';
-    const notificationOptions = {
-        body: payload.data?.body || '',
-        icon: payload.data?.icon || '/assets/notification-icon-v2.png',
-        badge: '/assets/favicon-32x32.png',
-        tag: payload.data?.tag || 'ragenaizer-notification',
-        data: payload.data || {}
-    };
-
-    return self.registration.showNotification(notificationTitle, notificationOptions);
-});
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
