@@ -22,7 +22,7 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         port: 21
         server-dir: /public_html/
-        state-name: sync-v2
+        state-name: sync-v3
         exclude: |
           **/.git*
           **/.git*/**
