@@ -360,6 +360,7 @@ function clearFcmState() {
     localStorage.removeItem(_FCM_KEYS.registered);
     localStorage.removeItem(_FCM_KEYS.permission);
     localStorage.removeItem(_FCM_KEYS.failCount);
+    localStorage.removeItem('ragenaizer_fcm_prompt_dismissed');
     _currentFcmToken = null;
     console.log('[FCM] State cleared');
 }

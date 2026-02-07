@@ -317,43 +317,125 @@ const Navigation = {
      * If firebase-init.js is already loaded (login.html, home.html), uses it directly.
      * Otherwise dynamically loads the script first.
      * Calls ensureFcmTokenRegistered() which is a no-op if already registered (localStorage check).
+     * If permission is still 'default', shows the in-app notification card.
      * @param {string} basePath - Base path for script URLs
      */
     async _ensureFcmInitialized(basePath = '') {
         try {
-            // If ensureFcmTokenRegistered is already available, use it directly
-            if (typeof ensureFcmTokenRegistered === 'function') {
-                await ensureFcmTokenRegistered();
-                // Also set up foreground handler if available
-                if (typeof setupForegroundMessageHandler === 'function') {
-                    setupForegroundMessageHandler();
+            // Ensure firebase-init.js is loaded
+            if (typeof ensureFcmTokenRegistered !== 'function') {
+                if (typeof FIREBASE_CONFIG === 'undefined' || typeof api === 'undefined') {
+                    console.log('[Nav/FCM] Prerequisites not loaded, skipping FCM init');
+                    return;
                 }
-                return;
+                await this._loadScript('/js/firebase-init.js');
             }
 
-            // firebase-init.js not loaded — dynamically load it
-            // It depends on config.js (for FIREBASE_CONFIG, FIREBASE_VAPID_KEY, STORAGE_PREFIX)
-            // and api.js (for api instance), which should already be loaded on authenticated pages
-            if (typeof FIREBASE_CONFIG === 'undefined' || typeof api === 'undefined') {
-                console.log('[Nav/FCM] Prerequisites not loaded, skipping FCM init');
-                return;
-            }
-
-            // Use absolute path to avoid relative path resolution issues in subdirectories
-            const scriptPath = '/js/firebase-init.js';
-            await this._loadScript(scriptPath);
-
-            // Now the functions should be available
+            // Try to register token (no-op if already registered or permission not granted)
             if (typeof ensureFcmTokenRegistered === 'function') {
                 await ensureFcmTokenRegistered();
                 if (typeof setupForegroundMessageHandler === 'function') {
                     setupForegroundMessageHandler();
                 }
+            }
+
+            // If permission is still 'default', show the in-app card
+            if ('Notification' in window && Notification.permission === 'default') {
+                this._showNotificationCard();
             }
         } catch (err) {
             // Non-blocking — FCM failure should never break page functionality
             console.warn('[Nav/FCM] Failed to initialize FCM:', err);
         }
+    },
+
+    /**
+     * Show a glassy bento-style card prompting the user to enable notifications.
+     * The "Enable" button tap is a genuine user gesture so Mobile Chrome will
+     * show the native permission prompt.
+     */
+    _showNotificationCard() {
+        // Don't show if card already exists
+        if (document.getElementById('fcmPermissionCard')) return;
+
+        // Check dismiss timestamp — re-show after 7 days
+        const dismissedAt = localStorage.getItem('ragenaizer_fcm_prompt_dismissed');
+        if (dismissedAt) {
+            const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+            if (Date.now() - parseInt(dismissedAt, 10) < SEVEN_DAYS) return;
+        }
+
+        const card = document.createElement('div');
+        card.id = 'fcmPermissionCard';
+        card.className = 'fcm-permission-card';
+        card.innerHTML = `
+            <div class="fcm-permission-card-header">
+                <div class="fcm-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div class="fcm-content">
+                    <p class="fcm-content-title">Stay in the loop</p>
+                    <p class="fcm-content-subtitle">Enable notifications to get alerts for messages and meetings.</p>
+                </div>
+                <button class="fcm-dismiss-btn" id="fcmDismissBtn" aria-label="Dismiss">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <button class="fcm-enable-btn" id="fcmEnableBtn">Enable Notifications</button>
+        `;
+
+        document.body.appendChild(card);
+
+        // Enable button — user gesture triggers native prompt
+        document.getElementById('fcmEnableBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('fcmEnableBtn');
+            btn.textContent = 'Requesting...';
+            btn.disabled = true;
+
+            try {
+                if (typeof requestNotificationPermissionOnly === 'function') {
+                    const permission = await requestNotificationPermissionOnly();
+                    if (permission === 'granted') {
+                        // Register token now that permission is granted
+                        if (typeof ensureFcmTokenRegistered === 'function') {
+                            await ensureFcmTokenRegistered(true);
+                        }
+                        if (typeof Toast !== 'undefined' && Toast.success) {
+                            Toast.success('Notifications enabled!');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[Nav/FCM] Permission request error:', err);
+            }
+
+            Navigation._removeNotificationCard();
+        });
+
+        // Dismiss button — store timestamp, hide card
+        document.getElementById('fcmDismissBtn').addEventListener('click', () => {
+            localStorage.setItem('ragenaizer_fcm_prompt_dismissed', String(Date.now()));
+            Navigation._removeNotificationCard();
+        });
+    },
+
+    /**
+     * Remove the notification permission card with a fade-out animation.
+     */
+    _removeNotificationCard() {
+        const card = document.getElementById('fcmPermissionCard');
+        if (!card) return;
+
+        card.classList.add('fcm-removing');
+        card.addEventListener('animationend', () => card.remove(), { once: true });
+        // Fallback removal in case animationend doesn't fire
+        setTimeout(() => { if (card.parentNode) card.remove(); }, 400);
     },
 
     /**
