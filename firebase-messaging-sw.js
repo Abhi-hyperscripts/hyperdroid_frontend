@@ -3,12 +3,9 @@
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
-// ── App Version ──
-// This MUST match SW_VERSION in /js/config.js.
-// When you deploy, increment SW_VERSION in config.js AND here.
-// The SW fetches config.js every 30s to detect mismatches.
-// SW_VERSION_MARKER: v6
-const APP_VERSION = 6;
+// ── App Version (single source of truth: /js/sw-version.js) ──
+importScripts('/js/sw-version.js');      // provides SW_VERSION
+const APP_VERSION = SW_VERSION;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
@@ -41,6 +38,7 @@ const PRECACHE_ASSETS = [
 // ── Patterns that should NEVER be cached ──
 const NO_CACHE_PATTERNS = [
     /\/api\//,           // API calls
+    /sw-version\.js/,    // Version file must always be fresh
     /firebasestorage/,   // Firebase storage
     /googleapis\.com/,   // Google APIs
     /gstatic\.com/,      // Firebase SDK (let browser handle)
@@ -182,7 +180,7 @@ function stripVersionQuery(request) {
 }
 
 // ============================================================
-// VERSION CHECK — Fetch /js/config.js every 30 seconds, parse SW_VERSION
+// VERSION CHECK — Fetch /js/sw-version.js every 30 seconds, parse SW_VERSION
 // ============================================================
 function startVersionCheckLoop() {
     if (versionCheckTimer) clearInterval(versionCheckTimer);
@@ -197,7 +195,7 @@ function startVersionCheckLoop() {
 
 async function checkForUpdate() {
     try {
-        const response = await fetch('/js/config.js?_=' + Date.now(), {
+        const response = await fetch('/js/sw-version.js?_=' + Date.now(), {
             cache: 'no-store',
             headers: { 'Cache-Control': 'no-cache' }
         });

@@ -317,15 +317,27 @@ const Navigation = {
     },
 
     /**
-     * Display SW_VERSION from config.js in the nav dropdown.
-     * config.js is loaded as a script tag on every page, so SW_VERSION is a global.
+     * Display SW_VERSION in the nav dropdown.
+     * Reads from /js/sw-version.js (single source of truth).
      */
     _showSwVersion() {
         const el = document.getElementById('navSwVersion');
         if (!el) return;
+
+        // If already loaded as a global (e.g. via script tag), use it directly
         if (typeof SW_VERSION !== 'undefined') {
             el.textContent = 'v' + SW_VERSION;
+            return;
         }
+
+        // Otherwise fetch the tiny version file
+        fetch('/js/sw-version.js?_=' + Date.now(), { cache: 'no-store' })
+            .then(r => r.text())
+            .then(text => {
+                const m = text.match(/SW_VERSION\s*=\s*(\d+)/);
+                if (m) el.textContent = 'v' + m[1];
+            })
+            .catch(() => {});
     },
 
     /**

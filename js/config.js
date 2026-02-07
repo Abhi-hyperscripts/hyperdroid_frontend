@@ -5,12 +5,8 @@
  * Auto-detects environment based on hostname.
  */
 
-// ── Service Worker Version ──
-// INCREMENT THIS on every deploy that changes JS/CSS/HTML files.
-// The service worker compares its own version against this value
-// by fetching config.js from the server every 30 seconds.
-// When a mismatch is detected, the app auto-updates.
-const SW_VERSION = 6;
+// NOTE: SW_VERSION is defined in /js/sw-version.js (single source of truth).
+// That file is loaded before config.js in all HTML pages.
 
 // Environment configurations
 const ENVIRONMENTS = {

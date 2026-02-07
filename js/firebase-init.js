@@ -325,15 +325,9 @@ async function setupForegroundMessageHandler(callback) {
             const title = payload.notification?.title || payload.data?.title || 'Notification';
             const body = payload.notification?.body || payload.data?.body || '';
 
-            // Show native browser notification (works even when page is focused)
-            if (Notification.permission === 'granted') {
-                new Notification(title, {
-                    body: body,
-                    icon: '/assets/notification-icon-v2.png',
-                    tag: 'ragenaizer-foreground',
-                    data: payload.data || {}
-                });
-            }
+            // Don't show native Notification here - the service worker already
+            // handles that via onBackgroundMessage / push event.  Showing one
+            // here too causes DUPLICATE system notifications.
 
             // Show toast if Toast utility is available
             if (typeof Toast !== 'undefined' && Toast.info) {
