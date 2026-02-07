@@ -7,8 +7,8 @@
 // This MUST match SW_VERSION in /js/config.js.
 // When you deploy, increment SW_VERSION in config.js AND here.
 // The SW fetches config.js every 30s to detect mismatches.
-// SW_VERSION_MARKER: v2
-const APP_VERSION = 2;
+// SW_VERSION_MARKER: v3
+const APP_VERSION = 3;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
@@ -265,39 +265,26 @@ firebase.initializeApp({
     measurementId: "G-60658KXB0N"
 });
 
-// NOTE: We intentionally do NOT use firebase.messaging().onBackgroundMessage()
-// because when FCM payload includes a "notification" field, the browser
-// auto-displays it AND onBackgroundMessage fires, causing DUPLICATE notifications.
-// Instead, we use a raw "push" event listener to handle all push messages ourselves.
+const messaging = firebase.messaging();
 
-self.addEventListener('push', (event) => {
-    // If no data, skip
-    if (!event.data) return;
+// Handle background push notifications.
+// IMPORTANT: FCM messages MUST be sent as data-only (no "notification" field).
+// If "notification" field is present, the browser auto-displays it AND this
+// handler fires, causing DUPLICATE notifications. Data-only messages only
+// trigger this handler.
+messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Background message received:', payload);
 
-    let payload;
-    try {
-        payload = event.data.json();
-    } catch (e) {
-        console.error('[SW] Failed to parse push data:', e);
-        return;
-    }
-
-    console.log('[SW] Push received:', payload);
-
-    const notificationTitle = payload.notification?.title || payload.data?.title || 'Ragenaizer';
+    const notificationTitle = payload.data?.title || 'Ragenaizer';
     const notificationOptions = {
-        body: payload.notification?.body || payload.data?.body || '',
-        icon: '/assets/notification-icon.png',
+        body: payload.data?.body || '',
+        icon: payload.data?.icon || '/assets/notification-icon.png',
         badge: '/assets/favicon-32x32.png',
-        tag: payload.data?.tag || payload.fcmMessageId || 'ragenaizer-notification',
-        renotify: false,
+        tag: payload.data?.tag || 'ragenaizer-notification',
         data: payload.data || {}
     };
 
-    // Show exactly one notification
-    event.waitUntil(
-        self.registration.showNotification(notificationTitle, notificationOptions)
-    );
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Handle notification click
