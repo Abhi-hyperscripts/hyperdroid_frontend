@@ -60,7 +60,8 @@ function initializeUserUI() {
 function adjustChatForNavbar() {
     const navbar = document.querySelector('.navbar');
     if (!navbar) return;
-    const navbarHeight = navbar.getBoundingClientRect().height;
+    // If navbar is hidden (display:none), height is 0 — chat gets full screen
+    const navbarHeight = navbar.offsetHeight;
     document.documentElement.style.setProperty('--chat-navbar-height', navbarHeight + 'px');
 }
 
@@ -390,10 +391,13 @@ async function selectConversation(conversationId) {
         markAsRead(conversationId, conv.last_message.id);
     }
 
-    // Handle mobile view
+    // Handle mobile view — hide sidebar and navbar to maximize chat space
     if (window.innerWidth <= 768) {
         document.getElementById('chatSidebar').classList.add('hidden');
         document.querySelector('.back-btn').style.display = 'block';
+        const navbar = document.querySelector('.navbar');
+        if (navbar) navbar.style.display = 'none';
+        adjustChatForNavbar();
     }
 
     // Focus input
@@ -1327,6 +1331,12 @@ function goBackToList() {
     document.querySelector('.back-btn').style.display = 'none';
     currentConversationId = null;
     document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+    // Restore navbar on conversation list view
+    if (window.innerWidth <= 768) {
+        const navbar = document.querySelector('.navbar');
+        if (navbar) navbar.style.display = '';
+        adjustChatForNavbar();
+    }
 }
 
 window.addEventListener('resize', handleResponsive);
