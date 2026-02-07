@@ -99,6 +99,9 @@ const Navigation = {
             }
         });
 
+        // Show SW version in dropdown
+        this._showSwVersion();
+
         // Bootstrap FCM on all authenticated pages
         this._ensureFcmInitialized(basePath);
     },
@@ -270,6 +273,7 @@ const Navigation = {
                     </svg>
                     Logout
                 </button>
+                <div class="nav-version-label" id="navSwVersion">v--</div>
             </div>
         `;
         document.body.appendChild(dropdownPortal);
@@ -309,6 +313,32 @@ const Navigation = {
             // Fallback for pages that don't have api loaded
             clearAuthData();
             window.location.href = '/index.html';
+        }
+    },
+
+    /**
+     * Fetch SW version and display it in the nav dropdown
+     */
+    _showSwVersion() {
+        if (!('serviceWorker' in navigator)) return;
+
+        const handler = (event) => {
+            if (event.data?.type === 'SW_VERSION') {
+                navigator.serviceWorker.removeEventListener('message', handler);
+                const el = document.getElementById('navSwVersion');
+                if (el) el.textContent = 'v' + event.data.version;
+            }
+        };
+        navigator.serviceWorker.addEventListener('message', handler);
+
+        const sw = navigator.serviceWorker.controller;
+        if (sw) {
+            sw.postMessage('GET_VERSION');
+        } else {
+            // SW not yet controlling — wait for it
+            navigator.serviceWorker.ready.then((reg) => {
+                if (reg.active) reg.active.postMessage('GET_VERSION');
+            });
         }
     },
 

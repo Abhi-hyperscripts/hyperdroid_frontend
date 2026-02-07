@@ -6524,6 +6524,14 @@ label.toggle-switch,
     stroke: var(--color-danger);
 }
 
+.nav-version-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    padding: 4px 0 8px;
+    letter-spacing: 0.5px;
+}
+
 /* Dark mode toggle in dropdown */
 .user-dropdown-menu .dark-mode-toggle {
     position: relative;
