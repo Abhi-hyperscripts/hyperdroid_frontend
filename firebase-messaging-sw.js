@@ -293,40 +293,16 @@ self.addEventListener('push', (event) => {
 });
 
 // ============================================================
-// FIREBASE CLOUD MESSAGING (token management only)
+// FIREBASE — Intentionally NOT imported in Service Worker
 // ============================================================
-// Block Firebase from registering its own 'push' event listener.
-// Firebase's internal handler causes Chrome to show "This site has been
-// updated in the background" for data-only messages. Our push handler
-// above already handles everything.
-const _origAddEventListener = self.addEventListener.bind(self);
-self.addEventListener = function(type, fn, opts) {
-    if (type === 'push') {
-        console.log('[SW] Blocked Firebase internal push handler registration');
-        return;
-    }
-    return _origAddEventListener(type, fn, opts);
-};
-
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
-
-// Firebase config — must match Frontend/js/config.js FIREBASE_CONFIG
-firebase.initializeApp({
-    apiKey: "AIzaSyD7hkVEbWubQaK8H1rEOEKFG3aDej_EcCs",
-    authDomain: "ragenaizer.firebaseapp.com",
-    projectId: "ragenaizer",
-    storageBucket: "ragenaizer.firebasestorage.app",
-    messagingSenderId: "888674952561",
-    appId: "1:888674952561:web:944eea6556fdc87a5a82d0",
-    measurementId: "G-60658KXB0N"
-});
-
-// Required for getToken() on the main page.
-const messaging = firebase.messaging();
-
-// Restore original addEventListener now that Firebase is initialized.
-self.addEventListener = _origAddEventListener;
+// firebase-messaging-compat.js registers its own internal 'push' handler.
+// For data-only FCM messages that handler does nothing visible, causing
+// Chrome/Samsung Internet to show "This site has been updated in the
+// background".  All push handling is done by our listener above.
+//
+// getToken() on the main page works without firebase.messaging() in the
+// SW — it only needs the SW registration's pushManager.subscribe().
+// Token management (subscribe/unsubscribe) is handled by the main page.
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
