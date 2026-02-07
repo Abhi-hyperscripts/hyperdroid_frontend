@@ -317,43 +317,18 @@ const Navigation = {
     },
 
     /**
-     * Fetch SW version and display it in the nav dropdown
+     * Fetch app version from version.json and display it in the nav dropdown
      */
     _showSwVersion() {
-        if (!('serviceWorker' in navigator)) return;
+        const el = document.getElementById('navSwVersion');
+        if (!el) return;
 
-        const updateEl = (version) => {
-            const el = document.getElementById('navSwVersion');
-            if (el) el.textContent = 'v' + version;
-        };
-
-        // Use MessageChannel for reliable two-way comms (works even when page is uncontrolled)
-        const askVersion = (sw) => {
-            const channel = new MessageChannel();
-            channel.port1.onmessage = (event) => {
-                if (event.data?.type === 'SW_VERSION') {
-                    updateEl(event.data.version);
-                }
-            };
-            sw.postMessage('GET_VERSION', [channel.port2]);
-        };
-
-        // Also listen for broadcast responses (fallback)
-        navigator.serviceWorker.addEventListener('message', function handler(event) {
-            if (event.data?.type === 'SW_VERSION') {
-                navigator.serviceWorker.removeEventListener('message', handler);
-                updateEl(event.data.version);
-            }
-        });
-
-        const sw = navigator.serviceWorker.controller;
-        if (sw) {
-            askVersion(sw);
-        } else {
-            navigator.serviceWorker.ready.then((reg) => {
-                if (reg.active) askVersion(reg.active);
-            });
-        }
+        fetch('/version.json?_=' + Date.now(), { cache: 'no-store' })
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => {
+                if (data?.version) el.textContent = 'v' + data.version;
+            })
+            .catch(() => { /* offline — leave as v-- */ });
     },
 
     /**
