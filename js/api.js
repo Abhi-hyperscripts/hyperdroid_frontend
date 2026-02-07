@@ -108,6 +108,10 @@ class API {
         if (endpoint.startsWith('/hrms/')) {
             return CONFIG.hrmsApiBaseUrl;
         }
+        // Notification endpoints go to Notification service
+        if (endpoint.startsWith('/notifications/')) {
+            return CONFIG.notificationApiBaseUrl;
+        }
         // Vision endpoints (projects, meetings) go to Vision service
         return CONFIG.visionApiBaseUrl;
     }
@@ -2908,6 +2912,37 @@ class API {
             method: 'PUT',
             body: JSON.stringify({ updates })
         });
+    }
+
+    // ==================== Notification / Device Token APIs ====================
+
+    /**
+     * Register a device token for push notifications.
+     * @param {string} token - The FCM device token
+     * @param {string} platform - 'web', 'android', or 'ios'
+     */
+    async registerDeviceToken(token, platform = 'web') {
+        return this.request('/notifications/device-tokens', {
+            method: 'POST',
+            body: JSON.stringify({ token, platform })
+        });
+    }
+
+    /**
+     * Deactivate a device token (e.g. on logout).
+     * @param {string} token - The FCM device token to deactivate
+     */
+    async deactivateDeviceToken(token) {
+        return this.request(`/notifications/device-tokens?token=${encodeURIComponent(token)}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Get all device tokens for the current user.
+     */
+    async getMyDeviceTokens() {
+        return this.request('/notifications/device-tokens');
     }
 }
 

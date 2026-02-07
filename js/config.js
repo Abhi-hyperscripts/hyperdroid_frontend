@@ -12,14 +12,16 @@ const ENVIRONMENTS = {
         vision: 'https://localhost:5099',
         drive: 'https://localhost:5100',
         chat: 'https://localhost:5102',
-        hrms: 'https://localhost:5104'
+        hrms: 'https://localhost:5104',
+        notification: 'http://localhost:5110'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',
         vision: 'https://vision.ragenaizer.com',
         drive: 'https://drive.ragenaizer.com',
         chat: 'https://chat.ragenaizer.com',
-        hrms: 'https://hrms.ragenaizer.com'
+        hrms: 'https://hrms.ragenaizer.com',
+        notification: 'https://notification.ragenaizer.com'
     }
 };
 
@@ -70,6 +72,10 @@ const CONFIG = {
 
     get hrmsApiBaseUrl() {
         return `${this.endpoints.hrms}/api`;
+    },
+
+    get notificationApiBaseUrl() {
+        return `${this.endpoints.notification}/api`;
     },
 
     // Legacy alias for backwards compatibility
@@ -139,6 +145,24 @@ const CONFIG = {
 // Freeze the configuration to prevent accidental modifications
 // Object.freeze(CONFIG); // Commented out - prevents caching ICE servers
 Object.freeze(CONFIG.endpoints);
+
+// Firebase Web App Configuration
+// Get these values from Firebase Console → Project Settings → General → Your apps → Web app
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyD7hkVEbWubQaK8H1rEOEKFG3aDej_EcCs",
+    authDomain: "ragenaizer.firebaseapp.com",
+    projectId: "ragenaizer",
+    storageBucket: "ragenaizer.firebasestorage.app",
+    messagingSenderId: "888674952561",
+    appId: "1:888674952561:web:944eea6556fdc87a5a82d0",
+    measurementId: "G-60658KXB0N"
+};
+
+// Firebase VAPID key for Web Push
+// Get from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
+const FIREBASE_VAPID_KEY = "BFEO3Txnc6bct_Z_fM_zVvZgZDYrMj-uTCcMwCIIaBrUtk4X2TRoG8mQCaHheN1TBIgmPlVAIXTEPwopjhX1SoM";
+
+Object.freeze(FIREBASE_CONFIG);
 
 // ==================== JWT Storage Utilities ====================
 // Centralized functions for JWT token management to avoid key conflicts
@@ -275,6 +299,10 @@ function removeStoredUser() {
  * Clear all auth data (tokens + user + expiry + organization info) - used for logout
  */
 function clearAuthData() {
+    // Deactivate FCM token on the backend before clearing auth
+    if (typeof deactivateCurrentFcmToken === 'function') {
+        deactivateCurrentFcmToken().catch(() => {});
+    }
     removeAuthToken();
     removeRefreshToken();
     removeTokenExpiry();

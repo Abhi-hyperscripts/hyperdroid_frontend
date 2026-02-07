@@ -100,6 +100,10 @@ async function handleFormSubmit() {
 
         if (response.success) {
             setButtonSuccess();
+            // Request notification permission after login (non-blocking)
+            if (typeof requestNotificationPermission === 'function') {
+                requestNotificationPermission().catch(() => {});
+            }
             setTimeout(() => {
                 window.location.href = 'home.html';
             }, 500);

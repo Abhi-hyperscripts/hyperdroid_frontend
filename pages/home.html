@@ -204,6 +204,7 @@
         document.write('<script src="../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../js/firebase-init.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         // Check authentication
@@ -220,6 +221,12 @@
             setTimeGreeting();
             checkModuleStatus();
             showAccessibleModules();
+
+            // Initialize Firebase push notifications
+            if (typeof requestNotificationPermission === 'function') {
+                requestNotificationPermission();
+                setupForegroundMessageHandler();
+            }
         });
 
         function setTimeGreeting() {
