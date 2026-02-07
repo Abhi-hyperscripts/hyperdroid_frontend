@@ -29,7 +29,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification?.title || payload.data?.title || 'Ragenaizer';
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || '',
-        icon: '/assets/android-chrome-192x192.png',
+        icon: '/assets/notification-icon.png',
         badge: '/assets/favicon-32x32.png',
         tag: payload.data?.tag || 'ragenaizer-notification',
         data: payload.data || {}

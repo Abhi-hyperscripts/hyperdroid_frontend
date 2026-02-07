@@ -192,7 +192,7 @@ async function setupForegroundMessageHandler(callback) {
             if (Notification.permission === 'granted') {
                 new Notification(title, {
                     body: body,
-                    icon: '/assets/android-chrome-192x192.png',
+                    icon: '/assets/notification-icon.png',
                     tag: 'ragenaizer-foreground',
                     data: payload.data || {}
                 });
