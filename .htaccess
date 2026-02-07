@@ -1,0 +1,26 @@
+<IfModule mod_headers.c>
+    # HTML - always revalidate with server
+    <FilesMatch "\.(html)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # JS/CSS - always revalidate (cache-busted by ?v= params in HTML)
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # JSON files (version.json, manifest.json) - never cache
+    <FilesMatch "\.(json)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    </FilesMatch>
+
+    # Service Worker - never cache (browser must always check for updates)
+    <FilesMatch "firebase-messaging-sw\.js$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    </FilesMatch>
+
+    # Static assets - cache 30 days (these rarely change)
+    <FilesMatch "\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+</IfModule>

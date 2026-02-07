@@ -79,9 +79,28 @@ async function _registerServiceWorker() {
 
     try {
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-            scope: '/'
+            scope: '/',
+            updateViaCache: 'none'  // Always check server for SW updates
         });
         console.log('[FCM] Service worker registered:', registration.scope);
+
+        // If a new SW is waiting, tell it to activate
+        if (registration.waiting) {
+            console.log('[FCM] New service worker waiting, activating...');
+            registration.waiting.postMessage('SKIP_WAITING');
+        }
+
+        // Detect when a new SW is installed and waiting
+        registration.addEventListener('updatefound', () => {
+            const newSW = registration.installing;
+            if (newSW) {
+                newSW.addEventListener('statechange', () => {
+                    if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('[FCM] New service worker installed and waiting');
+                    }
+                });
+            }
+        });
 
         // Wait for a service worker to be active
         if (!registration.active) {
