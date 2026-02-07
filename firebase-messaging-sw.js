@@ -309,8 +309,16 @@ firebase.initializeApp({
     measurementId: "G-60658KXB0N"
 });
 
-// Required for getToken() on the main page — do NOT call onBackgroundMessage()
+// Required for getToken() on the main page.
 const messaging = firebase.messaging();
+
+// Register a no-op background handler so Firebase doesn't trigger Chrome's
+// default "This site has been updated in the background" notification.
+// The actual notification display is handled by the standard push listener above.
+messaging.onBackgroundMessage(() => {
+    // No-op — our push event listener (registered above) already showed the notification.
+    return Promise.resolve();
+});
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {

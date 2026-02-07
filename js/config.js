@@ -5,8 +5,12 @@
  * Auto-detects environment based on hostname.
  */
 
-// NOTE: SW_VERSION is defined in /js/sw-version.js (single source of truth).
-// That file is loaded before config.js in all HTML pages.
+// SW_VERSION must stay here for backwards compatibility.
+// Old service workers (v6 and earlier) fetch config.js every 30s and parse
+// this line via regex to detect updates. Without it, they can NEVER update.
+// The SW itself reads from /js/sw-version.js via importScripts.
+// IMPORTANT: Keep this value in sync with /js/sw-version.js!
+const SW_VERSION = 9;
 
 // Environment configurations
 const ENVIRONMENTS = {
