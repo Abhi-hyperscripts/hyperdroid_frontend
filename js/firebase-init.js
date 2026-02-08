@@ -43,13 +43,18 @@ let _fcmRegistrationInProgress = false;
 _currentFcmToken = localStorage.getItem(_FCM_KEYS.token) || null;
 
 // When the SW controller changes (new SW takes over), the old push subscription
-// and FCM token become invalid. Force re-registration on next opportunity.
+// and FCM token become invalid. Clear all registration state so the next page
+// load does a full fresh registration. Note: sw-update.js reloads the page on
+// controllerchange, so the setTimeout below is a fallback for non-reloading pages.
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[FCM] SW controller changed — clearing registration flag for re-registration');
+        console.log('[FCM] SW controller changed — clearing all FCM state for fresh registration');
         localStorage.removeItem(_FCM_KEYS.registered);
+        localStorage.removeItem(_FCM_KEYS.failCount);
+        localStorage.removeItem(_FCM_KEYS.failTimestamp);
+        localStorage.removeItem(`${STORAGE_PREFIX}fcm_version`);
         _currentFcmToken = null;
-        // Attempt re-registration after a short delay (let new SW settle)
+        // Fallback: if page doesn't reload, try re-registration after delay
         setTimeout(() => {
             if (!_fcmRegistrationInProgress) {
                 ensureFcmTokenRegistered(true).catch(() => {});
