@@ -265,8 +265,9 @@ self.addEventListener('message', (event) => {
 // "This site has been updated in the background" notification. The phantom lives
 // at Chrome's native Android level — getNotifications() CANNOT see or close it.
 //
-// Fix: Use a FIXED tag so each new notification replaces the previous one.
-// No timestamp in tag. No conditional logic. Just show it.
+// Fix: Call showNotification() synchronously with zero async work before it.
+// Use unique tag per notification so each alerts separately (fixed tags
+// cause ONLY_ALERT_ONCE silent replacement). No conditional logic. Just show it.
 self.addEventListener('push', (event) => {
     let title = 'Ragenaizer';
     let body = '';
@@ -289,12 +290,14 @@ self.addEventListener('push', (event) => {
     const origin = self.location.origin;
 
     // ALWAYS show notification — no conditions, no early returns.
+    // Use unique tag per notification so each one alerts separately.
+    // Fixed tags cause Chrome to silently replace (ONLY_ALERT_ONCE).
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
             icon: icon || `${origin}/assets/notification-icon-v2.png`,
             badge: `${origin}/assets/badge-icon.png`,
-            tag: 'ragenaizer-notification',
+            tag: 'ragenaizer-' + Date.now(),
             renotify: true,
             requireInteraction: false,
             data: data,
