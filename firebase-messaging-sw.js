@@ -258,16 +258,14 @@ self.addEventListener('message', (event) => {
 // PUSH NOTIFICATIONS
 // ============================================================
 
-// ── Push handler (v25) ──
-// CRITICAL: Always call showNotification() IMMEDIATELY inside event.waitUntil().
-// No conditions, no async work before it. Chrome Android WebAPK has a race:
-// if it doesn't see showNotification() called fast enough, it creates a phantom
-// "This site has been updated in the background" notification. The phantom lives
-// at Chrome's native Android level — getNotifications() CANNOT see or close it.
+// ── Push handler (v28) ──
+// Chrome Android WebAPK has a KNOWN BUG (Chromium #378103918):
+// After event.waitUntil() resolves, Chrome counts visible notifications via
+// an async DB query. If showNotification()'s write hasn't been committed yet,
+// count=0 → Chrome creates a phantom "updated in background" notification.
+// getNotifications() CAN see and close this phantom after a short delay.
 //
-// Fix: Call showNotification() synchronously with zero async work before it.
-// Use unique tag per notification so each alerts separately (fixed tags
-// cause ONLY_ALERT_ONCE silent replacement). No conditional logic. Just show it.
+// Strategy: Show notification immediately, then clean up the phantom.
 self.addEventListener('push', (event) => {
     let title = 'Ragenaizer';
     let body = '';
@@ -289,9 +287,6 @@ self.addEventListener('push', (event) => {
 
     const origin = self.location.origin;
 
-    // ALWAYS show notification — no conditions, no early returns.
-    // Use unique tag per notification so each one alerts separately.
-    // Fixed tags cause Chrome to silently replace (ONLY_ALERT_ONCE).
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
@@ -302,6 +297,24 @@ self.addEventListener('push', (event) => {
             requireInteraction: false,
             data: data,
             vibrate: [200, 100, 200]
+        }).then(() => {
+            // Wait for Chrome's phantom to appear (if it will), then close it.
+            // Chrome creates phantom ~15-100ms after showNotification resolves.
+            return new Promise(resolve => setTimeout(resolve, 200));
+        }).then(() => {
+            return self.registration.getNotifications();
+        }).then((notifications) => {
+            for (const n of notifications) {
+                // Chrome's phantom has no data, body = "This site has been updated..."
+                // or tag contains "user_visible_auto_notification"
+                if (!n.data || Object.keys(n.data).length === 0) {
+                    if (n.body && n.body.includes('updated in the background')) {
+                        n.close();
+                    }
+                }
+            }
+        }).catch(() => {
+            // Ignore cleanup errors
         })
     );
 });
