@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Handle responsive back button
     handleResponsive();
+
+    // Fix iOS keyboard viewport shift
+    setupIOSKeyboardFix();
 });
 
 function initializeUserUI() {
@@ -1399,6 +1402,49 @@ function goBackToList() {
 }
 
 window.addEventListener('resize', handleResponsive);
+
+// ============================================
+// iOS Keyboard Viewport Fix
+// ============================================
+// iOS Safari/PWA shifts the page up when the virtual keyboard opens.
+// When the keyboard closes, it doesn't always restore scroll position,
+// leaving the UI clipped at the top (navbar hidden).
+
+function setupIOSKeyboardFix() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (!isIOS) return;
+
+    // When any input/textarea loses focus (keyboard closing), reset scroll
+    document.addEventListener('focusout', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            // Small delay to let iOS finish its viewport animation
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }, 50);
+        }
+    });
+
+    // Use visualViewport API to detect keyboard dismiss
+    if (window.visualViewport) {
+        let lastHeight = window.visualViewport.height;
+        window.visualViewport.addEventListener('resize', () => {
+            const currentHeight = window.visualViewport.height;
+            // Keyboard closing = viewport getting larger
+            if (currentHeight > lastHeight && currentHeight >= window.innerHeight * 0.8) {
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    document.body.scrollTop = 0;
+                    document.documentElement.scrollTop = 0;
+                }, 50);
+            }
+            lastHeight = currentHeight;
+        });
+    }
+}
 
 // Local showToast removed - using unified toast.js instead
 

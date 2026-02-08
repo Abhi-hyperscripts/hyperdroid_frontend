@@ -7,6 +7,7 @@ body.chat-page {
     overflow: hidden;
     overflow-x: hidden;
     height: 100vh;
+    height: 100dvh;
     max-width: 100vw;
 }
 
@@ -41,6 +42,7 @@ body.chat-page::after {
 .chat-container {
     display: flex;
     height: calc(100vh - 78px - 12px);
+    height: calc(100dvh - 78px - 12px);
     gap: var(--space-3);
     margin: 78px var(--space-3) var(--space-3) var(--space-3);
     position: relative;
