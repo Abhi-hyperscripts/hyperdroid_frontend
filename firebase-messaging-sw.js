@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 31]
+// Ragenaizer Service Worker  [BUILD 32]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -265,14 +265,14 @@ self.addEventListener('message', (event) => {
 // PUSH NOTIFICATIONS
 // ============================================================
 
-// ── Push handler (v28) ──
+// ── Push handler (v32) ──
 // Chrome Android WebAPK has a KNOWN BUG (Chromium #378103918):
 // After event.waitUntil() resolves, Chrome counts visible notifications via
 // an async DB query. If showNotification()'s write hasn't been committed yet,
 // count=0 → Chrome creates a phantom "updated in background" notification.
-// getNotifications() CAN see and close this phantom after a short delay.
 //
-// Strategy: Show notification immediately, then clean up the phantom.
+// Strategy: Show notification immediately, then run MULTIPLE cleanup passes
+// to catch the phantom regardless of Chrome's internal timing.
 self.addEventListener('push', (event) => {
     let title = 'Ragenaizer';
     let body = '';
@@ -294,35 +294,50 @@ self.addEventListener('push', (event) => {
 
     const origin = self.location.origin;
 
+    // Helper: scan notifications and close any Chrome phantom
+    function closePhantoms() {
+        return self.registration.getNotifications().then(function (notifications) {
+            for (var i = 0; i < notifications.length; i++) {
+                var n = notifications[i];
+                // Chrome phantom: no data (or empty data) AND body mentions "updated in the background"
+                var hasNoData = !n.data || Object.keys(n.data).length === 0;
+                var isPhantom = hasNoData && n.body && n.body.indexOf('updated in the background') !== -1;
+                if (isPhantom) {
+                    n.close();
+                }
+            }
+        }).catch(function () {});
+    }
+
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
-            icon: icon || `${origin}/assets/notification-icon-v2.png`,
-            badge: `${origin}/assets/badge-icon.png`,
+            icon: icon || origin + '/assets/notification-icon-v2.png',
+            badge: origin + '/assets/badge-icon.png',
             tag: 'ragenaizer-' + Date.now(),
             renotify: true,
             requireInteraction: false,
             data: data,
             vibrate: [200, 100, 200]
-        }).then(() => {
-            // Wait for Chrome's phantom to appear (if it will), then close it.
-            // Chrome creates phantom ~15-100ms after showNotification resolves.
-            return new Promise(resolve => setTimeout(resolve, 200));
-        }).then(() => {
-            return self.registration.getNotifications();
-        }).then((notifications) => {
-            for (const n of notifications) {
-                // Chrome's phantom has no data, body = "This site has been updated..."
-                // or tag contains "user_visible_auto_notification"
-                if (!n.data || Object.keys(n.data).length === 0) {
-                    if (n.body && n.body.includes('updated in the background')) {
-                        n.close();
-                    }
+        }).then(function () {
+            // Multiple cleanup passes to catch Chrome's phantom regardless of timing.
+            // Chrome creates phantom 15-200ms after showNotification resolves,
+            // but sometimes later on slow devices.
+            return new Promise(function (resolve) {
+                var passes = [150, 400, 800, 1500];
+                var done = 0;
+                for (var i = 0; i < passes.length; i++) {
+                    (function (delay) {
+                        setTimeout(function () {
+                            closePhantoms().then(function () {
+                                done++;
+                                if (done === passes.length) resolve();
+                            });
+                        }, delay);
+                    })(passes[i]);
                 }
-            }
-        }).catch(() => {
-            // Ignore cleanup errors
-        })
+            });
+        }).catch(function () {})
     );
 });
 
