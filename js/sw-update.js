@@ -17,7 +17,11 @@
     let reloading = false;
 
     // Register the service worker immediately on every page
-    navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    // Cache-buster query param forces Chrome Android to bypass V8 bytecode cache.
+    // Chrome aggressively caches compiled SW code and reuses it even after unregister+reregister.
+    // Changing the script URL is the ONLY reliable way to force fresh code on Android.
+    var swUrl = '/firebase-messaging-sw.js?cb=2';
+    navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'
     }).then((reg) => {
@@ -100,7 +104,7 @@
                         console.log('[Update] SW running stale code v' + swVersion + ', expected v' + expectedVersion + '. Force re-registering...');
                         registration.unregister().then(function () {
                             console.log('[Update] Old SW unregistered, re-registering fresh...');
-                            return navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                            return navigator.serviceWorker.register(swUrl, {
                                 scope: '/',
                                 updateViaCache: 'none'
                             });
@@ -137,7 +141,7 @@
                 if (!responded && !reloading) {
                     console.log('[Update] SW did not respond to GET_VERSION — stale code. Force re-registering...');
                     registration.unregister().then(function () {
-                        return navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                        return navigator.serviceWorker.register(swUrl, {
                             scope: '/',
                             updateViaCache: 'none'
                         });

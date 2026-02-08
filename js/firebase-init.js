@@ -118,7 +118,9 @@ async function _registerServiceWorker() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        // Cache-buster query param (?cb=2) forces Chrome Android to bypass V8 bytecode cache.
+        // Without this, Chrome reuses old compiled SW code even after unregister+reregister.
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js?cb=2', {
             scope: '/',
             updateViaCache: 'none'  // Always check server for SW updates
         });
