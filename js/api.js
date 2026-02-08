@@ -993,13 +993,11 @@ class API {
     }
 
     async createGroupConversation(name, description = null, memberUserIds = []) {
+        const payload = { name, member_user_ids: memberUserIds };
+        if (description) payload.description = description;
         return this.request('/chat/conversations/group', {
             method: 'POST',
-            body: JSON.stringify({
-                name: name,
-                description: description,
-                member_user_ids: memberUserIds
-            })
+            body: JSON.stringify(payload)
         });
     }
 

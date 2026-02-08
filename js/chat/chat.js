@@ -845,7 +845,7 @@ async function createConversation() {
                 showToast('Please enter a group name', 'error');
                 return;
             }
-            response = await api.createGroupConversation(groupName, selectedUsers.map(u => u.user_id));
+            response = await api.createGroupConversation(groupName, null, selectedUsers.map(u => u.user_id));
         }
 
         closeNewChatModal();
