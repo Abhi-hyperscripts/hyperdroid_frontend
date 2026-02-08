@@ -9,11 +9,10 @@ const APP_VERSION = SW_VERSION;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
-// ── Notification debounce ──
-// Prevents showing the same notification twice when both 'push' event
-// and Firebase onBackgroundMessage fire for the same FCM message.
-const NOTIFICATION_DEBOUNCE_MS = 2000;
-let lastNotificationTime = 0;
+// ── Push-handler flag ──
+// When the native 'push' event fires and shows a notification, we set this flag.
+// Firebase onBackgroundMessage checks it to avoid showing a duplicate.
+let pushHandlerFiredRecently = false;
 
 // ── Assets to pre-cache on install ──
 const PRECACHE_ASSETS = [
@@ -254,58 +253,48 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================================
-// PUSH NOTIFICATIONS — Dual handler approach (matches OPRO pattern)
+// PUSH NOTIFICATIONS — Split handler approach
 // ============================================================
+// The native 'push' event MUST always call showNotification().
+// If it doesn't, Chrome Android shows "This site has been updated
+// in the background" as a penalty notification.
+//
+// Firebase onBackgroundMessage is secondary — it only shows a
+// notification if the push handler somehow didn't fire.
 
-// ── Shared notification display function with debounce ──
-// Both the native 'push' handler and Firebase onBackgroundMessage call this.
-// 2-second debounce prevents showing duplicate notifications.
-function showPushNotification(notificationData) {
-    const now = Date.now();
-
-    // Debounce: skip if a notification was shown within the last 2 seconds
-    if (now - lastNotificationTime < NOTIFICATION_DEBOUNCE_MS) {
-        console.log('[SW] Debounced - notification already shown recently');
-        return Promise.resolve();
-    }
-    lastNotificationTime = now;
-
+// ── Helper: build notification options from payload data ──
+function buildNotificationOptions(notificationData) {
     const title = notificationData.title || 'Ragenaizer';
     const body = notificationData.body || '';
-
-    // Build absolute icon URLs
     const origin = self.location.origin;
     const icon = notificationData.icon || `${origin}/assets/notification-icon-v2.png`;
     const badge = `${origin}/assets/badge-icon.png`;
 
-    const options = {
-        body: body,
-        icon: icon,
-        badge: badge,
-        tag: 'ragenaizer-' + now,  // Unique tag per notification
-        renotify: true,
-        requireInteraction: false,
-        data: notificationData,
-        vibrate: [200, 100, 200]
+    return {
+        title,
+        options: {
+            body: body,
+            icon: icon,
+            badge: badge,
+            tag: 'ragenaizer-' + Date.now(),
+            renotify: true,
+            requireInteraction: false,
+            data: notificationData,
+            vibrate: [200, 100, 200]
+        }
     };
-
-    console.log('[SW] Showing notification:', title, '-', body);
-
-    return self.registration.showNotification(title, options)
-        .then(() => {
-            console.log('[SW] Notification displayed successfully');
-            // Clean up Chrome WebAPK phantom notifications
-            return cleanupAutoNotification();
-        })
-        .catch((error) => {
-            console.error('[SW] Error displaying notification:', error);
-        });
 }
 
 // ── PRIMARY HANDLER: Native Web Push API ──
-// Fires for ALL push events (FCM data-only and notification messages).
+// CRITICAL: This handler ALWAYS shows a notification. Never debounce here.
+// Chrome Android checks that the push event results in a showNotification()
+// call — if it doesn't, the phantom "updated in background" appears.
 self.addEventListener('push', (event) => {
     console.log('[SW] Push event received');
+
+    // Set flag so onBackgroundMessage knows not to duplicate
+    pushHandlerFiredRecently = true;
+    setTimeout(() => { pushHandlerFiredRecently = false; }, 3000);
 
     let notificationData = {};
 
@@ -314,16 +303,14 @@ self.addEventListener('push', (event) => {
             const payload = event.data.json();
             console.log('[SW] Push payload:', JSON.stringify(payload));
 
-            // FCM data-only messages: payload.data contains our custom fields
             const d = payload.data || {};
-            // FCM notification messages: payload.notification has title/body
             const n = payload.notification || {};
 
             notificationData = {
                 title: d.title || n.title || 'Ragenaizer',
                 body: d.body || n.body || '',
                 icon: d.icon || n.icon,
-                ...d  // Include all data fields for notification click handling
+                ...d
             };
         }
     } catch (err) {
@@ -333,21 +320,35 @@ self.addEventListener('push', (event) => {
         } catch (_) {}
     }
 
-    // CRITICAL: Use waitUntil to keep SW alive until notification is shown
-    event.waitUntil(showPushNotification(notificationData));
+    const { title, options } = buildNotificationOptions(notificationData);
+    console.log('[SW] Showing notification:', title, '-', options.body);
+
+    // CRITICAL: waitUntil keeps the SW alive until showNotification resolves.
+    // showNotification MUST be called — never skip or debounce in this handler.
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+            .then(() => {
+                console.log('[SW] Notification displayed successfully');
+                return cleanupPhantomNotifications();
+            })
+            .catch((error) => {
+                console.error('[SW] Error displaying notification:', error);
+            })
+    );
 });
 
-// ── Chrome WebAPK phantom notification cleanup ──
-async function cleanupAutoNotification() {
-    // Check frequently for 10 seconds to catch late-created auto-notifications.
-    // WebAPK's native push handler can create these at unpredictable times.
-    const delays = [100, 200, 300, 500, 1000, 1000, 2000, 2000, 3000];
+// ── Chrome phantom notification cleanup ──
+async function cleanupPhantomNotifications() {
+    // Chrome Android (especially WebAPK) may create auto-notifications.
+    // Check repeatedly to catch late-created ones.
+    const delays = [100, 300, 500, 1000, 2000, 3000];
     for (const delay of delays) {
         await new Promise((r) => setTimeout(r, delay));
         const notifications = await self.registration.getNotifications();
         for (const n of notifications) {
-            if (n.tag && n.tag.includes('user_visible_auto')) {
-                console.log('[SW] Closing Chrome auto-notification:', n.tag);
+            // Close Chrome's auto-generated phantom notifications
+            if (n.tag && (n.tag.includes('user_visible_auto') || n.tag.includes('user_visible_fallback'))) {
+                console.log('[SW] Closing phantom notification:', n.tag);
                 n.close();
             }
         }
@@ -377,11 +378,19 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // ── SECONDARY HANDLER: Firebase onBackgroundMessage ──
-// Fires when Firebase receives a data-only message while app is in background.
-// Debounce prevents duplicate notification if push handler already showed one.
+// Only shows a notification if the native push handler somehow didn't fire.
+// In normal operation, push handler fires first → sets pushHandlerFiredRecently → this skips.
 messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Firebase onBackgroundMessage received:', JSON.stringify(payload));
+    console.log('[SW] Firebase onBackgroundMessage received');
 
+    // Push handler already showed the notification — skip to avoid duplicates
+    if (pushHandlerFiredRecently) {
+        console.log('[SW] Push handler already showed notification, skipping onBackgroundMessage');
+        return;
+    }
+
+    // Fallback: push handler didn't fire (shouldn't happen, but safe)
+    console.log('[SW] Push handler did not fire, showing from onBackgroundMessage');
     const d = payload.data || {};
     const n = payload.notification || {};
 
@@ -392,7 +401,8 @@ messaging.onBackgroundMessage((payload) => {
         ...d
     };
 
-    return showPushNotification(notificationData);
+    const { title, options } = buildNotificationOptions(notificationData);
+    return self.registration.showNotification(title, options);
 });
 
 // Handle notification click
