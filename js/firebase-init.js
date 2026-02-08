@@ -215,6 +215,13 @@ async function ensureFcmTokenRegistered(force = false) {
             return null;
         }
 
+        // Force re-registration when SW version changes (ensures platform/browser info is updated)
+        const lastRegisteredVersion = localStorage.getItem(`${STORAGE_PREFIX}fcm_version`);
+        if (lastRegisteredVersion !== String(SW_VERSION)) {
+            console.log(`[FCM] Version changed (${lastRegisteredVersion} → ${SW_VERSION}), forcing re-registration`);
+            force = true;
+        }
+
         // Check if already registered (fast path)
         if (!force && localStorage.getItem(_FCM_KEYS.registered) === 'true' && _currentFcmToken) {
             console.log('[FCM] Already registered, using cached token');
@@ -269,10 +276,11 @@ async function ensureFcmTokenRegistered(force = false) {
             // Register with backend
             await registerTokenWithBackend(token);
 
-            // Mark as registered
+            // Mark as registered with current version
             localStorage.setItem(_FCM_KEYS.registered, 'true');
             localStorage.setItem(_FCM_KEYS.failCount, '0');
-            console.log('[FCM] Token registered successfully');
+            localStorage.setItem(`${STORAGE_PREFIX}fcm_version`, String(SW_VERSION));
+            console.log('[FCM] Token registered successfully (v' + SW_VERSION + ')');
             return token;
         } else {
             console.warn('[FCM] No token received');
@@ -322,7 +330,8 @@ async function registerTokenWithBackend(fcmToken) {
 
         const platform = _detectPlatform();
         const browser = _detectBrowser();
-        const result = await api.registerDeviceToken(fcmToken, platform, browser);
+        const version = typeof SW_VERSION !== 'undefined' ? SW_VERSION : 0;
+        const result = await api.registerDeviceToken(fcmToken, platform, browser, version);
         console.log('[FCM] Token registered with backend:', result);
     } catch (err) {
         console.error('[FCM] Failed to register token with backend:', err);
@@ -394,6 +403,7 @@ function clearFcmState() {
     localStorage.removeItem(_FCM_KEYS.permission);
     localStorage.removeItem(_FCM_KEYS.failCount);
     localStorage.removeItem('ragenaizer_fcm_prompt_dismissed');
+    localStorage.removeItem(`${STORAGE_PREFIX}fcm_version`);
     _currentFcmToken = null;
     console.log('[FCM] State cleared');
 }
