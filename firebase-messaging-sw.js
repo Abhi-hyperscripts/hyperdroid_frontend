@@ -264,7 +264,8 @@ self.addEventListener('push', (event) => {
     let body = '';
     let icon = '/assets/notification-icon-v2.png';
     let badge = '/assets/badge-icon.png';
-    let tag = 'ragenaizer-notification';
+    // Unique tag per push to prevent Chrome treating replacement as "no notification"
+    let tag = 'ragenaizer-' + Date.now();
     let data = {};
 
     try {
@@ -280,7 +281,8 @@ self.addEventListener('push', (event) => {
             title = d.title || n.title || title;
             body  = d.body  || n.body  || body;
             icon  = d.icon  || n.icon  || icon;
-            tag   = d.tag   || tag;
+            // Keep unique tag unless explicitly set by backend
+            if (d.tag) tag = d.tag;
             data  = d;
         }
     } catch (err) {
@@ -289,22 +291,25 @@ self.addEventListener('push', (event) => {
     }
 
     event.waitUntil(
-        self.registration.showNotification(title, { body, icon, badge, tag, data })
+        self.registration.showNotification(title, { body, icon, badge, tag, renotify: true, data })
             .then(() => cleanupAutoNotification())
     );
 });
 
 // Chrome WebAPK sometimes generates a phantom "This site has been updated in
 // the background" notification (tag: user_visible_auto_notification) alongside
-// our real notification. Proactively close it.
+// our real notification. Proactively close it with multiple retries.
 async function cleanupAutoNotification() {
-    // Short delay to let Chrome create the auto-notification first
-    await new Promise((r) => setTimeout(r, 100));
-    const notifications = await self.registration.getNotifications();
-    for (const n of notifications) {
-        if (n.tag && n.tag.includes('user_visible_auto')) {
-            console.log('[SW] Closing Chrome auto-notification:', n.tag);
-            n.close();
+    // Check at 200ms, 500ms, and 1500ms to catch late-created auto-notifications
+    const delays = [200, 300, 1000];
+    for (const delay of delays) {
+        await new Promise((r) => setTimeout(r, delay));
+        const notifications = await self.registration.getNotifications();
+        for (const n of notifications) {
+            if (n.tag && n.tag.includes('user_visible_auto')) {
+                console.log('[SW] Closing Chrome auto-notification:', n.tag);
+                n.close();
+            }
         }
     }
 }
