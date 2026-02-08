@@ -11,7 +11,8 @@ const _FCM_KEYS = {
     token: `${STORAGE_PREFIX}fcm_token`,
     registered: `${STORAGE_PREFIX}fcm_registered`,
     permission: `${STORAGE_PREFIX}fcm_permission`,
-    failCount: `${STORAGE_PREFIX}fcm_fail_count`
+    failCount: `${STORAGE_PREFIX}fcm_fail_count`,
+    failTimestamp: `${STORAGE_PREFIX}fcm_fail_timestamp`
 };
 
 // ==================== Device/Browser Detection ====================
@@ -260,11 +261,19 @@ async function ensureFcmTokenRegistered(force = false) {
             return null;
         }
 
-        // Check failure backoff (max 3 failures per session)
+        // Check failure backoff (max 3 failures, auto-reset after 5 minutes)
         const failCount = parseInt(localStorage.getItem(_FCM_KEYS.failCount) || '0', 10);
+        const failTimestamp = parseInt(localStorage.getItem(_FCM_KEYS.failTimestamp) || '0', 10);
         if (failCount >= 3 && !force) {
-            console.warn(`[FCM] Too many failures (${failCount}), backing off`);
-            return null;
+            // Auto-reset fail count after 5 minutes so PWA recovers from transient errors
+            if (failTimestamp && (Date.now() - failTimestamp > 5 * 60 * 1000)) {
+                console.log('[FCM] Fail backoff expired, resetting and retrying');
+                localStorage.setItem(_FCM_KEYS.failCount, '0');
+                localStorage.removeItem(_FCM_KEYS.failTimestamp);
+            } else {
+                console.warn(`[FCM] Too many failures (${failCount}), backing off`);
+                return null;
+            }
         }
 
         _fcmRegistrationInProgress = true;
@@ -294,6 +303,7 @@ async function ensureFcmTokenRegistered(force = false) {
             // Mark as registered with current version
             localStorage.setItem(_FCM_KEYS.registered, 'true');
             localStorage.setItem(_FCM_KEYS.failCount, '0');
+            localStorage.removeItem(_FCM_KEYS.failTimestamp);
             localStorage.setItem(`${STORAGE_PREFIX}fcm_version`, String(SW_VERSION));
             console.log('[FCM] Token registered successfully (v' + SW_VERSION + ')');
             return token;
@@ -317,6 +327,7 @@ async function ensureFcmTokenRegistered(force = false) {
 function _incrementFailCount() {
     const current = parseInt(localStorage.getItem(_FCM_KEYS.failCount) || '0', 10);
     localStorage.setItem(_FCM_KEYS.failCount, String(current + 1));
+    localStorage.setItem(_FCM_KEYS.failTimestamp, String(Date.now()));
 }
 
 /**
@@ -417,6 +428,7 @@ function clearFcmState() {
     localStorage.removeItem(_FCM_KEYS.registered);
     localStorage.removeItem(_FCM_KEYS.permission);
     localStorage.removeItem(_FCM_KEYS.failCount);
+    localStorage.removeItem(_FCM_KEYS.failTimestamp);
     localStorage.removeItem('ragenaizer_fcm_prompt_dismissed');
     localStorage.removeItem(`${STORAGE_PREFIX}fcm_version`);
     _currentFcmToken = null;
