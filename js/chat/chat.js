@@ -14,6 +14,10 @@ let typingTimeout = null;
 let currentUser = null;
 let showingArchived = false;
 let pendingFileAttachment = null; // Stores file info while uploading/pending send
+let hasMoreMessages = false;
+let oldestMessageId = null;
+let isLoadingMore = false;
+const INITIAL_MESSAGE_LIMIT = 15;
 
 // Video Call from Chat
 const MEETING_CARD_PREFIX = '::meeting_card::';
@@ -458,12 +462,16 @@ async function loadConversationDetails(conversationId) {
 
 async function loadMessages(conversationId, beforeMessageId = null) {
     try {
-        const response = await api.getMessages(conversationId, beforeMessageId);
+        const limit = beforeMessageId ? 20 : INITIAL_MESSAGE_LIMIT;
+        const response = await api.getMessages(conversationId, beforeMessageId, limit);
         const messages = response.messages || [];
+        hasMoreMessages = response.has_more || false;
+        oldestMessageId = response.oldest_message_id || null;
 
         if (!beforeMessageId) {
             currentMessages = messages;
             renderMessages(messages);
+            setupScrollPagination();
         } else {
             currentMessages = [...messages, ...currentMessages];
             prependMessages(messages);
@@ -593,13 +601,35 @@ function appendMessage(msg) {
 
 function prependMessages(messages) {
     const container = document.getElementById('chatMessages');
+    const prevScrollHeight = container.scrollHeight;
     const html = messages.map(msg => renderMessage(msg)).join('');
     container.insertAdjacentHTML('afterbegin', html);
+    // Maintain scroll position after prepending
+    container.scrollTop = container.scrollHeight - prevScrollHeight;
 }
 
 function scrollToBottom() {
     const container = document.getElementById('chatMessages');
     container.scrollTop = container.scrollHeight;
+}
+
+function setupScrollPagination() {
+    const container = document.getElementById('chatMessages');
+    // Remove previous listener by replacing element trick (avoids duplicate listeners)
+    container.removeEventListener('scroll', handleMessagesScroll);
+    container.addEventListener('scroll', handleMessagesScroll);
+}
+
+async function handleMessagesScroll() {
+    const container = document.getElementById('chatMessages');
+    if (container.scrollTop < 100 && hasMoreMessages && !isLoadingMore && oldestMessageId) {
+        isLoadingMore = true;
+        try {
+            await loadMessages(currentConversationId, oldestMessageId);
+        } finally {
+            isLoadingMore = false;
+        }
+    }
 }
 
 // ============================================
