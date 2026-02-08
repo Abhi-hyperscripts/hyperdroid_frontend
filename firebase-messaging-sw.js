@@ -9,6 +9,12 @@ const APP_VERSION = SW_VERSION;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
+// ── Notification debounce ──
+// Prevents showing the same notification twice when both 'push' event
+// and Firebase onBackgroundMessage fire for the same FCM message.
+const NOTIFICATION_DEBOUNCE_MS = 2000;
+let lastNotificationTime = 0;
+
 // ── Assets to pre-cache on install ──
 const PRECACHE_ASSETS = [
     '/',
@@ -248,25 +254,60 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================================
-// PUSH NOTIFICATIONS — Standard Web Push handler
+// PUSH NOTIFICATIONS — Dual handler approach (matches OPRO pattern)
 // ============================================================
-// CRITICAL: This listener MUST be registered BEFORE Firebase imports.
-// firebase.messaging() registers its own internal push handler. For
-// data-only messages it does nothing (no notification shown). iOS Safari
-// counts that as a "silent push" and revokes the push subscription
-// after 3 silent pushes. By registering our handler first, we guarantee
-// showNotification() is called via event.waitUntil() before Firebase's
-// handler runs, so iOS never considers it silent.
+
+// ── Shared notification display function with debounce ──
+// Both the native 'push' handler and Firebase onBackgroundMessage call this.
+// 2-second debounce prevents showing duplicate notifications.
+function showPushNotification(notificationData) {
+    const now = Date.now();
+
+    // Debounce: skip if a notification was shown within the last 2 seconds
+    if (now - lastNotificationTime < NOTIFICATION_DEBOUNCE_MS) {
+        console.log('[SW] Debounced - notification already shown recently');
+        return Promise.resolve();
+    }
+    lastNotificationTime = now;
+
+    const title = notificationData.title || 'Ragenaizer';
+    const body = notificationData.body || '';
+
+    // Build absolute icon URLs
+    const origin = self.location.origin;
+    const icon = notificationData.icon || `${origin}/assets/notification-icon-v2.png`;
+    const badge = `${origin}/assets/badge-icon.png`;
+
+    const options = {
+        body: body,
+        icon: icon,
+        badge: badge,
+        tag: 'ragenaizer-' + now,  // Unique tag per notification
+        renotify: true,
+        requireInteraction: false,
+        data: notificationData,
+        vibrate: [200, 100, 200]
+    };
+
+    console.log('[SW] Showing notification:', title, '-', body);
+
+    return self.registration.showNotification(title, options)
+        .then(() => {
+            console.log('[SW] Notification displayed successfully');
+            // Clean up Chrome WebAPK phantom notifications
+            return cleanupAutoNotification();
+        })
+        .catch((error) => {
+            console.error('[SW] Error displaying notification:', error);
+        });
+}
+
+// ── PRIMARY HANDLER: Native Web Push API ──
+// Fires for ALL push events (FCM data-only and notification messages).
 self.addEventListener('push', (event) => {
     console.log('[SW] Push event received');
 
-    let title = 'Ragenaizer';
-    let body = '';
-    let icon = '/assets/notification-icon-v2.png';
-    let badge = '/assets/badge-icon.png';
-    // Unique tag per push to prevent Chrome treating replacement as "no notification"
-    let tag = 'ragenaizer-' + Date.now();
-    let data = {};
+    let notificationData = {};
 
     try {
         if (event.data) {
@@ -278,30 +319,29 @@ self.addEventListener('push', (event) => {
             // FCM notification messages: payload.notification has title/body
             const n = payload.notification || {};
 
-            title = d.title || n.title || title;
-            body  = d.body  || n.body  || body;
-            icon  = d.icon  || n.icon  || icon;
-            // Keep unique tag unless explicitly set by backend
-            if (d.tag) tag = d.tag;
-            data  = d;
+            notificationData = {
+                title: d.title || n.title || 'Ragenaizer',
+                body: d.body || n.body || '',
+                icon: d.icon || n.icon,
+                ...d  // Include all data fields for notification click handling
+            };
         }
     } catch (err) {
         console.warn('[SW] Failed to parse push data:', err);
-        try { body = event.data?.text() || ''; } catch (_) {}
+        try {
+            notificationData.body = event.data?.text() || '';
+        } catch (_) {}
     }
 
-    event.waitUntil(
-        self.registration.showNotification(title, { body, icon, badge, tag, renotify: true, data })
-            .then(() => cleanupAutoNotification())
-    );
+    // CRITICAL: Use waitUntil to keep SW alive until notification is shown
+    event.waitUntil(showPushNotification(notificationData));
 });
 
-// Chrome WebAPK sometimes generates a phantom "This site has been updated in
-// the background" notification (tag: user_visible_auto_notification) alongside
-// our real notification. Proactively close it with multiple retries.
+// ── Chrome WebAPK phantom notification cleanup ──
 async function cleanupAutoNotification() {
-    // Check at 200ms, 500ms, and 1500ms to catch late-created auto-notifications
-    const delays = [200, 300, 1000];
+    // Check frequently for 10 seconds to catch late-created auto-notifications.
+    // WebAPK's native push handler can create these at unpredictable times.
+    const delays = [100, 200, 300, 500, 1000, 1000, 2000, 2000, 3000];
     for (const delay of delays) {
         await new Promise((r) => setTimeout(r, delay));
         const notifications = await self.registration.getNotifications();
@@ -315,16 +355,45 @@ async function cleanupAutoNotification() {
 }
 
 // ============================================================
-// FIREBASE — Intentionally NOT imported in Service Worker
+// FIREBASE — Import SDK for proper Chrome WebAPK push integration
 // ============================================================
-// firebase-messaging-compat.js registers its own internal 'push' handler.
-// For data-only FCM messages that handler does nothing visible, causing
-// Chrome/Samsung Internet to show "This site has been updated in the
-// background".  All push handling is done by our listener above.
-//
-// getToken() on the main page works without firebase.messaging() in the
-// SW — it only needs the SW registration's pushManager.subscribe().
-// Token management (subscribe/unsubscribe) is handled by the main page.
+// Firebase SDK in the SW ensures Chrome's WebAPK layer properly
+// acknowledges push events, preventing "This site has been updated
+// in the background" phantom notifications on Android.
+importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
+
+// Initialize Firebase in the service worker
+firebase.initializeApp({
+    apiKey: "AIzaSyD7hkVEbWubQaK8H1rEOEKFG3aDej_EcCs",
+    authDomain: "ragenaizer.firebaseapp.com",
+    projectId: "ragenaizer",
+    storageBucket: "ragenaizer.firebasestorage.app",
+    messagingSenderId: "888674952561",
+    appId: "1:888674952561:web:944eea6556fdc87a5a82d0",
+    measurementId: "G-60658KXB0N"
+});
+
+const messaging = firebase.messaging();
+
+// ── SECONDARY HANDLER: Firebase onBackgroundMessage ──
+// Fires when Firebase receives a data-only message while app is in background.
+// Debounce prevents duplicate notification if push handler already showed one.
+messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Firebase onBackgroundMessage received:', JSON.stringify(payload));
+
+    const d = payload.data || {};
+    const n = payload.notification || {};
+
+    const notificationData = {
+        title: d.title || n.title || 'Ragenaizer',
+        body: d.body || n.body || '',
+        icon: d.icon || n.icon,
+        ...d
+    };
+
+    return showPushNotification(notificationData);
+});
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
