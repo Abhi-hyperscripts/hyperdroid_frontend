@@ -1411,20 +1411,37 @@ window.addEventListener('resize', handleResponsive);
 // leaving the UI clipped at the top (navbar hidden).
 
 function setupIOSKeyboardFix() {
+    // Add class to html element for CSS targeting on mobile
+    if (window.innerWidth <= 768) {
+        document.documentElement.classList.add('chat-page-html');
+    }
+
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     if (!isIOS) return;
 
+    function resetScroll() {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+    }
+
     // When any input/textarea loses focus (keyboard closing), reset scroll
     document.addEventListener('focusout', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            // Small delay to let iOS finish its viewport animation
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-                document.body.scrollTop = 0;
-                document.documentElement.scrollTop = 0;
-            }, 50);
+            // Multiple resets at different timings to catch iOS animation
+            resetScroll();
+            setTimeout(resetScroll, 50);
+            setTimeout(resetScroll, 150);
+            setTimeout(resetScroll, 300);
+        }
+    });
+
+    // Catch any scroll on the window itself and force it back
+    window.addEventListener('scroll', () => {
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+            resetScroll();
         }
     });
 
@@ -1434,12 +1451,10 @@ function setupIOSKeyboardFix() {
         window.visualViewport.addEventListener('resize', () => {
             const currentHeight = window.visualViewport.height;
             // Keyboard closing = viewport getting larger
-            if (currentHeight > lastHeight && currentHeight >= window.innerHeight * 0.8) {
-                setTimeout(() => {
-                    window.scrollTo(0, 0);
-                    document.body.scrollTop = 0;
-                    document.documentElement.scrollTop = 0;
-                }, 50);
+            if (currentHeight > lastHeight) {
+                resetScroll();
+                setTimeout(resetScroll, 100);
+                setTimeout(resetScroll, 300);
             }
             lastHeight = currentHeight;
         });

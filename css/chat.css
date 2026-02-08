@@ -2095,6 +2095,21 @@ body.chat-page::after {
    ============================================ */
 
 @media (max-width: 768px) {
+    /* iOS keyboard fix: position:fixed on body prevents iOS Safari/PWA from
+       scrolling the body when the virtual keyboard opens/closes.
+       Without this, dismissing the keyboard leaves the UI shifted up. */
+    html.chat-page-html,
+    body.chat-page {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
     /* Fix: Navbar must stay visible on mobile — position:fixed prevents
        touch-scroll propagation from chat messages pushing it off-screen.
        home.css sets body.dashboard .navbar to position:relative which breaks on real devices. */
