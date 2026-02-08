@@ -9,10 +9,12 @@ const APP_VERSION = SW_VERSION;
 const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
-// ── Push-handler flag ──
-// When the native 'push' event fires and shows a notification, we set this flag.
-// Firebase onBackgroundMessage checks it to avoid showing a duplicate.
-let pushHandlerFiredRecently = false;
+// NOTE: Firebase SDK is intentionally NOT loaded in this service worker.
+// FCM data-only messages are delivered via the standard Web Push API.
+// The native 'push' event handler below receives them without Firebase SDK.
+// Loading Firebase SDK here caused interference — its internal push handler
+// called event.waitUntil() with a promise that didn't include showNotification(),
+// causing Chrome Android to show "This site has been updated in the background".
 
 // ── Assets to pre-cache on install ──
 const PRECACHE_ASSETS = [
@@ -292,10 +294,6 @@ function buildNotificationOptions(notificationData) {
 self.addEventListener('push', (event) => {
     console.log('[SW] Push event received');
 
-    // Set flag so onBackgroundMessage knows not to duplicate
-    pushHandlerFiredRecently = true;
-    setTimeout(() => { pushHandlerFiredRecently = false; }, 3000);
-
     let notificationData = {};
 
     try {
@@ -356,54 +354,8 @@ async function cleanupPhantomNotifications() {
 }
 
 // ============================================================
-// FIREBASE — Import SDK for proper Chrome WebAPK push integration
+// NOTIFICATION CLICK
 // ============================================================
-// Firebase SDK in the SW ensures Chrome's WebAPK layer properly
-// acknowledges push events, preventing "This site has been updated
-// in the background" phantom notifications on Android.
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
-
-// Initialize Firebase in the service worker
-firebase.initializeApp({
-    apiKey: "AIzaSyD7hkVEbWubQaK8H1rEOEKFG3aDej_EcCs",
-    authDomain: "ragenaizer.firebaseapp.com",
-    projectId: "ragenaizer",
-    storageBucket: "ragenaizer.firebasestorage.app",
-    messagingSenderId: "888674952561",
-    appId: "1:888674952561:web:944eea6556fdc87a5a82d0",
-    measurementId: "G-60658KXB0N"
-});
-
-const messaging = firebase.messaging();
-
-// ── SECONDARY HANDLER: Firebase onBackgroundMessage ──
-// Only shows a notification if the native push handler somehow didn't fire.
-// In normal operation, push handler fires first → sets pushHandlerFiredRecently → this skips.
-messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Firebase onBackgroundMessage received');
-
-    // Push handler already showed the notification — skip to avoid duplicates
-    if (pushHandlerFiredRecently) {
-        console.log('[SW] Push handler already showed notification, skipping onBackgroundMessage');
-        return;
-    }
-
-    // Fallback: push handler didn't fire (shouldn't happen, but safe)
-    console.log('[SW] Push handler did not fire, showing from onBackgroundMessage');
-    const d = payload.data || {};
-    const n = payload.notification || {};
-
-    const notificationData = {
-        title: d.title || n.title || 'Ragenaizer',
-        body: d.body || n.body || '',
-        icon: d.icon || n.icon,
-        ...d
-    };
-
-    const { title, options } = buildNotificationOptions(notificationData);
-    return self.registration.showNotification(title, options);
-});
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
