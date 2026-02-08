@@ -224,8 +224,23 @@ async function ensureFcmTokenRegistered(force = false) {
 
         // Check if already registered (fast path)
         if (!force && localStorage.getItem(_FCM_KEYS.registered) === 'true' && _currentFcmToken) {
-            console.log('[FCM] Already registered, using cached token');
-            return _currentFcmToken;
+            // Validate the actual push subscription is still valid
+            // Catches scenarios where SW is cleared/updated but localStorage still has the old flag
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const subscription = await reg.pushManager.getSubscription();
+                if (!subscription) {
+                    console.log('[FCM] Push subscription lost, forcing re-registration');
+                    force = true;
+                    // Fall through to full registration below
+                } else {
+                    console.log('[FCM] Already registered, subscription valid');
+                    return _currentFcmToken;
+                }
+            } catch (e) {
+                console.warn('[FCM] Could not check subscription, using cached token:', e);
+                return _currentFcmToken;
+            }
         }
 
         // Check permission — don't prompt from random pages
@@ -406,6 +421,17 @@ function clearFcmState() {
     localStorage.removeItem(`${STORAGE_PREFIX}fcm_version`);
     _currentFcmToken = null;
     console.log('[FCM] State cleared');
+}
+
+/**
+ * Clear the 'registered' flag so the next page load does a full FCM re-registration.
+ * Call this after login to ensure the backend always has the freshest token.
+ * Does NOT clear the token itself — the subscription check (ensureFcmTokenRegistered)
+ * will detect truly invalid subscriptions.
+ */
+function forceRegistrationOnNextLoad() {
+    localStorage.removeItem(_FCM_KEYS.registered);
+    console.log('[FCM] Registration flag cleared — will re-register on next page load');
 }
 
 /**

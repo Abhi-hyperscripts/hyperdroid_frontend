@@ -115,6 +115,11 @@ async function handleFormSubmit() {
                 }
             }
 
+            // Force FCM re-registration on next page load so backend gets the freshest token
+            if (typeof forceRegistrationOnNextLoad === 'function') {
+                forceRegistrationOnNextLoad();
+            }
+
             // Redirect immediately — full FCM registration happens on home.html / navigation.js
             window.location.href = 'home.html';
         } else {
