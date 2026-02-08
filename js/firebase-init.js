@@ -42,6 +42,22 @@ let _fcmRegistrationInProgress = false;
 // Restore cached token from localStorage on load
 _currentFcmToken = localStorage.getItem(_FCM_KEYS.token) || null;
 
+// When the SW controller changes (new SW takes over), the old push subscription
+// and FCM token become invalid. Force re-registration on next opportunity.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('[FCM] SW controller changed — clearing registration flag for re-registration');
+        localStorage.removeItem(_FCM_KEYS.registered);
+        _currentFcmToken = null;
+        // Attempt re-registration after a short delay (let new SW settle)
+        setTimeout(() => {
+            if (!_fcmRegistrationInProgress) {
+                ensureFcmTokenRegistered(true).catch(() => {});
+            }
+        }, 3000);
+    });
+}
+
 /**
  * Load Firebase SDK scripts from CDN.
  * Returns a promise that resolves when both scripts are loaded.
@@ -103,43 +119,67 @@ async function _registerServiceWorker() {
         });
         console.log('[FCM] Service worker registered:', registration.scope);
 
-        // If a new SW is waiting, tell it to activate
+        // Helper: wait for a SW to reach 'activated' state
+        function waitForActivation(sw) {
+            return new Promise((resolve) => {
+                if (sw.state === 'activated') { resolve(); return; }
+                sw.addEventListener('statechange', () => {
+                    if (sw.state === 'activated') resolve();
+                });
+            });
+        }
+
+        // If a new SW is waiting, tell it to activate and wait
         if (registration.waiting) {
             console.log('[FCM] New service worker waiting, activating...');
             registration.waiting.postMessage('SKIP_WAITING');
+            await waitForActivation(registration.waiting);
+            console.log('[FCM] Waiting SW now active');
         }
 
-        // Detect when a new SW is installed and waiting
-        registration.addEventListener('updatefound', () => {
-            const newSW = registration.installing;
-            if (newSW) {
-                newSW.addEventListener('statechange', () => {
-                    if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log('[FCM] New service worker installed and waiting');
+        // If a new SW is installing, wait for it to finish
+        if (registration.installing) {
+            console.log('[FCM] New service worker installing, waiting...');
+            const installingSW = registration.installing;
+            await new Promise((resolve) => {
+                installingSW.addEventListener('statechange', () => {
+                    if (installingSW.state === 'installed') {
+                        // Now it's installed and waiting — tell it to activate
+                        installingSW.postMessage('SKIP_WAITING');
                     }
-                });
-            }
-        });
-
-        // Wait for a service worker to be active
-        if (!registration.active) {
-            const sw = registration.installing || registration.waiting;
-            if (sw) {
-                await new Promise((resolve) => {
-                    sw.addEventListener('statechange', () => {
-                        if (sw.state === 'activated') {
-                            resolve();
-                        }
-                    });
-                    if (sw.state === 'activated') {
+                    if (installingSW.state === 'activated') {
                         resolve();
                     }
                 });
+                if (installingSW.state === 'activated') resolve();
+            });
+            console.log('[FCM] Installing SW now active');
+        }
+
+        // Wait for any active SW (first install case)
+        if (!registration.active) {
+            const sw = registration.installing || registration.waiting;
+            if (sw) {
+                await waitForActivation(sw);
                 console.log('[FCM] Service worker now active');
             }
         } else {
             console.log('[FCM] Service worker already active');
         }
+
+        // Listen for future updates — if SW updates mid-session, re-register token
+        registration.addEventListener('updatefound', () => {
+            const newSW = registration.installing;
+            if (newSW) {
+                newSW.addEventListener('statechange', () => {
+                    if (newSW.state === 'activated') {
+                        console.log('[FCM] SW updated mid-session, scheduling re-registration');
+                        // Clear registered flag so next ensureFcmTokenRegistered() does a full re-register
+                        localStorage.removeItem(_FCM_KEYS.registered);
+                    }
+                });
+            }
+        });
 
         return registration;
     } catch (err) {
