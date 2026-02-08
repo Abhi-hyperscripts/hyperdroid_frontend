@@ -255,101 +255,66 @@ self.addEventListener('message', (event) => {
 });
 
 // ============================================================
-// PUSH NOTIFICATIONS — Split handler approach
+// PUSH NOTIFICATIONS
 // ============================================================
-// The native 'push' event MUST always call showNotification().
-// If it doesn't, Chrome Android shows "This site has been updated
-// in the background" as a penalty notification.
-//
-// Firebase onBackgroundMessage is secondary — it only shows a
-// notification if the push handler somehow didn't fire.
 
-// ── Helper: build notification options from payload data ──
-function buildNotificationOptions(notificationData) {
-    const title = notificationData.title || 'Ragenaizer';
-    const body = notificationData.body || '';
-    const origin = self.location.origin;
-    const icon = notificationData.icon || `${origin}/assets/notification-icon-v2.png`;
-    const badge = `${origin}/assets/badge-icon.png`;
-
-    return {
-        title,
-        options: {
-            body: body,
-            icon: icon,
-            badge: badge,
-            tag: 'ragenaizer-' + Date.now(),
-            renotify: true,
-            requireInteraction: false,
-            data: notificationData,
-            vibrate: [200, 100, 200]
-        }
-    };
-}
-
-// ── PRIMARY HANDLER: Native Web Push API ──
-// CRITICAL: This handler ALWAYS shows a notification. Never debounce here.
-// Chrome Android checks that the push event results in a showNotification()
-// call — if it doesn't, the phantom "updated in background" appears.
+// ── Push handler: show notification as fast as possible ──
 self.addEventListener('push', (event) => {
-    console.log('[SW] Push event received');
-
-    let notificationData = {};
+    // Parse synchronously — no async before showNotification
+    let title = 'Ragenaizer';
+    let body = '';
+    let icon = null;
+    let data = {};
 
     try {
         if (event.data) {
             const payload = event.data.json();
-            console.log('[SW] Push payload:', JSON.stringify(payload));
-
             const d = payload.data || {};
             const n = payload.notification || {};
-
-            notificationData = {
-                title: d.title || n.title || 'Ragenaizer',
-                body: d.body || n.body || '',
-                icon: d.icon || n.icon,
-                ...d
-            };
+            title = d.title || n.title || 'Ragenaizer';
+            body = d.body || n.body || '';
+            icon = d.icon || n.icon;
+            data = { ...d, title, body };
         }
-    } catch (err) {
-        console.warn('[SW] Failed to parse push data:', err);
-        try {
-            notificationData.body = event.data?.text() || '';
-        } catch (_) {}
+    } catch (_) {
+        try { body = event.data?.text() || ''; } catch (__) {}
     }
 
-    const { title, options } = buildNotificationOptions(notificationData);
-    console.log('[SW] Showing notification:', title, '-', options.body);
+    const origin = self.location.origin;
 
-    // CRITICAL: waitUntil keeps the SW alive until showNotification resolves.
-    // showNotification MUST be called — never skip or debounce in this handler.
+    // Show notification IMMEDIATELY — zero delay between push event and showNotification
     event.waitUntil(
-        self.registration.showNotification(title, options)
-            .then(() => {
-                console.log('[SW] Notification displayed successfully');
-                return cleanupPhantomNotifications();
-            })
-            .catch((error) => {
-                console.error('[SW] Error displaying notification:', error);
-            })
+        self.registration.showNotification(title, {
+            body: body,
+            icon: icon || `${origin}/assets/notification-icon-v2.png`,
+            badge: `${origin}/assets/badge-icon.png`,
+            tag: 'ragenaizer-' + Date.now(),
+            renotify: true,
+            requireInteraction: false,
+            data: data,
+            vibrate: [200, 100, 200]
+        }).then(() => killPhantomNotifications())
     );
 });
 
-// ── Chrome phantom notification cleanup ──
-async function cleanupPhantomNotifications() {
-    // Chrome Android (especially WebAPK) may create auto-notifications.
-    // Check repeatedly to catch late-created ones.
-    const delays = [100, 300, 500, 1000, 2000, 3000];
+// ── Aggressively close ANY notification not created by us ──
+// Chrome Android / WebAPK creates phantom "updated in background"
+// notifications. We close everything that doesn't have our tag prefix.
+async function killPhantomNotifications() {
+    // Check 10 times over ~12 seconds to catch late-appearing phantoms
+    const delays = [50, 100, 200, 500, 1000, 1000, 2000, 2000, 3000, 3000];
     for (const delay of delays) {
         await new Promise((r) => setTimeout(r, delay));
-        const notifications = await self.registration.getNotifications();
-        for (const n of notifications) {
-            // Close Chrome's auto-generated phantom notifications
-            if (n.tag && (n.tag.includes('user_visible_auto') || n.tag.includes('user_visible_fallback'))) {
-                console.log('[SW] Closing phantom notification:', n.tag);
-                n.close();
+        try {
+            const notifications = await self.registration.getNotifications();
+            for (const n of notifications) {
+                // Close ANY notification that isn't ours
+                if (!n.tag || !n.tag.startsWith('ragenaizer-')) {
+                    console.log('[SW] Killing phantom:', n.tag, n.title);
+                    n.close();
+                }
             }
-        }
+        } catch (_) {}
     }
 }
 
