@@ -289,7 +289,9 @@ function renderConversations(convos) {
         const displayName = isGroup ? conv.group_name : getOtherParticipantName(conv);
         const initials = getInitials(displayName);
         let preview = conv.last_message?.content || 'No messages yet';
-        if (preview.startsWith(MEETING_CARD_PREFIX)) {
+        if (conv.last_message?.message_type === 'file') {
+            preview = conv.last_message.file_name || 'Sent a file';
+        } else if (preview.startsWith(MEETING_CARD_PREFIX)) {
             preview = '';
         }
         const time = conv.last_message ? formatTime(conv.last_message.created_at) : '';
