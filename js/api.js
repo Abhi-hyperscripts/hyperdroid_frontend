@@ -2920,11 +2920,12 @@ class API {
      * Register a device token for push notifications.
      * @param {string} token - The FCM device token
      * @param {string} platform - 'web', 'android', or 'ios'
+     * @param {string} browser - 'chrome', 'safari', 'firefox', 'samsung', 'edge', 'unknown'
      */
-    async registerDeviceToken(token, platform = 'web') {
+    async registerDeviceToken(token, platform = 'web', browser = 'unknown') {
         return this.request('/notifications/device-tokens', {
             method: 'POST',
-            body: JSON.stringify({ token, platform })
+            body: JSON.stringify({ token, platform, browser })
         });
     }
 

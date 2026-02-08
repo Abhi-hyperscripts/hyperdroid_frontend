@@ -14,6 +14,24 @@ const _FCM_KEYS = {
     failCount: `${STORAGE_PREFIX}fcm_fail_count`
 };
 
+// ==================== Device/Browser Detection ====================
+function _detectPlatform() {
+    const ua = navigator.userAgent || '';
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/i.test(ua)) return 'android';
+    return 'web';
+}
+
+function _detectBrowser() {
+    const ua = navigator.userAgent || '';
+    if (/SamsungBrowser/i.test(ua)) return 'samsung';
+    if (/Edg\//i.test(ua)) return 'edge';
+    if (/Firefox/i.test(ua)) return 'firefox';
+    if (/CriOS|Chrome/i.test(ua) && !/Edg/i.test(ua)) return 'chrome';
+    if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return 'safari';
+    return 'unknown';
+}
+
 // ==================== In-memory State ====================
 let _firebaseApp = null;
 let _messaging = null;
@@ -302,7 +320,9 @@ async function registerTokenWithBackend(fcmToken) {
             return;
         }
 
-        const result = await api.registerDeviceToken(fcmToken, 'web');
+        const platform = _detectPlatform();
+        const browser = _detectBrowser();
+        const result = await api.registerDeviceToken(fcmToken, platform, browser);
         console.log('[FCM] Token registered with backend:', result);
     } catch (err) {
         console.error('[FCM] Failed to register token with backend:', err);
