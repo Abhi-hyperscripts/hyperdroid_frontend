@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 30]
+// Ragenaizer Service Worker  [BUILD 31]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -251,6 +251,13 @@ self.addEventListener('message', (event) => {
 
     if (event.data === 'CHECK_UPDATE') {
         checkForUpdate();
+    }
+
+    // Respond with actual running version so the page can detect stale SW code
+    if (event.data === 'GET_VERSION') {
+        if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ type: 'SW_VERSION_RESPONSE', version: APP_VERSION });
+        }
     }
 });
 
