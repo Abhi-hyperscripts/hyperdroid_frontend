@@ -30,6 +30,7 @@ const PRECACHE_ASSETS = [
     '/js/pwa-install-prompt.js',
     '/assets/brand_logo.png',
     '/assets/notification-icon-v2.png',
+    '/assets/badge-icon.png',
     '/assets/favicon-32x32.png',
     '/assets/favicon-16x16.png',
     '/manifest.json'
@@ -262,7 +263,7 @@ self.addEventListener('push', (event) => {
     let title = 'Ragenaizer';
     let body = '';
     let icon = '/assets/notification-icon-v2.png';
-    let badge = '/assets/favicon-32x32.png';
+    let badge = '/assets/badge-icon.png';
     let tag = 'ragenaizer-notification';
     let data = {};
 
