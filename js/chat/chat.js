@@ -1532,7 +1532,7 @@ async function uploadFile(file) {
             progressFill.style.width = '100%';
             progressText.textContent = 'Ready to send';
 
-            // Store file info for sending
+            // Store file info and auto-send
             pendingFileAttachment = {
                 s3_key: result.s3_key,
                 file_name: result.file_name,
@@ -1540,6 +1540,11 @@ async function uploadFile(file) {
                 content_type: result.content_type,
                 download_url: result.download_url
             };
+
+            // Auto-send file message after successful upload
+            progressContainer.style.display = 'none';
+            await sendMessage();
+            return;
         } else {
             showToast(`Upload failed: ${result.error || 'Unknown error'}`, 'error');
             removeFileAttachment();
