@@ -258,19 +258,16 @@ self.addEventListener('message', (event) => {
 // PUSH NOTIFICATIONS
 // ============================================================
 
-// ── Push handler ──
-// The backend sends FCM messages with BOTH a `notification` field (for Chrome
-// WebAPK native display) and a `data` field (for click handling).
+// ── Push handler (v25) ──
+// CRITICAL: Always call showNotification() IMMEDIATELY inside event.waitUntil().
+// No conditions, no async work before it. Chrome Android WebAPK has a race:
+// if it doesn't see showNotification() called fast enough, it creates a phantom
+// "This site has been updated in the background" notification. The phantom lives
+// at Chrome's native Android level — getNotifications() CANNOT see or close it.
 //
-// When Chrome receives a message with a `notification` field in the BACKGROUND,
-// it displays the notification natively via the WebAPK — no SW involvement.
-// The push event still fires, but we must NOT call showNotification() again
-// or the user sees duplicates.
-//
-// We only call showNotification() as a FALLBACK for data-only messages
-// (e.g. older backend, direct API testing, or non-WebAPK browsers).
+// Fix: Use a FIXED tag so each new notification replaces the previous one.
+// No timestamp in tag. No conditional logic. Just show it.
 self.addEventListener('push', (event) => {
-    let payload = null;
     let title = 'Ragenaizer';
     let body = '';
     let icon = null;
@@ -278,35 +275,26 @@ self.addEventListener('push', (event) => {
 
     try {
         if (event.data) {
-            payload = event.data.json();
+            const payload = event.data.json();
             const d = payload.data || {};
-            const n = payload.notification || {};
-            title = d.title || n.title || 'Ragenaizer';
-            body = d.body || n.body || '';
-            icon = d.icon || n.icon;
+            title = d.title || 'Ragenaizer';
+            body = d.body || '';
+            icon = d.icon || null;
             data = { ...d, title, body };
         }
     } catch (_) {
         try { body = event.data?.text() || ''; } catch (__) {}
     }
 
-    // If the payload has a `notification` field, Chrome handles display natively.
-    // We do NOT call showNotification() — Chrome already did it via the WebAPK.
-    if (payload && payload.notification) {
-        console.log('[SW] Push has notification field — Chrome displays natively, skipping showNotification');
-        return;
-    }
-
-    // Fallback: data-only message — WE must show the notification.
     const origin = self.location.origin;
-    console.log('[SW] Data-only push — showing notification via SW');
 
+    // ALWAYS show notification — no conditions, no early returns.
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
             icon: icon || `${origin}/assets/notification-icon-v2.png`,
             badge: `${origin}/assets/badge-icon.png`,
-            tag: 'ragenaizer-' + Date.now(),
+            tag: 'ragenaizer-notification',
             renotify: true,
             requireInteraction: false,
             data: data,
