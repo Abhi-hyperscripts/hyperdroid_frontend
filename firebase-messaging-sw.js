@@ -258,9 +258,19 @@ self.addEventListener('message', (event) => {
 // PUSH NOTIFICATIONS
 // ============================================================
 
-// ── Push handler: show notification as fast as possible ──
+// ── Push handler ──
+// The backend sends FCM messages with BOTH a `notification` field (for Chrome
+// WebAPK native display) and a `data` field (for click handling).
+//
+// When Chrome receives a message with a `notification` field in the BACKGROUND,
+// it displays the notification natively via the WebAPK — no SW involvement.
+// The push event still fires, but we must NOT call showNotification() again
+// or the user sees duplicates.
+//
+// We only call showNotification() as a FALLBACK for data-only messages
+// (e.g. older backend, direct API testing, or non-WebAPK browsers).
 self.addEventListener('push', (event) => {
-    // Parse synchronously — no async before showNotification
+    let payload = null;
     let title = 'Ragenaizer';
     let body = '';
     let icon = null;
@@ -268,7 +278,7 @@ self.addEventListener('push', (event) => {
 
     try {
         if (event.data) {
-            const payload = event.data.json();
+            payload = event.data.json();
             const d = payload.data || {};
             const n = payload.notification || {};
             title = d.title || n.title || 'Ragenaizer';
@@ -280,9 +290,17 @@ self.addEventListener('push', (event) => {
         try { body = event.data?.text() || ''; } catch (__) {}
     }
 
-    const origin = self.location.origin;
+    // If the payload has a `notification` field, Chrome handles display natively.
+    // We do NOT call showNotification() — Chrome already did it via the WebAPK.
+    if (payload && payload.notification) {
+        console.log('[SW] Push has notification field — Chrome displays natively, skipping showNotification');
+        return;
+    }
 
-    // Show notification IMMEDIATELY — zero delay between push event and showNotification
+    // Fallback: data-only message — WE must show the notification.
+    const origin = self.location.origin;
+    console.log('[SW] Data-only push — showing notification via SW');
+
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
@@ -293,30 +311,9 @@ self.addEventListener('push', (event) => {
             requireInteraction: false,
             data: data,
             vibrate: [200, 100, 200]
-        }).then(() => killPhantomNotifications())
+        })
     );
 });
-
-// ── Aggressively close ANY notification not created by us ──
-// Chrome Android / WebAPK creates phantom "updated in background"
-// notifications. We close everything that doesn't have our tag prefix.
-async function killPhantomNotifications() {
-    // Check 10 times over ~12 seconds to catch late-appearing phantoms
-    const delays = [50, 100, 200, 500, 1000, 1000, 2000, 2000, 3000, 3000];
-    for (const delay of delays) {
-        await new Promise((r) => setTimeout(r, delay));
-        try {
-            const notifications = await self.registration.getNotifications();
-            for (const n of notifications) {
-                // Close ANY notification that isn't ours
-                if (!n.tag || !n.tag.startsWith('ragenaizer-')) {
-                    console.log('[SW] Killing phantom:', n.tag, n.title);
-                    n.close();
-                }
-            }
-        } catch (_) {}
-    }
-}
 
 // ============================================================
 // NOTIFICATION CLICK
