@@ -2320,14 +2320,11 @@ body.chat-page::after {
     body.chat-page {
         display: flex !important;
         flex-direction: column !important;
-        height: 100vh !important;
-        height: 100dvh !important;
-        /* min-height:0 overrides the THREE min-height:100vh rules in styles.css
-           (body, .dashboard, body.dashboard) that force the body to grow past
-           the set height when content is taller. Without this, body was 1891px
-           instead of viewport height. */
+        /* HEIGHT IS CONTROLLED EXCLUSIVELY BY JS (setupIOSKeyboardFix).
+           JS uses window.innerHeight which gives the actual usable viewport
+           (797px on iOS PWA) whereas 100dvh resolves to the full screen
+           (844px including safe areas). Do NOT add height/max-height here. */
         min-height: 0 !important;
-        max-height: 100dvh !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
