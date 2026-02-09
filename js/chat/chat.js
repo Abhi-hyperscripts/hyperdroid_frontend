@@ -585,6 +585,33 @@ function renderMessage(msg) {
         `;
     }
 
+    // Build message actions for own messages (edit + delete for text, delete-only for files)
+    let actionsHtml = '';
+    if (isOwn && !msg.is_deleted) {
+        const isTextMessage = msg.message_type === 'text' || (!msg.message_type && msg.content);
+        actionsHtml = `
+            <div class="message-actions">
+                ${isTextMessage ? `
+                    <button class="msg-action-btn" onclick="event.stopPropagation(); startEditMessage('${msg.id}')" title="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                ` : ''}
+                <button class="msg-action-btn msg-action-delete" onclick="event.stopPropagation(); confirmDeleteMessage('${msg.id}')" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-2 14H7L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4h6v2"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+
     return `
         <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.id}">
             <div class="message-avatar">${initials}</div>
@@ -592,6 +619,7 @@ function renderMessage(msg) {
                 <span class="message-sender">${escapeHtml(senderName)}</span>
                 ${fileHtml}
                 ${textHtml}
+                ${actionsHtml}
                 <span class="message-time">${time}</span>
             </div>
         </div>
@@ -1550,6 +1578,182 @@ function renderMeetingCard(msg, cardData, isOwn, senderName, time) {
             </div>
         </div>
     `;
+}
+
+// ============================================
+// Message Edit & Delete
+// ============================================
+
+function startEditMessage(messageId) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageEl) return;
+
+    const bubbleEl = messageEl.querySelector('.message-bubble');
+    if (!bubbleEl) return;
+
+    // Get current text (excluding the edited indicator)
+    const editedIndicator = bubbleEl.querySelector('.edited-indicator');
+    const currentText = editedIndicator
+        ? bubbleEl.textContent.replace(editedIndicator.textContent, '').trim()
+        : bubbleEl.textContent.trim();
+
+    // Replace bubble content with edit form
+    const originalHtml = bubbleEl.innerHTML;
+    bubbleEl.classList.add('editing');
+    bubbleEl.innerHTML = `
+        <div class="message-edit-container">
+            <textarea class="message-edit-textarea" rows="1">${escapeHtml(currentText)}</textarea>
+            <div class="message-edit-actions">
+                <button class="message-edit-cancel" onclick="event.stopPropagation(); cancelEditMessage('${messageId}')">Cancel</button>
+                <button class="message-edit-save" onclick="event.stopPropagation(); saveEditMessage('${messageId}')">Save</button>
+            </div>
+        </div>
+    `;
+
+    // Store original HTML for cancel
+    bubbleEl.dataset.originalHtml = originalHtml;
+
+    // Focus textarea and auto-resize
+    const textarea = bubbleEl.querySelector('.message-edit-textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    autoResizeEditTextarea(textarea);
+
+    // Handle Enter to save, Shift+Enter for newline, Escape to cancel
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            saveEditMessage(messageId);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelEditMessage(messageId);
+        }
+    });
+
+    textarea.addEventListener('input', () => autoResizeEditTextarea(textarea));
+
+    // Hide action buttons while editing
+    const actionsEl = messageEl.querySelector('.message-actions');
+    if (actionsEl) actionsEl.style.display = 'none';
+}
+
+function autoResizeEditTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+function cancelEditMessage(messageId) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageEl) return;
+
+    const bubbleEl = messageEl.querySelector('.message-bubble');
+    if (!bubbleEl) return;
+
+    // Restore original content
+    if (bubbleEl.dataset.originalHtml) {
+        bubbleEl.innerHTML = bubbleEl.dataset.originalHtml;
+        delete bubbleEl.dataset.originalHtml;
+    }
+    bubbleEl.classList.remove('editing');
+
+    // Restore action buttons
+    const actionsEl = messageEl.querySelector('.message-actions');
+    if (actionsEl) actionsEl.style.display = '';
+}
+
+async function saveEditMessage(messageId) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageEl) return;
+
+    const bubbleEl = messageEl.querySelector('.message-bubble');
+    if (!bubbleEl) return;
+
+    const textarea = bubbleEl.querySelector('.message-edit-textarea');
+    if (!textarea) return;
+
+    const newContent = textarea.value.trim();
+    if (!newContent) {
+        showToast('Message cannot be empty', 'error');
+        return;
+    }
+
+    // Check if content actually changed
+    const originalHtml = bubbleEl.dataset.originalHtml || '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = originalHtml;
+    const editedSpan = tempDiv.querySelector('.edited-indicator');
+    if (editedSpan) editedSpan.remove();
+    const originalText = tempDiv.textContent.trim();
+
+    if (newContent === originalText) {
+        cancelEditMessage(messageId);
+        return;
+    }
+
+    // Disable save button while processing
+    const saveBtn = bubbleEl.querySelector('.message-edit-save');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+        if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+            await signalRConnection.invoke('EditMessage', messageId, newContent);
+        } else {
+            // Fallback to REST API
+            await api.editMessage(messageId, newContent);
+            // Manually update the UI since we won't get a SignalR event
+            handleMessageEdited({
+                message_id: messageId,
+                conversation_id: currentConversationId,
+                new_content: newContent,
+                edited_at: new Date().toISOString()
+            });
+        }
+        bubbleEl.classList.remove('editing');
+        delete bubbleEl.dataset.originalHtml;
+        // Restore action buttons
+        const actionsEl = messageEl.querySelector('.message-actions');
+        if (actionsEl) actionsEl.style.display = '';
+    } catch (error) {
+        console.error('Error editing message:', error);
+        showToast('Failed to edit message', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+        }
+    }
+}
+
+async function confirmDeleteMessage(messageId) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Message',
+        message: 'Are you sure you want to delete this message? This action cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        if (signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+            await signalRConnection.invoke('DeleteMessage', messageId);
+        } else {
+            // Fallback to REST API
+            await api.deleteMessage(messageId);
+            // Manually remove from DOM since we won't get a SignalR event
+            handleMessageDeleted({
+                message_id: messageId,
+                conversation_id: currentConversationId
+            });
+        }
+        showToast('Message deleted', 'success');
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        showToast('Failed to delete message', 'error');
+    }
 }
 
 // ============================================

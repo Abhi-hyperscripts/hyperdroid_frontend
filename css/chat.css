@@ -1112,6 +1112,158 @@ body.chat-page::after {
     box-shadow: var(--shadow-primary-md);
 }
 
+/* ============================================
+   MESSAGE ACTIONS — Hover-reveal Edit/Delete
+   ============================================ */
+
+.message-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    align-self: flex-end;
+    margin-top: 2px;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+/* On touch devices, always show actions for own messages */
+@media (hover: none) {
+    .message.own .message-actions {
+        opacity: 1;
+    }
+}
+
+.msg-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--border-radius-full);
+    border: none;
+    background: var(--hover-overlay-medium);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.msg-action-btn:hover {
+    background: var(--hover-overlay-strong);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.msg-action-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+}
+
+.msg-action-delete:hover {
+    background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
+    color: var(--color-danger);
+}
+
+/* ============================================
+   MESSAGE EDIT MODE — Inline Edit Form
+   ============================================ */
+
+/* When editing, expand the message to give room for the textarea */
+.message:has(.message-bubble.editing) {
+    max-width: 85%;
+    min-width: min(480px, 70%);
+}
+
+.message-bubble.editing {
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    padding: var(--space-3) !important;
+    color: var(--text-primary) !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.message.own .message-bubble.editing {
+    color: var(--text-primary) !important;
+}
+
+.message-edit-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 320px;
+    width: 100%;
+}
+
+.message-edit-textarea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    line-height: var(--line-height-normal);
+    color: var(--text-primary);
+    background: var(--bg-card);
+    resize: none;
+    max-height: 200px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.message-edit-textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.message-edit-actions {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+}
+
+.message-edit-cancel,
+.message-edit-save {
+    padding: 4px 12px;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.message-edit-cancel {
+    background: var(--hover-overlay-medium);
+    color: var(--text-secondary);
+}
+
+.message-edit-cancel:hover {
+    background: var(--hover-overlay-strong);
+    color: var(--text-primary);
+}
+
+.message-edit-save {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.message-edit-save:hover {
+    opacity: 0.9;
+}
+
+.message-edit-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Message Time */
 .message-time {
     font-size: 11px;
@@ -2275,6 +2427,14 @@ body.chat-page::after {
 
     .message {
         max-width: 85%;
+    }
+
+    .message:has(.message-bubble.editing) {
+        min-width: 80%;
+    }
+
+    .message-edit-container {
+        min-width: 0;
     }
 
     .message-avatar {
