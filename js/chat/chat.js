@@ -1464,90 +1464,84 @@ function setupIOSKeyboardFix() {
     let keyboardOpen = false;
     let focusTimer = null;
 
-    // Capture the full viewport height once at load (before any keyboard).
-    // On some iOS versions window.innerHeight & visualViewport.height both
-    // shrink when the keyboard opens, making their difference useless.
-    // Comparing against this initial value is reliable across all versions.
+    // Baseline viewport height captured at load (no keyboard).
+    // Used to calculate keyboard height on iOS versions where
+    // window.innerHeight and visualViewport.height both change.
     let fullHeight = window.innerHeight;
 
-    function resetScroll() {
-        if (keyboardOpen) return;
+    function forceScrollTop() {
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
         document.documentElement.scrollTop = 0;
     }
 
-    function applyKeyboardOffset(kbHeight) {
+    function applyOffset(kbHeight) {
         keyboardOpen = true;
-        // Push the container's bottom edge up above the keyboard.
-        // Chat header stays fixed at top (untouched). The flex layout
-        // makes .chat-messages shrink while header & input keep size.
+        // Push container bottom up by keyboard height.
+        // Chat header (back arrow, name, buttons) is inside the container
+        // and stays at top. The flex layout shrinks .chat-messages (flex:1)
+        // while header and input keep their size.
         chatContainer.style.setProperty('bottom', kbHeight + 'px', 'important');
+        forceScrollTop();
 
         const messagesEl = document.getElementById('chatMessages');
         if (messagesEl) {
-            setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 100);
+            requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
         }
     }
 
-    function removeKeyboardOffset() {
+    function removeOffset() {
         if (!keyboardOpen) return;
         keyboardOpen = false;
         chatContainer.style.removeProperty('bottom');
-        setTimeout(resetScroll, 100);
+        forceScrollTop();
     }
 
-    // ── Primary: visualViewport.resize ──
-    // Works on iOS 13+ when the viewport actually reports the change.
+    // ── Primary: visualViewport resize ──
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             const vv = window.visualViewport;
-            // Compare against fullHeight captured at page load
             const kbHeight = fullHeight - vv.height;
 
             if (kbHeight > 150) {
-                applyKeyboardOffset(kbHeight);
+                applyOffset(kbHeight);
             } else {
-                removeKeyboardOffset();
-                // Update fullHeight in case URL bar collapsed/expanded
+                removeOffset();
+                // Track URL bar collapse/expand
                 fullHeight = Math.max(fullHeight, vv.height);
             }
         });
+
+        // Also force scroll top when iOS tries to scroll the viewport
+        window.visualViewport.addEventListener('scroll', forceScrollTop);
     }
 
-    // ── Fallback: focusin / focusout ──
-    // If visualViewport doesn't fire (or both heights shrink equally),
-    // detect keyboard via focus events with an estimated height (~40%).
+    // ── Fallback: focusin/focusout ──
+    // If visualViewport doesn't report the change, use focus events
+    // with an estimated keyboard height (~42% of screen).
     document.addEventListener('focusin', (e) => {
-        if (!e.target.matches('.chat-input-container textarea, .chat-input-container input')) return;
+        if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
         clearTimeout(focusTimer);
-        // Wait for keyboard animation to finish, then check if
-        // visualViewport already handled it
         focusTimer = setTimeout(() => {
             if (!keyboardOpen) {
-                // visualViewport didn't trigger — use fallback estimate
-                const fallbackKb = Math.round(fullHeight * 0.42);
-                applyKeyboardOffset(fallbackKb);
+                applyOffset(Math.round(fullHeight * 0.42));
             }
         }, 600);
     });
 
     document.addEventListener('focusout', (e) => {
-        if (!e.target.matches('.chat-input-container textarea, .chat-input-container input')) return;
+        if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
         clearTimeout(focusTimer);
-        // Small delay so switching between inputs doesn't flicker
         focusTimer = setTimeout(() => {
-            const active = document.activeElement;
-            if (!active || !active.matches('.chat-input-container textarea, .chat-input-container input')) {
-                removeKeyboardOffset();
+            const a = document.activeElement;
+            if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
+                removeOffset();
             }
-        }, 200);
+        }, 300);
     });
 
-    // Reset scroll only when keyboard is closed
-    window.addEventListener('scroll', () => {
-        if (!keyboardOpen) resetScroll();
-    }, { passive: true });
+    // Force scroll top whenever iOS tries to scroll the document
+    window.addEventListener('scroll', forceScrollTop, { passive: true });
 }
 
 // Local showToast removed - using unified toast.js instead

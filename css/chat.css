@@ -2311,9 +2311,17 @@ body.chat-page::after {
    ============================================ */
 
 @media (max-width: 768px) {
-    /* Fix: Navbar must stay visible on mobile — position:fixed prevents
-       touch-scroll propagation from chat messages pushing it off-screen.
-       home.css sets body.dashboard .navbar to position:relative which breaks on real devices. */
+    /* Lock body on mobile to prevent iOS keyboard from scrolling the page.
+       Without position:fixed, iOS Safari scrolls the viewport when the
+       keyboard opens, causing fixed elements (navbar, chat-container) to
+       shift off-screen. */
+    body.chat-page {
+        position: fixed !important;
+        width: 100% !important;
+        inset: 0 !important;
+        overflow: hidden !important;
+    }
+
     body.chat-page .navbar {
         position: fixed !important;
         top: 0;
@@ -2324,9 +2332,6 @@ body.chat-page::after {
         border-bottom: 1px solid var(--border-primary) !important;
     }
 
-    /* iOS keyboard fix: Both navbar and chat-container use position:fixed
-       so they anchor to the viewport directly. iOS keyboard open/close
-       can scroll the body/html, but fixed elements are unaffected. */
     body.chat-page .chat-container {
         flex-direction: column !important;
         position: fixed !important;
