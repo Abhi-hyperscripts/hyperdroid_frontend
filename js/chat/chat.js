@@ -1479,11 +1479,38 @@ function setupIOSKeyboardFix() {
     // Catch any window-level scroll and force back to 0
     window.addEventListener('scroll', resetScroll, { passive: true });
 
-    // visualViewport resize (keyboard open/close detection)
+    // iOS keyboard fix: Use visualViewport to resize the chat container
+    // so the input area stays visible above the keyboard.
+    // On iOS PWA, position:fixed bottom:0 refers to the layout viewport,
+    // which doesn't shrink when the keyboard opens. We must manually
+    // set the container height to match the visual viewport.
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            setTimeout(resetScroll, 100);
-        });
+        const chatContainer = document.querySelector('.chat-container');
+        const navbar = document.querySelector('.navbar');
+
+        function adjustForKeyboard() {
+            const vv = window.visualViewport;
+            const navbarH = navbar ? navbar.offsetHeight : 70;
+            // visualViewport.height = visible area (shrinks when keyboard opens)
+            // visualViewport.offsetTop = how far the viewport has scrolled
+            const availableHeight = vv.height - navbarH;
+
+            if (chatContainer) {
+                chatContainer.style.height = availableHeight + 'px';
+                chatContainer.style.bottom = 'auto';
+            }
+
+            // Scroll the messages to bottom so user sees latest + input
+            const messagesEl = document.getElementById('chatMessages');
+            if (messagesEl) {
+                setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+            }
+
+            resetScroll();
+        }
+
+        window.visualViewport.addEventListener('resize', adjustForKeyboard);
+        window.visualViewport.addEventListener('scroll', resetScroll);
     }
 }
 
