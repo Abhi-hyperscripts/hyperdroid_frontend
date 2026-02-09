@@ -87,6 +87,39 @@ body.chat-page::after {
     color: var(--text-primary);
 }
 
+/* SignalR connection status dot */
+.signalr-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-left: 4px;
+    transition: background 0.3s ease;
+}
+
+.signalr-dot.connected {
+    background: var(--color-success, #10b981);
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+}
+
+.signalr-dot.disconnected {
+    background: var(--color-error, #ef4444);
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+    animation: signalr-blink 1s ease-in-out infinite;
+}
+
+.signalr-dot.connecting {
+    background: var(--color-warning, #f59e0b);
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
+    animation: signalr-blink 0.8s ease-in-out infinite;
+}
+
+@keyframes signalr-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+}
+
 .chat-sidebar-header.archived-view h2 {
     background: none;
     -webkit-text-fill-color: var(--text-secondary);

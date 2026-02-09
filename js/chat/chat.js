@@ -116,13 +116,12 @@ async function connectSignalR() {
 
         signalRConnection.onreconnecting(() => {
             console.log('SignalR reconnecting...');
-            showToast('Reconnecting...', 'info');
+            updateSignalRDot('connecting');
         });
 
         signalRConnection.onreconnected(async () => {
             console.log('SignalR reconnected');
-            showToast('Connected', 'success');
-            hideDisconnectedBanner();
+            updateSignalRDot('connected');
             await loadConversations();
             // Rejoin the active conversation group so messages are delivered
             if (currentConversationId) {
@@ -139,7 +138,7 @@ async function connectSignalR() {
 
         signalRConnection.onclose(async () => {
             console.log('SignalR connection closed');
-            showDisconnectedBanner();
+            updateSignalRDot('disconnected');
             // Attempt manual reconnect quickly (auto-reconnect already exhausted)
             setTimeout(() => {
                 if (!signalRConnection || signalRConnection.state === signalR.HubConnectionState.Disconnected) {
@@ -151,10 +150,11 @@ async function connectSignalR() {
 
         await signalRConnection.start();
         console.log('SignalR connected');
+        updateSignalRDot('connected');
 
     } catch (error) {
         console.error('SignalR connection error:', error);
-        showToast('Chat connection failed', 'error');
+        updateSignalRDot('disconnected');
     }
 }
 
@@ -1330,11 +1330,10 @@ async function reconnectSignalR() {
 
     try {
         console.log('Reconnecting SignalR...');
-        showToast('Reconnecting...', 'info');
+        updateSignalRDot('connecting');
         await signalRConnection.start();
         console.log('SignalR manually reconnected');
-        showToast('Connected', 'success');
-        hideDisconnectedBanner();
+        updateSignalRDot('connected');
 
         // Reload conversations and rejoin active group
         await loadConversations();
@@ -1353,21 +1352,13 @@ async function reconnectSignalR() {
     }
 }
 
-function showDisconnectedBanner() {
-    let banner = document.getElementById('chatDisconnectedBanner');
-    if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'chatDisconnectedBanner';
-        banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;background:var(--color-error,#ef4444);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
-        banner.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#fff;opacity:0.7;animation:pulse 1.5s infinite;"></span> Disconnected — trying to reconnect...';
-        document.body.appendChild(banner);
-    }
-    banner.style.display = 'flex';
-}
-
-function hideDisconnectedBanner() {
-    const banner = document.getElementById('chatDisconnectedBanner');
-    if (banner) banner.style.display = 'none';
+// Update the small SignalR status dot next to "Messages"
+function updateSignalRDot(state) {
+    const dot = document.getElementById('signalrStatusDot');
+    if (!dot) return;
+    dot.className = 'signalr-dot ' + state;
+    const titles = { connected: 'Connected', disconnected: 'Disconnected', connecting: 'Connecting...' };
+    dot.title = titles[state] || state;
 }
 
 // Handle mobile browser tab backgrounding / foregrounding
