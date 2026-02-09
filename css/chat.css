@@ -2320,9 +2320,14 @@ body.chat-page::after {
     body.chat-page {
         display: flex !important;
         flex-direction: column !important;
-        height: 100vh;
-        height: 100dvh;
-        /* NO !important on height — JS overrides with exact viewport value */
+        height: 100vh !important;
+        height: 100dvh !important;
+        /* min-height:0 overrides the THREE min-height:100vh rules in styles.css
+           (body, .dashboard, body.dashboard) that force the body to grow past
+           the set height when content is taller. Without this, body was 1891px
+           instead of viewport height. */
+        min-height: 0 !important;
+        max-height: 100dvh !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
