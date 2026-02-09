@@ -73,7 +73,7 @@ body.chat-page::after {
 
 /* Sidebar Header */
 .chat-sidebar-header {
-    padding: var(--space-5) var(--space-5) var(--space-4);
+    padding: var(--space-2) var(--space-4);
     border-bottom: 1px solid var(--border-color-light);
     display: flex;
     justify-content: space-between;
@@ -81,7 +81,7 @@ body.chat-page::after {
 }
 
 .chat-sidebar-header h2 {
-    font-size: var(--font-size-xl);
+    font-size: 16px;
     font-weight: var(--font-weight-bold);
     margin: 0;
     color: var(--text-primary);
@@ -101,8 +101,8 @@ body.chat-page::after {
 
 /* Archived Button */
 .archived-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--border-radius-full);
     background: var(--hover-overlay-medium);
     color: var(--text-secondary);
@@ -127,8 +127,8 @@ body.chat-page::after {
 
 /* New Chat Button — Gradient Glow */
 .new-chat-btn {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: var(--border-radius-full);
     background: var(--gradient-primary);
     color: var(--text-inverse);
@@ -819,7 +819,7 @@ body.chat-page::after {
    ============================================ */
 
 .chat-header {
-    padding: var(--space-4) var(--space-6);
+    padding: var(--space-2) var(--space-5);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -880,12 +880,12 @@ body.chat-page::after {
 .chat-header-info {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
 }
 
 .chat-header-avatar {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--border-radius-full);
     background: var(--gradient-primary);
     display: flex;
@@ -893,7 +893,7 @@ body.chat-page::after {
     justify-content: center;
     color: var(--avatar-text);
     font-weight: var(--font-weight-semibold);
-    font-size: 15px;
+    font-size: 13px;
     position: relative;
     box-shadow:
         0 0 0 2px rgba(var(--brand-primary-rgb), 0.25),
@@ -922,10 +922,11 @@ body.chat-page::after {
 }
 
 .chat-header-details h3 {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
-    margin: 0 0 2px 0;
+    margin: 0 0 1px 0;
+    line-height: 1.2;
 }
 
 .chat-header-details p {
@@ -963,8 +964,8 @@ body.chat-page::after {
 }
 
 .chat-header-actions button {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--border-radius-full);
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.04);
@@ -989,8 +990,8 @@ body.chat-page::after {
 }
 
 .chat-header-actions button svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     stroke: var(--text-primary);
     transition: stroke 0.2s ease;
 }
@@ -2380,13 +2381,13 @@ body.chat-page::after {
     }
 
     .chat-header-avatar {
-        width: 40px;
-        height: 40px;
-        font-size: var(--font-size-sm);
+        width: 34px;
+        height: 34px;
+        font-size: 12px;
     }
 
     .chat-header-details h3 {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .chat-header-details p {
