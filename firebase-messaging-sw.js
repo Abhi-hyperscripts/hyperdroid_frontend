@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 32]
+// Ragenaizer Service Worker  [BUILD 33]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
