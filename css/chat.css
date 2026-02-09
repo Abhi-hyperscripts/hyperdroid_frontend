@@ -1580,6 +1580,7 @@ body.chat-page::after {
 
 .send-btn svg {
     stroke: var(--text-inverse) !important;
+    transform: translate(-1px, 1px);
 }
 
 /* ============================================
