@@ -2315,8 +2315,7 @@ body.chat-page::after {
        Flex column. JS sets exact body height to window.innerHeight which
        avoids iOS PWA safe-area clipping (100dvh includes status bar +
        home indicator, but innerHeight gives actual usable space).
-       On keyboard open, JS switches body to position:fixed to prevent
-       iOS from scrolling the viewport. */
+       On keyboard open, iOS scrolls the visual viewport natively. */
     body.chat-page {
         display: flex !important;
         flex-direction: column !important;
