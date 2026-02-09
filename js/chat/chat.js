@@ -1458,10 +1458,6 @@ function setupIOSKeyboardFix() {
 
     if (!isIOS || window.innerWidth > 768) return;
 
-    // On iOS, when keyboard opens/closes it can scroll the body/html.
-    // Our layout uses position:fixed for navbar and chat-container,
-    // so they stay viewport-anchored. But we still need to reset
-    // body scroll to prevent accumulation of scroll offset.
     function resetScroll() {
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
@@ -1476,34 +1472,50 @@ function setupIOSKeyboardFix() {
         }
     });
 
-    // Catch any window-level scroll and force back to 0
     window.addEventListener('scroll', resetScroll, { passive: true });
 
-    // iOS keyboard fix: Use visualViewport to resize the chat container
-    // so the input area stays visible above the keyboard.
-    // On iOS PWA, position:fixed bottom:0 refers to the layout viewport,
-    // which doesn't shrink when the keyboard opens. We must manually
-    // set the container height to match the visual viewport.
+    // iOS keyboard fix: On iOS, position:fixed bottom:0 refers to the
+    // layout viewport, which does NOT shrink when the keyboard opens.
+    // The CSS uses !important on height/bottom, so regular inline styles
+    // are overridden. We must use setProperty('...', '...', 'important')
+    // to beat the CSS !important and manually resize the container to
+    // match the visual viewport (the visible area above the keyboard).
     if (window.visualViewport) {
         const chatContainer = document.querySelector('.chat-container');
         const navbar = document.querySelector('.navbar');
+        let keyboardOpen = false;
 
         function adjustForKeyboard() {
             const vv = window.visualViewport;
             const navbarH = navbar ? navbar.offsetHeight : 70;
-            // visualViewport.height = visible area (shrinks when keyboard opens)
-            // visualViewport.offsetTop = how far the viewport has scrolled
-            const availableHeight = vv.height - navbarH;
+            const keyboardHeight = window.innerHeight - vv.height;
 
-            if (chatContainer) {
-                chatContainer.style.height = availableHeight + 'px';
-                chatContainer.style.bottom = 'auto';
-            }
+            if (keyboardHeight > 100) {
+                // Keyboard is open (100px threshold avoids false triggers
+                // from URL bar collapse/expand)
+                keyboardOpen = true;
+                const containerHeight = vv.height - navbarH;
 
-            // Scroll the messages to bottom so user sees latest + input
-            const messagesEl = document.getElementById('chatMessages');
-            if (messagesEl) {
-                setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+                if (chatContainer) {
+                    // setProperty with 'important' overrides CSS !important
+                    chatContainer.style.setProperty('height', containerHeight + 'px', 'important');
+                    chatContainer.style.setProperty('bottom', 'auto', 'important');
+                    chatContainer.style.setProperty('top', navbarH + 'px', 'important');
+                }
+
+                // Scroll messages to bottom so user sees latest + input
+                const messagesEl = document.getElementById('chatMessages');
+                if (messagesEl) {
+                    setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+                }
+            } else if (keyboardOpen) {
+                // Keyboard closed — remove overrides so CSS rules apply
+                keyboardOpen = false;
+                if (chatContainer) {
+                    chatContainer.style.removeProperty('height');
+                    chatContainer.style.removeProperty('bottom');
+                    chatContainer.style.removeProperty('top');
+                }
             }
 
             resetScroll();
