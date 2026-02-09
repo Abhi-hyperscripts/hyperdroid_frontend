@@ -1446,11 +1446,18 @@ function goBackToList() {
 window.addEventListener('resize', handleResponsive);
 
 // ============================================
-// Mobile Keyboard Fix + DEBUG OVERLAY (v60)
+// Mobile Keyboard Fix + DEBUG OVERLAY (v61)
 // ============================================
-// Body height is controlled EXCLUSIVELY by JS (not CSS) to avoid
-// iOS PWA 100dvh (844px) vs innerHeight (797px) mismatch.
-// Debug overlay will be removed once the keyboard fix is confirmed.
+// v50-v60: Tried position:fixed + height shrink on iOS keyboard open.
+//   FAILED: iOS visual viewport scroll fights position:fixed, causing
+//   double-rendered keyboards, screen jumping up then falling, blank gaps.
+//
+// v61: NEW APPROACH — Don't fight iOS. Let it handle keyboard natively.
+//   - Body height = window.innerHeight (fixes 100dvh mismatch)
+//   - NO position:fixed, NO height shrinking, NO scroll prevention
+//   - iOS scrolls the visual viewport to show input above keyboard
+//   - Navbar scrolls off when keyboard is open (natural iOS behavior)
+//   - On keyboard close: scroll back to top
 
 function setupIOSKeyboardFix() {
     if (window.innerWidth > 768) return;
@@ -1474,7 +1481,7 @@ function setupIOSKeyboardFix() {
         const ae = document.activeElement;
         const aeTag = ae ? ae.tagName : 'null';
         const lines = [
-            `v60 innerH:${window.innerHeight} outerH:${window.outerHeight} scrH:${screen.height}`,
+            `v61 innerH:${window.innerHeight} outerH:${window.outerHeight} scrH:${screen.height}`,
             `vv.h:${vv ? Math.round(vv.height) : 'N/A'} vv.offT:${vv ? Math.round(vv.offsetTop) : 'N/A'} vv.pgT:${vv ? Math.round(vv.pageTop) : 'N/A'}`,
             `scrollY:${Math.round(window.scrollY)} bodyH:${document.body.offsetHeight} bodyPos:${getComputedStyle(document.body).position}`,
             `iOS:${isIOS} standalone:${isStandalone} kbOpen:${keyboardOpen} ae:${aeTag}`,
@@ -1488,7 +1495,7 @@ function setupIOSKeyboardFix() {
     document.body.style.setProperty('height', fullHeight + 'px', 'important');
     updateDebug('init: h=' + fullHeight);
 
-    // Track resize (only when keyboard not open)
+    // Track resize
     window.addEventListener('resize', () => {
         if (keyboardOpen) return;
         fullHeight = window.innerHeight;
@@ -1501,56 +1508,17 @@ function setupIOSKeyboardFix() {
 
     if (!isIOS) return;
 
-    // --- iOS-specific keyboard handling ---
-
-    function restoreFullHeight() {
-        if (!keyboardOpen) return;
-        keyboardOpen = false;
-        document.body.style.removeProperty('position');
-        document.body.style.removeProperty('top');
-        document.body.style.removeProperty('left');
-        document.body.style.removeProperty('right');
-        document.body.style.removeProperty('transform');
-        document.body.style.setProperty('height', fullHeight + 'px', 'important');
-        window.scrollTo(0, 0);
-        updateDebug('restored: h=' + fullHeight);
-    }
-
-    function shrinkForKeyboard(source) {
-        keyboardOpen = true;
-        // Lock body to viewport
-        document.body.style.setProperty('position', 'fixed', 'important');
-        document.body.style.top = '0';
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-
-        // Shrink to estimated visible area above keyboard (~40%)
-        const kbEstimate = Math.round(fullHeight * 0.40);
-        const shrunk = fullHeight - kbEstimate;
-        document.body.style.setProperty('height', shrunk + 'px', 'important');
-        window.scrollTo(0, 0);
-        updateDebug(source + ': shrunk=' + shrunk);
-
-        // Try to refine height with visualViewport after keyboard settles
-        setTimeout(() => {
-            if (!keyboardOpen) return;
-            const vv = window.visualViewport;
-            if (vv && vv.height < fullHeight - 50) {
-                document.body.style.setProperty('height', Math.round(vv.height) + 'px', 'important');
-                updateDebug('refined: vv.h=' + Math.round(vv.height));
-            }
-            window.scrollTo(0, 0);
-            const msgs = document.getElementById('chatMessages');
-            if (msgs) msgs.scrollTop = msgs.scrollHeight;
-        }, 500);
-    }
+    // --- iOS: Let the browser handle keyboard natively ---
+    // No position:fixed. No height shrinking. No scroll prevention.
+    // Just track state and restore scroll position when keyboard closes.
 
     let focusTimer = null;
 
     document.addEventListener('focusin', (e) => {
         if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
         clearTimeout(focusTimer);
-        shrinkForKeyboard('focusin');
+        keyboardOpen = true;
+        updateDebug('focusin: native scroll');
     });
 
     document.addEventListener('focusout', (e) => {
@@ -1559,56 +1527,18 @@ function setupIOSKeyboardFix() {
         focusTimer = setTimeout(() => {
             const a = document.activeElement;
             if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
-                restoreFullHeight();
+                keyboardOpen = false;
+                window.scrollTo(0, 0);
+                updateDebug('focusout: scrolled top');
             }
-        }, 150); // shorter delay for faster recovery
+        }, 300);
     });
 
-    // CRITICAL FALLBACK: Periodically check if keyboard should still be open.
-    // On iOS PWA, focusout does not always fire (e.g. when scrolling the page
-    // or tapping non-interactive areas). This catches those cases.
-    setInterval(() => {
-        if (!keyboardOpen) return;
-        const a = document.activeElement;
-        if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
-            updateDebug('fallback: ae not input, closing');
-            restoreFullHeight();
-        }
-    }, 800);
-
-    // TOUCH FALLBACK: If user taps outside input areas, keyboard should close.
-    document.addEventListener('touchstart', (e) => {
-        if (!keyboardOpen) return;
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-        // User tapped outside input - wait for focus to settle then check
-        setTimeout(() => {
-            const a = document.activeElement;
-            if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
-                restoreFullHeight();
-            }
-        }, 200);
-    }, { passive: true });
-
-    // VisualViewport resize listener — refine height when iOS reports it
+    // Track visualViewport events for debug
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            const vv = window.visualViewport;
-            if (keyboardOpen && vv.height < fullHeight - 50) {
-                document.body.style.setProperty('height', Math.round(vv.height) + 'px', 'important');
-                updateDebug('vv-resize: h=' + Math.round(vv.height));
-            } else if (keyboardOpen && vv.height >= fullHeight - 50) {
-                // VV expanded back to full — keyboard likely closed
-                restoreFullHeight();
-                updateDebug('vv-resize: kb closed');
-            }
-        });
-        window.visualViewport.addEventListener('scroll', () => {
-            updateDebug('vv-scroll');
-        });
+        window.visualViewport.addEventListener('resize', () => updateDebug('vv-resize'));
+        window.visualViewport.addEventListener('scroll', () => updateDebug('vv-scroll'));
     }
-
-    // Prevent iOS from scrolling the page behind the keyboard
-    window.addEventListener('scroll', () => { window.scrollTo(0, 0); }, { passive: true });
 }
 
 // Local showToast removed - using unified toast.js instead
