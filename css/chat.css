@@ -2269,7 +2269,7 @@ body.chat-page::after {
     }
 
     .chat-header {
-        padding: var(--space-3) var(--space-5);
+        padding: var(--space-2) var(--space-4);
     }
 }
 
@@ -2374,24 +2374,48 @@ body.chat-page::after {
     }
 
     .chat-header {
-        padding: var(--space-3) var(--space-4);
+        padding: var(--space-1) var(--space-3);
         /* When navbar is hidden, add safe area inset so header doesn't go behind iOS status bar */
-        padding-top: max(var(--space-3), env(safe-area-inset-top));
+        padding-top: max(var(--space-1), env(safe-area-inset-top));
         flex-shrink: 0;
     }
 
     .chat-header-avatar {
-        width: 34px;
-        height: 34px;
-        font-size: 12px;
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
     }
 
     .chat-header-details h3 {
-        font-size: 14px;
+        font-size: 13px;
+        line-height: 1.2;
     }
 
     .chat-header-details p {
-        font-size: var(--font-size-xs);
+        font-size: 11px;
+    }
+
+    .chat-header-info {
+        gap: var(--space-2);
+    }
+
+    .chat-header-actions {
+        gap: var(--space-1);
+    }
+
+    .chat-header-actions button {
+        width: 30px;
+        height: 30px;
+    }
+
+    .chat-header-actions button svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .back-btn {
+        min-width: 36px;
+        min-height: 36px;
     }
 
     .conversation-item {
@@ -2490,11 +2514,11 @@ body.chat-page::after {
     }
 
     .chat-sidebar-header {
-        padding: var(--space-4);
+        padding: var(--space-1) var(--space-3);
     }
 
     .chat-search {
-        padding: var(--space-2) var(--space-4) var(--space-4);
+        padding: var(--space-1) var(--space-3) var(--space-2);
     }
 
     .conversations-list {
@@ -2517,14 +2541,14 @@ body.chat-page::after {
     }
 
     .new-chat-btn {
-        width: 36px;
-        height: 36px;
+        width: 30px;
+        height: 30px;
     }
 
     .conversation-avatar {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
         font-size: var(--font-size-xs);
     }
 
