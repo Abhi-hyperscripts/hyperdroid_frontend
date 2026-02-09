@@ -1135,25 +1135,22 @@ body.chat-page::after {
 }
 
 .msg-action-btn {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: var(--border-radius-full);
     border: none;
-    background: var(--hover-overlay-medium);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    color: var(--text-secondary);
+    transition: color 0.15s ease;
+    color: var(--text-tertiary);
+    padding: 0;
 }
 
 .msg-action-btn:hover {
-    background: var(--hover-overlay-strong);
     color: var(--text-primary);
-    transform: scale(1.1);
 }
 
 .msg-action-btn svg {
@@ -1163,8 +1160,7 @@ body.chat-page::after {
 }
 
 .msg-action-delete:hover {
-    background: var(--danger-alpha-10, rgba(239, 68, 68, 0.15));
-    color: var(--color-danger);
+    color: var(--color-danger, #ef4444);
 }
 
 /* ============================================
