@@ -212,6 +212,8 @@ function handleMessageDeleted(event) {
     }
 }
 
+let typingHideTimer = null;
+
 function handleUserTyping(event) {
     const { conversation_id, user_id, user_name, is_typing } = event;
 
@@ -219,9 +221,15 @@ function handleUserTyping(event) {
         const indicator = document.getElementById('typingIndicator');
         const typingText = document.getElementById('typingText');
 
+        clearTimeout(typingHideTimer);
+
         if (is_typing) {
             typingText.textContent = `${user_name} is typing...`;
             indicator.style.display = 'flex';
+            // Auto-hide after 5s as safety net (e.g. if user disconnects abruptly)
+            typingHideTimer = setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 5000);
         } else {
             indicator.style.display = 'none';
         }
