@@ -1352,13 +1352,27 @@ async function reconnectSignalR() {
     }
 }
 
-// Update the small SignalR status dot next to "Messages"
+// Update the small SignalR status dots (sidebar + chat header)
 function updateSignalRDot(state) {
-    const dot = document.getElementById('signalrStatusDot');
-    if (!dot) return;
-    dot.className = 'signalr-dot ' + state;
     const titles = { connected: 'Connected', disconnected: 'Disconnected', connecting: 'Connecting...' };
-    dot.title = titles[state] || state;
+    const t = titles[state] || state;
+
+    // Sidebar dot (static in HTML)
+    const sidebarDot = document.getElementById('signalrStatusDot');
+    if (sidebarDot) { sidebarDot.className = 'signalr-dot ' + state; sidebarDot.title = t; }
+
+    // Chat header dot (injected dynamically so JS overwrites don't destroy it)
+    let chatDot = document.getElementById('signalrStatusDotChat');
+    if (!chatDot) {
+        const header = document.querySelector('.chat-header .chat-header-info');
+        if (header) {
+            chatDot = document.createElement('span');
+            chatDot.id = 'signalrStatusDotChat';
+            chatDot.style.cssText = 'width:6px;height:6px;flex-shrink:0;';
+            header.appendChild(chatDot);
+        }
+    }
+    if (chatDot) { chatDot.className = 'signalr-dot ' + state; chatDot.title = t; }
 }
 
 // Handle mobile browser tab backgrounding / foregrounding
