@@ -1364,7 +1364,7 @@ function updateSignalRDot(state) {
     // Chat header dot (injected dynamically so JS overwrites don't destroy it)
     let chatDot = document.getElementById('signalrStatusDotChat');
     if (!chatDot) {
-        const header = document.querySelector('.chat-header .chat-header-info');
+        const header = document.querySelector('.chat-header .chat-header-actions');
         if (header) {
             chatDot = document.createElement('span');
             chatDot.id = 'signalrStatusDotChat';
