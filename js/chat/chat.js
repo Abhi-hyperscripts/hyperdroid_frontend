@@ -1446,50 +1446,50 @@ function goBackToList() {
 window.addEventListener('resize', handleResponsive);
 
 // ============================================
-// Mobile Viewport Height Fix (especially iOS keyboard)
+// Mobile Keyboard Fix (iOS PWA + Android + desktop)
 // ============================================
-// On iOS PWA, the keyboard overlays on top of the app, but NEITHER
-// window.innerHeight NOR visualViewport.height actually changes.
-// So we cannot detect the keyboard via viewport size — we must use
-// focusin/focusout events and FORCE the body to shrink.
+// Layout: body is a flex column (navbar + chat-container). NO position:fixed
+// or position:absolute on layout elements. This prevents the iOS PWA bug
+// where the OS scrolls the viewport and breaks fixed/absolute positioning.
 //
-// The mobile CSS uses position:absolute for the chat container inside
-// a body sized by --app-height. On focusin we immediately shrink
-// --app-height by an estimated keyboard height (~42% of screen).
+// Android: the viewport resizes when the keyboard opens, so flex layout
+// automatically adapts. No JS needed.
+//
+// iOS PWA: the keyboard OVERLAYS without resizing the viewport, and iOS
+// scrolls the viewport up. We counter by:
+//   1. Shrinking body.style.height so flex children fit above the keyboard
+//   2. Using transform:translateY() to visually counter the OS scroll
+//   3. A requestAnimationFrame loop to track the scroll continuously
 
 function setupIOSKeyboardFix() {
     if (window.innerWidth > 768) return;
 
-    // Capture the full viewport height at load (no keyboard).
-    let fullHeight = window.innerHeight;
-    document.documentElement.style.setProperty('--app-height', fullHeight + 'px');
-
-    // If the viewport DOES report changes (Android, some iOS versions),
-    // use those values directly.
-    function updateFromViewport() {
-        let h = window.innerHeight;
-        if (window.visualViewport) {
-            h = Math.min(h, window.visualViewport.height);
-        }
-        document.documentElement.style.setProperty('--app-height', h + 'px');
-        // Update baseline when keyboard is NOT open
-        if (h >= fullHeight - 50) {
-            fullHeight = Math.max(fullHeight, h);
-        }
-    }
-
-    window.addEventListener('resize', updateFromViewport);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateFromViewport);
-    }
-
-    // iOS-specific: force-shrink on focus since viewport events may not fire
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Android/Chrome: viewport resizes automatically. Nothing to do.
     if (!isIOS) return;
 
-    // Prevent iOS from scrolling the viewport
-    window.addEventListener('scroll', () => { window.scrollTo(0, 0); }, { passive: true });
+    const fullHeight = window.innerHeight;
+    let keyboardOpen = false;
+    let rafId = null;
+
+    // Continuously counter the iOS viewport scroll via transform.
+    // iOS scrolls at the OS level which we can't prevent, but we can
+    // visually undo it each frame.
+    function trackScroll() {
+        if (!keyboardOpen) return;
+
+        const scrollY = window.visualViewport
+            ? window.visualViewport.offsetTop
+            : window.pageYOffset;
+
+        if (scrollY > 0) {
+            document.body.style.transform = `translateY(${scrollY}px)`;
+        }
+
+        rafId = requestAnimationFrame(trackScroll);
+    }
 
     let focusTimer = null;
 
@@ -1497,23 +1497,24 @@ function setupIOSKeyboardFix() {
         if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
         clearTimeout(focusTimer);
 
-        // IMMEDIATELY shrink body by estimated keyboard height.
-        // iPhone keyboards are ~38-45% of screen. Use 42% as safe middle.
-        const kbEstimate = Math.round(fullHeight * 0.42);
-        const shrunkHeight = fullHeight - kbEstimate;
-        document.documentElement.style.setProperty('--app-height', shrunkHeight + 'px');
-        window.scrollTo(0, 0);
+        keyboardOpen = true;
 
-        // After keyboard animation, try to refine with actual viewport values
+        // Shrink body to the estimated visible area above the keyboard.
+        // iPhone keyboards are ~38-45% of screen height.
+        const kbEstimate = Math.round(fullHeight * 0.42);
+        document.body.style.height = (fullHeight - kbEstimate) + 'px';
+
+        // Start the scroll-counter loop
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(trackScroll);
+
+        // After keyboard animation settles, refine with actual viewport
         setTimeout(() => {
-            let h = window.innerHeight;
-            if (window.visualViewport) {
-                h = Math.min(h, window.visualViewport.height);
-            }
-            // Only use viewport value if it's meaningfully smaller
-            // (meaning the viewport actually reported the keyboard)
-            if (h < shrunkHeight) {
-                document.documentElement.style.setProperty('--app-height', h + 'px');
+            if (!keyboardOpen) return;
+            const vv = window.visualViewport;
+            if (vv && vv.height < fullHeight - 100) {
+                // Viewport reported an actual smaller height — use it
+                document.body.style.height = vv.height + 'px';
             }
             window.scrollTo(0, 0);
             const msgs = document.getElementById('chatMessages');
@@ -1527,12 +1528,25 @@ function setupIOSKeyboardFix() {
         focusTimer = setTimeout(() => {
             const a = document.activeElement;
             if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
-                // Keyboard closed — restore full height
-                document.documentElement.style.setProperty('--app-height', fullHeight + 'px');
+                keyboardOpen = false;
+                cancelAnimationFrame(rafId);
+                document.body.style.height = '';
+                document.body.style.transform = '';
                 window.scrollTo(0, 0);
             }
         }, 300);
     });
+
+    // Also listen to visualViewport events if available
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('scroll', () => {
+            if (!keyboardOpen) return;
+            const offset = window.visualViewport.offsetTop;
+            if (offset > 0) {
+                document.body.style.transform = `translateY(${offset}px)`;
+            }
+        });
+    }
 }
 
 // Local showToast removed - using unified toast.js instead
