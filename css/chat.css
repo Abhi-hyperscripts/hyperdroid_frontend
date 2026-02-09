@@ -1096,7 +1096,7 @@ body.chat-page::after {
 }
 
 .message-bubble:hover {
-    background: var(--hover-overlay-strong);
+    /* no hover effect — edit/delete icons appear instead */
 }
 
 /* Own Message Bubble — Brand Gradient */
@@ -1109,7 +1109,7 @@ body.chat-page::after {
 }
 
 .message.own .message-bubble:hover {
-    box-shadow: var(--shadow-primary-md);
+    /* no hover effect — edit/delete icons appear instead */
 }
 
 /* ============================================
@@ -2601,7 +2601,7 @@ body.chat-page::after {
 }
 
 [data-theme="dark"] .message-bubble:hover {
-    background: rgba(255, 255, 255, 0.1);
+    /* no hover effect — edit/delete icons appear instead */
 }
 
 [data-theme="dark"] .conversation-item.active {
