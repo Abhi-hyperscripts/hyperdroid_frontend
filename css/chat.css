@@ -1117,22 +1117,20 @@ body.chat-page::after {
    ============================================ */
 
 .message-actions {
-    display: flex;
+    display: none;
     gap: 4px;
-    opacity: 0;
-    transition: opacity 0.15s ease;
     align-self: flex-end;
     margin-top: 2px;
 }
 
 .message:hover .message-actions {
-    opacity: 1;
+    display: flex;
 }
 
 /* On touch devices, always show actions for own messages */
 @media (hover: none) {
     .message.own .message-actions {
-        opacity: 1;
+        display: flex;
     }
 }
 
