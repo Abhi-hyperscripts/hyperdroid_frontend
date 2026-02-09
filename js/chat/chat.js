@@ -1368,7 +1368,7 @@ function updateSignalRDot(state) {
         if (header) {
             chatDot = document.createElement('span');
             chatDot.id = 'signalrStatusDotChat';
-            chatDot.style.cssText = 'width:6px;height:6px;flex-shrink:0;';
+            chatDot.style.cssText = 'width:6px;height:6px;flex-shrink:0;align-self:center;';
             header.appendChild(chatDot);
         }
     }
