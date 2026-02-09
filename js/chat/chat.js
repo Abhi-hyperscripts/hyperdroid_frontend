@@ -1446,47 +1446,57 @@ function goBackToList() {
 window.addEventListener('resize', handleResponsive);
 
 // ============================================
-// Mobile Keyboard Fix (iOS PWA + Android + desktop)
+// Mobile Keyboard Fix + DEBUG OVERLAY
 // ============================================
-// Two problems on iOS PWA standalone:
-//
-// 1) INITIAL LOAD: 100dvh includes the status bar + home indicator areas,
-//    so the body is taller than the usable viewport → input clipped at bottom.
-//    Fix: set body height to window.innerHeight (exact usable space).
-//
-// 2) KEYBOARD OPEN: iOS overlays the keyboard without resizing the viewport,
-//    then scrolls the visual viewport to show the focused input — breaking
-//    the layout (header scrolls off, empty space appears).
-//    Fix: on focusin, set body to position:fixed (anchors to viewport,
-//    prevents iOS scroll) and shrink height to visible area above keyboard.
-//    Flex children adapt automatically.
-//
-// Android: viewport resizes when keyboard opens → flex layout adapts. No fix needed.
+// Adding a debug overlay to see actual values on iOS device.
+// This will be removed once the keyboard fix is working.
 
 function setupIOSKeyboardFix() {
     if (window.innerWidth > 768) return;
 
-    // === Fix 1: Exact body height ===
-    // window.innerHeight gives the actual usable viewport (excluding
-    // iOS status bar + home indicator), unlike 100dvh which includes them.
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone = window.navigator.standalone === true;
+
+    // === DEBUG OVERLAY ===
+    const dbg = document.createElement('div');
+    dbg.id = 'kbDebug';
+    dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;' +
+        'background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;' +
+        'padding:4px 8px;pointer-events:none;white-space:pre;';
+    document.body.appendChild(dbg);
+
+    let keyboardOpen = false;
+
+    function updateDebug(extra) {
+        const vv = window.visualViewport;
+        const lines = [
+            `innerH:${window.innerHeight} outerH:${window.outerHeight} scrH:${screen.height}`,
+            `vv.h:${vv ? Math.round(vv.height) : 'N/A'} vv.offT:${vv ? Math.round(vv.offsetTop) : 'N/A'} vv.pgT:${vv ? Math.round(vv.pageTop) : 'N/A'}`,
+            `scrollY:${Math.round(window.scrollY)} bodyH:${document.body.offsetHeight} bodyPos:${getComputedStyle(document.body).position}`,
+            `iOS:${isIOS} standalone:${isStandalone} kbOpen:${keyboardOpen}`,
+        ];
+        if (extra) lines.push(extra);
+        dbg.textContent = lines.join('\n');
+    }
+
+    // === Set body height ===
     let fullHeight = window.innerHeight;
     document.body.style.setProperty('height', fullHeight + 'px', 'important');
+    updateDebug('init: h=' + fullHeight);
 
-    // Track resize/orientation changes (but not during keyboard open)
-    let keyboardOpen = false;
+    // Track resize
     const updateFullHeight = () => {
         if (keyboardOpen) return;
         fullHeight = window.innerHeight;
         document.body.style.setProperty('height', fullHeight + 'px', 'important');
+        updateDebug('resize: h=' + fullHeight);
     };
     window.addEventListener('resize', updateFullHeight);
-    window.addEventListener('orientationchange', () => setTimeout(updateFullHeight, 200));
 
-    // === Fix 2: iOS keyboard handling ===
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // Update debug periodically
+    setInterval(() => updateDebug(), 500);
 
-    // Android: viewport resizes automatically. Nothing more to do.
     if (!isIOS) return;
 
     let focusTimer = null;
@@ -1496,26 +1506,26 @@ function setupIOSKeyboardFix() {
         clearTimeout(focusTimer);
         keyboardOpen = true;
 
-        // Lock body to viewport — this PREVENTS iOS from scrolling.
-        // Children are flex, so they resize with the body (no fixed/absolute children).
+        // Lock body to viewport
         document.body.style.setProperty('position', 'fixed', 'important');
         document.body.style.top = '0';
         document.body.style.left = '0';
         document.body.style.right = '0';
 
-        // Shrink to estimated visible area above keyboard (~42% of screen).
+        // Shrink to estimated visible area above keyboard
         const kbEstimate = Math.round(fullHeight * 0.42);
-        document.body.style.setProperty('height', (fullHeight - kbEstimate) + 'px', 'important');
-
-        // Force any stray scroll back to top
+        const shrunk = fullHeight - kbEstimate;
+        document.body.style.setProperty('height', shrunk + 'px', 'important');
         window.scrollTo(0, 0);
 
-        // After keyboard animation, refine with actual viewport if available
+        updateDebug('focusin: shrunk=' + shrunk);
+
         setTimeout(() => {
             if (!keyboardOpen) return;
             const vv = window.visualViewport;
             if (vv && vv.height < fullHeight - 100) {
-                document.body.style.setProperty('height', vv.height + 'px', 'important');
+                document.body.style.setProperty('height', Math.round(vv.height) + 'px', 'important');
+                updateDebug('refined: vv.h=' + Math.round(vv.height));
             }
             window.scrollTo(0, 0);
             const msgs = document.getElementById('chatMessages');
@@ -1530,7 +1540,6 @@ function setupIOSKeyboardFix() {
             const a = document.activeElement;
             if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
                 keyboardOpen = false;
-                // Restore normal layout
                 document.body.style.removeProperty('position');
                 document.body.style.removeProperty('top');
                 document.body.style.removeProperty('left');
@@ -1538,11 +1547,21 @@ function setupIOSKeyboardFix() {
                 document.body.style.setProperty('height', fullHeight + 'px', 'important');
                 document.body.style.removeProperty('transform');
                 window.scrollTo(0, 0);
+                updateDebug('focusout: restored=' + fullHeight);
             }
         }, 300);
     });
 
-    // Safety net: continuously push scroll back to 0
+    // Track visualViewport events
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            updateDebug('vv-resize');
+        });
+        window.visualViewport.addEventListener('scroll', () => {
+            updateDebug('vv-scroll');
+        });
+    }
+
     window.addEventListener('scroll', () => { window.scrollTo(0, 0); }, { passive: true });
 }
 
