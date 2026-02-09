@@ -544,6 +544,7 @@ function renderMessage(msg) {
                 ${showAsImage ? `
                     <div class="message-image-preview" onclick="openFilePreview('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}', true)">
                         <img src="${msg.file_download_url}" alt="${escapeHtml(fileName)}"
+                             loading="lazy"
                              onerror="this.onerror=null; this.parentElement.innerHTML='<div class=image-load-error>Click to view image</div>';"
                              onload="scrollToBottom()">
                     </div>
