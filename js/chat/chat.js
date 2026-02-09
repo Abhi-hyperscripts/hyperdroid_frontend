@@ -542,11 +542,19 @@ function renderMessage(msg) {
         fileHtml = `
             <div class="message-file-attachment" data-s3-key="${escapeHtml(msg.file_s3_key)}">
                 ${showAsImage ? `
-                    <div class="message-image-preview" onclick="openFilePreview('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}', true)">
+                    <div class="message-image-preview">
                         <img src="${msg.file_download_url}" alt="${escapeHtml(fileName)}"
                              loading="lazy"
+                             onclick="openFilePreview('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}', true)"
                              onerror="this.onerror=null; this.parentElement.innerHTML='<div class=image-load-error>Click to view image</div>';"
                              onload="scrollToBottom()">
+                        <button class="image-download-btn" onclick="event.stopPropagation(); downloadFile('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}')" title="Download ${escapeHtml(fileName)}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </button>
                     </div>
                 ` : `
                     <div class="message-file" onclick="downloadFile('${escapeHtml(msg.file_s3_key)}', '${escapeHtml(fileName)}')">
@@ -1642,18 +1650,21 @@ function removeFileAttachment() {
 
 async function downloadFile(s3Key, fileName) {
     try {
-        showToast('Getting download link...', 'info');
+        showToast('Downloading...', 'info');
 
         const result = await api.getChatFileDownloadUrl(currentConversationId, s3Key);
         if (result.success && result.url) {
-            // Open in new tab or trigger download
+            // Fetch as blob to force download (download attr is ignored for cross-origin URLs)
+            const response = await fetch(result.url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = result.url;
+            link.href = blobUrl;
             link.download = fileName;
-            link.target = '_blank';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
         } else {
             showToast('Failed to get download URL', 'error');
         }

@@ -1581,6 +1581,7 @@ body.chat-page::after {
 }
 
 .message-image-preview {
+    position: relative;
     max-width: 300px;
     border-radius: var(--border-radius-lg);
     overflow: hidden;
@@ -1598,6 +1599,39 @@ body.chat-page::after {
 
 .message-image-preview:hover img {
     transform: scale(1.02);
+}
+
+.image-download-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.image-download-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.message-image-preview:hover .image-download-btn {
+    opacity: 1;
+}
+
+.image-download-btn:hover {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
 }
 
 .image-load-error {
