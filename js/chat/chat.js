@@ -1448,72 +1448,88 @@ window.addEventListener('resize', handleResponsive);
 // ============================================
 // Mobile Viewport Height Fix (especially iOS keyboard)
 // ============================================
-// On iOS PWA, the keyboard overlays on top of position:fixed elements,
-// and iOS scrolls the viewport — breaking the entire layout.
+// On iOS PWA, the keyboard overlays on top of the app, but NEITHER
+// window.innerHeight NOR visualViewport.height actually changes.
+// So we cannot detect the keyboard via viewport size — we must use
+// focusin/focusout events and FORCE the body to shrink.
 //
-// Solution: Track window.innerHeight via --app-height CSS variable.
-// The mobile CSS uses position:absolute (not fixed) for the chat container,
-// inside a body sized by --app-height. When the keyboard opens and
-// innerHeight shrinks, the body + container shrink automatically.
+// The mobile CSS uses position:absolute for the chat container inside
+// a body sized by --app-height. On focusin we immediately shrink
+// --app-height by an estimated keyboard height (~42% of screen).
 
 function setupIOSKeyboardFix() {
     if (window.innerWidth > 768) return;
 
-    // Set --app-height to the smallest available height.
-    // On iOS Safari, visualViewport.height shrinks with keyboard even
-    // when window.innerHeight doesn't. Using Math.min covers both cases.
-    function updateAppHeight() {
+    // Capture the full viewport height at load (no keyboard).
+    let fullHeight = window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', fullHeight + 'px');
+
+    // If the viewport DOES report changes (Android, some iOS versions),
+    // use those values directly.
+    function updateFromViewport() {
         let h = window.innerHeight;
         if (window.visualViewport) {
             h = Math.min(h, window.visualViewport.height);
         }
         document.documentElement.style.setProperty('--app-height', h + 'px');
+        // Update baseline when keyboard is NOT open
+        if (h >= fullHeight - 50) {
+            fullHeight = Math.max(fullHeight, h);
+        }
     }
 
-    // Listen to all possible resize signals
-    window.addEventListener('resize', updateAppHeight);
+    window.addEventListener('resize', updateFromViewport);
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateAppHeight);
+        window.visualViewport.addEventListener('resize', updateFromViewport);
     }
-    updateAppHeight();
 
-    // iOS-specific: force scroll to top + poll during keyboard animation
+    // iOS-specific: force-shrink on focus since viewport events may not fire
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (!isIOS) return;
 
-    function forceScrollTop() {
-        window.scrollTo(0, 0);
-    }
+    // Prevent iOS from scrolling the viewport
+    window.addEventListener('scroll', () => { window.scrollTo(0, 0); }, { passive: true });
 
-    // Prevent iOS from accumulating scroll offset
-    window.addEventListener('scroll', forceScrollTop, { passive: true });
+    let focusTimer = null;
 
-    // Poll during keyboard animation to catch height changes
-    let focusPoll = null;
     document.addEventListener('focusin', (e) => {
         if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
-        clearInterval(focusPoll);
-        let count = 0;
-        focusPoll = setInterval(() => {
-            updateAppHeight();
-            forceScrollTop();
-            // Keep chat scrolled to bottom so input + latest messages visible
+        clearTimeout(focusTimer);
+
+        // IMMEDIATELY shrink body by estimated keyboard height.
+        // iPhone keyboards are ~38-45% of screen. Use 42% as safe middle.
+        const kbEstimate = Math.round(fullHeight * 0.42);
+        const shrunkHeight = fullHeight - kbEstimate;
+        document.documentElement.style.setProperty('--app-height', shrunkHeight + 'px');
+        window.scrollTo(0, 0);
+
+        // After keyboard animation, try to refine with actual viewport values
+        setTimeout(() => {
+            let h = window.innerHeight;
+            if (window.visualViewport) {
+                h = Math.min(h, window.visualViewport.height);
+            }
+            // Only use viewport value if it's meaningfully smaller
+            // (meaning the viewport actually reported the keyboard)
+            if (h < shrunkHeight) {
+                document.documentElement.style.setProperty('--app-height', h + 'px');
+            }
+            window.scrollTo(0, 0);
             const msgs = document.getElementById('chatMessages');
             if (msgs) msgs.scrollTop = msgs.scrollHeight;
-            count++;
-            if (count >= 15) clearInterval(focusPoll); // 1.5s of polling
-        }, 100);
+        }, 500);
     });
 
     document.addEventListener('focusout', (e) => {
         if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
-        clearInterval(focusPoll);
-        setTimeout(() => {
+        clearTimeout(focusTimer);
+        focusTimer = setTimeout(() => {
             const a = document.activeElement;
             if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
-                updateAppHeight();
-                forceScrollTop();
+                // Keyboard closed — restore full height
+                document.documentElement.style.setProperty('--app-height', fullHeight + 'px');
+                window.scrollTo(0, 0);
             }
         }, 300);
     });
