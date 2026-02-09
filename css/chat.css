@@ -1145,7 +1145,7 @@ body.chat-page::after {
     align-items: center;
     justify-content: center;
     transition: color 0.15s ease;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     padding: 0;
 }
 
