@@ -1448,73 +1448,74 @@ window.addEventListener('resize', handleResponsive);
 // ============================================
 // Mobile Keyboard Fix (iOS PWA + Android + desktop)
 // ============================================
-// Layout: body is a flex column (navbar + chat-container). NO position:fixed
-// or position:absolute on layout elements. This prevents the iOS PWA bug
-// where the OS scrolls the viewport and breaks fixed/absolute positioning.
+// Two problems on iOS PWA standalone:
 //
-// Android: the viewport resizes when the keyboard opens, so flex layout
-// automatically adapts. No JS needed.
+// 1) INITIAL LOAD: 100dvh includes the status bar + home indicator areas,
+//    so the body is taller than the usable viewport → input clipped at bottom.
+//    Fix: set body height to window.innerHeight (exact usable space).
 //
-// iOS PWA: the keyboard OVERLAYS without resizing the viewport, and iOS
-// scrolls the viewport up. We counter by:
-//   1. Shrinking body.style.height so flex children fit above the keyboard
-//   2. Using transform:translateY() to visually counter the OS scroll
-//   3. A requestAnimationFrame loop to track the scroll continuously
+// 2) KEYBOARD OPEN: iOS overlays the keyboard without resizing the viewport,
+//    then scrolls the visual viewport to show the focused input — breaking
+//    the layout (header scrolls off, empty space appears).
+//    Fix: on focusin, set body to position:fixed (anchors to viewport,
+//    prevents iOS scroll) and shrink height to visible area above keyboard.
+//    Flex children adapt automatically.
+//
+// Android: viewport resizes when keyboard opens → flex layout adapts. No fix needed.
 
 function setupIOSKeyboardFix() {
     if (window.innerWidth > 768) return;
 
+    // === Fix 1: Exact body height ===
+    // window.innerHeight gives the actual usable viewport (excluding
+    // iOS status bar + home indicator), unlike 100dvh which includes them.
+    let fullHeight = window.innerHeight;
+    document.body.style.setProperty('height', fullHeight + 'px', 'important');
+
+    // Track resize/orientation changes (but not during keyboard open)
+    let keyboardOpen = false;
+    const updateFullHeight = () => {
+        if (keyboardOpen) return;
+        fullHeight = window.innerHeight;
+        document.body.style.setProperty('height', fullHeight + 'px', 'important');
+    };
+    window.addEventListener('resize', updateFullHeight);
+    window.addEventListener('orientationchange', () => setTimeout(updateFullHeight, 200));
+
+    // === Fix 2: iOS keyboard handling ===
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // Android/Chrome: viewport resizes automatically. Nothing to do.
+    // Android: viewport resizes automatically. Nothing more to do.
     if (!isIOS) return;
-
-    const fullHeight = window.innerHeight;
-    let keyboardOpen = false;
-    let rafId = null;
-
-    // Continuously counter the iOS viewport scroll via transform.
-    // iOS scrolls at the OS level which we can't prevent, but we can
-    // visually undo it each frame.
-    function trackScroll() {
-        if (!keyboardOpen) return;
-
-        const scrollY = window.visualViewport
-            ? window.visualViewport.offsetTop
-            : window.pageYOffset;
-
-        if (scrollY > 0) {
-            document.body.style.transform = `translateY(${scrollY}px)`;
-        }
-
-        rafId = requestAnimationFrame(trackScroll);
-    }
 
     let focusTimer = null;
 
     document.addEventListener('focusin', (e) => {
         if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') return;
         clearTimeout(focusTimer);
-
         keyboardOpen = true;
 
-        // Shrink body to the estimated visible area above the keyboard.
-        // iPhone keyboards are ~38-45% of screen height.
+        // Lock body to viewport — this PREVENTS iOS from scrolling.
+        // Children are flex, so they resize with the body (no fixed/absolute children).
+        document.body.style.setProperty('position', 'fixed', 'important');
+        document.body.style.top = '0';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+
+        // Shrink to estimated visible area above keyboard (~42% of screen).
         const kbEstimate = Math.round(fullHeight * 0.42);
-        document.body.style.height = (fullHeight - kbEstimate) + 'px';
+        document.body.style.setProperty('height', (fullHeight - kbEstimate) + 'px', 'important');
 
-        // Start the scroll-counter loop
-        cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(trackScroll);
+        // Force any stray scroll back to top
+        window.scrollTo(0, 0);
 
-        // After keyboard animation settles, refine with actual viewport
+        // After keyboard animation, refine with actual viewport if available
         setTimeout(() => {
             if (!keyboardOpen) return;
             const vv = window.visualViewport;
             if (vv && vv.height < fullHeight - 100) {
-                // Viewport reported an actual smaller height — use it
-                document.body.style.height = vv.height + 'px';
+                document.body.style.setProperty('height', vv.height + 'px', 'important');
             }
             window.scrollTo(0, 0);
             const msgs = document.getElementById('chatMessages');
@@ -1529,24 +1530,20 @@ function setupIOSKeyboardFix() {
             const a = document.activeElement;
             if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) {
                 keyboardOpen = false;
-                cancelAnimationFrame(rafId);
-                document.body.style.height = '';
-                document.body.style.transform = '';
+                // Restore normal layout
+                document.body.style.removeProperty('position');
+                document.body.style.removeProperty('top');
+                document.body.style.removeProperty('left');
+                document.body.style.removeProperty('right');
+                document.body.style.setProperty('height', fullHeight + 'px', 'important');
+                document.body.style.removeProperty('transform');
                 window.scrollTo(0, 0);
             }
         }, 300);
     });
 
-    // Also listen to visualViewport events if available
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('scroll', () => {
-            if (!keyboardOpen) return;
-            const offset = window.visualViewport.offsetTop;
-            if (offset > 0) {
-                document.body.style.transform = `translateY(${offset}px)`;
-            }
-        });
-    }
+    // Safety net: continuously push scroll back to 0
+    window.addEventListener('scroll', () => { window.scrollTo(0, 0); }, { passive: true });
 }
 
 // Local showToast removed - using unified toast.js instead

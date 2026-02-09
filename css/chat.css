@@ -2312,17 +2312,17 @@ body.chat-page::after {
 
 @media (max-width: 768px) {
     /* === UNIFIED MOBILE LAYOUT ===
-       Pure flex column. NO position:fixed or position:absolute on layout
-       elements. On iOS PWA the keyboard overlays and the OS scrolls the
-       viewport — breaking fixed/absolute positioning. Using normal flex
-       flow means the body height (set via JS on iOS) directly controls
-       how much space children get. Works identically on Android, iOS
-       browser, iOS PWA, and desktop-narrow. */
+       Flex column. JS sets exact body height to window.innerHeight which
+       avoids iOS PWA safe-area clipping (100dvh includes status bar +
+       home indicator, but innerHeight gives actual usable space).
+       On keyboard open, JS switches body to position:fixed to prevent
+       iOS from scrolling the viewport. */
     body.chat-page {
         display: flex !important;
         flex-direction: column !important;
-        height: 100vh !important;
-        height: 100dvh !important;
+        height: 100vh;
+        height: 100dvh;
+        /* NO !important on height — JS overrides with exact viewport value */
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
