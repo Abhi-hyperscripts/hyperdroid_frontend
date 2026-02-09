@@ -160,8 +160,8 @@ body.chat-page::after {
 
 /* New Chat Button — Gradient Glow */
 .new-chat-btn {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--border-radius-full);
     background: var(--gradient-primary);
     color: var(--text-inverse);
@@ -184,8 +184,8 @@ body.chat-page::after {
 }
 
 .new-chat-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 /* ============================================
@@ -2589,8 +2589,13 @@ body.chat-page::after {
     }
 
     .new-chat-btn {
-        width: 30px;
-        height: 30px;
+        width: 26px;
+        height: 26px;
+    }
+
+    .new-chat-btn svg {
+        width: 14px;
+        height: 14px;
     }
 
     .conversation-avatar {
