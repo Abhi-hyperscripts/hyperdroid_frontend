@@ -290,7 +290,7 @@ const Navigation = {
     },
 
     /**
-     * Setup click outside listener to close dropdown
+     * Setup listeners to close dropdown on outside interaction (click, scroll, touch)
      */
     setupDropdownListeners() {
         document.addEventListener('click', (e) => {
@@ -300,6 +300,22 @@ const Navigation = {
                 dropdown.classList.remove('show');
             }
         });
+
+        // Close on any scroll/touch interaction outside the dropdown
+        const closeIfOpen = (e) => {
+            const dropdown = document.getElementById('userDropdownMenu');
+            if (dropdown && dropdown.classList.contains('show')) {
+                // Don't close if scrolling inside the dropdown itself
+                if (e && dropdown.contains(e.target)) return;
+                dropdown.classList.remove('show');
+            }
+        };
+        // Capture-phase scroll catches nested scrollable containers
+        document.addEventListener('scroll', closeIfOpen, { passive: true, capture: true });
+        // Wheel covers desktop mouse/trackpad scroll before scroll event fires
+        document.addEventListener('wheel', closeIfOpen, { passive: true });
+        // Touchmove covers mobile finger-drag scrolling on any element
+        document.addEventListener('touchmove', closeIfOpen, { passive: true });
     },
 
     /**
