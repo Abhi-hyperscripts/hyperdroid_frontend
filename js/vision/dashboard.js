@@ -144,6 +144,7 @@ function createDashboardMeetingCard(meeting) {
     const type = meeting.meeting_type || 'regular';
     const isStarted = meeting.is_started || false;
     const isRecording = meeting.is_recording || false;
+    const isActive = meeting.is_active !== false; // default true
     const recCount = meeting.recording_count || 0;
     const participantCount = meeting.allowed_participant_count || 0;
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
@@ -155,8 +156,10 @@ function createDashboardMeetingCard(meeting) {
     const typeBadge = getTypeBadgeHTML(type);
     const sourceBadge = getSourceBadgeHTML(meeting.source_service);
 
-    const liveIndicator = isStarted
+    const liveIndicator = isStarted && isActive
         ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>'
+        : !isActive
+        ? '<span class="badge badge-ended">Ended</span>'
         : '';
 
     // Build meta items with dot separators
@@ -169,8 +172,10 @@ function createDashboardMeetingCard(meeting) {
     if (type === 'participant-controlled') metaParts.push(`<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount}</span>`);
     if (meeting.is_hosted_by_me) metaParts.push('<span class="badge badge-host-you">Host</span>');
 
+    const cardClass = isActive ? 'meeting-card-v2' : 'meeting-card-v2 mcv2-ended';
+
     return `
-        <div class="meeting-card-v2" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
+        <div class="${cardClass}" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
             <div class="mcv2-card-border"></div>
             <div class="mcv2-card-content">
                 <div class="mcv2-info">
@@ -415,7 +420,8 @@ function initDashboardDropdowns() {
             { value: 'all', label: 'All Status' },
             { value: 'live', label: 'Live' },
             { value: 'active', label: 'Active' },
-            { value: 'scheduled', label: 'Scheduled' }
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'ended', label: 'Ended' }
         ],
         value: 'all',
         placeholder: 'All Status',

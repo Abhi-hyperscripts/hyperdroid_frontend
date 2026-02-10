@@ -7434,6 +7434,15 @@ label.toggle-switch,
     border-color: transparent;
 }
 
+/* Ended/inactive meeting cards — subtle dim */
+.meeting-card-v2.mcv2-ended .mcv2-card-content {
+    opacity: 0.6;
+}
+
+.meeting-card-v2.mcv2-ended:hover .mcv2-card-content {
+    opacity: 0.85;
+}
+
 /* Info section — takes remaining space */
 .mcv2-info {
     flex: 1;
