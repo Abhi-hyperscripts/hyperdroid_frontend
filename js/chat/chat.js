@@ -506,7 +506,17 @@ function renderMessages(messages) {
         return;
     }
 
-    container.innerHTML = messages.map(msg => renderMessage(msg)).join('');
+    let html = '';
+    let lastDateKey = '';
+    for (const msg of messages) {
+        const dateKey = getDateKey(msg.created_at);
+        if (dateKey && dateKey !== lastDateKey) {
+            html += renderDateDivider(msg.created_at);
+            lastDateKey = dateKey;
+        }
+        html += renderMessage(msg);
+    }
+    container.innerHTML = html;
     scrollToBottom();
 }
 
@@ -514,7 +524,7 @@ function renderMessage(msg) {
     const isOwn = msg.sender_id === currentUser.userId;
     const senderName = msg.sender_name || msg.sender_email || 'Unknown';
     const initials = getInitials(senderName);
-    const time = formatTime(msg.created_at);
+    const time = formatMessageTime(msg.created_at);
 
     if (msg.message_type === 'system') {
         return `
@@ -593,13 +603,22 @@ function renderMessage(msg) {
         `;
     }
 
-    // Build message actions for own messages (edit + delete for text, delete-only for files)
+    // Build message actions — copy for all messages, edit+delete for own only
     let actionsHtml = '';
-    if (isOwn && !msg.is_deleted) {
+    if (!msg.is_deleted) {
         const isTextMessage = msg.message_type === 'text' || (!msg.message_type && msg.content);
+        const hasContent = msg.content && msg.content.trim();
         actionsHtml = `
             <div class="message-actions">
-                ${isTextMessage ? `
+                ${hasContent ? `
+                    <button class="msg-action-btn" onclick="event.stopPropagation(); copyMessageText('${msg.id}')" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
+                ` : ''}
+                ${isOwn && isTextMessage ? `
                     <button class="msg-action-btn" onclick="event.stopPropagation(); startEditMessage('${msg.id}')" title="Edit">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -607,15 +626,17 @@ function renderMessage(msg) {
                         </svg>
                     </button>
                 ` : ''}
-                <button class="msg-action-btn msg-action-delete" onclick="event.stopPropagation(); confirmDeleteMessage('${msg.id}')" title="Delete">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-2 14H7L5 6"/>
-                        <path d="M10 11v6"/>
-                        <path d="M14 11v6"/>
-                        <path d="M9 6V4h6v2"/>
-                    </svg>
-                </button>
+                ${isOwn ? `
+                    <button class="msg-action-btn msg-action-delete" onclick="event.stopPropagation(); confirmDeleteMessage('${msg.id}')" title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-2 14H7L5 6"/>
+                            <path d="M10 11v6"/>
+                            <path d="M14 11v6"/>
+                            <path d="M9 6V4h6v2"/>
+                        </svg>
+                    </button>
+                ` : ''}
             </div>
         `;
     }
@@ -643,6 +664,29 @@ function appendMessage(msg) {
         emptyState.remove();
     }
 
+    // Check if we need a date divider before this message
+    const newDateKey = getDateKey(msg.created_at);
+    if (newDateKey) {
+        // Find the last message element's date by looking at the last .message element
+        const allMessages = container.querySelectorAll('.message[data-message-id]');
+        let needsDivider = true;
+        if (allMessages.length > 0) {
+            // Find the last date-divider to compare
+            const dividers = container.querySelectorAll('.date-divider');
+            if (dividers.length > 0) {
+                const lastDividerText = dividers[dividers.length - 1].textContent.trim();
+                const newDividerText = formatDateDivider(msg.created_at);
+                needsDivider = lastDividerText !== newDividerText;
+            }
+        } else {
+            // No messages yet — always insert divider
+            needsDivider = true;
+        }
+        if (needsDivider) {
+            container.insertAdjacentHTML('beforeend', renderDateDivider(msg.created_at));
+        }
+    }
+
     container.insertAdjacentHTML('beforeend', renderMessage(msg));
     scrollToBottom();
 }
@@ -650,7 +694,32 @@ function appendMessage(msg) {
 function prependMessages(messages) {
     const container = document.getElementById('chatMessages');
     const prevScrollHeight = container.scrollHeight;
-    const html = messages.map(msg => renderMessage(msg)).join('');
+
+    // Build HTML for prepended messages with date dividers
+    let html = '';
+    let lastDateKey = '';
+    for (const msg of messages) {
+        const dateKey = getDateKey(msg.created_at);
+        if (dateKey && dateKey !== lastDateKey) {
+            html += renderDateDivider(msg.created_at);
+            lastDateKey = dateKey;
+        }
+        html += renderMessage(msg);
+    }
+
+    // Check if the first existing element in the container is a date-divider
+    // for the same date as the last prepended message — if so, remove it to avoid duplicates
+    if (lastDateKey) {
+        const firstChild = container.firstElementChild;
+        if (firstChild && firstChild.classList.contains('date-divider')) {
+            const existingText = firstChild.textContent.trim();
+            const lastPrependedDate = messages[messages.length - 1]?.created_at;
+            if (lastPrependedDate && existingText === formatDateDivider(lastPrependedDate)) {
+                firstChild.remove();
+            }
+        }
+    }
+
     container.insertAdjacentHTML('afterbegin', html);
     // Maintain scroll position after prepending
     container.scrollTop = container.scrollHeight - prevScrollHeight;
@@ -1250,6 +1319,52 @@ function formatTime(dateStr) {
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+// Always returns exact time like "2:35 PM" for message bubbles
+function formatMessageTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+// Returns a YYYY-MM-DD key for date comparison
+function getDateKey(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Returns the text for a date divider badge (WhatsApp-style)
+function formatDateDivider(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+
+    // Today
+    if (date.toDateString() === now.toDateString()) {
+        return 'Today';
+    }
+
+    // Yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+    }
+
+    // Same year — "Saturday, 26 January"
+    if (date.getFullYear() === now.getFullYear()) {
+        return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    // Older year — "Saturday, 26 January 2025"
+    return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Returns the HTML for a date divider
+function renderDateDivider(dateStr) {
+    return `<div class="date-divider"><span>${formatDateDivider(dateStr)}</span></div>`;
+}
+
 function truncate(str, length) {
     if (!str) return '';
     return str.length > length ? str.substring(0, length) + '...' : str;
@@ -1603,10 +1718,78 @@ function renderMeetingCard(msg, cardData, isOwn, senderName, time) {
                         Join Meeting
                     </div>
                 </a>
+                <div class="message-actions">
+                    <button class="msg-action-btn" onclick="event.stopPropagation(); copyMeetingLink('${meetingLink}')" title="Copy link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
+                    ${isOwn && !msg.is_deleted ? `
+                        <button class="msg-action-btn msg-action-delete" onclick="event.stopPropagation(); confirmDeleteMessage('${msg.id}')" title="Delete">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-2 14H7L5 6"/>
+                                <path d="M10 11v6"/>
+                                <path d="M14 11v6"/>
+                                <path d="M9 6V4h6v2"/>
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
                 <span class="message-time">${time}</span>
             </div>
         </div>
     `;
+}
+
+// ============================================
+// Copy Message Text / Meeting Link
+// ============================================
+
+function copyMessageText(messageId) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageEl) return;
+
+    const bubbleEl = messageEl.querySelector('.message-bubble');
+    if (!bubbleEl) return;
+
+    // Get text content excluding the "(edited)" indicator
+    const editedIndicator = bubbleEl.querySelector('.edited-indicator');
+    const text = editedIndicator
+        ? bubbleEl.textContent.replace(editedIndicator.textContent, '').trim()
+        : bubbleEl.textContent.trim();
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard', 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Copied to clipboard', 'success');
+    });
+}
+
+function copyMeetingLink(link) {
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Meeting link copied', 'success');
+    }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = link;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Meeting link copied', 'success');
+    });
 }
 
 // ============================================

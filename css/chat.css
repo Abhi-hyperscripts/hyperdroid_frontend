@@ -1163,9 +1163,9 @@ body.chat-page::after {
     display: flex;
 }
 
-/* On touch devices, always show actions for own messages */
+/* On touch devices, always show actions */
 @media (hover: none) {
-    .message.own .message-actions {
+    .message .message-actions {
         display: flex;
     }
 }
