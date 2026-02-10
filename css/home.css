@@ -519,19 +519,82 @@ body.dashboard .navbar {
 
 @media (max-width: 500px) {
     .home-content {
-        padding: 20px 12px;
+        padding: 16px 10px;
     }
 
     .welcome-title {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
+    }
+
+    .welcome-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .bento-grid {
+        gap: 8px;
     }
 
     .bento-card {
-        flex: 0 1 100%;
-        max-width: 100%;
+        flex: 0 1 calc(50% - 4px);
+        min-width: 0;
+        max-width: none;
+        border-radius: 10px;
     }
 
     .card-content {
-        padding: 12px 14px;
+        padding: 8px 8px;
+        border-radius: 10px;
+        gap: 4px;
+    }
+
+    .card-header {
+        gap: 4px;
+    }
+
+    .app-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+    }
+
+    .app-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .app-status {
+        font-size: 0.5rem;
+        padding: 1px 4px;
+        gap: 2px;
+    }
+
+    .status-indicator {
+        width: 3px;
+        height: 3px;
+    }
+
+    .card-body h3 {
+        font-size: 0.72rem;
+        margin-bottom: 0;
+    }
+
+    .card-body p {
+        font-size: 0.58rem;
+        line-height: 1.25;
+        -webkit-line-clamp: 2;
+    }
+
+    .card-footer {
+        padding-top: 3px;
+    }
+
+    .app-action {
+        font-size: 0.58rem;
+        gap: 3px;
+    }
+
+    .app-action svg {
+        width: 9px;
+        height: 9px;
     }
 }
