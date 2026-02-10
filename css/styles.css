@@ -7663,9 +7663,9 @@ label.toggle-switch,
 
     .mcv2-actions {
         justify-content: space-between;
-        padding-top: 8px;
-        border-top: 1px solid var(--border-primary);
-        margin-top: 4px;
+        padding-top: 2px;
+        border-top: none;
+        margin-top: 0;
     }
 
     /* Show all actions on mobile (no hover) */
