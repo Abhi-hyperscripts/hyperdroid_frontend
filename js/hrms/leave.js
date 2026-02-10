@@ -14,6 +14,7 @@ let balanceYearDropdown = null;
 let balanceDepartmentDropdown = null;
 let calendarOfficeDropdown = null;
 let calendarDepartmentDropdown = null;
+let calendarMonthPicker = null;
 
 // SearchableDropdown instances - Leave Type Modal
 let leaveTypeCarryForwardDropdown = null;
@@ -2231,11 +2232,17 @@ let calendarInitialized = false;
 
 function initializeTeamCalendar() {
     if (!calendarInitialized) {
-        // Set default month to current month
+        // Initialize custom MonthPicker for calendar month selection
         const now = new Date();
-        const monthInput = document.getElementById('calendarMonth');
-        if (monthInput) {
-            monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        if (!calendarMonthPicker && typeof MonthPicker !== 'undefined') {
+            calendarMonthPicker = new MonthPicker('calendarMonthPicker', {
+                yearsBack: 5,
+                yearsForward: 2,
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                allowAllMonths: false,
+                onChange: () => loadTeamCalendar()
+            });
         }
 
         // Populate department filter using SearchableDropdown if available
@@ -2257,16 +2264,18 @@ function initializeTeamCalendar() {
 }
 
 async function loadTeamCalendar() {
-    const monthInput = document.getElementById('calendarMonth');
-
-    if (!monthInput || !monthInput.value) {
+    if (!calendarMonthPicker) {
         return;
     }
 
-    const [year, month] = monthInput.value.split('-');
-    const startDate = `${year}-${month}-01`;
+    const year = calendarMonthPicker.getYear();
+    const month = calendarMonthPicker.getMonth();
+    if (!year || !month) return;
+
+    const monthStr = String(month).padStart(2, '0');
+    const startDate = `${year}-${monthStr}-01`;
     const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${year}-${month}-${lastDay}`;
+    const endDate = `${year}-${monthStr}-${lastDay}`;
 
     // Get department value from SearchableDropdown if available, otherwise from native select
     const departmentId = calendarDepartmentDropdown
@@ -2354,19 +2363,38 @@ function setupSidebar() {
     const toggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('organizationSidebar');
     const container = document.querySelector('.hrms-container');
+    const overlay = document.getElementById('sidebarOverlay');
 
     if (!toggle || !sidebar) return;
 
-    // Open sidebar by default on page load
-    toggle.classList.add('active');
-    sidebar.classList.add('open');
-    container?.classList.add('sidebar-open');
+    // Open sidebar by default on desktop, ensure closed on mobile
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    } else {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
+    }
 
     // Toggle sidebar open/close
     toggle.addEventListener('click', () => {
         toggle.classList.toggle('active');
         sidebar.classList.toggle('open');
         container?.classList.toggle('sidebar-open');
+        if (window.innerWidth <= 1024) {
+            overlay?.classList.toggle('active');
+        }
+    });
+
+    // Close sidebar when clicking overlay (mobile)
+    overlay?.addEventListener('click', () => {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
     });
 
     // Collapsible nav groups
@@ -2385,6 +2413,7 @@ function setupSidebar() {
             toggle.classList.remove('active');
             sidebar.classList.remove('open');
             container?.classList.remove('sidebar-open');
+            overlay?.classList.remove('active');
         }
     });
 }

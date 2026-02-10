@@ -259,7 +259,7 @@
                             <select id="calendarOffice" class="form-select">
                                 <option value="">All Offices</option>
                             </select>
-                            <input type="month" id="calendarMonth" class="form-control">
+                            <div class="month-picker-container" id="calendarMonthPicker"></div>
                             <select id="calendarDepartment" class="form-select">
                                 <option value="">All Departments</option>
                             </select>
@@ -740,6 +740,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/hrms-monthpicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');

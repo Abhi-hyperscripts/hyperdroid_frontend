@@ -321,7 +321,54 @@
         grid-template-columns: 1fr;
     }
 
+    .generator-filters {
+        padding: 16px;
+        overflow: visible;
+    }
+
+    /* Stack label above input on mobile */
+    .filter-row .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    /* Make all filter inputs full-width on mobile */
+    .filter-row .filter-group > *,
+    .filter-row .filter-group .searchable-dropdown,
+    .filter-row .filter-group .searchable-dropdown-trigger,
+    .filter-row .filter-group .form-control,
+    .filter-row .filter-group .form-select,
+    .filter-row .filter-group input,
+    .filter-row .filter-group select {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
+    .filter-actions {
+        flex-wrap: wrap;
+        justify-content: stretch;
+    }
+
+    .filter-actions .btn {
+        flex: 1;
+    }
+
+    .output-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
     .output-actions {
         flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .output-actions .btn {
+        flex: 1;
+        min-width: 0;
     }
 }

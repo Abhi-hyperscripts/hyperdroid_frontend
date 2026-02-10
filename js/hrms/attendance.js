@@ -1081,11 +1081,16 @@ function setupSidebar() {
         }
     }
 
-    // Open sidebar by default on page load (desktop)
+    // Open sidebar by default on desktop, ensure closed on mobile
     if (window.innerWidth > 1024) {
         toggle.classList.add('active');
         sidebar.classList.add('open');
         container?.classList.add('sidebar-open');
+    } else {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
     }
 
     // Toggle sidebar open/close
@@ -1093,6 +1098,9 @@ function setupSidebar() {
         toggle.classList.toggle('active');
         sidebar.classList.toggle('open');
         container?.classList.toggle('sidebar-open');
+        if (window.innerWidth <= 1024) {
+            overlay?.classList.toggle('active');
+        }
     });
 
     // Close sidebar when clicking overlay (mobile)
@@ -1100,6 +1108,7 @@ function setupSidebar() {
         toggle.classList.remove('active');
         sidebar.classList.remove('open');
         container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
     });
 
     // Collapsible nav groups

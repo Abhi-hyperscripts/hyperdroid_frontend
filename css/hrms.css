@@ -1340,18 +1340,105 @@ input.readonly-field,
         align-items: stretch;
     }
 
+    /* Make all filter bar children full-width when stacked on mobile */
+    .filters-bar > * {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
+    .filters-bar .filter-group {
+        flex-direction: column;
+    }
+
+    .filters-bar .filter-group > * {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
+    /* Month/date picker containers - override inline-block */
+    .filters-bar .month-picker-container,
+    .filters-bar .date-picker-container {
+        display: block !important;
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    .filters-bar .month-picker-container .month-picker-trigger,
+    .filters-bar .date-picker-container input {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Searchable dropdowns inside filter bars */
+    .filters-bar .searchable-dropdown,
+    .filters-bar .searchable-dropdown-wrapper,
+    .filters-bar .searchable-dropdown .searchable-dropdown-trigger {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
     .search-input-wrapper {
         max-width: none;
     }
 
     .stats-row {
         flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .stats-row .stat-card,
+    .stats-row .stat-mini {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 0;
+        max-width: none;
+        box-sizing: border-box;
+    }
+
+    .stat-card {
+        padding: 12px 16px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
     }
 
     .stat-mini {
-        flex: 1;
-        min-width: 80px;
-        padding: 12px 16px;
+        padding: 10px 12px;
+    }
+
+    .stat-mini-value {
+        font-size: 1.35rem;
+    }
+
+    .stat-mini-label {
+        font-size: 0.75rem;
+    }
+
+    .pr-stats-row {
+        gap: 10px;
+    }
+
+    .pr-stats-row .pr-stat {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 0;
+    }
+
+    .pr-stat-val {
+        font-size: 0.95rem;
+    }
+
+    .pr-stat-lbl {
+        font-size: 0.6rem;
     }
 
     .data-table-container {
@@ -18313,6 +18400,29 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 [data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
 [data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
+}
+
+/* Mobile: Override date/month/time input fixed widths to stretch full-width */
+@media (max-width: 768px) {
+    .filters-bar input[type="month"],
+    .inline-filters input[type="month"],
+    .filter-group input[type="month"],
+    .filter-group input[type="month"].form-control,
+    input[type="month"].filter-select,
+    .filters-bar input[type="date"],
+    .inline-filters input[type="date"],
+    .filter-group input[type="date"],
+    .filter-group input[type="date"].form-control,
+    input[type="date"].filter-select,
+    .filters-bar input[type="time"],
+    .inline-filters input[type="time"],
+    .filter-group input[type="time"],
+    .filter-group input[type="time"].form-control,
+    input[type="time"].filter-select {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: none !important;
+    }
 }
 
 /* ============================================

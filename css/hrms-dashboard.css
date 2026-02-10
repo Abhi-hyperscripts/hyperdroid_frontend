@@ -918,11 +918,26 @@ body.hrms-dashboard::before {
     }
 
     .stat-card {
-        padding: 16px;
+        padding: 14px 12px;
     }
 
     .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .stat-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .stat-icon svg {
+        width: 16px;
+        height: 16px;
     }
 
     .quick-actions {
@@ -948,7 +963,8 @@ body.hrms-dashboard::before {
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
     }
 
     .tab-badge {

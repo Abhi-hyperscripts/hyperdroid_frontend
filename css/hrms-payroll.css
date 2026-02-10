@@ -730,9 +730,22 @@
     border-radius: 50%;
 }
 
-/* Sidebar Overlay - Hidden (no backdrop) */
+/* Sidebar Overlay - Hidden on desktop, visible on mobile */
 .sidebar-overlay {
-    display: none !important;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
 }
 
 /* Main layout container */
@@ -1013,6 +1026,15 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    /* Keep navbar fixed on mobile for HRMS pages (styles.css sets relative for chat) */
+    body:has(.hrms-container) .navbar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 999999 !important;
+    }
+
     .hrms-header-row {
         gap: 12px;
     }
@@ -1038,6 +1060,28 @@
 
     .active-tab-title {
         font-size: 13px;
+    }
+
+    /* On mobile, sidebar overlays content instead of pushing it */
+    .sidebar-overlay {
+        display: block;
+        pointer-events: none;
+    }
+
+    .sidebar-overlay.active {
+        pointer-events: auto;
+    }
+
+    /* Don't shift content on mobile - sidebar overlays instead */
+    .hrms-container.sidebar-open .hrms-header {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .hrms-container.sidebar-open .payroll-layout,
+    .hrms-container.sidebar-open .organization-layout {
+        margin-left: 0;
+        width: 100%;
     }
 }
 
