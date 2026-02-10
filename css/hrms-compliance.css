@@ -4782,10 +4782,18 @@
     font-size: var(--font-size-sm);
 }
 
+#statutory-registrations > .compliance-section {
+    border: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+}
+
 #statutory-registrations .statutory-registrations-section {
     margin-top: 0;
     border-top: none;
-    padding-top: 0;
 }
 
 #statutory-registrations .statutory-registrations-section > .section-header {

@@ -1,0 +1,194 @@
+/*
+ * TABLE → CARD MOBILE LAYOUT
+ * ===========================
+ * Universal responsive CSS that transforms .data-table rows into
+ * glassy bento-style cards on mobile viewports.
+ *
+ * Works automatically with table-cards.js which applies data-label
+ * attributes via MutationObserver — zero changes needed in page JS.
+ *
+ * Usage: Include this CSS + table-cards.js on any page that uses
+ * .data-table-container > .data-table markup.
+ */
+
+@media (max-width: 768px) {
+
+    /* ── Container reset ── */
+    .data-table-container {
+        overflow-x: visible;
+        background: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* ── Table reset ── */
+    .data-table {
+        min-width: 0;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    /* ── Card style per row ── */
+    .data-table tbody tr {
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+            rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(16px) saturate(1.4);
+        -webkit-backdrop-filter: blur(16px) saturate(1.4);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+        border-radius: 14px;
+        margin-bottom: 10px;
+        padding: 12px 14px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .data-table tbody tr:hover {
+        border-color: rgba(var(--brand-primary-rgb), 0.4);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            0 0 12px rgba(var(--brand-primary-rgb), 0.08);
+    }
+
+    /* Dark mode: frosted glass with diagonal light streak */
+    [data-theme="dark"] .data-table tbody tr {
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.01) 50%, transparent 100%),
+            rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.3);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="dark"] .data-table tbody tr:hover {
+        border-color: rgba(var(--brand-primary-rgb), 0.5);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 4px 16px rgba(0, 0, 0, 0.2),
+            0 0 12px rgba(var(--brand-primary-rgb), 0.1);
+    }
+
+    .data-table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    /* ── Empty / loading state rows ── */
+    .data-table tbody tr.empty-state,
+    .data-table tbody tr.empty-row,
+    .data-table tbody tr.ess-empty-state {
+        text-align: center;
+        background: var(--glass-bg);
+        padding: 24px 16px;
+    }
+
+    .data-table tbody tr.empty-state td,
+    .data-table tbody tr.empty-row td,
+    .data-table tbody tr.ess-empty-state td {
+        justify-content: center;
+    }
+
+    .data-table tbody tr.empty-state td::before,
+    .data-table tbody tr.empty-row td::before,
+    .data-table tbody tr.ess-empty-state td::before {
+        display: none;
+    }
+
+    /* ── Cell as labeled row ── */
+    .data-table td {
+        padding: 4px 0;
+        border-bottom: none;
+        font-size: 0.82rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px 8px;
+        text-align: right;
+        flex-wrap: wrap;
+        word-break: break-word;
+        min-width: 0;
+    }
+
+    /* Prevent inner elements from overflowing the card */
+    .data-table td > * {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Remove hover background on individual cells */
+    .data-table tr:hover td {
+        background: none;
+    }
+
+    /* Label from data-label attribute */
+    .data-table td[data-label]::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+        min-width: 35%;
+        text-align: left;
+    }
+
+    /* ── Actions cell — full width, right-aligned ── */
+    .data-table td.tc-actions {
+        padding-top: 8px;
+        margin-top: 4px;
+        border-top: 1px solid var(--hover-overlay);
+        justify-content: flex-end;
+    }
+
+    /* Hide label for pure-action cells */
+    .data-table td.tc-actions::before {
+        display: none;
+    }
+
+    /* ── Badge / status adjustments ── */
+    .data-table td .badge,
+    .data-table td .status-badge {
+        font-size: 0.7rem;
+    }
+
+    /* ── Employee info cell — full width row ── */
+    .data-table td .employee-info {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    /* ── Action buttons wrap nicely ── */
+    .data-table td .action-buttons,
+    .data-table td .btn-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .data-table td .btn-sm,
+    .data-table td .action-btn {
+        font-size: 0.72rem;
+        padding: 4px 8px;
+    }
+
+    /* ── Clickable row indicator ── */
+    .data-table tbody tr.clickable-row {
+        cursor: pointer;
+    }
+}

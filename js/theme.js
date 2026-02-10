@@ -421,6 +421,7 @@ const Theme = {
             // Auto-detect if card background is dark and set card text colors
             const cardRgb = utils.hexToRgb(bgCard);
             if (cardRgb) {
+                theme['--bg-card-rgb'] = `${cardRgb.r}, ${cardRgb.g}, ${cardRgb.b}`;
                 const cardLuminance = (0.299 * cardRgb.r + 0.587 * cardRgb.g + 0.114 * cardRgb.b) / 255;
                 if (cardLuminance < 0.5) {
                     // Dark card - ensure text is readable

@@ -1,0 +1,443 @@
+/*
+ * GLASS BENTO CARD SYSTEM
+ * ========================
+ * Universal glassy frosted-glass card styles for consistent look & feel
+ * across the entire frontend. Apply the `.glass-card` class to any
+ * container element, or use the auto-applied selectors below for
+ * known HRMS card patterns.
+ *
+ * Usage:
+ *   <div class="glass-card">...</div>
+ *
+ * Variants:
+ *   .glass-card              — Standard frosted card
+ *   .glass-card-sm           — Smaller padding, tighter radius
+ *   .glass-card-flush        — No padding (for cards with internal sections)
+ *
+ * Include this CSS on any page that needs glassy card styling.
+ */
+
+/* ===================================================================
+   BASE GLASS CARD — Light mode
+   =================================================================== */
+.glass-card,
+.glass-card-sm,
+.glass-card-flush {
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+        rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.glass-card {
+    padding: 16px;
+}
+
+.glass-card-sm {
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.glass-card-flush {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ── Hover ── */
+.glass-card:hover,
+.glass-card-sm:hover,
+.glass-card-flush:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.4);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 12px rgba(var(--brand-primary-rgb), 0.08);
+}
+
+/* ===================================================================
+   DARK MODE
+   =================================================================== */
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .glass-card-sm,
+[data-theme="dark"] .glass-card-flush {
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        rgba(var(--bg-card-rgb), 0.06);
+    border: 1px solid var(--border-color-light);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .glass-card:hover,
+[data-theme="dark"] .glass-card-sm:hover,
+[data-theme="dark"] .glass-card-flush:hover {
+    border-color: var(--border-color-strong);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 8px rgba(var(--brand-primary-rgb), 0.1);
+}
+
+/* ===================================================================
+   AUTO-APPLY: Known HRMS card & section selectors
+   Any element matching these selectors gets the glass effect
+   automatically — no HTML changes required.
+   =================================================================== */
+
+/* ── Stat cards ── */
+.stat-card,
+.cfg-stat-card,
+.summary-card,
+.ess-stat-card,
+
+/* ── Statutory / Compliance cards ── */
+.statutory-card,
+.rule-card,
+.regime-card,
+.cess-card,
+.calc-card,
+.validation-card,
+.employee-violation-card,
+.pt-config-card,
+.lwf-config-card,
+.country-config-card,
+.contrib-card,
+.bento-card-compliance,
+.compliance-section,
+
+/* ── Compliance sections & workflow cards ── */
+.country-configs-section,
+.statutory-registrations-section,
+.office-registrations-section,
+.config-workflow-card,
+
+/* ── Dashboard cards ── */
+.action-card,
+
+/* ── Reports cards ── */
+.category-card,
+.report-section,
+.report-generator,
+.report-card-compact,
+
+/* ── Payroll cards & sections ── */
+.version-component-row,
+.component-section,
+.collapsible-section,
+.employee-search-panel,
+.type-card-content,
+.adjustment-amount-card,
+.adjustment-receipt-section,
+.current-salary-section,
+.pending-calculations-section,
+.cfg-summary-section,
+.cfg-detail-section,
+.cfg-category-section,
+.statutory-compact-section,
+.regional-compact-section,
+.regional-tax-table-section,
+
+/* ── Organization sections ── */
+.office-section,
+.basic-component-section,
+.version-reason-section,
+.version-components-section,
+
+/* ── Self-service / Directory cards ── */
+.directory-card.compact,
+.ess-profile-section,
+.profile-photo-section,
+.declaration-section,
+.declaration-form-section,
+
+/* ── Slide panel sections ── */
+.panel-section,
+
+/* ── NFC cards ── */
+.nfc-issue-section,
+.nfc-cards-section,
+.nfc-profile-section,
+
+/* ── Bulk import ── */
+.bulk-import-template-section,
+
+/* ── Proof cards ── */
+.proof-card {
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+        rgba(255, 255, 255, 0.55) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.25) !important;
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+/* ===================================================================
+   PADDING FIX — Section classes that have NO padding defined in their
+   own CSS files. Without this, content sticks to the rounded edges.
+   =================================================================== */
+.component-section,
+.collapsible-section,
+.employee-search-panel,
+.pending-calculations-section,
+.cfg-category-section,
+.statutory-compact-section,
+.regional-compact-section,
+.regional-tax-table-section,
+.version-components-section,
+.office-registrations-section,
+.report-section,
+.statutory-card,
+.current-salary-section,
+.statutory-registrations-section {
+    padding: 16px;
+}
+
+/* ── Auto-apply hover ── */
+.stat-card:hover,
+.cfg-stat-card:hover,
+.summary-card:hover,
+.ess-stat-card:hover,
+.statutory-card:hover,
+.rule-card:hover,
+.regime-card:hover,
+.cess-card:hover,
+.calc-card:hover,
+.validation-card:hover,
+.employee-violation-card:hover,
+.pt-config-card:hover,
+.lwf-config-card:hover,
+.country-config-card:hover,
+.contrib-card:hover,
+.bento-card-compliance:hover,
+.compliance-section:hover,
+.country-configs-section:hover,
+.statutory-registrations-section:hover,
+.office-registrations-section:hover,
+.config-workflow-card:hover,
+.action-card:hover,
+.category-card:hover,
+.report-section:hover,
+.report-generator:hover,
+.report-card-compact:hover,
+.version-component-row:hover,
+.component-section:hover,
+.collapsible-section:hover,
+.employee-search-panel:hover,
+.type-card-content:hover,
+.adjustment-amount-card:hover,
+.adjustment-receipt-section:hover,
+.current-salary-section:hover,
+.pending-calculations-section:hover,
+.cfg-summary-section:hover,
+.cfg-detail-section:hover,
+.cfg-category-section:hover,
+.statutory-compact-section:hover,
+.regional-compact-section:hover,
+.regional-tax-table-section:hover,
+.office-section:hover,
+.basic-component-section:hover,
+.version-reason-section:hover,
+.version-components-section:hover,
+.directory-card.compact:hover,
+.ess-profile-section:hover,
+.profile-photo-section:hover,
+.declaration-section:hover,
+.declaration-form-section:hover,
+.panel-section:hover,
+.nfc-issue-section:hover,
+.nfc-cards-section:hover,
+.nfc-profile-section:hover,
+.bulk-import-template-section:hover,
+.proof-card:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.4) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 12px rgba(var(--brand-primary-rgb), 0.08) !important;
+}
+
+/* ── Auto-apply dark mode ── */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .cfg-stat-card,
+[data-theme="dark"] .summary-card,
+[data-theme="dark"] .ess-stat-card,
+[data-theme="dark"] .statutory-card,
+[data-theme="dark"] .rule-card,
+[data-theme="dark"] .regime-card,
+[data-theme="dark"] .cess-card,
+[data-theme="dark"] .calc-card,
+[data-theme="dark"] .validation-card,
+[data-theme="dark"] .employee-violation-card,
+[data-theme="dark"] .pt-config-card,
+[data-theme="dark"] .lwf-config-card,
+[data-theme="dark"] .country-config-card,
+[data-theme="dark"] .contrib-card,
+[data-theme="dark"] .bento-card-compliance,
+[data-theme="dark"] .compliance-section,
+[data-theme="dark"] .country-configs-section,
+[data-theme="dark"] .statutory-registrations-section,
+[data-theme="dark"] .office-registrations-section,
+[data-theme="dark"] .config-workflow-card,
+[data-theme="dark"] .action-card,
+[data-theme="dark"] .category-card,
+[data-theme="dark"] .report-section,
+[data-theme="dark"] .report-generator,
+[data-theme="dark"] .report-card-compact,
+[data-theme="dark"] .version-component-row,
+[data-theme="dark"] .component-section,
+[data-theme="dark"] .collapsible-section,
+[data-theme="dark"] .employee-search-panel,
+[data-theme="dark"] .type-card-content,
+[data-theme="dark"] .adjustment-amount-card,
+[data-theme="dark"] .adjustment-receipt-section,
+[data-theme="dark"] .current-salary-section,
+[data-theme="dark"] .pending-calculations-section,
+[data-theme="dark"] .cfg-summary-section,
+[data-theme="dark"] .cfg-detail-section,
+[data-theme="dark"] .cfg-category-section,
+[data-theme="dark"] .statutory-compact-section,
+[data-theme="dark"] .regional-compact-section,
+[data-theme="dark"] .regional-tax-table-section,
+[data-theme="dark"] .office-section,
+[data-theme="dark"] .basic-component-section,
+[data-theme="dark"] .version-reason-section,
+[data-theme="dark"] .version-components-section,
+[data-theme="dark"] .directory-card.compact,
+[data-theme="dark"] .ess-profile-section,
+[data-theme="dark"] .profile-photo-section,
+[data-theme="dark"] .declaration-section,
+[data-theme="dark"] .declaration-form-section,
+[data-theme="dark"] .panel-section,
+[data-theme="dark"] .nfc-issue-section,
+[data-theme="dark"] .nfc-cards-section,
+[data-theme="dark"] .nfc-profile-section,
+[data-theme="dark"] .bulk-import-template-section,
+[data-theme="dark"] .proof-card {
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        rgba(var(--bg-card-rgb), 0.06) !important;
+    border: 1px solid var(--border-color-light) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .cfg-stat-card:hover,
+[data-theme="dark"] .summary-card:hover,
+[data-theme="dark"] .ess-stat-card:hover,
+[data-theme="dark"] .statutory-card:hover,
+[data-theme="dark"] .rule-card:hover,
+[data-theme="dark"] .regime-card:hover,
+[data-theme="dark"] .cess-card:hover,
+[data-theme="dark"] .calc-card:hover,
+[data-theme="dark"] .validation-card:hover,
+[data-theme="dark"] .employee-violation-card:hover,
+[data-theme="dark"] .pt-config-card:hover,
+[data-theme="dark"] .lwf-config-card:hover,
+[data-theme="dark"] .country-config-card:hover,
+[data-theme="dark"] .contrib-card:hover,
+[data-theme="dark"] .bento-card-compliance:hover,
+[data-theme="dark"] .compliance-section:hover,
+[data-theme="dark"] .country-configs-section:hover,
+[data-theme="dark"] .statutory-registrations-section:hover,
+[data-theme="dark"] .office-registrations-section:hover,
+[data-theme="dark"] .config-workflow-card:hover,
+[data-theme="dark"] .action-card:hover,
+[data-theme="dark"] .category-card:hover,
+[data-theme="dark"] .report-section:hover,
+[data-theme="dark"] .report-generator:hover,
+[data-theme="dark"] .report-card-compact:hover,
+[data-theme="dark"] .version-component-row:hover,
+[data-theme="dark"] .component-section:hover,
+[data-theme="dark"] .collapsible-section:hover,
+[data-theme="dark"] .employee-search-panel:hover,
+[data-theme="dark"] .type-card-content:hover,
+[data-theme="dark"] .adjustment-amount-card:hover,
+[data-theme="dark"] .adjustment-receipt-section:hover,
+[data-theme="dark"] .current-salary-section:hover,
+[data-theme="dark"] .pending-calculations-section:hover,
+[data-theme="dark"] .cfg-summary-section:hover,
+[data-theme="dark"] .cfg-detail-section:hover,
+[data-theme="dark"] .cfg-category-section:hover,
+[data-theme="dark"] .statutory-compact-section:hover,
+[data-theme="dark"] .regional-compact-section:hover,
+[data-theme="dark"] .regional-tax-table-section:hover,
+[data-theme="dark"] .office-section:hover,
+[data-theme="dark"] .basic-component-section:hover,
+[data-theme="dark"] .version-reason-section:hover,
+[data-theme="dark"] .version-components-section:hover,
+[data-theme="dark"] .directory-card.compact:hover,
+[data-theme="dark"] .ess-profile-section:hover,
+[data-theme="dark"] .profile-photo-section:hover,
+[data-theme="dark"] .declaration-section:hover,
+[data-theme="dark"] .declaration-form-section:hover,
+[data-theme="dark"] .panel-section:hover,
+[data-theme="dark"] .nfc-issue-section:hover,
+[data-theme="dark"] .nfc-cards-section:hover,
+[data-theme="dark"] .nfc-profile-section:hover,
+[data-theme="dark"] .bulk-import-template-section:hover,
+[data-theme="dark"] .proof-card:hover {
+    border-color: var(--border-color-strong) !important;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 8px rgba(var(--brand-primary-rgb), 0.1) !important;
+}
+
+/* ===================================================================
+   CARD HEADERS — Frosted inner header bar
+   Used for cards that have a distinct header section (like statutory
+   cards with icon + title). These get a subtle frosted header.
+   =================================================================== */
+.statutory-card-header,
+.rule-card-header {
+    background:
+        rgba(255, 255, 255, 0.15) !important;
+    border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.1) !important;
+}
+
+[data-theme="dark"] .statutory-card-header,
+[data-theme="dark"] .rule-card-header {
+    background:
+        rgba(255, 255, 255, 0.04) !important;
+    border-bottom-color: rgba(var(--brand-primary-rgb), 0.15) !important;
+}
+
+/* ===================================================================
+   MOBILE RESPONSIVE — Statutory contribution rows
+   Fix overflow: stack vertically on small screens
+   =================================================================== */
+@media (max-width: 768px) {
+    .contribution-row {
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        padding: 10px 12px;
+    }
+
+    .ctc-badge-cell {
+        min-width: auto;
+    }
+
+    .contribution-details {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .component-name {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .compliance-tag {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Statutory grid — single column on mobile */
+    .statutory-contributions-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

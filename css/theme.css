@@ -113,6 +113,7 @@
      ═══════════════════════════════════════════════════════════════════════════ */
   --bg-body: #f5f7fa;
   --bg-card: #ffffff;
+  --bg-card-rgb: 255, 255, 255;        /* RGB values for rgba() glass usage */
   --bg-card-hover: #f9fafb;
   --bg-sidebar: #ffffff;
   --bg-navbar: #ffffff;
@@ -532,6 +533,7 @@
   /* Background colors */
   --bg-body: #0f172a;
   --bg-card: #1e293b;
+  --bg-card-rgb: 30, 41, 59;           /* RGB values for rgba() glass usage */
   --bg-card-hover: #334155;
   --bg-elevated: #1e293b;
   --bg-sunken: #020617;
