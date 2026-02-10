@@ -1338,13 +1338,7 @@ function formatMessageTime(dateStr) {
         return `Yesterday, ${time}`;
     }
 
-    // Same year — "8 Feb, 2:35 PM"
-    if (date.getFullYear() === now.getFullYear()) {
-        const datePart = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-        return `${datePart}, ${time}`;
-    }
-
-    // Older year — "8 Feb 2025, 2:35 PM"
+    // All other dates — "8 Feb 2025, 2:35 PM"
     const datePart = date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
     return `${datePart}, ${time}`;
 }
@@ -1374,12 +1368,7 @@ function formatDateDivider(dateStr) {
         return 'Yesterday';
     }
 
-    // Same year — "Saturday, 26 January"
-    if (date.getFullYear() === now.getFullYear()) {
-        return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
-    }
-
-    // Older year — "Saturday, 26 January 2025"
+    // All other dates — "Saturday, 26 January 2026"
     return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
