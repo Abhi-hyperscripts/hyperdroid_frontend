@@ -399,6 +399,19 @@
 }
 
 /* ============================================
+   STACKING CONTEXT DEFENSE
+   Prevent parent containers with position+z-index
+   from clipping dropdown menus behind siblings.
+   ============================================ */
+
+/* When a dropdown is open, ensure its nearest positioned
+   ancestor is elevated so the menu (z-index:1000) can
+   escape and render above sibling stacking contexts. */
+.searchable-dropdown.open {
+    z-index: 1001;
+}
+
+/* ============================================
    RESPONSIVE ADJUSTMENTS
    ============================================ */
 @media (max-width: 768px) {

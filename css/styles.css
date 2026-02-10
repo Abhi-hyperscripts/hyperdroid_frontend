@@ -7235,8 +7235,12 @@ label.toggle-switch,
 
 .filter-panel-dropdown {
     position: relative;
-    z-index: 50;
     width: 100%;
+}
+
+/* Elevate only the dropdown whose menu is open above its siblings */
+.filter-panel-dropdown:has(.searchable-dropdown.open) {
+    z-index: 100;
 }
 
 .filter-panel-dropdown .searchable-dropdown,
