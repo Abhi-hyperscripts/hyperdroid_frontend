@@ -516,6 +516,20 @@ class API {
         return this.request('/meetings/hosted');
     }
 
+    async getDashboardMeetings(params = {}) {
+        const query = new URLSearchParams();
+        if (params.page) query.set('page', params.page);
+        if (params.page_size) query.set('page_size', params.page_size);
+        if (params.search) query.set('search', params.search);
+        if (params.source_filter && params.source_filter !== 'all') query.set('source_filter', params.source_filter);
+        if (params.type_filter && params.type_filter !== 'all') query.set('type_filter', params.type_filter);
+        if (params.status_filter && params.status_filter !== 'all') query.set('status_filter', params.status_filter);
+        if (params.sort_by) query.set('sort_by', params.sort_by);
+        if (params.project_id) query.set('project_id', params.project_id);
+        const qs = query.toString();
+        return this.request(`/meetings/dashboard${qs ? '?' + qs : ''}`);
+    }
+
     async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null) {
         return this.request('/meetings/create', {
             method: 'POST',

@@ -1,4 +1,4 @@
-// Dashboard page JavaScript - Unified Dashboard
+// Dashboard page JavaScript - Meeting-Centric Dashboard
 let currentProjectId = null;
 let selectedMeetingType = 'regular'; // For create meeting modal
 
@@ -11,357 +11,209 @@ if (!api.isAuthenticated()) {
 const user = api.getUser();
 
 // ============================================
-// UNIFIED DASHBOARD - LOAD ALL PROJECTS
+// DASHBOARD STATE
 // ============================================
 
-async function loadAllProjects() {
-    try {
-        const projects = await api.getProjects();
-        const container = document.getElementById('allProjects');
+let dashboardState = {
+    meetings: [],
+    page: 1,
+    page_size: 20,
+    total_count: 0,
+    has_more: false,
+    search: '',
+    source_filter: 'all',
+    type_filter: 'all',
+    status_filter: 'all',
+    sort_by: 'recent',
+    project_id: null,
+    month_filter: null,  // null = all months
+    year_filter: new Date().getFullYear(),
+    isLoading: false,
+    projects: []
+};
 
-        // Also load meetings where user is host (from other users' projects)
-        await loadMeetingsImHosting(projects);
+let _searchDebounceTimer = null;
 
-        // For each project, load ALL meetings (of any type)
-        const projectsWithMeetings = await Promise.all(
-            projects.map(async (project) => {
-                const meetings = await api.getProjectMeetings(project.id);
+// ============================================
+// LOAD DASHBOARD (single API call)
+// ============================================
 
-                // Fetch recordings and participant count for each meeting
-                const meetingsWithDetails = await Promise.all(
-                    meetings.map(async (meeting) => {
-                        try {
-                            const recordings = await api.getMeetingRecordings(meeting.id);
-                            let participantCount = 0;
+async function loadDashboard(reset = true) {
+    if (dashboardState.isLoading) return;
+    dashboardState.isLoading = true;
 
-                            if (meeting.meeting_type === 'participant-controlled') {
-                                try {
-                                    const participants = await api.getAllowedParticipants(meeting.id);
-                                    participantCount = participants ? participants.length : 0;
-                                } catch (error) {
-                                    console.error('Error fetching participants for meeting:', meeting.id, error);
-                                }
-                            }
+    const grid = document.getElementById('meetingsGrid');
+    const pagination = document.getElementById('dashboardPagination');
 
-                            return { ...meeting, recordings: recordings || [], participant_count: participantCount };
-                        } catch (error) {
-                            console.error('Error fetching recordings for meeting:', meeting.id, error);
-                            return { ...meeting, recordings: [], participant_count: 0 };
-                        }
-                    })
-                );
-
-                return { ...project, meetings: meetingsWithDetails };
-            })
-        );
-
-        // Separate projects with meetings and empty projects
-        const projectsWithMeetingsList = projectsWithMeetings.filter(p => p.meetings.length > 0);
-        const emptyProjects = projectsWithMeetings.filter(p => p.meetings.length === 0);
-
-        if (projectsWithMeetingsList.length === 0 && emptyProjects.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📁</div>
-                    <h3>No projects yet</h3>
-                    <p>Create your first project to get started</p>
-                    <button onclick="showCreateProjectModal()" class="btn btn-primary">+ Create Project</button>
-                </div>
-            `;
-            return;
-        }
-
-        // Render projects with meetings
-        let html = projectsWithMeetingsList.map(project => createProjectAccordionHTML(project)).join('');
-
-        // Render empty projects
-        if (emptyProjects.length > 0) {
-            html += '<div class="empty-projects-section"><h4 class="empty-projects-title">Projects without meetings</h4>';
-            html += emptyProjects.map(project => createEmptyProjectCardHTML(project)).join('');
-            html += '</div>';
-        }
-
-        container.innerHTML = html;
-
-    } catch (error) {
-        console.error('Error loading projects:', error);
+    if (reset) {
+        dashboardState.page = 1;
+        dashboardState.meetings = [];
+        grid.innerHTML = '<div class="dashboard-loading"><div class="loading-spinner"></div><p>Loading meetings...</p></div>';
     }
-}
 
-// ============================================
-// MEETINGS I'M HOSTING (from other users' projects)
-// ============================================
-
-async function loadMeetingsImHosting(userProjects) {
     try {
-        const hostedMeetings = await api.getHostedMeetings();
-        const userProjectIds = userProjects.map(p => p.id);
+        const result = await api.getDashboardMeetings({
+            page: dashboardState.page,
+            page_size: dashboardState.page_size,
+            search: dashboardState.search || undefined,
+            source_filter: dashboardState.source_filter,
+            type_filter: dashboardState.type_filter,
+            status_filter: dashboardState.status_filter,
+            sort_by: dashboardState.sort_by,
+            project_id: dashboardState.project_id || undefined
+        });
 
-        // Filter to meetings NOT in user's own projects
-        const meetingsImHosting = hostedMeetings.filter(m => !userProjectIds.includes(m.project_id));
-
-        const section = document.getElementById('meetingsImHostingSection');
-        const list = document.getElementById('meetingsImHostingList');
-
-        if (!section || !list) return;
-
-        if (meetingsImHosting.length > 0) {
-            section.style.display = 'block';
-
-            // Fetch recordings for each meeting
-            const meetingsWithRecordings = await Promise.all(
-                meetingsImHosting.map(async (meeting) => {
-                    try {
-                        const recordings = await api.getMeetingRecordings(meeting.id);
-                        let participantCount = 0;
-                        if (meeting.meeting_type === 'participant-controlled') {
-                            try {
-                                const participants = await api.getAllowedParticipants(meeting.id);
-                                participantCount = participants ? participants.length : 0;
-                            } catch (e) { }
-                        }
-                        return { ...meeting, recordings: recordings || [], participant_count: participantCount };
-                    } catch (error) {
-                        return { ...meeting, recordings: [], participant_count: 0 };
-                    }
-                })
-            );
-
-            list.innerHTML = meetingsWithRecordings.map(meeting => createHostedMeetingItemHTML(meeting)).join('');
+        if (reset) {
+            dashboardState.meetings = result.meetings;
         } else {
-            section.style.display = 'none';
+            dashboardState.meetings = dashboardState.meetings.concat(result.meetings);
         }
+        dashboardState.total_count = result.total_count;
+        dashboardState.has_more = result.has_more;
+
+        renderMeetingsList(reset);
+        updateResultsBar();
+        updatePagination();
+        if (reset) updateSourceFilterOptions(result.meetings);
+
     } catch (error) {
-        console.error('Error loading hosted meetings:', error);
-        const section = document.getElementById('meetingsImHostingSection');
-        if (section) section.style.display = 'none';
+        console.error('Error loading dashboard:', error);
+        if (reset) {
+            grid.innerHTML = '<div class="empty-state"><h3>Error loading meetings</h3><p>Please try refreshing the page</p></div>';
+        }
+    } finally {
+        dashboardState.isLoading = false;
+    }
+}
+
+// Keep loadAllProjects as alias for backward compatibility with existing code
+async function loadAllProjects() {
+    await loadDashboard(true);
+}
+
+// ============================================
+// RENDER MEETINGS LIST
+// ============================================
+
+function getMonthFilteredMeetings(meetings) {
+    const { month_filter, year_filter } = dashboardState;
+    // "All Months" (null) = no date filtering at all
+    if (month_filter === null) return meetings;
+    // Specific month selected — filter by year + month
+    return meetings.filter(m => {
+        const date = m.start_time ? new Date(m.start_time) : (m.created_at ? new Date(m.created_at) : null);
+        if (!date) return false;
+        return date.getFullYear() === year_filter && (date.getMonth() + 1) === month_filter;
+    });
+}
+
+function renderMeetingsList(fullReplace = true) {
+    const grid = document.getElementById('meetingsGrid');
+    const filtered = getMonthFilteredMeetings(dashboardState.meetings);
+
+    if (filtered.length === 0) {
+        const hasFilters = dashboardState.search || dashboardState.source_filter !== 'all' || dashboardState.type_filter !== 'all' || dashboardState.status_filter !== 'all' || dashboardState.month_filter !== null;
+        grid.innerHTML = `
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <h3>No meetings found</h3>
+                <p>${hasFilters ? 'Try adjusting your filters' : 'Create your first meeting to get started'}</p>
+                <button onclick="showCreateMeetingQuickModal()" class="btn btn-primary" style="margin-top: 12px;">+ New Meeting</button>
+            </div>
+        `;
+        return;
+    }
+
+    if (fullReplace) {
+        grid.innerHTML = filtered.map(m => createDashboardMeetingCard(m)).join('');
+    } else {
+        // Append new meetings (for Load More)
+        const startIdx = filtered.length - (dashboardState.page_size);
+        const newMeetings = filtered.slice(startIdx < 0 ? 0 : startIdx);
+        grid.insertAdjacentHTML('beforeend', newMeetings.map(m => createDashboardMeetingCard(m)).join(''));
     }
 }
 
 // ============================================
-// PROJECT ACCORDION HTML
+// MEETING CARD V2
 // ============================================
 
-function createProjectAccordionHTML(project) {
-    const meetingsList = project.meetings.map(meeting => createMeetingItemHTML(meeting)).join('');
-
-    return `
-        <div class="project-accordion-item" id="project-${project.id}">
-            <div class="project-accordion-header" onclick="toggleProject('${project.id}')">
-                <div class="project-info">
-                    <h3>${project.project_name}</h3>
-                    <p>${project.description || 'No description'}</p>
-                    <span class="meeting-count">${project.meetings.length} ${project.meetings.length === 1 ? 'meeting' : 'meetings'}</span>
-                </div>
-                <div class="accordion-actions">
-                    <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); showCreateMeetingModalForProject('${project.id}')">
-                        + Add Meeting
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); confirmDeleteProject('${project.id}')">
-                        Delete Project
-                    </button>
-                    <span class="accordion-chevron" id="chevron-${project.id}">▼</span>
-                </div>
-            </div>
-            <div class="project-accordion-body" id="meetings-${project.id}">
-                <div class="meetings-list">
-                    ${meetingsList}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createEmptyProjectCardHTML(project) {
-    return `
-        <div class="empty-project-card" id="empty-project-${project.id}">
-            <div class="empty-project-info">
-                <h4>${project.project_name}</h4>
-                <p>${project.description || 'No description'}</p>
-                <span class="no-meetings-badge">No meetings yet</span>
-            </div>
-            <div class="empty-project-actions">
-                <button class="btn btn-sm btn-primary" onclick="showCreateMeetingModalForProject('${project.id}')">
-                    + Add Meeting
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="confirmDeleteProject('${project.id}')">
-                    Delete
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// ============================================
-// MEETING CARD HTML - WITH TYPE BADGES
-// ============================================
-
-function createMeetingItemHTML(meeting) {
-    const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
-    const participantCount = meeting.participant_count || 0;
+function createDashboardMeetingCard(meeting) {
     const type = meeting.meeting_type || 'regular';
     const isStarted = meeting.is_started || false;
     const isRecording = meeting.is_recording || false;
-
-    const dateStr = meeting.start_time
-        ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        : '';
-
-    // Type badge with colors
-    const typeBadge = getTypeBadgeHTML(type);
-
-    // Guest link badge (clickable when guests are allowed and not participant-controlled)
+    const recCount = meeting.recording_count || 0;
+    const participantCount = meeting.allowed_participant_count || 0;
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
 
-    // LIVE indicator for meetings in progress
+    const dateStr = meeting.start_time
+        ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '';
+
+    const typeBadge = getTypeBadgeHTML(type);
+    const sourceBadge = getSourceBadgeHTML(meeting.source_service);
+
     const liveIndicator = isStarted
-        ? `<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>`
-        : `<span class="meeting-live-indicator" style="display: none;"><span class="live-dot"></span>LIVE</span>`;
+        ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>'
+        : '';
+
+    // Build meta items with dot separators
+    const metaParts = [];
+    metaParts.push(`<span class="mcv2-meta-project"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escapeHtml(meeting.project_name || 'Unknown')}</span>`);
+    if (dateStr) metaParts.push(`<span class="mcv2-meta-date">${dateStr}</span>`);
+    if (sourceBadge) metaParts.push(sourceBadge);
+    if (recCount > 0) metaParts.push(`<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="${recCount} recording${recCount > 1 ? 's' : ''}">${recCount} rec</span>`);
+    if (showGuestLink) metaParts.push(`<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Copy guest link">Guests</span>`);
+    if (type === 'participant-controlled') metaParts.push(`<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount}</span>`);
+    if (meeting.is_hosted_by_me) metaParts.push('<span class="badge badge-host-you">Host</span>');
 
     return `
-        <div class="meeting-card" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
-            <div class="meeting-card-header">
-                <div class="meeting-card-title">
-                    <h4 class="meeting-name">${meeting.meeting_name}</h4>
-                    ${liveIndicator}
-                    <div class="meeting-card-badges">
+        <div class="meeting-card-v2" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
+            <div class="mcv2-card-border"></div>
+            <div class="mcv2-card-content">
+                <div class="mcv2-info">
+                    <div class="mcv2-title-row">
+                        ${liveIndicator}
+                        <h4 class="mcv2-name">${escapeHtml(meeting.meeting_name || 'Untitled')}</h4>
                         ${typeBadge}
-                        ${dateStr ? `<span class="badge badge-date">${dateStr}</span>` : ''}
-                        ${type === 'participant-controlled' ? `<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount} participant${participantCount !== 1 ? 's' : ''}</span>` : ''}
-                        ${hasRecordings ? `<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="View ${meeting.recordings.length} recording${meeting.recordings.length > 1 ? 's' : ''}">${meeting.recordings.length} rec</span>` : ''}
-                        ${showGuestLink ? `<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Click to copy guest link">Guests OK</span>` : ''}
-                        ${(type === 'hosted' || type === 'participant-controlled') && meeting.host_user_name ? `<span class="badge badge-host" title="Host: ${meeting.host_user_name}">Host: ${meeting.host_user_name.split(' ')[0]}</span>` : ''}
+                    </div>
+                    <div class="mcv2-meta-row">
+                        ${metaParts.join('<span class="mcv2-dot">\u00b7</span>')}
                     </div>
                 </div>
-                <div class="meeting-card-actions">
-                    <button class="btn-icon btn-danger" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>
-                    <span class="auto-rec-label">Auto Rec</span>
-                    <label class="toggle-auto-rec auto-rec-container ${isStarted ? 'toggle-disabled' : ''}" title="${isStarted ? 'Cannot change while meeting is in progress' : 'Auto Recording'}">
-                        <input type="checkbox" class="meeting-auto-rec-toggle" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''} ${isStarted ? 'disabled' : ''}
-                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
-                        <span>Join</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                            <polyline points="10 17 15 12 10 7"/>
-                            <line x1="15" y1="12" x2="3" y2="12"/>
+                <div class="mcv2-actions">
+                    <div class="mcv2-secondary-actions">
+                        <button class="btn-icon-sm btn-delete" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-sm" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-sm" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-sm" onclick="copyMeetingLink('${meeting.id}')" title="Copy Link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="btn-join-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
+                        Join
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"/>
                         </svg>
                     </button>
                 </div>
             </div>
-            ${meeting.notes && meeting.notes !== 'No notes' ? `<div class="meeting-card-notes">${meeting.notes}</div>` : ''}
-        </div>
-    `;
-}
-
-function createHostedMeetingItemHTML(meeting) {
-    const hasRecordings = meeting.recordings && meeting.recordings.length > 0;
-    const participantCount = meeting.participant_count || 0;
-    const type = meeting.meeting_type || 'regular';
-    const isStarted = meeting.is_started || false;
-    const isRecording = meeting.is_recording || false;
-
-    const dateStr = meeting.start_time
-        ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        : '';
-
-    const typeBadge = getTypeBadgeHTML(type);
-    const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
-
-    // LIVE indicator for meetings in progress
-    const liveIndicator = isStarted
-        ? `<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>`
-        : `<span class="meeting-live-indicator" style="display: none;"><span class="live-dot"></span>LIVE</span>`;
-
-    return `
-        <div class="meeting-card hosted-meeting-card" id="meeting-${meeting.id}" data-hosted-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
-            <div class="meeting-card-header">
-                <div class="meeting-card-title">
-                    <h4 class="meeting-name">${meeting.meeting_name}</h4>
-                    ${liveIndicator}
-                    <div class="meeting-card-badges">
-                        ${typeBadge}
-                        <span class="badge badge-project" title="From project: ${meeting.project_name || 'Unknown'}">📁 ${meeting.project_name || 'Unknown Project'}</span>
-                        ${dateStr ? `<span class="badge badge-date">${dateStr}</span>` : ''}
-                        ${type === 'participant-controlled' ? `<span class="badge badge-participants">${participantCount} participant${participantCount !== 1 ? 's' : ''}</span>` : ''}
-                        ${hasRecordings ? `<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')">${meeting.recordings.length} rec</span>` : ''}
-                        ${showGuestLink ? `<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Click to copy guest link">Guests OK</span>` : ''}
-                        <span class="badge badge-host-you">You are host</span>
-                    </div>
-                </div>
-                <div class="meeting-card-actions">
-                    <button class="btn-icon btn-danger" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>
-                    <span class="auto-rec-label">Auto Rec</span>
-                    <label class="toggle-auto-rec auto-rec-container ${isStarted ? 'toggle-disabled' : ''}" title="${isStarted ? 'Cannot change while meeting is in progress' : 'Auto Recording'}">
-                        <input type="checkbox" class="meeting-auto-rec-toggle" id="autoRecording-${meeting.id}" ${meeting.auto_recording ? 'checked' : ''} ${isStarted ? 'disabled' : ''}
-                               onchange="handleAutoRecordingToggle('${meeting.id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-secondary" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-secondary" onclick="copyMeetingLink('${meeting.id}')" title="Copy Meeting Link">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
-                        <span>Join</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                            <polyline points="10 17 15 12 10 7"/>
-                            <line x1="15" y1="12" x2="3" y2="12"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            ${meeting.notes && meeting.notes !== 'No notes' ? `<div class="meeting-card-notes">${meeting.notes}</div>` : ''}
         </div>
     `;
 }
@@ -375,40 +227,361 @@ function getTypeBadgeHTML(type) {
     return badges[type] || badges['regular'];
 }
 
-function getMeetingStatus(meeting) {
-    if (!meeting.start_time && !meeting.end_time) {
-        return 'Active';
-    }
+function getSourceBadgeHTML(sourceService) {
+    if (!sourceService) return '';
+    const colors = {
+        'Chat': 'var(--color-success)',
+        'HRMS': '#a855f7',
+        'ATS': '#f59e0b',
+        'CRM': '#06b6d4'
+    };
+    const color = colors[sourceService] || 'var(--text-secondary)';
+    return `<span class="badge badge-source" style="--source-color: ${color}">${escapeHtml(sourceService)}</span>`;
+}
 
+function getMeetingStatus(meeting) {
+    if (!meeting.start_time && !meeting.end_time) return 'Active';
     const now = new Date();
     const start = meeting.start_time ? new Date(meeting.start_time) : null;
     const end = meeting.end_time ? new Date(meeting.end_time) : null;
-
     if (start && end) {
         if (now < start) return 'Scheduled';
         if (now > end) return 'Ended';
         return 'Active';
     }
-
     if (start && now < start) return 'Scheduled';
     return 'Active';
 }
 
 // ============================================
-// ACCORDION TOGGLE
+// FILTER / SEARCH / SORT / PAGINATION
 // ============================================
 
-function toggleProject(projectId) {
-    try {
-        const item = document.getElementById('project-' + projectId);
-        if (!item) {
-            console.error('Project accordion item not found for ID:', projectId);
-            return;
-        }
-        item.classList.toggle('expanded');
-    } catch (error) {
-        console.error('Error toggling accordion:', error);
+function setFilter(type, value) {
+    const filterMap = { source: 'source_filter', type: 'type_filter', status: 'status_filter' };
+    const stateKey = filterMap[type];
+    if (!stateKey) return;
+    dashboardState[stateKey] = value;
+    updateFilterCountBadge();
+    loadDashboard(true);
+}
+
+function setSort(value) {
+    dashboardState.sort_by = value;
+    updateFilterCountBadge();
+    loadDashboard(true);
+}
+
+function setProjectFilter(value) {
+    dashboardState.project_id = value || null;
+    loadDashboard(true);
+}
+
+// ============================================
+// FILTER PANEL TOGGLE & BADGE
+// ============================================
+
+function toggleFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    const btn = document.getElementById('filterToggleBtn');
+    if (!panel || !btn) return;
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+}
+
+function updateFilterCountBadge() {
+    let count = 0;
+    if (dashboardState.source_filter !== 'all') count++;
+    if (dashboardState.type_filter !== 'all') count++;
+    if (dashboardState.status_filter !== 'all') count++;
+    if (dashboardState.sort_by !== 'recent') count++;
+
+    const badge = document.getElementById('filterCountBadge');
+    const btn = document.getElementById('filterToggleBtn');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-flex' : 'none';
     }
+    if (btn) {
+        btn.classList.toggle('has-filters', count > 0);
+    }
+
+    // Update active summary
+    const summary = document.getElementById('filterActiveSummary');
+    const text = document.getElementById('activeFilterText');
+    if (summary && text) {
+        if (count > 0) {
+            const parts = [];
+            if (dashboardState.source_filter !== 'all') parts.push(`Source: ${dashboardState.source_filter}`);
+            if (dashboardState.type_filter !== 'all') {
+                const labels = { regular: 'Open', hosted: 'Hosted', 'participant-controlled': 'Private' };
+                parts.push(`Type: ${labels[dashboardState.type_filter] || dashboardState.type_filter}`);
+            }
+            if (dashboardState.status_filter !== 'all') parts.push(`Status: ${dashboardState.status_filter}`);
+            if (dashboardState.sort_by !== 'recent') {
+                const sortLabels = { name: 'Name', upcoming: 'Upcoming' };
+                parts.push(`Sort: ${sortLabels[dashboardState.sort_by] || dashboardState.sort_by}`);
+            }
+            text.textContent = parts.join('  \u00b7  ');
+            summary.style.display = 'flex';
+        } else {
+            summary.style.display = 'none';
+        }
+    }
+}
+
+function clearAllFilters() {
+    dashboardState.source_filter = 'all';
+    dashboardState.type_filter = 'all';
+    dashboardState.status_filter = 'all';
+    dashboardState.sort_by = 'recent';
+    dashboardState.month_filter = null;
+    dashboardState.year_filter = new Date().getFullYear();
+    // Reset all filter dropdowns
+    if (sourceDropdownSD) sourceDropdownSD.setValue('all');
+    if (typeDropdownSD) typeDropdownSD.setValue('all');
+    if (statusDropdownSD) statusDropdownSD.setValue('all');
+    if (sortDropdownSD) sortDropdownSD.setValue('recent');
+    if (dashboardMonthPicker) dashboardMonthPicker.setValue(new Date().getFullYear(), null);
+    updateFilterCountBadge();
+    loadDashboard(true);
+}
+
+// ============================================
+// SEARCHABLE DROPDOWN INIT (All Filters)
+// ============================================
+
+let projectDropdownSD = null;
+let sourceDropdownSD = null;
+let typeDropdownSD = null;
+let statusDropdownSD = null;
+let sortDropdownSD = null;
+let dashboardMonthPicker = null;
+
+function initDashboardDropdowns() {
+    // Month picker for filtering by month/year
+    dashboardMonthPicker = new MonthPicker('dashboardMonthPicker', {
+        allowAllMonths: true,
+        yearsBack: 3,
+        yearsForward: 1,
+        month: null, // Start with "All Months"
+        onChange: ({ year, month }) => {
+            dashboardState.year_filter = year;
+            dashboardState.month_filter = month;
+            loadDashboard(true);
+        }
+    });
+
+    // Project dropdown (top bar) — populated later by loadProjectFilterDropdown
+    projectDropdownSD = new SearchableDropdown('projectDropdownContainer', {
+        id: 'projectDropdownSD',
+        options: [{ value: '', label: 'All Projects' }],
+        value: '',
+        placeholder: 'All Projects',
+        compact: true,
+        linkedSelect: document.getElementById('dashboardProjectFilter'),
+        onChange: (value) => { setProjectFilter(value); }
+    });
+
+    // Source dropdown — starts with "All Sources", dynamically updated after first load
+    sourceDropdownSD = new SearchableDropdown('sourceDropdownContainer', {
+        id: 'sourceDropdownSD',
+        options: [{ value: 'all', label: 'All Sources' }],
+        value: 'all',
+        placeholder: 'All Sources',
+        compact: true,
+        onChange: (value) => { setFilter('source', value); }
+    });
+
+    // Type dropdown
+    typeDropdownSD = new SearchableDropdown('typeDropdownContainer', {
+        id: 'typeDropdownSD',
+        options: [
+            { value: 'all', label: 'All Types' },
+            { value: 'regular', label: 'Open' },
+            { value: 'hosted', label: 'Hosted' },
+            { value: 'participant-controlled', label: 'Private' }
+        ],
+        value: 'all',
+        placeholder: 'All Types',
+        compact: true,
+        onChange: (value) => { setFilter('type', value); }
+    });
+
+    // Status dropdown
+    statusDropdownSD = new SearchableDropdown('statusDropdownContainer', {
+        id: 'statusDropdownSD',
+        options: [
+            { value: 'all', label: 'All Status' },
+            { value: 'live', label: 'Live' },
+            { value: 'active', label: 'Active' },
+            { value: 'scheduled', label: 'Scheduled' }
+        ],
+        value: 'all',
+        placeholder: 'All Status',
+        compact: true,
+        onChange: (value) => { setFilter('status', value); }
+    });
+
+    // Sort dropdown
+    sortDropdownSD = new SearchableDropdown('sortDropdownContainer', {
+        id: 'sortDropdownSD',
+        options: [
+            { value: 'recent', label: 'Recent' },
+            { value: 'name', label: 'Name' },
+            { value: 'upcoming', label: 'Upcoming' }
+        ],
+        value: 'recent',
+        placeholder: 'Sort by',
+        compact: true,
+        onChange: (value) => { setSort(value); }
+    });
+}
+
+// Dynamically update source dropdown options from loaded meetings
+function updateSourceFilterOptions(meetings) {
+    if (!sourceDropdownSD) return;
+    const sources = new Set();
+    meetings.forEach(m => {
+        if (m.source && m.source !== 'manual') sources.add(m.source);
+    });
+    const opts = [{ value: 'all', label: 'All Sources' }, { value: 'manual', label: 'Manual' }];
+    Array.from(sources).sort().forEach(s => opts.push({ value: s, label: s }));
+    sourceDropdownSD.setOptions(opts);
+}
+
+function debounceSearch() {
+    clearTimeout(_searchDebounceTimer);
+    _searchDebounceTimer = setTimeout(() => {
+        const input = document.getElementById('dashboardSearch');
+        dashboardState.search = input ? input.value.trim() : '';
+        loadDashboard(true);
+    }, 300);
+}
+
+function loadMoreMeetings() {
+    if (!dashboardState.has_more || dashboardState.isLoading) return;
+    dashboardState.page++;
+    loadDashboard(false);
+}
+
+function updateResultsBar() {
+    const el = document.getElementById('resultsCount');
+    if (!el) return;
+    const filtered = getMonthFilteredMeetings(dashboardState.meetings);
+    const showing = filtered.length;
+    const total = dashboardState.total_count;
+    if (dashboardState.month_filter !== null && showing !== total) {
+        el.textContent = `Showing ${showing} of ${total} meeting${total !== 1 ? 's' : ''} (filtered by month)`;
+    } else {
+        el.textContent = `Showing ${showing} of ${total} meeting${total !== 1 ? 's' : ''}`;
+    }
+}
+
+function updatePagination() {
+    const pag = document.getElementById('dashboardPagination');
+    const info = document.getElementById('paginationInfo');
+    if (!pag) return;
+
+    if (dashboardState.has_more) {
+        pag.style.display = 'flex';
+        const remaining = dashboardState.total_count - dashboardState.meetings.length;
+        if (info) info.textContent = `${remaining} more meeting${remaining !== 1 ? 's' : ''}`;
+    } else {
+        pag.style.display = 'none';
+    }
+}
+
+// ============================================
+// PROJECT FILTER DROPDOWN
+// ============================================
+
+async function loadProjectFilterDropdown() {
+    try {
+        const projects = await api.getProjects();
+        dashboardState.projects = projects;
+
+        // Update SearchableDropdown options
+        if (projectDropdownSD) {
+            const opts = [{ value: '', label: 'All Projects' }];
+            projects.forEach(p => opts.push({ value: p.id, label: p.project_name }));
+            projectDropdownSD.setOptions(opts);
+        }
+
+        // Also update hidden select for fallback
+        const select = document.getElementById('dashboardProjectFilter');
+        if (select) {
+            select.innerHTML = '<option value="">All Projects</option>';
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.project_name;
+                select.appendChild(opt);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading project filter:', error);
+    }
+}
+
+// ============================================
+// QUICK CREATE MEETING (auto-select project)
+// ============================================
+
+function showCreateMeetingQuickModal() {
+    if (dashboardState.projects.length === 0) {
+        Toast.info('Create a project first before adding meetings');
+        showCreateProjectModal();
+        return;
+    }
+
+    // Reset form state
+    selectedMeetingType = 'regular';
+    createMeetingSelectedParticipants = [];
+    const form = document.getElementById('createMeetingForm');
+    if (form) form.reset();
+    setDefaultDateTime();
+
+    // Reset type buttons
+    document.querySelectorAll('#meetingTypeToggle .segment-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === 'regular') btn.classList.add('active');
+    });
+    document.getElementById('meetingTypeHelp').textContent = 'Anyone can join directly without approval';
+    document.getElementById('hostSelectionGroup').style.display = 'none';
+    document.getElementById('participantsSelectionGroup').style.display = 'none';
+    document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
+
+    // Populate project selector
+    const projectSelect = document.getElementById('meetingProjectSelect');
+    const projectGroup = document.getElementById('meetingProjectSelectGroup');
+    if (projectSelect && projectGroup) {
+        if (dashboardState.projects.length === 1) {
+            // Auto-select the only project
+            currentProjectId = dashboardState.projects[0].id;
+            document.getElementById('currentProjectId').value = currentProjectId;
+            projectGroup.style.display = 'none';
+        } else {
+            currentProjectId = null;
+            document.getElementById('currentProjectId').value = '';
+            projectGroup.style.display = 'block';
+            projectSelect.innerHTML = '<option value="">Select a project...</option>';
+            dashboardState.projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.project_name;
+                projectSelect.appendChild(opt);
+            });
+        }
+    }
+
+    openModal('createMeetingModal');
+    fetchAndPopulateUsers();
+}
+
+function onMeetingProjectSelected(projectId) {
+    currentProjectId = projectId || null;
+    document.getElementById('currentProjectId').value = projectId || '';
 }
 
 // ============================================
@@ -775,6 +948,11 @@ async function showCreateMeetingModalForProject(projectId) {
 
     // Reset form
     document.getElementById('createMeetingForm').reset();
+    document.getElementById('currentProjectId').value = projectId;
+
+    // Hide project selector since project is pre-selected
+    const projectGroup = document.getElementById('meetingProjectSelectGroup');
+    if (projectGroup) projectGroup.style.display = 'none';
 
     // Set default date/time values (today, next 15-min slot)
     setDefaultDateTime();
@@ -3975,7 +4153,9 @@ function escapeHtml(text) {
 
 if (document.querySelector('.dashboard')) {
     document.addEventListener('DOMContentLoaded', () => {
-        loadAllProjects();
+        initDashboardDropdowns();
+        loadProjectFilterDropdown();
+        loadDashboard(true);
         initDashboardSignalR();
     });
 

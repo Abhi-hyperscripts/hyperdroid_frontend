@@ -11446,6 +11446,55 @@ input:checked + .slider:before {
 }
 
 /* =====================================================
+   MonthPicker — Mobile Compact
+   ===================================================== */
+@media (max-width: 768px) {
+    .month-picker-dropdown {
+        min-width: 200px;
+        border-radius: 10px;
+    }
+
+    .month-picker-header {
+        padding: 8px 10px;
+    }
+
+    .month-picker-year {
+        font-size: 13px;
+    }
+
+    .month-picker-nav {
+        width: 26px;
+        height: 26px;
+    }
+
+    .month-picker-nav svg {
+        width: 13px;
+        height: 13px;
+    }
+
+    .month-picker-all {
+        padding: 5px 8px;
+    }
+
+    .month-picker-all-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .month-picker-grid {
+        gap: 3px;
+        padding: 6px 8px 8px;
+    }
+
+    .month-picker-month {
+        padding: 6px 2px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+}
+
+/* =====================================================
    Salary Component Badges & Immutable Components
    ===================================================== */
 

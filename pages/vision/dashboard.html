@@ -21,6 +21,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
@@ -37,32 +38,96 @@
     </nav>
 
     <div class="dashboard-content">
-        <!-- Unified Dashboard Header -->
+        <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div class="dashboard-title">
-                <h2>My Projects</h2>
-                <p class="dashboard-subtitle">Manage your projects and meetings</p>
+                <h2>Meetings</h2>
+                <p class="dashboard-subtitle">All your meetings in one place</p>
             </div>
-            <button onclick="showCreateProjectModal()" class="btn btn-primary">
-                + Create Project
-            </button>
+            <div class="dashboard-header-actions">
+                <button onclick="showCreateMeetingQuickModal()" class="btn btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Meeting
+                </button>
+                <button onclick="showCreateProjectModal()" class="btn btn-secondary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    New Project
+                </button>
+            </div>
         </div>
 
-        <!-- Meetings I'm Hosting (from other users' projects) -->
-        <div id="meetingsImHostingSection" class="hosted-meetings-section" style="display: none;">
-            <h3 class="section-subtitle">Meetings I'm Hosting</h3>
-            <div class="meetings-list" id="meetingsImHostingList">
-                <!-- Meetings will be loaded here -->
+        <!-- Filter Bar -->
+        <div class="dashboard-filter-bar">
+            <div class="dashboard-filter-bar-border"></div>
+            <div class="dashboard-filter-bar-inner">
+            <div class="filter-bar-context">
+                <div id="projectDropdownContainer" class="filter-bar-dropdown filter-bar-project"></div>
+                <select id="dashboardProjectFilter" class="filter-select" style="display:none;" onchange="setProjectFilter(this.value)">
+                    <option value="">All Projects</option>
+                </select>
+                <div id="dashboardMonthPicker" class="filter-bar-monthpicker"></div>
             </div>
+            <div class="filter-bar-top">
+                <div class="dashboard-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="dashboardSearch" placeholder="Search meetings..." oninput="debounceSearch()">
+                </div>
+                <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                    <span>Filters</span>
+                    <span class="filter-count-badge" id="filterCountBadge" style="display:none;">0</span>
+                </button>
+            </div>
+            <div class="filter-panel" id="filterPanel">
+                <div class="filter-panel-row">
+                    <div class="filter-group">
+                        <span class="filter-label">Source</span>
+                        <div id="sourceDropdownContainer" class="filter-panel-dropdown"></div>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Type</span>
+                        <div id="typeDropdownContainer" class="filter-panel-dropdown"></div>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Status</span>
+                        <div id="statusDropdownContainer" class="filter-panel-dropdown"></div>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Sort</span>
+                        <div id="sortDropdownContainer" class="filter-panel-dropdown"></div>
+                    </div>
+                </div>
+                <div class="filter-active-summary" id="filterActiveSummary" style="display:none;">
+                    <span id="activeFilterText"></span>
+                    <button class="filter-clear-btn" onclick="clearAllFilters()">Clear all</button>
+                </div>
+            </div>
+            </div><!-- /.dashboard-filter-bar-inner -->
         </div>
 
-        <!-- All Projects Container -->
-        <div class="projects-accordion" id="allProjects">
-            <!-- Loading spinner - replaced when projects load -->
+        <!-- Results Bar -->
+        <div class="dashboard-results-bar" id="dashboardResultsBar">
+            <span id="resultsCount">Loading...</span>
+        </div>
+
+        <!-- Meetings Grid -->
+        <div class="meetings-grid" id="meetingsGrid">
             <div class="dashboard-loading">
                 <div class="loading-spinner"></div>
-                <p>Loading projects...</p>
+                <p>Loading meetings...</p>
             </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="dashboard-pagination" id="dashboardPagination" style="display: none;">
+            <button class="btn btn-secondary btn-load-more" id="loadMoreBtn" onclick="loadMoreMeetings()">
+                Load More
+            </button>
+            <span class="pagination-info" id="paginationInfo"></span>
         </div>
     </div>
 
@@ -104,6 +169,14 @@
                 <div class="modal-body">
                     <form id="createMeetingForm">
                         <input type="hidden" id="currentProjectId">
+
+                        <!-- Project Selector (shown when no project pre-selected) -->
+                        <div class="form-group" id="meetingProjectSelectGroup">
+                            <label for="meetingProjectSelect">Project</label>
+                            <select id="meetingProjectSelect" class="form-select" onchange="onMeetingProjectSelected(this.value)">
+                                <option value="">Select a project...</option>
+                            </select>
+                        </div>
 
                         <!-- Meeting Type Toggle Buttons -->
                         <div class="form-group meeting-type-group">
@@ -476,6 +549,7 @@
         });
     </script>
     <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/hrms/hrms-monthpicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/slide-panel.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/vision/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
