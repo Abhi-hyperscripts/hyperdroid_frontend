@@ -158,19 +158,19 @@ function createDashboardMeetingCard(meeting) {
 
     const liveIndicator = isStarted && isActive
         ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>'
-        : !isActive
-        ? '<span class="badge badge-ended">Ended</span>'
         : '';
 
-    // Build meta items with dot separators
-    const metaParts = [];
-    metaParts.push(`<span class="mcv2-meta-project"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escapeHtml(meeting.project_name || 'Unknown')}</span>`);
-    if (dateStr) metaParts.push(`<span class="mcv2-meta-date">${dateStr}</span>`);
-    if (sourceBadge) metaParts.push(sourceBadge);
-    if (recCount > 0) metaParts.push(`<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="${recCount} recording${recCount > 1 ? 's' : ''}">${recCount} rec</span>`);
-    if (showGuestLink) metaParts.push(`<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Copy guest link">Guests</span>`);
-    if (type === 'participant-controlled') metaParts.push(`<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount}</span>`);
-    if (meeting.is_hosted_by_me) metaParts.push('<span class="badge badge-host-you">Host</span>');
+    // Build meta items — dots only between project and date, badges flow with gap
+    const metaTextParts = [];
+    metaTextParts.push(`<span class="mcv2-meta-project"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escapeHtml(meeting.project_name || 'Unknown')}</span>`);
+    if (dateStr) metaTextParts.push(`<span class="mcv2-meta-date">${dateStr}</span>`);
+
+    const metaBadges = [];
+    metaBadges.push(typeBadge);
+    if (sourceBadge) metaBadges.push(sourceBadge);
+    if (recCount > 0) metaBadges.push(`<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="${recCount} recording${recCount > 1 ? 's' : ''}">${recCount} rec</span>`);
+    if (showGuestLink) metaBadges.push(`<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Copy guest link"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:2px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Copy Guest Link</span>`);
+    if (type === 'participant-controlled') metaBadges.push(`<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount}</span>`);
 
     const cardClass = isActive ? 'meeting-card-v2' : 'meeting-card-v2 mcv2-ended';
 
@@ -182,10 +182,12 @@ function createDashboardMeetingCard(meeting) {
                     <div class="mcv2-title-row">
                         ${liveIndicator}
                         <h4 class="mcv2-name">${escapeHtml(meeting.meeting_name || 'Untitled')}</h4>
-                        ${typeBadge}
                     </div>
                     <div class="mcv2-meta-row">
-                        ${metaParts.join('<span class="mcv2-dot">\u00b7</span>')}
+                        ${metaTextParts.join('<span class="mcv2-dot">\u00b7</span>')}
+                    </div>
+                    <div class="mcv2-badges-row">
+                        ${metaBadges.join('')}
                     </div>
                 </div>
                 <div class="mcv2-actions">
@@ -225,9 +227,9 @@ function createDashboardMeetingCard(meeting) {
 
 function getTypeBadgeHTML(type) {
     const badges = {
-        'regular': '<span class="badge badge-type badge-type-open">Open</span>',
+        'regular': '<span class="badge badge-type badge-type-open">Public</span>',
         'hosted': '<span class="badge badge-type badge-type-hosted">Hosted</span>',
-        'participant-controlled': '<span class="badge badge-type badge-type-private">Private</span>'
+        'participant-controlled': '<span class="badge badge-type badge-type-private">Invite Only</span>'
     };
     return badges[type] || badges['regular'];
 }

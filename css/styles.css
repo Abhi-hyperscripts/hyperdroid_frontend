@@ -7440,11 +7440,11 @@ label.toggle-switch,
 
 /* Ended/inactive meeting cards — subtle dim */
 .meeting-card-v2.mcv2-ended .mcv2-card-content {
-    opacity: 0.6;
+    opacity: 0.75;
 }
 
 .meeting-card-v2.mcv2-ended:hover .mcv2-card-content {
-    opacity: 0.85;
+    opacity: 0.9;
 }
 
 /* Info section — takes remaining space */
@@ -7502,6 +7502,15 @@ label.toggle-switch,
 .mcv2-meta-date {
     font-size: 0.72rem;
     color: var(--text-tertiary);
+}
+
+/* Badges row — separate line below meta for reduced visual noise */
+.mcv2-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 6px;
 }
 
 /* Actions section — right side */
@@ -7796,6 +7805,82 @@ label.toggle-switch,
 .badge.badge-type-private {
     background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
     color: var(--text-inverse);
+}
+
+/* === Meeting card badge declutter — uniform ghost style (scoped to vision dashboard only) === */
+
+/* Uniform size for ALL badges inside meeting cards */
+.meeting-card-v2 .mcv2-badges-row .badge {
+    font-size: 0.58rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    line-height: 1.4;
+}
+
+.meeting-card-v2 .badge.badge-type {
+    background: transparent;
+    border: 1px solid;
+    opacity: 0.7;
+}
+
+.meeting-card-v2 .badge.badge-type-open {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.meeting-card-v2 .badge.badge-type-hosted {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.meeting-card-v2 .badge.badge-type-private {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+
+.meeting-card-v2 .badge.badge-source {
+    background: transparent;
+    border: 1px solid var(--source-color, var(--text-secondary));
+    color: var(--source-color, var(--text-secondary));
+    opacity: 0.7;
+}
+
+.meeting-card-v2 .badge.badge-guest {
+    background: transparent;
+    border: 1px solid #06b6d4;
+    color: #06b6d4;
+    opacity: 0.7;
+    text-transform: none;
+}
+
+.meeting-card-v2 .badge.badge-guest.badge-clickable:hover {
+    background: #06b6d4;
+    color: var(--text-inverse);
+    opacity: 1;
+}
+
+.meeting-card-v2 .badge.badge-recording {
+    background: transparent;
+    border: 1px solid var(--color-warning);
+    color: var(--color-warning);
+    opacity: 0.7;
+    text-transform: none;
+}
+
+.meeting-card-v2 .badge.badge-recording.badge-clickable:hover {
+    background: var(--color-warning);
+    color: var(--text-inverse);
+    opacity: 1;
+}
+
+.meeting-card-v2 .badge.badge-participants {
+    background: transparent;
+    border: 1px solid var(--text-tertiary);
+    color: var(--text-secondary);
+    opacity: 0.7;
 }
 
 /* Meeting Type Display (Read-only in settings) */
