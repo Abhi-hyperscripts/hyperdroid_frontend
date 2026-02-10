@@ -4066,7 +4066,8 @@ function initTimePickers() {
         time_24hr: false,
         minuteIncrement: 15,
         defaultHour: 9,
-        defaultMinute: 0
+        defaultMinute: 0,
+        appendTo: document.body
     };
 
     document.querySelectorAll('.time-picker').forEach(input => {

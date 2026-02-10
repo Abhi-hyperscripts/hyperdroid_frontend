@@ -1010,6 +1010,22 @@
 }
 
 /* =================================================================
+   FLATPICKR OVERFLOW FIX — allow calendar to escape modal bounds
+   Flatpickr uses appendTo:body by default (set in hrms-datepicker.js),
+   but as a CSS safety net, allow overflow when a calendar is open.
+   ================================================================= */
+
+.modal-content:has(.flatpickr-calendar.open),
+.modal-overlay .modal-content:has(.flatpickr-calendar.open) {
+    overflow: visible !important;
+}
+
+.modal-body:has(.flatpickr-calendar.open),
+.modal-overlay .modal-body:has(.flatpickr-calendar.open) {
+    overflow: visible !important;
+}
+
+/* =================================================================
    RESPONSIVE — Standard modals
    ================================================================= */
 
