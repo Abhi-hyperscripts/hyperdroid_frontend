@@ -1323,7 +1323,30 @@ function formatTime(dateStr) {
 function formatMessageTime(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const now = new Date();
+    const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    // Today — "Today, 2:35 PM"
+    if (date.toDateString() === now.toDateString()) {
+        return `Today, ${time}`;
+    }
+
+    // Yesterday — "Yesterday, 2:35 PM"
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday, ${time}`;
+    }
+
+    // Same year — "8 Feb, 2:35 PM"
+    if (date.getFullYear() === now.getFullYear()) {
+        const datePart = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+        return `${datePart}, ${time}`;
+    }
+
+    // Older year — "8 Feb 2025, 2:35 PM"
+    const datePart = date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${datePart}, ${time}`;
 }
 
 // Returns a YYYY-MM-DD key for date comparison
