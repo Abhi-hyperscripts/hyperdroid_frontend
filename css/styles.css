@@ -7226,7 +7226,7 @@ label.toggle-switch,
     width: 100%;
 }
 
-.filter-group {
+.filter-panel .filter-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
