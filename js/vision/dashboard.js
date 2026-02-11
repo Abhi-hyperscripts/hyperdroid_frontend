@@ -1222,6 +1222,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const notes = document.getElementById('notes').value;
     const allowGuests = document.getElementById('allowGuests').checked;
     const autoRecording = document.getElementById('autoRecording').checked;
+    const autoTranscription = document.getElementById('autoTranscription').checked;
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
         ? (document.getElementById('meetingHost').value || null)
         : null;
@@ -1243,7 +1244,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
             allowGuests,
             selectedMeetingType,
             autoRecording,
-            hostUserId
+            hostUserId,
+            autoTranscription
         );
 
         // Extract meeting from response (backend returns { success, message, meeting })
@@ -2903,6 +2905,7 @@ async function showMeetingSettingsModal(meetingId, type) {
 
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
         document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
+        document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
 
         // Show/hide fields based on meeting type
         const allowGuestsGroup = document.getElementById('allowGuestsSettingGroup');
@@ -2935,12 +2938,14 @@ async function showMeetingSettingsModal(meetingId, type) {
             document.getElementById('settingsAllowGuests').disabled = true;
             setHostDropdownDisabled(true);
             document.getElementById('settingsAutoRecording').disabled = true;
+            document.getElementById('settingsAutoTranscription').disabled = true;
             if (saveBtn) saveBtn.disabled = true;
         } else {
             warningDiv.style.display = 'none';
             document.getElementById('settingsAllowGuests').disabled = false;
             setHostDropdownDisabled(false);
             document.getElementById('settingsAutoRecording').disabled = false;
+            document.getElementById('settingsAutoTranscription').disabled = false;
             if (saveBtn) saveBtn.disabled = false;
         }
 
@@ -3450,6 +3455,7 @@ async function saveMeetingSettings() {
     const allowGuests = document.getElementById('settingsAllowGuests').checked;
     const hostUserId = document.getElementById('settingsHost').value || null;
     const autoRecording = document.getElementById('settingsAutoRecording').checked;
+    const autoTranscription = document.getElementById('settingsAutoTranscription').checked;
 
     if (type === 'hosted' && !hostUserId) {
         Toast.warning('Host is required for hosted meetings');
@@ -3468,6 +3474,10 @@ async function saveMeetingSettings() {
 
         if (currentSettingsMeeting && currentSettingsMeeting.auto_recording !== autoRecording) {
             await api.toggleAutoRecording(meetingId, autoRecording);
+        }
+
+        if (currentSettingsMeeting && currentSettingsMeeting.auto_transcription !== autoTranscription) {
+            await api.toggleAutoTranscription(meetingId, autoTranscription);
         }
 
         if (currentSettingsMeeting && currentSettingsMeeting.host_user_id !== hostUserId) {

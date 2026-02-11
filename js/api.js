@@ -530,7 +530,7 @@ class API {
         return this.request(`/meetings/dashboard${qs ? '?' + qs : ''}`);
     }
 
-    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null) {
+    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false) {
         return this.request('/meetings/create', {
             method: 'POST',
             body: JSON.stringify({
@@ -542,7 +542,8 @@ class API {
                 allow_guests: allowGuests,
                 meeting_type: meetingType,
                 auto_recording: autoRecording,
-                host_user_id: hostUserId
+                host_user_id: hostUserId,
+                auto_transcription: autoTranscription
             })
         });
     }
@@ -658,6 +659,16 @@ class API {
 
     async toggleAutoRecording(meetingId, value) {
         return this.request(`/meetings/${meetingId}/toggle-recording`, {
+            method: 'POST',
+            body: JSON.stringify({
+                meeting_id: meetingId,
+                value: value
+            })
+        });
+    }
+
+    async toggleAutoTranscription(meetingId, value) {
+        return this.request(`/meetings/${meetingId}/toggle-transcription`, {
             method: 'POST',
             body: JSON.stringify({
                 meeting_id: meetingId,
