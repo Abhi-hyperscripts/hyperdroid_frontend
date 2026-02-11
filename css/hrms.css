@@ -9326,6 +9326,60 @@ input:checked + .slider:before {
     }
 }
 
+/* Mobile: collapse all multi-column form rows to single column inside modals */
+@media (max-width: 480px) {
+    /* Force all form-row variants to single column */
+    .modal .form-row,
+    .modal .form-row.two-col,
+    .modal .form-row.three-col,
+    .modal .form-row.four-col {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* Equal-width flex rows → single column */
+    .modal .equal-width {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* Wizard photo+info layout: stack and stretch to full width */
+    .modal .photo-info-row-large,
+    .modal .photo-info-row {
+        flex-direction: column !important;
+    }
+
+    .modal .photo-info-row-large .photo-col-large,
+    .modal .photo-info-row .photo-col {
+        flex: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .modal .photo-info-row-large .info-col-large,
+    .modal .photo-info-row .info-col {
+        width: 100% !important;
+    }
+
+    /* Ensure all form inputs/selects/dropdowns fill their container */
+    .modal .form-control,
+    .modal .form-select,
+    .modal .searchable-dropdown,
+    .modal input[type="text"],
+    .modal input[type="number"],
+    .modal input[type="date"],
+    .modal input[type="email"],
+    .modal input[type="tel"],
+    .modal select,
+    .modal textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+
 /* ============================================
    Payslip Modal Footer & Status Styles
    ============================================ */
