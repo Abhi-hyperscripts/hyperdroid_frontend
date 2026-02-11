@@ -8522,3 +8522,41 @@ label.toggle-switch,
         width: auto;
     }
 }
+
+/* =============================================================
+   VISION DASHBOARD — Create/Settings Meeting Modal Dropdown Fix
+   Scoped to #createMeetingModal and #meetingSettingsModal only.
+   HRMS hides .modal .searchable-dropdown .dropdown-menu with
+   !important for its portal pattern. Vision uses inline menus,
+   so we must re-enable them here.
+   ============================================================= */
+
+#createMeetingModal .searchable-dropdown .dropdown-menu.open,
+#meetingSettingsModal .searchable-dropdown .dropdown-menu.open {
+    display: block !important;
+}
+
+#createMeetingModal .modal-content:has(.dropdown-menu.open),
+#meetingSettingsModal .modal-content:has(.dropdown-menu.open) {
+    overflow: visible !important;
+}
+
+#createMeetingModal .modal-body:has(.dropdown-menu.open),
+#meetingSettingsModal .modal-body:has(.dropdown-menu.open) {
+    overflow: visible !important;
+}
+
+/* Vision dashboard — toggle switches: each toggle gets equal width */
+#createMeetingModal .form-toggles > .toggle-switch,
+#meetingSettingsModal .form-toggles > .toggle-switch {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+#createMeetingModal .modal-content .toggle-switch-label,
+#meetingSettingsModal .modal-content .toggle-switch-label {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.65rem;
+}
