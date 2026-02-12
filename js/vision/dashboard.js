@@ -1065,11 +1065,13 @@ function selectMeetingType(type) {
 
     // Show/hide AI Copilot toggle (only for hosted meetings + tenant has LLM key)
     const aiCopilotToggle = document.getElementById('aiCopilotToggleGroup');
+    const meetingModeGroup = document.getElementById('meetingModeGroup');
     if (type === 'hosted' && tenantHasLlmKey) {
         aiCopilotToggle.classList.remove('hidden');
     } else {
         aiCopilotToggle.classList.add('hidden');
         document.getElementById('aiCopilot').checked = false;
+        meetingModeGroup.classList.add('hidden');
         // Re-enable toggles that AI Copilot may have disabled
         document.getElementById('allowGuests').disabled = false;
         document.getElementById('autoTranscription').disabled = false;
@@ -1084,14 +1086,17 @@ function selectMeetingType(type) {
 document.getElementById('aiCopilot').addEventListener('change', function() {
     const allowGuests = document.getElementById('allowGuests');
     const autoTranscription = document.getElementById('autoTranscription');
+    const meetingModeGroup = document.getElementById('meetingModeGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
         allowGuests.disabled = true;
         autoTranscription.disabled = true;
+        meetingModeGroup.classList.remove('hidden');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
+        meetingModeGroup.classList.add('hidden');
     }
 });
 
@@ -1099,14 +1104,17 @@ document.getElementById('aiCopilot').addEventListener('change', function() {
 document.getElementById('settingsAiCopilot').addEventListener('change', function() {
     const allowGuests = document.getElementById('settingsAllowGuests');
     const autoTranscription = document.getElementById('settingsAutoTranscription');
+    const meetingModeGroup = document.getElementById('meetingModeSettingGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
         allowGuests.disabled = true;
         autoTranscription.disabled = true;
+        meetingModeGroup.style.setProperty('display', 'block', 'important');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
+        meetingModeGroup.style.setProperty('display', 'none', 'important');
     }
 });
 
@@ -1284,6 +1292,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const autoRecording = document.getElementById('autoRecording').checked;
     const autoTranscription = document.getElementById('autoTranscription').checked;
     const aiSupport = document.getElementById('aiCopilot').checked;
+    const meetingMode = aiSupport ? document.getElementById('meetingMode').value : null;
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
         ? (document.getElementById('meetingHost').value || null)
         : null;
@@ -1307,7 +1316,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
             autoRecording,
             hostUserId,
             autoTranscription,
-            aiSupport
+            aiSupport,
+            meetingMode
         );
 
         // Extract meeting from response (backend returns { success, message, meeting })
@@ -2970,6 +2980,9 @@ async function showMeetingSettingsModal(meetingId, type) {
         document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
         document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
         document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
+        if (meeting.meeting_mode) {
+            document.getElementById('settingsMeetingMode').value = meeting.meeting_mode;
+        }
 
         // Show/hide fields based on meeting type
         const allowGuestsGroup = document.getElementById('allowGuestsSettingGroup');
@@ -2977,6 +2990,7 @@ async function showMeetingSettingsModal(meetingId, type) {
         const hostHelp = document.getElementById('hostSettingHelp');
         const participantsGroup = document.getElementById('settingsParticipantsGroup');
         const aiCopilotGroup = document.getElementById('aiCopilotSettingGroup');
+        const meetingModeGroup = document.getElementById('meetingModeSettingGroup');
 
         if (type === 'participant-controlled') {
             allowGuestsGroup.style.display = 'none';
@@ -2984,6 +2998,7 @@ async function showMeetingSettingsModal(meetingId, type) {
             hostHelp.textContent = 'If set, the host must start the meeting before allowed participants can join';
             participantsGroup.style.display = 'block';
             aiCopilotGroup.style.setProperty('display', 'none', 'important');
+            meetingModeGroup.style.setProperty('display', 'none', 'important');
             await loadSettingsParticipantsList(meetingId);
         } else if (type === 'hosted') {
             allowGuestsGroup.style.display = 'block';
@@ -2991,11 +3006,13 @@ async function showMeetingSettingsModal(meetingId, type) {
             hostHelp.textContent = 'Required - the host must start the meeting before others can join';
             participantsGroup.style.display = 'none';
             aiCopilotGroup.style.setProperty('display', tenantHasLlmKey ? 'block' : 'none', 'important');
+            meetingModeGroup.style.setProperty('display', (tenantHasLlmKey && meeting.ai_support) ? 'block' : 'none', 'important');
         } else {
             allowGuestsGroup.style.display = 'block';
             hostGroup.style.display = 'none';
             participantsGroup.style.display = 'none';
             aiCopilotGroup.style.setProperty('display', 'none', 'important');
+            meetingModeGroup.style.setProperty('display', 'none', 'important');
         }
 
         // If AI Copilot is on, disable guest access and transcription toggles
@@ -3015,6 +3032,7 @@ async function showMeetingSettingsModal(meetingId, type) {
             document.getElementById('settingsAutoRecording').disabled = true;
             document.getElementById('settingsAutoTranscription').disabled = true;
             document.getElementById('settingsAiCopilot').disabled = true;
+            document.getElementById('settingsMeetingMode').disabled = true;
             if (saveBtn) saveBtn.disabled = true;
         } else {
             warningDiv.style.display = 'none';
@@ -3024,6 +3042,7 @@ async function showMeetingSettingsModal(meetingId, type) {
             document.getElementById('settingsAutoRecording').disabled = false;
             document.getElementById('settingsAutoTranscription').disabled = false;
             document.getElementById('settingsAiCopilot').disabled = false;
+            document.getElementById('settingsMeetingMode').disabled = false;
             if (saveBtn) saveBtn.disabled = false;
             // Re-apply AI Copilot lock if active (after clearing in-progress overrides)
             if (meeting.ai_support) {
@@ -3541,6 +3560,7 @@ async function saveMeetingSettings() {
     const autoRecording = document.getElementById('settingsAutoRecording').checked;
     const autoTranscription = document.getElementById('settingsAutoTranscription').checked;
     const aiSupport = document.getElementById('settingsAiCopilot').checked;
+    const meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
 
     if (type === 'hosted' && !hostUserId) {
         Toast.warning('Host is required for hosted meetings');
@@ -3553,9 +3573,11 @@ async function saveMeetingSettings() {
     saveBtn.disabled = true;
 
     try {
-        // Save notes if changed
-        if (currentSettingsMeeting && (currentSettingsMeeting.notes || '') !== notes) {
-            await api.updateMeetingNotes(meetingId, currentSettingsMeeting.meeting_name, notes);
+        // Save notes and meeting_mode if changed
+        const notesChanged = currentSettingsMeeting && (currentSettingsMeeting.notes || '') !== notes;
+        const modeChanged = currentSettingsMeeting && (currentSettingsMeeting.meeting_mode || null) !== meetingMode;
+        if (notesChanged || modeChanged) {
+            await api.updateMeetingNotes(meetingId, currentSettingsMeeting.meeting_name, notes, meetingMode);
         }
 
         if (currentSettingsMeeting && currentSettingsMeeting.allow_guests !== allowGuests) {

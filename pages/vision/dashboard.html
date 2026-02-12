@@ -350,6 +350,13 @@
                                 <span class="toggle-switch-label">AI Copilot</span>
                             </label>
                         </div>
+                        <div class="form-group hidden" id="meetingModeGroup">
+                            <label class="form-label">Meeting Mode</label>
+                            <select id="meetingMode" class="form-control">
+                                <option value="sales">Sales</option>
+                                <option value="interview">Interview</option>
+                            </select>
+                        </div>
 
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary btn-full">Create Meeting</button>
@@ -570,6 +577,16 @@
                             <span class="toggle-switch-label">AI Copilot</span>
                         </label>
                         <small>Enables AI features — auto-enables guest access and transcription</small>
+                    </div>
+
+                    <!-- Meeting Mode Dropdown (shown when AI Copilot is ON) -->
+                    <div id="meetingModeSettingGroup" class="form-group settings-row" style="display: none !important;">
+                        <label class="form-label">Meeting Mode</label>
+                        <select id="settingsMeetingMode" class="form-control">
+                            <option value="sales">Sales</option>
+                            <option value="interview">Interview</option>
+                        </select>
+                        <small>Determines the AI copilot behavior for this meeting</small>
                     </div>
 
                     <div class="form-group" style="margin-top: 20px;">

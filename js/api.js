@@ -565,7 +565,7 @@ class API {
         return this.request(`/meetings/dashboard${qs ? '?' + qs : ''}`);
     }
 
-    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false, aiSupport = false) {
+    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false, aiSupport = false, meetingMode = null) {
         return this.request('/meetings/create', {
             method: 'POST',
             body: JSON.stringify({
@@ -579,7 +579,8 @@ class API {
                 auto_recording: autoRecording,
                 host_user_id: hostUserId,
                 auto_transcription: autoTranscription,
-                ai_support: aiSupport
+                ai_support: aiSupport,
+                meeting_mode: meetingMode
             })
         });
     }
@@ -723,14 +724,18 @@ class API {
         });
     }
 
-    async updateMeetingNotes(meetingId, meetingName, notes) {
+    async updateMeetingNotes(meetingId, meetingName, notes, meetingMode = undefined) {
+        const body = {
+            id: meetingId,
+            meeting_name: meetingName,
+            notes: notes
+        };
+        if (meetingMode !== undefined) {
+            body.meeting_mode = meetingMode;
+        }
         return this.request('/meetings/update', {
             method: 'PUT',
-            body: JSON.stringify({
-                id: meetingId,
-                meeting_name: meetingName,
-                notes: notes
-            })
+            body: JSON.stringify(body)
         });
     }
 
