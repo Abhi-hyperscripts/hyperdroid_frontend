@@ -93,7 +93,7 @@ class API {
             return CONFIG.authApiBaseUrl;
         }
         // Services, Users, Admin, and Tenants endpoints go to Authentication service (admin APIs)
-        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants')) {
+        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys')) {
             return CONFIG.authApiBaseUrl;
         }
         // Drive endpoints go directly to Drive service (independent microservice)
@@ -480,6 +480,31 @@ class API {
     // Sub-Tenants (SaaS Platform Only)
     async getSubTenants(includeInactive = false) {
         return this.request(`/tenants/sub-tenants?includeInactive=${includeInactive}`);
+    }
+
+    // Tenant API Keys (SUPERADMIN)
+    async getApiKeys() {
+        return this.request('/tenant-api-keys');
+    }
+
+    async saveApiKey(provider, serviceType, apiKey) {
+        return this.request('/tenant-api-keys', {
+            method: 'POST',
+            body: JSON.stringify({ provider, serviceType, apiKey })
+        });
+    }
+
+    async updateApiKey(provider, serviceType, data) {
+        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async deleteApiKey(provider, serviceType) {
+        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
+            method: 'DELETE'
+        });
     }
 
     // Projects

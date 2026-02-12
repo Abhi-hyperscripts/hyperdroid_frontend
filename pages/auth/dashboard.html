@@ -144,8 +144,11 @@
                             <button class="sidebar-btn" data-tab="license" id="licenseSidebarTab">
                                 <span class="nav-number">4</span><span class="nav-label">License</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="apikeys" id="apikeysSidebarTab">
+                                <span class="nav-number">5</span><span class="nav-label">API Keys</span>
+                            </button>
                             <button class="sidebar-btn hidden-tab" data-tab="subtenants" id="subtenantsSidebarTab">
-                                <span class="nav-number">5</span><span class="nav-label">Sub-Tenants</span>
+                                <span class="nav-number">6</span><span class="nav-label">Sub-Tenants</span>
                             </button>
                         </div>
                     </div>
@@ -336,6 +339,54 @@
                             </div>
                             <h3>No License Configured</h3>
                             <p>This system is running in unlicensed mode. Contact your administrator to configure a valid license.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Keys Tab -->
+                <div class="tab-content" id="apikeys">
+                    <div class="apikeys-container">
+                        <div class="users-header">
+                            <div class="users-search">
+                                <div class="search-input-wrapper">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="M21 21l-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" class="search-input" id="apiKeySearch" placeholder="Search API keys..." oninput="filterApiKeys()" autocomplete="off">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="openAddApiKeyModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add API Key
+                            </button>
+                        </div>
+
+                        <div class="users-table-container">
+                            <table class="users-table apikeys-table">
+                                <thead>
+                                    <tr>
+                                        <th>Provider</th>
+                                        <th>Service Type</th>
+                                        <th>Key Hint</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="apiKeysTableBody">
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="loading-spinner">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -646,6 +697,104 @@
                         <span id="updateLicenseSpinner" class="spinner-sm" style="display: none;"></span>
                         Apply License
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit API Key Modal -->
+    <div class="modal" id="apiKeyModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="apiKeyModalTitle">Add API Key</h3>
+                    <button class="close-btn" onclick="closeModal('apiKeyModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="apiKeyForm">
+                        <div class="form-group">
+                            <label>Provider</label>
+                            <select id="apiKeyProvider" required>
+                                <option value="">Select provider...</option>
+                                <option value="Deepgram">Deepgram</option>
+                                <option value="Anthropic">Anthropic</option>
+                                <option value="OpenAI">OpenAI</option>
+                                <option value="Google">Google</option>
+                                <option value="Azure">Azure</option>
+                                <option value="Custom">Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Service Type</label>
+                            <select id="apiKeyServiceType" required>
+                                <option value="">Select service type...</option>
+                                <option value="stt">STT (Speech-to-Text)</option>
+                                <option value="llm">LLM (Language Model)</option>
+                                <option value="tts">TTS (Text-to-Speech)</option>
+                                <option value="vision">Vision</option>
+                                <option value="embedding">Embedding</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>API Key</label>
+                            <div class="apikey-input-wrapper">
+                                <input type="password" id="apiKeyValue" required placeholder="Enter API key...">
+                                <button type="button" class="apikey-toggle-btn" onclick="toggleApiKeyVisibility()">
+                                    <svg id="apiKeyEyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('apiKeyModal')">Cancel</button>
+                    <button class="btn btn-primary" id="apiKeySaveBtn" onclick="saveApiKey()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Toggle API Key Modal -->
+    <div class="modal" id="confirmToggleApiKeyModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="toggleApiKeyModalTitle">Toggle API Key</h3>
+                    <button class="close-btn" onclick="closeModal('confirmToggleApiKeyModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p id="toggleApiKeyMessage" class="text-secondary"></p>
+                    <input type="hidden" id="toggleApiKeyProvider">
+                    <input type="hidden" id="toggleApiKeyServiceType">
+                    <input type="hidden" id="toggleApiKeyNewState">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('confirmToggleApiKeyModal')">Cancel</button>
+                    <button class="btn btn-primary" id="confirmToggleApiKeyBtn" onclick="confirmToggleApiKey()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete API Key Modal -->
+    <div class="modal" id="confirmDeleteApiKeyModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Delete API Key</h3>
+                    <button class="close-btn" onclick="closeModal('confirmDeleteApiKeyModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteApiKeyMessage" class="text-secondary"></p>
+                    <input type="hidden" id="deleteApiKeyProvider">
+                    <input type="hidden" id="deleteApiKeyServiceType">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('confirmDeleteApiKeyModal')">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeleteApiKey()">Delete</button>
                 </div>
             </div>
         </div>

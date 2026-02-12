@@ -2734,3 +2734,131 @@
         min-width: 800px;
     }
 }
+
+/* ============================================
+   API Keys Tab Styles
+   ============================================ */
+
+.apikeys-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Provider cell */
+.apikey-provider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.apikey-provider-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--hover-overlay-subtle);
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.apikey-provider-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.apikey-provider-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+/* Service type badges */
+.apikey-service-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: var(--hover-overlay-medium);
+    color: var(--text-secondary);
+}
+
+.apikey-service-badge.stt {
+    background: var(--info-alpha-15);
+    color: var(--color-info);
+}
+
+.apikey-service-badge.llm {
+    background: var(--purple-bg-light);
+    color: var(--brand-secondary);
+}
+
+.apikey-service-badge.tts {
+    background: var(--success-alpha-10);
+    color: var(--color-success);
+}
+
+.apikey-service-badge.vision {
+    background: var(--accent-alpha-15);
+    color: var(--brand-accent);
+}
+
+.apikey-service-badge.embedding {
+    background: var(--warning-alpha-15);
+    color: var(--color-warning);
+}
+
+/* Key hint monospace */
+.apikey-hint {
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color-light);
+}
+
+/* API Key input wrapper with show/hide toggle */
+.apikey-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.apikey-input-wrapper input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.apikey-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.apikey-toggle-btn:hover {
+    color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .apikeys-table {
+        min-width: 700px;
+    }
+}

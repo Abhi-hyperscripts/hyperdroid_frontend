@@ -8,6 +8,8 @@ let currentUserRoles = [];
 let adminHubConnection = null;
 let showDeactivatedUsers = false;
 let licenseData = null;
+let allApiKeys = [];
+let apiKeyEditMode = false;
 
 // ==================== License-Based Filtering ====================
 
@@ -343,6 +345,7 @@ async function loadAllData() {
         loadUsers(),
         loadRoles(),
         loadLicense(),
+        loadApiKeys(),
         checkSubTenantsVisibility()
     ]);
 }
@@ -1477,6 +1480,7 @@ function switchTab(tabName) {
         'users': 'Users',
         'roles': 'Roles',
         'license': 'License',
+        'apikeys': 'API Keys',
         'subtenants': 'Sub-Tenants'
     };
 
@@ -1804,6 +1808,286 @@ async function updateLicense() {
 
 let subTenantsData = null;
 let isSaaSPlatformAdmin = false;
+
+// ==================== API Keys Management ====================
+
+async function loadApiKeys() {
+    const tbody = document.getElementById('apiKeysTableBody');
+    if (!tbody) return;
+
+    try {
+        const response = await api.getApiKeys();
+        allApiKeys = response.keys || response || [];
+        filterApiKeys();
+    } catch (error) {
+        console.error('Failed to load API keys:', error);
+        allApiKeys = [];
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <h3>Failed to Load API Keys</h3>
+                        <p>${error.message}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function filterApiKeys() {
+    const searchInput = document.getElementById('apiKeySearch');
+    const searchTerm = (searchInput ? searchInput.value : '').toLowerCase();
+
+    const filtered = allApiKeys.filter(key => {
+        const provider = (key.provider || '').toLowerCase();
+        const serviceType = (key.serviceType || key.service_type || '').toLowerCase();
+        return provider.includes(searchTerm) || serviceType.includes(searchTerm);
+    });
+
+    renderApiKeysTable(filtered);
+}
+
+function renderApiKeysTable(keys) {
+    const tbody = document.getElementById('apiKeysTableBody');
+    if (!tbody) return;
+
+    if (keys.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <h3>No API Keys</h3>
+                        <p>Add an API key for your AI service providers.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = keys.map(key => {
+        const provider = key.provider || '';
+        const serviceType = key.serviceType || key.service_type || '';
+        const displayHint = key.displayHint || key.display_hint || '****';
+        const isActive = key.isActive !== undefined ? key.isActive : (key.is_active !== undefined ? key.is_active : true);
+        const createdAt = key.createdAt || key.created_at;
+        const createdDate = createdAt ? formatDate(createdAt) : '-';
+
+        const escapedProvider = provider.replace(/'/g, "\\'");
+        const escapedServiceType = serviceType.replace(/'/g, "\\'");
+
+        return `
+            <tr>
+                <td>
+                    <div class="apikey-provider">
+                        <span class="apikey-provider-icon">${getProviderIcon(provider)}</span>
+                        <span class="apikey-provider-name">${provider}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="apikey-service-badge ${serviceType.toLowerCase()}">${formatServiceType(serviceType)}</span>
+                </td>
+                <td>
+                    <code class="apikey-hint">${displayHint}</code>
+                </td>
+                <td>
+                    <span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                        <span class="status-dot"></span>
+                        ${isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="date-cell">${createdDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn" data-tooltip="${isActive ? 'Deactivate' : 'Activate'}" onclick="toggleApiKeyStatus('${escapedProvider}', '${escapedServiceType}', ${!isActive})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                ${isActive
+                                    ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
+                                    : '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'}
+                            </svg>
+                        </button>
+                        <button class="action-btn" data-tooltip="Rotate Key" onclick="openEditApiKeyModal('${escapedProvider}', '${escapedServiceType}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn danger" data-tooltip="Delete" onclick="openDeleteApiKeyModal('${escapedProvider}', '${escapedServiceType}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openAddApiKeyModal() {
+    apiKeyEditMode = false;
+    document.getElementById('apiKeyModalTitle').textContent = 'Add API Key';
+    document.getElementById('apiKeyProvider').value = '';
+    document.getElementById('apiKeyProvider').disabled = false;
+    document.getElementById('apiKeyServiceType').value = '';
+    document.getElementById('apiKeyServiceType').disabled = false;
+    document.getElementById('apiKeyValue').value = '';
+    document.getElementById('apiKeyValue').type = 'password';
+    document.getElementById('apiKeySaveBtn').textContent = 'Save';
+    openModal('apiKeyModal');
+}
+
+function openEditApiKeyModal(provider, serviceType) {
+    apiKeyEditMode = true;
+    document.getElementById('apiKeyModalTitle').textContent = 'Rotate API Key';
+    // Match provider option case-insensitively
+    const providerSelect = document.getElementById('apiKeyProvider');
+    const providerLower = provider.toLowerCase();
+    for (const opt of providerSelect.options) {
+        if (opt.value.toLowerCase() === providerLower) {
+            providerSelect.value = opt.value;
+            break;
+        }
+    }
+    providerSelect.disabled = true;
+    document.getElementById('apiKeyServiceType').value = serviceType;
+    document.getElementById('apiKeyServiceType').disabled = true;
+    document.getElementById('apiKeyValue').value = '';
+    document.getElementById('apiKeyValue').type = 'password';
+    document.getElementById('apiKeyValue').placeholder = 'Enter new API key...';
+    document.getElementById('apiKeySaveBtn').textContent = 'Update Key';
+    openModal('apiKeyModal');
+}
+
+async function saveApiKey() {
+    const provider = document.getElementById('apiKeyProvider').value;
+    const serviceType = document.getElementById('apiKeyServiceType').value;
+    const apiKeyVal = document.getElementById('apiKeyValue').value;
+
+    if (!provider || !serviceType || !apiKeyVal) {
+        showToast('Please fill in all fields', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('apiKeySaveBtn');
+    btn.disabled = true;
+    btn.textContent = apiKeyEditMode ? 'Updating...' : 'Saving...';
+
+    try {
+        if (apiKeyEditMode) {
+            await api.updateApiKey(provider, serviceType, { apiKey: apiKeyVal });
+            showToast(`API key for ${provider}/${formatServiceType(serviceType)} rotated successfully`, 'success');
+        } else {
+            await api.saveApiKey(provider, serviceType, apiKeyVal);
+            showToast(`API key for ${provider}/${formatServiceType(serviceType)} added successfully`, 'success');
+        }
+        closeModal('apiKeyModal');
+        await loadApiKeys();
+    } catch (error) {
+        showToast(error.message || 'Failed to save API key', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = apiKeyEditMode ? 'Update Key' : 'Save';
+    }
+}
+
+function toggleApiKeyStatus(provider, serviceType, isActive) {
+    document.getElementById('toggleApiKeyProvider').value = provider;
+    document.getElementById('toggleApiKeyServiceType').value = serviceType;
+    document.getElementById('toggleApiKeyNewState').value = isActive;
+    document.getElementById('toggleApiKeyModalTitle').textContent = isActive ? 'Activate API Key' : 'Deactivate API Key';
+    document.getElementById('toggleApiKeyMessage').textContent =
+        `Are you sure you want to ${isActive ? 'activate' : 'deactivate'} the ${provider} / ${formatServiceType(serviceType)} API key?`;
+    const confirmBtn = document.getElementById('confirmToggleApiKeyBtn');
+    confirmBtn.className = isActive ? 'btn btn-primary' : 'btn btn-danger';
+    confirmBtn.textContent = isActive ? 'Activate' : 'Deactivate';
+    openModal('confirmToggleApiKeyModal');
+}
+
+async function confirmToggleApiKey() {
+    const provider = document.getElementById('toggleApiKeyProvider').value;
+    const serviceType = document.getElementById('toggleApiKeyServiceType').value;
+    const isActive = document.getElementById('toggleApiKeyNewState').value === 'true';
+    try {
+        await api.updateApiKey(provider, serviceType, { isActive });
+        closeModal('confirmToggleApiKeyModal');
+        showToast(`API key ${isActive ? 'activated' : 'deactivated'}`, 'success');
+        await loadApiKeys();
+    } catch (error) {
+        closeModal('confirmToggleApiKeyModal');
+        showToast(error.message || 'Failed to update API key status', 'error');
+    }
+}
+
+function openDeleteApiKeyModal(provider, serviceType) {
+    document.getElementById('deleteApiKeyProvider').value = provider;
+    document.getElementById('deleteApiKeyServiceType').value = serviceType;
+    document.getElementById('deleteApiKeyMessage').textContent =
+        `Are you sure you want to delete the ${provider} / ${formatServiceType(serviceType)} API key? This action cannot be undone.`;
+    openModal('confirmDeleteApiKeyModal');
+}
+
+async function confirmDeleteApiKey() {
+    const provider = document.getElementById('deleteApiKeyProvider').value;
+    const serviceType = document.getElementById('deleteApiKeyServiceType').value;
+
+    try {
+        await api.deleteApiKey(provider, serviceType);
+        showToast(`API key for ${provider}/${formatServiceType(serviceType)} deleted`, 'success');
+        closeModal('confirmDeleteApiKeyModal');
+        await loadApiKeys();
+    } catch (error) {
+        showToast(error.message || 'Failed to delete API key', 'error');
+    }
+}
+
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyValue');
+    const icon = document.getElementById('apiKeyEyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+        input.type = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+}
+
+function getProviderIcon(provider) {
+    const name = (provider || '').toLowerCase();
+    const icons = {
+        'deepgram': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+        'anthropic': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2L2 19h20L12 2z"/></svg>',
+        'openai': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>',
+        'google': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        'azure': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M2 20L10 4l4 12 6-4-18 8z"/></svg>'
+    };
+    return icons[name] || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+}
+
+function formatServiceType(type) {
+    const typeMap = {
+        'stt': 'STT',
+        'llm': 'LLM',
+        'tts': 'TTS',
+        'vision': 'Vision',
+        'embedding': 'Embedding'
+    };
+    return typeMap[(type || '').toLowerCase()] || type;
+}
+
+// ==================== Sub-Tenants Management ====================
 
 async function checkSubTenantsVisibility() {
     // Check if we should show the Sub-Tenants tab
