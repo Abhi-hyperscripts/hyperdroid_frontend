@@ -8623,8 +8623,15 @@ label.toggle-switch,
 
 #createMeetingModal .modal-content .toggle-switch-label,
 #meetingSettingsModal .modal-content .toggle-switch-label {
-    white-space: nowrap !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 0.65rem;
+    white-space: normal;
+    overflow: visible;
+    font-size: 0.8rem;
+}
+
+/* Vision dashboard — toggle switches in settings modal: full width on mobile */
+#meetingSettingsModal .settings-row label.toggle-switch,
+#createMeetingModal .settings-row label.toggle-switch {
+    display: flex !important;
+    width: 100% !important;
+    align-self: stretch !important;
 }
