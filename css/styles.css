@@ -8546,6 +8546,74 @@ label.toggle-switch,
     overflow: visible !important;
 }
 
+/* Live Captions Overlay (Path A — real-time STT) */
+.live-captions-container {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 999;
+    pointer-events: none;
+}
+
+.live-caption-slot {
+    background: var(--overlay-heavy, rgba(0, 0, 0, 0.75));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 6px 14px;
+    max-width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    transition: opacity 0.5s ease;
+    opacity: 1;
+}
+
+.live-caption-slot.caption-fade-out {
+    opacity: 0;
+}
+
+.caption-speaker {
+    color: var(--brand-accent, #60a5fa);
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.caption-text {
+    color: var(--text-inverse, #ffffff);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+@media (max-width: 768px) {
+    .live-captions-container {
+        width: 95%;
+        bottom: 65px;
+    }
+
+    .live-caption-slot {
+        padding: 4px 10px;
+    }
+
+    .caption-speaker {
+        font-size: 0.7rem;
+    }
+
+    .caption-text {
+        font-size: 0.8rem;
+    }
+}
+
 /* Vision dashboard — toggle switches: each toggle gets equal width */
 #createMeetingModal .form-toggles > .toggle-switch,
 #meetingSettingsModal .form-toggles > .toggle-switch {

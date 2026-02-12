@@ -859,6 +859,11 @@ function setupSignalREventHandlers() {
         }
     });
 
+    // Live captions from server-side Vosk STT (Path A)
+    signalRConnection.on('LiveCaptionUpdate', (data) => {
+        updateLiveCaption(data.speakerId, data.speakerName, data.text, data.language, data.isFinal, data.timestamp);
+    });
+
     // Server-side recording started (LiveKit Egress)
     signalRConnection.on('RecordingStarted', (data) => {
         console.log('Server recording started:', data);
@@ -2648,6 +2653,9 @@ async function leaveMeeting() {
             // Stop stale participant cleanup
             stopStaleParticipantCleanup();
 
+            // Clean up live captions
+            cleanupLiveCaptions();
+
             // Clear guest session if guest user
             if (isGuest) {
                 sessionStorage.clear();
@@ -4175,6 +4183,108 @@ async function kickParticipant(participantIdentity) {
         Toast.error('Failed to remove participant: ' + error.message);
     }
 }
+
+// ===================== Live Captions (Path A) =====================
+
+let captionsEnabled = false;
+const captionSlots = new Map(); // speakerId -> { element, fadeTimer }
+
+function getCaptionsContainer() {
+    let container = document.getElementById('liveCaptionsContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'liveCaptionsContainer';
+        container.className = 'live-captions-container';
+        // Insert before meeting-controls so it sits just above the control bar
+        const controls = document.querySelector('.meeting-controls');
+        if (controls && controls.parentNode) {
+            controls.parentNode.insertBefore(container, controls);
+        } else {
+            document.body.appendChild(container);
+        }
+    }
+    return container;
+}
+
+function updateLiveCaption(speakerId, speakerName, text, language, isFinal, timestamp) {
+    if (!captionsEnabled) return;
+
+    const container = getCaptionsContainer();
+    let slot = captionSlots.get(speakerId);
+
+    if (!slot) {
+        // Create new caption slot for this speaker
+        const el = document.createElement('div');
+        el.className = 'live-caption-slot';
+        el.innerHTML = `<span class="caption-speaker">${escapeHtml(speakerName)}</span><span class="caption-text"></span>`;
+        container.appendChild(el);
+        slot = { element: el, fadeTimer: null };
+        captionSlots.set(speakerId, slot);
+    }
+
+    // Clear any pending fade timer
+    if (slot.fadeTimer) {
+        clearTimeout(slot.fadeTimer);
+        slot.fadeTimer = null;
+    }
+
+    // Update caption text
+    const textEl = slot.element.querySelector('.caption-text');
+    if (textEl) {
+        textEl.textContent = text;
+    }
+
+    // Make sure slot is visible
+    slot.element.classList.remove('caption-fade-out');
+    slot.element.style.display = '';
+
+    // If final, fade out after 4 seconds
+    if (isFinal) {
+        slot.fadeTimer = setTimeout(() => {
+            slot.element.classList.add('caption-fade-out');
+            // Remove from DOM after fade animation
+            setTimeout(() => {
+                if (slot.element.parentNode) {
+                    slot.element.parentNode.removeChild(slot.element);
+                }
+                captionSlots.delete(speakerId);
+            }, 500);
+        }, 4000);
+    }
+}
+
+function toggleCaptions() {
+    captionsEnabled = !captionsEnabled;
+    const btn = document.getElementById('captionsBtn');
+
+    if (captionsEnabled) {
+        btn.classList.add('active');
+        getCaptionsContainer().style.display = '';
+    } else {
+        btn.classList.remove('active');
+        const container = document.getElementById('liveCaptionsContainer');
+        if (container) container.style.display = 'none';
+    }
+}
+
+function cleanupLiveCaptions() {
+    captionSlots.forEach(slot => {
+        if (slot.fadeTimer) clearTimeout(slot.fadeTimer);
+    });
+    captionSlots.clear();
+    const container = document.getElementById('liveCaptionsContainer');
+    if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===================== End Live Captions =====================
 
 // Initialize on page load
 initializeMeeting();
