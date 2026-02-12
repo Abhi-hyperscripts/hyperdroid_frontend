@@ -507,6 +507,16 @@ class API {
         });
     }
 
+    async hasActiveLlmKey() {
+        try {
+            const response = await this.request('/tenant-api-keys');
+            const keys = response.keys || response || [];
+            return keys.some(k => k.serviceType === 'llm' && k.isActive);
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Projects
     async getProjects() {
         return this.request('/projects/list');
@@ -555,7 +565,7 @@ class API {
         return this.request(`/meetings/dashboard${qs ? '?' + qs : ''}`);
     }
 
-    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false) {
+    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false, aiSupport = false) {
         return this.request('/meetings/create', {
             method: 'POST',
             body: JSON.stringify({
@@ -568,7 +578,8 @@ class API {
                 meeting_type: meetingType,
                 auto_recording: autoRecording,
                 host_user_id: hostUserId,
-                auto_transcription: autoTranscription
+                auto_transcription: autoTranscription,
+                ai_support: aiSupport
             })
         });
     }
@@ -698,6 +709,27 @@ class API {
             body: JSON.stringify({
                 meeting_id: meetingId,
                 value: value
+            })
+        });
+    }
+
+    async toggleAiSupport(meetingId, value) {
+        return this.request(`/meetings/${meetingId}/toggle-ai-support`, {
+            method: 'POST',
+            body: JSON.stringify({
+                meeting_id: meetingId,
+                value: value
+            })
+        });
+    }
+
+    async updateMeetingNotes(meetingId, meetingName, notes) {
+        return this.request('/meetings/update', {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: meetingId,
+                meeting_name: meetingName,
+                notes: notes
             })
         });
     }

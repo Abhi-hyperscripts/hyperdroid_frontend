@@ -1,6 +1,7 @@
 // Dashboard page JavaScript - Meeting-Centric Dashboard
 let currentProjectId = null;
 let selectedMeetingType = 'regular'; // For create meeting modal
+var tenantHasLlmKey = false; // Whether tenant has an active LLM API key (for AI Copilot)
 
 // Check authentication
 if (!api.isAuthenticated()) {
@@ -560,6 +561,13 @@ function showCreateMeetingQuickModal() {
     document.getElementById('participantsSelectionGroup').style.display = 'none';
     document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
 
+    // Reset AI Copilot toggle (hidden by default, only shown for hosted + LLM key)
+    document.getElementById('aiCopilotToggleGroup').classList.add('hidden');
+    document.getElementById('aiCopilot').checked = false;
+    // Re-enable toggles that AI Copilot may have disabled
+    document.getElementById('allowGuests').disabled = false;
+    document.getElementById('autoTranscription').disabled = false;
+
     // Populate project selector
     const projectSelect = document.getElementById('meetingProjectSelect');
     const projectGroup = document.getElementById('meetingProjectSelectGroup');
@@ -983,6 +991,12 @@ async function showCreateMeetingModalForProject(projectId) {
     // Show allow guests toggle (modal opens with 'regular' type by default)
     document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
 
+    // Reset AI Copilot toggle (hidden by default, only shown for hosted + LLM key)
+    document.getElementById('aiCopilotToggleGroup').classList.add('hidden');
+    document.getElementById('aiCopilot').checked = false;
+    document.getElementById('allowGuests').disabled = false;
+    document.getElementById('autoTranscription').disabled = false;
+
     modal.classList.add('gm-animating');
     requestAnimationFrame(() => {
         requestAnimationFrame(() => modal.classList.add('active'));
@@ -1048,7 +1062,53 @@ function selectMeetingType(type) {
     } else {
         allowGuestsToggle.classList.remove('hidden');
     }
+
+    // Show/hide AI Copilot toggle (only for hosted meetings + tenant has LLM key)
+    const aiCopilotToggle = document.getElementById('aiCopilotToggleGroup');
+    if (type === 'hosted' && tenantHasLlmKey) {
+        aiCopilotToggle.classList.remove('hidden');
+    } else {
+        aiCopilotToggle.classList.add('hidden');
+        document.getElementById('aiCopilot').checked = false;
+        // Re-enable toggles that AI Copilot may have disabled
+        document.getElementById('allowGuests').disabled = false;
+        document.getElementById('autoTranscription').disabled = false;
+    }
 }
+
+// ============================================
+// AI Copilot Toggle Auto-Enable Logic
+// ============================================
+
+// Create modal: AI Copilot toggle
+document.getElementById('aiCopilot').addEventListener('change', function() {
+    const allowGuests = document.getElementById('allowGuests');
+    const autoTranscription = document.getElementById('autoTranscription');
+    if (this.checked) {
+        allowGuests.checked = true;
+        autoTranscription.checked = true;
+        allowGuests.disabled = true;
+        autoTranscription.disabled = true;
+    } else {
+        allowGuests.disabled = false;
+        autoTranscription.disabled = false;
+    }
+});
+
+// Settings modal: AI Copilot toggle
+document.getElementById('settingsAiCopilot').addEventListener('change', function() {
+    const allowGuests = document.getElementById('settingsAllowGuests');
+    const autoTranscription = document.getElementById('settingsAutoTranscription');
+    if (this.checked) {
+        allowGuests.checked = true;
+        autoTranscription.checked = true;
+        allowGuests.disabled = true;
+        autoTranscription.disabled = true;
+    } else {
+        allowGuests.disabled = false;
+        autoTranscription.disabled = false;
+    }
+});
 
 // ============================================
 // Create Meeting Participants Multi-Select Dropdown
@@ -1223,6 +1283,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const allowGuests = document.getElementById('allowGuests').checked;
     const autoRecording = document.getElementById('autoRecording').checked;
     const autoTranscription = document.getElementById('autoTranscription').checked;
+    const aiSupport = document.getElementById('aiCopilot').checked;
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
         ? (document.getElementById('meetingHost').value || null)
         : null;
@@ -1245,7 +1306,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
             selectedMeetingType,
             autoRecording,
             hostUserId,
-            autoTranscription
+            autoTranscription,
+            aiSupport
         );
 
         // Extract meeting from response (backend returns { success, message, meeting })
@@ -2903,31 +2965,43 @@ async function showMeetingSettingsModal(meetingId, type) {
 
         await populateSettingsHostDropdown(meeting.host_user_id, type);
 
+        document.getElementById('settingsNotes').value = meeting.notes || '';
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
         document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
         document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
+        document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
 
         // Show/hide fields based on meeting type
         const allowGuestsGroup = document.getElementById('allowGuestsSettingGroup');
         const hostGroup = document.getElementById('hostSettingGroup');
         const hostHelp = document.getElementById('hostSettingHelp');
         const participantsGroup = document.getElementById('settingsParticipantsGroup');
+        const aiCopilotGroup = document.getElementById('aiCopilotSettingGroup');
 
         if (type === 'participant-controlled') {
             allowGuestsGroup.style.display = 'none';
             hostGroup.style.display = 'block';
             hostHelp.textContent = 'If set, the host must start the meeting before allowed participants can join';
             participantsGroup.style.display = 'block';
+            aiCopilotGroup.style.setProperty('display', 'none', 'important');
             await loadSettingsParticipantsList(meetingId);
         } else if (type === 'hosted') {
             allowGuestsGroup.style.display = 'block';
             hostGroup.style.display = 'block';
             hostHelp.textContent = 'Required - the host must start the meeting before others can join';
             participantsGroup.style.display = 'none';
+            aiCopilotGroup.style.setProperty('display', tenantHasLlmKey ? 'block' : 'none', 'important');
         } else {
             allowGuestsGroup.style.display = 'block';
             hostGroup.style.display = 'none';
             participantsGroup.style.display = 'none';
+            aiCopilotGroup.style.setProperty('display', 'none', 'important');
+        }
+
+        // If AI Copilot is on, disable guest access and transcription toggles
+        if (meeting.ai_support) {
+            document.getElementById('settingsAllowGuests').disabled = true;
+            document.getElementById('settingsAutoTranscription').disabled = true;
         }
 
         const warningDiv = document.getElementById('settingsInProgressWarning');
@@ -2935,18 +3009,27 @@ async function showMeetingSettingsModal(meetingId, type) {
 
         if (isStarted) {
             warningDiv.style.display = 'flex';
+            document.getElementById('settingsNotes').disabled = true;
             document.getElementById('settingsAllowGuests').disabled = true;
             setHostDropdownDisabled(true);
             document.getElementById('settingsAutoRecording').disabled = true;
             document.getElementById('settingsAutoTranscription').disabled = true;
+            document.getElementById('settingsAiCopilot').disabled = true;
             if (saveBtn) saveBtn.disabled = true;
         } else {
             warningDiv.style.display = 'none';
+            document.getElementById('settingsNotes').disabled = false;
             document.getElementById('settingsAllowGuests').disabled = false;
             setHostDropdownDisabled(false);
             document.getElementById('settingsAutoRecording').disabled = false;
             document.getElementById('settingsAutoTranscription').disabled = false;
+            document.getElementById('settingsAiCopilot').disabled = false;
             if (saveBtn) saveBtn.disabled = false;
+            // Re-apply AI Copilot lock if active (after clearing in-progress overrides)
+            if (meeting.ai_support) {
+                document.getElementById('settingsAllowGuests').disabled = true;
+                document.getElementById('settingsAutoTranscription').disabled = true;
+            }
         }
 
         modal.classList.add('gm-animating');
@@ -3452,10 +3535,12 @@ function selectCreateHostOption(userId) {
 async function saveMeetingSettings() {
     const meetingId = document.getElementById('settingsMeetingId').value;
     const type = document.getElementById('settingsMeetingType').value;
+    const notes = document.getElementById('settingsNotes').value;
     const allowGuests = document.getElementById('settingsAllowGuests').checked;
     const hostUserId = document.getElementById('settingsHost').value || null;
     const autoRecording = document.getElementById('settingsAutoRecording').checked;
     const autoTranscription = document.getElementById('settingsAutoTranscription').checked;
+    const aiSupport = document.getElementById('settingsAiCopilot').checked;
 
     if (type === 'hosted' && !hostUserId) {
         Toast.warning('Host is required for hosted meetings');
@@ -3468,6 +3553,11 @@ async function saveMeetingSettings() {
     saveBtn.disabled = true;
 
     try {
+        // Save notes if changed
+        if (currentSettingsMeeting && (currentSettingsMeeting.notes || '') !== notes) {
+            await api.updateMeetingNotes(meetingId, currentSettingsMeeting.meeting_name, notes);
+        }
+
         if (currentSettingsMeeting && currentSettingsMeeting.allow_guests !== allowGuests) {
             await api.toggleAllowGuests(meetingId, allowGuests);
         }
@@ -3478,6 +3568,11 @@ async function saveMeetingSettings() {
 
         if (currentSettingsMeeting && currentSettingsMeeting.auto_transcription !== autoTranscription) {
             await api.toggleAutoTranscription(meetingId, autoTranscription);
+        }
+
+        // Save AI Copilot if changed — runs after guest/transcription toggles above
+        if (currentSettingsMeeting && (currentSettingsMeeting.ai_support || false) !== aiSupport) {
+            await api.toggleAiSupport(meetingId, aiSupport);
         }
 
         if (currentSettingsMeeting && currentSettingsMeeting.host_user_id !== hostUserId) {
@@ -4175,6 +4270,8 @@ if (document.querySelector('.dashboard')) {
         loadProjectFilterDropdown();
         loadDashboard(true);
         initDashboardSignalR();
+        // Check if tenant has active LLM API key (for AI Copilot visibility)
+        api.hasActiveLlmKey().then(has => { tenantHasLlmKey = has; });
     });
 
     window.addEventListener('beforeunload', async () => {
