@@ -206,6 +206,7 @@ function speakTTS(text, volume) {
 
     // Cancel any in-progress TTS
     window.speechSynthesis.cancel();
+    if (window._ttsResumeInterval) clearInterval(window._ttsResumeInterval);
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
@@ -213,12 +214,30 @@ function speakTTS(text, volume) {
     utterance.pitch = 1.0;
 
     ttsSpeaking = true;
+    window._ttsActive = true;
+
+    // Chrome bug workaround: speechSynthesis silently stops after ~15s.
+    // Calling resume() every 5s keeps it alive.
+    window._ttsResumeInterval = setInterval(() => {
+        if (window.speechSynthesis?.speaking) {
+            window.speechSynthesis.resume();
+        } else {
+            clearInterval(window._ttsResumeInterval);
+            window._ttsResumeInterval = null;
+        }
+    }, 5000);
 
     utterance.onend = () => {
         ttsSpeaking = false;
+        clearInterval(window._ttsResumeInterval);
+        window._ttsResumeInterval = null;
+        setTimeout(() => { window._ttsActive = false; }, 300);
     };
     utterance.onerror = () => {
         ttsSpeaking = false;
+        clearInterval(window._ttsResumeInterval);
+        window._ttsResumeInterval = null;
+        window._ttsActive = false;
     };
 
     window.speechSynthesis.speak(utterance);
@@ -230,8 +249,13 @@ function speakTTS(text, volume) {
 function cancelTTS() {
     if (window.speechSynthesis?.speaking) {
         window.speechSynthesis.cancel();
-        ttsSpeaking = false;
     }
+    if (window._ttsResumeInterval) {
+        clearInterval(window._ttsResumeInterval);
+        window._ttsResumeInterval = null;
+    }
+    ttsSpeaking = false;
+    window._ttsActive = false;
 }
 
 function dismissInsight(el) {

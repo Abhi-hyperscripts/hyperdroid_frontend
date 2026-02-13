@@ -1,0 +1,218 @@
+RAGENAIZER — SALES MEETING PRODUCT CONTEXT
+============================================
+
+WHAT IS RAGENAIZER?
+Ragenaizer is an all-in-one business software platform that replaces 4 separate tools (Zoom + Slack + Dropbox + HR/Payroll) with a single unified workspace. Companies cut costs by 60% compared to buying these tools separately.
+
+FOUR PRODUCTS IN ONE PLATFORM:
+1. Vision — HD Video Conferencing (replaces Zoom)
+2. Chat — Team Messaging (replaces Slack)
+3. Drive — Secure Cloud Storage (replaces Dropbox/Google Drive)
+4. HRMS — HR Management & Payroll (replaces greytHR/BambooHR/Gusto)
+
+DEPLOYMENT OPTIONS:
+- Cloud (SaaS) — hosted by us, instant setup
+- On-Premises / Self-Hosted — white-label, air-gapped, full data sovereignty
+
+---
+
+PRICING
+-------
+- $12/user/month — all four products included, no add-ons
+- Flat rate per tenant, NOT per-employee pricing for HRMS
+- No hidden fees, no per-meeting charges, no storage surcharges
+- Month-to-month contract (no multi-year lock-in)
+- Free trial available, no credit card required
+- Enterprise/custom pricing available for large deployments
+- Contact: sales@ragenaizer.com (response within 24 hours)
+
+COST COMPARISON (per user/month):
+- Zoom Pro: $13 + Slack Pro: $7.25 + Google Drive: $12 + BambooHR: $8 = ~$40/user/mo
+- Ragenaizer: $12/user/mo (saves ~$28/user/mo = 60% savings)
+- For 100 employees: saves ~$2,800/month = $33,600/year
+
+---
+
+VISION — VIDEO CONFERENCING
+----------------------------
+- HD video & audio, adaptive quality for any bandwidth
+- 100+ participants included (Zoom charges $50/mo extra for 500)
+- Unlimited meeting duration (Zoom free = 40-minute limit)
+- Screen sharing with viewer zoom/pan controls and screenshot capture
+- Virtual backgrounds — blur, custom images, AI-powered (TensorFlow)
+- Cloud recording — unlimited storage, auto-recording option, download & share
+- Host controls — waiting room/lobby, admit/reject, participant whitelist
+- In-meeting chat with file sharing and persistent history
+- Active speaker detection, emoji reactions, hand raising, picture-in-picture
+- Live captions (AI-powered speech-to-text)
+- Guest access — join without creating an account
+- Meeting types: Regular (open), Hosted (lobby), Participant-controlled (whitelist)
+- 1-click to join, no downloads required
+
+WHY NOT ZOOM:
+- No 40-minute time limits ever
+- No hidden fees ($50 for 500 participants, $79 for webinars on Zoom)
+- No security concerns (Zoom had Zoombombing, shared data with Facebook, AI data harvesting)
+- Built-in chat, storage, and HR — no tool sprawl
+
+---
+
+CHAT — TEAM MESSAGING
+-----------------------
+- Real-time instant messaging, no refreshing needed
+- Unlimited message history (Slack free = 90-day limit)
+- Direct messages and group channels
+- File sharing — drag and drop, automatically saved to Drive
+- Chat during meetings — integrated with video calls
+- Guest access for external users
+- Searchable archive — find old messages anytime
+- Instant notifications
+
+WHY NOT SLACK:
+- Unlimited history (Slack deletes after 90 days on free plan)
+- Full video conferencing built-in (Slack Huddles = max 50, no recording)
+- No expensive AI add-on ($20/user/mo extra on Slack)
+- Integrated storage and HR in same platform
+
+---
+
+DRIVE — CLOUD STORAGE
+-----------------------
+- 5GB file uploads (Dropbox/Slack limit = 1GB)
+- Folder organization with breadcrumb navigation
+- Secure sharing — password protection, expiration dates, download limits
+- Complete audit trail — see who viewed, downloaded, or shared any file
+- S3/Wasabi compatible — works with AWS, Wasabi, or your own storage
+- Real-time sync across team
+- Encrypted at rest and in transit
+- Upload modes: Direct (<100MB), Multipart (100MB-5GB), Chunked (unreliable networks)
+
+---
+
+HRMS — HR MANAGEMENT & PAYROLL
+--------------------------------
+THE KEY DIFFERENTIATOR: Ragenaizer is the ONLY HRMS that shows exactly how every payslip number was calculated. 57 auditable fields per payslip. Click any line and see the exact formula, inputs, and values. 100% transparent, 100% audit-ready.
+
+PAYROLL:
+- Country-agnostic engine — works in India, USA, UK, UAE, any country via JSON config
+- Automated statutory compliance — auto-calculates PF, ESI, PT, TDS, retirement, insurance, taxes
+- Multi-location support — mid-month transfers with split calculations
+- Retrospective arrears — handles salary revisions, arrears-on-arrears
+- Draft preview before finalization
+- Flat-rate pricing (not per-employee like greytHR's ₹50/employee/month)
+
+ATTENDANCE:
+- Geofenced clock-in (location-based)
+- NFC kiosk / biometric integration
+- Regularization workflows
+- Overtime tracking
+
+LEAVE MANAGEMENT:
+- Unlimited configurable leave types
+- Carry-forward and accruals
+- Manager/HR approval workflows
+- Real-time balance tracking
+
+EMPLOYEE MANAGEMENT:
+- Full lifecycle — onboarding to offboarding
+- Document management
+- Transfers and hierarchy management
+- Org chart visualization
+
+LOANS & ADVANCES:
+- EMI auto-deduction from payroll
+- Approval workflows
+- Balance tracking
+
+SELF-SERVICE PORTAL:
+- View payslips, apply leave, request loans, team management, approvals
+
+COMPLIANCE (India-specific examples):
+- PF ECR generation, ESI challan, Form 16/12BA
+- Professional Tax for all states
+- TDS Old/New regime support
+- Extends to any country's statutory requirements
+
+WHY NOT greytHR:
+- Calculation proofs (greytHR doesn't show how numbers are calculated)
+- Unified platform (greytHR = HR only, no video/chat/storage)
+- Country-agnostic (greytHR = India/UAE/KSA only)
+- Self-hosted option available
+- No per-employee pricing
+
+WHY NOT ENTERPRISE HRMS (Oracle, Workday, SAP):
+- Setup: 1 day vs 8-12 months
+- Implementation cost: $0 vs $500K+
+- Minimum size: 1 employee vs 500+
+- No dedicated IT team needed
+- No feature bloat (70% unused features in enterprise tools)
+- Month-to-month vs multi-year lock-in
+
+STRESS TEST PROOF:
+- 3 retroactive salary revisions in same period
+- Mid-month office transfer (Day 15)
+- Statutory ceiling change mid-period
+- ALL tests passed — arrears collapse, location split, statutory ceilings, tax jurisdictions handled correctly
+
+---
+
+STARTUP-SPECIFIC VALUE PROPS
+------------------------------
+- 51% of startups still use spreadsheets for payroll (1-8% error rate, $291/error)
+- 30% have misclassified employees (fines up to $55K)
+- HR teams lose 14 hours/week to manual processes
+- 53% of companies incur payroll penalties
+- With Ragenaizer: 84% time saved on payroll, $10K compliance savings/year, 14 hours saved weekly
+- $0 implementation fee, 1-day setup
+- 16% better employee retention with proper onboarding
+
+---
+
+SECURITY & TRUST
+-----------------
+- End-to-end encryption
+- JWT authentication with automatic token invalidation on password change
+- AES-256-GCM encrypted API keys
+- No data harvesting — your data stays yours
+- Self-hosted option for full data sovereignty
+- BCrypt password hashing
+- Path traversal prevention
+- SOC2-ready architecture
+
+---
+
+SALES OBJECTION HANDLING
+--------------------------
+
+"We already use Zoom/Slack/etc."
+→ You're paying ~$40/user/mo for 4 tools that don't talk to each other. Ragenaizer = $12/user/mo for everything integrated. That's $33,600/year savings for 100 employees.
+
+"Is the video quality as good as Zoom?"
+→ Yes. Built on LiveKit (same WebRTC standard as Zoom). HD adaptive quality, 100+ participants, unlimited duration. Plus you get chat, storage, and HR included.
+
+"We need enterprise-grade HR/payroll."
+→ Our payroll engine passed a stress test with 3 retroactive salary revisions + mid-month transfer + statutory changes — all in one period. We show 57 auditable fields per payslip. No enterprise HRMS does that.
+
+"Can it work in our country?"
+→ Yes. Country-agnostic payroll engine with JSON-configurable statutory rules. Works in India, USA, UK, UAE, and any other country.
+
+"What about data security?"
+→ AES-256 encryption, JWT auth, self-hosted option available. Your data never leaves your control. No third-party data sharing.
+
+"We're a small team, is this overkill?"
+→ No minimum size. Works for 1 employee to 10,000+. You pay per user, and everything is included. No feature bloat — use what you need.
+
+"What about migration from our current tools?"
+→ We handle migration support. Chat history, files, employee data — we help you move everything over. 1-day setup typical.
+
+"Why haven't I heard of you?"
+→ We're focused on product quality over marketing. Our HRMS calculation transparency is something no competitor offers — not even the billion-dollar players. Ask any of them to show you how a payslip number was calculated.
+
+---
+
+CONTACT
+--------
+Website: https://ragenaizer.com
+Sales: sales@ragenaizer.com
+Response time: Within 24 hours
+Free trial: Available, no credit card required

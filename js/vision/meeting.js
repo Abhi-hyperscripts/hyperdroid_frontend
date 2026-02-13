@@ -877,10 +877,11 @@ function setupSignalREventHandlers() {
     signalRConnection.on('LiveCaptionUpdate', (data) => {
         updateLiveCaption(data.speakerId, data.speakerName, data.text, data.language, data.isFinal, data.timestamp);
 
-        // TTS interrupt: when someone speaks, cancel in-progress TTS to avoid overlap
-        if (window.speechSynthesis?.speaking) {
+        // TTS interrupt: only cancel TTS if it's NOT our own autonomous playback.
+        // During _ttsActive, the mic picks up TTS echo → generates captions → would kill TTS instantly.
+        // Only interrupt when TTS is playing but NOT from autonomous copilot (e.g. leftover earpiece TTS).
+        if (window.speechSynthesis?.speaking && !window._ttsActive) {
             window.speechSynthesis.cancel();
-            window._ttsActive = false;
         }
     });
 
@@ -889,6 +890,7 @@ function setupSignalREventHandlers() {
         if (window._isHostUser) return; // Host ignores — they see it in the HUD
         if (window.speechSynthesis && data.text) {
             window.speechSynthesis.cancel();
+            if (window._ttsResumeInterval) clearInterval(window._ttsResumeInterval);
             window._ttsActive = true;
 
             // Hide thinking indicator since response arrived
@@ -897,11 +899,29 @@ function setupSignalREventHandlers() {
             const utterance = new SpeechSynthesisUtterance(data.text);
             utterance.rate = 1.0;
             utterance.volume = 1.0;
+
+            // Chrome bug workaround: speechSynthesis silently stops after ~15s.
+            // Calling resume() every 5s keeps it alive.
+            window._ttsResumeInterval = setInterval(() => {
+                if (window.speechSynthesis?.speaking) {
+                    window.speechSynthesis.resume();
+                } else {
+                    clearInterval(window._ttsResumeInterval);
+                    window._ttsResumeInterval = null;
+                }
+            }, 5000);
+
             utterance.onend = () => {
+                clearInterval(window._ttsResumeInterval);
+                window._ttsResumeInterval = null;
                 // Buffer 300ms after TTS finishes before allowing STT to process again
                 setTimeout(() => { window._ttsActive = false; }, 300);
             };
-            utterance.onerror = () => { window._ttsActive = false; };
+            utterance.onerror = () => {
+                clearInterval(window._ttsResumeInterval);
+                window._ttsResumeInterval = null;
+                window._ttsActive = false;
+            };
             window.speechSynthesis.speak(utterance);
         }
     });
