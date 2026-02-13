@@ -342,6 +342,11 @@ function updateModeToggleUI(mode) {
 function speakTTS(text, volume) {
     if (!window.speechSynthesis || !text) return;
 
+    // Increment generation so stale onerror/onend callbacks from cancelled utterances
+    // don't reset _ttsActive (race condition: cancel() triggers async onerror on old utterance)
+    window._ttsGeneration = (window._ttsGeneration || 0) + 1;
+    const gen = window._ttsGeneration;
+
     // Cancel any in-progress TTS
     window.speechSynthesis.cancel();
     if (window._ttsResumeInterval) clearInterval(window._ttsResumeInterval);
@@ -354,24 +359,22 @@ function speakTTS(text, volume) {
     ttsSpeaking = true;
     window._ttsActive = true;
 
-    // Chrome bug workaround: speechSynthesis silently stops after ~15s.
-    // Calling resume() every 5s keeps it alive.
+    // Chrome bug workaround: speechSynthesis silently stops/pauses after ~15s.
+    // Calling resume() every 3s keeps it alive. Don't self-destruct — let onend handle cleanup.
     window._ttsResumeInterval = setInterval(() => {
-        if (window.speechSynthesis?.speaking) {
-            window.speechSynthesis.resume();
-        } else {
-            clearInterval(window._ttsResumeInterval);
-            window._ttsResumeInterval = null;
-        }
-    }, 5000);
+        if (window.speechSynthesis) window.speechSynthesis.resume();
+    }, 3000);
 
     utterance.onend = () => {
+        if (window._ttsGeneration !== gen) return; // stale callback from cancelled utterance
         ttsSpeaking = false;
         clearInterval(window._ttsResumeInterval);
         window._ttsResumeInterval = null;
         setTimeout(() => { window._ttsActive = false; }, 300);
     };
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
+        if (window._ttsGeneration !== gen) return; // stale callback from cancelled utterance
+        if (e.error === 'canceled') return; // expected when we call cancel() for new utterance
         ttsSpeaking = false;
         clearInterval(window._ttsResumeInterval);
         window._ttsResumeInterval = null;

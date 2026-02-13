@@ -889,6 +889,10 @@ function setupSignalREventHandlers() {
     signalRConnection.on('CopilotSpeakResponse', (data) => {
         if (window._isHostUser) return; // Host ignores — they see it in the HUD
         if (window.speechSynthesis && data.text) {
+            // Generation counter prevents stale onerror from cancelled utterance resetting _ttsActive
+            window._ttsGeneration = (window._ttsGeneration || 0) + 1;
+            const gen = window._ttsGeneration;
+
             window.speechSynthesis.cancel();
             if (window._ttsResumeInterval) clearInterval(window._ttsResumeInterval);
             window._ttsActive = true;
@@ -900,24 +904,21 @@ function setupSignalREventHandlers() {
             utterance.rate = 1.0;
             utterance.volume = 1.0;
 
-            // Chrome bug workaround: speechSynthesis silently stops after ~15s.
-            // Calling resume() every 5s keeps it alive.
+            // Chrome bug workaround: speechSynthesis silently stops/pauses after ~15s.
+            // resume() every 3s keeps it alive. Don't self-destruct — let onend handle cleanup.
             window._ttsResumeInterval = setInterval(() => {
-                if (window.speechSynthesis?.speaking) {
-                    window.speechSynthesis.resume();
-                } else {
-                    clearInterval(window._ttsResumeInterval);
-                    window._ttsResumeInterval = null;
-                }
-            }, 5000);
+                if (window.speechSynthesis) window.speechSynthesis.resume();
+            }, 3000);
 
             utterance.onend = () => {
+                if (window._ttsGeneration !== gen) return; // stale callback
                 clearInterval(window._ttsResumeInterval);
                 window._ttsResumeInterval = null;
-                // Buffer 300ms after TTS finishes before allowing STT to process again
                 setTimeout(() => { window._ttsActive = false; }, 300);
             };
-            utterance.onerror = () => {
+            utterance.onerror = (e) => {
+                if (window._ttsGeneration !== gen) return; // stale callback
+                if (e.error === 'canceled') return; // expected on cancel() for new utterance
                 clearInterval(window._ttsResumeInterval);
                 window._ttsResumeInterval = null;
                 window._ttsActive = false;
