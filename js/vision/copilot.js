@@ -34,8 +34,8 @@ const HUD_TYPE_CONFIG = {
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
     suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#00d4ff' },  // neon cyan diamond
     sentiment:  { label: 'SENTIMENT',  glyph: '\u25CF', color: '#ffa502' },  // amber circle
-    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#7c5cfc' },  // purple star
-    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#64748b' }   // slate gray line
+    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#a78bfa' },  // bright purple star
+    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#94a3b8' }   // light slate line
 };
 
 /**
