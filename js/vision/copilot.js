@@ -168,7 +168,8 @@ function handleCopilotInsight(data) {
               `</div>`
             : '');
 
-    feed.appendChild(el);
+    // Prepend newest on top — latest insights always visible first
+    feed.prepend(el);
 
     // Trigger entrance animation on next frame
     requestAnimationFrame(() => el.classList.add('hud-insight-in'));
@@ -182,9 +183,9 @@ function handleCopilotInsight(data) {
     }
     setTimeout(() => dismissInsight(el), dismissMs);
 
-    // Evict oldest if over max — force-remove immediately (no animation) to prevent pile-up
+    // Evict oldest from bottom if over max
     while (feed.children.length > HUD_MAX_VISIBLE) {
-        const oldest = feed.children[0];
+        const oldest = feed.children[feed.children.length - 1];
         if (oldest) oldest.remove();
     }
 
