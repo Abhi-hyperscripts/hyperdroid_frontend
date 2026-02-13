@@ -21,10 +21,11 @@ let ttsSpeaking = false;
 
 // Max visible insights in the feed before oldest auto-removes
 const HUD_MAX_VISIBLE = 5;
-// Auto-dismiss non-high insights after this many ms
+// Auto-dismiss timeouts per mode (autonomous is faster — host isn't reading them as closely)
 const HUD_DISMISS_MS = 25000;
-// High-priority insights stay longer
 const HUD_DISMISS_HIGH_MS = 45000;
+const HUD_DISMISS_AUTO_MS = 8000;
+const HUD_DISMISS_AUTO_HIGH_MS = 12000;
 
 const HUD_TYPE_CONFIG = {
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
@@ -105,13 +106,19 @@ function handleCopilotInsight(data) {
     // Trigger entrance animation on next frame
     requestAnimationFrame(() => el.classList.add('hud-insight-in'));
 
-    // Auto-dismiss after timeout
-    const dismissMs = isHigh ? HUD_DISMISS_HIGH_MS : HUD_DISMISS_MS;
+    // Auto-dismiss after timeout (autonomous mode uses shorter times)
+    let dismissMs;
+    if (copilotMode === 'autonomous') {
+        dismissMs = isHigh ? HUD_DISMISS_AUTO_HIGH_MS : HUD_DISMISS_AUTO_MS;
+    } else {
+        dismissMs = isHigh ? HUD_DISMISS_HIGH_MS : HUD_DISMISS_MS;
+    }
     setTimeout(() => dismissInsight(el), dismissMs);
 
-    // Evict oldest if over max
+    // Evict oldest if over max — force-remove immediately (no animation) to prevent pile-up
     while (feed.children.length > HUD_MAX_VISIBLE) {
-        dismissInsight(feed.children[0]);
+        const oldest = feed.children[0];
+        if (oldest) oldest.remove();
     }
 
     // Update stats

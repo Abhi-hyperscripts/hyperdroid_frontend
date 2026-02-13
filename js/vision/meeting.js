@@ -937,20 +937,29 @@ function setupSignalREventHandlers() {
  * Auto-hides after 10s safety timeout.
  */
 let _thinkingTimeout = null;
+let _thinkingShownAt = 0;
+const THINKING_MIN_DISPLAY_MS = 800;
+
 function showThinkingIndicator(active) {
     const el = document.getElementById('copilotThinking');
     if (!el) return;
 
     if (active) {
         el.style.display = 'block';
+        _thinkingShownAt = Date.now();
         // Safety timeout: auto-hide after 10s if no response arrives
         clearTimeout(_thinkingTimeout);
         _thinkingTimeout = setTimeout(() => {
             el.style.display = 'none';
         }, 10000);
     } else {
-        el.style.display = 'none';
+        // Ensure minimum display time so dots are visible even with fast responses
+        const elapsed = Date.now() - _thinkingShownAt;
+        const remaining = Math.max(0, THINKING_MIN_DISPLAY_MS - elapsed);
         clearTimeout(_thinkingTimeout);
+        _thinkingTimeout = setTimeout(() => {
+            el.style.display = 'none';
+        }, remaining);
     }
 }
 
