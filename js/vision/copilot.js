@@ -67,6 +67,8 @@ function handleCopilotInsight(data) {
 
     const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+    const hasSuggested = data.suggestedResponse && data.suggestedResponse.trim().length > 0;
+
     el.innerHTML =
         `<div class="hud-insight-header">` +
             `<span class="hud-glyph" style="color:${config.color}">${config.glyph}</span>` +
@@ -74,7 +76,16 @@ function handleCopilotInsight(data) {
             (isHigh ? `<span class="hud-priority-tag">HIGH</span>` : '') +
             `<span class="hud-time">${time}</span>` +
         `</div>` +
-        `<div class="hud-insight-text">${escapeHtml(data.content)}</div>`;
+        `<div class="hud-insight-text">${escapeHtml(data.content)}</div>` +
+        (hasSuggested
+            ? `<div class="hud-suggested-response">` +
+                `<div class="hud-suggested-label">` +
+                    `<span class="hud-suggested-icon">\u{1F399}</span> SAY THIS` +
+                    `<button class="hud-copy-btn" title="Copy to clipboard" onclick="copySuggestedResponse(this, event)">COPY</button>` +
+                `</div>` +
+                `<div class="hud-suggested-text">${escapeHtml(data.suggestedResponse)}</div>` +
+              `</div>`
+            : '');
 
     feed.appendChild(el);
 
@@ -140,6 +151,35 @@ function updateHudUptime() {
     const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const s = (elapsed % 60).toString().padStart(2, '0');
     el.textContent = m + ':' + s;
+}
+
+/**
+ * Copy suggested response text to clipboard.
+ */
+function copySuggestedResponse(btn, event) {
+    event.stopPropagation();
+    const textEl = btn.closest('.hud-suggested-response')?.querySelector('.hud-suggested-text');
+    if (!textEl) return;
+
+    navigator.clipboard.writeText(textEl.textContent).then(() => {
+        btn.textContent = 'COPIED';
+        btn.classList.add('hud-copy-success');
+        setTimeout(() => {
+            btn.textContent = 'COPY';
+            btn.classList.remove('hud-copy-success');
+        }, 1500);
+    }).catch(() => {
+        // Fallback for non-HTTPS contexts
+        const range = document.createRange();
+        range.selectNodeContents(textEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        btn.textContent = 'COPIED';
+        setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
+    });
 }
 
 /**
