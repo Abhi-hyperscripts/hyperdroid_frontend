@@ -14,6 +14,7 @@ let copilotMeetingId = null;
 let copilotMeetingMode = 'sales';
 let copilotMode = 'manual'; // "manual", "earpiece", "autonomous"
 let copilotFrequency = 'normal'; // "fast", "normal", "chill"
+let copilotFrequencySynced = false; // true once initial frequency sent to backend
 let copilotVisible = false;
 let copilotInsightCount = 0;
 let copilotStartTime = null;
@@ -105,6 +106,15 @@ function handleCopilotBotStatus(data) {
  */
 function updateBotStatusUI(active) {
     copilotBotActive = active;
+
+    // Sync initial frequency to backend when bot first becomes active
+    if (active && !copilotFrequencySynced && copilotConnection && copilotMeetingId) {
+        copilotFrequencySynced = true;
+        copilotConnection.invoke('SetCopilotFrequency', copilotMeetingId, copilotFrequency)
+            .then(ok => { if (ok) console.log(`[Copilot HUD] Initial frequency synced: ${copilotFrequency}`); })
+            .catch(err => { console.warn(`[Copilot HUD] Initial frequency sync failed: ${err}`); copilotFrequencySynced = false; });
+    }
+
     const dot = document.getElementById('hudBotDot');
     const label = document.getElementById('hudBotLabel');
 
