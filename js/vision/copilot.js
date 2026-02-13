@@ -30,6 +30,11 @@ const HUD_DISMISS_MS = 25000;
 const HUD_DISMISS_HIGH_MS = 45000;
 const HUD_DISMISS_AUTO_MS = 8000;
 const HUD_DISMISS_AUTO_HIGH_MS = 12000;
+// Minimum time (ms) a card stays on top before a new one can push it down.
+// Prevents rapid-fire insights from making cards unreadable.
+const HUD_MIN_DISPLAY_MS = 5000;
+let hudLastCardShownAt = 0;
+let hudInsightQueue = [];
 
 const HUD_TYPE_CONFIG = {
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
@@ -142,9 +147,52 @@ function updateBotStatusUI(active) {
 
 /**
  * Handle incoming copilot insight from SignalR.
+ * Uses a minimum display time to prevent rapid cards from being unreadable.
  */
 function handleCopilotInsight(data) {
+    const now = Date.now();
+    const timeSinceLast = now - hudLastCardShownAt;
+
+    // If a card was shown recently, queue this one
+    if (timeSinceLast < HUD_MIN_DISPLAY_MS && hudLastCardShownAt > 0) {
+        hudInsightQueue.push(data);
+        // Schedule drain after remaining time
+        const delay = HUD_MIN_DISPLAY_MS - timeSinceLast;
+        setTimeout(drainInsightQueue, delay);
+        console.log(`[Copilot HUD] Queued insight (${hudInsightQueue.length} pending, showing in ${delay}ms)`);
+        return;
+    }
+
+    showInsightCard(data);
+}
+
+/**
+ * Drain queued insights one at a time with minimum display spacing.
+ */
+function drainInsightQueue() {
+    if (hudInsightQueue.length === 0) return;
+    const now = Date.now();
+    const timeSinceLast = now - hudLastCardShownAt;
+    if (timeSinceLast < HUD_MIN_DISPLAY_MS) {
+        // Still too soon, retry later
+        setTimeout(drainInsightQueue, HUD_MIN_DISPLAY_MS - timeSinceLast);
+        return;
+    }
+    const next = hudInsightQueue.shift();
+    showInsightCard(next);
+    // If more queued, schedule next
+    if (hudInsightQueue.length > 0) {
+        setTimeout(drainInsightQueue, HUD_MIN_DISPLAY_MS);
+    }
+}
+
+/**
+ * Render an insight card into the HUD feed.
+ */
+function showInsightCard(data) {
     copilotInsightCount++;
+    hudLastCardShownAt = Date.now();
+
     const feed = document.getElementById('copilotInsights');
     if (!feed) return;
 
