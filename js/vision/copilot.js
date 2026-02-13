@@ -18,6 +18,8 @@ let copilotVisible = false;
 let copilotInsightCount = 0;
 let copilotStartTime = null;
 let copilotUptimeInterval = null;
+let copilotBotActive = false;
+let copilotBotPollInterval = null;
 let ttsSpeaking = false;
 
 // Max visible insights in the feed before oldest auto-removes
@@ -30,10 +32,10 @@ const HUD_DISMISS_AUTO_HIGH_MS = 12000;
 
 const HUD_TYPE_CONFIG = {
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
-    suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#2ed573' },  // green diamond
+    suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#00d4ff' },  // neon cyan diamond
     sentiment:  { label: 'SENTIMENT',  glyph: '\u25CF', color: '#ffa502' },  // amber circle
-    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#3742fa' },  // blue star
-    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#a4b0be' }   // gray line
+    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#7c5cfc' },  // purple star
+    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#64748b' }   // slate gray line
 };
 
 /**
@@ -55,6 +57,7 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     connection.on('CopilotInsight', handleCopilotInsight);
     connection.on('CopilotModeChanged', handleCopilotModeChanged);
     connection.on('CopilotFrequencyChanged', handleCopilotFrequencyChanged);
+    connection.on('CopilotBotStatus', handleCopilotBotStatus);
 
     // Start uptime clock
     copilotUptimeInterval = setInterval(updateHudUptime, 1000);
@@ -62,7 +65,69 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     // Initialize mode toggle UI
     updateModeToggleUI('manual');
 
+    // Set initial bot status to standby
+    updateBotStatusUI(false);
+
+    // Query initial bot status from server
+    queryCopilotBotStatus();
+
+    // Poll bot status every 10s as a fallback (in case we miss a SignalR event)
+    copilotBotPollInterval = setInterval(queryCopilotBotStatus, 10000);
+
     console.log(`[Copilot HUD] Initialized for mode: ${copilotMeetingMode}`);
+}
+
+/**
+ * Query copilot bot status from server via SignalR invoke.
+ */
+function queryCopilotBotStatus() {
+    if (!copilotConnection || !copilotMeetingId) return;
+
+    copilotConnection.invoke('GetCopilotBotStatus', copilotMeetingId)
+        .then(active => {
+            updateBotStatusUI(active);
+        })
+        .catch(err => {
+            console.warn(`[Copilot HUD] Error querying bot status: ${err}`);
+        });
+}
+
+/**
+ * Handle CopilotBotStatus broadcast from server.
+ */
+function handleCopilotBotStatus(data) {
+    console.log(`[Copilot HUD] Bot status: active=${data.active}`);
+    updateBotStatusUI(data.active);
+}
+
+/**
+ * Update the LIVE/STANDBY indicator in the HUD status bar.
+ */
+function updateBotStatusUI(active) {
+    copilotBotActive = active;
+    const dot = document.getElementById('hudBotDot');
+    const label = document.getElementById('hudBotLabel');
+
+    if (dot) {
+        if (active) {
+            dot.classList.add('hud-bot-active');
+            dot.classList.remove('hud-bot-inactive');
+        } else {
+            dot.classList.add('hud-bot-inactive');
+            dot.classList.remove('hud-bot-active');
+        }
+    }
+
+    if (label) {
+        label.textContent = active ? 'LIVE' : 'STANDBY';
+        if (active) {
+            label.classList.add('hud-bot-active');
+            label.classList.remove('hud-bot-inactive');
+        } else {
+            label.classList.add('hud-bot-inactive');
+            label.classList.remove('hud-bot-active');
+        }
+    }
 }
 
 /**
@@ -390,4 +455,9 @@ function toggleCopilotPanel() {
 
     copilotVisible = !copilotVisible;
     hud.style.display = copilotVisible ? 'block' : 'none';
+
+    // Query bot status when opening HUD
+    if (copilotVisible) {
+        queryCopilotBotStatus();
+    }
 }

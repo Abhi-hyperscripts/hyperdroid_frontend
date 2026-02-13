@@ -1703,7 +1703,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     box-shadow: var(--focus-ring);
 }
 
-/* ── Copilot HUD — pilot visor overlay (host-only) ── */
+/* ── Copilot HUD — TRON-style visor overlay (host-only) ── */
+/* Neon blue/cyan palette: #00d4ff primary, #7c5cfc accent, #0a0e1a base */
 .copilot-hud {
     position: absolute;
     top: 0;
@@ -1725,27 +1726,28 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(46, 213, 115, 0.25);
-    border-radius: 4px;
+    background: rgba(6, 10, 22, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 6px;
     pointer-events: auto;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .hud-reticle {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #2ed573;
-    box-shadow: 0 0 6px #2ed573;
+    background: #00d4ff;
+    box-shadow: 0 0 6px #00d4ff, 0 0 12px rgba(0, 212, 255, 0.3);
     animation: hudPulse 2s ease-in-out infinite;
 }
 
 .hud-label {
     font-size: 11px;
     font-weight: 700;
-    color: #2ed573;
+    color: #00d4ff;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -1753,39 +1755,61 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 .hud-mode {
     font-size: 10px;
     font-weight: 600;
-    color: #000;
-    background: #2ed573;
+    color: #0a0e1a;
+    background: #00d4ff;
     padding: 1px 6px;
-    border-radius: 2px;
+    border-radius: 3px;
     letter-spacing: 0.08em;
 }
 
 .hud-separator {
-    color: rgba(46, 213, 115, 0.3);
+    color: rgba(0, 212, 255, 0.2);
     font-size: 10px;
 }
 
 .hud-model {
     font-size: 10px;
     font-weight: 500;
-    color: rgba(46, 213, 115, 0.7);
+    color: rgba(0, 212, 255, 0.6);
     letter-spacing: 0.08em;
 }
 
+/* ── Bot status indicator (LIVE / STANDBY) ── */
 .hud-live-dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #ff4757;
-    box-shadow: 0 0 4px #ff4757;
-    animation: hudPulse 1.2s ease-in-out infinite;
+    transition: background 0.3s, box-shadow 0.3s;
 }
 
 .hud-live {
     font-size: 10px;
     font-weight: 700;
-    color: #ff4757;
     letter-spacing: 0.1em;
+    transition: color 0.3s;
+}
+
+/* Active state — bright neon cyan pulse */
+.hud-live-dot.hud-bot-active,
+.hud-live-dot:not(.hud-bot-inactive):not(.hud-bot-active) {
+    background: #00d4ff;
+    box-shadow: 0 0 4px #00d4ff, 0 0 10px rgba(0, 212, 255, 0.4);
+    animation: hudPulse 1.2s ease-in-out infinite;
+}
+
+.hud-live.hud-bot-active {
+    color: #00d4ff;
+}
+
+/* Inactive/standby state — dim amber */
+.hud-live-dot.hud-bot-inactive {
+    background: #64748b;
+    box-shadow: 0 0 2px rgba(100, 116, 139, 0.4);
+    animation: none;
+}
+
+.hud-live.hud-bot-inactive {
+    color: #64748b;
 }
 
 /* ── Mode selector — below status bar ── */
@@ -1803,10 +1827,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 4px;
     padding: 3px 10px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(46, 213, 115, 0.2);
-    border-radius: 3px;
-    color: rgba(46, 213, 115, 0.6);
+    background: rgba(6, 10, 22, 0.6);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 4px;
+    color: rgba(0, 212, 255, 0.5);
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
     font-size: 9px;
     font-weight: 600;
@@ -1814,19 +1838,21 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .copilot-mode-btn:hover {
-    background: rgba(46, 213, 115, 0.1);
-    border-color: rgba(46, 213, 115, 0.4);
-    color: rgba(46, 213, 115, 0.85);
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.35);
+    color: rgba(0, 212, 255, 0.85);
 }
 
 .copilot-mode-btn.active {
-    background: rgba(46, 213, 115, 0.15);
-    border-color: rgba(46, 213, 115, 0.6);
-    color: #2ed573;
-    box-shadow: 0 0 8px rgba(46, 213, 115, 0.2);
+    background: rgba(0, 212, 255, 0.12);
+    border-color: rgba(0, 212, 255, 0.5);
+    color: #00d4ff;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .copilot-mode-btn svg {
@@ -1840,10 +1866,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     left: 50%;
     transform: translateX(-50%);
     padding: 6px 16px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(46, 213, 115, 0.25);
+    background: rgba(6, 10, 22, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 212, 255, 0.2);
     border-radius: 20px;
     z-index: 95;
 }
@@ -1851,7 +1877,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 .thinking-dots span {
     font-size: 18px;
     font-weight: 700;
-    color: #2ed573;
+    color: #00d4ff;
     animation: thinkingBounce 1.4s ease-in-out infinite;
 }
 
@@ -1877,22 +1903,24 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     max-height: calc(100% - 110px);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     overflow: hidden;
     pointer-events: auto;
 }
 
-/* ── Individual insight card ── */
+/* ── Individual insight card — glass/bento style ── */
 .hud-insight {
-    padding: 10px 14px;
-    background: rgba(10, 12, 18, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-left: 2px solid rgba(46, 213, 115, 0.5);
-    border-radius: 2px;
+    padding: 12px 16px;
+    background: rgba(8, 12, 24, 0.75);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-left: 3px solid rgba(0, 212, 255, 0.5);
+    border-radius: 10px;
     opacity: 0;
     transform: translateX(-30px);
     transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .hud-insight.hud-insight-in {
@@ -1908,14 +1936,17 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 
 .hud-insight.hud-high {
     border-left-color: #ff4757;
-    background: rgba(40, 10, 14, 0.92);
+    background: rgba(30, 8, 12, 0.78);
+    border-color: rgba(255, 71, 87, 0.2);
+    border-left-color: #ff4757;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 71, 87, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .hud-insight-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .hud-glyph {
@@ -1937,14 +1968,14 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #fff;
     background: #ff4757;
     padding: 1px 5px;
-    border-radius: 2px;
+    border-radius: 3px;
     letter-spacing: 0.1em;
 }
 
 .hud-time {
     margin-left: auto;
     font-size: 9px;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.35);
     letter-spacing: 0.05em;
 }
 
@@ -1955,13 +1986,15 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ── Suggested response — "say this" script ── */
+/* ── Suggested response — "say this" script (glass sub-card) ── */
 .hud-suggested-response {
-    margin-top: 6px;
-    padding: 6px 8px;
-    background: rgba(12, 30, 18, 0.9);
-    border: 1px solid rgba(46, 213, 115, 0.3);
-    border-radius: 3px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(0, 212, 255, 0.04);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .hud-suggested-label {
@@ -1970,7 +2003,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     gap: 4px;
     font-size: 9px;
     font-weight: 700;
-    color: #2ed573;
+    color: #00d4ff;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -1983,14 +2016,14 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 
 .hud-copy-btn {
     margin-left: auto;
-    background: rgba(46, 213, 115, 0.15);
-    border: 1px solid rgba(46, 213, 115, 0.3);
-    color: #2ed573;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    color: #00d4ff;
     font-size: 8px;
     font-weight: 700;
     letter-spacing: 0.1em;
-    padding: 1px 6px;
-    border-radius: 2px;
+    padding: 2px 8px;
+    border-radius: 4px;
     cursor: pointer;
     pointer-events: auto;
     transition: background 0.2s, color 0.2s;
@@ -1998,14 +2031,14 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-copy-btn:hover {
-    background: rgba(46, 213, 115, 0.3);
+    background: rgba(0, 212, 255, 0.25);
     color: #fff;
 }
 
 .hud-copy-btn.hud-copy-success {
-    background: #2ed573;
-    color: #000;
-    border-color: #2ed573;
+    background: #00d4ff;
+    color: #0a0e1a;
+    border-color: #00d4ff;
 }
 
 .hud-suggested-text {
@@ -2025,18 +2058,18 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 8px;
     padding: 4px 12px;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(46, 213, 115, 0.15);
-    border-radius: 3px;
+    background: rgba(6, 10, 22, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    border-radius: 4px;
     pointer-events: auto;
 }
 
 .hud-stat {
     font-size: 10px;
     font-weight: 600;
-    color: rgba(46, 213, 115, 0.7);
+    color: rgba(0, 212, 255, 0.6);
     letter-spacing: 0.08em;
 }
 
@@ -2051,29 +2084,29 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 .hud-corner-tl {
     top: 8px;
     left: 8px;
-    border-top: 2px solid rgba(46, 213, 115, 0.3);
-    border-left: 2px solid rgba(46, 213, 115, 0.3);
+    border-top: 2px solid rgba(0, 212, 255, 0.2);
+    border-left: 2px solid rgba(0, 212, 255, 0.2);
 }
 
 .hud-corner-tr {
     top: 8px;
     right: 8px;
-    border-top: 2px solid rgba(46, 213, 115, 0.3);
-    border-right: 2px solid rgba(46, 213, 115, 0.3);
+    border-top: 2px solid rgba(0, 212, 255, 0.2);
+    border-right: 2px solid rgba(0, 212, 255, 0.2);
 }
 
 .hud-corner-bl {
     bottom: 8px;
     left: 8px;
-    border-bottom: 2px solid rgba(46, 213, 115, 0.3);
-    border-left: 2px solid rgba(46, 213, 115, 0.3);
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+    border-left: 2px solid rgba(0, 212, 255, 0.2);
 }
 
 .hud-corner-br {
     bottom: 8px;
     right: 8px;
-    border-bottom: 2px solid rgba(46, 213, 115, 0.3);
-    border-right: 2px solid rgba(46, 213, 115, 0.3);
+    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+    border-right: 2px solid rgba(0, 212, 255, 0.2);
 }
 
 /* ── Animations ── */
@@ -2117,29 +2150,30 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .copilot-freq-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.45);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 8px;
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 2px 6px;
-    border-radius: 2px;
+    border-radius: 3px;
     cursor: pointer;
     transition: all 0.2s ease;
     line-height: 1;
 }
 
 .copilot-freq-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 212, 255, 0.1);
+    color: rgba(0, 212, 255, 0.8);
+    border-color: rgba(0, 212, 255, 0.3);
 }
 
 .copilot-freq-btn.active {
-    background: rgba(46, 213, 115, 0.2);
-    border-color: rgba(46, 213, 115, 0.5);
-    color: #2ed573;
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.4);
+    color: #00d4ff;
 }
 
 /* ── HUD mobile responsive ── */
