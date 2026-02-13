@@ -324,6 +324,12 @@ function updateModeToggleUI(mode) {
         }
     });
 
+    // Hide frequency toggle in autonomous mode (frequency has no effect there)
+    const freqToggle = document.getElementById('copilotFreqToggle');
+    const freqSeparator = freqToggle?.previousElementSibling;
+    if (freqToggle) freqToggle.style.display = mode === 'autonomous' ? 'none' : '';
+    if (freqSeparator?.classList.contains('hud-separator')) freqSeparator.style.display = mode === 'autonomous' ? 'none' : '';
+
     // Update the HUD mode badge to show current copilot mode
     const badge = document.getElementById('copilotModeBadge');
     if (badge) {
