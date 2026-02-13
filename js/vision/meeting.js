@@ -877,11 +877,21 @@ function setupSignalREventHandlers() {
     signalRConnection.on('LiveCaptionUpdate', (data) => {
         updateLiveCaption(data.speakerId, data.speakerName, data.text, data.language, data.isFinal, data.timestamp);
 
-        // TTS interrupt: only cancel TTS if it's NOT our own autonomous playback.
-        // During _ttsActive, the mic picks up TTS echo → generates captions → would kill TTS instantly.
-        // Only interrupt when TTS is playing but NOT from autonomous copilot (e.g. leftover earpiece TTS).
-        if (window.speechSynthesis?.speaking && !window._ttsActive) {
-            window.speechSynthesis.cancel();
+        // TTS interrupt logic:
+        // - If TTS is NOT from copilot (_ttsActive=false): cancel unconditionally
+        // - If TTS IS from copilot (_ttsActive=true): only cancel when a DIFFERENT person speaks
+        //   (real interruption). Ignore captions from our own mic (echo of TTS playback).
+        if (window.speechSynthesis?.speaking) {
+            if (!window._ttsActive) {
+                window.speechSynthesis.cancel();
+            } else {
+                const localId = room?.localParticipant?.identity;
+                if (localId && data.speakerId !== localId) {
+                    window.speechSynthesis.cancel();
+                    if (window._ttsResumeInterval) { clearInterval(window._ttsResumeInterval); window._ttsResumeInterval = null; }
+                    window._ttsActive = false;
+                }
+            }
         }
     });
 
