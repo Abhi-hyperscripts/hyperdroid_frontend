@@ -1873,7 +1873,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     position: absolute;
     top: 80px;
     left: 20px;
-    width: 360px;
+    width: 480px;
     max-height: calc(100% - 110px);
     display: flex;
     flex-direction: column;
@@ -1884,7 +1884,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 
 /* ── Individual insight card ── */
 .hud-insight {
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: rgba(10, 12, 18, 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -1925,7 +1925,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-type {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -1949,9 +1949,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-insight-text {
-    font-size: 12px;
-    line-height: 1.45;
-    color: rgba(255, 255, 255, 0.88);
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.92);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -2009,8 +2009,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-suggested-text {
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.55;
     color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-style: italic;
