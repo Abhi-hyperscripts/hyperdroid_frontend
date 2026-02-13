@@ -171,8 +171,11 @@ function handleCopilotInsight(data) {
     // Prepend newest on top — latest insights always visible first
     feed.prepend(el);
 
-    // Trigger entrance animation on next frame
-    requestAnimationFrame(() => el.classList.add('hud-insight-in'));
+    // Trigger entrance animation + new-card glow on next frame
+    requestAnimationFrame(() => {
+        el.classList.add('hud-insight-in', 'hud-new');
+        setTimeout(() => el.classList.remove('hud-new'), 2000);
+    });
 
     // Auto-dismiss after timeout (autonomous mode uses shorter times)
     let dismissMs;
