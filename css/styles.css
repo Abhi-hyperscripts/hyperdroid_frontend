@@ -1788,10 +1788,90 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     letter-spacing: 0.1em;
 }
 
+/* ── Mode selector — below status bar ── */
+.hud-mode-selector {
+    position: absolute;
+    top: 50px;
+    left: 20px;
+    display: flex;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+.copilot-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(46, 213, 115, 0.2);
+    border-radius: 3px;
+    color: rgba(46, 213, 115, 0.6);
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copilot-mode-btn:hover {
+    background: rgba(46, 213, 115, 0.1);
+    border-color: rgba(46, 213, 115, 0.4);
+    color: rgba(46, 213, 115, 0.85);
+}
+
+.copilot-mode-btn.active {
+    background: rgba(46, 213, 115, 0.15);
+    border-color: rgba(46, 213, 115, 0.6);
+    color: #2ed573;
+    box-shadow: 0 0 8px rgba(46, 213, 115, 0.2);
+}
+
+.copilot-mode-btn svg {
+    flex-shrink: 0;
+}
+
+/* ── Thinking indicator — bottom-center, visible to all ── */
+.copilot-thinking {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(46, 213, 115, 0.25);
+    border-radius: 20px;
+    z-index: 95;
+}
+
+.thinking-dots span {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2ed573;
+    animation: thinkingBounce 1.4s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.thinking-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes thinkingBounce {
+    0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-4px); }
+}
+
 /* ── Insight feed — left rail ── */
 .hud-insight-feed {
     position: absolute;
-    top: 56px;
+    top: 80px;
     left: 20px;
     width: 360px;
     max-height: calc(100% - 110px);
@@ -2033,6 +2113,12 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 @media (max-width: 768px) {
     .hud-insight-feed {
         width: calc(100% - 40px);
+        top: 74px;
+    }
+
+    .hud-mode-selector {
+        left: 12px;
+        top: 44px;
     }
 
     .hud-status-bar {

@@ -369,6 +369,7 @@ async function initializeMeeting() {
         // Get current user info
         const user = isGuest ? null : api.getUser();
         const isHostUser = user && meetingStatus.host_user_id === user.userId;
+        window._isHostUser = !!isHostUser;
 
         // Show participants button to all users (host controls are restricted in loadParticipants)
         const participantsBtn = document.getElementById('participantsBtn');
@@ -437,7 +438,7 @@ async function initializeMeeting() {
 
         // Initialize copilot after SignalR is connected (host-only, ai_support meetings)
         if (isHostUser && meetingStatus.ai_support && signalRConnection) {
-            initCopilot(signalRConnection, meetingStatus.meeting_mode);
+            initCopilot(signalRConnection, meetingStatus.meeting_mode, meetingId);
         }
 
         // Check if recording is already in progress when joining
@@ -875,6 +876,45 @@ function setupSignalREventHandlers() {
     // Live captions from server-side Vosk STT (Path A)
     signalRConnection.on('LiveCaptionUpdate', (data) => {
         updateLiveCaption(data.speakerId, data.speakerName, data.text, data.language, data.isFinal, data.timestamp);
+
+        // TTS interrupt: when someone speaks, cancel in-progress TTS to avoid overlap
+        if (window.speechSynthesis?.speaking) {
+            window.speechSynthesis.cancel();
+            window._ttsActive = false;
+        }
+    });
+
+    // Full Autonomous: non-host browsers speak the suggested response via TTS
+    signalRConnection.on('CopilotSpeakResponse', (data) => {
+        if (window._isHostUser) return; // Host ignores — they see it in the HUD
+        if (window.speechSynthesis && data.text) {
+            window.speechSynthesis.cancel();
+            window._ttsActive = true;
+
+            // Hide thinking indicator since response arrived
+            showThinkingIndicator(false);
+
+            const utterance = new SpeechSynthesisUtterance(data.text);
+            utterance.rate = 1.0;
+            utterance.volume = 1.0;
+            utterance.onend = () => {
+                // Buffer 300ms after TTS finishes before allowing STT to process again
+                setTimeout(() => { window._ttsActive = false; }, 300);
+            };
+            utterance.onerror = () => { window._ttsActive = false; };
+            window.speechSynthesis.speak(utterance);
+        }
+    });
+
+    // Autonomous "thinking..." indicator for prospect browsers
+    signalRConnection.on('CopilotThinking', (data) => {
+        if (window._isHostUser) return;
+        showThinkingIndicator(data.active);
+    });
+
+    // Copilot mode changed (sync all clients)
+    signalRConnection.on('CopilotModeChanged', (data) => {
+        console.log(`[Meeting] Copilot mode: ${data.mode}`);
     });
 
     // Server-side recording started (LiveKit Egress)
@@ -890,6 +930,28 @@ function setupSignalREventHandlers() {
         showServerRecordingOverlay(false);
         addChatMessage('System', 'Recording has stopped', 'system');
     });
+}
+
+/**
+ * Show/hide the thinking indicator (autonomous mode, non-host only).
+ * Auto-hides after 10s safety timeout.
+ */
+let _thinkingTimeout = null;
+function showThinkingIndicator(active) {
+    const el = document.getElementById('copilotThinking');
+    if (!el) return;
+
+    if (active) {
+        el.style.display = 'block';
+        // Safety timeout: auto-hide after 10s if no response arrives
+        clearTimeout(_thinkingTimeout);
+        _thinkingTimeout = setTimeout(() => {
+            el.style.display = 'none';
+        }, 10000);
+    } else {
+        el.style.display = 'none';
+        clearTimeout(_thinkingTimeout);
+    }
 }
 
 // Add local participant video

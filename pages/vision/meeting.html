@@ -95,6 +95,33 @@
                     <span class="hud-live">LIVE</span>
                 </div>
 
+                <!-- Copilot mode selector — host only -->
+                <div class="hud-mode-selector" id="copilotModeSelector">
+                    <button class="copilot-mode-btn active" data-mode="manual" onclick="setCopilotMode('manual')" title="See insights only">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>Manual</span>
+                    </button>
+                    <button class="copilot-mode-btn" data-mode="earpiece" onclick="setCopilotMode('earpiece')" title="Hear whispered suggestions">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                        </svg>
+                        <span>Earpiece</span>
+                    </button>
+                    <button class="copilot-mode-btn" data-mode="autonomous" onclick="setCopilotMode('autonomous')" title="AI speaks to prospect">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <span>Auto</span>
+                    </button>
+                </div>
+
                 <!-- Left rail: insight feed -->
                 <div class="hud-insight-feed" id="copilotInsights">
                     <!-- Insight cards rendered dynamically -->
@@ -114,6 +141,10 @@
                 <div class="hud-corner hud-corner-br"></div>
             </div>
 
+            <!-- Autonomous mode: thinking indicator (shown to prospect during Claude processing) -->
+            <div class="copilot-thinking" id="copilotThinking" style="display: none;">
+                <span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>
+            </div>
         </div>
 
         <div class="meeting-controls">

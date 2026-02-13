@@ -2,14 +2,22 @@
  * AI Copilot HUD — heads-up display overlay for host-only real-time coaching.
  * Renders like a pilot's visor: transparent overlay on the video grid,
  * insights slide in from the left, auto-dismiss after timeout.
+ *
+ * Supports three operational modes:
+ * - Manual: Host reads insights on screen (default)
+ * - Earpiece: Host hears TTS whisper of suggested responses
+ * - Autonomous: AI speaks to prospect via TTS on their browser
  */
 
 let copilotConnection = null;
+let copilotMeetingId = null;
 let copilotMeetingMode = 'sales';
+let copilotMode = 'manual'; // "manual", "earpiece", "autonomous"
 let copilotVisible = false;
 let copilotInsightCount = 0;
 let copilotStartTime = null;
 let copilotUptimeInterval = null;
+let ttsSpeaking = false;
 
 // Max visible insights in the feed before oldest auto-removes
 const HUD_MAX_VISIBLE = 5;
@@ -29,9 +37,10 @@ const HUD_TYPE_CONFIG = {
 /**
  * Initialize copilot HUD: register SignalR handler, start uptime clock.
  */
-function initCopilot(connection, meetingMode) {
+function initCopilot(connection, meetingMode, meetingIdParam) {
     copilotConnection = connection;
     copilotMeetingMode = meetingMode || 'sales';
+    copilotMeetingId = meetingIdParam || null;
     copilotStartTime = Date.now();
 
     // Set mode badge
@@ -40,11 +49,15 @@ function initCopilot(connection, meetingMode) {
         badge.textContent = (copilotMeetingMode === 'interview' ? 'INTERVIEW' : 'SALES');
     }
 
-    // Register SignalR handler
+    // Register SignalR handlers
     connection.on('CopilotInsight', handleCopilotInsight);
+    connection.on('CopilotModeChanged', handleCopilotModeChanged);
 
     // Start uptime clock
     copilotUptimeInterval = setInterval(updateHudUptime, 1000);
+
+    // Initialize mode toggle UI
+    updateModeToggleUI('manual');
 
     console.log(`[Copilot HUD] Initialized for mode: ${copilotMeetingMode}`);
 }
@@ -111,6 +124,106 @@ function handleCopilotInsight(data) {
             btn.classList.add('copilot-flash');
             setTimeout(() => btn.classList.remove('copilot-flash'), 2000);
         }
+    }
+
+    // Earpiece mode: TTS whisper the suggested response to host
+    if (copilotMode === 'earpiece' && hasSuggested) {
+        speakTTS(data.suggestedResponse, 0.7);
+    }
+}
+
+/**
+ * Handle CopilotModeChanged broadcast from server.
+ * Syncs local mode state when another client changes mode.
+ */
+function handleCopilotModeChanged(data) {
+    console.log(`[Copilot HUD] Mode changed to: ${data.mode} by ${data.changedBy}`);
+    copilotMode = data.mode;
+    updateModeToggleUI(data.mode);
+}
+
+/**
+ * Set copilot mode via SignalR invoke.
+ */
+function setCopilotMode(mode) {
+    if (!copilotConnection || !copilotMeetingId) {
+        console.warn('[Copilot HUD] Cannot set mode — no connection or meeting ID');
+        return;
+    }
+
+    copilotConnection.invoke('SetCopilotMode', copilotMeetingId, mode)
+        .then(success => {
+            if (success) {
+                copilotMode = mode;
+                updateModeToggleUI(mode);
+                console.log(`[Copilot HUD] Mode set to: ${mode}`);
+            } else {
+                console.warn(`[Copilot HUD] Failed to set mode: ${mode}`);
+            }
+        })
+        .catch(err => {
+            console.error(`[Copilot HUD] Error setting mode: ${err}`);
+        });
+}
+
+/**
+ * Update mode toggle button UI to reflect active mode.
+ */
+function updateModeToggleUI(mode) {
+    const buttons = document.querySelectorAll('.copilot-mode-btn');
+    buttons.forEach(btn => {
+        if (btn.getAttribute('data-mode') === mode) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Update the HUD mode badge to show current copilot mode
+    const badge = document.getElementById('copilotModeBadge');
+    if (badge) {
+        const modeLabel = copilotMeetingMode === 'interview' ? 'INTERVIEW' : 'SALES';
+        const modeIndicator = mode === 'manual' ? '' : mode === 'earpiece' ? ' | EAR' : ' | AUTO';
+        badge.textContent = modeLabel + modeIndicator;
+    }
+}
+
+/**
+ * Speak text via Web Speech API TTS.
+ * Used for earpiece mode (host hears suggestions whispered).
+ * @param {string} text - Text to speak
+ * @param {number} volume - Volume 0.0-1.0 (default 0.7 for earpiece whisper)
+ */
+function speakTTS(text, volume) {
+    if (!window.speechSynthesis || !text) return;
+
+    // Cancel any in-progress TTS
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.volume = volume || 0.7;
+    utterance.pitch = 1.0;
+
+    ttsSpeaking = true;
+
+    utterance.onend = () => {
+        ttsSpeaking = false;
+    };
+    utterance.onerror = () => {
+        ttsSpeaking = false;
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
+
+/**
+ * Cancel any in-progress TTS.
+ */
+function cancelTTS() {
+    if (window.speechSynthesis?.speaking) {
+        window.speechSynthesis.cancel();
+        ttsSpeaking = false;
     }
 }
 
