@@ -1726,13 +1726,11 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    background: rgba(6, 10, 22, 0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(6, 10, 22, 0.92);
     border: 1px solid rgba(0, 212, 255, 0.2);
     border-radius: 6px;
     pointer-events: auto;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.06);
 }
 
 .hud-reticle {
@@ -1827,10 +1825,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 4px;
     padding: 3px 10px;
-    background: rgba(6, 10, 22, 0.9);
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    background: #0a0e1a;
+    border: 1px solid rgba(0, 212, 255, 0.25);
     border-radius: 4px;
-    color: rgba(0, 212, 255, 0.55);
+    color: rgba(0, 212, 255, 0.6);
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
     font-size: 9px;
     font-weight: 600;
@@ -1838,21 +1836,19 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
 }
 
 .copilot-mode-btn:hover {
-    background: rgba(6, 10, 22, 0.94);
-    border-color: rgba(0, 212, 255, 0.4);
-    color: rgba(0, 212, 255, 0.9);
+    background: #0d1424;
+    border-color: rgba(0, 212, 255, 0.5);
+    color: rgba(0, 212, 255, 0.95);
 }
 
 .copilot-mode-btn.active {
-    background: rgba(0, 30, 50, 0.92);
-    border-color: rgba(0, 212, 255, 0.55);
+    background: #001e32;
+    border-color: #00d4ff;
     color: #00d4ff;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.2), inset 0 1px 0 rgba(0, 212, 255, 0.08);
 }
 
 .copilot-mode-btn svg {
@@ -2058,10 +2054,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 8px;
     padding: 4px 12px;
-    background: rgba(6, 10, 22, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 212, 255, 0.12);
+    background: rgba(6, 10, 22, 0.92);
+    border: 1px solid rgba(0, 212, 255, 0.15);
     border-radius: 4px;
     pointer-events: auto;
 }
