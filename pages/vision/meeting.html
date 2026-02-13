@@ -127,11 +127,17 @@
                     <!-- Insight cards rendered dynamically -->
                 </div>
 
-                <!-- Bottom-left: stats -->
+                <!-- Bottom-left: stats + frequency control -->
                 <div class="hud-stats-bar">
                     <span class="hud-stat" id="hudInsightCount">0 INSIGHTS</span>
                     <span class="hud-separator">|</span>
                     <span class="hud-stat" id="hudUptime">00:00</span>
+                    <span class="hud-separator">|</span>
+                    <div class="hud-freq-toggle" id="copilotFreqToggle">
+                        <button class="copilot-freq-btn" data-freq="fast" onclick="setCopilotFrequency('fast')" title="2s cooldown — more insights">FAST</button>
+                        <button class="copilot-freq-btn active" data-freq="normal" onclick="setCopilotFrequency('normal')" title="4s cooldown — balanced">NORMAL</button>
+                        <button class="copilot-freq-btn" data-freq="chill" onclick="setCopilotFrequency('chill')" title="8s cooldown — minimal">CHILL</button>
+                    </div>
                 </div>
 
                 <!-- Corner brackets — visor frame -->

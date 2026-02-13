@@ -13,6 +13,7 @@ let copilotConnection = null;
 let copilotMeetingId = null;
 let copilotMeetingMode = 'sales';
 let copilotMode = 'manual'; // "manual", "earpiece", "autonomous"
+let copilotFrequency = 'normal'; // "fast", "normal", "chill"
 let copilotVisible = false;
 let copilotInsightCount = 0;
 let copilotStartTime = null;
@@ -53,6 +54,7 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     // Register SignalR handlers
     connection.on('CopilotInsight', handleCopilotInsight);
     connection.on('CopilotModeChanged', handleCopilotModeChanged);
+    connection.on('CopilotFrequencyChanged', handleCopilotFrequencyChanged);
 
     // Start uptime clock
     copilotUptimeInterval = setInterval(updateHudUptime, 1000);
@@ -177,6 +179,53 @@ function setCopilotMode(mode) {
         .catch(err => {
             console.error(`[Copilot HUD] Error setting mode: ${err}`);
         });
+}
+
+/**
+ * Set copilot insight frequency via SignalR invoke.
+ */
+function setCopilotFrequency(frequency) {
+    if (!copilotConnection || !copilotMeetingId) {
+        console.warn('[Copilot HUD] Cannot set frequency — no connection or meeting ID');
+        return;
+    }
+
+    copilotConnection.invoke('SetCopilotFrequency', copilotMeetingId, frequency)
+        .then(success => {
+            if (success) {
+                copilotFrequency = frequency;
+                updateFreqToggleUI(frequency);
+                console.log(`[Copilot HUD] Frequency set to: ${frequency}`);
+            } else {
+                console.warn(`[Copilot HUD] Failed to set frequency: ${frequency}`);
+            }
+        })
+        .catch(err => {
+            console.error(`[Copilot HUD] Error setting frequency: ${err}`);
+        });
+}
+
+/**
+ * Handle CopilotFrequencyChanged broadcast from server.
+ */
+function handleCopilotFrequencyChanged(data) {
+    console.log(`[Copilot HUD] Frequency changed to: ${data.frequency} by ${data.changedBy}`);
+    copilotFrequency = data.frequency;
+    updateFreqToggleUI(data.frequency);
+}
+
+/**
+ * Update frequency toggle button UI.
+ */
+function updateFreqToggleUI(frequency) {
+    const buttons = document.querySelectorAll('.copilot-freq-btn');
+    buttons.forEach(btn => {
+        if (btn.getAttribute('data-freq') === frequency) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
 }
 
 /**
