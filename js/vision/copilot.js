@@ -145,8 +145,14 @@ function handleCopilotInsight(data) {
  */
 function handleCopilotModeChanged(data) {
     console.log(`[Copilot HUD] Mode changed to: ${data.mode} by ${data.changedBy}`);
+    const prevMode = copilotMode;
     copilotMode = data.mode;
     updateModeToggleUI(data.mode);
+
+    // Cancel earpiece TTS when switching away from earpiece mode
+    if (prevMode === 'earpiece' && data.mode !== 'earpiece') {
+        cancelTTS();
+    }
 }
 
 /**

@@ -935,6 +935,19 @@ function setupSignalREventHandlers() {
     // Copilot mode changed (sync all clients)
     signalRConnection.on('CopilotModeChanged', (data) => {
         console.log(`[Meeting] Copilot mode: ${data.mode}`);
+
+        // Switching away from autonomous: cancel in-progress TTS on prospect browser
+        if (data.mode !== 'autonomous' && !window._isHostUser) {
+            if (window.speechSynthesis?.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            if (window._ttsResumeInterval) {
+                clearInterval(window._ttsResumeInterval);
+                window._ttsResumeInterval = null;
+            }
+            window._ttsActive = false;
+            showThinkingIndicator(false);
+        }
     });
 
     // Server-side recording started (LiveKit Egress)
