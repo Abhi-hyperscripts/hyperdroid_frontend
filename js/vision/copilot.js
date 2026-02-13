@@ -171,6 +171,10 @@ function handleCopilotInsight(data) {
     // Prepend newest on top — latest insights always visible first
     feed.prepend(el);
 
+    // Remove glow from any previous "latest" card
+    const prevNew = feed.querySelector('.hud-new');
+    if (prevNew) prevNew.classList.remove('hud-new');
+
     // Trigger entrance animation + new-card glow on next frame
     requestAnimationFrame(() => {
         el.classList.add('hud-insight-in', 'hud-new');
