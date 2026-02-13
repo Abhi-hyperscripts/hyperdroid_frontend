@@ -80,6 +80,40 @@
                     <button onclick="sendMessage()" class="btn btn-primary">Send</button>
                 </div>
             </div>
+
+            <!-- HUD Overlay — pilot visor style, host-only -->
+            <div class="copilot-hud" id="copilotHud" style="display: none;">
+                <!-- Top-left: status bar -->
+                <div class="hud-status-bar">
+                    <span class="hud-reticle"></span>
+                    <span class="hud-label">COPILOT</span>
+                    <span class="hud-mode" id="copilotModeBadge">SALES</span>
+                    <span class="hud-separator">|</span>
+                    <span class="hud-model" id="hudModel">HAIKU</span>
+                    <span class="hud-separator">|</span>
+                    <span class="hud-live-dot"></span>
+                    <span class="hud-live">LIVE</span>
+                </div>
+
+                <!-- Left rail: insight feed -->
+                <div class="hud-insight-feed" id="copilotInsights">
+                    <!-- Insight cards rendered dynamically -->
+                </div>
+
+                <!-- Bottom-left: stats -->
+                <div class="hud-stats-bar">
+                    <span class="hud-stat" id="hudInsightCount">0 INSIGHTS</span>
+                    <span class="hud-separator">|</span>
+                    <span class="hud-stat" id="hudUptime">00:00</span>
+                </div>
+
+                <!-- Corner brackets — visor frame -->
+                <div class="hud-corner hud-corner-tl"></div>
+                <div class="hud-corner hud-corner-tr"></div>
+                <div class="hud-corner hud-corner-bl"></div>
+                <div class="hud-corner hud-corner-br"></div>
+            </div>
+
         </div>
 
         <div class="meeting-controls">
@@ -119,6 +153,12 @@
                     <path d="M7 12h2m4 0h4M7 16h10"></path>
                 </svg>
                 <span>CC</span>
+            </button>
+            <button id="copilotBtn" class="control-btn" onclick="toggleCopilotPanel()" title="AI Copilot" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                <span>Copilot</span>
             </button>
             <button id="settingsBtn" class="control-btn" onclick="toggleSettingsMenu()" title="More Options">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -388,6 +428,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script src="../../js/searchable-dropdown.js"></script>
     <script>document.write('<script src="../../js/vision/activeSpeaker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/vision/copilot.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- Browser-side STT removed — server-side Vosk bot handles transcription -->
     <!-- <script src="../../js/vision/controls-scroll.js"></script> Disabled - no longer using scrolling controls -->
     <script>document.write('<script src="../../js/vision/meeting.js?v=' + CACHE_VERSION + '"><\/script>');</script>

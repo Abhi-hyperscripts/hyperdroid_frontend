@@ -1,0 +1,154 @@
+/**
+ * AI Copilot HUD — heads-up display overlay for host-only real-time coaching.
+ * Renders like a pilot's visor: transparent overlay on the video grid,
+ * insights slide in from the left, auto-dismiss after timeout.
+ */
+
+let copilotConnection = null;
+let copilotMeetingMode = 'sales';
+let copilotVisible = false;
+let copilotInsightCount = 0;
+let copilotStartTime = null;
+let copilotUptimeInterval = null;
+
+// Max visible insights in the feed before oldest auto-removes
+const HUD_MAX_VISIBLE = 5;
+// Auto-dismiss non-high insights after this many ms
+const HUD_DISMISS_MS = 25000;
+// High-priority insights stay longer
+const HUD_DISMISS_HIGH_MS = 45000;
+
+const HUD_TYPE_CONFIG = {
+    objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
+    suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#2ed573' },  // green diamond
+    sentiment:  { label: 'SENTIMENT',  glyph: '\u25CF', color: '#ffa502' },  // amber circle
+    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#3742fa' },  // blue star
+    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#a4b0be' }   // gray line
+};
+
+/**
+ * Initialize copilot HUD: register SignalR handler, start uptime clock.
+ */
+function initCopilot(connection, meetingMode) {
+    copilotConnection = connection;
+    copilotMeetingMode = meetingMode || 'sales';
+    copilotStartTime = Date.now();
+
+    // Set mode badge
+    const badge = document.getElementById('copilotModeBadge');
+    if (badge) {
+        badge.textContent = (copilotMeetingMode === 'interview' ? 'INTERVIEW' : 'SALES');
+    }
+
+    // Register SignalR handler
+    connection.on('CopilotInsight', handleCopilotInsight);
+
+    // Start uptime clock
+    copilotUptimeInterval = setInterval(updateHudUptime, 1000);
+
+    console.log(`[Copilot HUD] Initialized for mode: ${copilotMeetingMode}`);
+}
+
+/**
+ * Handle incoming copilot insight from SignalR.
+ */
+function handleCopilotInsight(data) {
+    copilotInsightCount++;
+    const feed = document.getElementById('copilotInsights');
+    if (!feed) return;
+
+    const config = HUD_TYPE_CONFIG[data.type] || HUD_TYPE_CONFIG.suggestion;
+    const isHigh = data.priority === 'high';
+
+    // Create insight element
+    const el = document.createElement('div');
+    el.className = `hud-insight${isHigh ? ' hud-high' : ''}`;
+    el.setAttribute('data-priority', data.priority || 'medium');
+
+    const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    el.innerHTML =
+        `<div class="hud-insight-header">` +
+            `<span class="hud-glyph" style="color:${config.color}">${config.glyph}</span>` +
+            `<span class="hud-type" style="color:${config.color}">${config.label}</span>` +
+            (isHigh ? `<span class="hud-priority-tag">HIGH</span>` : '') +
+            `<span class="hud-time">${time}</span>` +
+        `</div>` +
+        `<div class="hud-insight-text">${escapeHtml(data.content)}</div>`;
+
+    feed.appendChild(el);
+
+    // Trigger entrance animation on next frame
+    requestAnimationFrame(() => el.classList.add('hud-insight-in'));
+
+    // Auto-dismiss after timeout
+    const dismissMs = isHigh ? HUD_DISMISS_HIGH_MS : HUD_DISMISS_MS;
+    setTimeout(() => dismissInsight(el), dismissMs);
+
+    // Evict oldest if over max
+    while (feed.children.length > HUD_MAX_VISIBLE) {
+        dismissInsight(feed.children[0]);
+    }
+
+    // Update stats
+    updateHudStats();
+
+    // Flash button if HUD is hidden
+    if (!copilotVisible) {
+        const btn = document.getElementById('copilotBtn');
+        if (btn) {
+            btn.classList.add('copilot-flash');
+            setTimeout(() => btn.classList.remove('copilot-flash'), 2000);
+        }
+    }
+}
+
+function dismissInsight(el) {
+    if (!el || !el.parentNode) return;
+    el.classList.add('hud-insight-out');
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updateHudStats() {
+    const countEl = document.getElementById('hudInsightCount');
+    if (countEl) countEl.textContent = copilotInsightCount + ' INSIGHT' + (copilotInsightCount !== 1 ? 'S' : '');
+
+    // Update toolbar badge
+    const btn = document.getElementById('copilotBtn');
+    if (!btn) return;
+    let badge = btn.querySelector('.copilot-badge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'copilot-badge';
+        btn.appendChild(badge);
+    }
+    badge.textContent = copilotInsightCount;
+    badge.style.display = copilotInsightCount > 0 ? 'flex' : 'none';
+}
+
+function updateHudUptime() {
+    if (!copilotStartTime) return;
+    const el = document.getElementById('hudUptime');
+    if (!el) return;
+    const elapsed = Math.floor((Date.now() - copilotStartTime) / 1000);
+    const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const s = (elapsed % 60).toString().padStart(2, '0');
+    el.textContent = m + ':' + s;
+}
+
+/**
+ * Toggle HUD visibility. Doesn't conflict with chat (overlay, not sidebar).
+ */
+function toggleCopilotPanel() {
+    const hud = document.getElementById('copilotHud');
+    if (!hud) return;
+
+    copilotVisible = !copilotVisible;
+    hud.style.display = copilotVisible ? 'block' : 'none';
+}

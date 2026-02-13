@@ -421,11 +421,24 @@ async function initializeMeeting() {
             tokenData = await api.getLiveKitToken(meetingId, participantName);
         }
 
+        // Show copilot button for host if ai_support is enabled
+        if (isHostUser && meetingStatus.ai_support) {
+            const copilotBtn = document.getElementById('copilotBtn');
+            if (copilotBtn) {
+                copilotBtn.style.display = 'inline-flex';
+            }
+        }
+
         // Connect to LiveKit
         await connectToLiveKit(tokenData.ws_url, tokenData.token);
 
         // Connect to SignalR chat (for both authenticated users and guests)
         await connectToSignalR(participantName);
+
+        // Initialize copilot after SignalR is connected (host-only, ai_support meetings)
+        if (isHostUser && meetingStatus.ai_support && signalRConnection) {
+            initCopilot(signalRConnection, meetingStatus.meeting_mode);
+        }
 
         // Check if recording is already in progress when joining
         if (tokenData.meeting && tokenData.meeting.is_recording) {

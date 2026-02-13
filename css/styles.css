@@ -1703,6 +1703,288 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     box-shadow: var(--focus-ring);
 }
 
+/* ── Copilot HUD — pilot visor overlay (host-only) ── */
+.copilot-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    pointer-events: none;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    overflow: hidden;
+}
+
+/* ── Status bar — top-left ── */
+.hud-status-bar {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(46, 213, 115, 0.25);
+    border-radius: 4px;
+    pointer-events: auto;
+}
+
+.hud-reticle {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2ed573;
+    box-shadow: 0 0 6px #2ed573;
+    animation: hudPulse 2s ease-in-out infinite;
+}
+
+.hud-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2ed573;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.hud-mode {
+    font-size: 10px;
+    font-weight: 600;
+    color: #000;
+    background: #2ed573;
+    padding: 1px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.08em;
+}
+
+.hud-separator {
+    color: rgba(46, 213, 115, 0.3);
+    font-size: 10px;
+}
+
+.hud-model {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(46, 213, 115, 0.7);
+    letter-spacing: 0.08em;
+}
+
+.hud-live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ff4757;
+    box-shadow: 0 0 4px #ff4757;
+    animation: hudPulse 1.2s ease-in-out infinite;
+}
+
+.hud-live {
+    font-size: 10px;
+    font-weight: 700;
+    color: #ff4757;
+    letter-spacing: 0.1em;
+}
+
+/* ── Insight feed — left rail ── */
+.hud-insight-feed {
+    position: absolute;
+    top: 56px;
+    left: 20px;
+    width: 360px;
+    max-height: calc(100% - 110px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+/* ── Individual insight card ── */
+.hud-insight {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 2px solid rgba(46, 213, 115, 0.5);
+    border-radius: 2px;
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+
+.hud-insight.hud-insight-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.hud-insight.hud-insight-out {
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.3s ease-in, transform 0.3s ease-in;
+}
+
+.hud-insight.hud-high {
+    border-left-color: #ff4757;
+    background: rgba(255, 71, 87, 0.12);
+}
+
+.hud-insight-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.hud-glyph {
+    font-size: 12px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.hud-type {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.hud-priority-tag {
+    font-size: 8px;
+    font-weight: 800;
+    color: #fff;
+    background: #ff4757;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+}
+
+.hud-time {
+    margin-left: auto;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.05em;
+}
+
+.hud-insight-text {
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Stats bar — bottom-left ── */
+.hud-stats-bar {
+    position: absolute;
+    bottom: 16px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(46, 213, 115, 0.15);
+    border-radius: 3px;
+    pointer-events: auto;
+}
+
+.hud-stat {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(46, 213, 115, 0.7);
+    letter-spacing: 0.08em;
+}
+
+/* ── Corner brackets — visor frame ── */
+.hud-corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+}
+
+.hud-corner-tl {
+    top: 8px;
+    left: 8px;
+    border-top: 2px solid rgba(46, 213, 115, 0.3);
+    border-left: 2px solid rgba(46, 213, 115, 0.3);
+}
+
+.hud-corner-tr {
+    top: 8px;
+    right: 8px;
+    border-top: 2px solid rgba(46, 213, 115, 0.3);
+    border-right: 2px solid rgba(46, 213, 115, 0.3);
+}
+
+.hud-corner-bl {
+    bottom: 8px;
+    left: 8px;
+    border-bottom: 2px solid rgba(46, 213, 115, 0.3);
+    border-left: 2px solid rgba(46, 213, 115, 0.3);
+}
+
+.hud-corner-br {
+    bottom: 8px;
+    right: 8px;
+    border-bottom: 2px solid rgba(46, 213, 115, 0.3);
+    border-right: 2px solid rgba(46, 213, 115, 0.3);
+}
+
+/* ── Animations ── */
+@keyframes hudPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── Toolbar button badge & flash ── */
+.copilot-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: #ff4757;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.copilot-flash {
+    animation: copilotFlash 0.5s ease-in-out 2;
+}
+
+@keyframes copilotFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── HUD mobile responsive ── */
+@media (max-width: 768px) {
+    .hud-insight-feed {
+        width: calc(100% - 40px);
+    }
+
+    .hud-status-bar {
+        left: 12px;
+        top: 12px;
+    }
+
+    .hud-stats-bar {
+        left: 12px;
+        bottom: 12px;
+    }
+}
+
 /* Meeting Controls - Circular Nav Style */
 .meeting-controls {
     position: fixed;
