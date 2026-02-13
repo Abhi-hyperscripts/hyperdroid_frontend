@@ -877,14 +877,29 @@ function setupSignalREventHandlers() {
     signalRConnection.on('LiveCaptionUpdate', (data) => {
         updateLiveCaption(data.speakerId, data.speakerName, data.text, data.language, data.isFinal, data.timestamp);
 
-        // TTS interrupt logic:
-        // - If TTS is NOT from copilot (_ttsActive=false): cancel unconditionally
-        // - If TTS IS from copilot (_ttsActive=true): only cancel when a DIFFERENT person speaks
-        //   (real interruption). Ignore captions from our own mic (echo of TTS playback).
+        // TTS interrupt logic (mode-aware):
+        // - Non-copilot TTS (_ttsActive=false): cancel on any speech
+        // - Host browser (earpiece): only cancel on DIFFERENT speaker (avoid earpiece echo)
+        // - Non-host browser (autonomous prospect): cancel when anyone speaks,
+        //   but add 1s grace period after TTS starts to ignore initial mic echo pickup.
         if (window.speechSynthesis?.speaking) {
             if (!window._ttsActive) {
                 window.speechSynthesis.cancel();
+            } else if (!window._isHostUser) {
+                // Prospect browser in autonomous mode:
+                // Host speaks → cancel immediately (host is taking over)
+                // Prospect speaks → cancel after 1s grace (ignore early TTS echo from speakers)
+                const localId = room?.localParticipant?.identity;
+                const ttsAge = Date.now() - (window._ttsStartTime || 0);
+                const isLocalSpeaker = localId && data.speakerId === localId;
+                if (!isLocalSpeaker || ttsAge > 1000) {
+                    window.speechSynthesis.cancel();
+                    if (window._ttsResumeInterval) { clearInterval(window._ttsResumeInterval); window._ttsResumeInterval = null; }
+                    window._ttsActive = false;
+                }
             } else {
+                // Host browser in earpiece mode:
+                // Only cancel when someone ELSE speaks (not echo from own earpiece)
                 const localId = room?.localParticipant?.identity;
                 if (localId && data.speakerId !== localId) {
                     window.speechSynthesis.cancel();
@@ -906,6 +921,7 @@ function setupSignalREventHandlers() {
             window.speechSynthesis.cancel();
             if (window._ttsResumeInterval) clearInterval(window._ttsResumeInterval);
             window._ttsActive = true;
+            window._ttsStartTime = Date.now();
 
             // Hide thinking indicator since response arrived
             showThinkingIndicator(false);
@@ -941,6 +957,14 @@ function setupSignalREventHandlers() {
     signalRConnection.on('CopilotThinking', (data) => {
         if (window._isHostUser) return;
         showThinkingIndicator(data.active);
+
+        // Server-side interrupt: when AI starts processing NEW transcript (active=true),
+        // it means someone spoke — cancel in-progress TTS so it doesn't talk over them.
+        if (data.active && window.speechSynthesis?.speaking) {
+            window.speechSynthesis.cancel();
+            if (window._ttsResumeInterval) { clearInterval(window._ttsResumeInterval); window._ttsResumeInterval = null; }
+            window._ttsActive = false;
+        }
     });
 
     // Copilot mode changed (sync all clients)

@@ -412,6 +412,7 @@ function speakTTS(text, volume) {
 
     ttsSpeaking = true;
     window._ttsActive = true;
+    window._ttsStartTime = Date.now();
 
     // Chrome bug workaround: speechSynthesis silently stops/pauses after ~15s.
     // Calling resume() every 3s keeps it alive. Don't self-destruct — let onend handle cleanup.
