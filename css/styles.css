@@ -1908,11 +1908,6 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     padding: 0 2px;
 }
 
-.hud-emotion-emoji {
-    font-size: 13px;
-    line-height: 1;
-}
-
 .hud-emotion-label {
     font-size: 9px;
     font-weight: 600;
@@ -1920,6 +1915,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     letter-spacing: 0.06em;
     text-transform: uppercase;
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    transition: color 0.3s;
 }
 
 .hud-attention-dot {

@@ -563,9 +563,14 @@ function copySuggestedResponse(btn, event) {
 
 // ── Emotion Detection ──
 
-const EMOTION_EMOJI = {
-    happy: '\u{1F60A}', surprised: '\u{1F62E}', sad: '\u{1F614}', neutral: '\u{1F610}',
-    angry: '\u{1F620}', fearful: '\u{1F628}', disgusted: '\u{1F922}'
+const EMOTION_COLORS = {
+    happy: '#2ed573',      // green
+    surprised: '#ffa502',  // amber
+    sad: '#70a1ff',        // blue
+    neutral: '#a4b0be',    // gray
+    angry: '#ff4757',      // red
+    fearful: '#a78bfa',    // purple
+    disgusted: '#ff6348'   // orange-red
 };
 
 /**
@@ -614,19 +619,19 @@ function findRemoteParticipantVideo() {
  * Update the cockpit panel emotion indicator display.
  */
 function updateEmotionDisplay(emotion, confidence, isLooking, allExpressions) {
-    const emojiEl = document.getElementById('hudEmotionEmoji');
     const labelEl = document.getElementById('hudEmotionLabel');
     const dotEl = document.getElementById('hudAttentionDot');
 
-    if (!emojiEl || !labelEl || !dotEl) return;
+    if (!labelEl || !dotEl) return;
 
     if (emotion) {
-        emojiEl.textContent = EMOTION_EMOJI[emotion] || '\u{1F610}';
+        const color = EMOTION_COLORS[emotion] || EMOTION_COLORS.neutral;
         labelEl.textContent = emotion.toUpperCase();
+        labelEl.style.color = color;
         latestEmotion = { emotion, confidence, isLooking };
     } else {
-        emojiEl.textContent = '--';
         labelEl.textContent = 'NO FACE';
+        labelEl.style.color = '';
         latestEmotion = { emotion: null, confidence: 0, isLooking: false };
     }
 
