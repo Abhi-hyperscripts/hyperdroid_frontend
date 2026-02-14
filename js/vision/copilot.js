@@ -68,6 +68,9 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     // Start uptime clock
     copilotUptimeInterval = setInterval(updateHudUptime, 1000);
 
+    // Restore HUD position preference (left/center)
+    restoreHudPosition();
+
     // Initialize mode toggle UI
     updateModeToggleUI('manual');
 
@@ -452,6 +455,37 @@ function cancelTTS() {
     }
     ttsSpeaking = false;
     window._ttsActive = false;
+}
+
+/**
+ * Toggle HUD position: left (default) ↔ center (teleprompter).
+ * Center mode positions insights at top-center of screen, near the webcam,
+ * so the host's eyes stay on the camera line while reading.
+ */
+function toggleHudPosition() {
+    const hud = document.getElementById('copilotHud');
+    if (!hud) return;
+    const isCenter = hud.classList.toggle('hud-center');
+    // Persist preference
+    try { localStorage.setItem('copilot_hud_position', isCenter ? 'center' : 'left'); } catch (e) {}
+    // Update button tooltip
+    const btn = document.getElementById('hudPositionBtn');
+    if (btn) btn.title = isCenter ? 'Move HUD to left side' : 'Move HUD to center (teleprompter mode)';
+}
+
+/**
+ * Restore HUD position from localStorage on init.
+ */
+function restoreHudPosition() {
+    try {
+        const pos = localStorage.getItem('copilot_hud_position');
+        if (pos === 'center') {
+            const hud = document.getElementById('copilotHud');
+            if (hud) hud.classList.add('hud-center');
+            const btn = document.getElementById('hudPositionBtn');
+            if (btn) btn.title = 'Move HUD to left side';
+        }
+    } catch (e) {}
 }
 
 function dismissInsight(el) {

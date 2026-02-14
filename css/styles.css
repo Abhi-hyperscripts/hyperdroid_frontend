@@ -1810,6 +1810,66 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #64748b;
 }
 
+/* ── HUD position toggle button ── */
+.hud-position-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(0, 212, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hud-position-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.5);
+    color: #00d4ff;
+}
+
+.copilot-hud.hud-center .hud-position-btn {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: #00d4ff;
+    color: #00d4ff;
+}
+
+/* ── CENTER (teleprompter) mode — HUD at top-center for camera eye-line ── */
+.copilot-hud.hud-center .hud-status-bar {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.copilot-hud.hud-center .hud-mode-selector {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.copilot-hud.hud-center .hud-insight-feed {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 520px;
+}
+
+.copilot-hud.hud-center .hud-insight {
+    background: rgba(8, 12, 24, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.copilot-hud.hud-center .hud-stats-bar {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.copilot-hud.hud-center .hud-corner {
+    display: none;
+}
+
 /* ── Mode selector — below status bar ── */
 .hud-mode-selector {
     position: absolute;
@@ -2182,6 +2242,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     .hud-insight-feed {
         width: calc(100% - 40px);
         top: 74px;
+    }
+
+    .copilot-hud.hud-center .hud-insight-feed {
+        width: calc(100% - 24px);
     }
 
     .hud-mode-selector {
