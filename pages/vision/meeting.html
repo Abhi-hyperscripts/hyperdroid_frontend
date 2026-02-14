@@ -98,6 +98,12 @@
                         <span class="hud-panel-divider"></span>
                         <span class="hud-stat" id="hudUptime">00:00</span>
                         <span class="hud-panel-divider"></span>
+                        <span class="hud-emotion-indicator" id="hudEmotionIndicator" title="Prospect emotion">
+                            <span class="hud-emotion-emoji" id="hudEmotionEmoji">--</span>
+                            <span class="hud-emotion-label" id="hudEmotionLabel">NO FACE</span>
+                            <span class="hud-attention-dot" id="hudAttentionDot"></span>
+                        </span>
+                        <span class="hud-panel-divider"></span>
                         <button class="hud-position-btn" id="hudPositionBtn" onclick="toggleHudPosition()" title="Move HUD to center (teleprompter mode)">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -458,6 +464,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script src="../../js/searchable-dropdown.js"></script>
     <script>document.write('<script src="../../js/vision/activeSpeaker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/vision/emotion.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/vision/copilot.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- Browser-side STT removed — server-side Vosk bot handles transcription -->
     <!-- <script src="../../js/vision/controls-scroll.js"></script> Disabled - no longer using scrolling controls -->

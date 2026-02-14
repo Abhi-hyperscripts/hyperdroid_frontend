@@ -1900,6 +1900,41 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #00d4ff;
 }
 
+/* ── Emotion indicator in cockpit panel ── */
+.hud-emotion-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 2px;
+}
+
+.hud-emotion-emoji {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.hud-emotion-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+
+.hud-attention-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ff4757;
+    transition: background 0.3s;
+}
+
+.hud-attention-dot.looking {
+    background: #2ed573;
+    box-shadow: 0 0 4px #2ed573;
+}
+
 /* ── Mode selector — inline in panel row ── */
 .hud-mode-selector {
     display: flex;

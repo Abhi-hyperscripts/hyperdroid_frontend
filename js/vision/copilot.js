@@ -23,6 +23,11 @@ let copilotBotActive = false;
 let copilotBotPollInterval = null;
 let ttsSpeaking = false;
 
+// Emotion detection state
+let emotionDetector = null;
+let emotionSendInterval = null;
+let latestEmotion = { emotion: null, confidence: 0, isLooking: false };
+
 // Max visible insights in the feed before oldest auto-removes
 const HUD_MAX_VISIBLE = 5;
 // Auto-dismiss timeouts per mode (autonomous is faster — host isn't reading them as closely)
@@ -556,6 +561,122 @@ function copySuggestedResponse(btn, event) {
     });
 }
 
+// ── Emotion Detection ──
+
+const EMOTION_EMOJI = {
+    happy: '\u{1F60A}', surprised: '\u{1F62E}', sad: '\u{1F614}', neutral: '\u{1F610}',
+    angry: '\u{1F620}', fearful: '\u{1F628}', disgusted: '\u{1F922}'
+};
+
+/**
+ * Initialize emotion detection. Lazy-loads face-api.js + models only on first HUD open.
+ */
+async function initEmotionDetection() {
+    if (emotionDetector) return; // already initialized
+
+    try {
+        emotionDetector = new EmotionDetector();
+        await emotionDetector.initialize();
+
+        emotionDetector.onEmotionUpdate = updateEmotionDisplay;
+
+        // Find the first remote participant's video element
+        const remoteVideo = findRemoteParticipantVideo();
+        if (remoteVideo) {
+            emotionDetector.startAnalysis(remoteVideo);
+        }
+
+        // Send emotion data to backend every 3 seconds
+        emotionSendInterval = setInterval(sendEmotionToBackend, 3000);
+
+        console.log('[Copilot] Emotion detection initialized');
+    } catch (e) {
+        console.warn('[Copilot] Failed to init emotion detection:', e.message);
+        emotionDetector = null;
+    }
+}
+
+/**
+ * Find the first remote participant's video element in the DOM.
+ */
+function findRemoteParticipantVideo() {
+    // Remote participant tiles have id like "participant-{identity}" but NOT "local-participant"
+    const tiles = document.querySelectorAll('.video-tile:not(#local-participant)');
+    for (const tile of tiles) {
+        const video = tile.querySelector('video');
+        if (video && video.srcObject) return video;
+    }
+    return null;
+}
+
+/**
+ * Update the cockpit panel emotion indicator display.
+ */
+function updateEmotionDisplay(emotion, confidence, isLooking, allExpressions) {
+    const emojiEl = document.getElementById('hudEmotionEmoji');
+    const labelEl = document.getElementById('hudEmotionLabel');
+    const dotEl = document.getElementById('hudAttentionDot');
+
+    if (!emojiEl || !labelEl || !dotEl) return;
+
+    if (emotion) {
+        emojiEl.textContent = EMOTION_EMOJI[emotion] || '\u{1F610}';
+        labelEl.textContent = emotion.toUpperCase();
+        latestEmotion = { emotion, confidence, isLooking };
+    } else {
+        emojiEl.textContent = '--';
+        labelEl.textContent = 'NO FACE';
+        latestEmotion = { emotion: null, confidence: 0, isLooking: false };
+    }
+
+    if (isLooking) {
+        dotEl.classList.add('looking');
+    } else {
+        dotEl.classList.remove('looking');
+    }
+}
+
+/**
+ * Send latest emotion data to backend via SignalR (every 3s).
+ */
+function sendEmotionToBackend() {
+    if (copilotConnection && copilotMeetingId && latestEmotion.emotion) {
+        copilotConnection.invoke('FeedEmotionData', copilotMeetingId,
+            latestEmotion.emotion,
+            latestEmotion.confidence,
+            latestEmotion.isLooking
+        ).catch(err => console.warn('[Copilot] Emotion send failed:', err));
+    }
+}
+
+/**
+ * Re-target emotion detector to a new remote participant video.
+ * Called when participants join/leave.
+ */
+function retargetEmotionDetector() {
+    if (!emotionDetector || !emotionDetector.loaded) return;
+
+    emotionDetector.stopAnalysis();
+    const remoteVideo = findRemoteParticipantVideo();
+    if (remoteVideo) {
+        emotionDetector.startAnalysis(remoteVideo);
+        console.log('[Copilot] Emotion detector re-targeted to new participant');
+    }
+}
+
+/**
+ * Stop emotion detection and clean up intervals.
+ */
+function stopEmotionDetection() {
+    if (emotionDetector) {
+        emotionDetector.stopAnalysis();
+    }
+    if (emotionSendInterval) {
+        clearInterval(emotionSendInterval);
+        emotionSendInterval = null;
+    }
+}
+
 /**
  * Toggle HUD visibility. Doesn't conflict with chat (overlay, not sidebar).
  */
@@ -569,5 +690,7 @@ function toggleCopilotPanel() {
     // Query bot status when opening HUD
     if (copilotVisible) {
         queryCopilotBotStatus();
+        // Lazy-init emotion detection on first HUD open
+        initEmotionDetection();
     }
 }
