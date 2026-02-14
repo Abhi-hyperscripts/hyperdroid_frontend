@@ -1800,11 +1800,6 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #00d4ff;
 }
 
-.copilot-hud.hud-center .hud-mesh-panel {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
 .hud-reticle {
     width: 6px;
     height: 6px;
@@ -1969,8 +1964,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 /* ── Face Mesh Radar Panel ── */
 .hud-mesh-panel {
     position: absolute;
-    top: 82px;
-    left: 16px;
+    top: 12px;
+    right: 16px;
     display: flex;
     flex-direction: column;
     gap: 6px;
