@@ -1943,9 +1943,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     height: 20px;
     padding: 0;
     background: transparent;
-    border: 1px solid rgba(167, 139, 250, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.2);
     border-radius: 4px;
-    color: rgba(167, 139, 250, 0.4);
+    color: rgba(0, 212, 255, 0.4);
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
@@ -1953,16 +1953,16 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-research-toggle:hover {
-    background: rgba(167, 139, 250, 0.1);
-    border-color: rgba(167, 139, 250, 0.5);
-    color: #a78bfa;
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.5);
+    color: #00d4ff;
 }
 
 .hud-research-toggle.active {
-    background: rgba(167, 139, 250, 0.12);
-    border-color: #a78bfa;
-    color: #a78bfa;
-    box-shadow: 0 0 8px rgba(167, 139, 250, 0.15);
+    background: rgba(0, 212, 255, 0.12);
+    border-color: #00d4ff;
+    color: #00d4ff;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
 }
 
 .hud-research-dot {
@@ -1991,7 +1991,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     display: flex;
     flex-direction: column;
     background: rgba(4, 8, 18, 0.95);
-    border: 1px solid rgba(167, 139, 250, 0.25);
+    border: 1px solid rgba(0, 212, 255, 0.25);
     border-radius: 8px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -2005,7 +2005,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.15);
     flex-shrink: 0;
 }
 
@@ -2014,15 +2014,15 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.15em;
-    color: #a78bfa;
+    color: #00d4ff;
 }
 
 .hud-research-count {
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     font-size: 9px;
     font-weight: 600;
-    color: rgba(167, 139, 250, 0.7);
-    background: rgba(167, 139, 250, 0.1);
+    color: rgba(0, 212, 255, 0.7);
+    background: rgba(0, 212, 255, 0.1);
     padding: 1px 6px;
     border-radius: 8px;
 }
@@ -2033,9 +2033,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-size: 8px;
     font-weight: 600;
     letter-spacing: 0.1em;
-    color: rgba(167, 139, 250, 0.4);
+    color: rgba(0, 212, 255, 0.4);
     background: transparent;
-    border: 1px solid rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.15);
     border-radius: 4px;
     padding: 2px 8px;
     cursor: pointer;
@@ -2043,9 +2043,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-research-clear:hover {
-    color: #a78bfa;
-    border-color: rgba(167, 139, 250, 0.4);
-    background: rgba(167, 139, 250, 0.08);
+    color: #00d4ff;
+    border-color: rgba(0, 212, 255, 0.4);
+    background: rgba(0, 212, 255, 0.08);
 }
 
 .hud-research-feed {
@@ -2066,14 +2066,14 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-research-feed::-webkit-scrollbar-thumb {
-    background: rgba(167, 139, 250, 0.2);
+    background: rgba(0, 212, 255, 0.2);
     border-radius: 2px;
 }
 
 .hud-research-card {
-    background: rgba(167, 139, 250, 0.05);
-    border: 1px solid rgba(167, 139, 250, 0.12);
-    border-left: 3px solid #a78bfa;
+    background: rgba(0, 212, 255, 0.04);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    border-left: 3px solid rgba(0, 212, 255, 0.5);
     border-radius: 6px;
     padding: 10px 12px;
     animation: researchFadeIn 0.4s ease-out;
@@ -2097,7 +2097,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-size: 10px;
     line-height: 1;
     transition: transform 0.25s ease;
-    color: rgba(167, 139, 250, 0.6);
+    color: rgba(0, 212, 255, 0.6);
     flex-shrink: 0;
 }
 
@@ -2136,7 +2136,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     font-size: 10px;
     font-weight: 600;
-    color: #a78bfa;
+    color: #00d4ff;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2175,7 +2175,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 .hud-research-source-link {
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     font-size: 9px;
-    color: rgba(167, 139, 250, 0.6);
+    color: rgba(0, 212, 255, 0.6);
     text-decoration: none;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2184,7 +2184,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-research-source-link:hover {
-    color: #a78bfa;
+    color: #00d4ff;
     text-decoration: underline;
 }
 
@@ -2334,8 +2334,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     border-left-color: #ffa502;
 }
 .hud-insight[data-type="key_moment"] {
-    background: rgba(167, 139, 250, 0.05);
-    border-left-color: #a78bfa;
+    background: rgba(0, 212, 255, 0.05);
+    border-left-color: #00d4ff;
 }
 .hud-insight[data-type="summary"] {
     background: rgba(148, 163, 184, 0.04);

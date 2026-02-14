@@ -49,7 +49,7 @@ const HUD_TYPE_CONFIG = {
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
     suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#00d4ff' },  // neon cyan diamond
     sentiment:  { label: 'SENTIMENT',  glyph: '\u25CF', color: '#ffa502' },  // amber circle
-    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#a78bfa' },  // bright purple star
+    key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#00d4ff' },  // cyan star
     summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#94a3b8' }   // light slate line
 };
 
@@ -612,7 +612,7 @@ const EMOTION_COLORS = {
     sad: '#70a1ff',        // blue
     neutral: '#a4b0be',    // gray
     angry: '#ff4757',      // red
-    fearful: '#a78bfa',    // purple
+    fearful: '#c084fc',    // light purple
     disgusted: '#ff6348'   // orange-red
 };
 
