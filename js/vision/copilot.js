@@ -221,6 +221,7 @@ function showInsightCard(data) {
     const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     const hasSuggested = data.suggestedResponse && data.suggestedResponse.trim().length > 0;
+    const tacticalPreview = hasSuggested ? extractTacticalPreview(data.suggestedResponse) : '';
 
     el.innerHTML =
         `<div class="hud-insight-header">` +
@@ -235,6 +236,7 @@ function showInsightCard(data) {
                 `<div class="hud-suggested-label" onclick="toggleSuggestedResponse(this)">` +
                     `<span class="hud-suggested-chevron">\u25B8</span>` +
                     `<span class="hud-suggested-icon">\u{1F399}</span> SAY THIS` +
+                    `<span class="hud-suggested-preview">${escapeHtml(tacticalPreview)}</span>` +
                     `<button class="hud-copy-btn" title="Copy to clipboard" onclick="copySuggestedResponse(this, event)">COPY</button>` +
                 `</div>` +
                 `<div class="hud-suggested-text">${escapeHtml(data.suggestedResponse)}</div>` +
@@ -243,6 +245,19 @@ function showInsightCard(data) {
 
     // Prepend newest on top — latest insights always visible first
     feed.prepend(el);
+
+    // Fighter-jet rule: only ONE high-priority card at a time.
+    // Demote all older HIGHs so the newest alert stays primary.
+    if (isHigh) {
+        const allHighs = feed.querySelectorAll('.hud-high');
+        allHighs.forEach(card => {
+            if (card === el) return; // keep the new one
+            card.classList.remove('hud-high');
+            card.setAttribute('data-priority', 'medium');
+            const tag = card.querySelector('.hud-priority-tag');
+            if (tag) tag.remove();
+        });
+    }
 
     // Remove glow from any previous "latest" card
     const prevNew = feed.querySelector('.hud-new');
@@ -512,6 +527,18 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+/**
+ * Extract a tactical one-liner from a full script.
+ * Splits on sentence boundaries (. ! ?) and caps at 80 chars.
+ */
+function extractTacticalPreview(text) {
+    if (!text) return '';
+    const match = text.match(/^[^.!?]*[.!?]/);
+    let preview = match ? match[0].trim() : text.trim();
+    if (preview.length > 80) preview = preview.substring(0, 77) + '...';
+    return preview;
+}
+
 function updateHudStats() {
     const countEl = document.getElementById('hudInsightCount');
     if (countEl) countEl.textContent = copilotInsightCount + ' INSIGHT' + (copilotInsightCount !== 1 ? 'S' : '');
@@ -722,6 +749,7 @@ function handleCopilotResearch(data) {
 
 /**
  * Render a research card into the intel feed.
+ * Default collapsed: query + first-line preview. Click header to expand.
  */
 function showResearchCard(data) {
     const feed = document.getElementById('hudResearchFeed');
@@ -731,6 +759,11 @@ function showResearchCard(data) {
     card.className = 'hud-research-card';
 
     const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Extract first line of summary as collapsed preview
+    const summaryText = data.summary || '';
+    const firstLine = summaryText.split('\n')[0] || '';
+    const summaryPreview = firstLine.length > 100 ? firstLine.substring(0, 97) + '...' : firstLine;
 
     let sourcesHtml = '';
     if (data.sources && data.sources.length > 0) {
@@ -744,16 +777,28 @@ function showResearchCard(data) {
     }
 
     card.innerHTML =
-        `<div class="hud-research-card-header">` +
+        `<div class="hud-research-card-header" onclick="toggleResearchCard(this)">` +
+            `<span class="hud-research-card-chevron">\u25B8</span>` +
             `<span class="hud-research-card-query">${escapeHtml(data.query || '')}</span>` +
+            `<span class="hud-research-card-preview">${escapeHtml(summaryPreview)}</span>` +
             `<span class="hud-research-card-time">${time}</span>` +
         `</div>` +
-        (data.triggeredBy ? `<div class="hud-research-card-reason">${escapeHtml(data.triggeredBy)}</div>` : '') +
-        `<div class="hud-research-card-summary">${escapeHtml(data.summary || '')}</div>` +
-        sourcesHtml;
+        `<div class="hud-research-card-details">` +
+            (data.triggeredBy ? `<div class="hud-research-card-reason">${escapeHtml(data.triggeredBy)}</div>` : '') +
+            `<div class="hud-research-card-summary">${escapeHtml(summaryText)}</div>` +
+            sourcesHtml +
+        `</div>`;
 
     // Prepend newest on top
     feed.prepend(card);
+}
+
+/**
+ * Toggle a research card between collapsed and expanded.
+ */
+function toggleResearchCard(headerEl) {
+    const card = headerEl.closest('.hud-research-card');
+    if (card) card.classList.toggle('hud-research-expanded');
 }
 
 /**

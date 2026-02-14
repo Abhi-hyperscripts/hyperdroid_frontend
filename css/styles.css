@@ -2088,7 +2088,48 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hud-research-card-chevron {
+    font-size: 10px;
+    line-height: 1;
+    transition: transform 0.25s ease;
+    color: rgba(167, 139, 250, 0.6);
+    flex-shrink: 0;
+}
+
+.hud-research-expanded .hud-research-card-chevron {
+    transform: rotate(90deg);
+}
+
+.hud-research-card-preview {
+    font-size: 11px;
+    color: rgba(226, 232, 240, 0.7);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.hud-research-expanded .hud-research-card-preview {
+    display: none;
+}
+
+.hud-research-card-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.hud-research-expanded .hud-research-card-details {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 6px;
 }
 
 .hud-research-card-query {
@@ -2389,6 +2430,20 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 .hud-suggested-icon {
     font-size: 11px;
     line-height: 1;
+}
+
+.hud-suggested-preview {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .hud-copy-btn {
