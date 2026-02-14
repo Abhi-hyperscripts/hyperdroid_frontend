@@ -1931,6 +1931,96 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     box-shadow: 0 0 4px #2ed573;
 }
 
+/* ── Face Mesh toggle button (same style as position btn) ── */
+.hud-mesh-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(0, 212, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.hud-mesh-toggle:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.5);
+    color: #00d4ff;
+}
+
+.hud-mesh-toggle.active {
+    background: rgba(0, 212, 255, 0.12);
+    border-color: #00d4ff;
+    color: #00d4ff;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
+/* ── Face Mesh Radar Panel ── */
+.hud-mesh-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(4, 8, 18, 0.94);
+    border: 1px solid rgba(0, 212, 255, 0.22);
+    border-radius: 8px;
+    padding: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+#hudMeshCanvas {
+    display: block;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hud-mesh-proximity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hud-mesh-prox-label {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: rgba(0, 212, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.hud-mesh-prox-bar {
+    flex: 1;
+    height: 3px;
+    background: rgba(0, 212, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.hud-mesh-prox-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00d4ff, #00ffcc);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.hud-mesh-prox-value {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(0, 212, 255, 0.8);
+    min-width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
 /* ── Mode selector — inline in panel row ── */
 .hud-mode-selector {
     display: flex;

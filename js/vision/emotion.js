@@ -21,6 +21,7 @@ class EmotionDetector {
         this._sentimentHistory = [];    // last 5 emotions for smoothing
         this._attentionHistory = [];    // last 3 rotations for smoothing
         this.onEmotionUpdate = null;    // callback(emotion, confidence, isLooking, rawExpressions)
+        this.onMeshUpdate = null;       // callback(positions, box, videoW, videoH)
         this._intervalId = null;
         this._videoElement = null;
     }
@@ -108,8 +109,16 @@ class EmotionDetector {
                 const topConfidence = this._getTopConfidence(detection.expressions);
 
                 this.onEmotionUpdate?.(smoothedEmotion, topConfidence, isLooking, detection.expressions);
+
+                // Pass landmarks + box for mesh rendering
+                const positions = detection.landmarks.positions; // array of 68 {x, y} points
+                const box = detection.detection.box; // {x, y, width, height}
+                const videoW = this._canvas.width;
+                const videoH = this._canvas.height;
+                this.onMeshUpdate?.(positions, box, videoW, videoH);
             } else {
                 this.onEmotionUpdate?.(null, 0, false, null);
+                this.onMeshUpdate?.(null, null, 0, 0);
             }
         } catch (e) {
             console.warn('[EmotionDetector] Detection error:', e.message);
