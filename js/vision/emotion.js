@@ -75,12 +75,15 @@ class EmotionDetector {
             this._intervalId = null;
         }
         this._videoElement = null;
+        this._canvas = null;
+        this._canvasCtx = null;
         this._sentimentHistory = [];
         this._attentionHistory = [];
     }
 
     /**
      * Internal: run one detection frame. Guarded against concurrent calls.
+     * Uses an offscreen canvas to avoid tainted-canvas issues with WebRTC video.
      */
     async _detect() {
         if (!this.analyzing || !this._videoElement || this._detecting) return;
@@ -89,8 +92,11 @@ class EmotionDetector {
 
         this._detecting = true;
         try {
+            // Draw video frame to offscreen canvas to avoid WebRTC tainted canvas issues
+            const input = this._getCanvasFrame();
+
             const detection = await faceapi.detectSingleFace(
-                this._videoElement,
+                input,
                 new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
             ).withFaceLandmarks().withFaceExpressions();
 
@@ -106,13 +112,31 @@ class EmotionDetector {
                 this.onEmotionUpdate?.(null, 0, false, null);
             }
         } catch (e) {
-            // Silently handle — video element may have been removed
-            if (e.message && !e.message.includes('disposed')) {
-                console.warn('[EmotionDetector] Detection error:', e.message);
-            }
+            console.warn('[EmotionDetector] Detection error:', e.message);
         } finally {
             this._detecting = false;
         }
+    }
+
+    /**
+     * Draw current video frame onto an offscreen canvas and return it.
+     * This avoids SecurityError when face-api.js reads pixel data from
+     * cross-origin WebRTC video elements.
+     */
+    _getCanvasFrame() {
+        const w = this._videoElement.videoWidth;
+        const h = this._videoElement.videoHeight;
+
+        if (!this._canvas) {
+            this._canvas = document.createElement('canvas');
+            this._canvasCtx = this._canvas.getContext('2d');
+        }
+        if (this._canvas.width !== w || this._canvas.height !== h) {
+            this._canvas.width = w;
+            this._canvas.height = h;
+        }
+        this._canvasCtx.drawImage(this._videoElement, 0, 0, w, h);
+        return this._canvas;
     }
 
     /**
