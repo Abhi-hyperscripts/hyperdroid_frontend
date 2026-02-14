@@ -111,6 +111,13 @@
                                 <path d="M5 14h14"></path>
                             </svg>
                         </button>
+                        <button class="hud-research-toggle" id="hudResearchToggle" onclick="toggleResearchPanel()" title="Intel research feed">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <span class="hud-research-dot" id="hudResearchDot" style="display:none;"></span>
+                        </button>
                         <button class="hud-position-btn" id="hudPositionBtn" onclick="toggleHudPosition()" title="Move HUD to center (teleprompter mode)">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -161,6 +168,18 @@
                             <div class="hud-mesh-prox-fill" id="hudMeshProxFill"></div>
                         </div>
                         <span class="hud-mesh-prox-value" id="hudMeshProxValue">--</span>
+                    </div>
+                </div>
+
+                <!-- Research Intel Panel (toggleable) -->
+                <div class="hud-research-panel" id="hudResearchPanel" style="display: none;">
+                    <div class="hud-research-header">
+                        <span class="hud-research-label">INTEL</span>
+                        <span class="hud-research-count" id="hudResearchCount">0</span>
+                        <button class="hud-research-clear" onclick="clearResearchPanel()" title="Clear all">CLEAR</button>
+                    </div>
+                    <div class="hud-research-feed" id="hudResearchFeed">
+                        <!-- Research cards rendered dynamically -->
                     </div>
                 </div>
 

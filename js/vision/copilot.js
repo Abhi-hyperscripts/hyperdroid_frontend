@@ -33,6 +33,10 @@ let meshPanelVisible = false;
 let meshCanvas = null;
 let meshCtx = null;
 
+// Research intel panel state
+let researchPanelVisible = false;
+let researchCount = 0;
+
 // 68-point face landmark connection paths
 const MESH_PATHS = [
     [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],           // jaw
@@ -91,6 +95,7 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
 
     // Register SignalR handlers
     connection.on('CopilotInsight', handleCopilotInsight);
+    connection.on('CopilotResearch', handleCopilotResearch);
     connection.on('CopilotModeChanged', handleCopilotModeChanged);
     connection.on('CopilotFrequencyChanged', handleCopilotFrequencyChanged);
     connection.on('CopilotBotStatus', handleCopilotBotStatus);
@@ -844,6 +849,100 @@ function updatePoseDisplay(rotX, rotY, isLooking) {
             attDot.classList.remove('looking');
         }
     }
+}
+
+// ── Research Intel Panel ──
+
+/**
+ * Handle incoming research result from SignalR.
+ */
+function handleCopilotResearch(data) {
+    console.log(`[Copilot HUD] Research received: query="${data.query}", ${data.sources?.length || 0} sources`);
+    researchCount++;
+    showResearchCard(data);
+
+    // Update count badge
+    const countEl = document.getElementById('hudResearchCount');
+    if (countEl) countEl.textContent = researchCount;
+
+    // Show notification dot if panel is hidden
+    if (!researchPanelVisible) {
+        const dot = document.getElementById('hudResearchDot');
+        if (dot) dot.style.display = '';
+    }
+}
+
+/**
+ * Render a research card into the intel feed.
+ */
+function showResearchCard(data) {
+    const feed = document.getElementById('hudResearchFeed');
+    if (!feed) return;
+
+    const card = document.createElement('div');
+    card.className = 'hud-research-card';
+
+    const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    let sourcesHtml = '';
+    if (data.sources && data.sources.length > 0) {
+        sourcesHtml = '<div class="hud-research-card-sources">';
+        for (const src of data.sources) {
+            const safeTitle = escapeHtml(src.title || src.url || 'Source');
+            const safeUrl = escapeHtml(src.url || '#');
+            sourcesHtml += `<a class="hud-research-source-link" href="${safeUrl}" target="_blank" rel="noopener">${safeTitle}</a>`;
+        }
+        sourcesHtml += '</div>';
+    }
+
+    card.innerHTML =
+        `<div class="hud-research-card-header">` +
+            `<span class="hud-research-card-query">${escapeHtml(data.query || '')}</span>` +
+            `<span class="hud-research-card-time">${time}</span>` +
+        `</div>` +
+        (data.triggeredBy ? `<div class="hud-research-card-reason">${escapeHtml(data.triggeredBy)}</div>` : '') +
+        `<div class="hud-research-card-summary">${escapeHtml(data.summary || '')}</div>` +
+        sourcesHtml;
+
+    // Prepend newest on top
+    feed.prepend(card);
+}
+
+/**
+ * Toggle research intel panel visibility.
+ */
+function toggleResearchPanel() {
+    const panel = document.getElementById('hudResearchPanel');
+    const btn = document.getElementById('hudResearchToggle');
+    if (!panel) return;
+
+    researchPanelVisible = !researchPanelVisible;
+    panel.style.display = researchPanelVisible ? 'flex' : 'none';
+
+    if (btn) {
+        if (researchPanelVisible) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    }
+
+    // Clear notification dot when opening
+    if (researchPanelVisible) {
+        const dot = document.getElementById('hudResearchDot');
+        if (dot) dot.style.display = 'none';
+    }
+}
+
+/**
+ * Clear all research cards from the panel.
+ */
+function clearResearchPanel() {
+    const feed = document.getElementById('hudResearchFeed');
+    if (feed) feed.innerHTML = '';
+    researchCount = 0;
+    const countEl = document.getElementById('hudResearchCount');
+    if (countEl) countEl.textContent = '0';
 }
 
 /**

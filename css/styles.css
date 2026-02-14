@@ -2070,6 +2070,219 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     flex-shrink: 0;
 }
 
+/* ── Research Intel Toggle Button ── */
+.hud-research-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 4px;
+    color: rgba(167, 139, 250, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.hud-research-toggle:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.5);
+    color: #a78bfa;
+}
+
+.hud-research-toggle.active {
+    background: rgba(167, 139, 250, 0.12);
+    border-color: #a78bfa;
+    color: #a78bfa;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.15);
+}
+
+.hud-research-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fbbf24;
+    animation: researchPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes researchPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+/* ── Research Intel Panel ── */
+.hud-research-panel {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    width: 360px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(4, 8, 18, 0.95);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: auto;
+    z-index: 2;
+    overflow: hidden;
+}
+
+.hud-research-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+    flex-shrink: 0;
+}
+
+.hud-research-label {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #a78bfa;
+}
+
+.hud-research-count {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(167, 139, 250, 0.7);
+    background: rgba(167, 139, 250, 0.1);
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+
+.hud-research-clear {
+    margin-left: auto;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(167, 139, 250, 0.4);
+    background: transparent;
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hud-research-clear:hover {
+    color: #a78bfa;
+    border-color: rgba(167, 139, 250, 0.4);
+    background: rgba(167, 139, 250, 0.08);
+}
+
+.hud-research-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hud-research-feed::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hud-research-feed::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hud-research-feed::-webkit-scrollbar-thumb {
+    background: rgba(167, 139, 250, 0.2);
+    border-radius: 2px;
+}
+
+.hud-research-card {
+    background: rgba(167, 139, 250, 0.05);
+    border: 1px solid rgba(167, 139, 250, 0.12);
+    border-left: 3px solid #a78bfa;
+    border-radius: 6px;
+    padding: 10px 12px;
+    animation: researchFadeIn 0.4s ease-out;
+}
+
+@keyframes researchFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hud-research-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.hud-research-card-query {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #a78bfa;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hud-research-card-time {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8px;
+    color: rgba(148, 163, 184, 0.5);
+    flex-shrink: 0;
+}
+
+.hud-research-card-reason {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 8px;
+    color: rgba(148, 163, 184, 0.5);
+    font-style: italic;
+    margin-bottom: 6px;
+}
+
+.hud-research-card-summary {
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(226, 232, 240, 0.9);
+    white-space: pre-wrap;
+    margin-bottom: 8px;
+}
+
+.hud-research-card-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hud-research-source-link {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 9px;
+    color: rgba(167, 139, 250, 0.6);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.hud-research-source-link:hover {
+    color: #a78bfa;
+    text-decoration: underline;
+}
+
 /* ── Mode selector — inline in panel row ── */
 .hud-mode-selector {
     display: flex;
