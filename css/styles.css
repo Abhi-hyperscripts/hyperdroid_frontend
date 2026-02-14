@@ -1953,10 +1953,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 /* ── Insight feed — left rail ── */
 .hud-insight-feed {
     position: absolute;
-    top: 80px;
+    top: 106px;
     left: 20px;
     width: 480px;
-    max-height: calc(100% - 110px);
+    max-height: calc(100% - 136px);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -2112,10 +2112,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-style: italic;
 }
 
-/* ── Stats bar — bottom-left ── */
+/* ── Stats bar — below mode selector ── */
 .hud-stats-bar {
     position: absolute;
-    bottom: 16px;
+    top: 76px;
     left: 20px;
     display: flex;
     align-items: center;
@@ -2241,7 +2241,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 @media (max-width: 768px) {
     .hud-insight-feed {
         width: calc(100% - 40px);
-        top: 74px;
+        top: 96px;
     }
 
     .copilot-hud.hud-center .hud-insight-feed {
@@ -2260,7 +2260,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 
     .hud-stats-bar {
         left: 12px;
-        bottom: 12px;
+        top: 68px;
     }
 }
 
