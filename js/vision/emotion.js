@@ -22,6 +22,7 @@ class EmotionDetector {
         this._attentionHistory = [];    // last 3 rotations for smoothing
         this.onEmotionUpdate = null;    // callback(emotion, confidence, isLooking, rawExpressions)
         this.onMeshUpdate = null;       // callback(positions, box, videoW, videoH)
+        this.onPoseUpdate = null;       // callback(rotX, rotY, isLooking)
         this._intervalId = null;
         this._videoElement = null;
     }
@@ -204,7 +205,12 @@ class EmotionDetector {
         const avgY = this._attentionHistory.reduce((s, r) => s + r.y, 0) / this._attentionHistory.length;
 
         // Looking at camera if rotation is within ±20 degrees on both axes
-        return Math.abs(avgY) < 20 && Math.abs(avgX) < 20;
+        const isLooking = Math.abs(avgY) < 20 && Math.abs(avgX) < 20;
+
+        // Expose smoothed pose to consumers
+        this.onPoseUpdate?.(avgX, avgY, isLooking);
+
+        return isLooking;
     }
 
     /**

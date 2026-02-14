@@ -610,6 +610,7 @@ async function initEmotionDetection() {
 
         emotionDetector.onEmotionUpdate = updateEmotionDisplay;
         emotionDetector.onMeshUpdate = updateMeshDisplay;
+        emotionDetector.onPoseUpdate = updatePoseDisplay;
 
         // Find the first remote participant's video element
         const remoteVideo = findRemoteParticipantVideo();
@@ -767,7 +768,7 @@ function updateMeshDisplay(positions, box, videoW, videoH) {
 
     // Draw wireframe paths (neon cyan)
     meshCtx.strokeStyle = 'rgba(0, 212, 255, 0.7)';
-    meshCtx.lineWidth = 1;
+    meshCtx.lineWidth = 1.5;
     for (const path of MESH_PATHS) {
         meshCtx.beginPath();
         meshCtx.moveTo(pts[path[0]].x, pts[path[0]].y);
@@ -779,7 +780,7 @@ function updateMeshDisplay(positions, box, videoW, videoH) {
 
     // Draw cross-connections (dimmer)
     meshCtx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-    meshCtx.lineWidth = 0.5;
+    meshCtx.lineWidth = 0.8;
     for (const [a, b] of MESH_CROSS) {
         meshCtx.beginPath();
         meshCtx.moveTo(pts[a].x, pts[a].y);
@@ -791,7 +792,7 @@ function updateMeshDisplay(positions, box, videoW, videoH) {
     meshCtx.fillStyle = 'rgba(0, 212, 255, 0.9)';
     for (const p of pts) {
         meshCtx.beginPath();
-        meshCtx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        meshCtx.arc(p.x, p.y, 2, 0, Math.PI * 2);
         meshCtx.fill();
     }
 
@@ -799,6 +800,50 @@ function updateMeshDisplay(positions, box, videoW, videoH) {
     const proximity = Math.min(100, Math.round((box.width / videoW) * 300));
     if (proxFill) proxFill.style.width = proximity + '%';
     if (proxValue) proxValue.textContent = proximity + '%';
+}
+
+/**
+ * Update head pose direction labels in the mesh panel.
+ * Called as onPoseUpdate callback from EmotionDetector.
+ */
+function updatePoseDisplay(rotX, rotY, isLooking) {
+    const dirH = document.getElementById('hudMeshDirH');
+    const dirV = document.getElementById('hudMeshDirV');
+    const attDot = document.getElementById('hudMeshAttDot');
+
+    if (dirH) {
+        if (rotY < -12) {
+            dirH.textContent = 'LEFT';
+            dirH.style.color = '#ffa502';
+        } else if (rotY > 12) {
+            dirH.textContent = 'RIGHT';
+            dirH.style.color = '#ffa502';
+        } else {
+            dirH.textContent = 'CENTER';
+            dirH.style.color = '#00d4ff';
+        }
+    }
+
+    if (dirV) {
+        if (rotX < -10) {
+            dirV.textContent = 'UP';
+            dirV.style.color = '#ffa502';
+        } else if (rotX > 10) {
+            dirV.textContent = 'DOWN';
+            dirV.style.color = '#ffa502';
+        } else {
+            dirV.textContent = 'LEVEL';
+            dirV.style.color = '#00d4ff';
+        }
+    }
+
+    if (attDot) {
+        if (isLooking) {
+            attDot.classList.add('looking');
+        } else {
+            attDot.classList.remove('looking');
+        }
+    }
 }
 
 /**

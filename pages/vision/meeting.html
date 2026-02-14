@@ -148,7 +148,13 @@
 
                 <!-- Face Mesh Radar Panel (toggleable) -->
                 <div class="hud-mesh-panel" id="hudMeshPanel" style="display: none;">
-                    <canvas id="hudMeshCanvas" width="140" height="105"></canvas>
+                    <canvas id="hudMeshCanvas" width="220" height="170"></canvas>
+                    <div class="hud-mesh-direction">
+                        <span class="hud-mesh-att-dot" id="hudMeshAttDot"></span>
+                        <span class="hud-mesh-dir-h" id="hudMeshDirH">CENTER</span>
+                        <span class="hud-mesh-dir-sep">|</span>
+                        <span class="hud-mesh-dir-v" id="hudMeshDirV">LEVEL</span>
+                    </div>
                     <div class="hud-mesh-proximity">
                         <span class="hud-mesh-prox-label">PROX</span>
                         <div class="hud-mesh-prox-bar">
