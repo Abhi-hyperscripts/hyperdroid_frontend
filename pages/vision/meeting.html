@@ -81,76 +81,63 @@
                 </div>
             </div>
 
-            <!-- HUD Overlay — pilot visor style, host-only -->
+            <!-- HUD Overlay — fighter cockpit style, host-only -->
             <div class="copilot-hud" id="copilotHud" style="display: none;">
-                <!-- Top-left: status bar -->
-                <div class="hud-status-bar">
-                    <span class="hud-reticle"></span>
-                    <span class="hud-label">COPILOT</span>
-                    <span class="hud-mode" id="copilotModeBadge">SALES</span>
-                    <span class="hud-separator">|</span>
-                    <span class="hud-live-dot" id="hudBotDot"></span>
-                    <span class="hud-live" id="hudBotLabel">STANDBY</span>
-                    <span class="hud-separator">|</span>
-                    <button class="hud-position-btn" id="hudPositionBtn" onclick="toggleHudPosition()" title="Move HUD to center (teleprompter mode)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="12" y1="3" x2="12" y2="21"></line>
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                        </svg>
-                    </button>
+                <!-- Unified cockpit control panel -->
+                <div class="hud-control-panel">
+                    <!-- Row 1: System status -->
+                    <div class="hud-panel-row hud-panel-top">
+                        <span class="hud-reticle"></span>
+                        <span class="hud-label">COPILOT</span>
+                        <span class="hud-mode" id="copilotModeBadge">SALES</span>
+                        <span class="hud-panel-divider"></span>
+                        <span class="hud-live-dot" id="hudBotDot"></span>
+                        <span class="hud-live" id="hudBotLabel">STANDBY</span>
+                        <span class="hud-panel-spacer"></span>
+                        <span class="hud-stat" id="hudInsightCount">0 INSIGHTS</span>
+                        <span class="hud-panel-divider"></span>
+                        <span class="hud-stat" id="hudUptime">00:00</span>
+                        <span class="hud-panel-divider"></span>
+                        <button class="hud-position-btn" id="hudPositionBtn" onclick="toggleHudPosition()" title="Move HUD to center (teleprompter mode)">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <line x1="12" y1="2" x2="12" y2="7"></line>
+                                <line x1="12" y1="17" x2="12" y2="22"></line>
+                                <line x1="2" y1="12" x2="7" y2="12"></line>
+                                <line x1="17" y1="12" x2="22" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Row 2: Controls -->
+                    <div class="hud-panel-row hud-panel-bottom">
+                        <div class="hud-mode-selector" id="copilotModeSelector">
+                            <button class="copilot-mode-btn active" data-mode="manual" onclick="setCopilotMode('manual')" title="See insights only">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <span>Manual</span>
+                            </button>
+                            <button class="copilot-mode-btn" data-mode="earpiece" onclick="setCopilotMode('earpiece')" title="Hear whispered suggestions">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                <span>Earpiece</span>
+                            </button>
+                            <button class="copilot-mode-btn" data-mode="autonomous" onclick="setCopilotMode('autonomous')" title="AI speaks to prospect">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                <span>Auto</span>
+                            </button>
+                        </div>
+                        <span class="hud-panel-divider"></span>
+                        <div class="hud-freq-toggle" id="copilotFreqToggle">
+                            <button class="copilot-freq-btn" data-freq="fast" onclick="setCopilotFrequency('fast')" title="2s cooldown — more insights">FAST</button>
+                            <button class="copilot-freq-btn active" data-freq="normal" onclick="setCopilotFrequency('normal')" title="4s cooldown — balanced">NORMAL</button>
+                            <button class="copilot-freq-btn" data-freq="chill" onclick="setCopilotFrequency('chill')" title="8s cooldown — minimal">CHILL</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Copilot mode selector — host only -->
-                <div class="hud-mode-selector" id="copilotModeSelector">
-                    <button class="copilot-mode-btn active" data-mode="manual" onclick="setCopilotMode('manual')" title="See insights only">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span>Manual</span>
-                    </button>
-                    <button class="copilot-mode-btn" data-mode="earpiece" onclick="setCopilotMode('earpiece')" title="Hear whispered suggestions">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                        </svg>
-                        <span>Earpiece</span>
-                    </button>
-                    <button class="copilot-mode-btn" data-mode="autonomous" onclick="setCopilotMode('autonomous')" title="AI speaks to prospect">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                            <line x1="12" y1="19" x2="12" y2="23"></line>
-                            <line x1="8" y1="23" x2="16" y2="23"></line>
-                        </svg>
-                        <span>Auto</span>
-                    </button>
-                </div>
-
-                <!-- Left rail: insight feed -->
+                <!-- Insight feed -->
                 <div class="hud-insight-feed" id="copilotInsights">
                     <!-- Insight cards rendered dynamically -->
                 </div>
 
-                <!-- Bottom-left: stats + frequency control -->
-                <div class="hud-stats-bar">
-                    <span class="hud-stat" id="hudInsightCount">0 INSIGHTS</span>
-                    <span class="hud-separator">|</span>
-                    <span class="hud-stat" id="hudUptime">00:00</span>
-                    <span class="hud-separator">|</span>
-                    <div class="hud-freq-toggle" id="copilotFreqToggle">
-                        <button class="copilot-freq-btn" data-freq="fast" onclick="setCopilotFrequency('fast')" title="2s cooldown — more insights">FAST</button>
-                        <button class="copilot-freq-btn active" data-freq="normal" onclick="setCopilotFrequency('normal')" title="4s cooldown — balanced">NORMAL</button>
-                        <button class="copilot-freq-btn" data-freq="chill" onclick="setCopilotFrequency('chill')" title="8s cooldown — minimal">CHILL</button>
-                    </div>
-                </div>
-
-                <!-- Corner brackets — visor frame -->
-                <div class="hud-corner hud-corner-tl"></div>
-                <div class="hud-corner hud-corner-tr"></div>
-                <div class="hud-corner hud-corner-bl"></div>
-                <div class="hud-corner hud-corner-br"></div>
             </div>
 
             <!-- Autonomous mode: thinking indicator (shown to prospect during Claude processing) -->

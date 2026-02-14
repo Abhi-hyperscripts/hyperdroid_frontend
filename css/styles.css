@@ -1717,20 +1717,87 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     overflow: hidden;
 }
 
-/* ── Status bar — top-left ── */
-.hud-status-bar {
+/* ══════════════════════════════════════════════════════════
+   COCKPIT CONTROL PANEL — unified instrument cluster
+   ══════════════════════════════════════════════════════════ */
+.hud-control-panel {
     position: absolute;
-    top: 16px;
-    left: 20px;
+    top: 12px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    background: rgba(4, 8, 18, 0.94);
+    border: 1px solid rgba(0, 212, 255, 0.22);
+    border-radius: 8px;
+    box-shadow:
+        0 0 20px rgba(0, 212, 255, 0.06),
+        inset 0 1px 0 rgba(0, 212, 255, 0.05),
+        0 4px 24px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+/* Subtle top edge glow — cockpit bezel */
+.hud-control-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
+}
+
+.hud-panel-row {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    background: rgba(6, 10, 22, 0.92);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    border-radius: 6px;
-    pointer-events: auto;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.06);
+}
+
+.hud-panel-top {
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    padding: 7px 14px 6px;
+}
+
+.hud-panel-bottom {
+    padding: 5px 14px 6px;
+}
+
+.hud-panel-divider {
+    width: 1px;
+    height: 14px;
+    background: rgba(0, 212, 255, 0.15);
+    flex-shrink: 0;
+}
+
+.hud-panel-spacer {
+    flex: 1;
+    min-width: 8px;
+}
+
+/* Center (teleprompter) mode */
+.copilot-hud.hud-center .hud-control-panel {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.copilot-hud.hud-center .hud-insight-feed {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 520px;
+}
+
+.copilot-hud.hud-center .hud-insight {
+    background: rgba(8, 12, 24, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.copilot-hud.hud-center .hud-position-btn {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: #00d4ff;
+    color: #00d4ff;
 }
 
 .hud-reticle {
@@ -1815,15 +1882,16 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     padding: 0;
     background: transparent;
     border: 1px solid rgba(0, 212, 255, 0.2);
     border-radius: 4px;
-    color: rgba(0, 212, 255, 0.5);
+    color: rgba(0, 212, 255, 0.4);
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .hud-position-btn:hover {
@@ -1832,52 +1900,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #00d4ff;
 }
 
-.copilot-hud.hud-center .hud-position-btn {
-    background: rgba(0, 212, 255, 0.15);
-    border-color: #00d4ff;
-    color: #00d4ff;
-}
-
-/* ── CENTER (teleprompter) mode — HUD at top-center for camera eye-line ── */
-.copilot-hud.hud-center .hud-status-bar {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.copilot-hud.hud-center .hud-mode-selector {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.copilot-hud.hud-center .hud-insight-feed {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 520px;
-}
-
-.copilot-hud.hud-center .hud-insight {
-    background: rgba(8, 12, 24, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-.copilot-hud.hud-center .hud-stats-bar {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.copilot-hud.hud-center .hud-corner {
-    display: none;
-}
-
-/* ── Mode selector — below status bar ── */
+/* ── Mode selector — inline in panel row ── */
 .hud-mode-selector {
-    position: absolute;
-    top: 50px;
-    left: 20px;
     display: flex;
-    gap: 4px;
-    pointer-events: auto;
+    gap: 3px;
 }
 
 .copilot-mode-btn {
@@ -1950,13 +1976,13 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     40% { opacity: 1; transform: translateY(-4px); }
 }
 
-/* ── Insight feed — left rail ── */
+/* ── Insight feed — below control panel ── */
 .hud-insight-feed {
     position: absolute;
-    top: 106px;
-    left: 20px;
+    top: 82px;
+    left: 16px;
     width: 480px;
-    max-height: calc(100% - 136px);
+    max-height: calc(100% - 110px);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -2112,21 +2138,6 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-style: italic;
 }
 
-/* ── Stats bar — below mode selector ── */
-.hud-stats-bar {
-    position: absolute;
-    top: 76px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
-    background: rgba(6, 10, 22, 0.92);
-    border: 1px solid rgba(0, 212, 255, 0.15);
-    border-radius: 4px;
-    pointer-events: auto;
-}
-
 .hud-stat {
     font-size: 10px;
     font-weight: 600;
@@ -2134,41 +2145,6 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     letter-spacing: 0.08em;
 }
 
-/* ── Corner brackets — visor frame ── */
-.hud-corner {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    pointer-events: none;
-}
-
-.hud-corner-tl {
-    top: 8px;
-    left: 8px;
-    border-top: 2px solid rgba(0, 212, 255, 0.2);
-    border-left: 2px solid rgba(0, 212, 255, 0.2);
-}
-
-.hud-corner-tr {
-    top: 8px;
-    right: 8px;
-    border-top: 2px solid rgba(0, 212, 255, 0.2);
-    border-right: 2px solid rgba(0, 212, 255, 0.2);
-}
-
-.hud-corner-bl {
-    bottom: 8px;
-    left: 8px;
-    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
-    border-left: 2px solid rgba(0, 212, 255, 0.2);
-}
-
-.hud-corner-br {
-    bottom: 8px;
-    right: 8px;
-    border-bottom: 2px solid rgba(0, 212, 255, 0.2);
-    border-right: 2px solid rgba(0, 212, 255, 0.2);
-}
 
 /* ── Animations ── */
 @keyframes hudPulse {
@@ -2239,28 +2215,26 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 
 /* ── HUD mobile responsive ── */
 @media (max-width: 768px) {
+    .hud-control-panel {
+        left: 8px;
+        right: 8px;
+        top: 8px;
+    }
+
+    .hud-panel-row {
+        gap: 6px;
+        padding: 5px 10px;
+        flex-wrap: wrap;
+    }
+
     .hud-insight-feed {
-        width: calc(100% - 40px);
-        top: 96px;
+        width: calc(100% - 16px);
+        left: 8px;
+        top: 78px;
     }
 
     .copilot-hud.hud-center .hud-insight-feed {
-        width: calc(100% - 24px);
-    }
-
-    .hud-mode-selector {
-        left: 12px;
-        top: 44px;
-    }
-
-    .hud-status-bar {
-        left: 12px;
-        top: 12px;
-    }
-
-    .hud-stats-bar {
-        left: 12px;
-        top: 68px;
+        width: calc(100% - 16px);
     }
 }
 
