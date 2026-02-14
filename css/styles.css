@@ -1932,143 +1932,7 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 /* ── Face Mesh toggle button (same style as position btn) ── */
-.hud-mesh-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    background: transparent;
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    border-radius: 4px;
-    color: rgba(0, 212, 255, 0.4);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
 
-.hud-mesh-toggle:hover {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: rgba(0, 212, 255, 0.5);
-    color: #00d4ff;
-}
-
-.hud-mesh-toggle.active {
-    background: rgba(0, 212, 255, 0.12);
-    border-color: #00d4ff;
-    color: #00d4ff;
-    box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
-}
-
-/* ── Face Mesh Radar Panel ── */
-.hud-mesh-panel {
-    position: absolute;
-    bottom: 80px;
-    right: calc(280px + 12px + 16px);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: rgba(4, 8, 18, 0.94);
-    border: 1px solid rgba(0, 212, 255, 0.22);
-    border-radius: 8px;
-    padding: 10px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    pointer-events: auto;
-    width: fit-content;
-    z-index: 1;
-}
-
-/* Single participant mode — no sidebar, panel sits at right edge */
-.video-container.single-participant ~ .copilot-hud .hud-mesh-panel {
-    right: 16px;
-}
-
-#hudMeshCanvas {
-    display: block;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.4);
-}
-
-/* ── Direction indicator row ── */
-.hud-mesh-direction {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.hud-mesh-att-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgba(148, 163, 184, 0.4);
-    flex-shrink: 0;
-    transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hud-mesh-att-dot.looking {
-    background: #2ed573;
-    box-shadow: 0 0 6px rgba(46, 213, 115, 0.6);
-}
-
-.hud-mesh-dir-h,
-.hud-mesh-dir-v {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: #00d4ff;
-    transition: color 0.2s ease;
-}
-
-.hud-mesh-dir-sep {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 10px;
-    color: rgba(0, 212, 255, 0.3);
-}
-
-.hud-mesh-proximity {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.hud-mesh-prox-label {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    color: rgba(0, 212, 255, 0.6);
-    flex-shrink: 0;
-}
-
-.hud-mesh-prox-bar {
-    flex: 1;
-    height: 3px;
-    background: rgba(0, 212, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.hud-mesh-prox-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #00d4ff, #00ffcc);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-}
-
-.hud-mesh-prox-value {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 8px;
-    font-weight: 600;
-    color: rgba(0, 212, 255, 0.8);
-    min-width: 22px;
-    text-align: right;
-    flex-shrink: 0;
-}
 
 /* ── Research Intel Toggle Button ── */
 .hud-research-toggle {
@@ -2410,10 +2274,31 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 .hud-insight.hud-high {
-    background: #140810;
     border-color: rgba(255, 71, 87, 0.25);
     border-left: 3px solid #ff4757;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Type-distinctive card styling ── */
+.hud-insight[data-type="objection"] {
+    background: rgba(255, 71, 87, 0.06);
+    border-left-color: #ff4757;
+}
+.hud-insight[data-type="suggestion"] {
+    background: rgba(0, 212, 255, 0.04);
+    border-left-color: rgba(0, 212, 255, 0.5);
+}
+.hud-insight[data-type="sentiment"] {
+    background: rgba(255, 165, 2, 0.05);
+    border-left-color: #ffa502;
+}
+.hud-insight[data-type="key_moment"] {
+    background: rgba(167, 139, 250, 0.05);
+    border-left-color: #a78bfa;
+}
+.hud-insight[data-type="summary"] {
+    background: rgba(148, 163, 184, 0.04);
+    border-left-color: #94a3b8;
 }
 
 .hud-insight-header {
@@ -2463,10 +2348,11 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 /* ── Suggested response — "say this" script (glass sub-card) ── */
 .hud-suggested-response {
     margin-top: 8px;
-    padding: 8px 10px;
+    padding: 0;
     background: rgba(0, 212, 255, 0.06);
     border: 1px solid rgba(0, 212, 255, 0.18);
     border-radius: 8px;
+    overflow: hidden;
 }
 
 .hud-suggested-label {
@@ -2478,7 +2364,26 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #00d4ff;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 0;
+    padding: 8px 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.hud-suggested-label:hover {
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.hud-suggested-chevron {
+    font-size: 10px;
+    line-height: 1;
+    transition: transform 0.25s ease;
+    color: rgba(0, 212, 255, 0.6);
+}
+
+.hud-suggested-expanded .hud-suggested-chevron {
+    transform: rotate(90deg);
 }
 
 .hud-suggested-icon {
@@ -2519,6 +2424,17 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-style: italic;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 10px;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+}
+
+.hud-suggested-expanded .hud-suggested-text {
+    max-height: 300px;
+    opacity: 1;
+    padding: 0 10px 10px;
 }
 
 .hud-stat {

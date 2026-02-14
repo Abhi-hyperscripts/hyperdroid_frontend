@@ -103,14 +103,6 @@
                             <span class="hud-attention-dot" id="hudAttentionDot"></span>
                         </span>
                         <span class="hud-panel-divider"></span>
-                        <button class="hud-mesh-toggle" id="hudMeshToggle" onclick="toggleMeshPanel()" title="Face mesh radar">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <ellipse cx="12" cy="11" rx="8" ry="10"></ellipse>
-                                <line x1="12" y1="1" x2="12" y2="21"></line>
-                                <path d="M4 8h16"></path>
-                                <path d="M5 14h14"></path>
-                            </svg>
-                        </button>
                         <button class="hud-research-toggle" id="hudResearchToggle" onclick="toggleResearchPanel()" title="Intel research feed">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -150,24 +142,6 @@
                             <button class="copilot-freq-btn active" data-freq="normal" onclick="setCopilotFrequency('normal')" title="4s cooldown — balanced">NORMAL</button>
                             <button class="copilot-freq-btn" data-freq="chill" onclick="setCopilotFrequency('chill')" title="8s cooldown — minimal">CHILL</button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Face Mesh Radar Panel (toggleable) -->
-                <div class="hud-mesh-panel" id="hudMeshPanel" style="display: none;">
-                    <canvas id="hudMeshCanvas" width="220" height="170"></canvas>
-                    <div class="hud-mesh-direction">
-                        <span class="hud-mesh-att-dot" id="hudMeshAttDot"></span>
-                        <span class="hud-mesh-dir-h" id="hudMeshDirH">CENTER</span>
-                        <span class="hud-mesh-dir-sep">|</span>
-                        <span class="hud-mesh-dir-v" id="hudMeshDirV">LEVEL</span>
-                    </div>
-                    <div class="hud-mesh-proximity">
-                        <span class="hud-mesh-prox-label">PROX</span>
-                        <div class="hud-mesh-prox-bar">
-                            <div class="hud-mesh-prox-fill" id="hudMeshProxFill"></div>
-                        </div>
-                        <span class="hud-mesh-prox-value" id="hudMeshProxValue">--</span>
                     </div>
                 </div>
 

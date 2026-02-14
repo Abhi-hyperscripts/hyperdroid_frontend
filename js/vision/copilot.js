@@ -28,34 +28,9 @@ let emotionDetector = null;
 let emotionSendInterval = null;
 let latestEmotion = { emotion: null, confidence: 0, isLooking: false };
 
-// Face mesh panel state
-let meshPanelVisible = false;
-let meshCanvas = null;
-let meshCtx = null;
-
 // Research intel panel state
 let researchPanelVisible = false;
 let researchCount = 0;
-
-// 68-point face landmark connection paths
-const MESH_PATHS = [
-    [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],           // jaw
-    [17,18,19,20,21],                                        // left eyebrow
-    [22,23,24,25,26],                                        // right eyebrow
-    [27,28,29,30],                                           // nose bridge
-    [31,32,33,34,35],                                        // nose bottom
-    [36,37,38,39,40,41,36],                                  // left eye (closed)
-    [42,43,44,45,46,47,42],                                  // right eye (closed)
-    [48,49,50,51,52,53,54,55,56,57,58,59,48],               // outer lip (closed)
-    [60,61,62,63,64,65,66,67,60],                            // inner lip (closed)
-];
-// Cross-connections for mesh density
-const MESH_CROSS = [
-    [0,17],[16,26],[21,27],[22,27],[36,17],[45,26],
-    [39,27],[42,27],[31,48],[35,54],[33,51],[33,62],
-    [8,57],[3,31],[13,35],[36,41],[42,47],
-    [27,39],[27,42],[30,33],
-];
 
 // Max visible insights in the feed before oldest auto-removes
 const HUD_MAX_VISIBLE = 5;
@@ -241,6 +216,7 @@ function showInsightCard(data) {
     const el = document.createElement('div');
     el.className = `hud-insight${isHigh ? ' hud-high' : ''}`;
     el.setAttribute('data-priority', data.priority || 'medium');
+    el.setAttribute('data-type', data.type || 'suggestion');
 
     const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -256,7 +232,8 @@ function showInsightCard(data) {
         `<div class="hud-insight-text">${escapeHtml(data.content)}</div>` +
         (hasSuggested
             ? `<div class="hud-suggested-response">` +
-                `<div class="hud-suggested-label">` +
+                `<div class="hud-suggested-label" onclick="toggleSuggestedResponse(this)">` +
+                    `<span class="hud-suggested-chevron">\u25B8</span>` +
                     `<span class="hud-suggested-icon">\u{1F399}</span> SAY THIS` +
                     `<button class="hud-copy-btn" title="Copy to clipboard" onclick="copySuggestedResponse(this, event)">COPY</button>` +
                 `</div>` +
@@ -591,6 +568,15 @@ function copySuggestedResponse(btn, event) {
     });
 }
 
+/**
+ * Toggle the SAY THIS suggested response section open/closed.
+ */
+function toggleSuggestedResponse(labelEl) {
+    const container = labelEl.closest('.hud-suggested-response');
+    if (!container) return;
+    container.classList.toggle('hud-suggested-expanded');
+}
+
 // ── Emotion Detection ──
 
 const EMOTION_COLORS = {
@@ -614,8 +600,6 @@ async function initEmotionDetection() {
         await emotionDetector.initialize();
 
         emotionDetector.onEmotionUpdate = updateEmotionDisplay;
-        emotionDetector.onMeshUpdate = updateMeshDisplay;
-        emotionDetector.onPoseUpdate = updatePoseDisplay;
 
         // Find the first remote participant's video element
         const remoteVideo = findRemoteParticipantVideo();
@@ -712,142 +696,6 @@ function stopEmotionDetection() {
     if (emotionSendInterval) {
         clearInterval(emotionSendInterval);
         emotionSendInterval = null;
-    }
-}
-
-// ── Face Mesh Panel ──
-
-/**
- * Toggle face mesh radar panel visibility.
- */
-function toggleMeshPanel() {
-    const panel = document.getElementById('hudMeshPanel');
-    const btn = document.getElementById('hudMeshToggle');
-    if (!panel) return;
-
-    meshPanelVisible = !meshPanelVisible;
-    panel.style.display = meshPanelVisible ? 'flex' : 'none';
-
-    if (btn) {
-        if (meshPanelVisible) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    }
-
-    // Initialize canvas context on first open
-    if (meshPanelVisible && !meshCtx) {
-        meshCanvas = document.getElementById('hudMeshCanvas');
-        if (meshCanvas) meshCtx = meshCanvas.getContext('2d');
-    }
-}
-
-/**
- * Update the face mesh wireframe display.
- * Called as onMeshUpdate callback from EmotionDetector.
- */
-function updateMeshDisplay(positions, box, videoW, videoH) {
-    if (!meshPanelVisible || !meshCtx || !meshCanvas) return;
-
-    const cw = meshCanvas.width;
-    const ch = meshCanvas.height;
-
-    // Clear canvas
-    meshCtx.clearRect(0, 0, cw, ch);
-
-    // Update proximity bar
-    const proxFill = document.getElementById('hudMeshProxFill');
-    const proxValue = document.getElementById('hudMeshProxValue');
-
-    if (!positions || !box) {
-        if (proxValue) proxValue.textContent = '--';
-        if (proxFill) proxFill.style.width = '0%';
-        return;
-    }
-
-    // Scale landmark points from video coords to canvas coords
-    const scaleX = cw / videoW;
-    const scaleY = ch / videoH;
-    const pts = positions.map(p => ({ x: p.x * scaleX, y: p.y * scaleY }));
-
-    // Draw wireframe paths (neon cyan)
-    meshCtx.strokeStyle = 'rgba(0, 212, 255, 0.7)';
-    meshCtx.lineWidth = 1.5;
-    for (const path of MESH_PATHS) {
-        meshCtx.beginPath();
-        meshCtx.moveTo(pts[path[0]].x, pts[path[0]].y);
-        for (let i = 1; i < path.length; i++) {
-            meshCtx.lineTo(pts[path[i]].x, pts[path[i]].y);
-        }
-        meshCtx.stroke();
-    }
-
-    // Draw cross-connections (dimmer)
-    meshCtx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-    meshCtx.lineWidth = 0.8;
-    for (const [a, b] of MESH_CROSS) {
-        meshCtx.beginPath();
-        meshCtx.moveTo(pts[a].x, pts[a].y);
-        meshCtx.lineTo(pts[b].x, pts[b].y);
-        meshCtx.stroke();
-    }
-
-    // Draw landmark dots
-    meshCtx.fillStyle = 'rgba(0, 212, 255, 0.9)';
-    for (const p of pts) {
-        meshCtx.beginPath();
-        meshCtx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-        meshCtx.fill();
-    }
-
-    // Calculate proximity: face bounding box width relative to video width
-    const proximity = Math.min(100, Math.round((box.width / videoW) * 300));
-    if (proxFill) proxFill.style.width = proximity + '%';
-    if (proxValue) proxValue.textContent = proximity + '%';
-}
-
-/**
- * Update head pose direction labels in the mesh panel.
- * Called as onPoseUpdate callback from EmotionDetector.
- */
-function updatePoseDisplay(rotX, rotY, isLooking) {
-    const dirH = document.getElementById('hudMeshDirH');
-    const dirV = document.getElementById('hudMeshDirV');
-    const attDot = document.getElementById('hudMeshAttDot');
-
-    if (dirH) {
-        if (rotY < -12) {
-            dirH.textContent = 'LEFT';
-            dirH.style.color = '#ffa502';
-        } else if (rotY > 12) {
-            dirH.textContent = 'RIGHT';
-            dirH.style.color = '#ffa502';
-        } else {
-            dirH.textContent = 'CENTER';
-            dirH.style.color = '#00d4ff';
-        }
-    }
-
-    if (dirV) {
-        if (rotX < -10) {
-            dirV.textContent = 'UP';
-            dirV.style.color = '#ffa502';
-        } else if (rotX > 10) {
-            dirV.textContent = 'DOWN';
-            dirV.style.color = '#ffa502';
-        } else {
-            dirV.textContent = 'LEVEL';
-            dirV.style.color = '#00d4ff';
-        }
-    }
-
-    if (attDot) {
-        if (isLooking) {
-            attDot.classList.add('looking');
-        } else {
-            attDot.classList.remove('looking');
-        }
     }
 }
 
