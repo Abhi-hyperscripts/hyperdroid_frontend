@@ -527,11 +527,19 @@ async function connectToLiveKit(wsUrl, token) {
         room.on('participantDisconnected', (participant) => {
             console.log('Participant disconnected:', participant.identity);
             removeParticipant(participant);
+            // Retarget emotion detector to another remote participant
+            if (typeof retargetEmotionDetector === 'function') {
+                setTimeout(retargetEmotionDetector, 500);
+            }
         });
 
         room.on('trackSubscribed', (track, publication, participant) => {
             console.log('Track subscribed:', track.kind, 'source:', publication.source);
             attachTrack(track, publication, participant);
+            // Retarget emotion detector when a remote video track becomes available
+            if (track.kind === 'video' && typeof retargetEmotionDetector === 'function') {
+                setTimeout(retargetEmotionDetector, 1000);
+            }
         });
 
         room.on('trackUnsubscribed', (track, publication, participant) => {

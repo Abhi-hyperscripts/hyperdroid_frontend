@@ -1964,8 +1964,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 /* ── Face Mesh Radar Panel ── */
 .hud-mesh-panel {
     position: absolute;
-    top: 12px;
-    right: 16px;
+    bottom: 80px;
+    right: 300px;
     display: flex;
     flex-direction: column;
     gap: 6px;
