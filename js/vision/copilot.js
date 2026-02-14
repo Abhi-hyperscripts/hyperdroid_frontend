@@ -600,8 +600,9 @@ async function initEmotionDetection() {
  * Find the first remote participant's video element in the DOM.
  */
 function findRemoteParticipantVideo() {
-    // Remote participant tiles have id like "participant-{identity}" but NOT "local-participant"
-    const tiles = document.querySelectorAll('.video-tile:not(#local-participant)');
+    // Remote participant tiles have class "video-participant" with id like "participant-{identity}"
+    // Local participant has id "local-participant"
+    const tiles = document.querySelectorAll('.video-participant:not(#local-participant)');
     for (const tile of tiles) {
         const video = tile.querySelector('video');
         if (video && video.srcObject) return video;
