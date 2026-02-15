@@ -13,7 +13,7 @@ const ENVIRONMENTS = {
         drive: 'https://localhost:5100',
         chat: 'https://localhost:5102',
         hrms: 'https://localhost:5104',
-        crm: 'https://localhost:5108',
+        crm: 'https://localhost:5112',
         notification: 'http://localhost:5110'
     },
     production: {
