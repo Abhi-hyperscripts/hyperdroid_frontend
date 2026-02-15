@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Deals Pipeline - CRM | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-pipeline.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">CRM</a>
+                    <span class="separator">/</span>
+                    <span class="current">Deals</span>
+                </nav>
+                <div class="crm-header-row">
+                    <h1>Deals Pipeline</h1>
+                    <div class="crm-header-actions">
+                        <!-- View Toggle -->
+                        <div class="crm-view-toggle" id="viewToggle">
+                            <button class="view-toggle-btn active" data-view="kanban" onclick="switchView('kanban')" title="Kanban View">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                </svg>
+                            </button>
+                            <button class="view-toggle-btn" data-view="list" onclick="switchView('list')" title="List View">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"/>
+                                    <line x1="8" y1="12" x2="21" y2="12"/>
+                                    <line x1="8" y1="18" x2="21" y2="18"/>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" id="newDealBtn" onclick="openNewDealModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Deal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline Summary -->
+        <div class="pipeline-summary" id="pipelineSummary">
+            <div class="pipeline-summary-item">
+                <span class="pipeline-summary-label">Total Value</span>
+                <span class="pipeline-summary-value" id="totalPipelineValue">-</span>
+            </div>
+            <div class="pipeline-summary-item">
+                <span class="pipeline-summary-label">Deals</span>
+                <span class="pipeline-summary-value" id="totalDealsCount">-</span>
+            </div>
+            <div class="pipeline-summary-item">
+                <span class="pipeline-summary-label">Won</span>
+                <span class="pipeline-summary-value pipeline-won" id="wonDealsValue">-</span>
+            </div>
+            <div class="pipeline-summary-item">
+                <span class="pipeline-summary-label">Lost</span>
+                <span class="pipeline-summary-value pipeline-lost" id="lostDealsValue">-</span>
+            </div>
+        </div>
+
+        <!-- Kanban View -->
+        <div class="pipeline-kanban" id="kanbanView">
+            <div class="kanban-board" id="kanbanBoard">
+                <!-- Kanban columns rendered by JS -->
+                <div class="kanban-loading">
+                    <div class="crm-empty-content">
+                        <div class="gm-spinner"></div>
+                        <p>Loading pipeline...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div class="pipeline-list" id="listView" style="display: none;">
+            <div class="crm-table-wrapper">
+                <table class="crm-table" id="dealsTable">
+                    <thead>
+                        <tr>
+                            <th>Deal Name</th>
+                            <th>Value</th>
+                            <th>Stage</th>
+                            <th class="hide-mobile">Contact</th>
+                            <th class="hide-mobile">Company</th>
+                            <th class="hide-mobile">Expected Close</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dealsTableBody">
+                        <tr>
+                            <td colspan="7" class="crm-empty-state">
+                                <div class="crm-empty-content">
+                                    <div class="gm-spinner"></div>
+                                    <p>Loading deals...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- New/Edit Deal Modal -->
+    <div class="modal" id="dealModal">
+        <div class="modal-backdrop" onclick="closeDealModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dealModalTitle">New Deal</h5>
+                    <button class="close-btn" onclick="closeDealModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="dealForm" onsubmit="handleDealSubmit(event)">
+                        <input type="hidden" id="dealId" value="">
+                        <div class="mb-3">
+                            <label for="dealName" class="form-label">Deal Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="dealName" name="deal_name" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dealValue" class="form-label">Deal Value <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="dealValue" name="deal_value" step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dealCurrency" class="form-label">Currency</label>
+                                <select class="form-select" id="dealCurrency" name="currency">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                    <option value="INR">INR</option>
+                                    <option value="AED">AED</option>
+                                    <option value="CAD">CAD</option>
+                                    <option value="AUD">AUD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dealStage" class="form-label">Stage <span class="text-danger">*</span></label>
+                                <select class="form-select" id="dealStage" name="stage_id" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dealExpectedClose" class="form-label">Expected Close Date</label>
+                                <input type="date" class="form-control" id="dealExpectedClose" name="expected_close_date">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dealContact" class="form-label">Contact</label>
+                                <select class="form-select" id="dealContact" name="contact_id">
+                                    <option value="">Select contact...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dealCompany" class="form-label">Company</label>
+                                <select class="form-select" id="dealCompany" name="company_id">
+                                    <option value="">Select company...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dealNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="dealNotes" name="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDealModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="dealForm" id="dealSubmitBtn">
+                        <span class="btn-spinner" id="dealSubmitSpinner" style="display:none;"></span>
+                        Create Deal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deal Stage Change Confirmation -->
+    <div class="modal" id="stageChangeModal">
+        <div class="modal-backdrop" onclick="closeStageChangeModal()"></div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="stageChangeTitle">Mark as Won</h5>
+                    <button class="close-btn" onclick="closeStageChangeModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="stageChangeBody">
+                    <p style="color: var(--text-secondary);">Are you sure you want to update this deal?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeStageChangeModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="stageChangeConfirmBtn" onclick="confirmStageChange()">
+                        <span class="btn-spinner" id="stageChangeSpinner" style="display:none;"></span>
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/deals.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

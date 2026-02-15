@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>CRM Dashboard - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard crm-dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <div class="crm-header">
+            <div>
+                <h1>CRM Dashboard</h1>
+                <p>Customer Relationship Management</p>
+            </div>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon leads">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalLeads">-</div>
+                <div class="stat-label">Total Leads</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon deals">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="activeDeals">-</div>
+                <div class="stat-label">Active Deals</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon pipeline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"/>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="pipelineValue">-</div>
+                <div class="stat-label">Pipeline Value</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon converted">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="convertedLeads">-</div>
+                <div class="stat-label">Converted Leads</div>
+            </div>
+        </div>
+
+        <!-- Lead Funnel Section -->
+        <div class="section-header">
+            <h3 class="section-title">Lead Funnel</h3>
+        </div>
+        <div class="lead-funnel" id="leadFunnel">
+            <div class="funnel-stage" id="funnelNew">
+                <div class="funnel-bar">
+                    <div class="funnel-fill" id="funnelNewFill" style="width: 0%"></div>
+                </div>
+                <div class="funnel-info">
+                    <span class="funnel-label">New</span>
+                    <span class="funnel-count" id="funnelNewCount">0</span>
+                </div>
+            </div>
+            <div class="funnel-stage" id="funnelContacted">
+                <div class="funnel-bar">
+                    <div class="funnel-fill" id="funnelContactedFill" style="width: 0%"></div>
+                </div>
+                <div class="funnel-info">
+                    <span class="funnel-label">Contacted</span>
+                    <span class="funnel-count" id="funnelContactedCount">0</span>
+                </div>
+            </div>
+            <div class="funnel-stage" id="funnelQualified">
+                <div class="funnel-bar">
+                    <div class="funnel-fill" id="funnelQualifiedFill" style="width: 0%"></div>
+                </div>
+                <div class="funnel-info">
+                    <span class="funnel-label">Qualified</span>
+                    <span class="funnel-count" id="funnelQualifiedCount">0</span>
+                </div>
+            </div>
+            <div class="funnel-stage" id="funnelConverted">
+                <div class="funnel-bar">
+                    <div class="funnel-fill" id="funnelConvertedFill" style="width: 0%"></div>
+                </div>
+                <div class="funnel-info">
+                    <span class="funnel-label">Converted</span>
+                    <span class="funnel-count" id="funnelConvertedCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Leads Table -->
+        <div class="section-header">
+            <h3 class="section-title">Recent Leads</h3>
+        </div>
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="recentLeadsBody">
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <p>Loading leads...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header">
+            <h3 class="section-title">Quick Actions</h3>
+        </div>
+        <div class="quick-actions" id="quickActionsGrid">
+            <div class="action-card" id="cardNewLead" onclick="navigateTo('leads.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="23" y1="11" x2="17" y2="11"/>
+                        <line x1="20" y1="8" x2="20" y2="14"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>New Lead</h4>
+                    <p>Capture a new lead into the pipeline</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" id="cardNewDeal" onclick="navigateTo('deals.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>New Deal</h4>
+                    <p>Create a new deal in the pipeline</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" id="cardNewContact" onclick="navigateTo('contacts.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>New Contact</h4>
+                    <p>Add a new contact to the directory</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+
+            <div class="action-card" id="cardNewCompany" onclick="navigateTo('companies.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>New Company</h4>
+                    <p>Register a new company account</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

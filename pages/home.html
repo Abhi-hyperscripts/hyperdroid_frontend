@@ -169,6 +169,38 @@
                 </div>
             </div>
 
+            <!-- CRM Card -->
+            <div class="bento-card crm" onclick="navigateToModule('crm')" id="crmCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="crmStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>CRM</h3>
+                        <p>Customer relationship management with leads, deals, and Facebook integration</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Admin Card (SUPERADMIN only) -->
             <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
                 <div class="card-border"></div>
@@ -265,6 +297,7 @@
                 'driveCard': 'DRIVE_USER',
                 'chatCard': 'CHAT_USER',
                 'hrmsCard': 'HRMS_USER',
+                'crmCard': 'CRM_USER',
                 'adminCard': 'SUPERADMIN'
             };
 
@@ -273,7 +306,8 @@
                 'visionCard': 'Vision',
                 'driveCard': 'Drive',
                 'chatCard': 'Chat',
-                'hrmsCard': 'HRMS'
+                'hrmsCard': 'HRMS',
+                'crmCard': 'CRM'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -313,6 +347,7 @@
             checkServiceHealth('drive', CONFIG.endpoints.drive);
             checkServiceHealth('chat', CONFIG.endpoints.chat);
             checkServiceHealth('hrms', CONFIG.endpoints.hrms);
+            checkServiceHealth('crm', CONFIG.endpoints.crm);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -354,6 +389,9 @@
                     break;
                 case 'hrms':
                     window.location.href = 'hrms/dashboard.html';
+                    break;
+                case 'crm':
+                    window.location.href = 'crm/dashboard.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';

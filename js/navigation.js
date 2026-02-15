@@ -13,6 +13,7 @@ const Navigation = {
         drive: 'DRIVE_USER',
         chat: 'CHAT_USER',
         hrms: 'HRMS_USER',
+        crm: 'CRM_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -67,6 +68,18 @@ const Navigation = {
             </svg>`,
             href: 'hrms/dashboard.html',
             requiresRole: 'HRMS_USER'
+        },
+        {
+            id: 'crm',
+            label: 'CRM',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+            </svg>`,
+            href: 'crm/dashboard.html',
+            requiresRole: 'CRM_USER'
         },
         {
             id: 'admin',
@@ -154,7 +167,8 @@ const Navigation = {
         'vision': 'Vision',
         'drive': 'Drive',
         'chat': 'Chat',
-        'hrms': 'HRMS'
+        'hrms': 'HRMS',
+        'crm': 'CRM'
         // 'admin' and 'home' don't require service licensing
     },
 
@@ -566,7 +580,10 @@ async function loadNavigation() {
     let currentPageId = 'home';
     let basePath = '';
 
-    if (path.includes('/hrms/')) {
+    if (path.includes('/crm/')) {
+        currentPageId = 'crm';
+        basePath = '../';
+    } else if (path.includes('/hrms/')) {
         currentPageId = 'hrms';
         basePath = '../';
     } else if (path.includes('/vision/')) {

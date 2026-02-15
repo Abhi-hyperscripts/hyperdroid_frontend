@@ -108,6 +108,10 @@ class API {
         if (endpoint.startsWith('/hrms/')) {
             return CONFIG.hrmsApiBaseUrl;
         }
+        // CRM endpoints go to CRM service (independent microservice)
+        if (endpoint.startsWith('/crm/')) {
+            return CONFIG.crmApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
@@ -135,6 +139,11 @@ class API {
         let actualEndpoint = endpoint;
         if (endpoint.startsWith('/hrms/')) {
             actualEndpoint = endpoint.substring(5); // Remove '/hrms' prefix, keep the rest
+        }
+        // For CRM endpoints, strip /crm prefix since baseUrl already has /api
+        // e.g., /crm/dashboard -> /dashboard (baseUrl has /api, so final is /api/dashboard)
+        if (endpoint.startsWith('/crm/')) {
+            actualEndpoint = endpoint.substring(4); // Remove '/crm' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {

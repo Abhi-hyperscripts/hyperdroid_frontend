@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Leads - CRM | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">CRM</a>
+                    <span class="separator">/</span>
+                    <span class="current">Leads</span>
+                </nav>
+                <div class="crm-header-row">
+                    <h1>Leads</h1>
+                    <button class="btn btn-primary" id="newLeadBtn" onclick="openNewLeadModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Lead
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="crm-stats-grid" id="leadStatsGrid">
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-total">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="statTotalLeads">-</div>
+                <div class="crm-stat-label">Total Leads</div>
+            </div>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-new">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="statNewLeads">-</div>
+                <div class="crm-stat-label">New</div>
+            </div>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-qualified">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="statQualifiedLeads">-</div>
+                <div class="crm-stat-label">Qualified</div>
+            </div>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-converted">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="statConvertedLeads">-</div>
+                <div class="crm-stat-label">Converted</div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="crm-filter-bar">
+            <div class="crm-filter-group">
+                <label for="filterStatus">Status</label>
+                <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="converted">Converted</option>
+                </select>
+            </div>
+            <div class="crm-filter-group">
+                <label for="filterSource">Source</label>
+                <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">All Sources</option>
+                    <option value="manual">Manual</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="website">Website</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="referral">Referral</option>
+                    <option value="google_ads">Google Ads</option>
+                </select>
+            </div>
+            <div class="crm-filter-group crm-search-group">
+                <label for="filterSearch">Search</label>
+                <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search leads..." oninput="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="crm-bulk-actions" id="bulkActionsBar" style="display: none;">
+            <span class="bulk-count"><span id="selectedCount">0</span> selected</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="bulkAssign()">Assign</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="bulkDelete()">Delete</button>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="crm-table-wrapper">
+            <table class="crm-table" id="leadsTable">
+                <thead>
+                    <tr>
+                        <th class="th-checkbox">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                        </th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th class="hide-mobile">Phone</th>
+                        <th class="hide-mobile">Source</th>
+                        <th>Status</th>
+                        <th class="hide-mobile">Owner</th>
+                        <th class="hide-mobile">Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody">
+                    <tr>
+                        <td colspan="9" class="crm-empty-state">
+                            <div class="crm-empty-content">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <line x1="23" y1="11" x2="17" y2="11"/>
+                                    <line x1="20" y1="8" x2="20" y2="14"/>
+                                </svg>
+                                <p>Loading leads...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="crm-pagination" id="leadsPagination"></div>
+    </div>
+
+    <!-- New/Edit Lead Modal -->
+    <div class="modal" id="leadModal">
+        <div class="modal-backdrop" onclick="closeLeadModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leadModalTitle">New Lead</h5>
+                    <button class="close-btn" onclick="closeLeadModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="leadForm" onsubmit="handleLeadSubmit(event)">
+                        <input type="hidden" id="leadId" value="">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="leadFirstName" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="leadFirstName" name="first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="leadLastName" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="leadLastName" name="last_name" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="leadEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="leadEmail" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="leadPhone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="leadPhone" name="phone">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="leadCompany" class="form-label">Company</label>
+                                <input type="text" class="form-control" id="leadCompany" name="company">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="leadJobTitle" class="form-label">Job Title</label>
+                                <input type="text" class="form-control" id="leadJobTitle" name="job_title">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="leadSource" class="form-label">Lead Source</label>
+                                <select class="form-select" id="leadSource" name="lead_source">
+                                    <option value="manual">Manual</option>
+                                    <option value="website">Website</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="referral">Referral</option>
+                                    <option value="google_ads">Google Ads</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="leadStatus" class="form-label">Status</label>
+                                <select class="form-select" id="leadStatus" name="status">
+                                    <option value="new">New</option>
+                                    <option value="contacted">Contacted</option>
+                                    <option value="qualified">Qualified</option>
+                                    <option value="converted">Converted</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="leadNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="leadNotes" name="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeLeadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="leadForm" id="leadSubmitBtn">
+                        <span class="btn-spinner" id="leadSubmitSpinner" style="display:none;"></span>
+                        Create Lead
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Convert Lead Modal -->
+    <div class="modal" id="convertLeadModal">
+        <div class="modal-backdrop" onclick="closeConvertModal()"></div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Convert Lead</h5>
+                    <button class="close-btn" onclick="closeConvertModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Converting this lead will create a Contact and optionally a Deal.
+                    </p>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="convertCreateDeal" checked>
+                            <label class="form-check-label" for="convertCreateDeal" style="color: var(--text-primary);">
+                                Also create a Deal
+                            </label>
+                        </div>
+                    </div>
+                    <div id="convertDealFields">
+                        <div class="mb-3">
+                            <label for="convertDealName" class="form-label">Deal Name</label>
+                            <input type="text" class="form-control" id="convertDealName">
+                        </div>
+                        <div class="mb-3">
+                            <label for="convertDealValue" class="form-label">Deal Value</label>
+                            <input type="number" class="form-control" id="convertDealValue" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeConvertModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmConvertLead()" id="convertLeadBtn">
+                        <span class="btn-spinner" id="convertSpinner" style="display:none;"></span>
+                        Convert Lead
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/leads.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

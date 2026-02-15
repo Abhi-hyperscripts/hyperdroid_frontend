@@ -13,6 +13,7 @@ const ENVIRONMENTS = {
         drive: 'https://localhost:5100',
         chat: 'https://localhost:5102',
         hrms: 'https://localhost:5104',
+        crm: 'https://localhost:5108',
         notification: 'http://localhost:5110'
     },
     production: {
@@ -21,6 +22,7 @@ const ENVIRONMENTS = {
         drive: 'https://drive.ragenaizer.com',
         chat: 'https://chat.ragenaizer.com',
         hrms: 'https://hrms.ragenaizer.com',
+        crm: 'https://crm.ragenaizer.com',
         notification: 'https://notification.ragenaizer.com'
     }
 };
@@ -72,6 +74,14 @@ const CONFIG = {
 
     get hrmsApiBaseUrl() {
         return `${this.endpoints.hrms}/api`;
+    },
+
+    get crmApiBaseUrl() {
+        return `${this.endpoints.crm}/api`;
+    },
+
+    get crmSignalRHubUrl() {
+        return `${this.endpoints.crm}/hubs/crm`;
     },
 
     get notificationApiBaseUrl() {

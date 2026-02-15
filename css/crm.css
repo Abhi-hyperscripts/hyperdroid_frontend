@@ -1,0 +1,1914 @@
+/**
+ * CRM Module Styles
+ * Shared styles for all CRM pages
+ * Uses CSS variables from theme.css - NEVER hardcode colors
+ */
+
+/* Fix: glassmorphic modal overlays must not intercept clicks when inactive */
+.gm-overlay:not(.active) {
+    pointer-events: none !important;
+}
+
+/* Professional font stack */
+.crm-container, .modal-content {
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Main Container */
+.crm-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 100px 24px 32px 24px;
+}
+
+/* Header */
+.crm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.crm-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.crm-header p {
+    color: var(--text-secondary);
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Breadcrumb */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.breadcrumb-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--text-primary);
+}
+
+.breadcrumb-nav .separator {
+    color: var(--text-muted);
+}
+
+.breadcrumb-nav .current {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Override Bootstrap primary button */
+.crm-container .btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+}
+.crm-container .btn-primary:hover {
+    background-color: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+    color: var(--text-inverse);
+}
+.crm-container .btn-primary:focus,
+.crm-container .btn-primary:active {
+    background-color: var(--brand-primary-dark) !important;
+    border-color: var(--brand-primary-dark) !important;
+    color: var(--text-inverse) !important;
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.25) !important;
+}
+
+.crm-container .btn-secondary {
+    background-color: var(--gray-100);
+    border-color: var(--border-color-light);
+    color: var(--text-primary);
+}
+.crm-container .btn-secondary:hover {
+    background-color: var(--gray-200);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.crm-container .btn-danger {
+    background-color: var(--color-danger);
+    border-color: var(--color-danger);
+    color: var(--text-inverse);
+}
+.crm-container .btn-danger:hover {
+    background-color: var(--color-danger-dark);
+    border-color: var(--color-danger-dark);
+}
+
+.crm-container .btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+.crm-container .btn-outline:hover {
+    background-color: rgba(var(--brand-primary-rgb), 0.06);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+/* Button Spinner */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--text-inverse);
+    animation: crm-btn-spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+@keyframes crm-btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Search & Filter Bar ─────────────────────────────────────────────────── */
+
+.crm-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.crm-search-input {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crm-search-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.12);
+}
+
+.crm-search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+}
+
+.crm-search-wrapper .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* ─── Data Table ──────────────────────────────────────────────────────────── */
+
+.data-table-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid var(--border-color-light);
+    overflow: hidden;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: rgba(var(--brand-primary-rgb), 0.04);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color-light);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color-light);
+    font-size: 0.85rem;
+    vertical-align: middle;
+    color: var(--text-primary);
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:hover td {
+    background: rgba(var(--brand-primary-rgb), 0.03);
+}
+
+.data-table .actions-cell {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.data-table .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.data-table .action-btn:hover {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary);
+}
+
+.data-table .action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--color-danger);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-secondary);
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+}
+
+.empty-state h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+/* ─── Status Badges ───────────────────────────────────────────────────────── */
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: var(--border-radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+
+.badge-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.badge-danger {
+    background: var(--color-danger-light);
+    color: var(--color-danger-text);
+}
+
+.badge-info {
+    background: var(--color-info-light);
+    color: var(--color-info-text);
+}
+
+.badge-neutral {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+/* ─── CRM Tabs ────────────────────────────────────────────────────────────── */
+
+.crm-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color-light);
+    padding-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.crm-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    position: relative;
+}
+
+.crm-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(var(--brand-primary-rgb), 0.04);
+}
+
+.crm-tab-btn.active {
+    color: var(--text-primary);
+    background: rgba(var(--brand-primary-rgb), 0.06);
+}
+
+.crm-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--brand-primary);
+}
+
+.crm-tab-content {
+    display: none;
+}
+
+.crm-tab-content.active {
+    display: block;
+}
+
+/* ─── Form Styles ─────────────────────────────────────────────────────────── */
+
+.crm-form-group {
+    margin-bottom: 16px;
+}
+
+.crm-form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.crm-form-group input,
+.crm-form-group select,
+.crm-form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crm-form-group input:focus,
+.crm-form-group select:focus,
+.crm-form-group textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.12);
+}
+
+.crm-form-group input:disabled,
+.crm-form-group select:disabled {
+    background: var(--bg-input-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.crm-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .crm-form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Section Headers ─────────────────────────────────────────────────────── */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* ─── Settings Specific: Pipeline Stage Card ──────────────────────────────── */
+
+.stage-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.stage-card:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.3);
+    box-shadow: var(--shadow-sm);
+}
+
+.stage-card-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.stage-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.stage-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.stage-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.stage-type-badge {
+    padding: 2px 8px;
+    border-radius: var(--border-radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stage-type-badge.open {
+    background: var(--color-info-light);
+    color: var(--color-info-text);
+}
+
+.stage-type-badge.won {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+
+.stage-type-badge.lost {
+    background: var(--color-danger-light);
+    color: var(--color-danger-text);
+}
+
+.stage-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.stage-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.stage-actions button:hover {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary);
+}
+
+.stage-actions button.delete:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--color-danger);
+}
+
+/* ─── Settings Specific: Facebook Integration Card ────────────────────────── */
+
+.integration-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.integration-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.integration-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.integration-icon.facebook {
+    background: rgba(24, 119, 242, 0.1);
+    color: #1877f2;
+}
+
+.integration-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.integration-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 4px 0 0;
+}
+
+.integration-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.integration-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.integration-status .dot.connected {
+    background: var(--color-success);
+}
+
+.integration-status .dot.disconnected {
+    background: var(--gray-400);
+}
+
+.connected-pages-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+}
+
+.connected-pages-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.connected-pages-list .page-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.connected-pages-list .lead-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ─── Alert Banner ────────────────────────────────────────────────────────── */
+
+.crm-alert {
+    padding: 12px 16px;
+    border-radius: var(--border-radius-md);
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.crm-alert-success {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-success);
+}
+
+.crm-alert-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger-text);
+    border: 1px solid var(--color-danger);
+}
+
+.crm-alert-info {
+    background: var(--color-info-light);
+    color: var(--color-info-text);
+    border: 1px solid var(--color-info);
+}
+
+/* ─── Loading Spinner ─────────────────────────────────────────────────────── */
+
+.crm-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    color: var(--text-secondary);
+}
+
+.crm-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color-light);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: crm-btn-spin 0.8s linear infinite;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .crm-container {
+        padding: 80px 16px 24px 16px;
+    }
+
+    .crm-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .crm-toolbar {
+        flex-direction: column;
+    }
+
+    .crm-search-wrapper {
+        min-width: 100%;
+    }
+
+    .crm-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .stage-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stage-actions {
+        align-self: flex-end;
+    }
+}
+
+/* ─── Dark Theme Overrides ────────────────────────────────────────────────── */
+
+[data-theme="dark"] .data-table-container {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .data-table th {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .data-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .stage-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .integration-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-form-group input,
+[data-theme="dark"] .crm-form-group select,
+[data-theme="dark"] .crm-form-group textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .crm-search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .crm-container .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .crm-container .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .badge-neutral {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   CRM DASHBOARD - Ambient Background
+   ============================================================= */
+body.crm-dashboard {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.crm-dashboard::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="dark"] body.crm-dashboard::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
+}
+
+body.crm-dashboard .crm-container {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================================
+   CRM DASHBOARD - Stats Cards
+   ============================================================= */
+.crm-container .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.crm-container .stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.crm-container .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.crm-container .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.crm-container .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crm-container .stat-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-inverse);
+}
+
+.crm-container .stat-icon.leads {
+    background: linear-gradient(135deg, var(--color-info), var(--color-primary));
+}
+
+.crm-container .stat-icon.deals {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-light-accent));
+}
+
+.crm-container .stat-icon.pipeline {
+    background: linear-gradient(135deg, var(--color-purple), var(--color-purple-dark));
+}
+
+.crm-container .stat-icon.converted {
+    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
+}
+
+.crm-container .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.crm-container .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* =============================================================
+   CRM DASHBOARD - Lead Funnel
+   ============================================================= */
+.lead-funnel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.funnel-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.funnel-bar {
+    height: 24px;
+    background: var(--overlay-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.funnel-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.6s ease;
+    min-width: 0;
+}
+
+#funnelNewFill {
+    background: linear-gradient(90deg, var(--color-info), var(--color-info-dark));
+}
+
+#funnelContactedFill {
+    background: linear-gradient(90deg, var(--color-warning), var(--color-warning-dark));
+}
+
+#funnelQualifiedFill {
+    background: linear-gradient(90deg, var(--color-purple), var(--color-purple-dark));
+}
+
+#funnelConvertedFill {
+    background: linear-gradient(90deg, var(--color-success), var(--color-success-dark));
+}
+
+.funnel-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.funnel-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.funnel-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   CRM DASHBOARD - Quick Actions
+   ============================================================= */
+.crm-container .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.crm-container .action-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    box-shadow: var(--shadow-xs);
+}
+
+.crm-container .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand-primary);
+    background: var(--bg-card-hover);
+}
+
+.crm-container .action-card:active {
+    transform: translateY(0);
+}
+
+.crm-container .action-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.crm-container .action-icon svg {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.15s ease;
+}
+
+.crm-container .action-card:hover .action-icon svg {
+    transform: scale(1.05);
+}
+
+.crm-container .action-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.crm-container .action-content h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    line-height: 1.3;
+}
+
+.crm-container .action-content p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.crm-container .action-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.crm-container .action-card:hover .action-arrow {
+    transform: translateX(4px);
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+/* Action Card Variants */
+#cardNewLead .action-icon {
+    background: linear-gradient(135deg, var(--color-info), var(--color-info-dark));
+}
+#cardNewLead .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardNewLead:hover {
+    border-color: var(--color-info);
+}
+
+#cardNewDeal .action-icon {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+}
+#cardNewDeal .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardNewDeal:hover {
+    border-color: var(--color-success);
+}
+
+#cardNewContact .action-icon {
+    background: linear-gradient(135deg, var(--color-purple), var(--color-purple-dark));
+}
+#cardNewContact .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardNewContact:hover {
+    border-color: var(--color-purple);
+}
+
+#cardNewCompany .action-icon {
+    background: linear-gradient(135deg, var(--color-warning), var(--color-warning-dark));
+}
+#cardNewCompany .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardNewCompany:hover {
+    border-color: var(--color-warning);
+}
+
+/* =============================================================
+   CRM DASHBOARD - Lead Info Cell
+   ============================================================= */
+.lead-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lead-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--avatar-bg);
+    color: var(--avatar-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.lead-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   CRM DASHBOARD - Status Badges (scoped)
+   ============================================================= */
+.crm-container .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.crm-container .status-badge.new {
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    color: var(--color-info);
+}
+
+.crm-container .status-badge.contacted {
+    background: var(--warning-alpha-15);
+    color: var(--color-warning-dark);
+}
+
+.crm-container .status-badge.qualified {
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--color-purple);
+}
+
+.crm-container .status-badge.converted {
+    background: var(--success-alpha-15);
+    color: var(--color-success);
+}
+
+.crm-container .status-badge.lost {
+    background: var(--danger-alpha-15);
+    color: var(--color-danger);
+}
+
+/* =============================================================
+   CRM DASHBOARD - Refresh Button
+   ============================================================= */
+.crm-container .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--overlay-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.crm-container .refresh-btn:hover {
+    background: var(--hover-overlay-strong);
+}
+
+.crm-container .refresh-btn.loading svg {
+    animation: crm-btn-spin 1s linear infinite;
+}
+
+/* =============================================================
+   CRM DASHBOARD - Responsive Overrides
+   ============================================================= */
+@media (max-width: 1024px) {
+    .crm-container .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .crm-container .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .crm-container .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .crm-container .stat-card {
+        padding: 14px 12px;
+    }
+
+    .crm-container .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .crm-container .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .crm-container .stat-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .crm-container .stat-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .crm-container .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .crm-container .data-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .crm-container .data-table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 480px) {
+    .crm-container .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+}
+
+/* =============================================================
+   CRM LEADS & DEALS - Header Row
+   ============================================================= */
+.crm-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.crm-header-row .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: var(--border-radius-md);
+    white-space: nowrap;
+}
+
+.crm-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* =============================================================
+   CRM LEADS - Stats Grid
+   ============================================================= */
+.crm-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.crm-stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.crm-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(var(--brand-primary-rgb), 0.3);
+}
+
+.crm-stat-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.crm-stat-icon svg {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    color: var(--text-inverse);
+    flex-shrink: 0;
+}
+
+.crm-stat-icon.stat-total {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
+}
+
+.crm-stat-icon.stat-new {
+    background: linear-gradient(135deg, var(--color-info), var(--color-info-dark));
+}
+
+.crm-stat-icon.stat-qualified {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+}
+
+.crm-stat-icon.stat-converted {
+    background: linear-gradient(135deg, var(--brand-secondary), var(--color-purple-dark));
+}
+
+.crm-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.crm-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* =============================================================
+   CRM LEADS - Filter Bar
+   ============================================================= */
+.crm-filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.crm-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.crm-filter-group label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.crm-filter-group .form-select,
+.crm-filter-group .form-control {
+    font-size: 0.85rem;
+    border-color: var(--border-color);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-md);
+}
+
+.crm-filter-group .form-select:focus,
+.crm-filter-group .form-control:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.12);
+}
+
+.crm-search-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* =============================================================
+   CRM - Bulk Actions Bar
+   ============================================================= */
+.crm-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: rgba(var(--brand-primary-rgb), 0.06);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 12px;
+}
+
+.crm-bulk-actions .bulk-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.crm-bulk-actions .btn-outline-primary {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    font-size: 0.8rem;
+}
+
+.crm-bulk-actions .btn-outline-primary:hover {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.crm-bulk-actions .btn-outline-danger {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    font-size: 0.8rem;
+}
+
+.crm-bulk-actions .btn-outline-danger:hover {
+    background: var(--color-danger);
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   CRM - Data Table (Leads & Deals)
+   ============================================================= */
+.crm-table-wrapper {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    border: 1px solid var(--border-color-light);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.crm-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.crm-table th {
+    background: rgba(var(--brand-primary-rgb), 0.04);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color-light);
+    white-space: nowrap;
+}
+
+.crm-table th.th-checkbox {
+    width: 40px;
+    text-align: center;
+}
+
+.crm-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color-light);
+    font-size: 0.85rem;
+    vertical-align: middle;
+    color: var(--text-primary);
+}
+
+.crm-table td.td-checkbox {
+    width: 40px;
+    text-align: center;
+}
+
+.crm-table tr:last-child td {
+    border-bottom: none;
+}
+
+.crm-table tr:hover td {
+    background: rgba(var(--brand-primary-rgb), 0.03);
+}
+
+.crm-cell-primary {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.crm-cell-secondary {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   CRM - Status Badges (Leads)
+   ============================================================= */
+.crm-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--border-radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.crm-status-badge.status-new {
+    background: var(--color-info-light);
+    color: var(--color-info-text);
+}
+
+.crm-status-badge.status-contacted {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+.crm-status-badge.status-qualified {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+
+.crm-status-badge.status-converted {
+    background: var(--color-purple-light);
+    color: var(--color-purple-text);
+}
+
+/* =============================================================
+   CRM - Source Badges (Leads)
+   ============================================================= */
+.crm-source-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: var(--gray-100);
+    color: var(--text-secondary);
+}
+
+.crm-source-badge.source-facebook {
+    background: rgba(24, 119, 242, 0.1);
+    color: var(--color-info-text);
+}
+
+.crm-source-badge.source-website {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary);
+}
+
+.crm-source-badge.source-linkedin {
+    background: rgba(10, 102, 194, 0.1);
+    color: var(--color-info-text);
+}
+
+.crm-source-badge.source-referral {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+
+.crm-source-badge.source-google_ads {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+/* =============================================================
+   CRM - Stage Badges (Deals)
+   ============================================================= */
+.crm-stage-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--border-radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary);
+}
+
+.crm-stage-badge.stage-won {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+
+.crm-stage-badge.stage-lost {
+    background: var(--color-danger-light);
+    color: var(--color-danger-text);
+}
+
+/* =============================================================
+   CRM - Action Buttons (Table rows)
+   ============================================================= */
+.crm-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.crm-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crm-action-btn:hover {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary);
+}
+
+.crm-action-btn.action-convert:hover {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.crm-action-btn.action-delete:hover {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+/* =============================================================
+   CRM - Empty State
+   ============================================================= */
+.crm-empty-state {
+    text-align: center;
+    padding: 48px 24px !important;
+}
+
+.crm-empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+}
+
+.crm-empty-content svg {
+    opacity: 0.4;
+}
+
+.crm-empty-content p {
+    font-size: 0.9rem;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   CRM - Deal Value Cell
+   ============================================================= */
+.deal-value-cell {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    color: var(--text-primary);
+}
+
+/* =============================================================
+   CRM - Pipeline Summary Bar
+   ============================================================= */
+.pipeline-summary {
+    display: flex;
+    gap: 24px;
+    padding: 14px 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
+}
+
+.pipeline-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pipeline-summary-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.pipeline-summary-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.pipeline-summary-value.pipeline-won {
+    color: var(--color-success);
+}
+
+.pipeline-summary-value.pipeline-lost {
+    color: var(--color-danger);
+}
+
+/* =============================================================
+   CRM - View Toggle (Kanban/List)
+   ============================================================= */
+.crm-view-toggle {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(var(--brand-primary-rgb), 0.06);
+    color: var(--text-primary);
+}
+
+.view-toggle-btn.active {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   CRM - Pagination
+   ============================================================= */
+.crm-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 16px 0;
+}
+
+.crm-pagination .page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.crm-pagination .page-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.crm-pagination .page-btn.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   CRM - Responsive: Table & Filters
+   ============================================================= */
+@media (max-width: 1024px) {
+    .crm-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .crm-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .crm-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .crm-stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .crm-stat-card {
+        padding: 12px;
+    }
+
+    .crm-stat-value {
+        font-size: 1.25rem;
+    }
+
+    .crm-filter-bar {
+        flex-direction: column;
+    }
+
+    .crm-filter-group {
+        min-width: 100%;
+    }
+
+    .crm-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .crm-table {
+        min-width: 600px;
+    }
+
+    .hide-mobile {
+        display: none !important;
+    }
+
+    .pipeline-summary {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .crm-stats-grid {
+        gap: 6px;
+    }
+}
+
+/* =============================================================
+   CRM - Dark Theme Overrides for Leads/Deals
+   ============================================================= */
+[data-theme="dark"] .crm-table-wrapper {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .crm-table th {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .crm-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .crm-stat-card {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-bulk-actions {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    border-color: rgba(var(--brand-primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .crm-source-badge {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .pipeline-summary {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-view-toggle {
+    border-color: rgba(255, 255, 255, 0.1);
+}

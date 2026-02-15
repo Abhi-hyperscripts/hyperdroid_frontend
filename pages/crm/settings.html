@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Settings - CRM | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">CRM</a>
+                    <span class="separator">/</span>
+                    <span class="current">Settings</span>
+                </nav>
+                <h1>CRM Settings</h1>
+                <p>Configure your CRM pipeline, integrations, and lead sources</p>
+            </div>
+        </div>
+
+        <!-- OAuth Status Alert (shown after Facebook callback) -->
+        <div class="crm-alert crm-alert-success" id="oauthSuccessAlert" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <span>Facebook pages connected successfully!</span>
+        </div>
+        <div class="crm-alert crm-alert-error" id="oauthErrorAlert" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span>Failed to connect Facebook pages. Please try again.</span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="crm-tabs">
+            <button class="crm-tab-btn active" data-tab="pipeline" onclick="switchTab('pipeline')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                Pipeline
+            </button>
+            <button class="crm-tab-btn" data-tab="integrations" onclick="switchTab('integrations')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                    <line x1="6" y1="6" x2="6.01" y2="6"/>
+                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                </svg>
+                Integrations
+            </button>
+            <button class="crm-tab-btn" data-tab="lead-sources" onclick="switchTab('lead-sources')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Lead Sources
+            </button>
+        </div>
+
+        <!-- ─── Pipeline Tab ──────────────────────────────────────────────── -->
+        <div class="crm-tab-content active" id="tab-pipeline">
+            <div class="section-header">
+                <h3 class="section-title">Deal Stages</h3>
+                <div class="header-actions">
+                    <button class="btn btn-outline" onclick="seedDefaultStages()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                        </svg>
+                        Seed Defaults
+                    </button>
+                    <button class="btn btn-primary" onclick="openCreateStageModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add Stage
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="crm-loading" id="pipelineLoading">
+                <div class="crm-loading-spinner"></div>
+            </div>
+
+            <!-- Pipeline Stages List -->
+            <div id="stagesList">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="pipelineEmptyState" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                <h3>No deal stages configured</h3>
+                <p>Set up your pipeline stages or seed the default ones</p>
+                <button class="btn btn-primary" onclick="seedDefaultStages()">Seed Default Stages</button>
+            </div>
+        </div>
+
+        <!-- ─── Integrations Tab ──────────────────────────────────────────── -->
+        <div class="crm-tab-content" id="tab-integrations">
+            <div class="section-header">
+                <h3 class="section-title">Connected Integrations</h3>
+            </div>
+
+            <!-- Facebook Integration Card -->
+            <div class="integration-card">
+                <div class="integration-card-header">
+                    <div class="integration-icon facebook">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="integration-title">Facebook Lead Ads</h4>
+                        <p class="integration-description">Automatically capture leads from your Facebook ad campaigns</p>
+                    </div>
+                </div>
+
+                <div class="integration-status" id="fbStatus">
+                    <span class="dot disconnected" id="fbStatusDot"></span>
+                    <span id="fbStatusText">Not connected</span>
+                </div>
+
+                <!-- Connected Pages List -->
+                <ul class="connected-pages-list" id="fbPagesList" style="display: none;">
+                    <!-- Populated by JavaScript -->
+                </ul>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" id="fbConnectBtn" onclick="connectFacebook()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        Connect Facebook Page
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Lead Sources Tab ──────────────────────────────────────────── -->
+        <div class="crm-tab-content" id="tab-lead-sources">
+            <div class="section-header">
+                <h3 class="section-title">Lead Sources</h3>
+            </div>
+
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h3>Coming Soon</h3>
+                <p>Lead source management will be available in a future update. For now, leads are automatically tagged with their source (Facebook, Website, etc.).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Stage Modal -->
+    <div class="gm-overlay" id="stageModal">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title" id="stageModalTitle">New Deal Stage</h3>
+                        <p class="gm-subtitle">Configure the pipeline stage</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeStageModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <form id="stageForm" onsubmit="handleStageSubmit(event)">
+                    <input type="hidden" id="stageId">
+                    <div class="crm-form-group">
+                        <label for="stageName">Stage Name *</label>
+                        <input type="text" id="stageName" required placeholder="e.g., Qualification">
+                    </div>
+                    <div class="crm-form-row">
+                        <div class="crm-form-group">
+                            <label for="stageType">Stage Type *</label>
+                            <select id="stageType" required>
+                                <option value="open">Open</option>
+                                <option value="won">Won (Closed)</option>
+                                <option value="lost">Lost (Closed)</option>
+                            </select>
+                        </div>
+                        <div class="crm-form-group">
+                            <label for="stageOrder">Order</label>
+                            <input type="number" id="stageOrder" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="crm-form-row">
+                        <div class="crm-form-group">
+                            <label for="stageWinProbability">Win Probability (%)</label>
+                            <input type="number" id="stageWinProbability" min="0" max="100" step="5" value="0">
+                        </div>
+                        <div class="crm-form-group">
+                            <label for="stageColor">Color</label>
+                            <input type="color" id="stageColor" value="#3b82f6" style="height: 42px; padding: 4px;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeStageModal()">Cancel</button>
+                <button type="submit" form="stageForm" class="btn btn-primary" id="stageSubmitBtn">Create Stage</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Stage Confirmation Modal -->
+    <div class="gm-overlay" id="deleteStageModal">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: rgba(239, 68, 68, 0.12); color: var(--color-danger);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Delete Stage</h3>
+                        <p class="gm-subtitle">This action cannot be undone</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeDeleteStageModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Are you sure you want to delete stage <strong id="deleteStageName"></strong>? Deals in this stage may be affected.</p>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteStageModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteStageBtn" onclick="confirmDeleteStage()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/settings.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
