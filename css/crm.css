@@ -2500,3 +2500,106 @@ body.crm-page .searchable-dropdown.open {
 body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     z-index: 10001;
 }
+
+/* ─── Custom Fields Badge ─────────────────────────────────────────────── */
+
+.crm-custom-fields-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    margin-left: 6px;
+    vertical-align: middle;
+    cursor: default;
+    white-space: nowrap;
+}
+
+/* ─── Custom Fields Form Rows ─────────────────────────────────────────── */
+
+.custom-field-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.custom-field-row .custom-field-key {
+    flex: 0 0 35%;
+}
+
+.custom-field-row .custom-field-value {
+    flex: 1;
+}
+
+.custom-field-row .custom-field-remove {
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: auto !important;
+    min-width: 28px;
+    max-width: 28px;
+    padding: 4px 6px !important;
+    line-height: 1;
+    font-size: 0.85rem !important;
+}
+
+.custom-field-row .custom-field-key,
+.custom-field-row .custom-field-value {
+    min-width: 0;
+}
+
+#customFieldsList {
+    overflow-x: hidden;
+}
+
+/* ─── Lead Sources: Field Mappings Editor ──────────────────────────────── */
+
+.field-mappings-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-mapping-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.field-mapping-row label {
+    flex: 0 0 90px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: right;
+}
+
+.field-mapping-row input {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+/* ─── Lead Sources: Status Badges ──────────────────────────────────────── */
+
+.crm-status-badge.status-active {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--color-success);
+}
+
+.crm-status-badge.status-inactive {
+    background: rgba(107, 114, 128, 0.12);
+    color: var(--text-secondary);
+}
+
+/* ─── Webhook URL text ────────────────────────────────────────────────── */
+
+.webhook-url-text {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}

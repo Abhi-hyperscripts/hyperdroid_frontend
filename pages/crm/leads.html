@@ -129,6 +129,9 @@
                     <option value="linkedin">LinkedIn</option>
                     <option value="referral">Referral</option>
                     <option value="google_ads">Google Ads</option>
+                    <option value="landing_page">Landing Page</option>
+                    <option value="api">API</option>
+                    <option value="import">Import</option>
                 </select>
             </div>
             <div class="crm-filter-group crm-search-group">
@@ -241,6 +244,9 @@
                                     <option value="linkedin">LinkedIn</option>
                                     <option value="referral">Referral</option>
                                     <option value="google_ads">Google Ads</option>
+                                    <option value="landing_page">Landing Page</option>
+                                    <option value="api">API</option>
+                                    <option value="import">Import</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
@@ -257,6 +263,15 @@
                         <div class="mb-3">
                             <label for="leadNotes" class="form-label">Notes</label>
                             <textarea class="form-control" id="leadNotes" name="notes" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3" id="customFieldsSection">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label class="form-label" style="margin: 0;">Custom Fields</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCustomFieldRow()">+ Add Field</button>
+                            </div>
+                            <div id="customFieldsList">
+                                <!-- Dynamic key/value rows -->
+                            </div>
                         </div>
                     </form>
                 </div>

@@ -260,14 +260,48 @@
                 <div class="crm-tab-content" id="tab-lead-sources">
                     <div class="section-header">
                         <h3 class="section-title">Lead Sources</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="openNewLeadSourceModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add Source
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="empty-state">
+                    <!-- Loading State -->
+                    <div class="crm-loading" id="leadSourcesLoading" style="display: none;">
+                        <div class="crm-loading-spinner"></div>
+                    </div>
+
+                    <!-- Lead Sources Table -->
+                    <div class="crm-table-wrapper data-table-container" id="leadSourcesTableWrapper" style="display: none;">
+                        <table class="crm-table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Source Name</th>
+                                    <th>Type</th>
+                                    <th class="hide-mobile">Webhook URL</th>
+                                    <th>Leads</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadSourcesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="leadSourcesEmptyState" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                         </svg>
-                        <h3>Coming Soon</h3>
-                        <p>Lead source management will be available in a future update. For now, leads are automatically tagged with their source (Facebook, Website, etc.).</p>
+                        <h3>No lead sources configured</h3>
+                        <p>Create a lead source to get a webhook URL for capturing leads from landing pages, forms, and external systems.</p>
+                        <button class="btn btn-primary" onclick="openNewLeadSourceModal()">Add Lead Source</button>
                     </div>
                 </div>
             </main>
@@ -332,6 +366,132 @@
             <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
                 <button type="button" class="btn btn-secondary" onclick="closeStageModal()">Cancel</button>
                 <button type="submit" form="stageForm" class="btn btn-primary" id="stageSubmitBtn">Create Stage</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Lead Source Modal -->
+    <div class="gm-overlay" id="leadSourceModal">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title" id="leadSourceModalTitle">New Lead Source</h3>
+                        <p class="gm-subtitle">Configure a lead capture source</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeLeadSourceModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <form id="leadSourceForm" onsubmit="handleLeadSourceSubmit(event)">
+                    <input type="hidden" id="leadSourceId">
+                    <div class="crm-form-group">
+                        <label for="leadSourceName">Source Name *</label>
+                        <input type="text" id="leadSourceName" required placeholder="e.g., Google Ads Landing Page">
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="leadSourceType">Source Type *</label>
+                        <select id="leadSourceType" required>
+                            <option value="landing_page">Landing Page</option>
+                            <option value="website">Website</option>
+                            <option value="api">API</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="manual">Manual</option>
+                            <option value="import">Import</option>
+                        </select>
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="leadSourceIdentifier">Source Identifier</label>
+                        <input type="text" id="leadSourceIdentifier" placeholder="e.g., FB page ID, campaign name">
+                        <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">
+                            Optional identifier for tracking (e.g., page ID, campaign name).
+                        </p>
+                    </div>
+                    <div class="crm-form-group">
+                        <label>Field Mappings</label>
+                        <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">
+                            Map source field names to CRM fields. Comma-separated aliases for each field. Defaults are applied if left empty.
+                        </p>
+                        <div class="field-mappings-editor" id="fieldMappingsEditor">
+                            <div class="field-mapping-row">
+                                <label>First Name</label>
+                                <input type="text" id="mapFirstName" placeholder="first_name, firstName, fname, given_name">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Last Name</label>
+                                <input type="text" id="mapLastName" placeholder="last_name, lastName, lname, family_name">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Full Name</label>
+                                <input type="text" id="mapFullName" placeholder="full_name, fullName, name">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Email</label>
+                                <input type="text" id="mapEmail" placeholder="email, email_address, work_email">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Phone</label>
+                                <input type="text" id="mapPhone" placeholder="phone, phone_number, mobile, tel">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Company</label>
+                                <input type="text" id="mapCompany" placeholder="company, company_name, organization">
+                            </div>
+                            <div class="field-mapping-row">
+                                <label>Job Title</label>
+                                <input type="text" id="mapJobTitle" placeholder="job_title, jobTitle, title, position">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeLeadSourceModal()">Cancel</button>
+                <button type="submit" form="leadSourceForm" class="btn btn-primary" id="leadSourceSubmitBtn">Create Source</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Lead Source Confirmation Modal -->
+    <div class="gm-overlay" id="deleteLeadSourceModal">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: rgba(239, 68, 68, 0.12); color: var(--color-danger);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Delete Lead Source</h3>
+                        <p class="gm-subtitle">This action cannot be undone</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeDeleteLeadSourceModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Are you sure you want to delete lead source <strong id="deleteLeadSourceName"></strong>? Its webhook URL will stop working.</p>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteLeadSourceModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteLeadSourceBtn" onclick="confirmDeleteLeadSource()">Delete</button>
             </div>
         </div>
     </div>

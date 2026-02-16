@@ -123,8 +123,10 @@ function renderLeadsTable(leads) {
                     ${selectedLeadIds.has(lead.id) ? 'checked' : ''}>
             </td>
             <td>
-                <div class="crm-cell-primary">${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}</div>
-                ${lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : ''}
+                <div class="crm-cell-primary">
+                    ${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}${getCustomFieldsBadge(lead.custom_fields)}
+                </div>
+                ${lead.company_name ? `<div class="crm-cell-secondary">${escapeHtml(lead.company_name)}</div>` : (lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : '')}
             </td>
             <td>
                 <span class="crm-cell-secondary">${escapeHtml(lead.email || '-')}</span>
@@ -192,6 +194,9 @@ function formatSource(source) {
         'linkedin': 'LinkedIn',
         'referral': 'Referral',
         'google_ads': 'Google Ads',
+        'landing_page': 'Landing Page',
+        'api': 'API',
+        'import': 'Import',
         'other': 'Other'
     };
     return labels[source] || source || 'Manual';
@@ -283,11 +288,13 @@ async function bulkDelete() {
 function openNewLeadModal() {
     currentEditLeadId = null;
     document.getElementById('leadModalTitle').textContent = 'New Lead';
-    document.getElementById('leadSubmitBtn').textContent = 'Create Lead';
+    const submitBtn = document.getElementById('leadSubmitBtn');
+    submitBtn.innerHTML = '<span class="btn-spinner" id="leadSubmitSpinner" style="display:none;"></span> Create Lead';
     document.getElementById('leadForm').reset();
     if (leadSourceDropdown) leadSourceDropdown.setValue('');
     if (leadStatusDropdown) leadStatusDropdown.setValue('');
     document.getElementById('leadId').value = '';
+    clearCustomFieldRows();
     openModal('leadModal');
 }
 
@@ -326,16 +333,19 @@ async function handleLeadSubmit(event) {
     submitBtn.disabled = true;
     spinner.style.display = 'inline-block';
 
+    const customFields = getCustomFieldsFromForm();
+
     const formData = {
         first_name: document.getElementById('leadFirstName').value.trim(),
         last_name: document.getElementById('leadLastName').value.trim(),
         email: document.getElementById('leadEmail').value.trim(),
         phone: document.getElementById('leadPhone').value.trim(),
-        company: document.getElementById('leadCompany').value.trim(),
+        company_name: document.getElementById('leadCompany').value.trim(),
         job_title: document.getElementById('leadJobTitle').value.trim(),
-        lead_source: document.getElementById('leadSource').value,
-        status: document.getElementById('leadStatus').value,
-        notes: document.getElementById('leadNotes').value.trim()
+        lead_source: leadSourceDropdown ? (leadSourceDropdown.getValue() || '') : document.getElementById('leadSource').value,
+        status: leadStatusDropdown ? (leadStatusDropdown.getValue() || '') : document.getElementById('leadStatus').value,
+        notes: document.getElementById('leadNotes').value.trim(),
+        custom_fields: Object.keys(customFields).length > 0 ? JSON.stringify(customFields) : null
     };
 
     try {
@@ -360,8 +370,8 @@ async function handleLeadSubmit(event) {
         console.error('Failed to save lead:', error);
         Toast.error(error.message || 'Failed to save lead');
     } finally {
-        submitBtn.disabled = false;
-        spinner.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
     }
 }
 
@@ -371,19 +381,23 @@ async function editLead(leadId) {
         currentEditLeadId = leadId;
 
         document.getElementById('leadModalTitle').textContent = 'Edit Lead';
-        document.getElementById('leadSubmitBtn').textContent = 'Update Lead';
+        const editSubmitBtn = document.getElementById('leadSubmitBtn');
+        editSubmitBtn.innerHTML = '<span class="btn-spinner" id="leadSubmitSpinner" style="display:none;"></span> Update Lead';
         document.getElementById('leadId').value = leadId;
         document.getElementById('leadFirstName').value = lead.first_name || '';
         document.getElementById('leadLastName').value = lead.last_name || '';
         document.getElementById('leadEmail').value = lead.email || '';
         document.getElementById('leadPhone').value = lead.phone || '';
-        document.getElementById('leadCompany').value = lead.company || '';
+        document.getElementById('leadCompany').value = lead.company_name || lead.company || '';
         document.getElementById('leadJobTitle').value = lead.job_title || '';
         document.getElementById('leadSource').value = lead.lead_source || 'manual';
         document.getElementById('leadStatus').value = lead.status || 'new';
         if (leadSourceDropdown) leadSourceDropdown.setValue(lead.lead_source || 'manual');
         if (leadStatusDropdown) leadStatusDropdown.setValue(lead.status || 'new');
         document.getElementById('leadNotes').value = lead.notes || '';
+
+        // Populate custom fields
+        populateCustomFieldRows(lead.custom_fields);
 
         openModal('leadModal');
     } catch (error) {
@@ -539,6 +553,80 @@ function initSearchableDropdowns() {
             searchPlaceholder: 'Search status...'
         });
     }
+}
+
+// ==================== Custom Fields ====================
+
+function getCustomFieldsBadge(customFieldsJson) {
+    if (!customFieldsJson || customFieldsJson === '{}') return '';
+    try {
+        const fields = typeof customFieldsJson === 'string' ? JSON.parse(customFieldsJson) : customFieldsJson;
+        const count = Object.keys(fields).length;
+        if (count === 0) return '';
+
+        const tooltipItems = Object.entries(fields)
+            .slice(0, 5)
+            .map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(String(v).substring(0, 30))}`)
+            .join('&#10;');
+        const extra = count > 5 ? `&#10;...and ${count - 5} more` : '';
+
+        return ` <span class="crm-custom-fields-badge" title="${tooltipItems}${extra}">+${count} fields</span>`;
+    } catch {
+        return '';
+    }
+}
+
+function addCustomFieldRow(key, value) {
+    const list = document.getElementById('customFieldsList');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.className = 'custom-field-row';
+    row.innerHTML = `
+        <input type="text" class="form-control form-control-sm custom-field-key" placeholder="Field name" value="${escapeHtml(key || '')}">
+        <input type="text" class="form-control form-control-sm custom-field-value" placeholder="Value" value="${escapeHtml(value || '')}">
+        <button type="button" class="btn btn-sm btn-outline-danger custom-field-remove" onclick="this.parentElement.remove()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    `;
+    list.appendChild(row);
+}
+
+function clearCustomFieldRows() {
+    const list = document.getElementById('customFieldsList');
+    if (list) list.innerHTML = '';
+}
+
+function populateCustomFieldRows(customFieldsJson) {
+    clearCustomFieldRows();
+    if (!customFieldsJson || customFieldsJson === '{}') return;
+    try {
+        const fields = typeof customFieldsJson === 'string' ? JSON.parse(customFieldsJson) : customFieldsJson;
+        for (const [key, value] of Object.entries(fields)) {
+            addCustomFieldRow(key, String(value));
+        }
+    } catch (e) {
+        console.error('Error parsing custom fields:', e);
+    }
+}
+
+function getCustomFieldsFromForm() {
+    const list = document.getElementById('customFieldsList');
+    if (!list) return {};
+
+    const fields = {};
+    const rows = list.querySelectorAll('.custom-field-row');
+    rows.forEach(row => {
+        const key = row.querySelector('.custom-field-key')?.value?.trim();
+        const value = row.querySelector('.custom-field-value')?.value?.trim();
+        if (key) {
+            fields[key] = value || '';
+        }
+    });
+    return fields;
 }
 
 // ==================== Utilities ====================
