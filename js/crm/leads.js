@@ -9,12 +9,19 @@ let selectedLeadIds = new Set();
 let currentEditLeadId = null;
 let convertingLeadId = null;
 
+// Searchable dropdown instances
+let filterStatusDropdown = null;
+let filterSourceDropdown = null;
+let leadSourceDropdown = null;
+let leadStatusDropdown = null;
+
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', () => {
     Navigation.init('crm', 'leads');
     loadLeads();
     loadLeadStats();
+    initSearchableDropdowns();
 });
 
 // ==================== Data Loading ====================
@@ -46,8 +53,8 @@ async function loadLeads() {
 async function loadLeadStats() {
     try {
         const stats = await api.request('/crm/leads/stats');
-        document.getElementById('statTotalLeads').textContent = stats.total ?? '-';
-        document.getElementById('statNewLeads').textContent = stats.new ?? '-';
+        document.getElementById('statTotalLeads').textContent = stats.total_leads ?? '-';
+        document.getElementById('statNewLeads').textContent = stats.new_leads ?? '-';
         document.getElementById('statQualifiedLeads').textContent = stats.qualified ?? '-';
         document.getElementById('statConvertedLeads').textContent = stats.converted ?? '-';
     } catch (error) {
@@ -62,8 +69,8 @@ async function loadLeadStats() {
  */
 function buildFilterParams() {
     const params = new URLSearchParams();
-    const status = document.getElementById('filterStatus').value;
-    const source = document.getElementById('filterSource').value;
+    const status = filterStatusDropdown ? filterStatusDropdown.getValue() : document.getElementById('filterStatus').value;
+    const source = filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource').value;
     const search = document.getElementById('filterSearch').value.trim();
 
     if (status) params.set('status', status);
@@ -252,7 +259,8 @@ async function bulkAssign() {
 }
 
 async function bulkDelete() {
-    if (!confirm(`Delete ${selectedLeadIds.size} selected lead(s)?`)) return;
+    const confirmed = await showConfirm(`Delete ${selectedLeadIds.size} selected lead(s)?`, 'Delete Leads', 'danger');
+    if (!confirmed) return;
 
     try {
         const promises = Array.from(selectedLeadIds).map(id =>
@@ -277,6 +285,8 @@ function openNewLeadModal() {
     document.getElementById('leadModalTitle').textContent = 'New Lead';
     document.getElementById('leadSubmitBtn').textContent = 'Create Lead';
     document.getElementById('leadForm').reset();
+    if (leadSourceDropdown) leadSourceDropdown.setValue('');
+    if (leadStatusDropdown) leadStatusDropdown.setValue('');
     document.getElementById('leadId').value = '';
     openModal('leadModal');
 }
@@ -371,6 +381,8 @@ async function editLead(leadId) {
         document.getElementById('leadJobTitle').value = lead.job_title || '';
         document.getElementById('leadSource').value = lead.lead_source || 'manual';
         document.getElementById('leadStatus').value = lead.status || 'new';
+        if (leadSourceDropdown) leadSourceDropdown.setValue(lead.lead_source || 'manual');
+        if (leadStatusDropdown) leadStatusDropdown.setValue(lead.status || 'new');
         document.getElementById('leadNotes').value = lead.notes || '';
 
         openModal('leadModal');
@@ -381,7 +393,8 @@ async function editLead(leadId) {
 }
 
 async function deleteLead(leadId) {
-    if (!confirm('Are you sure you want to delete this lead?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this lead?', 'Delete Lead', 'danger');
+    if (!confirmed) return;
 
     try {
         await api.request(`/crm/leads/${leadId}`, { method: 'DELETE' });
@@ -485,6 +498,46 @@ async function confirmConvertLead() {
     } finally {
         convertBtn.disabled = false;
         spinner.style.display = 'none';
+    }
+}
+
+// ==================== Searchable Dropdowns ====================
+
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    // Filter bar dropdowns (compact)
+    if (!filterStatusDropdown) {
+        filterStatusDropdown = convertSelectToSearchable('filterStatus', {
+            compact: true,
+            placeholder: 'All Statuses',
+            searchPlaceholder: 'Search status...',
+            onChange: () => applyFilters()
+        });
+    }
+
+    if (!filterSourceDropdown) {
+        filterSourceDropdown = convertSelectToSearchable('filterSource', {
+            compact: true,
+            placeholder: 'All Sources',
+            searchPlaceholder: 'Search sources...',
+            onChange: () => applyFilters()
+        });
+    }
+
+    // Modal form dropdowns
+    if (!leadSourceDropdown) {
+        leadSourceDropdown = convertSelectToSearchable('leadSource', {
+            placeholder: 'Select source...',
+            searchPlaceholder: 'Search sources...'
+        });
+    }
+
+    if (!leadStatusDropdown) {
+        leadStatusDropdown = convertSelectToSearchable('leadStatus', {
+            placeholder: 'Select status...',
+            searchPlaceholder: 'Search status...'
+        });
     }
 }
 

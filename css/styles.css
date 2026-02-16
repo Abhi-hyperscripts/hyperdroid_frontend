@@ -1030,7 +1030,7 @@ body.dashboard::before {
         radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
 }
 
-body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide-panel):not(.slide-panel-overlay):not(.slide-panel):not(.modal):not(.toast-container):not(.gm-overlay):not(.chat-modal):not(.fcm-permission-card):not(.flatpickr-calendar) {
+body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide-panel):not(.slide-panel-overlay):not(.slide-panel):not(.modal):not(.toast-container):not(.gm-overlay):not(.chat-modal):not(.fcm-permission-card):not(.flatpickr-calendar):not(.stage-picker-overlay) {
     position: relative;
     z-index: 1;
 }

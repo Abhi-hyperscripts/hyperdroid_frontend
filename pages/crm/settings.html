@@ -21,10 +21,12 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard">
+<body class="dashboard crm-page">
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -36,158 +38,239 @@
         </div>
     </nav>
 
-    <div class="crm-container">
-        <div class="crm-header">
+    <div class="crm-container crm-settings-container">
+        <!-- Header with hamburger toggle -->
+        <div class="crm-header crm-settings-header">
             <div class="header-content">
                 <nav class="breadcrumb-nav">
                     <a href="dashboard.html">CRM</a>
                     <span class="separator">/</span>
                     <span class="current">Settings</span>
                 </nav>
-                <h1>CRM Settings</h1>
-                <p>Configure your CRM pipeline, integrations, and lead sources</p>
+                <div class="crm-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <div class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </div>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1>CRM Settings</h1>
+                        <div class="active-tab-title" id="activeTabTitle">
+                            <span class="tab-indicator"></span>
+                            <span id="activeTabName">General</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- OAuth Status Alert (shown after Facebook callback) -->
-        <div class="crm-alert crm-alert-success" id="oauthSuccessAlert" style="display: none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            <span>Facebook pages connected successfully!</span>
-        </div>
-        <div class="crm-alert crm-alert-error" id="oauthErrorAlert" style="display: none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <span>Failed to connect Facebook pages. Please try again.</span>
-        </div>
-
-        <!-- Tabs -->
-        <div class="crm-tabs">
-            <button class="crm-tab-btn active" data-tab="pipeline" onclick="switchTab('pipeline')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        <div class="crm-settings-alerts">
+            <div class="crm-alert crm-alert-success" id="oauthSuccessAlert" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>
-                Pipeline
-            </button>
-            <button class="crm-tab-btn" data-tab="integrations" onclick="switchTab('integrations')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-                    <line x1="6" y1="6" x2="6.01" y2="6"/>
-                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                <span>Facebook pages connected successfully!</span>
+            </div>
+            <div class="crm-alert crm-alert-error" id="oauthErrorAlert" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
                 </svg>
-                Integrations
-            </button>
-            <button class="crm-tab-btn" data-tab="lead-sources" onclick="switchTab('lead-sources')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                Lead Sources
-            </button>
+                <span>Failed to connect Facebook pages. Please try again.</span>
+            </div>
         </div>
 
-        <!-- ─── Pipeline Tab ──────────────────────────────────────────────── -->
-        <div class="crm-tab-content active" id="tab-pipeline">
-            <div class="section-header">
-                <h3 class="section-title">Deal Stages</h3>
-                <div class="header-actions">
-                    <button class="btn btn-outline" onclick="seedDefaultStages()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                        </svg>
-                        Seed Defaults
-                    </button>
-                    <button class="btn btn-primary" onclick="openCreateStageModal()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                            <line x1="12" y1="5" x2="12" y2="19"/>
-                            <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                        Add Stage
-                    </button>
+        <!-- Sidebar overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Settings layout: sidebar + content -->
+        <div class="crm-settings-layout">
+            <aside class="crm-settings-sidebar" id="settingsSidebar">
+                <div class="sidebar-header">
+                    <h3>Settings</h3>
+                    <p>Configure your CRM</p>
                 </div>
-            </div>
-
-            <!-- Loading State -->
-            <div class="crm-loading" id="pipelineLoading">
-                <div class="crm-loading-spinner"></div>
-            </div>
-
-            <!-- Pipeline Stages List -->
-            <div id="stagesList">
-                <!-- Populated by JavaScript -->
-            </div>
-
-            <!-- Empty State -->
-            <div class="empty-state" id="pipelineEmptyState" style="display: none;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
-                <h3>No deal stages configured</h3>
-                <p>Set up your pipeline stages or seed the default ones</p>
-                <button class="btn btn-primary" onclick="seedDefaultStages()">Seed Default Stages</button>
-            </div>
-        </div>
-
-        <!-- ─── Integrations Tab ──────────────────────────────────────────── -->
-        <div class="crm-tab-content" id="tab-integrations">
-            <div class="section-header">
-                <h3 class="section-title">Connected Integrations</h3>
-            </div>
-
-            <!-- Facebook Integration Card -->
-            <div class="integration-card">
-                <div class="integration-card-header">
-                    <div class="integration-icon facebook">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <nav class="sidebar-nav">
+                    <button class="sidebar-btn active" data-tab="general" onclick="switchSettingsTab('general')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                         </svg>
+                        <span class="nav-label">General</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="pipeline" onclick="switchSettingsTab('pipeline')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                        <span class="nav-label">Pipeline</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="integrations" onclick="switchSettingsTab('integrations')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                            <line x1="6" y1="6" x2="6.01" y2="6"/>
+                            <line x1="6" y1="18" x2="6.01" y2="18"/>
+                        </svg>
+                        <span class="nav-label">Integrations</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="lead-sources" onclick="switchSettingsTab('lead-sources')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span class="nav-label">Lead Sources</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <main class="crm-settings-content">
+                <!-- ─── General Tab ───────────────────────────────────────────────── -->
+                <div class="crm-tab-content active" id="tab-general">
+                    <div class="section-header">
+                        <h3 class="section-title">General Settings</h3>
                     </div>
-                    <div>
-                        <h4 class="integration-title">Facebook Lead Ads</h4>
-                        <p class="integration-description">Automatically capture leads from your Facebook ad campaigns</p>
+
+                    <div class="crm-loading" id="generalLoading" style="display: none;">
+                        <div class="crm-loading-spinner"></div>
+                    </div>
+
+                    <div class="settings-form-section" id="generalSettingsForm">
+                        <div class="crm-form-group" style="max-width: 400px;">
+                            <label for="defaultCurrency">Default Currency</label>
+                            <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.8rem; margin: 4px 0 8px;">
+                                Used as the default for new deals and pipeline value display.
+                            </p>
+                            <select id="defaultCurrency">
+                                <option value="USD">USD ($) - US Dollar</option>
+                                <option value="EUR">EUR (&euro;) - Euro</option>
+                                <option value="GBP">GBP (&pound;) - British Pound</option>
+                                <option value="INR">INR (&#8377;) - Indian Rupee</option>
+                                <option value="AED">AED - UAE Dirham</option>
+                                <option value="CAD">CAD (C$) - Canadian Dollar</option>
+                                <option value="AUD">AUD (A$) - Australian Dollar</option>
+                                <option value="JPY">JPY (&yen;) - Japanese Yen</option>
+                                <option value="CNY">CNY (&yen;) - Chinese Yuan</option>
+                                <option value="KRW">KRW (&#8361;) - South Korean Won</option>
+                                <option value="BRL">BRL (R$) - Brazilian Real</option>
+                                <option value="ZAR">ZAR (R) - South African Rand</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveGeneralSettings()" id="saveGeneralBtn">
+                                <span class="btn-spinner" id="saveGeneralSpinner" style="display:none;"></span>
+                                Save Settings
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="integration-status" id="fbStatus">
-                    <span class="dot disconnected" id="fbStatusDot"></span>
-                    <span id="fbStatusText">Not connected</span>
-                </div>
+                <!-- ─── Pipeline Tab ──────────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-pipeline">
+                    <div class="section-header">
+                        <h3 class="section-title">Deal Stages</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" onclick="seedDefaultStages()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                                </svg>
+                                Seed Defaults
+                            </button>
+                            <button class="btn btn-primary" onclick="openCreateStageModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add Stage
+                            </button>
+                        </div>
+                    </div>
 
-                <!-- Connected Pages List -->
-                <ul class="connected-pages-list" id="fbPagesList" style="display: none;">
-                    <!-- Populated by JavaScript -->
-                </ul>
+                    <!-- Loading State -->
+                    <div class="crm-loading" id="pipelineLoading">
+                        <div class="crm-loading-spinner"></div>
+                    </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-primary" id="fbConnectBtn" onclick="connectFacebook()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    <!-- Pipeline Stages List -->
+                    <div id="stagesList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="pipelineEmptyState" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                         </svg>
-                        Connect Facebook Page
-                    </button>
+                        <h3>No deal stages configured</h3>
+                        <p>Set up your pipeline stages or seed the default ones</p>
+                        <button class="btn btn-primary" onclick="seedDefaultStages()">Seed Default Stages</button>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- ─── Lead Sources Tab ──────────────────────────────────────────── -->
-        <div class="crm-tab-content" id="tab-lead-sources">
-            <div class="section-header">
-                <h3 class="section-title">Lead Sources</h3>
-            </div>
+                <!-- ─── Integrations Tab ──────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-integrations">
+                    <div class="section-header">
+                        <h3 class="section-title">Connected Integrations</h3>
+                    </div>
 
-            <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <h3>Coming Soon</h3>
-                <p>Lead source management will be available in a future update. For now, leads are automatically tagged with their source (Facebook, Website, etc.).</p>
-            </div>
+                    <!-- Facebook Integration Card -->
+                    <div class="integration-card">
+                        <div class="integration-card-header">
+                            <div class="integration-icon facebook">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">Facebook Lead Ads</h4>
+                                <p class="integration-description">Automatically capture leads from your Facebook ad campaigns</p>
+                            </div>
+                        </div>
+
+                        <div class="integration-status" id="fbStatus">
+                            <span class="dot disconnected" id="fbStatusDot"></span>
+                            <span id="fbStatusText">Not connected</span>
+                        </div>
+
+                        <!-- Connected Pages List -->
+                        <ul class="connected-pages-list" id="fbPagesList" style="display: none;">
+                            <!-- Populated by JavaScript -->
+                        </ul>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" id="fbConnectBtn" onclick="connectFacebook()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                </svg>
+                                Connect Facebook Page
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── Lead Sources Tab ──────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-lead-sources">
+                    <div class="section-header">
+                        <h3 class="section-title">Lead Sources</h3>
+                    </div>
+
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <h3>Coming Soon</h3>
+                        <p>Lead source management will be available in a future update. For now, leads are automatically tagged with their source (Facebook, Website, etc.).</p>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -292,6 +375,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

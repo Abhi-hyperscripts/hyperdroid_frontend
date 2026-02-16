@@ -80,6 +80,7 @@ body.hrms-dashboard::before {
 }
 
 .hrms-container {
+    width: 100%;
     max-width: 1400px;
     margin: auto;
     padding: 16px 24px;

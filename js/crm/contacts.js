@@ -7,6 +7,8 @@ let contacts = [];
 let companies = [];
 let editingContactId = null;
 let deletingContactId = null;
+let contactCompanyDropdown = null;
+let contactSourceDropdown = null;
 
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
@@ -33,12 +35,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('crm', '../');
 
+    initSearchableDropdowns();
+
     // Load data
     await Promise.all([
         loadContacts(),
         loadCompanies()
     ]);
 });
+
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    if (!contactCompanyDropdown) {
+        contactCompanyDropdown = convertSelectToSearchable('contactCompany', {
+            placeholder: '-- Select Company --',
+            searchPlaceholder: 'Search companies...'
+        });
+    }
+
+    if (!contactSourceDropdown) {
+        contactSourceDropdown = convertSelectToSearchable('contactSource', {
+            placeholder: '-- Select Source --',
+            searchPlaceholder: 'Search sources...'
+        });
+    }
+}
 
 // ─── Data Loading ───────────────────────────────────────────────────────────
 
@@ -79,9 +101,17 @@ function populateCompanyDropdown() {
     companies.forEach(company => {
         const option = document.createElement('option');
         option.value = company.id;
-        option.textContent = company.companyName;
+        option.textContent = company.company_name;
         select.appendChild(option);
     });
+
+    // Update searchable dropdown
+    if (contactCompanyDropdown) {
+        contactCompanyDropdown.setOptions([
+            { value: '', label: '-- Select Company --' },
+            ...companies.map(c => ({ value: c.id, label: c.company_name }))
+        ]);
+    }
 }
 
 // ─── Rendering ──────────────────────────────────────────────────────────────
@@ -102,9 +132,9 @@ function renderContacts() {
     emptyState.style.display = 'none';
 
     tbody.innerHTML = contacts.map(contact => {
-        const companyName = getCompanyName(contact.companyId);
-        const fullName = escapeHtml(`${contact.firstName || ''} ${contact.lastName || ''}`.trim());
-        const initials = getInitials(contact.firstName, contact.lastName);
+        const companyName = getCompanyName(contact.company_id);
+        const fullName = escapeHtml(`${contact.first_name || ''} ${contact.last_name || ''}`.trim());
+        const initials = getInitials(contact.first_name, contact.last_name);
 
         return `
             <tr>
@@ -119,9 +149,9 @@ function renderContacts() {
                 <td>${escapeHtml(contact.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${escapeHtml(contact.phone || contact.mobile) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${companyName ? escapeHtml(companyName) : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${contact.contactSource ? `<span class="badge badge-neutral">${escapeHtml(contact.contactSource)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${escapeHtml(contact.jobTitle) || '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td style="white-space: nowrap;">${formatDate(contact.createdAt)}</td>
+                <td>${contact.contact_source ? `<span class="badge badge-neutral">${escapeHtml(contact.contact_source)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
+                <td>${escapeHtml(contact.job_title) || '<span style="color: var(--text-muted);">-</span>'}</td>
+                <td style="white-space: nowrap;">${formatDate(contact.created_at)}</td>
                 <td class="actions-cell">
                     <button class="action-btn" title="Edit" onclick="openEditContactModal('${contact.id}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -144,7 +174,7 @@ function renderContacts() {
 function getCompanyName(companyId) {
     if (!companyId) return null;
     const company = companies.find(c => c.id === companyId);
-    return company ? company.companyName : null;
+    return company ? company.company_name : null;
 }
 
 function getInitials(firstName, lastName) {
@@ -164,12 +194,12 @@ function filterContacts() {
     }
 
     const filtered = contacts.filter(c => {
-        const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
+        const fullName = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase();
         const email = (c.email || '').toLowerCase();
         const phone = (c.phone || '').toLowerCase();
         const mobile = (c.mobile || '').toLowerCase();
-        const companyName = (getCompanyName(c.companyId) || '').toLowerCase();
-        const jobTitle = (c.jobTitle || '').toLowerCase();
+        const companyName = (getCompanyName(c.company_id) || '').toLowerCase();
+        const jobTitle = (c.job_title || '').toLowerCase();
 
         return fullName.includes(query) ||
                email.includes(query) ||
@@ -218,6 +248,8 @@ function openCreateContactModal() {
     document.getElementById('contactSubmitBtn').textContent = 'Create Contact';
     document.getElementById('contactForm').reset();
     document.getElementById('contactId').value = '';
+    if (contactCompanyDropdown) contactCompanyDropdown.setValue('');
+    if (contactSourceDropdown) contactSourceDropdown.setValue('');
     openModal('contactModal');
 }
 
@@ -232,14 +264,16 @@ function openEditContactModal(id) {
     document.getElementById('contactSubmitBtn').textContent = 'Update Contact';
 
     document.getElementById('contactId').value = id;
-    document.getElementById('firstName').value = contact.firstName || '';
-    document.getElementById('lastName').value = contact.lastName || '';
+    document.getElementById('firstName').value = contact.first_name || '';
+    document.getElementById('lastName').value = contact.last_name || '';
     document.getElementById('contactEmail').value = contact.email || '';
     document.getElementById('contactPhone').value = contact.phone || '';
     document.getElementById('contactMobile').value = contact.mobile || '';
-    document.getElementById('contactCompany').value = contact.companyId || '';
-    document.getElementById('contactJobTitle').value = contact.jobTitle || '';
-    document.getElementById('contactSource').value = contact.contactSource || '';
+    document.getElementById('contactCompany').value = contact.company_id || '';
+    document.getElementById('contactJobTitle').value = contact.job_title || '';
+    document.getElementById('contactSource').value = contact.contact_source || '';
+    if (contactCompanyDropdown) contactCompanyDropdown.setValue(contact.company_id || '');
+    if (contactSourceDropdown) contactSourceDropdown.setValue(contact.contact_source || '');
 
     openModal('contactModal');
 }
@@ -257,7 +291,7 @@ function openDeleteModal(id) {
 
     deletingContactId = id;
     document.getElementById('deleteContactName').textContent =
-        `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+        `${contact.first_name || ''} ${contact.last_name || ''}`.trim();
     openModal('deleteModal');
 }
 
@@ -277,17 +311,17 @@ async function handleContactSubmit(event) {
     submitBtn.innerHTML = '<span class="btn-spinner"></span>Saving...';
 
     try {
-        const companyIdValue = document.getElementById('contactCompany').value;
+        const companyIdValue = (contactCompanyDropdown ? contactCompanyDropdown.getValue() : document.getElementById('contactCompany').value);
 
         const payload = {
-            firstName: document.getElementById('firstName').value.trim(),
-            lastName: document.getElementById('lastName').value.trim(),
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
             email: document.getElementById('contactEmail').value.trim() || null,
             phone: document.getElementById('contactPhone').value.trim() || null,
             mobile: document.getElementById('contactMobile').value.trim() || null,
-            companyId: companyIdValue || null,
-            jobTitle: document.getElementById('contactJobTitle').value.trim() || null,
-            contactSource: document.getElementById('contactSource').value || null
+            company_id: companyIdValue || null,
+            job_title: document.getElementById('contactJobTitle').value.trim() || null,
+            contact_source: (contactSourceDropdown ? contactSourceDropdown.getValue() : document.getElementById('contactSource').value) || null
         };
 
         if (editingContactId) {

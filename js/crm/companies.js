@@ -6,6 +6,7 @@
 let companies = [];
 let editingCompanyId = null;
 let deletingCompanyId = null;
+let companyIndustryDropdown = null;
 
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
@@ -32,8 +33,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('crm', '../');
 
+    initSearchableDropdowns();
+
     await loadCompanies();
 });
+
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    if (!companyIndustryDropdown) {
+        companyIndustryDropdown = convertSelectToSearchable('companyIndustry', {
+            placeholder: '-- Select Industry --',
+            searchPlaceholder: 'Search industries...'
+        });
+    }
+}
 
 // ─── Data Loading ───────────────────────────────────────────────────────────
 
@@ -72,7 +86,7 @@ function renderCompanies() {
 
     tbody.innerHTML = companies.map(company => {
         const location = buildLocation(company.city, company.state, company.country);
-        const initial = (company.companyName || '?')[0].toUpperCase();
+        const initial = (company.company_name || '?')[0].toUpperCase();
 
         return `
             <tr>
@@ -81,7 +95,7 @@ function renderCompanies() {
                         <div style="width: 32px; height: 32px; border-radius: var(--border-radius-sm); background: var(--brand-secondary); color: var(--text-inverse); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;">
                             ${escapeHtml(initial)}
                         </div>
-                        <span style="font-weight: 500;">${escapeHtml(company.companyName)}</span>
+                        <span style="font-weight: 500;">${escapeHtml(company.company_name)}</span>
                     </div>
                 </td>
                 <td>${company.industry ? `<span class="badge badge-neutral">${escapeHtml(company.industry)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
@@ -89,7 +103,7 @@ function renderCompanies() {
                 <td>${escapeHtml(company.phone) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${escapeHtml(company.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${location ? escapeHtml(location) : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td style="white-space: nowrap;">${formatDate(company.createdAt)}</td>
+                <td style="white-space: nowrap;">${formatDate(company.created_at)}</td>
                 <td class="actions-cell">
                     <button class="action-btn" title="Edit" onclick="openEditCompanyModal('${company.id}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,7 +149,7 @@ function filterCompanies() {
     }
 
     const filtered = companies.filter(c => {
-        const name = (c.companyName || '').toLowerCase();
+        const name = (c.company_name || '').toLowerCase();
         const industry = (c.industry || '').toLowerCase();
         const email = (c.email || '').toLowerCase();
         const phone = (c.phone || '').toLowerCase();
@@ -188,6 +202,7 @@ function openCreateCompanyModal() {
     document.getElementById('companySubmitBtn').textContent = 'Create Company';
     document.getElementById('companyForm').reset();
     document.getElementById('companyId').value = '';
+    if (companyIndustryDropdown) companyIndustryDropdown.setValue('');
     openModal('companyModal');
 }
 
@@ -202,8 +217,9 @@ function openEditCompanyModal(id) {
     document.getElementById('companySubmitBtn').textContent = 'Update Company';
 
     document.getElementById('companyId').value = id;
-    document.getElementById('companyName').value = company.companyName || '';
+    document.getElementById('companyName').value = company.company_name || '';
     document.getElementById('companyIndustry').value = company.industry || '';
+    if (companyIndustryDropdown) companyIndustryDropdown.setValue(company.industry || '');
     document.getElementById('companyWebsite').value = company.website || '';
     document.getElementById('companyPhone').value = company.phone || '';
     document.getElementById('companyEmail').value = company.email || '';
@@ -227,7 +243,7 @@ function openDeleteModal(id) {
     if (!company) return;
 
     deletingCompanyId = id;
-    document.getElementById('deleteCompanyName').textContent = company.companyName || '';
+    document.getElementById('deleteCompanyName').textContent = company.company_name || '';
     openModal('deleteModal');
 }
 
@@ -248,8 +264,8 @@ async function handleCompanySubmit(event) {
 
     try {
         const payload = {
-            companyName: document.getElementById('companyName').value.trim(),
-            industry: document.getElementById('companyIndustry').value || null,
+            company_name: document.getElementById('companyName').value.trim(),
+            industry: (companyIndustryDropdown ? companyIndustryDropdown.getValue() : document.getElementById('companyIndustry').value) || null,
             website: document.getElementById('companyWebsite').value.trim() || null,
             phone: document.getElementById('companyPhone').value.trim() || null,
             email: document.getElementById('companyEmail').value.trim() || null,

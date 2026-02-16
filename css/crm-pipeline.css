@@ -8,16 +8,20 @@
    KANBAN BOARD - Horizontal scrolling container
    ============================================================= */
 .pipeline-kanban {
-    margin-bottom: 24px;
+    margin-bottom: 0;
+    flex: 1;
+    min-height: 0;
 }
 
 .kanban-board {
     display: flex;
     gap: 12px;
     overflow-x: auto;
+    overflow-y: hidden;
     padding-bottom: 16px;
     -webkit-overflow-scrolling: touch;
-    min-height: 400px;
+    min-height: 0;
+    height: calc(100vh - 300px);
 }
 
 /* Custom scrollbar for the kanban board */
@@ -114,7 +118,7 @@
     flex: 1;
     padding: 8px;
     overflow-y: auto;
-    max-height: calc(100vh - 380px);
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -307,6 +311,8 @@
     .kanban-board {
         flex-direction: column;
         overflow-x: visible;
+        overflow-y: auto;
+        height: auto;
         gap: 16px;
     }
 
@@ -380,4 +386,250 @@
 
 [data-theme="dark"] .deal-card-date::before {
     filter: brightness(1.5);
+}
+
+/* =============================================================
+   STAGE PICKER — Bottom sheet (mobile) / Modal (desktop)
+   ============================================================= */
+.stage-picker-overlay {
+    /* !important overrides styles.css blanket body.dashboard > * { position: relative } rule */
+    position: fixed !important;
+    inset: 0 !important;
+    background: var(--overlay-dark, rgba(0, 0, 0, 0.5));
+    z-index: 1050 !important;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.stage-picker-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.stage-picker-sheet {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 480px;
+    max-height: 70vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stage-picker-sheet:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.5);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb), 0.25),
+        0 0 40px rgba(var(--brand-primary-rgb), 0.1),
+        0 -4px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stage-picker-overlay.active .stage-picker-sheet {
+    transform: translateY(0);
+}
+
+.stage-picker-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gray-300);
+    margin: 8px auto 0;
+    flex-shrink: 0;
+}
+
+.stage-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    position: relative;
+}
+
+.stage-picker-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+.stage-picker-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.stage-picker-deal-info {
+    padding: 0 16px 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    z-index: 1;
+}
+
+.stage-picker-deal-info .picker-deal-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.stage-picker-deal-info .picker-deal-value {
+    font-weight: 600;
+    color: var(--brand-primary);
+    margin-left: 8px;
+}
+
+.stage-picker-list {
+    overflow-y: auto;
+    padding: 8px 0;
+    flex: 1;
+}
+
+.stage-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin: 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: none;
+    width: calc(100% - 16px);
+    text-align: left;
+    font-family: inherit;
+}
+
+.stage-picker-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(var(--brand-primary-rgb), 0.35);
+    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.08);
+}
+
+.stage-picker-item:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.stage-picker-item.current-stage {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    border-color: rgba(var(--brand-primary-rgb), 0.2);
+}
+
+.stage-picker-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.stage-picker-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.stage-picker-item-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stage-picker-item-type {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.stage-picker-check {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--brand-primary);
+}
+
+/* Desktop: center the sheet as a modal */
+@media (min-width: 769px) {
+    .stage-picker-overlay,
+    .stage-picker-overlay.active {
+        align-items: center;
+    }
+
+    .stage-picker-sheet {
+        border-radius: 16px;
+        max-height: 50vh;
+        transform: scale(0.95);
+        opacity: 0;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .stage-picker-overlay.active .stage-picker-sheet {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .stage-picker-handle {
+        display: none;
+    }
+}
+
+/* Mobile: indicate card is tappable */
+@media (max-width: 768px) {
+    .kanban-deal-card {
+        cursor: pointer;
+    }
+}
+
+/* Light theme overrides */
+[data-theme="light"] .stage-picker-sheet {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .stage-picker-sheet:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.4);
+    box-shadow:
+        0 0 20px rgba(var(--brand-primary-rgb), 0.15),
+        0 0 40px rgba(var(--brand-primary-rgb), 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .stage-picker-header::before {
+    background: linear-gradient(180deg, rgba(var(--brand-primary-rgb), 0.06) 0%, transparent 100%);
+}
+
+[data-theme="light"] .stage-picker-deal-info {
+    border-bottom-color: var(--border-color-light);
+}
+
+[data-theme="light"] .stage-picker-item:hover {
+    background: rgba(var(--brand-primary-rgb), 0.06);
+}
+
+[data-theme="light"] .stage-picker-item.current-stage {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+}
+
+[data-theme="light"] .stage-picker-handle {
+    background: var(--gray-300);
 }

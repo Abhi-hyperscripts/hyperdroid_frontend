@@ -21,9 +21,11 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard crm-dashboard">
+<body class="dashboard crm-dashboard crm-page">
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -114,66 +116,33 @@
         </div>
         <div class="lead-funnel" id="leadFunnel">
             <div class="funnel-stage" id="funnelNew">
+                <span class="funnel-label">New</span>
                 <div class="funnel-bar">
                     <div class="funnel-fill" id="funnelNewFill" style="width: 0%"></div>
                 </div>
-                <div class="funnel-info">
-                    <span class="funnel-label">New</span>
-                    <span class="funnel-count" id="funnelNewCount">0</span>
-                </div>
+                <span class="funnel-count" id="funnelNewCount">0</span>
             </div>
             <div class="funnel-stage" id="funnelContacted">
+                <span class="funnel-label">Contacted</span>
                 <div class="funnel-bar">
                     <div class="funnel-fill" id="funnelContactedFill" style="width: 0%"></div>
                 </div>
-                <div class="funnel-info">
-                    <span class="funnel-label">Contacted</span>
-                    <span class="funnel-count" id="funnelContactedCount">0</span>
-                </div>
+                <span class="funnel-count" id="funnelContactedCount">0</span>
             </div>
             <div class="funnel-stage" id="funnelQualified">
+                <span class="funnel-label">Qualified</span>
                 <div class="funnel-bar">
                     <div class="funnel-fill" id="funnelQualifiedFill" style="width: 0%"></div>
                 </div>
-                <div class="funnel-info">
-                    <span class="funnel-label">Qualified</span>
-                    <span class="funnel-count" id="funnelQualifiedCount">0</span>
-                </div>
+                <span class="funnel-count" id="funnelQualifiedCount">0</span>
             </div>
             <div class="funnel-stage" id="funnelConverted">
+                <span class="funnel-label">Converted</span>
                 <div class="funnel-bar">
                     <div class="funnel-fill" id="funnelConvertedFill" style="width: 0%"></div>
                 </div>
-                <div class="funnel-info">
-                    <span class="funnel-label">Converted</span>
-                    <span class="funnel-count" id="funnelConvertedCount">0</span>
-                </div>
+                <span class="funnel-count" id="funnelConvertedCount">0</span>
             </div>
-        </div>
-
-        <!-- Recent Leads Table -->
-        <div class="section-header">
-            <h3 class="section-title">Recent Leads</h3>
-        </div>
-        <div class="data-table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Source</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody id="recentLeadsBody">
-                    <tr>
-                        <td colspan="5" class="empty-state">
-                            <p>Loading leads...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
 
         <!-- Quick Actions -->
@@ -247,6 +216,22 @@
                     <polyline points="9 18 15 12 9 6"/>
                 </svg>
             </div>
+
+            <div class="action-card" id="cardSettings" onclick="navigateTo('settings.html')">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Settings</h4>
+                    <p>Configure pipeline and integrations</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -256,6 +241,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

@@ -140,6 +140,7 @@ td.text-right strong,
 
 /* Main Container */
 .hrms-container {
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     padding: 100px 24px 32px 24px; /* Top padding accounts for fixed navbar (70px) + spacing */

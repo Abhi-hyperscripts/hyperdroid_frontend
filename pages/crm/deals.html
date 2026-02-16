@@ -22,10 +22,12 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-pipeline.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard">
+<body class="dashboard crm-page">
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -257,12 +259,33 @@
         </div>
     </div>
 
+    <!-- Stage Picker (mobile-friendly bottom sheet) -->
+    <div class="stage-picker-overlay" id="stagePickerOverlay" onclick="closeStagePicker()">
+        <div class="stage-picker-sheet" onclick="event.stopPropagation()">
+            <div class="stage-picker-handle"></div>
+            <div class="stage-picker-header">
+                <h6 class="stage-picker-title">Move to Stage</h6>
+                <button class="close-btn" onclick="closeStagePicker()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="stage-picker-deal-info" id="stagePickerDealInfo"></div>
+            <div class="stage-picker-list" id="stagePickerList">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/deals.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

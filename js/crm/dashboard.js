@@ -1,5 +1,15 @@
 // CRM Dashboard JavaScript
 
+// Currency symbols map
+const CURRENCY_SYMBOLS = {
+    'USD': '$', 'EUR': '\u20AC', 'GBP': '\u00A3', 'INR': '\u20B9',
+    'AED': 'AED ', 'CAD': 'C$', 'AUD': 'A$', 'JPY': '\u00A5',
+    'CNY': '\u00A5', 'KRW': '\u20A9', 'BRL': 'R$', 'ZAR': 'R'
+};
+
+// Default currency from CRM settings
+let dashboardCurrency = 'USD';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     await loadNavigation();
@@ -9,9 +19,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Load dashboard data
+    // Load default currency setting, then dashboard data
+    await loadDashboardCurrency();
     await loadDashboard();
 });
+
+/**
+ * Load default currency from CRM settings
+ */
+async function loadDashboardCurrency() {
+    try {
+        const response = await api.request('/crm/crm-settings/default_currency');
+        if (response && response.value) {
+            dashboardCurrency = response.value;
+        }
+    } catch (error) {
+        console.error('Failed to load default currency, using USD:', error);
+    }
+}
 
 /**
  * Load all dashboard data
@@ -41,15 +66,21 @@ async function loadStats() {
         const pipelineValueEl = document.getElementById('pipelineValue');
         const convertedLeadsEl = document.getElementById('convertedLeads');
 
-        if (totalLeadsEl) totalLeadsEl.textContent = data.total_leads ?? 0;
-        if (activeDealsEl) activeDealsEl.textContent = data.active_deals ?? 0;
-        if (pipelineValueEl) pipelineValueEl.textContent = formatCurrency(data.pipeline_value ?? 0);
-        if (convertedLeadsEl) convertedLeadsEl.textContent = data.converted_leads ?? 0;
+        const stats = data.lead_stats ?? {};
+        const pipeline = data.pipeline_summary ?? {};
+        const stages = pipeline.stages ?? [];
+        const activeDeals = stages.reduce((sum, s) => sum + (s.deal_count ?? 0), 0);
+        const pipelineValue = stages.reduce((sum, s) => sum + (parseFloat(s.total_value) || 0), 0);
+
+        if (totalLeadsEl) totalLeadsEl.textContent = stats.total_leads ?? 0;
+        if (activeDealsEl) activeDealsEl.textContent = activeDeals;
+        if (pipelineValueEl) pipelineValueEl.textContent = formatCurrency(pipelineValue);
+        if (convertedLeadsEl) convertedLeadsEl.textContent = stats.converted ?? 0;
     } catch (error) {
         console.error('Error loading stats:', error);
         document.getElementById('totalLeads').textContent = '0';
         document.getElementById('activeDeals').textContent = '0';
-        document.getElementById('pipelineValue').textContent = '$0';
+        document.getElementById('pipelineValue').textContent = formatCurrency(0);
         document.getElementById('convertedLeads').textContent = '0';
     }
 }
@@ -59,10 +90,10 @@ async function loadStats() {
  */
 async function loadLeadFunnel() {
     try {
-        const data = await api.request('/crm/dashboard/funnel');
+        const data = await api.request('/crm/dashboard/lead-funnel');
         const funnel = data.funnel ?? data ?? {};
 
-        const newCount = funnel.new ?? 0;
+        const newCount = funnel.new_leads ?? 0;
         const contactedCount = funnel.contacted ?? 0;
         const qualifiedCount = funnel.qualified ?? 0;
         const convertedCount = funnel.converted ?? 0;
@@ -120,7 +151,7 @@ async function loadRecentLeads() {
                     </div>
                 </td>
                 <td>${escapeHtml(lead.email || '-')}</td>
-                <td>${escapeHtml(lead.source || '-')}</td>
+                <td>${escapeHtml(lead.lead_source || '-')}</td>
                 <td><span class="status-badge ${(lead.status || 'new').toLowerCase()}">${capitalizeFirst(lead.status || 'new')}</span></td>
                 <td>${formatDate(lead.created_at)}</td>
             </tr>
@@ -175,17 +206,19 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function formatCurrency(value) {
-    if (value === null || value === undefined) return '$0';
+function formatCurrency(value, currency) {
+    const cur = currency || dashboardCurrency;
+    const symbol = CURRENCY_SYMBOLS[cur] || cur + ' ';
+    if (value === null || value === undefined) return symbol + '0';
     const num = Number(value);
-    if (isNaN(num)) return '$0';
+    if (isNaN(num)) return symbol + '0';
     if (num >= 1000000) {
-        return '$' + (num / 1000000).toFixed(1) + 'M';
+        return symbol + (num / 1000000).toFixed(1) + 'M';
     }
     if (num >= 1000) {
-        return '$' + (num / 1000).toFixed(1) + 'K';
+        return symbol + (num / 1000).toFixed(1) + 'K';
     }
-    return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return symbol + num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function escapeHtml(str) {

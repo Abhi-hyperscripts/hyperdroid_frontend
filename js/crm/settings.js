@@ -7,6 +7,8 @@ let dealStages = [];
 let facebookPages = [];
 let editingStageId = null;
 let deletingStageId = null;
+let stageTypeDropdown = null;
+let defaultCurrencyDropdown = null;
 
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
@@ -33,12 +35,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     Navigation.init('crm', '../');
 
+    // Setup sidebar
+    setupSettingsSidebar();
+
     // Check for OAuth callback parameters
     handleOAuthCallback();
 
+    initSearchableDropdowns();
+
     // Load initial data
+    await loadGeneralSettings();
     await loadDealStages();
 });
+
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    if (!stageTypeDropdown) {
+        stageTypeDropdown = convertSelectToSearchable('stageType', {
+            placeholder: 'Select type...',
+            searchPlaceholder: 'Search...'
+        });
+    }
+
+    if (!defaultCurrencyDropdown) {
+        defaultCurrencyDropdown = convertSelectToSearchable('defaultCurrency', {
+            placeholder: 'Select currency...',
+            searchPlaceholder: 'Search currencies...'
+        });
+    }
+}
 
 // ─── OAuth Callback Handler ─────────────────────────────────────────────────
 
@@ -72,11 +98,98 @@ function handleOAuthCallback() {
     }
 }
 
+// ─── Sidebar Setup ──────────────────────────────────────────────────────────
+
+const settingsTabNames = {
+    'general': 'General',
+    'pipeline': 'Pipeline',
+    'integrations': 'Integrations',
+    'lead-sources': 'Lead Sources'
+};
+
+function setupSettingsSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('settingsSidebar');
+    const container = document.querySelector('.crm-settings-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!toggle || !sidebar) return;
+
+    // Open sidebar by default on desktop, closed on mobile
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    } else {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
+    }
+
+    // Toggle sidebar
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+        if (window.innerWidth <= 1024) {
+            overlay?.classList.toggle('active');
+        }
+    });
+
+    // Close sidebar on overlay click (mobile)
+    overlay?.addEventListener('click', () => {
+        closeSidebar();
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            closeSidebar();
+        }
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (window.innerWidth > 1024) {
+                toggle.classList.add('active');
+                sidebar.classList.add('open');
+                container?.classList.add('sidebar-open');
+                overlay?.classList.remove('active');
+            } else {
+                toggle.classList.remove('active');
+                sidebar.classList.remove('open');
+                container?.classList.remove('sidebar-open');
+                overlay?.classList.remove('active');
+            }
+        }, 150);
+    });
+}
+
+function closeSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('settingsSidebar');
+    const container = document.querySelector('.crm-settings-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    toggle?.classList.remove('active');
+    sidebar?.classList.remove('open');
+    container?.classList.remove('sidebar-open');
+    overlay?.classList.remove('active');
+}
+
+function toggleSettingsSidebar() {
+    document.getElementById('sidebarToggle')?.click();
+}
+
 // ─── Tab Switching ──────────────────────────────────────────────────────────
 
-function switchTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.crm-tab-btn').forEach(btn => {
+function switchSettingsTab(tabName) {
+    // Update sidebar buttons
+    document.querySelectorAll('.crm-settings-sidebar .sidebar-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
@@ -85,10 +198,28 @@ function switchTab(tabName) {
         content.classList.toggle('active', content.id === `tab-${tabName}`);
     });
 
+    // Update active tab title
+    const activeTabName = document.getElementById('activeTabName');
+    if (activeTabName && settingsTabNames[tabName]) {
+        activeTabName.textContent = settingsTabNames[tabName];
+    }
+
+    // On mobile, close sidebar after switching
+    if (window.innerWidth <= 1024) {
+        closeSidebar();
+    }
+
     // Load tab-specific data
-    if (tabName === 'integrations') {
+    if (tabName === 'general') {
+        loadGeneralSettings();
+    } else if (tabName === 'integrations') {
         loadFacebookPages();
     }
+}
+
+// Legacy alias for OAuth callback
+function switchTab(tabName) {
+    switchSettingsTab(tabName);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -124,18 +255,18 @@ function renderStages() {
     emptyState.style.display = 'none';
 
     // Sort by order
-    const sorted = [...dealStages].sort((a, b) => a.stageOrder - b.stageOrder);
+    const sorted = [...dealStages].sort((a, b) => a.stage_order - b.stage_order);
 
     list.innerHTML = sorted.map((stage, index) => `
         <div class="stage-card" data-stage-id="${stage.id}">
             <div class="stage-card-info">
                 <div class="stage-color-dot" style="background: ${escapeHtml(stage.color || '#3b82f6')};"></div>
                 <div>
-                    <div class="stage-name">${escapeHtml(stage.stageName)}</div>
+                    <div class="stage-name">${escapeHtml(stage.stage_name)}</div>
                     <div class="stage-meta">
-                        <span class="stage-type-badge ${stage.stageType}">${escapeHtml(stage.stageType)}</span>
-                        <span>Order: ${stage.stageOrder}</span>
-                        <span>Win: ${stage.winProbability}%</span>
+                        <span class="stage-type-badge ${stage.stage_type}">${escapeHtml(stage.stage_type)}</span>
+                        <span>Order: ${stage.stage_order}</span>
+                        <span>Win: ${stage.win_probability}%</span>
                     </div>
                 </div>
             </div>
@@ -170,7 +301,7 @@ function renderStages() {
 // ─── Move / Reorder Stages ──────────────────────────────────────────────────
 
 async function moveStage(stageId, direction) {
-    const sorted = [...dealStages].sort((a, b) => a.stageOrder - b.stageOrder);
+    const sorted = [...dealStages].sort((a, b) => a.stage_order - b.stage_order);
     const index = sorted.findIndex(s => s.id === stageId);
 
     if (index < 0) return;
@@ -180,14 +311,14 @@ async function moveStage(stageId, direction) {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
 
     // Swap orders
-    const temp = sorted[index].stageOrder;
-    sorted[index].stageOrder = sorted[swapIndex].stageOrder;
-    sorted[swapIndex].stageOrder = temp;
+    const temp = sorted[index].stage_order;
+    sorted[index].stage_order = sorted[swapIndex].stage_order;
+    sorted[swapIndex].stage_order = temp;
 
     // Build reorder payload
     const stages = sorted.map(s => ({
-        stageId: s.id,
-        newOrder: s.stageOrder
+        stage_id: s.id,
+        new_order: s.stage_order
     }));
 
     try {
@@ -231,9 +362,10 @@ function openCreateStageModal() {
     document.getElementById('stageForm').reset();
     document.getElementById('stageId').value = '';
     document.getElementById('stageColor').value = '#3b82f6';
+    if (stageTypeDropdown) stageTypeDropdown.setValue('open');
 
     // Set order to max + 1
-    const maxOrder = dealStages.reduce((max, s) => Math.max(max, s.stageOrder), 0);
+    const maxOrder = dealStages.reduce((max, s) => Math.max(max, s.stage_order), 0);
     document.getElementById('stageOrder').value = maxOrder + 1;
 
     openModal('stageModal');
@@ -250,10 +382,11 @@ function openEditStageModal(id) {
     document.getElementById('stageSubmitBtn').textContent = 'Update Stage';
 
     document.getElementById('stageId').value = id;
-    document.getElementById('stageName').value = stage.stageName || '';
-    document.getElementById('stageType').value = stage.stageType || 'open';
-    document.getElementById('stageOrder').value = stage.stageOrder || 0;
-    document.getElementById('stageWinProbability').value = stage.winProbability || 0;
+    document.getElementById('stageName').value = stage.stage_name || '';
+    document.getElementById('stageType').value = stage.stage_type || 'open';
+    if (stageTypeDropdown) stageTypeDropdown.setValue(stage.stage_type || 'open');
+    document.getElementById('stageOrder').value = stage.stage_order || 0;
+    document.getElementById('stageWinProbability').value = stage.win_probability || 0;
     document.getElementById('stageColor').value = stage.color || '#3b82f6';
 
     openModal('stageModal');
@@ -271,7 +404,7 @@ function openDeleteStageModal(id) {
     if (!stage) return;
 
     deletingStageId = id;
-    document.getElementById('deleteStageName').textContent = stage.stageName || '';
+    document.getElementById('deleteStageName').textContent = stage.stage_name || '';
     openModal('deleteStageModal');
 }
 
@@ -294,9 +427,9 @@ async function handleStageSubmit(event) {
         if (editingStageId) {
             // Update only editable fields
             const payload = {
-                stageName: document.getElementById('stageName').value.trim(),
-                stageType: document.getElementById('stageType').value,
-                winProbability: parseFloat(document.getElementById('stageWinProbability').value) || 0,
+                stage_name: document.getElementById('stageName').value.trim(),
+                stage_type: (stageTypeDropdown ? stageTypeDropdown.getValue() : document.getElementById('stageType').value),
+                win_probability: parseFloat(document.getElementById('stageWinProbability').value) || 0,
                 color: document.getElementById('stageColor').value || null
             };
 
@@ -307,11 +440,11 @@ async function handleStageSubmit(event) {
             Toast.success('Stage updated successfully');
         } else {
             const payload = {
-                pipelineName: 'Default',
-                stageName: document.getElementById('stageName').value.trim(),
-                stageOrder: parseInt(document.getElementById('stageOrder').value) || 0,
-                stageType: document.getElementById('stageType').value,
-                winProbability: parseFloat(document.getElementById('stageWinProbability').value) || 0,
+                pipeline_name: 'Default',
+                stage_name: document.getElementById('stageName').value.trim(),
+                stage_order: parseInt(document.getElementById('stageOrder').value) || 0,
+                stage_type: (stageTypeDropdown ? stageTypeDropdown.getValue() : document.getElementById('stageType').value),
+                win_probability: parseFloat(document.getElementById('stageWinProbability').value) || 0,
                 color: document.getElementById('stageColor').value || null
             };
 
@@ -359,6 +492,57 @@ async function confirmDeleteStage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  GENERAL SETTINGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadGeneralSettings() {
+    const loading = document.getElementById('generalLoading');
+    const form = document.getElementById('generalSettingsForm');
+
+    try {
+        if (loading) loading.style.display = 'flex';
+        if (form) form.style.display = 'none';
+
+        const response = await api.request('/crm/crm-settings/default_currency');
+        const currency = (response && response.value) ? response.value : 'USD';
+
+        const select = document.getElementById('defaultCurrency');
+        if (select) select.value = currency;
+        if (defaultCurrencyDropdown) defaultCurrencyDropdown.setValue(currency);
+    } catch (error) {
+        console.error('Error loading general settings:', error);
+    } finally {
+        if (loading) loading.style.display = 'none';
+        if (form) form.style.display = 'block';
+    }
+}
+
+async function saveGeneralSettings() {
+    const btn = document.getElementById('saveGeneralBtn');
+    const spinner = document.getElementById('saveGeneralSpinner');
+    const currency = defaultCurrencyDropdown ? defaultCurrencyDropdown.getValue() : document.getElementById('defaultCurrency')?.value;
+
+    if (!currency) return;
+
+    btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        await api.request('/crm/crm-settings/default_currency', {
+            method: 'PUT',
+            body: JSON.stringify({ value: currency })
+        });
+        Toast.success('Settings saved successfully');
+    } catch (error) {
+        console.error('Error saving general settings:', error);
+        Toast.error(error.message || 'Failed to save settings');
+    } finally {
+        btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  FACEBOOK INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -379,7 +563,7 @@ function renderFacebookPages() {
     const statusText = document.getElementById('fbStatusText');
     const pagesList = document.getElementById('fbPagesList');
 
-    const activePages = facebookPages.filter(p => p.isActive);
+    const activePages = facebookPages.filter(p => p.is_active);
 
     if (activePages.length > 0) {
         statusDot.className = 'dot connected';
@@ -392,10 +576,10 @@ function renderFacebookPages() {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #1877f2;">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
-                    <span>${escapeHtml(page.pageName)}</span>
-                    <span class="lead-count">${page.totalLeadsReceived} lead${page.totalLeadsReceived !== 1 ? 's' : ''}</span>
+                    <span>${escapeHtml(page.page_name)}</span>
+                    <span class="lead-count">${page.total_leads_received} lead${page.total_leads_received !== 1 ? 's' : ''}</span>
                 </div>
-                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 0.75rem;" onclick="disconnectFacebookPage('${escapeHtml(page.pageId)}')">
+                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 0.75rem;" onclick="disconnectFacebookPage('${escapeHtml(page.page_id)}')">
                     Disconnect
                 </button>
             </li>
@@ -411,8 +595,8 @@ function renderFacebookPages() {
 async function connectFacebook() {
     try {
         const result = await api.request('/crm/facebook/auth-url');
-        if (result && result.authUrl) {
-            window.location.href = result.authUrl;
+        if (result && result.auth_url) {
+            window.location.href = result.auth_url;
         } else {
             Toast.error('Failed to get Facebook auth URL');
         }
@@ -423,9 +607,8 @@ async function connectFacebook() {
 }
 
 async function disconnectFacebookPage(pageId) {
-    if (!confirm('Are you sure you want to disconnect this Facebook page? New leads will no longer be captured.')) {
-        return;
-    }
+    const confirmed = await showConfirm('Are you sure you want to disconnect this Facebook page? New leads will no longer be captured.', 'Disconnect Facebook', 'danger');
+    if (!confirmed) return;
 
     try {
         await api.request(`/crm/facebook/disconnect/${pageId}`, {

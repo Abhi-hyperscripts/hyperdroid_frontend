@@ -18,9 +18,14 @@
 
 /* Main Container */
 .crm-container {
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 100px 24px 32px 24px;
+    padding: 80px 24px 16px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* Header */
@@ -32,7 +37,7 @@
 }
 
 .crm-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     margin: 0;
@@ -442,10 +447,10 @@
 }
 
 .section-title {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0;
+    margin: 0 0 10px 0;
 }
 
 /* ─── Settings Specific: Pipeline Stage Card ──────────────────────────────── */
@@ -696,7 +701,8 @@
 
 @media (max-width: 768px) {
     .crm-container {
-        padding: 80px 16px 24px 16px;
+        padding: 8px 16px 24px 16px;
+        overflow-x: hidden;
     }
 
     .crm-header {
@@ -904,26 +910,29 @@ body.crm-dashboard .crm-container {
    CRM DASHBOARD - Lead Funnel
    ============================================================= */
 .lead-funnel {
-    background: var(--glass-bg);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-color-light);
     border-radius: 12px;
-    padding: 20px;
+    padding: 14px 20px;
     margin-bottom: 24px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
 }
 
 .funnel-stage {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 10px;
 }
 
 .funnel-bar {
-    height: 24px;
+    height: 10px;
+    flex: 1;
     background: var(--overlay-subtle);
     border-radius: 6px;
     overflow: hidden;
@@ -952,22 +961,19 @@ body.crm-dashboard .crm-container {
     background: linear-gradient(90deg, var(--color-success), var(--color-success-dark));
 }
 
-.funnel-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 .funnel-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-secondary);
+    min-width: 72px;
 }
 
 .funnel-count {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-primary);
+    min-width: 24px;
+    text-align: right;
 }
 
 /* =============================================================
@@ -975,13 +981,15 @@ body.crm-dashboard .crm-container {
    ============================================================= */
 .crm-container .quick-actions {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
     margin-bottom: 24px;
 }
 
 .crm-container .action-card {
     background: var(--bg-card);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
     border: 1px solid var(--border-color-light);
     border-radius: 12px;
     padding: 12px;
@@ -1008,7 +1016,7 @@ body.crm-dashboard .crm-container {
 .crm-container .action-icon {
     width: 42px;
     height: 42px;
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1098,6 +1106,16 @@ body.crm-dashboard .crm-container {
 }
 #cardNewCompany:hover {
     border-color: var(--color-warning);
+}
+
+#cardSettings .action-icon {
+    background: linear-gradient(135deg, var(--gray-500), var(--gray-700));
+}
+#cardSettings .action-icon svg {
+    color: var(--text-inverse);
+}
+#cardSettings:hover {
+    border-color: var(--gray-500);
 }
 
 /* =============================================================
@@ -1198,10 +1216,6 @@ body.crm-dashboard .crm-container {
     .crm-container .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-
-    .crm-container .quick-actions {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 
 @media (max-width: 768px) {
@@ -1212,6 +1226,8 @@ body.crm-dashboard .crm-container {
 
     .crm-container .stat-card {
         padding: 14px 12px;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .crm-container .stat-value {
@@ -1238,12 +1254,11 @@ body.crm-dashboard .crm-container {
     }
 
     .crm-container .data-table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: visible;
     }
 
     .crm-container .data-table {
-        min-width: 600px;
+        min-width: 0;
     }
 }
 
@@ -1846,12 +1861,31 @@ body.crm-dashboard .crm-container {
     }
 
     .crm-table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: visible;
+        background: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
     }
 
     .crm-table {
-        min-width: 600px;
+        min-width: 0;
+    }
+
+    /* Reset crm-table cell styles for table-cards compatibility */
+    .crm-table.data-table td {
+        border-bottom: none;
+    }
+
+    .crm-table.data-table tr:hover td {
+        background: none;
+    }
+
+    .crm-table.data-table th.th-checkbox,
+    .crm-table.data-table td.td-checkbox {
+        display: none;
     }
 
     .hide-mobile {
@@ -1867,6 +1901,453 @@ body.crm-dashboard .crm-container {
     .crm-stats-grid {
         gap: 6px;
     }
+}
+
+/* =============================================================
+   CRM SETTINGS - Sidebar Layout
+   ============================================================= */
+
+/* Container */
+.crm-settings-container {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Header */
+.crm-settings-header {
+    padding: 16px 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    margin-bottom: 0;
+    display: block;
+}
+
+.crm-settings-header .header-content {
+    display: block;
+    width: 100%;
+}
+
+.crm-settings-header .breadcrumb-nav {
+    margin-bottom: 8px;
+}
+
+.crm-settings-header .crm-header-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+/* Active Tab Title */
+.crm-settings-header .active-tab-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.crm-settings-header .active-tab-title .tab-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--brand-primary);
+    border-radius: 50%;
+}
+
+/* Sidebar Toggle */
+.crm-settings-container .sidebar-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.crm-settings-container .sidebar-toggle:hover {
+    background: var(--gray-100);
+    box-shadow: var(--shadow-md);
+}
+
+.crm-settings-container .hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.crm-settings-container .hamburger-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.crm-settings-container .hamburger-line + .hamburger-line {
+    margin-top: 5px;
+}
+
+.crm-settings-container .arrow-icon {
+    display: none;
+    color: var(--text-primary);
+    stroke: currentColor;
+}
+
+.crm-settings-container .sidebar-toggle.active .hamburger-icon {
+    display: none;
+}
+
+.crm-settings-container .sidebar-toggle.active .arrow-icon {
+    display: block;
+}
+
+/* Sidebar Overlay */
+.crm-settings-container .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.crm-settings-container .sidebar-overlay.active {
+    opacity: 1;
+}
+
+/* Alerts container */
+.crm-settings-alerts {
+    padding: 0 20px;
+    transition: all 0.3s ease;
+}
+
+/* Settings Layout */
+.crm-settings-layout {
+    display: block;
+    min-height: calc(100vh - 200px);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Sidebar */
+.crm-settings-sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 280px;
+    height: calc(100vh - 60px);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: 16px 0;
+    box-shadow: var(--shadow-lg);
+}
+
+.crm-settings-sidebar.open {
+    transform: translateX(0);
+}
+
+/* Sidebar uses shared HRMS classes: .sidebar-header, .sidebar-nav, .sidebar-btn */
+.crm-settings-sidebar .sidebar-header {
+    padding: 12px 16px 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.crm-settings-sidebar .sidebar-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.crm-settings-sidebar .sidebar-header p {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin: 4px 0 0;
+}
+
+.crm-settings-sidebar .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px;
+}
+
+.crm-settings-sidebar .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.crm-settings-sidebar .sidebar-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.crm-settings-sidebar .sidebar-btn:hover {
+    background: var(--gray-100);
+    color: var(--text-primary);
+}
+
+.crm-settings-sidebar .sidebar-btn:hover svg {
+    opacity: 1;
+}
+
+.crm-settings-sidebar .sidebar-btn.active {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.crm-settings-sidebar .sidebar-btn.active svg {
+    opacity: 1;
+    color: var(--brand-primary);
+}
+
+.crm-settings-sidebar .nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Settings Content */
+.crm-settings-content {
+    width: 100%;
+    padding: 16px 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* When sidebar is open - shift header, alerts, and layout on desktop */
+.crm-settings-container.sidebar-open .crm-settings-header {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+.crm-settings-container.sidebar-open .crm-settings-alerts {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+.crm-settings-container.sidebar-open .crm-settings-layout {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+/* Settings page mobile */
+@media (max-width: 768px) {
+    /* Navbar is position:relative on mobile, so no need for large top padding */
+    .crm-settings-container {
+        padding: 8px 0 24px 0;
+    }
+
+    .crm-settings-header {
+        padding: 12px 16px;
+    }
+
+    .crm-settings-container .sidebar-toggle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .crm-settings-container .hamburger-line {
+        width: 18px;
+    }
+
+    .crm-settings-sidebar {
+        width: 260px;
+    }
+
+    .crm-settings-content {
+        padding: 12px 16px;
+    }
+
+    .crm-settings-header .active-tab-title {
+        font-size: 13px;
+    }
+
+    .crm-settings-alerts {
+        padding: 0 16px;
+    }
+
+    /* Section headers: stack title above buttons, full width */
+    .crm-settings-container .section-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px;
+    }
+
+    .crm-settings-container .section-header .section-title {
+        font-size: 1.1rem;
+    }
+
+    .crm-settings-container .header-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .crm-settings-container .header-actions .btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.8rem;
+        padding: 10px 12px;
+        white-space: nowrap;
+    }
+
+    /* On mobile, sidebar overlays content instead of pushing */
+    .crm-settings-container .sidebar-overlay {
+        display: block;
+        pointer-events: none;
+    }
+
+    .crm-settings-container .sidebar-overlay.active {
+        pointer-events: auto;
+    }
+
+    /* Don't shift content on mobile */
+    .crm-settings-container.sidebar-open .crm-settings-header {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .crm-settings-container.sidebar-open .crm-settings-alerts {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .crm-settings-container.sidebar-open .crm-settings-layout {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    /* Integration card: full width, reduced padding */
+    .crm-settings-container .integration-card {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .crm-settings-container .integration-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .crm-settings-container .integration-card .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .crm-settings-container .connected-pages-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .crm-settings-container .connected-pages-list li .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Stage cards: full width, stacked layout */
+    .crm-settings-container .stage-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .crm-settings-container .stage-card-info {
+        width: 100%;
+    }
+
+    /* Stage action buttons: full width row, touch-friendly */
+    .crm-settings-container .stage-actions {
+        display: flex;
+        width: 100%;
+        justify-content: flex-end;
+        gap: 4px;
+        border-top: 1px solid var(--border-color-light);
+        padding-top: 10px;
+    }
+
+    .crm-settings-container .stage-actions button {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    /* Empty state: full width */
+    .crm-settings-container .empty-state {
+        padding: 40px 16px;
+    }
+
+    .crm-settings-container .empty-state .btn {
+        width: 100%;
+    }
+}
+
+/* Dark theme overrides for settings sidebar */
+[data-theme="dark"] .crm-settings-sidebar {
+    background: rgba(15, 23, 42, 0.95);
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .crm-settings-sidebar .sidebar-header {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-settings-sidebar .sidebar-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .crm-settings-container .sidebar-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .crm-settings-container .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* =============================================================
@@ -1911,4 +2392,111 @@ body.crm-dashboard .crm-container {
 
 [data-theme="dark"] .crm-view-toggle {
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   CRM MODAL FORM — compact heights (match HRMS 30px)
+   Scoped to CRM pages via body.crm-page
+   ============================================ */
+
+/* Inputs and selects in .modal modals */
+body.crm-page .modal-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+body.crm-page .modal-body select {
+    height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+body.crm-page .modal-body textarea {
+    height: auto !important;
+    min-height: 50px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+/* Searchable dropdown triggers in .modal modals */
+body.crm-page .modal-body .searchable-dropdown-trigger {
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+/* Inputs and selects in .gm-overlay modals */
+body.crm-page .gm-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+body.crm-page .gm-body select {
+    height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+body.crm-page .gm-body textarea {
+    height: auto !important;
+    min-height: 50px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+/* Searchable dropdown triggers in .gm-overlay modals */
+body.crm-page .gm-body .searchable-dropdown-trigger {
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+}
+
+/* ============================================
+   SEARCHABLE DROPDOWN IN CRM MODALS — overflow fix
+   Scoped to CRM pages via body.crm-page
+   Same pattern as HRMS uses for .modal-content / .modal-body
+   Covers both .modal (leads, deals) and .gm-overlay (contacts, companies, settings)
+   ============================================ */
+
+/* .modal type modals (leads.html, deals.html) */
+body.crm-page .modal:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .modal-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .modal-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .modal-body .form-group:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .modal-body .form-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* .gm-overlay type modals (contacts.html, companies.html, settings.html) */
+body.crm-page .gm-modal:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .gm-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .gm-body .form-group:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+body.crm-page .gm-body .form-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Ensure the open dropdown has high z-index in both modal types */
+body.crm-page .searchable-dropdown.open {
+    z-index: 10000;
+}
+
+body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
+    z-index: 10001;
 }

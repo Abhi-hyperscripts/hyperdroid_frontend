@@ -9,8 +9,18 @@ let dealStages = [];
 let currentView = 'kanban'; // 'kanban' or 'list'
 let currentEditDealId = null;
 let pendingStageChange = null; // { dealId, action, data }
+let stagePickerDealId = null;
 let contactsList = [];
 let companiesList = [];
+
+// Default currency from CRM settings
+let defaultCurrency = 'USD';
+
+// Searchable dropdown instances
+let dealCurrencyDropdown = null;
+let dealStageDropdown = null;
+let dealContactDropdown = null;
+let dealCompanyDropdown = null;
 
 // Currency symbols map
 const CURRENCY_SYMBOLS = {
@@ -21,15 +31,63 @@ const CURRENCY_SYMBOLS = {
 
 // ==================== Initialization ====================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('crm', 'deals');
-    loadDealStages();
+    await loadDefaultCurrency();
+    await loadDealStages();
     loadPipeline();
     loadContacts();
     loadCompanies();
+    initSearchableDropdowns();
 });
 
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    if (!dealCurrencyDropdown) {
+        dealCurrencyDropdown = convertSelectToSearchable('dealCurrency', {
+            placeholder: 'Select currency...',
+            searchPlaceholder: 'Search currencies...'
+        });
+    }
+
+    if (!dealStageDropdown) {
+        dealStageDropdown = convertSelectToSearchable('dealStage', {
+            placeholder: 'Select stage...',
+            searchPlaceholder: 'Search stages...'
+        });
+    }
+
+    if (!dealContactDropdown) {
+        dealContactDropdown = convertSelectToSearchable('dealContact', {
+            placeholder: 'Select contact...',
+            searchPlaceholder: 'Search contacts...'
+        });
+    }
+
+    if (!dealCompanyDropdown) {
+        dealCompanyDropdown = convertSelectToSearchable('dealCompany', {
+            placeholder: 'Select company...',
+            searchPlaceholder: 'Search companies...'
+        });
+    }
+}
+
 // ==================== Data Loading ====================
+
+/**
+ * Load default currency from CRM settings
+ */
+async function loadDefaultCurrency() {
+    try {
+        const response = await api.request('/crm/crm-settings/default_currency');
+        if (response && response.value) {
+            defaultCurrency = response.value;
+        }
+    } catch (error) {
+        console.error('Failed to load default currency, using USD:', error);
+    }
+}
 
 /**
  * Load pipeline stages
@@ -43,28 +101,33 @@ async function loadDealStages() {
         const stageSelect = document.getElementById('dealStage');
         if (stageSelect && dealStages.length > 0) {
             stageSelect.innerHTML = dealStages.map(stage =>
-                `<option value="${stage.id}">${escapeHtml(stage.name)}</option>`
+                `<option value="${stage.id}">${escapeHtml(stage.stage_name)}</option>`
             ).join('');
+        }
+
+        // Update searchable dropdown
+        if (dealStageDropdown) {
+            dealStageDropdown.setOptions(dealStages.map(s => ({ value: s.id, label: s.stage_name })));
         }
     } catch (error) {
         console.error('Failed to load deal stages:', error);
         // Fallback default stages
         dealStages = [
-            { id: 'qualification', name: 'Qualification', order: 1, color: 'blue' },
-            { id: 'proposal', name: 'Proposal', order: 2, color: 'purple' },
-            { id: 'negotiation', name: 'Negotiation', order: 3, color: 'orange' },
-            { id: 'won', name: 'Won', order: 4, color: 'green' },
-            { id: 'lost', name: 'Lost', order: 5, color: 'red' }
+            { id: 'qualification', stage_name: 'Qualification', stage_order: 1, color: 'blue' },
+            { id: 'proposal', stage_name: 'Proposal', stage_order: 2, color: 'purple' },
+            { id: 'negotiation', stage_name: 'Negotiation', stage_order: 3, color: 'orange' },
+            { id: 'won', stage_name: 'Won', stage_order: 4, color: 'green' },
+            { id: 'lost', stage_name: 'Lost', stage_order: 5, color: 'red' }
         ];
     }
 }
 
 /**
- * Load pipeline deals
+ * Load pipeline deals (full deal objects for kanban/list rendering)
  */
 async function loadPipeline() {
     try {
-        const response = await api.request('/crm/deals/pipeline?pipelineName=Default');
+        const response = await api.request('/crm/deals');
         allDeals = response.data || response || [];
         renderCurrentView();
         updatePipelineSummary();
@@ -89,6 +152,13 @@ async function loadContacts() {
             ).join('');
             contactSelect.innerHTML = '<option value="">Select contact...</option>' + options;
         }
+
+        if (dealContactDropdown) {
+            dealContactDropdown.setOptions([
+                { value: '', label: 'Select contact...' },
+                ...contactsList.map(c => ({ value: c.id, label: ((c.first_name || '') + ' ' + (c.last_name || '')).trim() }))
+            ]);
+        }
     } catch (error) {
         console.error('Failed to load contacts:', error);
     }
@@ -104,9 +174,16 @@ async function loadCompanies() {
         const companySelect = document.getElementById('dealCompany');
         if (companySelect) {
             const options = companiesList.map(c =>
-                `<option value="${c.id}">${escapeHtml(c.name || '')}</option>`
+                `<option value="${c.id}">${escapeHtml(c.company_name || '')}</option>`
             ).join('');
             companySelect.innerHTML = '<option value="">Select company...</option>' + options;
+        }
+
+        if (dealCompanyDropdown) {
+            dealCompanyDropdown.setOptions([
+                { value: '', label: 'Select company...' },
+                ...companiesList.map(c => ({ value: c.id, label: c.company_name || '' }))
+            ]);
         }
     } catch (error) {
         console.error('Failed to load companies:', error);
@@ -117,15 +194,18 @@ async function loadCompanies() {
 
 function updatePipelineSummary() {
     const totalValue = allDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
-    const wonDeals = allDeals.filter(d => d.is_won);
-    const lostDeals = allDeals.filter(d => d.is_lost);
+    // Determine won/lost by matching stage_id to dealStages with stage_type
+    const wonStageIds = dealStages.filter(s => s.stage_type === 'won').map(s => s.id);
+    const lostStageIds = dealStages.filter(s => s.stage_type === 'lost').map(s => s.id);
+    const wonDeals = allDeals.filter(d => wonStageIds.includes(d.stage_id));
+    const lostDeals = allDeals.filter(d => lostStageIds.includes(d.stage_id));
     const wonValue = wonDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
     const lostValue = lostDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
 
-    document.getElementById('totalPipelineValue').textContent = formatCurrency(totalValue);
+    document.getElementById('totalPipelineValue').textContent = formatCurrency(totalValue, defaultCurrency);
     document.getElementById('totalDealsCount').textContent = allDeals.length;
-    document.getElementById('wonDealsValue').textContent = formatCurrency(wonValue);
-    document.getElementById('lostDealsValue').textContent = formatCurrency(lostValue);
+    document.getElementById('wonDealsValue').textContent = formatCurrency(wonValue, defaultCurrency);
+    document.getElementById('lostDealsValue').textContent = formatCurrency(lostValue, defaultCurrency);
 }
 
 // ==================== View Toggle ====================
@@ -179,11 +259,7 @@ function renderKanbanBoard() {
     // Group deals by stage
     const dealsByStage = {};
     dealStages.forEach(stage => {
-        dealsByStage[stage.id] = allDeals.filter(d =>
-            d.stage_id === stage.id ||
-            (stage.name === 'Won' && d.is_won) ||
-            (stage.name === 'Lost' && d.is_lost)
-        );
+        dealsByStage[stage.id] = allDeals.filter(d => d.stage_id === stage.id);
     });
 
     board.innerHTML = dealStages.map(stage => {
@@ -197,10 +273,10 @@ function renderKanbanBoard() {
                 <div class="kanban-column-header" style="border-top-color: ${stageColor};">
                     <div class="kanban-column-title">
                         <span class="kanban-stage-dot" style="background: ${stageColor};"></span>
-                        <span>${escapeHtml(stage.name)}</span>
+                        <span>${escapeHtml(stage.stage_name)}</span>
                         <span class="kanban-count">${stageDeals.length}</span>
                     </div>
-                    <div class="kanban-column-value">${formatCurrency(stageValue)}</div>
+                    <div class="kanban-column-value">${formatCurrency(stageValue, defaultCurrency)}</div>
                 </div>
                 <div class="kanban-column-body">
                     ${stageDeals.length === 0 ? `
@@ -215,15 +291,18 @@ function renderKanbanBoard() {
 }
 
 function renderDealCard(deal, stage) {
-    const value = formatCurrency(parseFloat(deal.deal_value) || 0, deal.currency);
+    const value = formatCurrency(parseFloat(deal.deal_value) || 0, deal.currency || defaultCurrency);
     const contactName = deal.contact_name || '';
     const companyName = deal.company_name || '';
     const closeDate = deal.expected_close_date ? formatDate(deal.expected_close_date) : '';
+    const isWon = stage && stage.stage_type === 'won';
+    const isLost = stage && stage.stage_type === 'lost';
 
     return `
         <div class="kanban-deal-card" draggable="true"
              data-deal-id="${deal.id}"
-             ondragstart="handleDragStart(event, '${deal.id}')">
+             ondragstart="handleDragStart(event, '${deal.id}')"
+             onclick="handleDealCardTap(event, '${deal.id}')">
             <div class="deal-card-header">
                 <span class="deal-card-name">${escapeHtml(deal.deal_name || 'Untitled Deal')}</span>
                 <div class="deal-card-actions">
@@ -242,7 +321,7 @@ function renderDealCard(deal, stage) {
             </div>
             ${closeDate ? `<div class="deal-card-date">${closeDate}</div>` : ''}
             <div class="deal-card-footer">
-                ${!deal.is_won && !deal.is_lost ? `
+                ${!isWon && !isLost ? `
                     <button class="deal-quick-btn deal-won-btn" onclick="event.stopPropagation(); markDealWon('${deal.id}')" title="Mark as Won">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="20 6 9 17 4 12"/>
@@ -283,7 +362,7 @@ function getStageColor(stage) {
         'won': 'var(--color-success)',
         'lost': 'var(--color-danger)'
     };
-    return nameMap[stage.name?.toLowerCase()] || 'var(--brand-primary)';
+    return nameMap[stage.stage_name?.toLowerCase()] || 'var(--brand-primary)';
 }
 
 // ==================== Drag & Drop ====================
@@ -348,8 +427,10 @@ function renderListView() {
 
     tbody.innerHTML = allDeals.map(deal => {
         const stage = dealStages.find(s => s.id === deal.stage_id);
-        const stageName = stage ? stage.name : (deal.is_won ? 'Won' : deal.is_lost ? 'Lost' : '-');
-        const stageClass = deal.is_won ? 'stage-won' : deal.is_lost ? 'stage-lost' : '';
+        const stageName = stage ? stage.stage_name : '-';
+        const isWon = stage && stage.stage_type === 'won';
+        const isLost = stage && stage.stage_type === 'lost';
+        const stageClass = isWon ? 'stage-won' : isLost ? 'stage-lost' : '';
 
         return `
             <tr data-deal-id="${deal.id}">
@@ -379,7 +460,7 @@ function renderListView() {
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
                         </button>
-                        ${!deal.is_won && !deal.is_lost ? `
+                        ${!isWon && !isLost ? `
                         <button class="crm-action-btn action-convert" onclick="markDealWon('${deal.id}')" title="Mark Won">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"/>
@@ -413,6 +494,12 @@ function openNewDealModal() {
     document.getElementById('dealSubmitBtn').textContent = 'Create Deal';
     document.getElementById('dealForm').reset();
     document.getElementById('dealId').value = '';
+
+    if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(defaultCurrency);
+    if (dealStageDropdown) dealStageDropdown.setValue('');
+    if (dealContactDropdown) dealContactDropdown.setValue('');
+    if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
+
     openModal('dealModal');
 }
 
@@ -453,17 +540,17 @@ async function handleDealSubmit(event) {
 
     const submitBtn = document.getElementById('dealSubmitBtn');
     const spinner = document.getElementById('dealSubmitSpinner');
-    submitBtn.disabled = true;
-    spinner.style.display = 'inline-block';
+    if (submitBtn) submitBtn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
 
     const formData = {
         deal_name: document.getElementById('dealName').value.trim(),
         deal_value: parseFloat(document.getElementById('dealValue').value) || 0,
-        currency: document.getElementById('dealCurrency').value,
-        stage_id: document.getElementById('dealStage').value,
+        currency: (dealCurrencyDropdown ? dealCurrencyDropdown.getValue() : document.getElementById('dealCurrency').value) || defaultCurrency,
+        stage_id: dealStageDropdown ? dealStageDropdown.getValue() : document.getElementById('dealStage').value,
         expected_close_date: document.getElementById('dealExpectedClose').value || null,
-        contact_id: document.getElementById('dealContact').value || null,
-        company_id: document.getElementById('dealCompany').value || null,
+        contact_id: (dealContactDropdown ? dealContactDropdown.getValue() : document.getElementById('dealContact').value) || null,
+        company_id: (dealCompanyDropdown ? dealCompanyDropdown.getValue() : document.getElementById('dealCompany').value) || null,
         notes: document.getElementById('dealNotes').value.trim()
     };
 
@@ -488,8 +575,8 @@ async function handleDealSubmit(event) {
         console.error('Failed to save deal:', error);
         Toast.error(error.message || 'Failed to save deal');
     } finally {
-        submitBtn.disabled = false;
-        spinner.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
     }
 }
 
@@ -510,6 +597,11 @@ async function editDeal(dealId) {
         document.getElementById('dealCompany').value = deal.company_id || '';
         document.getElementById('dealNotes').value = deal.notes || '';
 
+        if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(deal.currency || 'USD');
+        if (dealStageDropdown) dealStageDropdown.setValue(deal.stage_id || '');
+        if (dealContactDropdown) dealContactDropdown.setValue(deal.contact_id || '');
+        if (dealCompanyDropdown) dealCompanyDropdown.setValue(deal.company_id || '');
+
         openModal('dealModal');
     } catch (error) {
         console.error('Failed to load deal:', error);
@@ -518,7 +610,8 @@ async function editDeal(dealId) {
 }
 
 async function deleteDeal(dealId) {
-    if (!confirm('Are you sure you want to delete this deal?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this deal?', 'Delete Deal', 'danger');
+    if (!confirmed) return;
 
     try {
         await api.request(`/crm/deals/${dealId}`, { method: 'DELETE' });
@@ -615,6 +708,83 @@ async function confirmStageChange() {
         confirmBtn.disabled = false;
         if (spinner) spinner.style.display = 'none';
     }
+}
+
+// ==================== Stage Picker (Mobile-friendly) ====================
+
+/**
+ * Handle tap on deal card — open stage picker.
+ * Ignores taps on buttons (edit, won, lost) via event target check.
+ */
+function handleDealCardTap(event, dealId) {
+    // Don't open picker if user clicked a button inside the card
+    if (event.target.closest('button')) return;
+    // Don't open on drag
+    if (event.target.classList.contains('dragging')) return;
+
+    openStagePicker(dealId);
+}
+
+function openStagePicker(dealId) {
+    const deal = allDeals.find(d => d.id === dealId);
+    if (!deal) return;
+
+    stagePickerDealId = dealId;
+
+    // Populate deal info
+    const infoEl = document.getElementById('stagePickerDealInfo');
+    const value = formatCurrency(parseFloat(deal.deal_value) || 0, deal.currency || defaultCurrency);
+    infoEl.innerHTML = `
+        <span class="picker-deal-name">${escapeHtml(deal.deal_name || 'Untitled Deal')}</span>
+        <span class="picker-deal-value">${value}</span>
+    `;
+
+    // Populate stage list
+    const listEl = document.getElementById('stagePickerList');
+    listEl.innerHTML = dealStages.map(stage => {
+        const isCurrent = deal.stage_id === stage.id;
+        const stageColor = getStageColor(stage);
+        return `
+            <button class="stage-picker-item ${isCurrent ? 'current-stage' : ''}"
+                    onclick="selectStageFromPicker('${stage.id}')"
+                    ${isCurrent ? 'disabled' : ''}>
+                <span class="stage-picker-dot" style="background: ${stageColor};"></span>
+                <span class="stage-picker-item-info">
+                    <span class="stage-picker-item-name">${escapeHtml(stage.stage_name)}</span>
+                    ${stage.stage_type && stage.stage_type !== 'open' ? `<span class="stage-picker-item-type">${escapeHtml(stage.stage_type)}</span>` : ''}
+                </span>
+                ${isCurrent ? `
+                    <svg class="stage-picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                ` : ''}
+            </button>
+        `;
+    }).join('');
+
+    // Show overlay with animation
+    const overlay = document.getElementById('stagePickerOverlay');
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+    });
+}
+
+function closeStagePicker() {
+    const overlay = document.getElementById('stagePickerOverlay');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300);
+    stagePickerDealId = null;
+}
+
+async function selectStageFromPicker(stageId) {
+    if (!stagePickerDealId) return;
+
+    const dealId = stagePickerDealId;
+    closeStagePicker();
+    await changeDealStage(dealId, stageId);
 }
 
 // ==================== Currency Formatting ====================
