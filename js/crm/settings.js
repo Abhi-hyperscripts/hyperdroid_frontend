@@ -757,6 +757,12 @@ function renderLeadSources() {
                 </td>
                 <td>
                     <div class="crm-actions">
+                        <button class="crm-action-btn" onclick="showEmbedCode('${source.id}')" title="Embed Code">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </button>
                         <button class="crm-action-btn" onclick="editLeadSource('${source.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1008,4 +1014,76 @@ function getFieldMappingsFromEditor() {
     }
 
     return mappings;
+}
+
+// ─── Embed Code ─────────────────────────────────────────────────────────────
+
+function showEmbedCode(id) {
+    const source = leadSources.find(s => s.id === id);
+    if (!source || !source.webhook_key) return;
+
+    const webhookUrl = `${getCrmBaseUrl()}/leads/capture/${source.webhook_key}`;
+
+    const embedCode = `<form action="${webhookUrl}" method="POST" style="max-width: 480px; margin: 0 auto; font-family: system-ui, sans-serif;">
+  <h3 style="margin-bottom: 16px;">Get in Touch</h3>
+
+  <div style="margin-bottom: 12px;">
+    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Name *</label>
+    <input name="name" required placeholder="Your full name"
+      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+  </div>
+
+  <div style="margin-bottom: 12px;">
+    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Email *</label>
+    <input name="email" type="email" required placeholder="you@example.com"
+      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+  </div>
+
+  <div style="margin-bottom: 12px;">
+    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Phone</label>
+    <input name="phone" type="tel" placeholder="+1 (555) 000-0000"
+      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+  </div>
+
+  <div style="margin-bottom: 12px;">
+    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Company</label>
+    <input name="company" placeholder="Company name"
+      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Message</label>
+    <textarea name="message" rows="3" placeholder="How can we help?"
+      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
+  </div>
+
+  <button type="submit"
+    style="width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+    Submit
+  </button>
+</form>`;
+
+    document.getElementById('embedCodeSourceName').textContent = source.source_name;
+    document.getElementById('embedCodeContent').textContent = embedCode;
+    openModal('embedCodeModal');
+}
+
+async function copyEmbedCode() {
+    const code = document.getElementById('embedCodeContent').textContent;
+    try {
+        await navigator.clipboard.writeText(code);
+        Toast.success('Embed code copied to clipboard');
+    } catch {
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        Toast.success('Embed code copied to clipboard');
+    }
+}
+
+function closeEmbedCodeModal() {
+    closeModal('embedCodeModal');
 }

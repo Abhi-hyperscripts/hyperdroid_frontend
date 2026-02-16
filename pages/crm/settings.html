@@ -496,6 +496,48 @@
         </div>
     </div>
 
+    <!-- Embed Code Modal -->
+    <div class="gm-overlay" id="embedCodeModal">
+        <div class="gm-modal" style="max-width: 640px;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Embed Code</h3>
+                        <p class="gm-subtitle" id="embedCodeSourceName"></p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeEmbedCodeModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                    Copy this HTML and paste it into your landing page. The form submits leads directly to your CRM.
+                </p>
+                <pre class="crm-embed-code-block"><code id="embedCodeContent"></code></pre>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeEmbedCodeModal()">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyEmbedCode()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    Copy Code
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Delete Stage Confirmation Modal -->
     <div class="gm-overlay" id="deleteStageModal">
         <div class="gm-modal gm-sm">

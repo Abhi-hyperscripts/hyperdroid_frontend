@@ -2583,6 +2583,27 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     font-size: 0.8rem;
 }
 
+/* ─── Embed Code Block ───────────────────────────────────────────────── */
+
+.crm-embed-code-block {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 0;
+    overflow: auto;
+    max-height: 350px;
+}
+
+.crm-embed-code-block code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 /* ─── Lead Sources: Status Badges ──────────────────────────────────────── */
 
 .crm-status-badge.status-active {
