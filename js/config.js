@@ -14,6 +14,7 @@ const ENVIRONMENTS = {
         chat: 'https://localhost:5102',
         hrms: 'https://localhost:5104',
         crm: 'https://localhost:5112',
+        research: 'https://localhost:5114',
         notification: 'http://localhost:5110'
     },
     production: {
@@ -23,6 +24,7 @@ const ENVIRONMENTS = {
         chat: 'https://chat.ragenaizer.com',
         hrms: 'https://hrms.ragenaizer.com',
         crm: 'https://crm.ragenaizer.com',
+        research: 'https://research.ragenaizer.com',
         notification: 'https://notification.ragenaizer.com'
     }
 };
@@ -82,6 +84,10 @@ const CONFIG = {
 
     get crmSignalRHubUrl() {
         return `${this.endpoints.crm}/hubs/crm`;
+    },
+
+    get researchApiBaseUrl() {
+        return `${this.endpoints.research}/api`;
     },
 
     get notificationApiBaseUrl() {

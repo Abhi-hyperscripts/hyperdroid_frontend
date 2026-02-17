@@ -108,6 +108,10 @@ class API {
         if (endpoint.startsWith('/hrms/')) {
             return CONFIG.hrmsApiBaseUrl;
         }
+        // Research endpoints go to Research service (independent microservice)
+        if (endpoint.startsWith('/research/')) {
+            return CONFIG.researchApiBaseUrl;
+        }
         // CRM endpoints go to CRM service (independent microservice)
         if (endpoint.startsWith('/crm/')) {
             return CONFIG.crmApiBaseUrl;
@@ -144,6 +148,10 @@ class API {
         // e.g., /crm/dashboard -> /dashboard (baseUrl has /api, so final is /api/dashboard)
         if (endpoint.startsWith('/crm/')) {
             actualEndpoint = endpoint.substring(4); // Remove '/crm' prefix, keep the rest
+        }
+        // For Research endpoints, strip /research prefix since baseUrl already has /api
+        if (endpoint.startsWith('/research/')) {
+            actualEndpoint = endpoint.substring(9); // Remove '/research' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {

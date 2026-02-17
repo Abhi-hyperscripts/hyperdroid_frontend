@@ -14,6 +14,7 @@ const Navigation = {
         chat: 'CHAT_USER',
         hrms: 'HRMS_USER',
         crm: 'CRM_USER',
+        research: 'RESEARCH_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -80,6 +81,16 @@ const Navigation = {
             </svg>`,
             href: 'crm/dashboard.html',
             requiresRole: 'CRM_USER'
+        },
+        {
+            id: 'research',
+            label: 'Research',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>`,
+            href: 'research/dashboard.html',
+            requiresRole: 'RESEARCH_USER'
         },
         {
             id: 'admin',
@@ -168,7 +179,8 @@ const Navigation = {
         'drive': 'Drive',
         'chat': 'Chat',
         'hrms': 'HRMS',
-        'crm': 'CRM'
+        'crm': 'CRM',
+        'research': 'Research'
         // 'admin' and 'home' don't require service licensing
     },
 
@@ -594,6 +606,9 @@ async function loadNavigation() {
         basePath = '../';
     } else if (path.includes('/chat/')) {
         currentPageId = 'chat';
+        basePath = '../';
+    } else if (path.includes('/research/')) {
+        currentPageId = 'research';
         basePath = '../';
     } else if (path.includes('/auth/')) {
         currentPageId = 'admin';

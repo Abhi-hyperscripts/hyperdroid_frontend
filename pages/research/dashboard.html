@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Research - HyperDroid</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/research.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard research-page">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="research-container">
+        <!-- Page Header -->
+        <div class="research-header">
+            <div>
+                <h1>Research</h1>
+                <p>Data analysis and insights</p>
+            </div>
+            <button class="research-btn btn-primary" id="newProjectBtn" onclick="showModal('createProjectModal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Project
+            </button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="research-stats-grid" id="statsGrid">
+            <div class="research-stat-card">
+                <div class="stat-icon primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalProjects">-</div>
+                <div class="stat-label">Total Projects</div>
+            </div>
+
+            <div class="research-stat-card">
+                <div class="stat-icon success">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalFiles">-</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+
+            <div class="research-stat-card">
+                <div class="stat-icon warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalRows">-</div>
+                <div class="stat-label">Total Rows</div>
+            </div>
+
+            <div class="research-stat-card">
+                <div class="stat-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </div>
+                <div class="stat-value" id="queriesRun">-</div>
+                <div class="stat-label">Queries Run</div>
+            </div>
+        </div>
+
+        <!-- Projects Section -->
+        <div class="research-filters">
+            <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin: 0;">Projects</h3>
+            <div class="research-search-wrapper">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" class="research-search-input" id="projectSearch" placeholder="Search projects...">
+            </div>
+        </div>
+
+        <div id="projectsGrid">
+            <div class="research-loading">
+                <div class="spinner"></div>
+                <p>Loading projects...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Project Modal (Glassmorphic) -->
+    <div id="createProjectModal" class="gm-overlay" onclick="if(event.target===this)closeModal('createProjectModal')">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title" id="projectModalTitle">Create New Project</h3>
+                        <p class="gm-subtitle">Add a new research project</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeModal('createProjectModal')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="createProjectForm">
+                <div class="gm-body">
+                    <div class="research-form-group">
+                        <label for="projectName">Project Name</label>
+                        <input type="text" id="projectName" placeholder="Enter project name" required>
+                    </div>
+                    <div class="research-form-group">
+                        <label for="projectDescription">Description</label>
+                        <textarea id="projectDescription" rows="3" placeholder="Describe your research project..."></textarea>
+                    </div>
+                </div>
+                <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                    <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('createProjectModal')">Cancel</button>
+                    <button type="submit" class="gm-btn gm-btn-primary" id="projectSubmitBtn">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Navigation !== 'undefined') {
+                Navigation.init('research', '../');
+            }
+        });
+    </script>
+</body>
+</html>
