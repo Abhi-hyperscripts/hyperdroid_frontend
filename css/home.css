@@ -120,12 +120,11 @@ body.dashboard .navbar {
    BENTO GRID - Compact Layout with Center Alignment
    ============================================================= */
 .bento-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     width: 100%;
-    max-width: 900px;
+    max-width: 1100px;
     margin-bottom: 32px;
 }
 
@@ -140,9 +139,6 @@ body.dashboard .navbar {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    flex: 0 1 calc(33.333% - 8px);
-    min-width: 260px;
-    max-width: 300px;
 }
 
 /* Glow border on hover */
@@ -219,6 +215,14 @@ body.dashboard .navbar {
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
 }
 
+.bento-card.crm:hover .card-border {
+    background: linear-gradient(135deg, var(--color-cyan, #06b6d4), #22d3ee);
+}
+
+.bento-card.research:hover .card-border {
+    background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
+}
+
 .bento-card.admin:hover .card-border {
     background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
@@ -240,6 +244,14 @@ body.dashboard .navbar {
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
+.bento-card.crm:hover {
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+}
+
+.bento-card.research:hover {
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
 .bento-card.admin:hover {
     box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
 }
@@ -258,6 +270,14 @@ body.dashboard .navbar {
 
 [data-theme="dark"] .bento-card.hrms:hover {
     box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .bento-card.crm:hover {
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25);
+}
+
+[data-theme="dark"] .bento-card.research:hover {
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
 }
 
 [data-theme="dark"] .bento-card.admin:hover {
@@ -341,6 +361,22 @@ body.dashboard .navbar {
     color: white;
 }
 
+.bento-card.crm .app-icon {
+    background: linear-gradient(135deg, var(--color-cyan, #06b6d4), #22d3ee);
+}
+
+.bento-card.crm .app-icon svg {
+    color: white;
+}
+
+.bento-card.research .app-icon {
+    background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
+}
+
+.bento-card.research .app-icon svg {
+    color: white;
+}
+
 .bento-card.admin .app-icon {
     background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
@@ -387,13 +423,13 @@ body.dashboard .navbar {
 }
 
 .app-status.admin-badge {
-    background: var(--danger-alpha-10);
-    color: var(--color-danger);
+    background: var(--purple-alpha-10);
+    color: var(--color-purple);
 }
 
 [data-theme="dark"] .app-status.admin-badge {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
 }
 
 .status-indicator {
@@ -476,6 +512,8 @@ body.dashboard .navbar {
 .bento-card.drive:hover .app-action { color: var(--color-success); }
 .bento-card.chat:hover .app-action { color: var(--color-warning); }
 .bento-card.hrms:hover .app-action { color: var(--brand-primary); }
+.bento-card.crm:hover .app-action { color: var(--color-cyan, #06b6d4); }
+.bento-card.research:hover .app-action { color: var(--brand-secondary); }
 .bento-card.admin:hover .app-action { color: var(--color-danger); }
 
 [data-theme="dark"] .app-action {
@@ -510,10 +548,15 @@ body.dashboard .navbar {
 /* =============================================================
    RESPONSIVE DESIGN
    ============================================================= */
-@media (max-width: 800px) {
-    .bento-card {
-        flex: 0 1 calc(50% - 6px);
-        min-width: 220px;
+@media (max-width: 900px) {
+    .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
     }
 }
 
