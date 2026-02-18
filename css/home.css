@@ -1,6 +1,6 @@
 /* =============================================================
-   Home Page Styles - Sleek Compact Bento Grid
-   Theme-aware with glowing effects
+   Home Page Styles - Compact Bento Grid
+   Theme-aware with glassmorphic effects
    ============================================================= */
 
 /* =============================================================
@@ -117,40 +117,36 @@ body.dashboard .navbar {
 }
 
 /* =============================================================
-   BENTO GRID - Compact Layout with Center Alignment
+   BENTO GRID - 4 Column Compact Layout
    ============================================================= */
 .bento-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
     width: 100%;
-    max-width: 900px;
+    max-width: 1000px;
     margin-bottom: 32px;
 }
 
 /* =============================================================
-   BENTO CARD - Compact Horizontal Style
+   BENTO CARD - Compact Glass Style
    ============================================================= */
 .bento-card {
     position: relative;
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    flex: 0 1 calc(33.333% - 8px);
-    min-width: 260px;
-    max-width: 300px;
 }
 
-/* Glow border on hover */
+/* Animated glow border */
 .card-border {
     position: absolute;
     inset: 0;
-    border-radius: 14px;
-    padding: 1.5px;
+    border-radius: 12px;
+    padding: 1px;
     background: transparent;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -160,38 +156,36 @@ body.dashboard .navbar {
     transition: opacity 0.3s ease;
 }
 
-/* Card content container */
+/* Card content - frosted glass */
 .card-content {
     position: relative;
     z-index: 1;
-    padding: 14px 16px;
+    padding: 12px 14px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     background: var(--bg-card);
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-/* Light mode card styles */
-.bento-card .card-content {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* Dark mode card styles */
+/* Dark mode - frosted glass effect */
 [data-theme="dark"] .card-content {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.025);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 /* =============================================================
    CARD HOVER EFFECTS
    ============================================================= */
 .bento-card:hover {
-    transform: translateY(-3px) scale(1.01);
+    transform: translateY(-2px);
 }
 
 .bento-card:hover .card-border {
@@ -206,81 +200,59 @@ body.dashboard .navbar {
 .bento-card.vision:hover .card-border {
     background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
 }
-
 .bento-card.drive:hover .card-border {
     background: linear-gradient(135deg, var(--color-success), #34d399);
 }
-
 .bento-card.chat:hover .card-border {
     background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
 }
-
 .bento-card.hrms:hover .card-border {
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
 }
-
+.bento-card.crm:hover .card-border {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+.bento-card.research:hover .card-border {
+    background: linear-gradient(135deg, #06b6d4, #22d3ee);
+}
 .bento-card.admin:hover .card-border {
     background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
 
 /* Hover shadow glow */
-.bento-card.vision:hover {
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
-}
+.bento-card.vision:hover { box-shadow: 0 6px 20px rgba(99, 102, 241, 0.15); }
+.bento-card.drive:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15); }
+.bento-card.chat:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15); }
+.bento-card.hrms:hover { box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15); }
+.bento-card.crm:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.15); }
+.bento-card.research:hover { box-shadow: 0 6px 20px rgba(6, 182, 212, 0.15); }
+.bento-card.admin:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.15); }
 
-.bento-card.drive:hover {
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-}
-
-.bento-card.chat:hover {
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
-}
-
-.bento-card.hrms:hover {
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
-}
-
-.bento-card.admin:hover {
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
-}
-
-[data-theme="dark"] .bento-card.vision:hover {
-    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.25);
-}
-
-[data-theme="dark"] .bento-card.drive:hover {
-    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);
-}
-
-[data-theme="dark"] .bento-card.chat:hover {
-    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
-}
-
-[data-theme="dark"] .bento-card.hrms:hover {
-    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
-}
-
-[data-theme="dark"] .bento-card.admin:hover {
-    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
-}
+[data-theme="dark"] .bento-card.vision:hover { box-shadow: 0 6px 24px rgba(99, 102, 241, 0.25); }
+[data-theme="dark"] .bento-card.drive:hover { box-shadow: 0 6px 24px rgba(16, 185, 129, 0.25); }
+[data-theme="dark"] .bento-card.chat:hover { box-shadow: 0 6px 24px rgba(245, 158, 11, 0.25); }
+[data-theme="dark"] .bento-card.hrms:hover { box-shadow: 0 6px 24px rgba(59, 130, 246, 0.25); }
+[data-theme="dark"] .bento-card.crm:hover { box-shadow: 0 6px 24px rgba(139, 92, 246, 0.25); }
+[data-theme="dark"] .bento-card.research:hover { box-shadow: 0 6px 24px rgba(6, 182, 212, 0.25); }
+[data-theme="dark"] .bento-card.admin:hover { box-shadow: 0 6px 24px rgba(239, 68, 68, 0.25); }
 
 /* =============================================================
-   CARD HEADER - Horizontal Layout
+   CARD HEADER
    ============================================================= */
 .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 
 /* =============================================================
    APP ICONS - Compact
    ============================================================= */
 .app-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -303,63 +275,34 @@ body.dashboard .navbar {
 }
 
 .app-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     position: relative;
     z-index: 1;
 }
 
-.bento-card.vision .app-icon {
-    background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
-}
+/* Icon colors */
+.bento-card.vision .app-icon { background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary)); }
+.bento-card.drive .app-icon { background: linear-gradient(135deg, var(--color-success), #34d399); }
+.bento-card.chat .app-icon { background: linear-gradient(135deg, var(--color-warning), var(--color-orange)); }
+.bento-card.hrms .app-icon { background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent)); }
+.bento-card.crm .app-icon { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+.bento-card.research .app-icon { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+.bento-card.admin .app-icon { background: linear-gradient(135deg, var(--color-danger), #f87171); }
 
-.bento-card.vision .app-icon svg {
-    color: white;
-}
-
-.bento-card.drive .app-icon {
-    background: linear-gradient(135deg, var(--color-success), #34d399);
-}
-
-.bento-card.drive .app-icon svg {
-    color: white;
-}
-
-.bento-card.chat .app-icon {
-    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
-}
-
-.bento-card.chat .app-icon svg {
-    color: white;
-}
-
-.bento-card.hrms .app-icon {
-    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-}
-
-.bento-card.hrms .app-icon svg {
-    color: white;
-}
-
-.bento-card.admin .app-icon {
-    background: linear-gradient(135deg, var(--color-danger), #f87171);
-}
-
-.bento-card.admin .app-icon svg {
-    color: white;
-}
+.bento-card .app-icon svg { color: white; }
 
 /* =============================================================
-   APP STATUS INDICATORS - Compact Pill
+   STATUS INDICATORS - Compact Pill
    ============================================================= */
 .app-status {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 12px;
+    padding: 2px 7px;
+    border-radius: 10px;
     background: var(--hover-overlay);
     color: var(--text-muted);
     text-transform: uppercase;
@@ -397,8 +340,8 @@ body.dashboard .navbar {
 }
 
 .status-indicator {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
     background: currentColor;
     animation: pulse 2s ease-in-out infinite;
@@ -417,7 +360,7 @@ body.dashboard .navbar {
 }
 
 .card-body h3 {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 2px;
@@ -426,8 +369,8 @@ body.dashboard .navbar {
 
 .card-body p {
     color: var(--text-secondary);
-    font-size: 0.75rem;
-    line-height: 1.4;
+    font-size: 0.7rem;
+    line-height: 1.35;
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -440,7 +383,7 @@ body.dashboard .navbar {
 }
 
 [data-theme="dark"] .card-body p {
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* =============================================================
@@ -461,21 +404,20 @@ body.dashboard .navbar {
 .app-action {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     transition: all 0.3s ease;
 }
 
-.bento-card:hover .app-action {
-    color: var(--brand-primary);
-}
-
+.bento-card:hover .app-action { color: var(--brand-primary); }
 .bento-card.vision:hover .app-action { color: var(--brand-accent); }
 .bento-card.drive:hover .app-action { color: var(--color-success); }
 .bento-card.chat:hover .app-action { color: var(--color-warning); }
 .bento-card.hrms:hover .app-action { color: var(--brand-primary); }
+.bento-card.crm:hover .app-action { color: #8b5cf6; }
+.bento-card.research:hover .app-action { color: #06b6d4; }
 .bento-card.admin:hover .app-action { color: var(--color-danger); }
 
 [data-theme="dark"] .app-action {
@@ -487,8 +429,8 @@ body.dashboard .navbar {
 }
 
 .app-action svg {
-    width: 12px;
-    height: 12px;
+    width: 11px;
+    height: 11px;
     transition: transform 0.3s ease;
 }
 
@@ -510,10 +452,16 @@ body.dashboard .navbar {
 /* =============================================================
    RESPONSIVE DESIGN
    ============================================================= */
-@media (max-width: 800px) {
-    .bento-card {
-        flex: 0 1 calc(50% - 6px);
-        min-width: 220px;
+@media (max-width: 900px) {
+    .bento-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 }
 
@@ -531,13 +479,10 @@ body.dashboard .navbar {
     }
 
     .bento-grid {
-        gap: 8px;
+        gap: 6px;
     }
 
     .bento-card {
-        flex: 0 1 calc(50% - 4px);
-        min-width: 0;
-        max-width: none;
         border-radius: 10px;
     }
 
