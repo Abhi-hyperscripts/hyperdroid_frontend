@@ -354,6 +354,13 @@
                 licensedServices = orgInfo.licensedServices;
             }
 
+            const cardToModule = {
+                'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
+                'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
+                'adminCard': 'admin'
+            };
+            const accessibleModules = [];
+
             for (const [cardId, role] of Object.entries(roleMapping)) {
                 const card = document.getElementById(cardId);
                 if (card) {
@@ -372,10 +379,17 @@
                         if (cardId === 'adminCard') {
                             card.classList.add('visible');
                         }
+                        accessibleModules.push(cardToModule[cardId]);
                     } else {
                         card.style.display = 'none';
                     }
                 }
+            }
+
+            // Auto-redirect if user has access to exactly one module
+            if (accessibleModules.length === 1) {
+                navigateToModule(accessibleModules[0]);
+                return;
             }
         }
 

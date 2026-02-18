@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize RBAC
     hrmsRoles.init();
 
+    // Auto-redirect basic users (HRMS_USER only) to Self-Service portal
+    if (hrmsRoles.isBasicUser()) {
+        window.location.href = 'self-service.html';
+        return;
+    }
+
     // Apply RBAC visibility
     applyDashboardRBAC();
 
