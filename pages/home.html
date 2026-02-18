@@ -201,6 +201,41 @@
                 </div>
             </div>
 
+            <!-- Research Card -->
+            <div class="bento-card research" onclick="navigateToModule('research')" id="researchCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M9 17H7A5 5 0 0 1 7 7h2"/>
+                                <path d="M15 7h2a5 5 0 1 1 0 10h-2"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                                <circle cx="11" cy="4" r="2"/>
+                                <path d="M18 20l3 3"/>
+                                <circle cx="15" cy="17" r="3"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="researchStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Research</h3>
+                        <p>Market research analytics with AI-powered data analysis and insights</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Admin Card (SUPERADMIN only) -->
             <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
                 <div class="card-border"></div>
@@ -298,6 +333,7 @@
                 'chatCard': 'CHAT_USER',
                 'hrmsCard': 'HRMS_USER',
                 'crmCard': 'CRM_USER',
+                'researchCard': 'RESEARCH_USER',
                 'adminCard': 'SUPERADMIN'
             };
 
@@ -307,7 +343,8 @@
                 'driveCard': 'Drive',
                 'chatCard': 'Chat',
                 'hrmsCard': 'HRMS',
-                'crmCard': 'CRM'
+                'crmCard': 'CRM',
+                'researchCard': 'Research'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -348,6 +385,7 @@
             checkServiceHealth('chat', CONFIG.endpoints.chat);
             checkServiceHealth('hrms', CONFIG.endpoints.hrms);
             checkServiceHealth('crm', CONFIG.endpoints.crm);
+            checkServiceHealth('research', CONFIG.endpoints.research);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -392,6 +430,9 @@
                     break;
                 case 'crm':
                     window.location.href = 'crm/dashboard.html';
+                    break;
+                case 'research':
+                    window.location.href = 'research/dashboard.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';
