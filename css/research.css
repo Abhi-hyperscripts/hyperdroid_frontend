@@ -2297,6 +2297,10 @@
     gap: 12px;
 }
 
+.research-pagination:empty {
+    display: none;
+}
+
 .research-pagination-info {
     font-size: var(--font-size-xs);
     color: var(--text-muted);
