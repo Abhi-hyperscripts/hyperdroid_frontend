@@ -474,9 +474,9 @@ function renderServiceCard(service) {
                     </div>
                 </div>
                 <div class="service-details">
-                    <div class="service-detail">
+                    <div class="service-detail service-detail-full">
                         <span class="service-detail-label">Endpoint</span>
-                        <span class="service-detail-value">${service.endpoint || '-'}</span>
+                        <span class="service-detail-value service-detail-endpoint">${service.endpoint || '-'}</span>
                     </div>
                     <div class="service-detail">
                         <span class="service-detail-label">gRPC Port</span>

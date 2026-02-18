@@ -255,7 +255,7 @@
 
 .service-details {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin-top: 12px;
     padding-top: 12px;
@@ -270,6 +270,15 @@
     background: var(--bg-tertiary);
     border-radius: 8px;
     transition: background 0.2s ease;
+    min-width: 0;
+}
+
+.service-detail-full {
+    grid-column: 1 / -1;
+}
+
+.service-detail-endpoint {
+    word-break: break-all;
 }
 
 .service-detail:hover {
