@@ -140,7 +140,11 @@
             background: var(--color-success-light, rgba(16, 185, 129, 0.15));
             color: var(--color-success, #10b981);
         }
-        .status-badge.parsing, .status-badge.uploading {
+        .status-badge.queued {
+            background: var(--color-warning-light, rgba(245, 158, 11, 0.15));
+            color: var(--color-warning, #f59e0b);
+        }
+        .status-badge.parsing, .status-badge.uploading, .status-badge.loading_data {
             background: var(--color-info-light, rgba(59, 130, 246, 0.15));
             color: var(--color-info, #3b82f6);
         }
@@ -823,6 +827,87 @@
             line-height: 1.5;
         }
 
+        /* Structured Validation Error */
+        .query-validation-error {
+            background: var(--color-danger-light, rgba(239, 68, 68, 0.08));
+            border: 1px solid var(--color-danger, #ef4444);
+            border-radius: 10px;
+            padding: 16px;
+            line-height: 1.5;
+        }
+        .validation-error-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .validation-error-type {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            background: var(--color-danger, #ef4444);
+            color: #fff;
+        }
+        .validation-error-type.syntax_error {
+            background: var(--color-warning, #f59e0b);
+        }
+        .validation-error-type.unknown_column {
+            background: var(--color-info, #3b82f6);
+        }
+        .validation-error-type.access_denied {
+            background: var(--color-danger, #ef4444);
+        }
+        .validation-error-type.forbidden_operation {
+            background: var(--color-danger, #ef4444);
+        }
+        .validation-error-message {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+        }
+        .validation-suggestions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+        }
+        .validation-suggestions-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .validation-suggestion-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.3);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            color: var(--brand-primary);
+            font-size: 0.78rem;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .validation-suggestion-btn:hover {
+            background: rgba(var(--brand-primary-rgb), 0.16);
+            border-color: var(--brand-primary);
+            box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.15);
+        }
+        .validation-suggestion-btn strong {
+            color: var(--color-success, #10b981);
+            font-weight: 700;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -988,6 +1073,18 @@
         .modal-body {
             padding: 20px;
         }
+        /* Allow searchable dropdown menus to overflow modal */
+        #fileMetadataModal .modal-dialog {
+            max-height: 85vh;
+            overflow-y: auto;
+            border-radius: 12px;
+        }
+        #fileMetadataModal .modal-content {
+            overflow: visible;
+        }
+        #fileMetadataModal .modal-body {
+            overflow: visible;
+        }
         .form-group {
             margin-bottom: 16px;
         }
@@ -1021,11 +1118,10 @@
             align-items: center;
             gap: 8px;
             padding: 7px 16px;
-            border: 1px solid rgba(0, 212, 255, 0.35);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.35);
             border-radius: 20px;
-            background: rgba(0, 212, 255, 0.08);
-            color: #00d4ff;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            color: var(--brand-primary-light);
             font-size: 0.7rem;
             font-weight: 600;
             letter-spacing: 1.2px;
@@ -1036,63 +1132,62 @@
             flex-shrink: 0;
         }
         .ai-chat-toggle-btn:hover {
-            background: rgba(0, 212, 255, 0.16);
-            border-color: rgba(0, 212, 255, 0.6);
-            box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+            background: rgba(var(--brand-primary-rgb), 0.16);
+            border-color: rgba(var(--brand-primary-rgb), 0.6);
+            box-shadow: 0 0 16px rgba(var(--brand-primary-rgb), 0.2);
         }
         .ai-chat-toggle-btn.active {
-            background: rgba(0, 212, 255, 0.18);
-            border-color: rgba(0, 212, 255, 0.6);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+            background: rgba(var(--brand-primary-rgb), 0.18);
+            border-color: rgba(var(--brand-primary-rgb), 0.6);
+            box-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.25);
         }
         .ai-btn-reticle {
             display: inline-block;
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #00d4ff;
-            box-shadow: 0 0 6px #00d4ff;
-            animation: ai-reticle-pulse 2s ease-in-out infinite;
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+            animation: ai-reticle-pulse-red 2s ease-in-out infinite;
+            transition: background 0.4s ease, box-shadow 0.4s ease;
+        }
+        .ai-btn-reticle.connecting {
+            background: #f59e0b;
+            box-shadow: 0 0 6px #f59e0b;
+            animation: ai-reticle-pulse-orange 1.2s ease-in-out infinite;
+        }
+        .ai-btn-reticle.connected {
+            background: #00e676;
+            box-shadow: 0 0 6px #00e676;
+            animation: ai-reticle-pulse-green 2s ease-in-out infinite;
         }
         @keyframes ai-reticle-pulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 6px #00d4ff; }
-            50% { opacity: 0.5; box-shadow: 0 0 12px #00d4ff; }
+            0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--brand-primary); }
+            50% { opacity: 0.5; box-shadow: 0 0 12px var(--brand-primary); }
         }
 
-        /* ── AI Chat HUD Overlay ── */
+        /* ── AI Chat Backdrop — disabled, click-through ── */
+        .ai-chat-backdrop {
+            display: none;
+        }
+
+        /* ── AI Chat Overlay — TV with Stand ── */
         .ai-hud-overlay {
             position: fixed;
-            top: 50%;
+            top: 53%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(0.95);
-            width: 600px;
-            max-width: calc(100vw - 32px);
-            height: 520px;
-            max-height: calc(100vh - 80px);
+            transform: translate(-50%, -50%) scale(0.92);
+            width: 90vw;
+            max-width: 1300px;
+            min-width: 480px;
+            height: 86vh;
+            max-height: 920px;
             z-index: 9000;
             display: none;
             flex-direction: column;
-            border-radius: 14px;
-            border: 1px solid rgba(0, 212, 255, 0.22);
-            background: rgba(4, 8, 18, 0.92);
-            backdrop-filter: blur(16px) saturate(1.4);
-            -webkit-backdrop-filter: blur(16px) saturate(1.4);
-            box-shadow:
-                0 0 40px rgba(0, 212, 255, 0.08),
-                0 8px 32px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(0, 212, 255, 0.1);
-            overflow: hidden;
+            align-items: center;
             opacity: 0;
-            transition: opacity 0.25s ease, transform 0.25s ease;
-        }
-        .ai-hud-overlay::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            right: 10%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5), transparent);
+            transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .ai-hud-overlay.visible {
             display: flex;
@@ -1100,14 +1195,108 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* HUD Header */
+        /* TV Screen — the main display panel */
+        .ai-tv-screen {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border-radius: 18px;
+            background: rgba(var(--bg-card-rgb), 0.78);
+            backdrop-filter: blur(50px) saturate(1.8);
+            -webkit-backdrop-filter: blur(50px) saturate(1.8);
+            border: 2px solid var(--border-color);
+            box-shadow:
+                0 0 0 1px rgba(var(--brand-primary-rgb), 0.08),
+                0 0 60px rgba(var(--brand-primary-rgb), 0.05),
+                0 20px 60px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 var(--border-color-light),
+                inset 0 0 80px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            position: relative;
+        }
+        .ai-tv-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 8%;
+            right: 8%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(var(--brand-primary-rgb), 0.2), rgba(var(--brand-primary-rgb), 0.4), rgba(var(--brand-primary-rgb), 0.2), transparent);
+            z-index: 2;
+        }
+        .ai-tv-screen::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: radial-gradient(ellipse at 50% -30%, rgba(var(--brand-primary-rgb), 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* TV Neck — connector between screen and stand */
+        .ai-tv-neck {
+            width: 160px;
+            height: 14px;
+            background: rgba(var(--bg-card-rgb), 0.7);
+            border-left: 1.5px solid rgba(var(--brand-primary-rgb), 0.25);
+            border-right: 1.5px solid rgba(var(--brand-primary-rgb), 0.25);
+            box-shadow: 0 0 8px rgba(var(--brand-primary-rgb), 0.1);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .ai-tv-neck::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(var(--brand-primary-rgb), 0.15), rgba(var(--brand-primary-rgb), 0.05));
+        }
+
+        /* TV Stand — the input base */
+        .ai-tv-stand {
+            width: 92%;
+            max-width: 1100px;
+            flex-shrink: 0;
+            border-radius: 16px;
+            background: rgba(var(--bg-card-rgb), 0.75);
+            backdrop-filter: blur(50px) saturate(1.8);
+            -webkit-backdrop-filter: blur(50px) saturate(1.8);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 var(--border-color-light),
+                inset 0 0 30px rgba(var(--brand-primary-rgb), 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        .ai-tv-stand::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(var(--brand-primary-rgb), 0.2), transparent);
+        }
+
+        /* HUD Header — Top bar of the TV */
         .ai-hud-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 18px;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border-color-light);
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            background: rgba(var(--bg-card-rgb), 0.05);
         }
         .ai-hud-header-left {
             display: flex;
@@ -1115,96 +1304,146 @@
             gap: 10px;
         }
         .ai-hud-reticle {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #00d4ff;
-            box-shadow: 0 0 8px #00d4ff;
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6), 0 0 4px #ef4444;
+            animation: ai-reticle-pulse-red 2s ease-in-out infinite;
+            transition: background 0.4s ease, box-shadow 0.4s ease;
+        }
+        .ai-hud-reticle.connecting {
+            background: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 4px #f59e0b;
+            animation: ai-reticle-pulse-orange 1.2s ease-in-out infinite;
+        }
+        .ai-hud-reticle.connected {
+            background: #00e676;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.6), 0 0 4px #00e676;
+            animation: ai-reticle-pulse-green 2s ease-in-out infinite;
+        }
+        @keyframes ai-reticle-pulse-red {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(239, 68, 68, 0.6), 0 0 4px #ef4444; }
+            50% { opacity: 0.7; box-shadow: 0 0 16px rgba(239, 68, 68, 0.8), 0 0 6px #ef4444; }
+        }
+        @keyframes ai-reticle-pulse-orange {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 4px #f59e0b; }
+            50% { opacity: 0.5; box-shadow: 0 0 16px rgba(245, 158, 11, 0.8), 0 0 6px #f59e0b; }
+        }
+        @keyframes ai-reticle-pulse-green {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(0, 230, 118, 0.6), 0 0 4px #00e676; }
+            50% { opacity: 0.7; box-shadow: 0 0 16px rgba(0, 230, 118, 0.8), 0 0 6px #00e676; }
         }
         .ai-hud-title {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 0.75rem;
+            font-size: 0.82rem;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.92);
-            letter-spacing: 1.5px;
+            color: var(--text-primary);
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
         .ai-hud-badge {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.6rem;
             font-weight: 600;
-            color: rgba(0, 212, 255, 0.7);
+            color: rgba(var(--brand-primary-rgb), 0.7);
             letter-spacing: 1px;
             padding: 2px 8px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
             border-radius: 4px;
             text-transform: uppercase;
         }
         .ai-hud-close {
-            background: none;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.5);
+            background: rgba(var(--bg-card-rgb), 0.1);
+            border: 1px solid var(--border-color-light);
+            color: var(--text-muted);
             cursor: pointer;
-            padding: 5px;
-            border-radius: 6px;
+            padding: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
         }
         .ai-hud-close:hover {
-            color: rgba(255, 255, 255, 0.9);
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+            background: rgba(var(--bg-card-rgb), 0.15);
+            transform: scale(1.05);
         }
 
         /* HUD Messages */
         .ai-hud-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 18px;
+            padding: 24px 32px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+            scroll-behavior: smooth;
         }
         .ai-hud-messages::-webkit-scrollbar {
-            width: 4px;
+            width: 5px;
         }
         .ai-hud-messages::-webkit-scrollbar-track {
             background: transparent;
         }
         .ai-hud-messages::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.2);
-            border-radius: 2px;
+            background: rgba(var(--brand-primary-rgb), 0.15);
+            border-radius: 4px;
+        }
+        .ai-hud-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(var(--brand-primary-rgb), 0.3);
+        }
+        @keyframes msgSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .ai-msg {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 0.82rem;
+            max-width: 88%;
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 0.8rem;
             line-height: 1.55;
             word-wrap: break-word;
+            animation: msgSlideIn 0.3s ease-out;
         }
         .ai-msg.user {
             align-self: flex-end;
-            background: rgba(0, 212, 255, 0.12);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            color: rgba(255, 255, 255, 0.92);
+            background: linear-gradient(135deg, var(--brand-primary), rgba(var(--brand-primary-rgb), 0.85));
+            border: none;
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 70%;
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.25);
         }
         .ai-msg.assistant {
             align-self: flex-start;
+            background: rgba(var(--bg-card-rgb), 0.45);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid rgba(255, 152, 0, 0.5);
+            color: var(--text-primary);
+            max-width: 98%;
+            border-radius: 4px 18px 18px 18px;
+            padding: 14px 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        [data-theme="dark"] .ai-msg.assistant {
             background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.85);
-            max-width: 95%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 3px solid rgba(255, 152, 0, 0.6);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
         }
         .ai-msg.system {
             align-self: center;
-            color: rgba(0, 212, 255, 0.6);
-            font-size: 0.75rem;
+            color: rgba(var(--brand-primary-rgb), 0.5);
+            font-size: 0.82rem;
             font-style: italic;
-            padding: 6px 12px;
+            padding: 10px 20px;
             background: none;
             border: none;
+            max-width: 100%;
         }
 
         /* AI Markdown Content — styles for marked.js output */
@@ -1213,17 +1452,16 @@
         .ai-msg.assistant h3,
         .ai-msg.assistant h4 {
             margin: 0 0 6px 0;
-            color: #00d4ff;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            color: var(--brand-primary-light);
             letter-spacing: 0.3px;
         }
-        .ai-msg.assistant h1 { font-size: 0.95rem; font-weight: 700; border-bottom: 1px solid rgba(0, 212, 255, 0.15); padding-bottom: 5px; margin-bottom: 10px; }
-        .ai-msg.assistant h2 { font-size: 0.88rem; font-weight: 700; border-bottom: 1px solid rgba(0, 212, 255, 0.12); padding-bottom: 4px; margin-bottom: 8px; margin-top: 12px; }
-        .ai-msg.assistant h3 { font-size: 0.84rem; font-weight: 600; margin-top: 10px; }
+        .ai-msg.assistant h1 { font-size: 0.92rem; font-weight: 600; border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.15); padding-bottom: 6px; margin-bottom: 10px; }
+        .ai-msg.assistant h2 { font-size: 0.86rem; font-weight: 600; border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.1); padding-bottom: 4px; margin-bottom: 8px; margin-top: 14px; }
+        .ai-msg.assistant h3 { font-size: 0.82rem; font-weight: 600; margin-top: 10px; }
         .ai-msg.assistant h4 { font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
         .ai-msg.assistant p {
-            margin: 0 0 8px 0;
-            line-height: 1.65;
+            margin: 0 0 6px 0;
+            line-height: 1.5;
         }
         .ai-msg.assistant ul,
         .ai-msg.assistant ol {
@@ -1241,21 +1479,21 @@
             content: '▸';
             position: absolute;
             left: -16px;
-            color: rgba(0, 212, 255, 0.5);
+            color: rgba(var(--brand-primary-rgb), 0.5);
             font-size: 0.7rem;
             top: 4px;
         }
         .ai-msg.assistant strong {
-            color: rgba(255, 255, 255, 0.95);
-            font-weight: 600;
+            color: var(--text-primary);
+            font-weight: 550;
         }
         .ai-msg.assistant em {
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--text-secondary);
             font-style: italic;
         }
         .ai-msg.assistant hr {
             border: none;
-            border-top: 1px solid rgba(0, 212, 255, 0.12);
+            border-top: 1px solid rgba(var(--brand-primary-rgb), 0.12);
             margin: 10px 0;
         }
 
@@ -1263,43 +1501,43 @@
         .ai-msg.assistant table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-variant-numeric: tabular-nums;
-            margin: 8px 0;
-            border-radius: 6px;
+            margin: 10px 0;
+            border-radius: 10px;
             overflow: hidden;
-            border: 1px solid rgba(0, 212, 255, 0.15);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
         }
         .ai-msg.assistant thead th {
-            background: rgba(0, 212, 255, 0.1);
-            color: #00d4ff;
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            color: var(--brand-primary-light);
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
-            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
             padding: 8px 12px;
             text-align: left;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.18);
             white-space: nowrap;
         }
         .ai-msg.assistant tbody td {
-            padding: 6px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.85);
+            padding: 7px 12px;
+            border-bottom: 1px solid var(--border-color-light);
+            color: var(--text-primary);
         }
         .ai-msg.assistant tbody tr:last-child td {
             border-bottom: none;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.95);
+            color: var(--text-primary);
         }
         .ai-msg.assistant tbody tr:hover td {
-            background: rgba(0, 212, 255, 0.04);
+            background: rgba(var(--brand-primary-rgb), 0.04);
         }
 
         /* AI Code — marked.js uses <pre><code> and inline <code> */
         .ai-msg.assistant pre {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color-light);
             border-radius: 5px;
             padding: 10px 12px;
             margin: 6px 0;
@@ -1309,39 +1547,116 @@
         .ai-msg.assistant pre code {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.75rem;
-            color: rgba(0, 212, 255, 0.85);
+            color: rgba(var(--brand-primary-rgb), 0.85);
             background: none;
             border: none;
             padding: 0;
         }
         .ai-msg.assistant code {
-            background: rgba(0, 212, 255, 0.08);
-            border: 1px solid rgba(0, 212, 255, 0.12);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
             border-radius: 3px;
             padding: 1px 5px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.76rem;
-            color: #00d4ff;
+            color: var(--brand-primary-light);
         }
 
         /* AI Blockquote */
         .ai-msg.assistant blockquote {
-            border-left: 3px solid rgba(0, 212, 255, 0.3);
+            border-left: 3px solid rgba(var(--brand-primary-rgb), 0.3);
             margin: 8px 0;
             padding: 4px 12px;
-            color: rgba(255, 255, 255, 0.7);
-            background: rgba(0, 212, 255, 0.03);
+            color: var(--text-secondary);
+            background: rgba(var(--brand-primary-rgb), 0.03);
             border-radius: 0 4px 4px 0;
+        }
+
+        /* AI Inline Charts — ApexCharts containers */
+        .ai-chart-container {
+            margin: 12px 0;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+            border-radius: 10px;
+            position: relative;
+            min-height: 280px;
+        }
+        .ai-chart-container .ai-chart-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--brand-primary-light);
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+        .ai-chart-container .apexcharts-canvas {
+            background: transparent !important;
+        }
+        .ai-chart-container .apexcharts-tooltip {
+            background: rgba(20, 20, 30, 0.95) !important;
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.25) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        }
+        .ai-chart-container .apexcharts-tooltip .apexcharts-tooltip-title {
+            background: rgba(var(--brand-primary-rgb), 0.1) !important;
+            border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.15) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.72rem !important;
+        }
+        .ai-chart-container .apexcharts-tooltip-text {
+            color: var(--text-primary) !important;
+            font-size: 0.72rem !important;
+        }
+        .ai-chart-container .apexcharts-legend-text {
+            color: var(--text-secondary) !important;
+            font-size: 0.7rem !important;
+        }
+        .ai-chart-container .apexcharts-xaxis-label,
+        .ai-chart-container .apexcharts-yaxis-label {
+            fill: var(--text-secondary) !important;
+            font-size: 0.68rem !important;
+        }
+        .ai-chart-container .apexcharts-gridline {
+            stroke: rgba(var(--brand-primary-rgb), 0.06) !important;
+        }
+        /* ApexCharts toolbar menu — dark theme override */
+        .ai-chart-container .apexcharts-menu {
+            background: rgba(20, 22, 35, 0.97) !important;
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.2) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            padding: 4px 0 !important;
+            min-width: 130px !important;
+        }
+        .ai-chart-container .apexcharts-menu-item {
+            color: var(--text-secondary) !important;
+            font-size: 0.72rem !important;
+            padding: 6px 14px !important;
+        }
+        .ai-chart-container .apexcharts-menu-item:hover {
+            background: rgba(var(--brand-primary-rgb), 0.15) !important;
+            color: var(--brand-primary-light) !important;
+        }
+        .ai-chart-container .apexcharts-toolbar {
+            z-index: 5 !important;
+        }
+        .ai-chart-container .apexcharts-menu-icon svg,
+        .ai-chart-container .apexcharts-toolbar svg {
+            fill: rgba(255, 255, 255, 0.4) !important;
+        }
+        .ai-chart-container .apexcharts-menu-icon:hover svg,
+        .ai-chart-container .apexcharts-toolbar svg:hover {
+            fill: var(--brand-primary-light) !important;
         }
 
         /* AI Metadata Footer */
         .ai-msg-meta {
             margin-top: 8px;
             padding-top: 6px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1px solid var(--border-color-light);
             font-size: 0.68rem;
-            color: rgba(255, 255, 255, 0.3);
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            color: var(--text-muted);
             letter-spacing: 0.3px;
         }
 
@@ -1357,54 +1672,226 @@
             50% { opacity: 1; }
         }
 
-        /* HUD Input */
+        /* Streaming cursor */
+        .streaming-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--brand-primary);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: streamBlink 0.6s steps(2) infinite;
+            border-radius: 1px;
+            box-shadow: 0 0 4px rgba(var(--brand-primary-rgb), 0.4);
+        }
+        @keyframes streamBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* HUD Input Area — polished bar inside the Stand */
         .ai-hud-input-area {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 18px;
-            border-top: 1px solid rgba(0, 212, 255, 0.12);
+            align-items: flex-end;
+            gap: 12px;
+            padding: 14px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
         .ai-hud-input {
             flex: 1;
-            padding: 10px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.92);
-            font-size: 0.82rem;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.9rem;
             font-family: inherit;
-            transition: border-color 0.15s ease;
+            line-height: 1.5;
+            resize: none;
             outline: none;
+            min-height: 44px;
+            max-height: 150px;
+            overflow-y: auto;
         }
         .ai-hud-input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: var(--text-muted);
+            font-weight: 300;
         }
-        .ai-hud-input:focus {
-            border-color: rgba(0, 212, 255, 0.4);
+        .ai-hud-input::-webkit-scrollbar {
+            width: 3px;
+        }
+        .ai-hud-input::-webkit-scrollbar-thumb {
+            background: rgba(var(--brand-primary-rgb), 0.15);
+            border-radius: 2px;
         }
         .ai-hud-send {
-            background: rgba(0, 212, 255, 0.15);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            color: #00d4ff;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--brand-primary);
+            border: none;
+            color: #fff;
             cursor: pointer;
-            padding: 9px 14px;
-            border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            transition: all 0.15s ease;
-            white-space: nowrap;
+            justify-content: center;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(var(--brand-primary-rgb), 0.3);
         }
         .ai-hud-send:hover {
-            background: rgba(0, 212, 255, 0.25);
-            border-color: rgba(0, 212, 255, 0.5);
+            background: var(--brand-primary-light);
+            box-shadow: 0 4px 20px rgba(var(--brand-primary-rgb), 0.4);
+            transform: translateY(-1px);
+        }
+        .ai-hud-send:active {
+            transform: translateY(0) scale(0.96);
+            box-shadow: 0 1px 8px rgba(var(--brand-primary-rgb), 0.3);
+        }
+        .ai-hud-send:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* AI Chat Responsive */
+        @media (max-width: 1100px) {
+            .ai-hud-overlay {
+                width: 92vw;
+                min-width: 360px;
+            }
+            .ai-tv-stand { width: 80%; }
+        }
+        @media (max-width: 640px) {
+            .ai-hud-overlay {
+                width: 98vw;
+                min-width: 0;
+                height: 92vh;
+            }
+            .ai-tv-screen { border-radius: 14px; }
+            .ai-tv-stand { width: 90%; border-radius: 14px; }
+            .ai-tv-neck { width: 80px; height: 10px; }
+            .ai-hud-messages { padding: 16px 18px; }
+            .ai-hud-input-area { padding: 12px 14px 14px; }
+        }
+
+        /* Dark mode: richer, more opaque glass */
+        [data-theme="dark"] .ai-tv-screen {
+            background: rgba(var(--bg-card-rgb), 0.9);
+            box-shadow:
+                0 0 0 1px rgba(var(--brand-primary-rgb), 0.08),
+                0 0 60px rgba(var(--brand-primary-rgb), 0.05),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 var(--border-color-light),
+                inset 0 0 80px rgba(0, 0, 0, 0.15);
+        }
+        [data-theme="dark"] .ai-tv-stand {
+            background: rgba(var(--bg-card-rgb), 0.88);
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 var(--border-color-light),
+                inset 0 0 30px rgba(var(--brand-primary-rgb), 0.03);
+        }
+
+        /* ── Floating File Progress Panel ── */
+        .file-progress-panel {
+            position: fixed !important;
+            bottom: 24px;
+            right: 24px;
+            width: 340px;
+            max-height: 400px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            overflow: hidden;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .file-progress-panel.minimized .file-progress-list {
+            display: none;
+        }
+        .file-progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .file-progress-header-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .file-progress-header button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            transition: color 0.15s ease;
+        }
+        .file-progress-header button:hover {
+            color: var(--text-primary);
+        }
+        .file-progress-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .file-progress-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .file-progress-item:last-child {
+            border-bottom: none;
+        }
+        .file-progress-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-progress-status {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .file-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-tertiary, rgba(0,0,0,0.1));
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        .file-progress-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .file-progress-fill.indeterminate {
+            width: 30% !important;
+            animation: progressIndeterminate 1.5s ease-in-out infinite;
+        }
+        @keyframes progressIndeterminate {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+        .file-progress-stats {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
         }
 
         /* Responsive */
@@ -1444,10 +1931,18 @@
                 width: calc(100vw - 16px);
                 height: calc(100vh - 80px);
             }
+            .ai-tv-stand { width: 95%; }
+            .ai-tv-neck { width: 60px; height: 8px; }
             .ai-chat-toggle-btn {
                 margin-left: 0;
                 width: 100%;
                 justify-content: center;
+            }
+            .file-progress-panel {
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                width: auto;
             }
         }
     </style>
@@ -1569,6 +2064,12 @@
                     </svg>
                     Query
                 </button>
+                <button class="tab-btn" data-tab="ailogs" onclick="switchTab('ailogs')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    AI Logs
+                </button>
             </div>
 
             <!-- Tab Content: Files -->
@@ -1597,7 +2098,7 @@
                     </select>
                     <span class="variable-count-label" id="variableCountLabel"></span>
                     <button class="ai-chat-toggle-btn" id="aiChatToggleBtn" style="display:none" onclick="toggleAiChat()">
-                        <span class="ai-btn-reticle"></span>
+                        <span class="ai-btn-reticle" id="aiBtnReticle"></span>
                         AI ASSISTANT
                     </button>
                 </div>
@@ -1617,33 +2118,43 @@
                 </div>
             </div>
 
-            <!-- AI Chat HUD Overlay -->
+            <!-- AI Chat Backdrop -->
+            <div class="ai-chat-backdrop" id="aiChatBackdrop" onclick="toggleAiChat()"></div>
+
+            <!-- AI Chat Overlay — TV with Stand -->
             <div class="ai-hud-overlay" id="aiHudOverlay">
-                <div class="ai-hud-header">
-                    <div class="ai-hud-header-left">
-                        <span class="ai-hud-reticle"></span>
-                        <span class="ai-hud-title">AI Assistant</span>
-                        <span class="ai-hud-badge">Research</span>
+                <!-- TV Screen -->
+                <div class="ai-tv-screen">
+                    <div class="ai-hud-header">
+                        <div class="ai-hud-header-left">
+                            <span class="ai-hud-reticle" id="aiHudReticle"></span>
+                            <span class="ai-hud-title">AI Assistant</span>
+                            <span class="ai-hud-badge">Research</span>
+                        </div>
+                        <button class="ai-hud-close" onclick="toggleAiChat()" title="Power Off (Esc)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                <line x1="12" y1="2" x2="12" y2="12"/>
+                            </svg>
+                        </button>
                     </div>
-                    <button class="ai-hud-close" onclick="toggleAiChat()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
+                    <div class="ai-hud-messages" id="aiHudMessages">
+                        <div class="ai-msg system">Ask anything about your research data — the AI analyst will pick the right files, variables, and weights automatically.</div>
+                    </div>
                 </div>
-                <div class="ai-hud-messages" id="aiHudMessages">
-                    <div class="ai-msg system">Ask questions about your research variables and data.</div>
-                </div>
-                <div class="ai-hud-input-area">
-                    <input type="text" class="ai-hud-input" id="aiHudInput" placeholder="Type your question..." onkeydown="if(event.key==='Enter')sendAiMessage()">
-                    <button class="ai-hud-send" onclick="sendAiMessage()">
-                        Send
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="22" y1="2" x2="11" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
-                    </button>
+                <!-- Stand Neck -->
+                <div class="ai-tv-neck"></div>
+                <!-- Stand — Input Area -->
+                <div class="ai-tv-stand">
+                    <div class="ai-hud-input-area">
+                        <textarea class="ai-hud-input" id="aiHudInput" placeholder="Ask anything about your data..." rows="1" onkeydown="handleAiInputKeydown(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,150)+'px'"></textarea>
+                        <button class="ai-hud-send" onclick="sendAiMessage()" title="Send">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1689,6 +2200,27 @@
                     </div>
                     <div id="queryError" class="query-error" style="display: none;"></div>
                 </div>
+            </div>
+
+            <!-- Tab Content: AI Logs -->
+            <div class="tab-content" id="ailogsTab">
+                <div class="ai-logs-toolbar" id="aiLogsToolbar" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                    <span class="ai-logs-count" id="aiLogsCount" style="color: var(--text-secondary); font-size: 0.85rem;"></span>
+                    <button class="btn btn-secondary" onclick="loadAiLogs()" style="margin-left: auto;">Refresh</button>
+                </div>
+                <div id="aiLogsLoading" class="loading-state" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading AI logs...</p>
+                </div>
+                <div id="aiLogsContent"></div>
+                <div id="aiLogsEmpty" class="empty-state" style="display: none;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <p class="empty-title">No AI chat logs yet</p>
+                    <p>Chat with the AI assistant to see interaction logs here.</p>
+                </div>
+                <div id="aiLogsPagination" class="pagination-controls" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -1745,6 +2277,17 @@
         </div>
     </div>
 
+    <!-- Floating File Progress Panel -->
+    <div id="fileProgressPanel" class="file-progress-panel" style="display:none;">
+        <div class="file-progress-header">
+            <span id="fileProgressTitle">Processing Files</span>
+            <div class="file-progress-header-actions">
+                <button onclick="toggleProgressPanel()" title="Minimize">_</button>
+            </div>
+        </div>
+        <div id="fileProgressList" class="file-progress-list"></div>
+    </div>
+
     <!-- Edit Project Modal -->
     <div id="editProjectModal" class="modal">
         <div class="modal-dialog">
@@ -1776,9 +2319,51 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label for="editProjectAiInstructions">AI Instructions (optional)</label>
+                            <textarea id="editProjectAiInstructions" rows="4"
+                                placeholder="E.g., 'This is a brand tracking study. Always present results by wave and country. Use weighted counts for all aggregations.'"
+                                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; resize: vertical;"></textarea>
+                            <small style="color: var(--text-secondary); font-size: 0.75rem;">These instructions guide the AI when answering questions about this project.</small>
+                        </div>
+                        <div class="form-group">
                             <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Metadata Modal -->
+    <div id="fileMetadataModal" class="modal">
+        <div class="modal-dialog" style="max-width: 600px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>File Context & Weight Rules</h5>
+                    <button class="close-btn" onclick="closeModal('fileMetadataModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="fileMetadataFileId">
+                    <div class="form-group">
+                        <label for="fileMetadataDescription">File Description (optional)</label>
+                        <textarea id="fileMetadataDescription" rows="3"
+                            placeholder="E.g., 'Wave 33 India brand tracking data, Oct 2025, 500k respondents'"
+                            style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; resize: vertical;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Weight Rules (optional)</label>
+                        <small style="display: block; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">Define weight variables for survey analysis. Weights are optional — only applied when explicitly requested.</small>
+                        <div id="weightRulesContainer"></div>
+                        <button type="button" class="btn btn-secondary" onclick="addWeightRule()" style="margin-top: 8px; font-size: 0.8rem;">+ Add Weight Rule</button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="saveFileMetadata()" style="width: 100%;">Save Metadata</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1792,6 +2377,7 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"><\/script>');
         document.write('<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@4.3.0/dist/apexcharts.min.js"><\/script>');
         document.write('<script src="../../js/research/project-detail.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>

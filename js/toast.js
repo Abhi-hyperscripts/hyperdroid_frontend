@@ -137,12 +137,13 @@ const Toast = (function() {
             cursor: pointer;
             max-width: 100%;
             word-wrap: break-word;
+            overflow: hidden;
         `;
 
         // Toast content
         toast.innerHTML = `
             <div style="flex-shrink: 0; margin-top: 1px;">${icon}</div>
-            <div style="flex: 1; margin-right: 8px;">${escapeHtml(message)}</div>
+            <div style="flex: 1; margin-right: 8px; min-width: 0; overflow-wrap: break-word; word-break: break-word;">${escapeHtml(message)}</div>
             <button style="
                 flex-shrink: 0;
                 background: none;
@@ -289,6 +290,7 @@ const Toast = (function() {
                 opacity: 0;
                 max-width: 100%;
                 word-wrap: break-word;
+                overflow: hidden;
             `;
 
             // Build title HTML if provided
@@ -484,7 +486,7 @@ const Confirm = (function() {
             .confirm-modal {
                 background: rgba(15, 23, 42, 0.6) !important;
                 border-radius: 16px !important;
-                max-width: 380px;
+                max-width: 440px;
                 width: 90%;
                 transform: scale(0.95);
                 transition: transform 200ms ease, box-shadow 300ms ease, border-color 300ms ease;
@@ -593,6 +595,8 @@ const Confirm = (function() {
                 color: var(--text-secondary);
                 line-height: 1.5;
                 white-space: pre-line;
+                overflow-wrap: anywhere;
+                word-break: break-all;
             }
 
             .confirm-actions {
