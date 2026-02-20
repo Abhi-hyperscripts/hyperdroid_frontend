@@ -1675,6 +1675,12 @@ async function checkAiAvailability() {
         btn.style.display = aiAvailable ? 'inline-flex' : 'none';
     }
 
+    // Show/hide Embed button based on AI availability (requires LLM API key)
+    const embedBtn = document.getElementById('embedSettingsBtn');
+    if (embedBtn) {
+        embedBtn.style.display = aiAvailable ? 'inline-flex' : 'none';
+    }
+
     // Connect SignalR if AI is available
     if (aiAvailable) connectAiSignalR();
 }
@@ -3502,3 +3508,470 @@ function toggleQuestionCard(idx) {
     const card = document.getElementById(`qcard-${idx}`);
     if (card) card.classList.toggle('expanded');
 }
+
+// ============================================
+// EMBED SETTINGS — Multiple Embeds per Project
+// ============================================
+let embedConfigs = [];
+let editingEmbedConfig = null;   // null = creating new
+let embedSelectedFileIds = new Set();
+let embedFilesDropdownOpen = false;
+
+// ---- Modal open: list view ----
+async function openEmbedSettingsModal() {
+    const modal = document.getElementById('embedSettingsModal');
+    if (!modal) return;
+    modal.classList.add('active');
+
+    // Always start on list view
+    showEmbedListView();
+
+    // Fetch all configs for this project
+    try {
+        embedConfigs = await api.request(`/research/embed/configs/${projectId}`);
+    } catch (err) {
+        embedConfigs = [];
+    }
+    renderEmbedList();
+}
+
+function showEmbedListView() {
+    const listView = document.getElementById('embedListView');
+    const detailView = document.getElementById('embedDetailView');
+    const backBtn = document.getElementById('embedBackBtn');
+    const title = document.getElementById('embedModalTitle');
+    if (listView) listView.style.display = '';
+    if (detailView) detailView.style.display = 'none';
+    if (backBtn) backBtn.style.display = 'none';
+    if (title) title.textContent = 'Embed Links';
+}
+
+function showEmbedDetailView(label) {
+    const listView = document.getElementById('embedListView');
+    const detailView = document.getElementById('embedDetailView');
+    const backBtn = document.getElementById('embedBackBtn');
+    const title = document.getElementById('embedModalTitle');
+    if (listView) listView.style.display = 'none';
+    if (detailView) detailView.style.display = '';
+    if (backBtn) backBtn.style.display = '';
+    if (title) title.textContent = label;
+}
+
+// ---- List rendering ----
+function renderEmbedList() {
+    const container = document.getElementById('embedListContainer');
+    if (!container) return;
+
+    if (embedConfigs.length === 0) {
+        container.innerHTML = '<div class="embed-list-empty">No embed links yet. Create one to get started.</div>';
+        return;
+    }
+
+    container.innerHTML = embedConfigs.map(c => {
+        const fileCount = (c.FileIds || c.file_ids || []).length;
+        const keyShort = (c.EmbedKey || c.embed_key || '').substring(0, 10) + '...';
+        const enabled = c.IsEnabled ?? c.is_enabled ?? false;
+        const name = c.Name || c.name || 'Default';
+        const id = c.Id || c.id;
+        return `<div class="embed-list-card">
+            <div class="embed-list-info">
+                <div class="embed-list-name">${escapeHtml(name)}</div>
+                <div class="embed-list-meta">${fileCount} file${fileCount !== 1 ? 's' : ''} · ${keyShort}</div>
+            </div>
+            <span class="embed-list-badge ${enabled ? 'enabled' : 'disabled'}">${enabled ? 'Enabled' : 'Disabled'}</span>
+            <div class="embed-list-actions">
+                <button onclick="openEmbedDetail('${id}')">Edit</button>
+                <button class="delete-btn" onclick="deleteEmbedConfig('${id}', '${escapeHtml(name)}')">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+// ---- Detail view (edit / create) ----
+function openEmbedDetail(configId) {
+    if (configId) {
+        // Normalise keys — API may return PascalCase or snake_case
+        editingEmbedConfig = embedConfigs.find(c => (c.Id || c.id) === configId) || null;
+        if (!editingEmbedConfig) { showToast('Config not found', 'error'); return; }
+        showEmbedDetailView('Edit: "' + (editingEmbedConfig.Name || editingEmbedConfig.name || 'Default') + '"');
+    } else {
+        editingEmbedConfig = null;
+        showEmbedDetailView('New Embed');
+    }
+
+    const cfg = editingEmbedConfig;
+    const g = (pascal, snake) => cfg ? (cfg[pascal] ?? cfg[snake] ?? null) : null;
+
+    // Name
+    const nameInput = document.getElementById('embedName');
+    if (nameInput) nameInput.value = g('Name', 'name') || '';
+
+    // Toggle
+    const isEnabled = g('IsEnabled', 'is_enabled') || false;
+    const toggle = document.getElementById('embedEnabled');
+    if (toggle) toggle.checked = isEnabled;
+    const track = document.getElementById('embedToggleTrack');
+    if (track) track.classList.toggle('active', isEnabled);
+
+    // Files
+    const fids = g('FileIds', 'file_ids') || [];
+    embedSelectedFileIds = new Set(fids.map(id => id.toString()));
+    populateEmbedFileDropdown();
+
+    // Domains
+    const domainsInput = document.getElementById('embedDomains');
+    if (domainsInput) domainsInput.value = (g('AllowedDomains', 'allowed_domains') || []).join(', ');
+
+    // Theme
+    const hc = g('HeaderColor', 'header_color') || '';
+    const ac = g('AccentColor', 'accent_color') || '';
+    const headerColorInput = document.getElementById('embedHeaderColor');
+    if (headerColorInput) headerColorInput.value = hc;
+    const accentColorInput = document.getElementById('embedAccentColor');
+    if (accentColorInput) accentColorInput.value = ac;
+    const logoUrlInput = document.getElementById('embedLogoUrl');
+    if (logoUrlInput) logoUrlInput.value = g('LogoUrl', 'logo_url') || '';
+
+    // Widget mode (dark/light)
+    const theme = g('Theme', 'theme') || 'light';
+    setEmbedTheme(theme, false);
+
+    // Sync color swatches
+    const hPicker = document.getElementById('embedHeaderColorPicker');
+    const hSwatch = document.getElementById('embedHeaderSwatch');
+    if (hPicker && hc) { hPicker.value = hc; if (hSwatch) hSwatch.style.background = hc; }
+    else if (hSwatch) hSwatch.style.background = '';
+    const aPicker = document.getElementById('embedAccentColorPicker');
+    const aSwatch = document.getElementById('embedAccentSwatch');
+    if (aPicker && ac) { aPicker.value = ac; if (aSwatch) aSwatch.style.background = ac; }
+    else if (aSwatch) aSwatch.style.background = '';
+
+    // Embed code + regen — only for existing configs
+    const codeSection = document.getElementById('embedCodeSection');
+    const regenBtn = document.getElementById('embedRegenBtn');
+    if (cfg) {
+        if (codeSection) codeSection.style.display = '';
+        if (regenBtn) regenBtn.style.display = '';
+        updateEmbedCodeSnippet();
+    } else {
+        if (codeSection) codeSection.style.display = 'none';
+        if (regenBtn) regenBtn.style.display = 'none';
+    }
+
+    // Close files dropdown
+    closeEmbedFilesDropdown();
+}
+
+function backToEmbedList() {
+    editingEmbedConfig = null;
+    closeEmbedFilesDropdown();
+    showEmbedListView();
+    renderEmbedList();
+}
+
+// ---- Multi-select file dropdown ----
+function populateEmbedFileDropdown() {
+    renderEmbedFileOptions();
+    updateEmbedFileCount();
+}
+
+function toggleEmbedFilesDropdown() {
+    embedFilesDropdownOpen = !embedFilesDropdownOpen;
+    const trigger = document.getElementById('embedFilesTrigger');
+    const menu = document.getElementById('embedFilesMenu');
+    if (trigger) trigger.classList.toggle('open', embedFilesDropdownOpen);
+    if (menu) menu.classList.toggle('open', embedFilesDropdownOpen);
+    if (embedFilesDropdownOpen) {
+        const searchInput = document.getElementById('embedFileSearch');
+        if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+        renderEmbedFileOptions();
+    }
+}
+
+function closeEmbedFilesDropdown() {
+    embedFilesDropdownOpen = false;
+    const trigger = document.getElementById('embedFilesTrigger');
+    const menu = document.getElementById('embedFilesMenu');
+    if (trigger) trigger.classList.remove('open');
+    if (menu) menu.classList.remove('open');
+}
+
+function filterEmbedFileOptions(query) {
+    renderEmbedFileOptions(query);
+}
+
+function renderEmbedFileOptions(query) {
+    const container = document.getElementById('embedFileOptions');
+    if (!container) return;
+
+    const q = (query || '').toLowerCase().trim();
+    const readyFiles = files.filter(f => f.status === 'ready');
+
+    if (readyFiles.length === 0) {
+        container.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No ready files</div>';
+        return;
+    }
+
+    // Sort: selected first, then alphabetical
+    const sorted = [...readyFiles].sort((a, b) => {
+        const aOn = embedSelectedFileIds.has(a.id.toString()) ? 0 : 1;
+        const bOn = embedSelectedFileIds.has(b.id.toString()) ? 0 : 1;
+        if (aOn !== bOn) return aOn - bOn;
+        return a.file_name.localeCompare(b.file_name);
+    });
+
+    const filtered = q ? sorted.filter(f => f.file_name.toLowerCase().includes(q)) : sorted;
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No matching files</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(f => {
+        const isOn = embedSelectedFileIds.has(f.id.toString());
+        return `<div class="embed-files-option" onclick="toggleEmbedFileSelection(event, '${f.id}')">
+            <span class="embed-files-option-name">${escapeHtml(f.file_name)}</span>
+            <span class="embed-file-mini-toggle ${isOn ? 'on' : ''}"></span>
+        </div>`;
+    }).join('');
+}
+
+function toggleEmbedFileSelection(event, fileId) {
+    event.stopPropagation();
+    const idStr = fileId.toString();
+    if (embedSelectedFileIds.has(idStr)) {
+        embedSelectedFileIds.delete(idStr);
+    } else {
+        embedSelectedFileIds.add(idStr);
+    }
+    // Update toggle in-place
+    const opt = event.currentTarget;
+    const tog = opt?.querySelector('.embed-file-mini-toggle');
+    if (tog) tog.classList.toggle('on', embedSelectedFileIds.has(idStr));
+    updateEmbedFileCount();
+}
+
+function updateEmbedFileCount() {
+    const el = document.getElementById('embedFilesCount');
+    if (el) {
+        const n = embedSelectedFileIds.size;
+        el.textContent = `${n} file${n !== 1 ? 's' : ''} selected`;
+    }
+}
+
+function embedSelectAllFiles() {
+    const readyFiles = files.filter(f => f.status === 'ready');
+    readyFiles.forEach(f => embedSelectedFileIds.add(f.id.toString()));
+    renderEmbedFileOptions();
+    updateEmbedFileCount();
+}
+
+function embedDeselectAllFiles() {
+    embedSelectedFileIds.clear();
+    renderEmbedFileOptions();
+    updateEmbedFileCount();
+}
+
+// ---- Toggle, color, code helpers ----
+function toggleEmbed() {
+    const toggle = document.getElementById('embedEnabled');
+    const track = document.getElementById('embedToggleTrack');
+    if (!toggle || !track) return;
+    toggle.checked = !toggle.checked;
+    track.classList.toggle('active', toggle.checked);
+}
+
+function setEmbedTheme(theme, updateSnippet = true) {
+    const lightBtn = document.getElementById('embedThemeLight');
+    const darkBtn = document.getElementById('embedThemeDark');
+    if (lightBtn) lightBtn.classList.toggle('active', theme === 'light');
+    if (darkBtn) darkBtn.classList.toggle('active', theme === 'dark');
+    // Store on a data attribute for save
+    const switcher = document.querySelector('.embed-theme-switcher');
+    if (switcher) switcher.dataset.theme = theme;
+    if (updateSnippet) updateEmbedCodeSnippet();
+}
+
+function getSelectedEmbedTheme() {
+    const switcher = document.querySelector('.embed-theme-switcher');
+    return switcher?.dataset.theme || 'light';
+}
+
+function syncColorSwatch(hexInput, pickerId, swatchId) {
+    const val = hexInput.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        const picker = document.getElementById(pickerId);
+        const swatch = document.getElementById(swatchId);
+        if (picker) picker.value = val;
+        if (swatch) swatch.style.background = val;
+    }
+}
+
+function getEmbedWidgetUrl() {
+    const frontendBase = window.location.origin;
+    return `${frontendBase}/embed/widget.js`;
+}
+
+function getResearchApiUrl() {
+    return CONFIG.endpoints.research || 'https://localhost:5114';
+}
+
+function updateEmbedCodeSnippet() {
+    const snippet = document.getElementById('embedCodeSnippet');
+    if (!snippet) return;
+    const cfg = editingEmbedConfig;
+    const key = cfg ? (cfg.EmbedKey || cfg.embed_key) : null;
+    if (!key) {
+        snippet.value = 'Save settings first to generate an embed key.';
+        return;
+    }
+    const widgetUrl = getEmbedWidgetUrl();
+    const apiUrl = getResearchApiUrl();
+    snippet.value = `<script src="${widgetUrl}" data-key="${key}" data-api="${apiUrl}"><\/script>`;
+}
+
+function copyEmbedCode() {
+    const snippet = document.getElementById('embedCodeSnippet');
+    if (!snippet) return;
+    navigator.clipboard.writeText(snippet.value).then(() => {
+        const btn = snippet.parentElement.querySelector('button');
+        if (btn) {
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }
+    }).catch(() => {
+        snippet.select();
+        document.execCommand('copy');
+    });
+}
+
+// ---- Save (create or update) ----
+async function saveEmbedConfig() {
+    const name = document.getElementById('embedName')?.value?.trim() || 'Default';
+    const isEnabled = document.getElementById('embedEnabled')?.checked || false;
+    const fileIds = Array.from(embedSelectedFileIds);
+
+    const domainsRaw = document.getElementById('embedDomains')?.value || '';
+    const allowedDomains = domainsRaw.split(',').map(d => d.trim()).filter(d => d.length > 0);
+
+    const headerColor = document.getElementById('embedHeaderColor')?.value?.trim() || null;
+    const accentColor = document.getElementById('embedAccentColor')?.value?.trim() || null;
+    const logoUrl = document.getElementById('embedLogoUrl')?.value?.trim() || null;
+
+    const theme = getSelectedEmbedTheme();
+
+    const body = {
+        name,
+        is_enabled: isEnabled,
+        file_ids: fileIds,
+        allowed_domains: allowedDomains.length > 0 ? allowedDomains : null,
+        header_color: headerColor,
+        accent_color: accentColor,
+        logo_url: logoUrl,
+        theme
+    };
+
+    try {
+        let res;
+        if (editingEmbedConfig) {
+            // Update existing
+            const configId = editingEmbedConfig.Id || editingEmbedConfig.id;
+            res = await api.request(`/research/embed/config/${configId}`, {
+                method: 'PUT',
+                body: JSON.stringify(body)
+            });
+        } else {
+            // Create new
+            res = await api.request(`/research/embed/configs/${projectId}`, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+        }
+
+        // Refresh list
+        try { embedConfigs = await api.request(`/research/embed/configs/${projectId}`); } catch {}
+
+        if (editingEmbedConfig) {
+            // Stay on detail with updated data
+            const configId = res.Id || res.id;
+            editingEmbedConfig = embedConfigs.find(c => (c.Id || c.id) === configId) || res;
+            updateEmbedCodeSnippet();
+            // Show code & regen now that config exists
+            const codeSection = document.getElementById('embedCodeSection');
+            const regenBtn = document.getElementById('embedRegenBtn');
+            if (codeSection) codeSection.style.display = '';
+            if (regenBtn) regenBtn.style.display = '';
+        } else {
+            // New config created — switch to editing it
+            const configId = res.Id || res.id;
+            editingEmbedConfig = embedConfigs.find(c => (c.Id || c.id) === configId) || res;
+            showEmbedDetailView('Edit: "' + name + '"');
+            updateEmbedCodeSnippet();
+            const codeSection = document.getElementById('embedCodeSection');
+            const regenBtn = document.getElementById('embedRegenBtn');
+            if (codeSection) codeSection.style.display = '';
+            if (regenBtn) regenBtn.style.display = '';
+        }
+
+        showToast('Embed settings saved', 'success');
+    } catch (err) {
+        showToast('Failed to save embed settings: ' + (err.message || err), 'error');
+    }
+}
+
+// ---- Delete ----
+async function deleteEmbedConfig(configId, name) {
+    const confirmed = await showConfirm(`Delete embed "${name}"? This will break any widgets using this embed key.`, 'Delete Embed', 'danger');
+    if (!confirmed) return;
+    try {
+        await api.request(`/research/embed/config/${configId}`, { method: 'DELETE' });
+        embedConfigs = embedConfigs.filter(c => (c.Id || c.id) !== configId);
+        renderEmbedList();
+        showToast('Embed deleted', 'success');
+    } catch (err) {
+        showToast('Failed to delete: ' + (err.message || err), 'error');
+    }
+}
+
+// ---- Regenerate key ----
+async function regenerateEmbedKey() {
+    if (!editingEmbedConfig) { showToast('Save embed settings first', 'error'); return; }
+
+    const confirmed = await showConfirm('Regenerate the embed key? This will break any existing widgets using this key.', 'Regenerate Key', 'danger');
+    if (!confirmed) return;
+
+    const configId = editingEmbedConfig.Id || editingEmbedConfig.id;
+    try {
+        const res = await api.request(`/research/embed/config/${configId}/regenerate-key`, { method: 'POST' });
+        // Update in local state
+        const newKey = res.embed_key;
+        if (editingEmbedConfig.EmbedKey !== undefined) editingEmbedConfig.EmbedKey = newKey;
+        if (editingEmbedConfig.embed_key !== undefined) editingEmbedConfig.embed_key = newKey;
+        // Also update in list
+        const inList = embedConfigs.find(c => (c.Id || c.id) === configId);
+        if (inList) {
+            if (inList.EmbedKey !== undefined) inList.EmbedKey = newKey;
+            if (inList.embed_key !== undefined) inList.embed_key = newKey;
+        }
+        updateEmbedCodeSnippet();
+        showToast('Embed key regenerated', 'success');
+    } catch (err) {
+        showToast('Failed to regenerate key: ' + (err.message || err), 'error');
+    }
+}
+
+// Close files dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!embedFilesDropdownOpen) return;
+    const dropdown = document.getElementById('embedFilesDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        closeEmbedFilesDropdown();
+    }
+});

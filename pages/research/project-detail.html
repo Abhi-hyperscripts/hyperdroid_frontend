@@ -2478,6 +2478,463 @@
                 width: auto;
             }
         }
+        /* ===== Embed Settings Modal Styles ===== */
+        #embedSettingsModal .modal-body { padding: 20px 24px 24px; }
+
+        /* Section blocks */
+        .embed-section {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+        }
+        .embed-section:last-child { border-bottom: none; padding-bottom: 0; }
+        .embed-section:first-child { padding-top: 0; }
+
+        .embed-section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .embed-section-hint {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Toggle row — label left, switch right */
+        .embed-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .embed-toggle-track {
+            position: relative;
+            width: 42px; height: 24px;
+            background: var(--border-color, #3a3f55);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .embed-toggle-track.active {
+            background: var(--color-success, #10b981);
+        }
+        .embed-toggle-knob {
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+        .embed-toggle-track.active .embed-toggle-knob {
+            transform: translateX(18px);
+        }
+
+        /* Text inputs */
+        .embed-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .embed-input:focus {
+            border-color: var(--brand-primary, #635bff);
+        }
+        .embed-input::placeholder {
+            color: var(--text-muted, #555);
+        }
+
+        /* Theme grid — 3 columns in one row */
+        /* Theme switcher (dark/light) */
+        .embed-theme-switcher {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .embed-theme-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .embed-theme-btn:hover {
+            border-color: var(--text-secondary);
+            background: var(--bg-tertiary);
+        }
+        .embed-theme-btn.active {
+            border-color: var(--brand-primary);
+            background: var(--brand-primary);
+            color: #fff;
+        }
+        .embed-theme-btn.active:hover {
+            opacity: 0.9;
+        }
+
+        .embed-theme-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.6fr;
+            gap: 10px;
+        }
+        .embed-theme-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Color picker row */
+        .embed-color-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .embed-color-swatch {
+            width: 30px; height: 30px;
+            border-radius: 6px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.15s;
+        }
+        .embed-color-swatch:hover {
+            border-color: var(--text-secondary);
+        }
+        .embed-color-swatch input[type="color"] {
+            position: absolute;
+            top: -6px; left: -6px;
+            width: calc(100% + 12px); height: calc(100% + 12px);
+            border: none;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+        .embed-color-swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border: none; }
+        .embed-color-swatch input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0; }
+        .embed-color-swatch input[type="color"]::-moz-color-swatch { border: none; border-radius: 0; }
+        .embed-color-hex {
+            flex: 1;
+            min-width: 0;
+            padding: 6px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.78rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .embed-color-hex:focus {
+            border-color: var(--brand-primary, #635bff);
+        }
+        .embed-color-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .embed-theme-field .embed-input {
+            padding: 6px 8px;
+            font-size: 0.78rem;
+        }
+
+        /* Embed code block */
+        .embed-code-wrap {
+            position: relative;
+        }
+        .embed-code-wrap textarea {
+            width: 100%;
+            padding: 10px 12px;
+            padding-right: 60px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-tertiary, var(--bg-secondary));
+            color: var(--text-primary);
+            font-size: 0.72rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            resize: none;
+            line-height: 1.5;
+            outline: none;
+        }
+        .embed-code-copy {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 3px 10px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            transition: background 0.15s, color 0.15s;
+        }
+        .embed-code-copy:hover {
+            background: var(--brand-primary, #635bff);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        /* Action buttons row */
+        .embed-actions-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .embed-actions-row .btn {
+            flex: 1;
+            font-size: 0.82rem;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .embed-regen-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .embed-regen-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+
+        /* ===== Embed List View ===== */
+        .embed-create-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--brand-primary, #635bff);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .embed-create-btn:hover { opacity: 0.85; }
+
+        .embed-list-empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .embed-list-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: background 0.15s;
+        }
+        .embed-list-card:hover {
+            background: var(--bg-secondary);
+        }
+        .embed-list-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .embed-list-name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .embed-list-meta {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .embed-list-badge {
+            font-size: 0.68rem;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        .embed-list-badge.enabled {
+            background: var(--color-success-light, rgba(16,185,129,0.15));
+            color: var(--color-success, #10b981);
+        }
+        .embed-list-badge.disabled {
+            background: var(--bg-tertiary, rgba(255,255,255,0.05));
+            color: var(--text-muted);
+        }
+        .embed-list-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .embed-list-actions button {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .embed-list-actions button:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .embed-list-actions button.delete-btn:hover {
+            background: rgba(239,68,68,0.1);
+            color: var(--color-error, #ef4444);
+            border-color: var(--color-error, #ef4444);
+        }
+
+        /* ===== Embed Detail Back Button ===== */
+        .embed-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            cursor: pointer;
+            padding: 2px 0;
+            transition: color 0.15s;
+        }
+        .embed-back-btn:hover { color: var(--text-primary); }
+
+        /* ===== Multi-select file dropdown (embed-scoped) ===== */
+        .embed-files-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .embed-files-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .embed-files-trigger:hover { border-color: var(--text-muted); }
+        .embed-files-trigger.open { border-color: var(--brand-primary, #635bff); }
+        .embed-files-trigger svg {
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+        .embed-files-trigger.open svg { transform: rotate(180deg); }
+
+        .embed-files-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: var(--bg-card, var(--bg-secondary));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1010;
+            max-height: 260px;
+            overflow: hidden;
+        }
+        .embed-files-menu.open { display: block; }
+        .embed-files-search {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .embed-files-search input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.78rem;
+            outline: none;
+        }
+        .embed-files-search input:focus { border-color: var(--brand-primary, #635bff); }
+        .embed-files-search input::placeholder { color: var(--text-muted); }
+        .embed-files-options {
+            max-height: 190px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .embed-files-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            cursor: pointer;
+            transition: background 0.12s;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+        }
+        .embed-files-option:hover { background: var(--bg-secondary); }
+        .embed-files-option-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .embed-file-mini-toggle {
+            position: relative;
+            width: 32px; height: 16px;
+            background: var(--border-color, #3a3f55);
+            border-radius: 8px;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .embed-file-mini-toggle.on { background: var(--color-success, #10b981); }
+        .embed-file-mini-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 12px; height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .embed-file-mini-toggle.on::after { transform: translateX(16px); }
     </style>
 </head>
 <body class="dashboard">
@@ -2555,6 +3012,13 @@
                             <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
                         Upload File
+                    </button>
+                    <button id="embedSettingsBtn" class="btn btn-secondary" onclick="openEmbedSettingsModal()" style="display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        Embed
                     </button>
                     <button class="btn btn-secondary" onclick="openEditProjectModal()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2948,6 +3412,170 @@
                             <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed Settings Modal -->
+    <div id="embedSettingsModal" class="modal">
+        <div class="modal-dialog" style="max-width: 720px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="embed-back-btn" id="embedBackBtn" onclick="backToEmbedList()" style="display:none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                            Back
+                        </button>
+                        <h5 id="embedModalTitle">Embed Links</h5>
+                    </div>
+                    <button class="close-btn" onclick="closeModal('embedSettingsModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- ===== LIST VIEW ===== -->
+                    <div id="embedListView">
+                        <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                            <button class="embed-create-btn" onclick="openEmbedDetail(null)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                New Embed
+                            </button>
+                        </div>
+                        <div id="embedListContainer">
+                            <div class="embed-list-empty">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- ===== DETAIL VIEW ===== -->
+                    <div id="embedDetailView" style="display:none;">
+                        <!-- Name -->
+                        <div class="embed-section">
+                            <div class="embed-section-label">Name</div>
+                            <input type="text" id="embedName" class="embed-input" placeholder="e.g., Survey Embed" maxlength="100">
+                        </div>
+
+                        <!-- Enable toggle -->
+                        <div class="embed-section">
+                            <div class="embed-toggle-row">
+                                <div>
+                                    <div class="embed-section-label">Enable Embed</div>
+                                    <div class="embed-section-hint" style="margin-bottom:0">Allow external websites to use this embed link</div>
+                                </div>
+                                <div class="embed-toggle-track" id="embedToggleTrack" onclick="toggleEmbed()">
+                                    <input type="checkbox" id="embedEnabled" style="display:none">
+                                    <div class="embed-toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File selection — multi-select dropdown -->
+                        <div class="embed-section">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                                <div>
+                                    <div class="embed-section-label">Exposed Files</div>
+                                    <div class="embed-section-hint" style="margin-bottom:0">Select which files the widget can query</div>
+                                </div>
+                                <div style="display:flex; gap:4px;">
+                                    <button type="button" style="background:none; border:none; color:var(--brand-primary,#635bff); font-size:0.72rem; cursor:pointer; padding:2px 6px; border-radius:4px;" onclick="embedSelectAllFiles()">All</button>
+                                    <button type="button" style="background:none; border:none; color:var(--brand-primary,#635bff); font-size:0.72rem; cursor:pointer; padding:2px 6px; border-radius:4px;" onclick="embedDeselectAllFiles()">None</button>
+                                </div>
+                            </div>
+                            <div class="embed-files-dropdown" id="embedFilesDropdown">
+                                <div class="embed-files-trigger" id="embedFilesTrigger" onclick="toggleEmbedFilesDropdown()">
+                                    <span id="embedFilesCount">0 files selected</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
+                                <div class="embed-files-menu" id="embedFilesMenu">
+                                    <div class="embed-files-search">
+                                        <input type="text" id="embedFileSearch" placeholder="Search files..." oninput="filterEmbedFileOptions(this.value)">
+                                    </div>
+                                    <div class="embed-files-options" id="embedFileOptions"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Domain whitelist -->
+                        <div class="embed-section">
+                            <div class="embed-section-label">Allowed Domains</div>
+                            <div class="embed-section-hint">Comma-separated. Leave empty to allow any origin.</div>
+                            <input type="text" id="embedDomains" class="embed-input" placeholder="e.g., dashboard.example.com, app.client.io">
+                        </div>
+
+                        <!-- Widget Mode (dark/light) -->
+                        <div class="embed-section">
+                            <div class="embed-section-label">Widget Mode</div>
+                            <div class="embed-section-hint">Choose the chat widget appearance for end users</div>
+                            <div class="embed-theme-switcher">
+                                <button type="button" class="embed-theme-btn active" id="embedThemeLight" onclick="setEmbedTheme('light')">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                                    Light
+                                </button>
+                                <button type="button" class="embed-theme-btn" id="embedThemeDark" onclick="setEmbedTheme('dark')">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                    Dark
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Theme customization -->
+                        <div class="embed-section">
+                            <div class="embed-section-label">Widget Colors</div>
+                            <div class="embed-section-hint">Customize the header, accent color, and logo</div>
+                            <div class="embed-theme-grid">
+                                <div class="embed-theme-field">
+                                    <div class="embed-color-label">Header Color</div>
+                                    <div class="embed-color-row">
+                                        <div class="embed-color-swatch" id="embedHeaderSwatch">
+                                            <input type="color" id="embedHeaderColorPicker" value="#00b8d9"
+                                                oninput="document.getElementById('embedHeaderColor').value=this.value; this.parentElement.style.background=this.value;">
+                                        </div>
+                                        <input type="text" id="embedHeaderColor" class="embed-color-hex" placeholder="#00b8d9" maxlength="7"
+                                            oninput="syncColorSwatch(this,'embedHeaderColorPicker','embedHeaderSwatch')">
+                                    </div>
+                                </div>
+                                <div class="embed-theme-field">
+                                    <div class="embed-color-label">Accent Color</div>
+                                    <div class="embed-color-row">
+                                        <div class="embed-color-swatch" id="embedAccentSwatch">
+                                            <input type="color" id="embedAccentColorPicker" value="#00b8d9"
+                                                oninput="document.getElementById('embedAccentColor').value=this.value; this.parentElement.style.background=this.value;">
+                                        </div>
+                                        <input type="text" id="embedAccentColor" class="embed-color-hex" placeholder="#00b8d9" maxlength="7"
+                                            oninput="syncColorSwatch(this,'embedAccentColorPicker','embedAccentSwatch')">
+                                    </div>
+                                </div>
+                                <div class="embed-theme-field">
+                                    <div class="embed-color-label">Logo URL</div>
+                                    <input type="text" id="embedLogoUrl" class="embed-input" placeholder="https://yoursite.com/logo.png">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Embed code -->
+                        <div class="embed-section" id="embedCodeSection" style="display:none;">
+                            <div class="embed-section-label">Embed Code</div>
+                            <div class="embed-code-wrap">
+                                <textarea id="embedCodeSnippet" readonly rows="2"></textarea>
+                                <button type="button" class="embed-code-copy" onclick="copyEmbedCode()">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="embed-section" style="border-bottom:none; display:flex; gap:10px; align-items:center;">
+                            <button type="button" class="embed-regen-btn" id="embedRegenBtn" onclick="regenerateEmbedKey()" style="flex-shrink:0; display:none;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                                Regenerate Key
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="saveEmbedConfig()" style="flex:1; font-size:0.85rem; padding: 8px 0;">Save Settings</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
