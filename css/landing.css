@@ -2975,22 +2975,20 @@
     }
 
     .nav-logo {
-        height: 32px;
+        height: 22px;
     }
 
     .nav-cta {
         gap: 8px;
     }
 
-    .nav-cta .btn-primary,
     .nav-cta .btn-secondary {
         padding: 8px 14px;
         font-size: 12px;
     }
 
-    /* Hide nav buttons on mobile - cleaner look */
-    .nav-cta .btn-primary,
-    .nav-cta .btn-secondary {
+    /* Hide "Get Started" on mobile, keep "Sign In" visible */
+    .nav-cta .btn-primary {
         display: none;
     }
 
