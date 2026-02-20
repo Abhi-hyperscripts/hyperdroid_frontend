@@ -595,11 +595,11 @@ body:has(.auth-container)::after {
     }
 
     .auth-logo-img {
-        height: 32px;
+        height: 22px;
     }
 
     .navbar-logo {
-        height: 32px;
+        height: 18px;
     }
 
     .auth-form {
@@ -7195,7 +7195,7 @@ label.toggle-switch,
     }
 
     .navbar-logo {
-        height: 32px;
+        height: 18px;
     }
 
     /* Hide nav links on mobile - they go into dropdown */
@@ -7458,7 +7458,7 @@ label.toggle-switch,
     }
 
     .navbar-logo {
-        height: 32px;
+        height: 18px;
     }
 
     .user-avatar {
