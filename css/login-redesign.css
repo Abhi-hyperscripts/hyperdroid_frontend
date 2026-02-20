@@ -991,6 +991,10 @@
 }
 
 @media (max-width: 480px) {
+    .mobile-logo {
+        display: none;
+    }
+
     .login-form-panel {
         padding: 24px 20px;
     }
