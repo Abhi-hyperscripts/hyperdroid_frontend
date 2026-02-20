@@ -5,8 +5,8 @@
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragenaizer - All-in-One Business Software | Video Conferencing, Team Chat, Cloud Storage, HRMS</title>
-    <meta name="description" content="Stop paying for 4 different tools. Ragenaizer unifies video conferencing, team chat, cloud storage, and HRMS in one secure platform. Cut costs by 60%. Zoom alternative with chat & file sharing. Start free today.">
+    <title>Ragenaizer — Business OS | Communication, HR, Analytics, CRM in One Platform</title>
+    <meta name="description" content="The operating system for your business. Ragenaizer unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, and sales CRM in one platform. Self-hosted or cloud. Complete data sovereignty.">
 
     <!-- SEO Meta Tags -->
     <meta name="keywords" content="all-in-one business software, unified workspace platform, enterprise collaboration software, video conferencing software, zoom alternative, microsoft teams alternative, team messaging app, business chat software, cloud storage for business, secure file sharing, HRMS software, payroll software, automated payroll processing, attendance tracking software, leave management system, remote team collaboration tools, digital workplace solution, work from home software, best video conferencing for remote teams, HRMS with payroll software, employee self-service portal, statutory compliance software">
@@ -19,8 +19,8 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/">
-    <meta property="og:title" content="Ragenaizer - All-in-One Business Software | Stop Paying for 4 Tools">
-    <meta property="og:description" content="Unified workspace platform: HD video conferencing, team chat, cloud storage, and HRMS. Best Zoom alternative with chat & file sharing. Cut costs by 60%. Free trial.">
+    <meta property="og:title" content="Ragenaizer — The Business OS | Everything Your Business Needs">
+    <meta property="og:description" content="The operating system for your business. Video conferencing, team chat, cloud storage, HRMS, AI analytics, and CRM — unified. Self-hosted or cloud.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -29,8 +29,8 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@ragenaizer">
-    <meta name="twitter:title" content="Ragenaizer - All-in-One Business Software">
-    <meta name="twitter:description" content="Stop switching between apps. Video, chat, storage, HRMS - unified. Best Zoom & Teams alternative. Cut SaaS costs by 60%.">
+    <meta name="twitter:title" content="Ragenaizer — The Business OS">
+    <meta name="twitter:description" content="The operating system for your business. Video, chat, storage, HRMS, AI analytics, CRM — all unified. Self-hosted or cloud.">
     <meta name="twitter:image" content="https://ragenaizer.com/assets/og-image.png">
 
     <!-- Additional SEO -->
@@ -52,9 +52,9 @@
         "@type": "SoftwareApplication",
         "name": "Ragenaizer",
         "applicationCategory": "BusinessApplication",
-        "applicationSubCategory": "Unified Workspace Platform",
+        "applicationSubCategory": "Business Operating System",
         "operatingSystem": "Web",
-        "description": "All-in-one business software that unifies video conferencing, team chat, cloud storage, and HRMS. Best alternative to Zoom, Slack, Dropbox, and separate HR tools. Enterprise collaboration platform for remote teams.",
+        "description": "The operating system for your business. Unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, and sales CRM. Self-hosted or cloud with complete data sovereignty.",
         "url": "https://ragenaizer.com",
         "author": {
             "@type": "Organization",
@@ -72,14 +72,15 @@
             "Team Chat with Channels and Threads",
             "Secure Cloud Storage with File Sharing",
             "HRMS with Automated Payroll",
+            "AI Research Analytics with SPSS Processing",
+            "Sales CRM with Pipeline Management",
             "Attendance Tracking with Geofencing",
             "Leave Management System",
-            "Employee Self-Service Portal",
-            "Statutory Compliance Automation",
+            "Embeddable Analytics Widget",
             "Real-time Collaboration",
-            "End-to-End Encryption"
+            "Self-Hosted or Cloud Deployment"
         ],
-        "keywords": "all-in-one business software, unified workspace, video conferencing, team chat, cloud storage, HRMS, payroll software, zoom alternative, microsoft teams alternative, remote work tools"
+        "keywords": "business OS, business operating system, video conferencing, team chat, cloud storage, HRMS, payroll software, AI analytics, CRM software, sales pipeline, self-hosted business software"
     }
     </script>
     <script type="application/ld+json">
@@ -303,7 +304,7 @@
         /* App window container */
         .hero-app-window {
             position: relative;
-            width: 560px;
+            width: 620px;
             background: linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(10, 15, 28, 0.98) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
@@ -424,6 +425,8 @@
         .sidebar-item.chat { --item-color: #a78bfa; --item-bg: rgba(139, 92, 246, 0.15); }
         .sidebar-item.drive { --item-color: #34d399; --item-bg: rgba(16, 185, 129, 0.15); }
         .sidebar-item.hrms { --item-color: #fbbf24; --item-bg: rgba(245, 158, 11, 0.15); }
+        .sidebar-item.research { --item-color: #22d3ee; --item-bg: rgba(6, 182, 212, 0.15); }
+        .sidebar-item.crm { --item-color: #fb7185; --item-bg: rgba(244, 63, 94, 0.15); }
 
         .sidebar-divider {
             width: 32px;
@@ -435,11 +438,11 @@
         /* Main content area */
         .app-main {
             flex: 1;
-            padding: 20px;
+            padding: 16px 20px 16px 16px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             grid-template-rows: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
         }
 
         /* Product preview cards */
@@ -447,12 +450,14 @@
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
-            padding: 16px;
+            padding: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
         }
 
         .preview-card:hover {
@@ -465,6 +470,53 @@
         .preview-card.chat { --card-border: rgba(139, 92, 246, 0.3); --accent: #a78bfa; }
         .preview-card.drive { --card-border: rgba(16, 185, 129, 0.3); --accent: #34d399; }
         .preview-card.hrms { --card-border: rgba(245, 158, 11, 0.3); --accent: #fbbf24; }
+        .preview-card.research { --card-border: rgba(6, 182, 212, 0.3); --accent: #22d3ee; }
+        .preview-card.crm { --card-border: rgba(244, 63, 94, 0.3); --accent: #fb7185; }
+
+        /* Research-specific preview */
+        .preview-card.research .preview-content {
+            gap: 6px;
+        }
+
+        .research-bar-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 40px;
+        }
+
+        .research-bar {
+            flex: 1;
+            background: rgba(6, 182, 212, 0.3);
+            border-radius: 2px 2px 0 0;
+            min-height: 8px;
+        }
+
+        /* CRM-specific preview */
+        .crm-col {
+            display: flex;
+            gap: 4px;
+        }
+
+        .crm-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .crm-stage-label {
+            font-size: 7px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+        }
+
+        .crm-deal {
+            height: 14px;
+            background: rgba(244, 63, 94, 0.2);
+            border-radius: 3px;
+            border: 1px solid rgba(244, 63, 94, 0.15);
+        }
 
         .preview-header {
             display: flex;
@@ -504,6 +556,7 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            min-width: 0;
         }
 
         .preview-bar {
@@ -520,13 +573,13 @@
         .preview-card.vision .preview-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
+            gap: 4px;
         }
 
         .video-tile {
-            aspect-ratio: 16/10;
+            height: 36px;
             background: rgba(59, 130, 246, 0.1);
-            border-radius: 6px;
+            border-radius: 4px;
             border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
@@ -616,7 +669,7 @@
             justify-content: center;
             gap: 16px;
             margin-top: 20px;
-            width: 560px;
+            width: 620px;
         }
 
         .hero-badge {
@@ -686,12 +739,17 @@
             }
 
             .hero-app-window {
-                width: 500px;
+                width: 520px;
                 margin: 0 auto;
             }
 
             .app-layout {
                 min-height: 300px;
+            }
+
+            .app-main {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(3, 1fr);
             }
 
             .hero-badges-row {
@@ -908,7 +966,7 @@
         /* Product Cards Grid */
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 24px;
             max-width: 1200px;
             margin: 0 auto;
@@ -1065,6 +1123,24 @@
             --icon-color: #fbbf24;
         }
 
+        .product-card.research {
+            --card-gradient: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+            --card-border: rgba(6, 182, 212, 0.3);
+            --card-shadow: rgba(6, 182, 212, 0.15);
+            --icon-bg: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.05));
+            --icon-border: rgba(6, 182, 212, 0.3);
+            --icon-color: #22d3ee;
+        }
+
+        .product-card.crm {
+            --card-gradient: linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, transparent 60%);
+            --card-border: rgba(244, 63, 94, 0.3);
+            --card-shadow: rgba(244, 63, 94, 0.15);
+            --icon-bg: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(244, 63, 94, 0.05));
+            --icon-border: rgba(244, 63, 94, 0.3);
+            --icon-color: #fb7185;
+        }
+
         /* Stats Section */
         .stats-section {
             padding: 80px 60px;
@@ -1153,6 +1229,12 @@
         }
 
         /* Responsive */
+        @media (max-width: 1100px) {
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 900px) {
             .products-grid {
                 grid-template-columns: 1fr;
@@ -1448,6 +1530,226 @@
                 padding: 20px 24px;
             }
         }
+
+        /* BYOK / Transparency Section */
+        .byok-section {
+            padding: 120px 60px;
+            position: relative;
+            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
+            overflow: hidden;
+        }
+
+        .byok-section::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .byok-inner {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 80px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .byok-badge {
+            background: rgba(245, 158, 11, 0.15) !important;
+            border-color: rgba(245, 158, 11, 0.3) !important;
+            color: #fbbf24 !important;
+        }
+
+        .byok-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 400;
+            color: #ffffff;
+            margin: 24px 0 24px 0;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            line-height: 1.15;
+        }
+
+        .byok-highlight {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .byok-description {
+            font-size: 17px;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.7;
+            margin-bottom: 36px;
+            max-width: 560px;
+        }
+
+        .byok-points {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .byok-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .byok-point-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            flex-shrink: 0;
+        }
+
+        .byok-point-icon svg {
+            width: 22px;
+            height: 22px;
+            color: #fbbf24;
+        }
+
+        .byok-point strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .byok-point span {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.55);
+            line-height: 1.5;
+        }
+
+        /* BYOK Visual Diagram */
+        .byok-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .byok-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .byok-box {
+            width: 100%;
+            padding: 20px 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid;
+        }
+
+        .byok-box-label {
+            font-family: 'Electrolize', sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .byok-box-detail {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .byok-you {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .byok-you .byok-box-label { color: #60a5fa; }
+        .byok-you .byok-box-detail { color: rgba(96, 165, 250, 0.7); }
+
+        .byok-platform {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .byok-platform .byok-box-label { color: #a78bfa; }
+        .byok-platform .byok-box-detail { color: rgba(167, 139, 250, 0.7); }
+
+        .byok-ai {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .byok-ai .byok-box-label { color: #fbbf24; }
+        .byok-ai .byok-box-detail { color: rgba(251, 191, 36, 0.7); }
+
+        .byok-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .byok-arrow svg {
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .byok-no-markup {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #34d399;
+        }
+
+        .byok-no-markup svg {
+            width: 18px;
+            height: 18px;
+            color: #34d399;
+        }
+
+        @media (max-width: 1024px) {
+            .byok-inner {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .byok-section {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .byok-section {
+                padding: 80px 24px;
+            }
+
+            .byok-diagram {
+                max-width: 280px;
+            }
+        }
     </style>
 </head>
 <body class="landing-page home-page">
@@ -1470,6 +1772,8 @@
                     <a href="pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
                     <a href="pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
                     <a href="pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                    <a href="pages/research.html" class="nav-dropdown-item">Research <span>AI Analytics</span></a>
+                    <a href="pages/crm.html" class="nav-dropdown-item">CRM <span>Sales Pipeline</span></a>
                 </div>
             </div>
             <!-- Features Dropdown -->
@@ -1485,6 +1789,8 @@
                     <a href="pages/features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
                     <a href="pages/features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
                     <a href="pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
+                    <a href="pages/research.html" class="nav-dropdown-item">AI Research <span>Agentic SPSS analytics</span></a>
+                    <a href="pages/crm.html" class="nav-dropdown-item">Sales CRM <span>Pipeline & lead capture</span></a>
                 </div>
             </div>
             <!-- Solutions Dropdown -->
@@ -1594,13 +1900,13 @@
         <div class="home-hero-inner">
             <!-- Left: Text Content -->
             <div class="home-hero-text">
-                <div class="home-badge">Enterprise Workspace Platform</div>
+                <div class="home-badge">Business OS</div>
                 <h1 class="home-title">
-                    Own your enterprise stack.<br>
-                    <span class="gradient-text">One unified platform.</span>
+                    The operating system<br>
+                    <span class="gradient-text">for your business.</span>
                 </h1>
                 <p class="home-description">
-                    Video conferencing, team chat, cloud storage, and HR management — self-hosted or cloud. One platform, one contract, complete data sovereignty.
+                    Communication, collaboration, HR, analytics, and sales — everything your business runs on, in one platform. Self-hosted or cloud. Complete data sovereignty.
                 </p>
                 <div class="home-cta">
                     <a href="pages/activate.html" class="btn-primary">Start Free Trial</a>
@@ -1648,6 +1954,19 @@
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                                     <circle cx="9" cy="7" r="4"/>
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                </svg>
+                            </a>
+                            <a href="pages/research.html" class="sidebar-item research">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                            </a>
+                            <a href="pages/crm.html" class="sidebar-item crm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
                                 </svg>
                             </a>
                         </div>
@@ -1732,6 +2051,60 @@
                                     <div class="preview-bar medium"></div>
                                 </div>
                             </a>
+
+                            <!-- Research preview -->
+                            <a href="pages/research.html" class="preview-card research">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">Research</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="research-bar-row">
+                                        <div class="research-bar" style="height: 60%;"></div>
+                                        <div class="research-bar" style="height: 85%;"></div>
+                                        <div class="research-bar" style="height: 45%;"></div>
+                                        <div class="research-bar" style="height: 100%;"></div>
+                                        <div class="research-bar" style="height: 70%;"></div>
+                                    </div>
+                                    <div class="preview-bar short" style="background: rgba(6, 182, 212, 0.3);"></div>
+                                </div>
+                            </a>
+
+                            <!-- CRM preview -->
+                            <a href="pages/crm.html" class="preview-card crm">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                            <path d="M2 17l10 5 10-5"/>
+                                            <path d="M2 12l10 5 10-5"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">CRM</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="crm-col">
+                                        <div class="crm-stage">
+                                            <div class="crm-stage-label">New</div>
+                                            <div class="crm-deal"></div>
+                                            <div class="crm-deal"></div>
+                                        </div>
+                                        <div class="crm-stage">
+                                            <div class="crm-stage-label">Qual</div>
+                                            <div class="crm-deal"></div>
+                                        </div>
+                                        <div class="crm-stage">
+                                            <div class="crm-stage-label">Won</div>
+                                            <div class="crm-deal" style="background: rgba(244, 63, 94, 0.35);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -1740,7 +2113,7 @@
                 <div class="hero-badges-row">
                     <div class="hero-badge">
                         <div class="badge-dot"></div>
-                        Live collaboration
+                        Real-Time Communication
                     </div>
                     <div class="hero-badge">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1878,12 +2251,94 @@
         </div>
     </section>
 
+    <!-- BYOK / Transparency Section -->
+    <section class="byok-section" id="byok">
+        <div class="byok-inner">
+            <div class="byok-text">
+                <div class="section-badge byok-badge">No AI Tax</div>
+                <h2 class="byok-title">Built to work.<br><span class="byok-highlight">With or without AI.</span></h2>
+                <p class="byok-description">
+                    Most SaaS products today are AI wrappers — they break the moment the API goes down.
+                    Ragenaizer is a full-stack business OS where every product works independently.
+                    AI enhances your workflow. It doesn't define it.
+                </p>
+                <div class="byok-points">
+                    <div class="byok-point">
+                        <div class="byok-point-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>Every product works without AI</strong>
+                            <span>Vision runs HD meetings — enable AI and get a Sales Co-Pilot. Research lets you analyze data manually — add your API key and the AI Assistant takes over. AI is optional, always.</span>
+                        </div>
+                    </div>
+                    <div class="byok-point">
+                        <div class="byok-point-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>BYOK — Bring Your Own Key</strong>
+                            <span>We don't markup AI costs. Plug in your own API key from OpenAI, Anthropic, or any provider. You pay them directly.</span>
+                        </div>
+                    </div>
+                    <div class="byok-point">
+                        <div class="byok-point-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="1" x2="12" y2="23"/>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong>Transparent pricing, always</strong>
+                            <span>We charge for infrastructure. AI costs go directly to your provider. No hidden markups, no bundled "AI credits."</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="byok-visual">
+                <div class="byok-diagram">
+                    <div class="byok-box byok-you">
+                        <div class="byok-box-label">You</div>
+                        <div class="byok-box-detail">Your API Key</div>
+                    </div>
+                    <div class="byok-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M19 12l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="byok-box byok-platform">
+                        <div class="byok-box-label">Ragenaizer</div>
+                        <div class="byok-box-detail">Infrastructure + Products</div>
+                    </div>
+                    <div class="byok-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M19 12l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="byok-box byok-ai">
+                        <div class="byok-box-label">AI Provider</div>
+                        <div class="byok-box-detail">Direct billing to you</div>
+                    </div>
+                    <div class="byok-no-markup">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        Zero markup on AI costs
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Products Section -->
     <section class="products-section" id="products">
         <div class="products-header">
-            <div class="section-badge">Our Products</div>
-            <h2>Four powerful tools. One platform.</h2>
-            <p>Each product is powerful on its own. Together, they're unstoppable.</p>
+            <div class="section-badge">The Stack</div>
+            <h2>Everything your business runs on.</h2>
+            <p>Each product stands alone. Together, they become your complete business operating system.</p>
         </div>
 
         <div class="products-grid">
@@ -1994,6 +2449,63 @@
                     </div>
                 </div>
             </a>
+
+            <!-- Research -->
+            <a href="pages/research.html" class="product-card research">
+                <div class="product-card-content">
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <line x1="11" y1="8" x2="11" y2="14"/>
+                            <line x1="8" y1="11" x2="14" y2="11"/>
+                        </svg>
+                    </div>
+                    <h3>Research</h3>
+                    <div class="product-tagline">AI Analytics</div>
+                    <p>Agentic AI for SPSS data analysis. Ask questions in plain English, get publication-ready statistical results instantly.</p>
+                    <div class="product-features">
+                        <span>Agentic AI</span>
+                        <span>SPSS Processing</span>
+                        <span>Cross-Tabulation</span>
+                        <span>Embeddable</span>
+                    </div>
+                    <div class="product-link">
+                        Learn more
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- CRM -->
+            <a href="pages/crm.html" class="product-card crm">
+                <div class="product-card-content">
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <h3>CRM</h3>
+                    <div class="product-tagline">Sales Pipeline</div>
+                    <p>Visual deal pipeline with real-time notifications. Capture leads from Facebook Ads, webhooks, and any landing page automatically.</p>
+                    <div class="product-features">
+                        <span>Kanban Pipeline</span>
+                        <span>Lead Webhooks</span>
+                        <span>Facebook Ads</span>
+                        <span>Real-Time Alerts</span>
+                    </div>
+                    <div class="product-link">
+                        Learn more
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
         </div>
     </section>
 
@@ -2001,12 +2513,8 @@
     <section class="stats-section">
         <div class="stats-grid">
             <div class="stat-item">
-                <h3>4</h3>
-                <p>Integrated Products</p>
-            </div>
-            <div class="stat-item">
                 <h3>1</h3>
-                <p>Unified Platform</p>
+                <p>Business OS</p>
             </div>
             <div class="stat-item">
                 <h3>100%</h3>
@@ -2016,14 +2524,18 @@
                 <h3>∞</h3>
                 <p>Scalability</p>
             </div>
+            <div class="stat-item">
+                <h3>0</h3>
+                <p>Vendor Lock-In</p>
+            </div>
         </div>
     </section>
 
     <!-- Final CTA -->
     <section class="final-cta">
         <div class="final-cta-content">
-            <h2>Ready to transform how your team works?</h2>
-            <p>Join thousands of teams already using Ragenaizer.</p>
+            <h2>Ready to run your business on one platform?</h2>
+            <p>Start with what you need. Scale to everything.</p>
             <div class="home-cta">
                 <a href="pages/activate.html" class="btn-primary">Get Started Free</a>
                 <a href="pages/login.html" class="btn-secondary">Sign In</a>
@@ -2042,6 +2554,8 @@
             <a href="pages/chat.html" class="footer-link">Chat</a>
             <a href="pages/drive.html" class="footer-link">Drive</a>
             <a href="pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="pages/research.html" class="footer-link">Research</a>
+            <a href="pages/crm.html" class="footer-link">CRM</a>
             <a href="pages/login.html" class="footer-link">Sign In</a>
             <a href="pages/terms.html" class="footer-link">Terms</a>
             <a href="pages/privacy.html" class="footer-link">Privacy</a>
