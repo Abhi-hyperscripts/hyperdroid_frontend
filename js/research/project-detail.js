@@ -19,6 +19,15 @@ let activeTab = 'files';
 let variablesLoaded = false;
 let queryResultsData = null;
 
+// Functions tab state
+let fnFunctions = [];     // cached function metadata from backend
+let fnLoaded = false;
+
+// Questions tab state
+let questionsData = [];    // raw question groups from API
+let questionsLoaded = false;
+let filteredQuestions = [];
+
 // Variables pagination state
 let varCurrentPage = 1;
 let varPageSize = 50;
@@ -71,10 +80,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     loadProject();
 
-    // Keyboard shortcut: Ctrl+Enter to run query
+    // Keyboard shortcut: Ctrl+Enter to run query or function
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             const sqlEditor = document.getElementById('sqlEditor');
+            const fnEditor = document.getElementById('fnEditor');
+            if (document.activeElement === fnEditor || activeTab === 'functions') {
+                e.preventDefault();
+                executeFn();
+                return;
+            }
             if (document.activeElement === sqlEditor || activeTab === 'query') {
                 e.preventDefault();
                 executeQuery();
@@ -398,7 +413,10 @@ function handleFileProgressUpdate(data) {
         const row = document.getElementById(`file-row-${fileId}`);
         if (row) {
             const statusCell = row.querySelector('td:nth-child(3)');
-            const displaySt = status === 'loading_data' ? 'loading data' : status;
+            const displaySt = status === 'loading_data' ? 'loading data'
+                             : status === 'grouping' ? 'grouping variables'
+                             : status === 'embedding' ? 'generating embeddings'
+                             : status;
             if (statusCell) {
                 statusCell.innerHTML = `<span class="status-badge ${status}">${displaySt}</span>`;
             }
@@ -421,7 +439,7 @@ function startFilePolling() {
     Object.values(fileStatusPollers).forEach(id => clearInterval(id));
     fileStatusPollers = {};
 
-    const processingFiles = files.filter(f => ['uploading', 'parsing', 'loading_data'].includes(f.status));
+    const processingFiles = files.filter(f => ['uploading', 'parsing', 'loading_data', 'grouping', 'embedding'].includes(f.status));
     if (processingFiles.length === 0) return;
 
     // Try SignalR first
@@ -535,14 +553,13 @@ function updateProgressPanelItem(fileId, data) {
         barClass = 'style="background: var(--color-danger, #ef4444);"';
     } else if (status === 'loading_data' && rowsLoaded > 0) {
         barWidth = '60%';
-        barClass = '';
-    } else if (status === 'queued') {
-        barClass = '';
-    } else {
-        barClass = '';
+    } else if (status === 'grouping') {
+        barWidth = '80%';
+    } else if (status === 'embedding') {
+        barWidth = '90%';
     }
 
-    const isIndeterminate = (status === 'queued' || status === 'parsing' || (status === 'loading_data' && rowsLoaded === 0));
+    const isIndeterminate = (status === 'queued' || status === 'parsing' || status === 'grouping' || status === 'embedding' || (status === 'loading_data' && rowsLoaded === 0));
 
     const statsText = (status === 'queued' && queuePosition > 0)
         ? `Position ${queuePosition} in queue`
@@ -662,8 +679,18 @@ function switchTab(tabName) {
         if (!variablesLoaded) loadVariables();
         if (aiAvailable === null) checkAiAvailability();
     }
+    if (tabName === 'questions') {
+        if (!questionsLoaded) {
+            populateQuestionFileFilter();
+            loadQuestions();
+        }
+    }
     if (tabName === 'query') {
         updateAvailableTables();
+    }
+    if (tabName === 'functions') {
+        if (!fnLoaded) loadFunctions();
+        updateFnFileSelector();
     }
     if (tabName === 'ailogs') {
         if (!document.getElementById('aiLogsContent').innerHTML) loadAiLogs();
@@ -749,7 +776,7 @@ let fileFilterDropdown = null;
 
 function populateFileFilter() {
     const select = document.getElementById('variableFileFilter');
-    select.innerHTML = '<option value="">All files</option>';
+    select.innerHTML = '';
 
     for (const fileGroup of allVariables) {
         const opt = document.createElement('option');
@@ -758,14 +785,23 @@ function populateFileFilter() {
         select.appendChild(opt);
     }
 
+    // Auto-select the first file
+    if (allVariables.length > 0) {
+        select.value = allVariables[0].fileId;
+    }
+
     // Convert to searchable dropdown
     if (typeof convertSelectToSearchable === 'function') {
         if (fileFilterDropdown) fileFilterDropdown.destroy();
         fileFilterDropdown = convertSelectToSearchable('variableFileFilter', {
-            placeholder: 'All files',
+            placeholder: 'Select file...',
             searchPlaceholder: 'Search files...',
             onChange: () => filterVariables()
         });
+        // Set the first file in the searchable dropdown too
+        if (allVariables.length > 0) {
+            fileFilterDropdown.setValue(allVariables[0].fileId);
+        }
     }
 }
 
@@ -1709,7 +1745,7 @@ async function connectAiSignalR() {
         });
 
         aiSignalRConnection.on('ResearchChatProgress', (data) => {
-            updateTypingIndicator(data.tools_called);
+            updateTypingIndicator(data.tools_called, data.step_description, data.round);
         });
 
         aiSignalRConnection.on('ResearchChatProcessing', () => {
@@ -2047,13 +2083,29 @@ function showTypingIndicator() {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function updateTypingIndicator(toolsCalled) {
+function updateTypingIndicator(toolsCalled, stepDescription, round) {
     const indicator = document.getElementById('aiTypingIndicator');
     if (!indicator) return;
-    const toolText = toolsCalled && toolsCalled.length > 0
-        ? toolsCalled.map(t => t === 'execute_query' ? 'Running query' : 'Reading metadata').join(', ')
-        : 'Analyzing data';
-    indicator.innerHTML = `<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> ${toolText}`;
+
+    let statusText;
+    if (stepDescription) {
+        // Use the agentic step description from the backend
+        statusText = stepDescription;
+        if (round > 0) statusText = `Step ${round}: ${statusText}`;
+    } else if (toolsCalled && toolsCalled.length > 0) {
+        const toolLabels = {
+            'execute_query': 'Running query',
+            'execute_function': 'Running analysis',
+            'search_questions': 'Searching questions',
+            'get_variable_details': 'Looking up metadata',
+            'create_visualization': 'Creating chart'
+        };
+        statusText = toolsCalled.map(t => toolLabels[t] || t).join(', ');
+    } else {
+        statusText = 'Analyzing data';
+    }
+
+    indicator.innerHTML = `<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> ${statusText}`;
 }
 
 function removeTypingIndicator() {
@@ -2489,6 +2541,7 @@ async function saveFileMetadata() {
 
 let aiLogsPage = 1;
 const aiLogsPageSize = 20;
+let _toolCallStore = [];
 
 async function loadAiLogs(page) {
     if (page) aiLogsPage = page;
@@ -2518,9 +2571,25 @@ async function loadAiLogs(page) {
 
         if (countEl) countEl.textContent = `${total} messages`;
 
+        _toolCallStore = [];
+
+        // Build a map of response times: for each assistant message, find the preceding user message
+        const responseTimeMap = new Map();
+        for (let i = 0; i < messages.length; i++) {
+            if (messages[i].role === 'assistant' && i + 1 < messages.length && messages[i + 1].role === 'user') {
+                const assistantTime = new Date(messages[i].created_at).getTime();
+                const userTime = new Date(messages[i + 1].created_at).getTime();
+                if (assistantTime > userTime) {
+                    const diffSec = ((assistantTime - userTime) / 1000).toFixed(1);
+                    responseTimeMap.set(i, diffSec);
+                }
+            }
+        }
+
         // Group messages into user/assistant pairs
         let html = '<div class="ai-logs-list">';
-        for (const msg of messages) {
+        for (let mi = 0; mi < messages.length; mi++) {
+            const msg = messages[mi];
             const isUser = msg.role === 'user';
             const isAssistant = msg.role === 'assistant';
             const time = msg.created_at ? new Date(msg.created_at).toLocaleString() : '';
@@ -2528,7 +2597,13 @@ async function loadAiLogs(page) {
             html += `<div class="ai-log-entry" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 8px; background: var(--bg-secondary);">`;
             html += `<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">`;
             html += `<span class="status-badge ${isUser ? 'active' : 'ready'}" style="font-size: 0.7rem;">${escapeHtml(msg.role)}</span>`;
-            html += `<span style="color: var(--text-secondary); font-size: 0.75rem;">${time}</span>`;
+            html += `<span style="color: var(--text-secondary); font-size: 0.75rem;">`;
+            if (isAssistant && responseTimeMap.has(mi)) {
+                const sec = responseTimeMap.get(mi);
+                const label = sec >= 60 ? `${(sec / 60).toFixed(1)}m` : `${sec}s`;
+                html += `<span style="color: var(--brand-primary); margin-right: 8px;" title="Response generation time">&#9201; ${label}</span>`;
+            }
+            html += `${time}</span>`;
             html += `</div>`;
 
             // Content preview
@@ -2551,15 +2626,27 @@ async function loadAiLogs(page) {
                         if (toolCalls.length > 0) {
                             html += `<details style="margin-top: 6px;"><summary style="color: var(--brand-primary); cursor: pointer; font-size: 0.8rem;">Tool calls (${toolCalls.length})</summary>`;
                             html += `<div style="margin-top: 4px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; font-family: monospace; max-height: 300px; overflow: auto;">`;
-                            for (const tc of toolCalls) {
-                                html += `<div style="margin-bottom: 6px;">`;
+                            for (let tci = 0; tci < toolCalls.length; tci++) {
+                                const tc = toolCalls[tci];
+                                const storeIdx = _toolCallStore.length;
+                                _toolCallStore.push(tc);
+                                html += `<div style="margin-bottom: 6px; cursor: pointer; padding: 4px 6px; border-radius: 4px; transition: background 0.15s;" class="tool-call-row" onclick="showToolCallDetail(${storeIdx})" title="Click to view full details">`;
                                 html += `<strong>Round ${tc.round}: ${escapeHtml(tc.tool)}</strong> ${tc.success ? '<span style="color:var(--color-success);">OK</span>' : '<span style="color:var(--color-error);">FAIL</span>'}`;
-                                if (tc.tool === 'execute_query') {
-                                    try {
-                                        const input = JSON.parse(tc.input);
-                                        if (input.sql) html += `<div style="color: var(--text-secondary); margin-top: 2px;">SQL: ${escapeHtml(input.sql.substring(0, 200))}</div>`;
-                                    } catch (e) {}
-                                }
+                                try {
+                                    const input = JSON.parse(tc.input);
+                                    if (tc.tool === 'execute_function' && input.function_name) {
+                                        html += `<div style="color: var(--text-secondary); margin-top: 2px;">Function: <strong>${escapeHtml(input.function_name)}</strong>`;
+                                        if (input.input_params) html += ` — Params: ${escapeHtml(JSON.stringify(input.input_params).substring(0, 200))}`;
+                                        html += `</div>`;
+                                    } else if (tc.tool === 'execute_query' && input.sql) {
+                                        html += `<div style="color: var(--text-secondary); margin-top: 2px;">SQL: ${escapeHtml(input.sql.substring(0, 200))}</div>`;
+                                    } else if (tc.tool === 'get_variable_details' && input.variable_names) {
+                                        html += `<div style="color: var(--text-secondary); margin-top: 2px;">Variables: ${escapeHtml(input.variable_names.join(', '))}</div>`;
+                                    } else if (tc.tool === 'create_visualization' && input.charts) {
+                                        const types = input.charts.map(c => c.chart_type || 'chart').join(', ');
+                                        html += `<div style="color: var(--text-secondary); margin-top: 2px;">Charts: ${escapeHtml(types)}</div>`;
+                                    }
+                                } catch (e) {}
                                 html += `</div>`;
                             }
                             html += `</div></details>`;
@@ -2589,6 +2676,627 @@ async function loadAiLogs(page) {
         console.error('Failed to load AI logs:', error);
     }
 }
+
+function showToolCallDetail(storeIdx) {
+    try {
+        const tc = _toolCallStore[storeIdx];
+        if (!tc) return;
+        let parsedInput = {};
+        try { parsedInput = JSON.parse(tc.input); } catch(e) {}
+
+        const titleEl = document.getElementById('toolCallModalTitle');
+        const bodyEl = document.getElementById('toolCallModalBody');
+        if (!titleEl || !bodyEl) return;
+
+        // Title
+        const statusLabel = tc.success ? '<span style="color:var(--color-success);">OK</span>' : '<span style="color:var(--color-error);">FAIL</span>';
+        titleEl.innerHTML = `Round ${tc.round}: ${escapeHtml(tc.tool)} ${statusLabel}`;
+
+        // Body
+        let html = '';
+
+        // Timestamp
+        if (tc.timestamp) {
+            html += `<div style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 12px;">${new Date(tc.timestamp).toLocaleString()}</div>`;
+        }
+
+        // Input section
+        html += `<div style="margin-bottom: 16px;">`;
+        html += `<div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--brand-primary);">Input</div>`;
+        html += `<pre style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-size: 0.78rem; overflow: auto; max-height: 40vh; white-space: pre-wrap; word-break: break-word; color: var(--text-primary); margin: 0;">${escapeHtml(JSON.stringify(parsedInput, null, 2))}</pre>`;
+        html += `</div>`;
+
+        // Result preview section
+        if (tc.result_preview) {
+            html += `<div style="margin-bottom: 16px;">`;
+            html += `<div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--color-success);">Result Preview</div>`;
+            html += `<pre style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-size: 0.78rem; overflow: auto; max-height: 30vh; white-space: pre-wrap; word-break: break-word; color: var(--text-primary); margin: 0;">${escapeHtml(tc.result_preview)}</pre>`;
+            html += `</div>`;
+        }
+
+        bodyEl.innerHTML = html;
+        document.getElementById('toolCallModal').classList.add('active');
+    } catch (e) {
+        console.error('Failed to show tool call detail:', e);
+    }
+}
+
+// ============================================
+// FUNCTIONS TAB
+// ============================================
+
+async function loadFunctions() {
+    const chipsEl = document.getElementById('fnLibraryChips');
+    if (!chipsEl) return;
+
+    chipsEl.innerHTML = '<span style="color: var(--text-muted); font-size: 0.75rem;">Loading...</span>';
+
+    try {
+        const baseUrl = api._getBaseUrl('/research/');
+        const token = api.token || getAuthToken();
+        const resp = await fetch(`${baseUrl}/projects/${projectId}/functions`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        fnFunctions = Array.isArray(data) ? data : (data.functions || []);
+        fnLoaded = true;
+        renderFnChips();
+    } catch (error) {
+        chipsEl.innerHTML = `<span style="color: var(--color-danger, #ef4444); font-size: 0.75rem;">Failed to load functions</span>`;
+        console.error('Failed to load functions:', error);
+    }
+}
+
+function renderFnChips() {
+    const chipsEl = document.getElementById('fnLibraryChips');
+    if (!chipsEl || fnFunctions.length === 0) {
+        if (chipsEl) chipsEl.innerHTML = '<span style="color: var(--text-muted); font-size: 0.75rem;">No functions available</span>';
+        return;
+    }
+
+    chipsEl.innerHTML = fnFunctions.map(fn => {
+        const name = fn.name || fn.function_name || '';
+        return `<button class="fn-chip" data-fn="${escapeHtml(name)}" onclick="selectFnChip('${escapeHtml(name)}')">${escapeHtml(name)}</button>`;
+    }).join('');
+}
+
+function selectFnChip(name) {
+    // Highlight active chip
+    document.querySelectorAll('.fn-chip').forEach(c => c.classList.toggle('active', c.dataset.fn === name));
+
+    const fn = fnFunctions.find(f => (f.name || f.function_name) === name);
+    if (!fn) return;
+
+    // Show function info — uses input_schema (JSON Schema) from backend
+    const infoEl = document.getElementById('fnInfo');
+    if (infoEl) {
+        let infoHtml = `<strong>${escapeHtml(fn.name || fn.function_name)}</strong>`;
+        if (fn.category) infoHtml += ` <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;">${escapeHtml(fn.category)}</span>`;
+        if (fn.description) infoHtml += `<br>${escapeHtml(fn.description)}`;
+
+        // Parse parameters from input_schema.properties
+        const schema = fn.input_schema;
+        if (schema && schema.properties) {
+            const required = schema.required || [];
+            infoHtml += '<br><br><strong>Parameters:</strong><br>';
+            for (const [pName, pDef] of Object.entries(schema.properties)) {
+                const isReq = required.includes(pName);
+                const req = isReq ? ' <span style="color:var(--color-danger,#ef4444);">*</span>' : '';
+                infoHtml += `&bull; <code style="font-family:var(--font-mono,monospace);font-size:0.75rem;background:var(--bg-primary);padding:1px 4px;border-radius:3px;">${escapeHtml(pName)}</code>${req}`;
+                if (pDef.type) infoHtml += ` <span style="color:var(--text-muted);">(${escapeHtml(pDef.type)})</span>`;
+                if (pDef.description) infoHtml += ` — ${escapeHtml(pDef.description)}`;
+                infoHtml += '<br>';
+            }
+        }
+        infoEl.innerHTML = infoHtml;
+        infoEl.style.display = '';
+    }
+
+    // Pre-populate editor — use first example's input_params if available
+    const editor = document.getElementById('fnEditor');
+    if (editor) {
+        let template;
+        const examples = fn.examples || [];
+        if (examples.length > 0 && examples[0].input_params) {
+            template = JSON.stringify({
+                function_name: fn.name || fn.function_name,
+                input_params: examples[0].input_params
+            }, null, 2);
+        } else {
+            // Fallback: build skeleton from input_schema required fields
+            const params = {};
+            const schema = fn.input_schema;
+            if (schema && schema.properties) {
+                for (const pName of (schema.required || [])) {
+                    const pDef = schema.properties[pName];
+                    if (pDef) {
+                        params[pName] = pDef.type === 'number' || pDef.type === 'integer' ? 0
+                            : pDef.type === 'array' ? []
+                            : pDef.type === 'object' ? {}
+                            : '';
+                    }
+                }
+            }
+            template = JSON.stringify({
+                function_name: fn.name || fn.function_name,
+                input_params: params
+            }, null, 2);
+        }
+        editor.value = template;
+    }
+}
+
+function updateFnFileSelector() {
+    const select = document.getElementById('fnFileSelect');
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Auto (first ready file)</option>';
+
+    const readyFiles = files.filter(f => f.status === 'ready');
+    for (const f of readyFiles) {
+        const fileName = f.fileName || f.file_name || 'Unknown';
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = fileName;
+        select.appendChild(opt);
+    }
+
+    // Restore selection if still valid
+    if (currentValue && readyFiles.some(f => f.id === currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+async function executeFn() {
+    const editor = document.getElementById('fnEditor');
+    const editorValue = (editor ? editor.value : '').trim();
+
+    if (!editorValue) {
+        Toast.warning('Please enter a function JSON spec in the editor.');
+        return;
+    }
+
+    // Validate JSON
+    let parsed;
+    try {
+        parsed = JSON.parse(editorValue);
+    } catch (e) {
+        renderFnError(`Invalid JSON: ${e.message}`);
+        return;
+    }
+
+    // Inject file_id from selector if not specified in JSON
+    const fileSelect = document.getElementById('fnFileSelect');
+    if (fileSelect && fileSelect.value && !parsed.file_id) {
+        parsed.file_id = fileSelect.value;
+    }
+
+    const btn = document.getElementById('fnRunBtn');
+    const execInfo = document.getElementById('fnExecInfo');
+
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0;"></div> Running...`;
+    if (execInfo) execInfo.textContent = '';
+
+    try {
+        const baseUrl = api._getBaseUrl('/research/');
+        const token = api.token || getAuthToken();
+        const fetchResponse = await fetch(`${baseUrl}/projects/${projectId}/functions/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(parsed)
+        });
+
+        const response = await fetchResponse.json();
+
+        if (!fetchResponse.ok || response.success === false) {
+            renderFnError(response.error || response.message || 'Function execution failed');
+            showFnPopup(0, 0);
+            if (execInfo) execInfo.textContent = '';
+            return;
+        }
+
+        // Show execution info
+        const execTime = response.execution_time_ms ?? 0;
+        const rowCount = response.rows ? response.rows.length : 0;
+        if (execInfo) execInfo.textContent = `${formatNumber(rowCount)} rows in ${execTime}ms`;
+
+        renderFnResults(response);
+        showFnPopup(execTime, rowCount);
+    } catch (error) {
+        renderFnError(`Request failed: ${error.message}`);
+        console.error('Function execution failed:', error);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Execute Function`;
+    }
+}
+
+function renderFnResults(response) {
+    const container = document.getElementById('fnResultsContent');
+    if (!container) return;
+
+    const columns = response.columns || [];
+    const rows = response.rows || [];
+    const stats = response.statistics || {};
+    const sigLetters = Array.isArray(stats.column_letters)
+        ? stats.column_letters.map(c => c.letter) : [];
+    const isTableFunc = (columns.length > 0 && columns[0] === 'row') || sigLetters.length > 0;
+
+    // Build a single markdown document
+    let md = '';
+
+    // Summary
+    if (response.summary) {
+        md += `### Summary\n${response.summary}\n\n`;
+    }
+
+    // Statistics as markdown table
+    if (stats && Object.keys(stats).length > 0) {
+        md += `### Statistics\n| Metric | Value |\n|---|---|\n`;
+        for (const [key, val] of Object.entries(stats)) {
+            let displayVal;
+            if (typeof val === 'number') {
+                displayVal = val.toLocaleString(undefined, { maximumFractionDigits: 4 });
+            } else if (Array.isArray(val)) {
+                if (val.length > 0 && val[0] && val[0].letter !== undefined) {
+                    displayVal = val.map(v => `**${v.letter}**=${v.label || v.value || ''}`).join(', ');
+                } else {
+                    displayVal = val.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
+                }
+            } else if (typeof val === 'object' && val !== null) {
+                displayVal = Object.entries(val).map(([k, v]) => `${k}=${v}`).join(', ');
+            } else {
+                displayVal = String(val);
+            }
+            md += `| ${key} | ${displayVal} |\n`;
+        }
+        md += '\n';
+    }
+
+    // Data table as markdown table with stacked cells (stats computed on backend)
+    if (columns.length > 0 && rows.length > 0) {
+        md += `### Data (${formatNumber(rows.length)} rows)\n`;
+        // Header
+        md += '| ' + columns.map(c => `**${c}**`).join(' | ') + ' |\n';
+        md += '|' + columns.map(() => '---').join('|') + '|\n';
+        // Rows
+        const displayRows = rows.slice(0, 1000);
+        for (const row of displayRows) {
+            if (Array.isArray(row)) {
+                md += '| ' + row.map(cell => formatCellValue(cell)).join(' | ') + ' |\n';
+            } else if (typeof row === 'object' && row !== null) {
+                const cells = [];
+                let colIdx = 0;
+                for (const col of columns) {
+                    const val = row[col];
+                    const labelKey = col + '_label';
+                    const label = row[labelKey];
+                    let cellStr = formatCellValue(val);
+                    const isRowCol = colIdx === 0;
+
+                    if (isRowCol && isTableFunc) {
+                        const trimmed = cellStr.replace(/^ +/, '');
+                        if (!trimmed) { cells.push(''); colIdx++; continue; } // separator row
+                        const indent = cellStr.length - trimmed.length;
+                        const prefix = indent > 0 ? '&emsp;'.repeat(indent) : '';
+                        const statLabels = ['Mean', 'Median', 'Std Dev', 'Min', 'Max'];
+                        const isBold = trimmed === 'Base' || trimmed === 'Total' || indent === 0 || statLabels.includes(trimmed);
+                        cells.push(isBold ? `${prefix}**${trimmed}**` : `${prefix}${trimmed}`);
+                    } else if (label !== undefined && label !== null) {
+                        cells.push(`${cellStr} *${label}*`);
+                    } else if (isTableFunc) {
+                        cells.push(_formatCellStacked(cellStr, sigLetters));
+                    } else {
+                        cells.push(cellStr);
+                    }
+                    colIdx++;
+                }
+                md += '| ' + cells.join(' | ') + ' |\n';
+            }
+        }
+
+        md += '\n';
+    }
+
+    // SQL (collapsible)
+    if (response.sql_executed) {
+        const sqlId = 'fnSql_' + Date.now();
+        md += `### SQL Executed\n`;
+        // We'll add this as HTML since markdown code blocks inside the same render work fine
+    }
+
+    // Render markdown
+    let html = '';
+    if (md) {
+        try {
+            html = `<div class="fn-summary fn-summary-md" style="padding: 14px;">${(typeof marked !== 'undefined' && marked.parse) ? marked.parse(md) : escapeHtml(md)}</div>`;
+        } catch(e) {
+            html = `<div class="fn-summary" style="padding: 14px;">${escapeHtml(md)}</div>`;
+        }
+    }
+
+    // SQL section as collapsible HTML block (outside markdown)
+    if (response.sql_executed) {
+        const sqlId = 'fnSql_' + Date.now();
+        html += `
+            <div class="fn-result-block">
+                <div class="fn-result-header">
+                    SQL Executed
+                    <span class="fn-sql-toggle" onclick="document.getElementById('${sqlId}').style.display = document.getElementById('${sqlId}').style.display === 'none' ? '' : 'none';">toggle</span>
+                </div>
+                <pre class="fn-sql-pre" id="${sqlId}" style="display:none;">${escapeHtml(response.sql_executed)}</pre>
+            </div>`;
+    }
+
+    if (!html) {
+        html = '<div class="fn-results-placeholder">Function returned no data</div>';
+    }
+
+    container.innerHTML = html;
+}
+
+/**
+ * Format a table cell value into stacked lines: count, percentage, sig letter.
+ * Input: "37,810 (35.1%) A" → "37,810<br>35.1%<br>**A**"
+ * Input: "1,07,870 (24.8%)" → "1,07,870<br>24.8%"
+ * Input: "4,35,814" → "4,35,814"
+ */
+function _formatCellStacked(cellStr, sigLetters) {
+    if (!cellStr) return '';
+    const s = String(cellStr).trim();
+
+    // Pattern: "count (pct%) [letters]"
+    const match = s.match(/^(.+?)\s+\(([^)]+%)\)\s*([A-Z]*)$/);
+    if (match) {
+        const count = match[1].trim();
+        const pct = match[2].trim();
+        const letters = match[3].trim();
+        let result = `${count}<br>${pct}`;
+        if (letters) {
+            result += `<br>**${letters}**`;
+        }
+        return result;
+    }
+
+    // Just count with possible trailing sig letters
+    if (sigLetters.length > 0) {
+        const letterMatch = s.match(/^(.+?)\s+([A-Z]+)$/);
+        if (letterMatch) {
+            return `${letterMatch[1].trim()}<br>**${letterMatch[2]}**`;
+        }
+    }
+
+    return s;
+}
+
+/**
+ * Parse a table cell like "37,810 (35.1%) A" into stacked HTML lines:
+ *   count on line 1, percentage on line 2, sig letter(s) on line 3.
+ * Falls back to plain escaped text if no pattern matches.
+ */
+function formatTableCellStacked(cellStr, sigLetters) {
+    if (cellStr === null || cellStr === undefined || cellStr === '') return '';
+    const s = String(cellStr).trim();
+    if (!s) return '';
+
+    // Pattern: "count (pct%) [letters]" or "count (pct%)" or just "count"
+    // Examples: "37,810 (35.1%) A", "1,07,870 (24.8%)", "4,35,814"
+    const match = s.match(/^(.+?)\s+\(([^)]+%)\)\s*([A-Z]*)$/);
+    if (match) {
+        const count = match[1].trim();
+        const pct = match[2].trim();
+        const letters = match[3].trim();
+        let html = `<span class="fn-cell-count">${escapeHtml(count)}</span>`;
+        html += `<span class="fn-cell-pct">${escapeHtml(pct)}</span>`;
+        if (letters) {
+            html += `<span class="fn-cell-sig">${escapeHtml(letters)}</span>`;
+        }
+        return html;
+    }
+
+    // No percentage — just a count possibly with sig letters (e.g. base row "4,35,814")
+    // Check for trailing sig letters
+    if (sigLetters.length > 0) {
+        const letterMatch = s.match(/^(.+?)\s+([A-Z]+)$/);
+        if (letterMatch) {
+            return `<span class="fn-cell-count">${escapeHtml(letterMatch[1].trim())}</span><span class="fn-cell-sig">${escapeHtml(letterMatch[2])}</span>`;
+        }
+    }
+
+    return `<span class="fn-cell-count">${escapeHtml(s)}</span>`;
+}
+
+/**
+ * Format a cell value with significance letters highlighted (fallback for non-stacked rendering).
+ */
+function formatCellWithSig(cellStr, sigLetters) {
+    if (!sigLetters || sigLetters.length === 0) return escapeHtml(cellStr);
+    const s = String(cellStr);
+    // Check for trailing sig letters like " A" or " AB"
+    const match = s.match(/^(.+?)\s+([A-Z]+)$/);
+    if (match) {
+        return `${escapeHtml(match[1])} <span class="fn-sig-letter">${escapeHtml(match[2])}</span>`;
+    }
+    return escapeHtml(s);
+}
+
+function renderFnError(message) {
+    const container = document.getElementById('fnResultsContent');
+    if (!container) return;
+    container.innerHTML = `<div class="query-error" style="margin: 12px;">${escapeHtml(message)}</div>`;
+}
+
+function clearFnResults() {
+    const container = document.getElementById('fnResultsContent');
+    if (container) {
+        container.innerHTML = '';
+    }
+    const execInfo = document.getElementById('fnExecInfo');
+    if (execInfo) execInfo.textContent = '';
+    closeFnPopup();
+}
+
+// ============================================
+// FLOATING RESULTS POPUP
+// ============================================
+
+let _fnPopupState = { lastTop: null, lastLeft: null, lastWidth: null, lastHeight: null };
+
+function showFnPopup(execTimeMs, rowCount) {
+    const popup = document.getElementById('fnPopup');
+    const pill = document.getElementById('fnPopupPill');
+    const info = document.getElementById('fnPopupInfo');
+    if (!popup) return;
+
+    // Restore last position/size if we have one
+    if (_fnPopupState.lastTop !== null) {
+        popup.style.top = _fnPopupState.lastTop;
+        popup.style.left = _fnPopupState.lastLeft;
+        popup.style.right = 'auto';
+        popup.style.width = _fnPopupState.lastWidth;
+        popup.style.height = _fnPopupState.lastHeight;
+    }
+
+    popup.classList.add('visible');
+    if (pill) pill.classList.remove('visible');
+
+    // Show info
+    if (info) {
+        if (execTimeMs || rowCount) {
+            info.textContent = `${formatNumber(rowCount)} rows in ${execTimeMs}ms`;
+        } else {
+            info.textContent = '';
+        }
+    }
+}
+
+function closeFnPopup() {
+    const popup = document.getElementById('fnPopup');
+    const pill = document.getElementById('fnPopupPill');
+    if (popup) popup.classList.remove('visible');
+    if (pill) pill.classList.remove('visible');
+}
+
+function minimizeFnPopup() {
+    const popup = document.getElementById('fnPopup');
+    const pill = document.getElementById('fnPopupPill');
+    const pillInfo = document.getElementById('fnPillInfo');
+    const popupInfo = document.getElementById('fnPopupInfo');
+
+    if (!popup) return;
+
+    // Save current position/size before hiding
+    _fnPopupState.lastTop = popup.style.top || popup.offsetTop + 'px';
+    _fnPopupState.lastLeft = popup.style.left || null;
+    _fnPopupState.lastWidth = popup.style.width || popup.offsetWidth + 'px';
+    _fnPopupState.lastHeight = popup.style.height || popup.offsetHeight + 'px';
+
+    popup.classList.remove('visible');
+    if (pill) pill.classList.add('visible');
+    if (pillInfo && popupInfo) pillInfo.textContent = popupInfo.textContent;
+}
+
+function restoreFnPopup() {
+    const popup = document.getElementById('fnPopup');
+    const pill = document.getElementById('fnPopupPill');
+    if (!popup) return;
+
+    // Restore saved position/size
+    if (_fnPopupState.lastTop !== null) {
+        popup.style.top = _fnPopupState.lastTop;
+        popup.style.left = _fnPopupState.lastLeft;
+        popup.style.right = _fnPopupState.lastLeft ? 'auto' : '';
+        popup.style.width = _fnPopupState.lastWidth;
+        popup.style.height = _fnPopupState.lastHeight;
+    }
+
+    popup.classList.add('visible');
+    if (pill) pill.classList.remove('visible');
+}
+
+// Drag logic for popup header
+(function initFnPopupDrag() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const header = document.getElementById('fnPopupHeader');
+        const popup = document.getElementById('fnPopup');
+        if (!header || !popup) return;
+
+        let isDragging = false, offsetX = 0, offsetY = 0;
+
+        header.addEventListener('mousedown', (e) => {
+            // Don't drag if clicking a button
+            if (e.target.closest('.fn-popup-btn') || e.target.closest('.fn-popup-actions')) return;
+            isDragging = true;
+            const rect = popup.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            // Immediately convert to left-based positioning
+            popup.style.left = rect.left + 'px';
+            popup.style.top = rect.top + 'px';
+            popup.style.right = 'auto';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            popup.style.left = (e.clientX - offsetX) + 'px';
+            popup.style.top = (e.clientY - offsetY) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                // Save position
+                _fnPopupState.lastTop = popup.style.top;
+                _fnPopupState.lastLeft = popup.style.left;
+            }
+        });
+    });
+})();
+
+// Resize logic for bottom-right handle
+(function initFnPopupResize() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const handle = document.getElementById('fnPopupResizeHandle');
+        const popup = document.getElementById('fnPopup');
+        if (!handle || !popup) return;
+
+        let isResizing = false, startX, startY, startW, startH;
+
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startW = popup.offsetWidth;
+            startH = popup.offsetHeight;
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const newW = Math.max(400, startW + (e.clientX - startX));
+            const newH = Math.max(300, startH + (e.clientY - startY));
+            popup.style.width = newW + 'px';
+            popup.style.height = newH + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                // Save size
+                _fnPopupState.lastWidth = popup.style.width;
+                _fnPopupState.lastHeight = popup.style.height;
+            }
+        });
+    });
+})();
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -2643,4 +3351,154 @@ function showPageError(message) {
     document.getElementById('pageLoading').innerHTML = `
         <div class="query-error">${escapeHtml(message)}</div>
     `;
+}
+
+// ============================================
+// QUESTIONS TAB
+// ============================================
+
+function populateQuestionFileFilter() {
+    const sel = document.getElementById('questionFileFilter');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select file...</option>';
+    const readyFiles = files.filter(f => f.status === 'ready');
+    readyFiles.forEach(f => {
+        sel.innerHTML += `<option value="${f.id}">${escapeHtml(f.file_name || f.fileName)}</option>`;
+    });
+    // Auto-select first ready file
+    if (readyFiles.length > 0) {
+        sel.value = readyFiles[0].id;
+    }
+}
+
+async function loadQuestions() {
+    const fileId = document.getElementById('questionFileFilter')?.value;
+    if (!fileId) {
+        document.getElementById('questionsEmpty').style.display = 'flex';
+        document.getElementById('questionsContent').innerHTML = '';
+        document.getElementById('questionsToolbar').style.display = 'none';
+        return;
+    }
+
+    const loadingEl = document.getElementById('questionsLoading');
+    const contentEl = document.getElementById('questionsContent');
+    const emptyEl = document.getElementById('questionsEmpty');
+    const toolbarEl = document.getElementById('questionsToolbar');
+
+    loadingEl.style.display = 'flex';
+    contentEl.innerHTML = '';
+    emptyEl.style.display = 'none';
+
+    try {
+        const resp = await api.request(`/research/projects/${projectId}/files/${fileId}/questions`);
+        loadingEl.style.display = 'none';
+
+        if (!resp.success || !resp.questions || resp.questions.length === 0) {
+            emptyEl.style.display = 'flex';
+            toolbarEl.style.display = 'none';
+            questionsLoaded = true;
+            return;
+        }
+
+        questionsData = resp.questions;
+        filteredQuestions = [...questionsData];
+        questionsLoaded = true;
+        toolbarEl.style.display = 'flex';
+        renderQuestions();
+    } catch (err) {
+        loadingEl.style.display = 'none';
+        contentEl.innerHTML = `<div class="query-error">Failed to load questions: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function filterQuestions() {
+    const search = (document.getElementById('questionSearch')?.value || '').toLowerCase();
+    const typeFilter = document.getElementById('questionTypeFilter')?.value || '';
+
+    filteredQuestions = questionsData.filter(q => {
+        if (typeFilter && q.question_type !== typeFilter) return false;
+        if (search) {
+            const matchLabel = (q.question_label || '').toLowerCase().includes(search);
+            const matchId = (q.question_id || '').toLowerCase().includes(search);
+            const matchVars = (q.variable_names || []).some(v => v.toLowerCase().includes(search));
+            const matchAttrs = (q.attribute_labels || []).some(a => a.toLowerCase().includes(search));
+            if (!matchLabel && !matchId && !matchVars && !matchAttrs) return false;
+        }
+        return true;
+    });
+
+    renderQuestions();
+}
+
+function renderQuestions() {
+    const contentEl = document.getElementById('questionsContent');
+    const countLabel = document.getElementById('questionCountLabel');
+
+    if (filteredQuestions.length === 0) {
+        contentEl.innerHTML = '<div class="empty-state"><p>No matching questions</p></div>';
+        if (countLabel) countLabel.textContent = '';
+        return;
+    }
+
+    if (countLabel) {
+        countLabel.textContent = `${filteredQuestions.length} of ${questionsData.length} questions`;
+    }
+
+    const html = filteredQuestions.map((q, idx) => {
+        const conf = q.confidence || 0;
+        const confClass = conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low';
+        const confPct = Math.round(conf * 100);
+
+        // Build variable-attribute pairs
+        let varAttrMap = {};
+        if (q.variable_attribute_map) {
+            // Parse "Q0341=Coca Cola, Q0342=Pepsi" format
+            q.variable_attribute_map.split(',').forEach(pair => {
+                const [varName, attr] = pair.split('=').map(s => s.trim());
+                if (varName && attr) varAttrMap[varName] = attr;
+            });
+        }
+
+        const varItems = (q.variable_names || []).map((v, vi) => {
+            const attr = varAttrMap[v] || (q.attribute_labels && q.attribute_labels[vi]) || '';
+            return `<div class="question-variable-item">
+                <span class="question-variable-name">${escapeHtml(v)}</span>
+                ${attr ? `<span class="question-variable-attr">→ ${escapeHtml(attr)}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        const valueLabels = q.shared_value_labels
+            ? `<div class="question-value-labels"><strong>Value Labels:</strong> ${escapeHtml(q.shared_value_labels)}</div>`
+            : '';
+
+        return `<div class="question-card" id="qcard-${idx}">
+            <div class="question-card-header" onclick="toggleQuestionCard(${idx})">
+                <svg class="question-expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <span class="question-type-badge ${q.question_type || 'unknown'}">${(q.question_type || 'unknown').replace(/_/g, ' ')}</span>
+                <span class="question-card-label" title="${escapeHtml(q.question_label || q.question_id)}">${escapeHtml(q.question_label || q.question_id)}</span>
+                <div class="question-card-meta">
+                    <span>${q.variable_count || 0} vars</span>
+                    <span class="question-confidence">
+                        <span class="confidence-dot ${confClass}"></span>
+                        ${confPct}%
+                    </span>
+                </div>
+            </div>
+            <div class="question-card-body">
+                <div class="question-variables-list">
+                    ${varItems}
+                </div>
+                ${valueLabels}
+            </div>
+        </div>`;
+    }).join('');
+
+    contentEl.innerHTML = html;
+}
+
+function toggleQuestionCard(idx) {
+    const card = document.getElementById(`qcard-${idx}`);
+    if (card) card.classList.toggle('expanded');
 }

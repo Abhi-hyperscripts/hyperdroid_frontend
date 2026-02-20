@@ -292,6 +292,175 @@
             margin-left: auto;
         }
 
+        /* Questions Toolbar (reuses .variables-toolbar pattern) */
+        .questions-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .questions-toolbar input,
+        .questions-toolbar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            transition: border-color 0.15s ease;
+        }
+        .questions-toolbar input:focus,
+        .questions-toolbar select:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+        .questions-toolbar input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* Question Card */
+        .question-card {
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(16px) saturate(1.4);
+            -webkit-backdrop-filter: blur(16px) saturate(1.4);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .question-card:hover {
+            border-color: rgba(var(--brand-primary-rgb), 0.35);
+            box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.08);
+        }
+        [data-theme="dark"] .question-card {
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                rgba(var(--bg-card-rgb, 30, 41, 59), 0.06);
+            border-color: var(--border-color-light);
+        }
+        .question-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .question-card-header:hover {
+            background: rgba(var(--brand-primary-rgb), 0.04);
+        }
+        .question-expand-icon {
+            transition: transform 0.2s ease;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+        .question-card.expanded .question-expand-icon {
+            transform: rotate(90deg);
+        }
+        .question-type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .question-type-badge.multi_response { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .question-type-badge.grid { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .question-type-badge.single { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .question-type-badge.numeric_scale { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+        .question-type-badge.text { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+        .question-type-badge.rank { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .question-type-badge.loop_group { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+        .question-type-badge.unknown { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+        .question-card-label {
+            flex: 1;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .question-card-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+        .question-confidence {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .confidence-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .confidence-dot.high { background: #22c55e; }
+        .confidence-dot.medium { background: #eab308; }
+        .confidence-dot.low { background: #ef4444; }
+
+        /* Question Card Body (collapsed by default) */
+        .question-card-body {
+            display: none;
+            padding: 0 16px 14px;
+            border-top: 1px solid var(--border-color-light);
+        }
+        .question-card.expanded .question-card-body {
+            display: block;
+        }
+        .question-variables-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .question-variable-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: rgba(var(--brand-primary-rgb), 0.04);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        .question-variable-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--brand-primary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .question-variable-attr {
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .question-value-labels {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(var(--brand-primary-rgb), 0.03);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .question-value-labels strong {
+            color: var(--text-primary);
+        }
+
         /* Variables Table (Desktop) */
         .variables-table-container {
             background:
@@ -1894,6 +2063,370 @@
             font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
         }
 
+        /* ── Functions Tab ── */
+        .fn-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .fn-file-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            min-width: 200px;
+            transition: border-color 0.15s ease;
+        }
+        .fn-file-select:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+        .fn-exec-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .fn-editor-full {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Floating results popup */
+        .fn-popup {
+            display: none;
+            position: fixed;
+            top: 100px;
+            right: 40px;
+            width: 720px;
+            height: 560px;
+            min-width: 400px;
+            min-height: 300px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            z-index: 9000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .fn-popup.visible { display: flex; }
+        .fn-popup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            cursor: grab;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .fn-popup-header:active { cursor: grabbing; }
+        .fn-popup-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .fn-popup-info {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-right: auto;
+        }
+        .fn-popup-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .fn-popup-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: background 0.15s, color 0.15s;
+        }
+        .fn-popup-btn:hover {
+            background: rgba(var(--brand-primary-rgb), 0.12);
+            color: var(--text-primary);
+        }
+        .fn-popup-body {
+            flex: 1;
+            overflow: auto;
+            padding: 0;
+        }
+        .fn-popup-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 18px;
+            height: 18px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 50%, rgba(var(--brand-primary-rgb), 0.25) 50%);
+            border-radius: 0 0 12px 0;
+        }
+
+        /* Minimized pill */
+        .fn-popup-pill {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--brand-primary);
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 9000;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .fn-popup-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .fn-popup-pill.visible { display: flex; gap: 8px; align-items: center; }
+        .fn-popup-pill-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Tool call row hover in AI Logs */
+        .tool-call-row:hover {
+            background: var(--bg-secondary);
+        }
+
+        /* Markdown summary inside popup */
+        .fn-summary-md h1, .fn-summary-md h2, .fn-summary-md h3, .fn-summary-md h4 {
+            margin: 0 0 6px 0;
+            color: var(--brand-primary-light);
+        }
+        .fn-summary-md h1 { font-size: 0.92rem; font-weight: 600; }
+        .fn-summary-md h2 { font-size: 0.86rem; font-weight: 600; margin-top: 10px; }
+        .fn-summary-md h3 { font-size: 0.82rem; font-weight: 600; margin-top: 8px; }
+        .fn-summary-md p { margin: 0 0 6px 0; line-height: 1.5; }
+        .fn-summary-md ul, .fn-summary-md ol { margin: 4px 0 8px 0; padding-left: 20px; }
+        .fn-summary-md li { padding: 2px 0; line-height: 1.5; }
+        .fn-summary-md strong { color: var(--text-primary); font-weight: 550; }
+        .fn-summary-md em { color: var(--text-secondary); font-style: italic; }
+        .fn-summary-md code {
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.78rem;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+        }
+        /* Markdown tables inside popup */
+        .fn-summary-md table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin: 6px 0 14px 0;
+        }
+        .fn-summary-md table th,
+        .fn-summary-md table td {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+            line-height: 1.45;
+        }
+        .fn-summary-md table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .fn-summary-md table td {
+            color: var(--text-secondary);
+        }
+        .fn-summary-md table tr:hover td {
+            background: rgba(var(--brand-primary-rgb), 0.04);
+        }
+        /* Row label column - first column */
+        .fn-summary-md table td:first-child {
+            color: var(--text-primary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .fn-library {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .fn-library-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding-top: 4px;
+        }
+        .fn-library-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .fn-chip {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .fn-chip:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+        .fn-chip.active {
+            background: rgba(var(--brand-primary-rgb), 0.15);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            font-weight: 600;
+        }
+        .fn-editor {
+            width: 100%;
+            flex: 1;
+            min-height: 200px;
+            padding: 12px;
+            font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Code', monospace);
+            font-size: 0.82rem;
+            line-height: 1.5;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            resize: vertical;
+            transition: border-color 0.15s ease;
+        }
+        .fn-editor:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+        .fn-editor::placeholder {
+            color: var(--text-muted);
+        }
+        .fn-info {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .fn-info strong {
+            color: var(--text-primary);
+        }
+        .fn-results-placeholder {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .fn-result-block {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .fn-result-block:last-child {
+            border-bottom: none;
+        }
+        .fn-result-header {
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .fn-result-body {
+            padding: 0;
+            overflow: auto;
+            max-height: 400px;
+        }
+        .fn-stats-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px 14px;
+        }
+        .fn-stat-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(var(--brand-primary-rgb), 0.1);
+            font-size: 0.73rem;
+        }
+        .fn-stat-chip .stat-label {
+            color: var(--text-secondary);
+        }
+        .fn-stat-chip .stat-value {
+            color: var(--brand-primary);
+            font-weight: 600;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+        }
+        .fn-val-label {
+            color: var(--brand-primary);
+            font-size: 0.72rem;
+            font-weight: 500;
+            opacity: 0.85;
+        }
+        .fn-sql-toggle {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+        .fn-sql-toggle:hover {
+            color: var(--text-secondary);
+        }
+        .fn-sql-pre {
+            margin: 0;
+            padding: 12px 14px;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: var(--bg-primary);
+        }
+        .fn-summary {
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        @media (max-width: 900px) {
+            .fn-popup {
+                width: 95vw;
+                right: 2.5vw;
+                left: auto;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .research-container {
@@ -2057,12 +2590,27 @@
                     </svg>
                     Variables
                 </button>
+                <button class="tab-btn" data-tab="questions" onclick="switchTab('questions')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    Questions
+                </button>
                 <button class="tab-btn" data-tab="query" onclick="switchTab('query')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
                         <polyline points="16 18 22 12 16 6"/>
                         <polyline points="8 6 2 12 8 18"/>
                     </svg>
                     Query
+                </button>
+                <button class="tab-btn" data-tab="functions" onclick="switchTab('functions')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <path d="M9 9h6M9 13h4"/>
+                    </svg>
+                    Functions
                 </button>
                 <button class="tab-btn" data-tab="ailogs" onclick="switchTab('ailogs')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
@@ -2115,6 +2663,41 @@
                     </svg>
                     <p class="empty-title">No variables found</p>
                     <p>Upload and parse a file to see variable definitions.</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Questions -->
+            <div class="tab-content" id="questionsTab">
+                <div class="questions-toolbar" id="questionsToolbar" style="display: none;">
+                    <input type="text" id="questionSearch" placeholder="Search questions..." oninput="filterQuestions()">
+                    <select id="questionTypeFilter" onchange="filterQuestions()">
+                        <option value="">All types</option>
+                        <option value="multi_response">Multi Response</option>
+                        <option value="grid">Grid</option>
+                        <option value="single">Single</option>
+                        <option value="numeric_scale">Numeric Scale</option>
+                        <option value="text">Text</option>
+                        <option value="rank">Rank</option>
+                        <option value="loop_group">Loop Group</option>
+                    </select>
+                    <select id="questionFileFilter" onchange="loadQuestions()">
+                        <option value="">Select file...</option>
+                    </select>
+                    <span class="variable-count-label" id="questionCountLabel"></span>
+                </div>
+                <div id="questionsLoading" class="loading-state" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading question groups...</p>
+                </div>
+                <div id="questionsContent"></div>
+                <div id="questionsEmpty" class="empty-state" style="display: none;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <p class="empty-title">No question groups found</p>
+                    <p>Question groups are generated automatically when an SPSS file is uploaded and parsed.</p>
                 </div>
             </div>
 
@@ -2221,6 +2804,42 @@
                     <p>Chat with the AI assistant to see interaction logs here.</p>
                 </div>
                 <div id="aiLogsPagination" class="pagination-controls" style="display: none;"></div>
+            </div>
+
+            <!-- Tab Content: Functions -->
+            <div class="tab-content" id="functionsTab">
+                <!-- Functions toolbar -->
+                <div class="fn-toolbar">
+                    <select id="fnFileSelect" class="fn-file-select">
+                        <option value="">Auto (first ready file)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="executeFn()" id="fnRunBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Execute Function
+                    </button>
+                    <span class="fn-exec-info" id="fnExecInfo"></span>
+                    <button class="btn btn-secondary" onclick="clearFnResults()" style="margin-left:auto;">Clear</button>
+                </div>
+
+                <!-- Full-width editor -->
+                <div class="fn-editor-full">
+                    <!-- Function library chips -->
+                    <div class="fn-library" id="fnLibrary">
+                        <div class="fn-library-label">Functions:</div>
+                        <div class="fn-library-chips" id="fnLibraryChips">
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- JSON editor -->
+                    <textarea class="fn-editor" id="fnEditor"
+                        placeholder='{ "function_name": "frequency", "input_params": { "variable": "Gender" } }'
+                        rows="14"></textarea>
+                    <!-- Selected function info -->
+                    <div class="fn-info" id="fnInfo" style="display:none;"></div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -2369,6 +2988,26 @@
         </div>
     </div>
 
+    <!-- Tool Call Detail Modal -->
+    <div id="toolCallModal" class="modal">
+        <div class="modal-dialog" style="max-width: 800px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="toolCallModalTitle">Tool Call Details</h5>
+                    <button class="close-btn" onclick="closeModal('toolCallModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding: 0;">
+                    <div id="toolCallModalBody" style="max-height: 70vh; overflow: auto; padding: 16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -2387,5 +3026,22 @@
             }
         });
     </script>
+    <!-- Floating results popup (body-level to avoid ancestor transform/filter issues) -->
+    <div class="fn-popup" id="fnPopup">
+        <div class="fn-popup-header" id="fnPopupHeader">
+            <span class="fn-popup-title">Function Results</span>
+            <span class="fn-popup-info" id="fnPopupInfo"></span>
+            <div class="fn-popup-actions">
+                <button class="fn-popup-btn" onclick="minimizeFnPopup()" title="Minimize">&#x2500;</button>
+                <button class="fn-popup-btn" onclick="closeFnPopup()" title="Close">&#x2715;</button>
+            </div>
+        </div>
+        <div class="fn-popup-body" id="fnResultsContent"></div>
+        <div class="fn-popup-resize-handle" id="fnPopupResizeHandle"></div>
+    </div>
+    <div class="fn-popup-pill" id="fnPopupPill" onclick="restoreFnPopup()">
+        <span>Function Results</span>
+        <span class="fn-popup-pill-info" id="fnPillInfo"></span>
+    </div>
 </body>
 </html>
