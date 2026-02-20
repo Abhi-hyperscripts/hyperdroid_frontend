@@ -2975,16 +2975,18 @@
     }
 
     .nav-logo {
-        height: 22px;
+        height: 18px;
     }
 
     .nav-cta {
         gap: 8px;
+        flex-shrink: 0;
     }
 
     .nav-cta .btn-secondary {
-        padding: 8px 14px;
+        padding: 6px 12px;
         font-size: 12px;
+        white-space: nowrap;
     }
 
     /* Hide "Get Started" on mobile, keep "Sign In" visible */
