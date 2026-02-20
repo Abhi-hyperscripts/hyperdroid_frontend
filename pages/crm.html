@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>CRM Software with Sales Pipeline & Lead Management | Ragenaizer</title>
+    <meta name="description" content="CRM software with visual sales pipeline, real-time notifications, Facebook Lead Ads integration, and webhook capture. Kanban deal tracking, contact management, activity logging. Free to start.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="CRM software, sales pipeline, lead management, deal tracking, Kanban CRM, Facebook lead ads integration, webhook CRM, real-time notifications CRM, contact management, sales automation, lead capture software, deal pipeline management, sales CRM free, CRM with webhooks, lead scoring software">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/crm.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/crm.html">
+    <meta property="og:title" content="CRM Software - Sales Pipeline & Lead Management | Ragenaizer">
+    <meta property="og:description" content="Visual deal pipeline, real-time notifications, Facebook Lead Ads integration. Track every lead, close more deals. Free to start.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-crm.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="CRM with Sales Pipeline & Lead Capture | Ragenaizer">
+    <meta name="twitter:description" content="Visual Kanban pipeline, Facebook Lead Ads, webhook capture, real-time notifications. Free CRM for sales teams.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-crm.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://ragenaizer.com/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Products",
+                "item": "https://ragenaizer.com/#products"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "CRM",
+                "item": "https://ragenaizer.com/pages/crm.html"
+            }
+        ]
+    }
+    </script>
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ragenaizer CRM",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "CRM software with visual sales pipeline, lead management, Facebook Lead Ads integration, webhook capture, real-time notifications, and activity tracking.",
+        "url": "https://ragenaizer.com/pages/crm.html",
+        "author": {
+            "@type": "Organization",
+            "name": "Ragenaizer"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Visual Deal Pipeline",
+            "Lead Capture via Webhooks",
+            "Facebook Lead Ads Integration",
+            "Real-Time Notifications",
+            "Contact & Company Management",
+            "Task & Activity Tracking",
+            "Multi-Pipeline Support",
+            "Custom Fields (JSONB)"
+        ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+
+    <!-- Page-specific styles -->
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           CRM PAGE — Pipeline & Lead Management Styles
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* Kanban Pipeline Mockup */
+        .crm-pipeline-mockup {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+        }
+        .pipeline-column {
+            flex: 1;
+            min-width: 0;
+        }
+        .pipeline-column-header {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .pipeline-column-header.qual {
+            color: rgba(59, 130, 246, 0.9);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .pipeline-column-header.proposal {
+            color: rgba(245, 158, 11, 0.9);
+            background: rgba(245, 158, 11, 0.1);
+        }
+        .pipeline-column-header.negotiation {
+            color: rgba(139, 92, 246, 0.9);
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .deal-card-mock {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 6px;
+        }
+        .deal-card-mock .deal-name {
+            font-size: 10px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+        .deal-card-mock .deal-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #34d399;
+        }
+        .deal-card-mock .deal-company {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .pipeline-arrow {
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            transform: translateY(-50%);
+        }
+
+        /* How It Works Flowchart */
+        .crm-flowchart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            max-width: 1000px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .crm-flow-step {
+            flex: 1;
+            min-width: 180px;
+            text-align: center;
+            padding: 24px 16px;
+            position: relative;
+        }
+        .crm-flow-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .crm-flow-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+        .crm-flow-icon.input-icon {
+            background: rgba(59, 130, 246, 0.1);
+            color: rgba(59, 130, 246, 0.8);
+        }
+        .crm-flow-icon.capture-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: rgba(16, 185, 129, 0.8);
+        }
+        .crm-flow-icon.qualify-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: rgba(245, 158, 11, 0.8);
+        }
+        .crm-flow-icon.close-icon {
+            background: rgba(139, 92, 246, 0.1);
+            color: rgba(139, 92, 246, 0.8);
+        }
+        .crm-flow-step h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .crm-flow-step p {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        .crm-flow-arrow {
+            width: 40px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+        }
+        .crm-flow-arrow svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Webhook Demo */
+        .integration-section {
+            padding: 100px 60px;
+        }
+        .integration-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 48px;
+            max-width: 1000px;
+            margin: 0 auto;
+            align-items: center;
+        }
+        .integration-text h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+        .integration-text p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+        .webhook-demo {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .webhook-demo-header {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .webhook-method {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(16, 185, 129, 0.9);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .webhook-url {
+            font-size: 11px;
+            color: #94a3b8;
+            font-family: 'Electrolize', monospace;
+        }
+        .code-block {
+            padding: 20px;
+            font-family: 'Electrolize', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            overflow-x: auto;
+        }
+        .code-block .code-key { color: #a78bfa; }
+        .code-block .code-string { color: #34d399; }
+        .code-block .code-comment { color: rgba(255, 255, 255, 0.4); font-style: italic; }
+        .webhook-response {
+            padding: 12px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .response-status {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(16, 185, 129, 0.9);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .response-text {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        /* Dashboard Preview */
+        .crm-dashboard-section {
+            padding: 100px 60px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .crm-dashboard-preview {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .dash-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .dash-card-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 16px;
+        }
+        /* Pipeline Summary */
+        .pipeline-summary {
+            display: flex;
+            gap: 8px;
+        }
+        .pipeline-stage-bar {
+            flex: 1;
+            border-radius: 6px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+        .pipeline-stage-bar.qual-bar { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.15); }
+        .pipeline-stage-bar.prop-bar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.15); }
+        .pipeline-stage-bar.neg-bar { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.15); }
+        .pipeline-stage-bar.won-bar { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.15); }
+        .pipeline-stage-bar .stage-count {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .pipeline-stage-bar .stage-name {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.65);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* Funnel */
+        .funnel-viz {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .funnel-bar {
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            font-size: 11px;
+            font-weight: 600;
+            justify-content: space-between;
+        }
+        .funnel-bar .funnel-label { color: #e2e8f0; }
+        .funnel-bar .funnel-count { color: #94a3b8; font-size: 10px; }
+        .funnel-bar:nth-child(1) { width: 100%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .funnel-bar:nth-child(2) { width: 78%; background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.18); }
+        .funnel-bar:nth-child(3) { width: 52%; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.18); }
+        .funnel-bar:nth-child(4) { width: 30%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.2); }
+        /* Activity Feed */
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .activity-dot.new-lead { background: rgba(59, 130, 246, 0.6); }
+        .activity-dot.deal-moved { background: rgba(245, 158, 11, 0.6); }
+        .activity-dot.deal-won { background: rgba(16, 185, 129, 0.6); }
+        .activity-info {
+            flex: 1;
+        }
+        .activity-info .activity-text {
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+        .activity-info .activity-text strong {
+            color: #f1f5f9;
+        }
+        .activity-info .activity-time {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
+        /* Tasks */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        .task-check {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+        }
+        .task-item .task-text {
+            font-size: 12px;
+            color: #cbd5e1;
+            flex: 1;
+        }
+        .task-item .task-due {
+            font-size: 10px;
+            color: rgba(245, 158, 11, 0.7);
+            font-weight: 600;
+        }
+        .task-item .task-due.overdue {
+            color: rgba(239, 68, 68, 0.7);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .integration-section,
+            .crm-dashboard-section {
+                padding: 60px 20px;
+            }
+            .integration-grid {
+                grid-template-columns: 1fr;
+            }
+            .crm-dashboard-preview {
+                grid-template-columns: 1fr;
+            }
+            .crm-flowchart {
+                flex-direction: column;
+            }
+            .crm-flow-arrow {
+                transform: rotate(90deg);
+            }
+            .crm-pipeline-mockup {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="landing-page landing-crm">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">Sales CRM</div>
+                <h1 class="hero-title">
+                    Close deals faster.<br>
+                    <span class="highlight">Lose leads never.</span>
+                </h1>
+                <p class="hero-description">
+                    Visual pipeline, real-time notifications, Facebook Lead Ads integration, and webhook capture from any landing page. Every lead tracked. Every deal visible.
+                </p>
+                <div class="hero-actions">
+                    <a href="activate.html" class="btn-primary">Start Free CRM</a>
+                    <a href="#features" class="btn-secondary">See Features</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">Real-Time</div>
+                        <div class="stat-label">Notifications</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">16+</div>
+                        <div class="stat-label">Event Types</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Multi</div>
+                        <div class="stat-label">Pipeline Support</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                    </div>
+                    <div class="mockup-content crm-pipeline-mockup">
+                        <div class="pipeline-column">
+                            <div class="pipeline-column-header qual">Qualification</div>
+                            <div class="deal-card-mock">
+                                <div class="deal-name">Website Redesign</div>
+                                <div class="deal-value">$12,500</div>
+                                <div class="deal-company">Acme Corp</div>
+                            </div>
+                            <div class="deal-card-mock">
+                                <div class="deal-name">SEO Audit</div>
+                                <div class="deal-value">$4,200</div>
+                                <div class="deal-company">TechStart Inc</div>
+                            </div>
+                        </div>
+                        <div class="pipeline-column">
+                            <div class="pipeline-column-header proposal">Proposal</div>
+                            <div class="deal-card-mock">
+                                <div class="deal-name">Enterprise License</div>
+                                <div class="deal-value">$48,000</div>
+                                <div class="deal-company">GlobalFin</div>
+                            </div>
+                        </div>
+                        <div class="pipeline-column">
+                            <div class="pipeline-column-header negotiation">Negotiation</div>
+                            <div class="deal-card-mock">
+                                <div class="deal-name">API Integration</div>
+                                <div class="deal-value">$22,000</div>
+                                <div class="deal-company">DataFlow Ltd</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <div class="section-badge">Features</div>
+            <h2 class="section-title">Everything you need to manage your sales pipeline</h2>
+            <p class="section-description">
+                From lead capture to deal close — a complete CRM built for teams that want visibility, speed, and zero missed opportunities.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card blue">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="9" rx="2"/>
+                        <rect x="14" y="3" width="7" height="5" rx="2"/>
+                        <rect x="14" y="12" width="7" height="9" rx="2"/>
+                        <rect x="3" y="16" width="7" height="5" rx="2"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Visual Deal Pipeline</h3>
+                <p class="feature-description">Drag deals through customizable stages. Multiple pipelines, win probability tracking, stage history with time-in-stage analytics.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Lead Capture & Webhooks</h3>
+                <p class="feature-description">Receive leads from any source via webhooks. Custom field mapping, auto-assignment, quality scoring. Redis-backed async processing with retry.</p>
+            </div>
+
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Facebook Lead Ads</h3>
+                <p class="feature-description">Native OAuth integration with Facebook. Auto-import leads from Lead Ad forms. Real-time webhook notifications. Multi-page support.</p>
+            </div>
+
+            <div class="feature-card cyan">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Real-Time Notifications</h3>
+                <p class="feature-description">SignalR-powered live updates. 16 event types: new leads, deal stage changes, task assignments, won/lost deals. Push notifications to mobile.</p>
+            </div>
+
+            <div class="feature-card orange">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Contact & Company Management</h3>
+                <p class="feature-description">Full contact database linked to companies and deals. Custom fields, tags, activity history. Track every interaction across your pipeline.</p>
+            </div>
+
+            <div class="feature-card pink">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                        <rect x="9" y="3" width="6" height="4" rx="2"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Task & Activity Tracking</h3>
+                <p class="feature-description">Log calls, emails, meetings, notes. Assign tasks with priorities and due dates. Track overdue items. Full activity timeline per entity.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="flowchart-section">
+        <div class="section-header">
+            <div class="section-badge">How It Works</div>
+            <h2 class="section-title">From lead to closed deal</h2>
+            <p class="section-description">
+                Every lead flows through a clear process — captured automatically, qualified by your team, and tracked through every pipeline stage.
+            </p>
+        </div>
+
+        <div class="crm-flowchart">
+            <div class="crm-flow-step">
+                <div class="crm-flow-icon input-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </div>
+                <h4>Capture</h4>
+                <p>Landing pages, Facebook, Google Forms, API — all sources feed in automatically</p>
+            </div>
+            <div class="crm-flow-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </div>
+            <div class="crm-flow-step">
+                <div class="crm-flow-icon capture-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <h4>Process</h4>
+                <p>Redis queue, webhook validation, field mapping, scoring, auto-assignment</p>
+            </div>
+            <div class="crm-flow-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </div>
+            <div class="crm-flow-step">
+                <div class="crm-flow-icon qualify-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h4>Qualify</h4>
+                <p>Score leads, assign contacts, convert to deals in your pipeline</p>
+            </div>
+            <div class="crm-flow-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </div>
+            <div class="crm-flow-step">
+                <div class="crm-flow-icon close-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <h4>Close</h4>
+                <p>Pipeline stages, won/lost tracking, reason codes, full analytics</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration Highlight -->
+    <section class="integration-section">
+        <div class="section-header">
+            <div class="section-badge">Integrations</div>
+            <h2 class="section-title">Capture leads from everywhere</h2>
+        </div>
+
+        <div class="integration-grid">
+            <div class="integration-text">
+                <h3>Point any form to your webhook URL</h3>
+                <p>Google Forms, Typeform, custom landing pages, Facebook Lead Ads — all captured automatically with field mapping. Every lead enters your pipeline in real-time with quality scoring and auto-assignment.</p>
+            </div>
+            <div class="webhook-demo">
+                <div class="webhook-demo-header">
+                    <span class="webhook-method">POST</span>
+                    <span class="webhook-url">api.ragenaizer.com/api/leads/capture/{key}</span>
+                </div>
+                <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="code-key">"name"</span>: <span class="code-string">"Jane Doe"</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"email"</span>: <span class="code-string">"jane@company.com"</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"company"</span>: <span class="code-string">"Acme Corp"</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"source"</span>: <span class="code-string">"Google Ads Landing Page"</span><br>
+}
+                </div>
+                <div class="webhook-response">
+                    <span class="response-status">202</span>
+                    <span class="response-text">Accepted — processed async via Redis queue</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview -->
+    <section class="crm-dashboard-section" id="dashboard">
+        <div class="section-header">
+            <div class="section-badge">Dashboard</div>
+            <h2 class="section-title">Your sales at a glance</h2>
+        </div>
+
+        <div class="crm-dashboard-preview">
+            <div class="dash-card">
+                <div class="dash-card-title">Pipeline Summary</div>
+                <div class="pipeline-summary">
+                    <div class="pipeline-stage-bar qual-bar">
+                        <div class="stage-count">12</div>
+                        <div class="stage-name">Qualify</div>
+                    </div>
+                    <div class="pipeline-stage-bar prop-bar">
+                        <div class="stage-count">8</div>
+                        <div class="stage-name">Proposal</div>
+                    </div>
+                    <div class="pipeline-stage-bar neg-bar">
+                        <div class="stage-count">5</div>
+                        <div class="stage-name">Negotiate</div>
+                    </div>
+                    <div class="pipeline-stage-bar won-bar">
+                        <div class="stage-count">3</div>
+                        <div class="stage-name">Won</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-title">Lead Funnel</div>
+                <div class="funnel-viz">
+                    <div class="funnel-bar">
+                        <span class="funnel-label">New</span>
+                        <span class="funnel-count">248 leads</span>
+                    </div>
+                    <div class="funnel-bar">
+                        <span class="funnel-label">Contacted</span>
+                        <span class="funnel-count">194 leads</span>
+                    </div>
+                    <div class="funnel-bar">
+                        <span class="funnel-label">Qualified</span>
+                        <span class="funnel-count">128 leads</span>
+                    </div>
+                    <div class="funnel-bar">
+                        <span class="funnel-label">Converted</span>
+                        <span class="funnel-count">74 deals</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-title">Recent Activity</div>
+                <div class="activity-feed">
+                    <div class="activity-item">
+                        <div class="activity-dot new-lead"></div>
+                        <div class="activity-info">
+                            <div class="activity-text"><strong>New lead</strong> from Facebook Ads — Sarah Chen, NovaTech</div>
+                            <div class="activity-time">2 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot deal-moved"></div>
+                        <div class="activity-info">
+                            <div class="activity-text"><strong>Deal moved</strong> Enterprise License → Negotiation</div>
+                            <div class="activity-time">15 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot deal-won"></div>
+                        <div class="activity-info">
+                            <div class="activity-text"><strong>Deal won!</strong> Cloud Migration — $34,500</div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-title">Upcoming Tasks</div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <div class="task-check"></div>
+                        <span class="task-text">Follow up with Acme Corp on proposal</span>
+                        <span class="task-due">Today</span>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-check"></div>
+                        <span class="task-text">Send demo recording to DataFlow</span>
+                        <span class="task-due">Tomorrow</span>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-check"></div>
+                        <span class="task-text">Call NovaTech for requirements</span>
+                        <span class="task-due overdue">Overdue</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2 class="cta-title">Start closing more deals today</h2>
+            <p class="cta-description">Free to start. No credit card required. Set up your pipeline in minutes.</p>
+            <div class="cta-actions">
+                <a href="activate.html" class="btn-primary">Get Started Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+</body>
+</html>

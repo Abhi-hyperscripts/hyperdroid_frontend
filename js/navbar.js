@@ -26,6 +26,8 @@ const NavbarComponent = {
                     <a href="/pages/chat.html" class="nav-dropdown-item">Chat <span>Team Messaging</span></a>
                     <a href="/pages/drive.html" class="nav-dropdown-item">Drive <span>Cloud Storage</span></a>
                     <a href="/pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
+                    <a href="/pages/research.html" class="nav-dropdown-item">Research <span>AI Analytics</span></a>
+                    <a href="/pages/crm.html" class="nav-dropdown-item">CRM <span>Sales Pipeline</span></a>
                 </div>
             </div>
             <!-- Features Dropdown -->
@@ -41,6 +43,8 @@ const NavbarComponent = {
                     <a href="/pages/features/team-chat.html" class="nav-dropdown-item">Team Chat <span>Real-time messaging</span></a>
                     <a href="/pages/features/cloud-storage.html" class="nav-dropdown-item">Cloud Storage <span>5GB files, secure sharing</span></a>
                     <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
+                    <a href="/pages/research.html" class="nav-dropdown-item">AI Research <span>Agentic SPSS analytics</span></a>
+                    <a href="/pages/crm.html" class="nav-dropdown-item">Sales CRM <span>Pipeline & lead capture</span></a>
                 </div>
             </div>
             <!-- Solutions Dropdown -->

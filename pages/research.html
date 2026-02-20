@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>AI Research Analytics Platform | Agentic AI for Survey Data Analysis | Ragenaizer</title>
+    <meta name="description" content="Agentic AI research analytics platform. Upload SPSS files, ask questions in plain English, get publication-ready statistical analysis with significance testing. Cross-tabulation, Z-test, effective base, embeddable widgets. Sub-second queries on ClickHouse.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="AI research analytics, agentic AI analytics, survey data analysis, SPSS analysis online, AI-powered analytics, market research software, cross tabulation tool, data visualization, embeddable analytics widget, agentic AI analytics, natural language analytics, statistical analysis tool, Z-test significance testing, ClickHouse analytics, survey data platform">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/research.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/research.html">
+    <meta property="og:title" content="Agentic AI Research Analytics | Survey Data Analysis Platform">
+    <meta property="og:description" content="Upload SPSS files, ask questions in plain English, get instant statistical analysis. Cross-tabulation, significance testing, embeddable widgets. Powered by Agentic AI.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-research.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Agentic AI for Research Analytics | Ragenaizer">
+    <meta name="twitter:description" content="Ask questions in English. Get publication-ready stats. SPSS upload, cross-tabs, significance testing. Free to start.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-research.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://ragenaizer.com/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Products",
+                "item": "https://ragenaizer.com/#products"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Research",
+                "item": "https://ragenaizer.com/pages/research.html"
+            }
+        ]
+    }
+    </script>
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ragenaizer Research",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Agentic AI research analytics platform for survey data analysis. Natural language queries, SPSS file processing, cross-tabulation with significance testing, embeddable widgets.",
+        "url": "https://ragenaizer.com/pages/research.html",
+        "author": {
+            "@type": "Organization",
+            "name": "Ragenaizer"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Natural Language Queries",
+            "SPSS File Processing",
+            "Cross-Tabulation with Significance Testing",
+            "Embeddable Chat Widget",
+            "ClickHouse Analytics Engine",
+            "Variable Auto-Grouping",
+            "Publication-Ready Results",
+            "Agentic Multi-Step Analysis"
+        ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+
+    <!-- Page-specific styles -->
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           RESEARCH PAGE — Dashboard-as-Landing-Page Styles
+           HIGH CONTRAST — all text readable on dark background
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* Hero Dashboard Mockup */
+        .research-dashboard-mockup {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .dashboard-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dashboard-tab {
+            padding: 10px 18px;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            border-bottom: 2px solid transparent;
+        }
+        .dashboard-tab.active {
+            color: #22d3ee;
+            border-bottom-color: #22d3ee;
+        }
+        .dashboard-body {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 12px;
+        }
+        .mock-chart-area {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .mock-chart-title {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .mock-table-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mock-table {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .mock-table-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 0.6fr;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .mock-table-row:last-child { border-bottom: none; }
+        .mock-table-row.header {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 9px;
+        }
+        .mock-table-row .sig { color: #22d3ee; font-weight: 600; }
+        .mock-chat-bubble {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .mock-chat-q {
+            font-size: 10px;
+            color: #a78bfa;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mock-chat-q::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #a78bfa;
+            flex-shrink: 0;
+        }
+        .mock-chat-a {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.65);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .streaming-dots {
+            display: flex;
+            gap: 3px;
+        }
+        .streaming-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #22d3ee;
+            animation: dotPulse 1.4s infinite ease-in-out;
+        }
+        .streaming-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .streaming-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotPulse {
+            0%, 80%, 100% { opacity: 0.4; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Comparison Panel — BI vs AI */
+        .comparison-section {
+            padding: 100px 60px;
+            position: relative;
+        }
+        .comparison-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .comparison-side {
+            border-radius: 16px;
+            padding: 36px;
+            position: relative;
+        }
+        .comparison-side.bi-side {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .comparison-side.ai-side {
+            background: rgba(6, 182, 212, 0.06);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.08);
+        }
+        .comparison-label {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        .bi-side .comparison-label {
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .ai-side .comparison-label {
+            color: #22d3ee;
+            background: rgba(6, 182, 212, 0.15);
+        }
+        .comparison-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .comparison-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        .ai-side .comparison-list li {
+            color: #f1f5f9;
+        }
+        .comparison-list li svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .bi-side .comparison-list li svg { color: rgba(255, 255, 255, 0.5); }
+        .ai-side .comparison-list li svg { color: #22d3ee; }
+
+        /* Agentic AI Evolution Grid */
+        .evolution-section {
+            padding: 100px 60px;
+        }
+        .ai-evolution-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .evolution-card {
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .evolution-card.dimmed {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .evolution-card.partial {
+            background: rgba(139, 92, 246, 0.07);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+        .evolution-card.highlighted {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 50px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.04);
+        }
+        .evolution-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .evolution-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+        .dimmed .evolution-icon {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .partial .evolution-icon {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+        .highlighted .evolution-icon {
+            background: rgba(6, 182, 212, 0.15);
+            color: #22d3ee;
+        }
+        .evolution-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+        }
+        .dimmed h3 { color: #cbd5e1; }
+        .evolution-card p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #94a3b8;
+        }
+        .dimmed p { color: #94a3b8; }
+        .highlighted p { color: #e2e8f0; }
+        .evolution-callout {
+            max-width: 800px;
+            margin: 40px auto 0;
+            padding: 24px 32px;
+            background: rgba(6, 182, 212, 0.06);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            text-align: center;
+        }
+        .evolution-callout strong {
+            color: #22d3ee;
+        }
+
+        /* Live Demo Section */
+        .demo-section {
+            padding: 100px 60px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .demo-panel {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .demo-query {
+            padding: 32px;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .demo-query-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #a78bfa;
+            margin-bottom: 12px;
+        }
+        .demo-query-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            padding: 16px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            font-style: italic;
+        }
+        .demo-query-input {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        .demo-query-input svg {
+            width: 16px;
+            height: 16px;
+            color: #a78bfa;
+        }
+        .demo-query-input span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+        .demo-response {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .demo-response-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.12);
+            padding: 4px 10px;
+            border-radius: 20px;
+            align-self: flex-end;
+        }
+        .demo-response-time::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #34d399;
+        }
+        .demo-mini-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .demo-mini-table th {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.55);
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .demo-mini-table td {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .demo-mini-table td.highlight-val {
+            color: #22d3ee;
+            font-weight: 600;
+        }
+        .demo-insight {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            padding: 12px 16px;
+            background: rgba(16, 185, 129, 0.06);
+            border-left: 3px solid #34d399;
+            border-radius: 0 8px 8px 0;
+        }
+        .demo-insight strong {
+            color: #34d399;
+        }
+
+        /* Embeddable Widget Section */
+        .widget-section {
+            padding: 100px 60px;
+        }
+        .widget-showcase {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .widget-info h3 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+        .widget-info p {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 24px;
+        }
+        .widget-features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .widget-features-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 15px;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+        .widget-features-list li svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            color: #22d3ee;
+            margin-top: 2px;
+        }
+        .widget-visual {
+            position: relative;
+        }
+        .widget-mockup {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .widget-mockup-header {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .widget-mockup-brand {
+            font-size: 13px;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+        .widget-mockup-badge {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.06);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .widget-mockup-body {
+            padding: 20px;
+        }
+        .widget-chat-msg {
+            margin-bottom: 14px;
+            max-width: 85%;
+        }
+        .widget-chat-msg.user {
+            margin-left: auto;
+            text-align: right;
+        }
+        .widget-chat-msg .msg-bubble {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .widget-chat-msg.user .msg-bubble {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #e2e8f0;
+        }
+        .widget-chat-msg.ai .msg-bubble {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.18);
+            color: #cbd5e1;
+            text-align: left;
+        }
+        .widget-chat-msg .msg-meta {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+        }
+        .widget-mockup-input {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .widget-mockup-input span {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.35);
+            flex: 1;
+        }
+        .widget-mockup-input .send-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(6, 182, 212, 0.2);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #22d3ee;
+        }
+        .widget-mockup-input .send-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+        .widget-code-snippet {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .widget-code-header {
+            padding: 8px 14px;
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .widget-code-body {
+            padding: 14px;
+            font-family: 'Electrolize', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #94a3b8;
+        }
+        .widget-code-body .code-tag { color: #22d3ee; }
+        .widget-code-body .code-attr { color: #a78bfa; }
+        .widget-code-body .code-val { color: #34d399; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .widget-section {
+                padding: 60px 20px;
+            }
+            .widget-showcase {
+                grid-template-columns: 1fr;
+            }
+            .comparison-section,
+            .evolution-section,
+            .demo-section {
+                padding: 60px 20px;
+            }
+            .comparison-panel {
+                grid-template-columns: 1fr;
+            }
+            .ai-evolution-grid {
+                grid-template-columns: 1fr;
+            }
+            .demo-panel {
+                grid-template-columns: 1fr;
+            }
+            .demo-query {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .dashboard-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="landing-page landing-research">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">AI Research Analytics</div>
+                <h1 class="hero-title">
+                    Your data speaks.<br>
+                    <span class="highlight">Now it answers.</span>
+                </h1>
+                <p class="hero-description">
+                    Natural language questions become instant statistical analysis, charts, and insights from your SPSS data. Upload files. Ask questions in plain English. Get publication-ready results.
+                </p>
+                <div class="hero-actions">
+                    <a href="activate.html" class="btn-primary">Try Research Free</a>
+                    <a href="#features" class="btn-secondary">See How It Works</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">99.9%</div>
+                        <div class="stat-label">Grouping Accuracy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">&lt;3s</div>
+                        <div class="stat-label">Query Response</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Embed</div>
+                        <div class="stat-label">Anywhere</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-mockup research-dashboard-mockup">
+                    <div class="dashboard-tabs">
+                        <div class="dashboard-tab">Overview</div>
+                        <div class="dashboard-tab active">Analysis</div>
+                        <div class="dashboard-tab">AI Chat</div>
+                    </div>
+                    <div class="dashboard-body">
+                        <div class="mock-chart-area">
+                            <div class="mock-chart-title">Brand Awareness by Category</div>
+                            <svg width="100%" height="120" viewBox="0 0 240 120" fill="none">
+                                <rect x="10" y="60" width="32" height="50" rx="4" fill="rgba(6, 182, 212, 0.5)"/>
+                                <rect x="52" y="30" width="32" height="80" rx="4" fill="rgba(6, 182, 212, 0.7)"/>
+                                <rect x="94" y="45" width="32" height="65" rx="4" fill="rgba(6, 182, 212, 0.6)"/>
+                                <rect x="136" y="15" width="32" height="95" rx="4" fill="rgba(6, 182, 212, 0.85)"/>
+                                <rect x="178" y="50" width="32" height="60" rx="4" fill="rgba(6, 182, 212, 0.55)"/>
+                                <text x="26" y="55" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">45%</text>
+                                <text x="68" y="25" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">72%</text>
+                                <text x="110" y="40" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">58%</text>
+                                <text x="152" y="10" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">86%</text>
+                                <text x="194" y="45" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">53%</text>
+                                <!-- Baseline -->
+                                <line x1="5" y1="110" x2="215" y2="110" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                            </svg>
+                        </div>
+                        <div class="mock-table-area">
+                            <div class="mock-table">
+                                <div class="mock-table-row header">
+                                    <span>Brand</span>
+                                    <span>Awareness %</span>
+                                    <span>Sig.</span>
+                                </div>
+                                <div class="mock-table-row">
+                                    <span>Brand A</span>
+                                    <span>86%</span>
+                                    <span class="sig">AB</span>
+                                </div>
+                                <div class="mock-table-row">
+                                    <span>Brand B</span>
+                                    <span>72%</span>
+                                    <span class="sig">A</span>
+                                </div>
+                                <div class="mock-table-row">
+                                    <span>Brand C</span>
+                                    <span>58%</span>
+                                    <span>-</span>
+                                </div>
+                            </div>
+                            <div class="mock-chat-bubble">
+                                <div class="mock-chat-q">What are the top brands by awareness?</div>
+                                <div class="mock-chat-a">
+                                    Analyzing 3 variables...
+                                    <span class="streaming-dots">
+                                        <span></span><span></span><span></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: BI vs AI Comparison -->
+    <section class="comparison-section">
+        <div class="section-header">
+            <div class="section-badge">The Evolution</div>
+            <h2 class="section-title">
+                BI Dashboards are dead.<br>
+                <span class="highlight">AI Dashboards have arrived.</span>
+            </h2>
+        </div>
+
+        <div class="comparison-panel">
+            <div class="comparison-side bi-side">
+                <span class="comparison-label">Traditional BI</span>
+                <ul class="comparison-list">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        Write SQL or use query builders
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        Build dashboards manually
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        Wait for an analyst
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        Pre-defined views only
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        No statistical testing
+                    </li>
+                </ul>
+            </div>
+            <div class="comparison-side ai-side">
+                <span class="comparison-label">AI-Powered</span>
+                <ul class="comparison-list">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Ask in plain English
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Instant results with charts
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Significance tested automatically
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Any question, any angle
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Multi-step agentic reasoning
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Agentic AI Evolution -->
+    <section class="evolution-section">
+        <div class="section-header">
+            <div class="section-badge">Understanding AI</div>
+            <h2 class="section-title">
+                Not just an AI Agent.<br>
+                <span class="highlight">Agentic AI for Research.</span>
+            </h2>
+        </div>
+
+        <div class="ai-evolution-grid">
+            <div class="evolution-card dimmed">
+                <div class="evolution-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3>Simple Chatbot</h3>
+                <p>Answers questions from a script. No data access. No reasoning. Cannot analyze or compute.</p>
+            </div>
+
+            <div class="evolution-card partial">
+                <div class="evolution-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <h3>AI Agent</h3>
+                <p>Executes a single task. Runs one query. Returns one result. No multi-step reasoning or tool chaining.</p>
+            </div>
+
+            <div class="evolution-card highlighted">
+                <div class="evolution-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6h4c0-3 2-4 2-6a4 4 0 0 0-4-4z"/>
+                        <line x1="10" y1="16" x2="14" y2="16"/>
+                        <line x1="10" y1="19" x2="14" y2="19"/>
+                        <line x1="11" y1="22" x2="13" y2="22"/>
+                        <circle cx="5" cy="9" r="1.5" opacity="0.5"/>
+                        <circle cx="19" cy="9" r="1.5" opacity="0.5"/>
+                        <circle cx="3" cy="14" r="1" opacity="0.3"/>
+                        <circle cx="21" cy="14" r="1" opacity="0.3"/>
+                    </svg>
+                </div>
+                <h3>Agentic AI</h3>
+                <p>Reasons across your data. Selects statistical functions. Runs multi-step analysis. Interprets results with domain context. Learns from your project structure.</p>
+            </div>
+        </div>
+
+        <div class="evolution-callout">
+            <strong>Ragenaizer Research uses Agentic AI</strong> — it doesn't just answer, it investigates. It identifies variables, selects the right statistical test, executes queries, and explains findings in context.
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <div class="section-badge">Capabilities</div>
+            <h2 class="section-title">Everything you need to analyze SPSS data</h2>
+            <p class="section-description">
+                From uploading raw SPSS files to getting publication-ready tables — an end-to-end research analytics platform powered by Agentic AI.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card cyan">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Natural Language Queries</h3>
+                <p class="feature-description">Ask questions in plain English. The AI agent identifies variables, selects statistical functions, and returns results with significance testing — no code required.</p>
+            </div>
+
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="3" y1="15" x2="21" y2="15"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                        <line x1="15" y1="3" x2="15" y2="21"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Cross-Tabulation & Significance</h3>
+                <p class="feature-description">Z-test for proportions, letter notation, effective base (Kish), weighted samples. Publication-ready tables with confidence intervals.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">SPSS File Processing</h3>
+                <p class="feature-description">Upload ZIP-compressed SPSS files. Automatic variable detection, value labels, measurement types. Fair round-robin queue across tenants.</p>
+            </div>
+
+            <div class="feature-card blue">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Embeddable Chat Widget</h3>
+                <p class="feature-description">White-label analytics widget for your website. Custom branding, domain whitelisting, dark/light themes. Embed research insights anywhere.</p>
+            </div>
+
+            <div class="feature-card orange">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">ClickHouse Analytics Engine</h3>
+                <p class="feature-description">Columnar OLAP database for sub-second queries on millions of rows. Resource-protected with query validation and tenant isolation.</p>
+            </div>
+
+            <div class="feature-card pink">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Variable Auto-Grouping</h3>
+                <p class="feature-description">7-signal deterministic algorithm detects multi-response sets, grids, and question structures with 99.9% accuracy. Zero manual mapping.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Embeddable Widget Showcase -->
+    <section class="widget-section" id="widget">
+        <div class="section-header">
+            <div class="section-badge">Embeddable Widget</div>
+            <h2 class="section-title">
+                Embed analytics anywhere.<br>
+                <span class="highlight">Your brand. Your data. Their website.</span>
+            </h2>
+            <p class="section-description">
+                Drop a single script tag and give any website a fully branded AI research chat interface. No authentication required for end users.
+            </p>
+        </div>
+
+        <div class="widget-showcase">
+            <div class="widget-info">
+                <h3>White-label AI analytics for any website</h3>
+                <p>
+                    Embed a research chat widget into client dashboards, reports, or public websites. Your users ask questions in plain English and get instant statistical insights from your SPSS data.
+                </p>
+                <ul class="widget-features-list">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Custom branding — your logo, colors, and fonts
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Domain whitelisting — control exactly where it loads
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Dark and light themes with full CSS override support
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Multi-dataset support — select which project to query
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Streaming responses with real-time progress indicators
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        No end-user auth required — controlled via API key
+                    </li>
+                </ul>
+            </div>
+
+            <div class="widget-visual">
+                <div class="widget-mockup">
+                    <div class="widget-mockup-header">
+                        <span class="widget-mockup-brand">YourBrand Research</span>
+                        <span class="widget-mockup-badge">Powered by Ragenaizer</span>
+                    </div>
+                    <div class="widget-mockup-body">
+                        <div class="widget-chat-msg user">
+                            <div class="msg-bubble">Which age group has the highest brand recall?</div>
+                            <div class="msg-meta">You</div>
+                        </div>
+                        <div class="widget-chat-msg ai">
+                            <div class="msg-bubble">The 25-34 age group has the highest unaided brand recall at 68%, significantly higher than all other groups (p&lt;0.01). The 18-24 group follows at 52%.</div>
+                            <div class="msg-meta">AI Research Assistant &middot; 1.8s</div>
+                        </div>
+                        <div class="widget-chat-msg user">
+                            <div class="msg-bubble">Break that down by region</div>
+                            <div class="msg-meta">You</div>
+                        </div>
+                        <div class="widget-chat-msg ai">
+                            <div class="msg-bubble">Running cross-tabulation: Age Group x Region x Brand Recall... North leads at 74% for 25-34, while South shows no significant age difference.</div>
+                            <div class="msg-meta">AI Research Assistant &middot; 2.3s</div>
+                        </div>
+                        <div class="widget-mockup-input">
+                            <span>Ask a question about your data...</span>
+                            <div class="send-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="widget-code-snippet">
+                    <div class="widget-code-header">Embed in 2 lines</div>
+                    <div class="widget-code-body">
+                        <span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-val">"https://cdn.ragenaizer.com/widget.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span><br>
+                        <span class="code-tag">&lt;ragenaizer-research</span> <span class="code-attr">key</span>=<span class="code-val">"your-api-key"</span> <span class="code-attr">theme</span>=<span class="code-val">"dark"</span><span class="code-tag"> /&gt;</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 6: Live Dashboard Demo -->
+    <section class="demo-section" id="demo">
+        <div class="section-header">
+            <div class="section-badge">See It In Action</div>
+            <h2 class="section-title">Ask anything. Get answers instantly.</h2>
+        </div>
+
+        <div class="demo-panel">
+            <div class="demo-query">
+                <div class="demo-query-label">Your Question</div>
+                <div class="demo-query-text">
+                    "What is the average satisfaction score by age group?"
+                </div>
+                <div class="demo-query-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <span>Ask a follow-up question...</span>
+                </div>
+            </div>
+            <div class="demo-response">
+                <span class="demo-response-time">2.1s</span>
+                <svg width="100%" height="100" viewBox="0 0 320 100" fill="none">
+                    <rect x="20" y="40" width="50" height="55" rx="4" fill="rgba(6, 182, 212, 0.4)"/>
+                    <rect x="90" y="15" width="50" height="80" rx="4" fill="rgba(6, 182, 212, 0.7)"/>
+                    <rect x="160" y="30" width="50" height="65" rx="4" fill="rgba(6, 182, 212, 0.55)"/>
+                    <rect x="230" y="50" width="50" height="45" rx="4" fill="rgba(6, 182, 212, 0.35)"/>
+                    <text x="45" y="36" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.6</text>
+                    <text x="115" y="11" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">4.2</text>
+                    <text x="185" y="26" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.8</text>
+                    <text x="255" y="46" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.1</text>
+                    <line x1="15" y1="95" x2="290" y2="95" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                    <text x="45" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">18-24</text>
+                    <text x="115" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">25-34</text>
+                    <text x="185" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">35-54</text>
+                    <text x="255" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">55+</text>
+                </svg>
+                <table class="demo-mini-table">
+                    <tr><th>Age Group</th><th>Mean</th><th>Std Dev</th><th>N</th></tr>
+                    <tr><td>18-24</td><td>3.6</td><td>0.82</td><td>234</td></tr>
+                    <tr><td>25-34</td><td class="highlight-val">4.2</td><td>0.71</td><td>412</td></tr>
+                    <tr><td>35-54</td><td>3.8</td><td>0.89</td><td>356</td></tr>
+                    <tr><td>55+</td><td>3.1</td><td>0.95</td><td>198</td></tr>
+                </table>
+                <div class="demo-insight">
+                    The <strong>25-34 age group</strong> shows significantly higher satisfaction (M=4.2) compared to 55+ (M=3.1), <strong>p&lt;0.05</strong>. One-way ANOVA confirms significant group differences, F(3, 1196) = 14.7.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2 class="cta-title">Turn your SPSS data into instant insights</h2>
+            <p class="cta-description">Upload your SPSS data. Ask questions. Get answers. Free to start.</p>
+            <div class="cta-actions">
+                <a href="activate.html" class="btn-primary">Start Analyzing Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+</body>
+</html>
