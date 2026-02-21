@@ -771,9 +771,11 @@
         }
 
         function makeChart(el, cd) {
-            const { chart_type, categories, series } = cd;
-            if (!categories?.length || !series?.length) return;
-            const cc = CHART_COLORS.slice(0, Math.max(series.length, categories.length));
+            const { chart_type, categories, series, points } = cd;
+            const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
+            if (!usesPoints && (!categories?.length || !series?.length)) return;
+            if (usesPoints && (!points?.length) && (!series?.length)) return;
+            const cc = CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
             const base = {
                 chart: {
                     background: 'transparent',
@@ -826,6 +828,92 @@
                             value: { show: true, fontSize: '16px', fontWeight: 600, color: '#00d4ff', formatter: v => fmtNum(parseFloat(v)) },
                             total: { show: true, label: 'Total', fontSize: '11px', color: C.textMuted, formatter: w => fmtNum(w.globals.spikeWidth ? 0 : w.globals.series.reduce((a,b)=>a+b,0)) }
                         } } } }, stroke: { width: 1, colors: [C.chartStroke] } };
+                    break;
+                case 'scatter_chart': {
+                    const pts = cd.points || [];
+                    const scSeries = pts.map(s => ({ name: s.name, data: (s.data || []).map(p => ({ x: p.x, y: p.y, meta: p.label || '' })) }));
+                    const scColors = pts.map(s => s.color || '#00d4ff');
+                    const ann = cd.annotations || {};
+                    const annOpts = { xaxis: [], yaxis: [] };
+                    if (ann.x_line != null) annOpts.xaxis.push({ x: ann.x_line, strokeDashArray: 4, borderColor: 'rgba(255,255,255,0.25)', label: { text: 'Mean', style: { color: '#fff', background: 'rgba(0,0,0,0.5)', fontSize: '10px', padding: { left: 4, right: 4, top: 2, bottom: 2 } }, position: 'top' } });
+                    if (ann.y_line != null) annOpts.yaxis.push({ y: ann.y_line, strokeDashArray: 4, borderColor: 'rgba(255,255,255,0.25)', label: { text: 'Mean', style: { color: '#fff', background: 'rgba(0,0,0,0.5)', fontSize: '10px', padding: { left: 4, right: 4, top: 2, bottom: 2 } }, position: 'left' } });
+                    opt = { ...base, chart: { ...base.chart, type: 'scatter', height: 380, zoom: { enabled: false } },
+                        series: scSeries, colors: scColors,
+                        markers: { size: 8, strokeWidth: 1, strokeColors: 'rgba(0,0,0,0.3)', hover: { size: 11 } },
+                        xaxis: { type: 'numeric', title: cd.x_label ? { text: cd.x_label, style: { color: C.chartFg, fontSize: '11px' } } : undefined, labels: { formatter: v => Number(v).toFixed(1), style: { fontSize: '10px' } }, tickAmount: 6 },
+                        yaxis: { title: cd.y_label ? { text: cd.y_label, style: { color: C.chartFg, fontSize: '11px' } } : undefined, labels: { formatter: v => Number(v).toFixed(1), style: { fontSize: '10px' } } },
+                        annotations: annOpts,
+                        grid: { ...base.grid, xaxis: { lines: { show: true } } },
+                        tooltip: { theme: 'dark', custom: ({ seriesIndex, dataPointIndex, w }) => {
+                            const pt = w.config.series[seriesIndex]?.data[dataPointIndex]; if (!pt) return '';
+                            const sn = w.config.series[seriesIndex].name || '';
+                            return `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.35);"><strong>${esc(pt.meta||sn)}</strong><br>${cd.x_label||'X'}: ${Number(pt.x).toFixed(1)}<br>${cd.y_label||'Y'}: ${Number(pt.y).toFixed(1)}<br><span style="color:${scColors[seriesIndex]||'#00d4ff'}">${sn}</span></div>`;
+                        } } };
+                    break;
+                }
+                case 'bubble_chart': {
+                    const bPts = cd.points || [];
+                    const bSeries = bPts.map(s => ({ name: s.name, data: (s.data || []).map(p => [p.x, p.y, p.z || 10]) }));
+                    const bColors = bPts.map(s => s.color || '#00d4ff');
+                    opt = { ...base, chart: { ...base.chart, type: 'bubble', height: 380, zoom: { enabled: false } },
+                        series: bSeries, colors: bColors.length ? bColors : cc, fill: { opacity: 0.7 },
+                        xaxis: { type: 'numeric', title: cd.x_label ? { text: cd.x_label, style: { color: C.chartFg, fontSize: '11px' } } : undefined, labels: { style: { fontSize: '10px' } }, tickAmount: 6 },
+                        yaxis: { title: cd.y_label ? { text: cd.y_label, style: { color: C.chartFg, fontSize: '11px' } } : undefined, labels: { style: { fontSize: '10px' } } } };
+                    break;
+                }
+                case 'radar_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'radar', height: 380 },
+                        series: series.map(s => ({ name: s.name, data: s.data })),
+                        xaxis: { categories, labels: { style: { fontSize: '10px', colors: Array(categories.length).fill(C.chartFg) } } },
+                        yaxis: { show: false }, stroke: { width: 2 }, fill: { opacity: 0.15 },
+                        markers: { size: 4, strokeWidth: 0, hover: { size: 6 } },
+                        plotOptions: { radar: { polygons: { strokeColors: 'rgba(255,255,255,0.08)', connectorColors: 'rgba(255,255,255,0.08)', fill: { colors: ['transparent'] } } } } };
+                    break;
+                case 'heatmap_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'heatmap', height: Math.max(280, (series.length||5)*38) },
+                        series: series.map(s => ({ name: s.name, data: s.data.map((v,i) => ({ x: categories[i]||`Col ${i+1}`, y: v })) })),
+                        plotOptions: { heatmap: { radius: 2, enableShades: true, shadeIntensity: 0.5, colorScale: { ranges: [{ from: -Infinity, to: 0, color: '#ef4444', name: 'Low' },{ from: 0, to: 50, color: '#f59e0b', name: 'Medium' },{ from: 50, to: Infinity, color: '#22c55e', name: 'High' }] } } },
+                        dataLabels: { enabled: true, style: { fontSize: '10px', colors: ['#fff'] } },
+                        stroke: { width: 1, colors: ['rgba(0,0,0,0.15)'] } };
+                    break;
+                case 'treemap_chart': {
+                    const tmPts = cd.points || [];
+                    const tmS = tmPts.length > 0
+                        ? tmPts.map(s => ({ name: s.name, data: (s.data||[]).map(p => ({ x: p.label||p.x, y: p.y })) }))
+                        : (series?.length > 0 ? [{ data: categories.map((c,i) => ({ x: c, y: series[0].data[i]||0 })) }] : []);
+                    opt = { ...base, chart: { ...base.chart, type: 'treemap', height: 340 },
+                        series: tmS,
+                        plotOptions: { treemap: { enableShades: true, shadeIntensity: 0.3, distributed: tmS.length <= 1 } },
+                        dataLabels: { enabled: true, style: { fontSize: '11px' }, formatter: (text, op) => [text, fmtNum(op.value)], offsetY: -2 } };
+                    break;
+                }
+                case 'radialBar_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'radialBar', height: 340 },
+                        series: series?.length > 0 ? series[0].data : [], labels: categories,
+                        plotOptions: { radialBar: { hollow: { size: categories.length > 3 ? '30%' : '45%' }, track: { background: 'rgba(255,255,255,0.06)', strokeWidth: '100%' },
+                            dataLabels: { name: { fontSize: '12px', color: C.chartLegend, offsetY: -10 }, value: { fontSize: '18px', fontWeight: 600, color: '#00d4ff', formatter: v => Math.round(v) + '%' },
+                                total: { show: categories.length > 1, label: 'Average', fontSize: '11px', color: C.textMuted, formatter: w => Math.round(w.globals.series.reduce((a,b)=>a+b,0)/w.globals.series.length) + '%' } } } },
+                        stroke: { lineCap: 'round' } };
+                    break;
+                case 'polarArea_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'polarArea', height: 340 },
+                        series: series?.length > 0 ? series[0].data : [], labels: categories,
+                        fill: { opacity: 0.8 }, stroke: { width: 1, colors: [C.chartStroke] },
+                        plotOptions: { polarArea: { rings: { strokeWidth: 1, strokeColor: 'rgba(255,255,255,0.08)' }, spokes: { strokeWidth: 1, connectorColors: 'rgba(255,255,255,0.08)' } } },
+                        yaxis: { show: false }, dataLabels: { enabled: true, formatter: v => Math.round(v) + '%', style: { fontSize: '10px' }, dropShadow: { enabled: false } } };
+                    break;
+                case 'boxPlot_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'boxPlot', height: 340 },
+                        series: series.map(s => ({ name: s.name || 'Distribution', type: 'boxPlot', data: s.data.map((d,i) => ({ x: categories[i]||`Group ${i+1}`, y: Array.isArray(d) ? d : [d,d,d,d,d] })) })),
+                        plotOptions: { boxPlot: { colors: { upper: '#00d4ff', lower: '#22c55e' } } } };
+                    break;
+                case 'area_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'area', height: 320 },
+                        series: series.map(s => ({ name: s.name, data: s.data })),
+                        stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+                        xaxis: { categories, labels: { rotate: categories.length > 8 ? -45 : 0, rotateAlways: categories.length > 8, style: { fontSize: '10px' } } },
+                        yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtNum(v) } },
+                        markers: { size: 4, strokeWidth: 0, hover: { size: 6 } } };
                     break;
                 default: return;
             }

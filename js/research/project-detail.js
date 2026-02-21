@@ -2542,6 +2542,7 @@ function renderInlineCharts(msgEl, charts) {
         containers.forEach(container => {
             const idx = parseInt(container.parentElement.dataset.chartIndex);
             if (idx < charts.length) {
+                console.log(`[AI Chart ${idx}]`, JSON.stringify(charts[idx]).substring(0, 1500));
                 createApexChart(container, charts[idx]);
             }
         });
@@ -2560,10 +2561,13 @@ function escapeHtml(str) {
  * Chart data: { title, chart_type, categories, series: [{ name, data }] }
  */
 function createApexChart(container, chartData) {
-    const { chart_type, categories, series } = chartData;
-    if (!categories || !series || series.length === 0) return;
+    const { chart_type, categories, series, points } = chartData;
+    // scatter/bubble/treemap use 'points' instead of categories/series
+    const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
+    if (!usesPoints && (!categories || !series || series.length === 0)) return;
+    if (usesPoints && (!points || points.length === 0) && (!series || series.length === 0)) return;
 
-    const colors = AI_CHART_COLORS.slice(0, Math.max(series.length, categories.length));
+    const colors = AI_CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
 
     // Common chart options
     const baseOptions = {
@@ -2714,6 +2718,260 @@ function createApexChart(container, chartData) {
                     }
                 },
                 stroke: { width: 1, colors: ['rgba(0,0,0,0.2)'] }
+            };
+            break;
+
+        case 'scatter_chart': {
+            const pts = chartData.points || [];
+            const scatterSeries = pts.map(s => ({
+                name: s.name,
+                data: (s.data || []).map(p => ({ x: p.x, y: p.y, meta: p.label || '' }))
+            }));
+            const scatterColors = pts.map(s => s.color || '#00d4ff');
+            const ann = chartData.annotations || {};
+            const annOpts = { xaxis: [], yaxis: [] };
+            if (ann.x_line != null) {
+                annOpts.xaxis.push({
+                    x: ann.x_line,
+                    strokeDashArray: 4,
+                    borderColor: 'rgba(255,255,255,0.25)',
+                    label: { text: 'Mean', style: { color: '#fff', background: 'rgba(0,0,0,0.5)', fontSize: '10px', padding: { left: 4, right: 4, top: 2, bottom: 2 } }, position: 'top' }
+                });
+            }
+            if (ann.y_line != null) {
+                annOpts.yaxis.push({
+                    y: ann.y_line,
+                    strokeDashArray: 4,
+                    borderColor: 'rgba(255,255,255,0.25)',
+                    label: { text: 'Mean', style: { color: '#fff', background: 'rgba(0,0,0,0.5)', fontSize: '10px', padding: { left: 4, right: 4, top: 2, bottom: 2 } }, position: 'left' }
+                });
+            }
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'scatter', height: 380, zoom: { enabled: false } },
+                series: scatterSeries,
+                colors: scatterColors,
+                markers: { size: 8, strokeWidth: 1, strokeColors: 'rgba(0,0,0,0.3)', hover: { size: 11 } },
+                xaxis: {
+                    type: 'numeric',
+                    title: { text: chartData.x_label || '', style: { color: 'rgba(255,255,255,0.5)', fontSize: '11px' } },
+                    labels: { style: { fontSize: '10px' }, formatter: (v) => Number(v).toFixed(1) },
+                    tickAmount: 6
+                },
+                yaxis: {
+                    title: { text: chartData.y_label || '', style: { color: 'rgba(255,255,255,0.5)', fontSize: '11px' } },
+                    labels: { style: { fontSize: '10px' }, formatter: (v) => Number(v).toFixed(1) }
+                },
+                annotations: annOpts,
+                tooltip: {
+                    theme: 'dark',
+                    custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                        const pt = w.config.series[seriesIndex].data[dataPointIndex];
+                        const sName = w.config.series[seriesIndex].name || '';
+                        const lbl = pt.meta || '';
+                        return `<div style="padding:8px 12px;font-size:0.78rem;line-height:1.6;background:#1e293b;color:#e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.35);">` +
+                            `<strong>${lbl || sName}</strong><br>` +
+                            `${chartData.x_label || 'X'}: ${Number(pt.x).toFixed(1)}<br>` +
+                            `${chartData.y_label || 'Y'}: ${Number(pt.y).toFixed(1)}<br>` +
+                            `<span style="color:${scatterColors[seriesIndex] || '#00d4ff'}">${sName}</span></div>`;
+                    }
+                },
+                legend: { ...baseOptions.legend, position: 'bottom', fontSize: '11px' },
+                grid: { ...baseOptions.grid, xaxis: { lines: { show: true } } }
+            };
+            break;
+        }
+
+        case 'bubble_chart': {
+            const bPts = chartData.points || [];
+            const bubbleSeries = bPts.map(s => ({
+                name: s.name,
+                data: (s.data || []).map(p => [p.x, p.y, p.z || 10])
+            }));
+            const bubbleColors = bPts.map(s => s.color || '#00d4ff');
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'bubble', height: 380, zoom: { enabled: false } },
+                series: bubbleSeries,
+                colors: bubbleColors.length ? bubbleColors : colors,
+                fill: { opacity: 0.7 },
+                xaxis: {
+                    type: 'numeric',
+                    title: { text: chartData.x_label || '', style: { color: 'rgba(255,255,255,0.5)', fontSize: '11px' } },
+                    labels: { style: { fontSize: '10px' } },
+                    tickAmount: 6
+                },
+                yaxis: {
+                    title: { text: chartData.y_label || '', style: { color: 'rgba(255,255,255,0.5)', fontSize: '11px' } },
+                    labels: { style: { fontSize: '10px' } }
+                },
+                tooltip: { theme: 'dark', style: { fontSize: '11px' } }
+            };
+            break;
+        }
+
+        case 'radar_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'radar', height: 380 },
+                series: series.map(s => ({ name: s.name, data: s.data })),
+                xaxis: {
+                    categories: categories,
+                    labels: { style: { fontSize: '10px', colors: Array(categories.length).fill('rgba(255,255,255,0.65)') } }
+                },
+                yaxis: { show: false },
+                stroke: { width: 2 },
+                fill: { opacity: 0.15 },
+                markers: { size: 4, strokeWidth: 0, hover: { size: 6 } },
+                plotOptions: {
+                    radar: {
+                        polygons: {
+                            strokeColors: 'rgba(255,255,255,0.08)',
+                            connectorColors: 'rgba(255,255,255,0.08)',
+                            fill: { colors: ['transparent'] }
+                        }
+                    }
+                }
+            };
+            break;
+
+        case 'heatmap_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'heatmap', height: Math.max(280, (series.length || 5) * 38) },
+                series: series.map(s => ({ name: s.name, data: s.data.map((v, i) => ({ x: categories[i] || `Col ${i+1}`, y: v })) })),
+                plotOptions: {
+                    heatmap: {
+                        radius: 2,
+                        enableShades: true,
+                        shadeIntensity: 0.5,
+                        colorScale: {
+                            ranges: [
+                                { from: -Infinity, to: 0, color: '#ef4444', name: 'Low' },
+                                { from: 0, to: 50, color: '#f59e0b', name: 'Medium' },
+                                { from: 50, to: Infinity, color: '#22c55e', name: 'High' }
+                            ]
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: { fontSize: '10px', colors: ['#fff'] }
+                },
+                xaxis: { labels: { style: { fontSize: '10px' } } },
+                yaxis: { labels: { style: { fontSize: '10px' } } },
+                stroke: { width: 1, colors: ['rgba(0,0,0,0.15)'] }
+            };
+            break;
+
+        case 'treemap_chart': {
+            const tmPts = chartData.points || [];
+            const tmSeries = tmPts.length > 0
+                ? tmPts.map(s => ({ name: s.name, data: (s.data || []).map(p => ({ x: p.label || p.x, y: p.y })) }))
+                : (series.length > 0 ? [{ data: categories.map((c, i) => ({ x: c, y: series[0].data[i] || 0 })) }] : []);
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'treemap', height: 340 },
+                series: tmSeries,
+                plotOptions: {
+                    treemap: {
+                        enableShades: true,
+                        shadeIntensity: 0.3,
+                        distributed: tmSeries.length <= 1,
+                        colorScale: { ranges: [] }
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: { fontSize: '11px' },
+                    formatter: (text, op) => [text, formatChartNumber(op.value)],
+                    offsetY: -2
+                }
+            };
+            break;
+        }
+
+        case 'radialBar_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'radialBar', height: 340 },
+                series: series.length > 0 ? series[0].data : [],
+                labels: categories,
+                plotOptions: {
+                    radialBar: {
+                        hollow: { size: categories.length > 3 ? '30%' : '45%' },
+                        track: { background: 'rgba(255,255,255,0.06)', strokeWidth: '100%' },
+                        dataLabels: {
+                            name: { fontSize: '12px', color: 'rgba(255,255,255,0.7)', offsetY: -10 },
+                            value: { fontSize: '18px', fontWeight: 600, color: '#00d4ff', formatter: (val) => Math.round(val) + '%' },
+                            total: {
+                                show: categories.length > 1,
+                                label: 'Average',
+                                fontSize: '11px',
+                                color: 'rgba(255,255,255,0.5)',
+                                formatter: (w) => Math.round(w.globals.series.reduce((a, b) => a + b, 0) / w.globals.series.length) + '%'
+                            }
+                        }
+                    }
+                },
+                stroke: { lineCap: 'round' }
+            };
+            break;
+
+        case 'polarArea_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'polarArea', height: 340 },
+                series: series.length > 0 ? series[0].data : [],
+                labels: categories,
+                fill: { opacity: 0.8 },
+                stroke: { width: 1, colors: ['rgba(0,0,0,0.2)'] },
+                plotOptions: { polarArea: { rings: { strokeWidth: 1, strokeColor: 'rgba(255,255,255,0.08)' }, spokes: { strokeWidth: 1, connectorColors: 'rgba(255,255,255,0.08)' } } },
+                yaxis: { show: false },
+                dataLabels: {
+                    enabled: true,
+                    formatter: (val) => Math.round(val) + '%',
+                    style: { fontSize: '10px' },
+                    dropShadow: { enabled: false }
+                }
+            };
+            break;
+
+        case 'boxPlot_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'boxPlot', height: 340 },
+                series: series.map(s => ({
+                    name: s.name || 'Distribution',
+                    type: 'boxPlot',
+                    data: s.data.map((d, i) => ({
+                        x: categories[i] || `Group ${i + 1}`,
+                        y: Array.isArray(d) ? d : [d, d, d, d, d]
+                    }))
+                })),
+                plotOptions: {
+                    boxPlot: {
+                        colors: { upper: '#00d4ff', lower: '#22c55e' }
+                    }
+                },
+                xaxis: { labels: { style: { fontSize: '10px' } } },
+                yaxis: { labels: { style: { fontSize: '10px' } } }
+            };
+            break;
+
+        case 'area_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'area', height: 320 },
+                series: series.map(s => ({ name: s.name, data: s.data })),
+                stroke: { curve: 'smooth', width: 2 },
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+                xaxis: {
+                    categories: categories,
+                    labels: { rotate: categories.length > 8 ? -45 : 0, rotateAlways: categories.length > 8, style: { fontSize: '10px' } }
+                },
+                yaxis: { labels: { style: { fontSize: '10px' }, formatter: (val) => formatChartNumber(val) } },
+                markers: { size: 4, strokeWidth: 0, hover: { size: 6 } }
             };
             break;
 
@@ -3256,9 +3514,9 @@ async function executeFn() {
 }
 
 /**
- * Render driver regression results in a polished SPSS-style format.
- * Shows: model summary box, ANOVA table, coefficients table with
- * importance bars, and comparison delta table when compare_by is used.
+ * Render driver regression results with professional ApexCharts visualizations.
+ * Layout: Model summary pills → Bar chart + Scatter side-by-side → Collapsible coefficient table.
+ * Comparison mode retains per-group tables with delta table.
  */
 function _renderDriverRegression(rows, stats) {
     const esc = s => escapeHtml(String(s ?? ''));
@@ -3279,48 +3537,37 @@ function _renderDriverRegression(rows, stats) {
     const depVar = stats.dependent_variable || '?';
     const isComparison = !!stats.groups;
 
-    let h = `<div class="spss-output" style="padding: 14px; font-size: 0.8rem;">`;
+    // Generate unique ID for this render
+    const uid = 'drv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+    let h = `<div class="drv-regression-output">`;
 
     // ── Title ──
-    h += `<div style="font-weight:700; font-size:0.92rem; margin-bottom:12px; color:var(--text-primary);">
-        Driver Regression — ${esc(depVar)}${stats.dependent_variable_label ? ' <span style="color:var(--text-secondary);font-weight:400;">(' + esc(stats.dependent_variable_label) + ')</span>' : ''}
-    </div>`;
+    h += `<div class="drv-title">Driver Regression \u2014 ${esc(depVar)}${stats.dependent_variable_label ? ' <span class="drv-dep-label">(' + esc(stats.dependent_variable_label) + ')</span>' : ''}</div>`;
 
     if (!isComparison) {
         // ── Single regression output ──
-        // Model Summary box
-        const r2 = Number(stats.r_squared || 0);
-        const adjR2 = Number(stats.adjusted_r_squared || 0);
-        const fStat = Number(stats.f_statistic || 0);
-        const fP = stats.f_p_value;
-        const n = Number(stats.n || 0);
-        const k = Number(stats.predictors_count || rows.length);
+        h += _buildModelSummaryBox(stats, bc, fmtD, fmtP, fmtN);
 
-        h += `<div style="font-weight:600; margin-bottom:4px;">Model Summary</div>`;
-        h += `<table style="border-collapse:collapse; margin-bottom:14px; font-size:0.78rem;">
-            <thead><tr>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">R\u00B2</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">Adj. R\u00B2</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">F</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">df1</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">df2</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">Sig.</th>
-                <th style="border:1px solid ${bc}; padding:4px 10px;">N</th>
-            </tr></thead>
-            <tbody><tr>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right; font-weight:600;">${fmtD(r2, 4)}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(adjR2, 4)}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(fStat.toFixed(2))}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${k}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(Number(stats.f_df2 || 0))}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtP(fP)}</td>
-                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(n)}</td>
-            </tr></tbody>
-        </table>`;
+        // Chart containers (rendered after DOM insertion)
+        h += `<div class="drv-chart-row">`;
+        h += `<div class="drv-chart-panel"><div class="drv-chart-title">Relative Importance</div><div id="${uid}_bar"></div></div>`;
+        h += `<div class="drv-chart-panel"><div class="drv-chart-title">Importance \u2013 Performance Quadrant</div><div id="${uid}_scatter"></div></div>`;
+        h += `</div>`;
 
-        // Coefficients table
-        h += `<div style="font-weight:600; margin-bottom:4px;">Coefficients</div>`;
+        // Collapsible coefficient table
+        h += `<button class="drv-collapse-toggle" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded');">`;
+        h += `<span class="drv-chevron">\u25B6</span> Coefficient Details</button>`;
+        h += `<div class="drv-collapse-body">`;
         h += _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc);
+        h += `</div>`;
+
+        // Stash chart data for deferred rendering
+        if (!window._drvChartQueue) window._drvChartQueue = {};
+        window._drvChartQueue[uid] = { rows, stats };
+
+        // Schedule chart rendering after DOM insertion
+        requestAnimationFrame(() => requestAnimationFrame(() => _renderDriverCharts(uid)));
 
     } else {
         // ── Comparison mode (compare_by) ──
@@ -3340,7 +3587,7 @@ function _renderDriverRegression(rows, stats) {
             </tr></thead><tbody>`;
         for (const g of groups) {
             h += `<tr>
-                <td style="border:1px solid ${bc}; padding:4px 10px; font-weight:600;">${esc(g.group_label || g.group_value)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; font-weight:600;">${esc(g.group_label || g.group_value || g.group)}</td>
                 <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(g.r_squared, 4)}</td>
                 <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(g.adjusted_r_squared, 4)}</td>
                 <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(Number(g.f_statistic || 0).toFixed(2))}</td>
@@ -3350,19 +3597,22 @@ function _renderDriverRegression(rows, stats) {
         }
         h += `</tbody></table>`;
 
-        // Per-group coefficient tables
+        // Per-group coefficient tables (collapsible)
         const groupValues = [...new Set(rows.map(r => String(r.group ?? '')))];
         for (const gv of groupValues) {
             const groupRows = rows.filter(r => String(r.group ?? '') === gv);
-            const groupMeta = groups.find(g => String(g.group_value) === gv);
-            const label = groupMeta?.group_label || gv;
-            h += `<div style="font-weight:600; margin:12px 0 4px;">Coefficients — ${esc(label)}</div>`;
+            const groupMeta = groups.find(g => String(g.group_value ?? g.group) === gv);
+            const label = groupMeta?.group_label || groupMeta?.group || gv;
+            h += `<button class="drv-collapse-toggle" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded');">`;
+            h += `<span class="drv-chevron">\u25B6</span> Coefficients \u2014 ${esc(label)}</button>`;
+            h += `<div class="drv-collapse-body">`;
             h += _buildCoefficientTable(groupRows, bc, fmtD, fmtP, fmtN, esc);
+            h += `</div>`;
         }
 
         // Delta importance table
         if (deltas.length > 0) {
-            h += `<div style="font-weight:600; margin:12px 0 4px;">Change in Drivers (First → Last Group)</div>`;
+            h += `<div style="font-weight:600; margin:12px 0 4px;">Change in Drivers (${esc(stats.delta_from || 'First')} \u2192 ${esc(stats.delta_to || 'Last')})</div>`;
             h += `<table style="border-collapse:collapse; width:100%; font-size:0.78rem; margin-bottom:10px;">
                 <thead><tr>
                     <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Variable</th>
@@ -3395,6 +3645,312 @@ function _renderDriverRegression(rows, stats) {
 }
 
 /**
+ * Build compact model summary pill row for driver regression.
+ */
+function _buildModelSummaryBox(stats, bc, fmtD, fmtP, fmtN) {
+    const r2 = Number(stats.r_squared || 0);
+    const adjR2 = Number(stats.adjusted_r_squared || 0);
+    const fStat = Number(stats.f_statistic || 0);
+    const fP = stats.f_p_value;
+    const n = Number(stats.n || 0);
+    const k = Number(stats.predictors_count || 0);
+    const df2 = Number(stats.f_df2 || 0);
+    const r2Pct = (r2 * 100).toFixed(1);
+
+    // Color-code R² — green ≥30%, yellow ≥10%, red <10%
+    const r2Color = r2 >= 0.30 ? 'var(--color-success, #22c55e)' :
+                    r2 >= 0.10 ? 'var(--color-warning, #f59e0b)' :
+                    'var(--color-error, #ef4444)';
+
+    let h = `<div class="drv-model-summary">`;
+    h += `<span class="drv-pill"><span class="pill-label">R\u00B2</span><span class="pill-value" style="color:${r2Color}">${r2Pct}%</span></span>`;
+    h += `<span class="drv-pill"><span class="pill-label">Adj. R\u00B2</span><span class="pill-value">${fmtD(adjR2, 4)}</span></span>`;
+    h += `<span class="drv-pill"><span class="pill-label">F(${k},${fmtN(df2)})</span><span class="pill-value">${fmtN(fStat.toFixed(2))}</span></span>`;
+    h += `<span class="drv-pill"><span class="pill-label">Sig.</span><span class="pill-value">${fmtP(fP)}</span></span>`;
+    h += `<span class="drv-pill"><span class="pill-label">N</span><span class="pill-value">${fmtN(n)}</span></span>`;
+    h += `</div>`;
+    return h;
+}
+
+/**
+ * Deferred chart rendering — called after DOM insertion via rAF.
+ */
+function _renderDriverCharts(uid) {
+    const q = window._drvChartQueue?.[uid];
+    if (!q) return;
+    const { rows, stats } = q;
+    delete window._drvChartQueue[uid];
+
+    // Sort rows by relative importance descending
+    const sorted = [...rows].sort((a, b) => Number(b.relative_importance || 0) - Number(a.relative_importance || 0));
+
+    _renderImportanceBarChart(`${uid}_bar`, sorted, stats);
+    _renderQuadrantScatter(`${uid}_scatter`, sorted, stats);
+}
+
+/**
+ * ApexCharts horizontal bar chart — relative importance by predictor.
+ */
+function _renderImportanceBarChart(containerId, sortedRows, stats) {
+    const el = document.getElementById(containerId);
+    if (!el || typeof ApexCharts === 'undefined') return;
+
+    // Reverse for bottom-to-top display (ApexCharts renders categories bottom-up)
+    const displayRows = [...sortedRows].reverse();
+    const categories = displayRows.map(r => {
+        const lbl = r.variable_label || r.variable || '';
+        return lbl.length > 28 ? lbl.slice(0, 26) + '\u2026' : lbl;
+    });
+    const values = displayRows.map(r => Number(r.relative_importance || 0));
+    const isSig = displayRows.map(r => r.significant === true || r.significant === 'true');
+
+    const brandPrimary = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#00d4ff';
+    const chartHeight = Math.max(240, sortedRows.length * 34);
+
+    const options = {
+        chart: {
+            type: 'bar',
+            height: chartHeight,
+            background: 'transparent',
+            toolbar: { show: false },
+            fontFamily: 'inherit'
+        },
+        series: [{
+            name: 'Relative Importance',
+            data: values
+        }],
+        plotOptions: {
+            bar: {
+                horizontal: true,
+                barHeight: '65%',
+                borderRadius: 3,
+                distributed: true,
+                dataLabels: { position: 'top' }
+            }
+        },
+        colors: displayRows.map((_, i) => isSig[i] ? brandPrimary : '#64748b'),
+        dataLabels: {
+            enabled: true,
+            formatter: v => v.toFixed(1) + '%',
+            offsetX: 28,
+            style: {
+                fontSize: '11px',
+                fontWeight: 600,
+                colors: ['var(--text-secondary, #94a3b8)']
+            }
+        },
+        xaxis: {
+            categories,
+            max: Math.ceil(Math.max(...values) * 1.25),
+            labels: {
+                formatter: v => v.toFixed(0) + '%',
+                style: { colors: 'var(--text-secondary, #94a3b8)', fontSize: '11px' }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                style: { colors: 'var(--text-secondary, #94a3b8)', fontSize: '11px' },
+                maxWidth: 180
+            }
+        },
+        grid: {
+            borderColor: 'var(--border-color, #334155)',
+            strokeDashArray: 3,
+            xaxis: { lines: { show: true } },
+            yaxis: { lines: { show: false } },
+            padding: { right: 40 }
+        },
+        tooltip: {
+            theme: 'dark',
+            y: { formatter: v => v.toFixed(1) + '%' }
+        },
+        legend: { show: false },
+        states: {
+            hover: { filter: { type: 'darken', value: 0.85 } }
+        }
+    };
+
+    try {
+        const chart = new ApexCharts(el, options);
+        chart.render();
+    } catch (e) {
+        console.warn('Driver bar chart render failed:', e);
+    }
+}
+
+/**
+ * ApexCharts scatter — Importance vs Performance quadrant map.
+ */
+function _renderQuadrantScatter(containerId, sortedRows, stats) {
+    const el = document.getElementById(containerId);
+    if (!el || typeof ApexCharts === 'undefined') return;
+
+    const meanImp = Number(stats.mean_importance_split || 0);
+    const meanPerf = Number(stats.mean_performance_split || 0);
+
+    // Classify each point into a quadrant
+    const quadrants = {
+        'Priority': { color: '#ef4444', data: [] },         // high imp, low perf
+        'Maintain': { color: '#22c55e', data: [] },          // high imp, high perf
+        'Monitor': { color: '#f59e0b', data: [] },           // low imp, high perf
+        'Low Priority': { color: '#64748b', data: [] }       // low imp, low perf
+    };
+
+    // Find common prefix among all labels to strip for short labels
+    const allLabels = sortedRows.map(r => r.variable_label || r.variable || '');
+    let commonPfx = allLabels[0] || '';
+    for (let i = 1; i < allLabels.length; i++) {
+        while (commonPfx && !allLabels[i].startsWith(commonPfx)) {
+            commonPfx = commonPfx.slice(0, -1);
+        }
+    }
+    // Only strip if prefix is substantial and ends at a word boundary
+    const stripPfx = commonPfx.length > 8 ? commonPfx : '';
+
+    // Scale mean_score to percentage (*100) so ApexCharts handles the axis properly
+    const perfScale = 100;
+    const meanPerfScaled = meanPerf * perfScale;
+
+    for (const r of sortedRows) {
+        const imp = Number(r.relative_importance || 0);
+        const perf = Number(r.mean_score || 0) * perfScale;
+        const lbl = r.variable_label || r.variable || '';
+        let shortLbl = stripPfx ? lbl.slice(stripPfx.length).trim() : lbl;
+        if (shortLbl.startsWith('- ')) shortLbl = shortLbl.slice(2);
+        if (shortLbl.length > 18) shortLbl = shortLbl.slice(0, 16) + '\u2026';
+        const point = { x: perf, y: imp, meta: { label: lbl, shortLabel: shortLbl, beta: r.std_beta, pValue: r.p_value, sig: r.significant, rawPerf: Number(r.mean_score || 0) } };
+
+        const highImp = imp >= meanImp;
+        const highPerf = perf >= meanPerfScaled;
+
+        if (highImp && !highPerf) quadrants['Priority'].data.push(point);
+        else if (highImp && highPerf) quadrants['Maintain'].data.push(point);
+        else if (!highImp && highPerf) quadrants['Monitor'].data.push(point);
+        else quadrants['Low Priority'].data.push(point);
+    }
+
+    const series = Object.entries(quadrants)
+        .filter(([_, q]) => q.data.length > 0)
+        .map(([name, q]) => ({ name, data: q.data, color: q.color }));
+
+    // Calculate axis range with padding
+    const allPerf = sortedRows.map(r => Number(r.mean_score || 0) * perfScale);
+    const allImp = sortedRows.map(r => Number(r.relative_importance || 0));
+    const perfMin = Math.min(...allPerf);
+    const perfMax = Math.max(...allPerf);
+    const impMax = Math.max(...allImp);
+    const perfPad = (perfMax - perfMin) * 0.15 || 5;
+    const impPad = impMax * 0.15 || 5;
+
+    const options = {
+        chart: {
+            type: 'scatter',
+            height: 340,
+            background: 'transparent',
+            toolbar: { show: false },
+            fontFamily: 'inherit',
+            zoom: { enabled: false }
+        },
+        series,
+        markers: {
+            size: 8,
+            strokeWidth: 2,
+            strokeColors: '#0f172a',
+            hover: { sizeOffset: 3 }
+        },
+        xaxis: {
+            type: 'numeric',
+            min: Math.floor(perfMin - perfPad),
+            max: Math.ceil(perfMax + perfPad),
+            title: { text: 'Performance (Mean Score %)', style: { color: 'var(--text-secondary, #94a3b8)', fontSize: '11px' } },
+            labels: {
+                formatter: v => Math.round(v) + '%',
+                style: { colors: 'var(--text-secondary, #94a3b8)', fontSize: '11px' }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            tickAmount: 5
+        },
+        yaxis: {
+            min: 0,
+            max: impMax + impPad,
+            title: { text: 'Relative Importance %', style: { color: 'var(--text-secondary, #94a3b8)', fontSize: '11px' } },
+            labels: {
+                formatter: v => Number(v).toFixed(0) + '%',
+                style: { colors: 'var(--text-secondary, #94a3b8)', fontSize: '11px' }
+            },
+            tickAmount: 5
+        },
+        annotations: {
+            xaxis: [{
+                x: meanPerfScaled,
+                borderColor: 'var(--text-muted, #475569)',
+                strokeDashArray: 4,
+                label: { text: 'Mean', style: { color: 'var(--text-secondary)', background: 'transparent', fontSize: '10px' } }
+            }],
+            yaxis: [{
+                y: meanImp,
+                borderColor: 'var(--text-muted, #475569)',
+                strokeDashArray: 4,
+                label: { text: 'Mean', style: { color: 'var(--text-secondary)', background: 'transparent', fontSize: '10px' } }
+            }]
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: (val, opts) => {
+                const pt = opts.w.config.series[opts.seriesIndex]?.data[opts.dataPointIndex];
+                return pt?.meta?.shortLabel || '';
+            },
+            offsetY: -10,
+            style: {
+                fontSize: '10px',
+                fontWeight: 400,
+                colors: ['var(--text-secondary, #94a3b8)']
+            },
+            background: { enabled: false }
+        },
+        tooltip: {
+            custom: ({ seriesIndex, dataPointIndex, w }) => {
+                const pt = w.config.series[seriesIndex]?.data[dataPointIndex];
+                if (!pt?.meta) return '';
+                const m = pt.meta;
+                const sigBadge = (m.sig === true || m.sig === 'true')
+                    ? '<span style="color:#22c55e;">Significant</span>'
+                    : '<span style="color:#64748b;">Not significant</span>';
+                return `<div style="padding:8px 12px; font-size:0.78rem; line-height:1.6; background:#1e293b; color:#e2e8f0; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.35);">
+                    <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(m.label)}</div>
+                    <div>\u03B2 = ${Number(m.beta).toFixed(4)}</div>
+                    <div>Importance: ${pt.y.toFixed(1)}%</div>
+                    <div>Mean Score: ${(m.rawPerf != null ? m.rawPerf : pt.x / 100).toFixed(3)}</div>
+                    <div>p = ${Number(m.pValue) < 0.001 ? '<.001' : Number(m.pValue).toFixed(3)}</div>
+                    <div>${sigBadge}</div>
+                </div>`;
+            }
+        },
+        legend: {
+            position: 'bottom',
+            fontSize: '11px',
+            labels: { colors: 'var(--text-secondary, #94a3b8)' },
+            markers: { size: 6 }
+        },
+        grid: {
+            borderColor: 'var(--border-color, #334155)',
+            strokeDashArray: 3,
+            padding: { top: 0, right: 10, bottom: 0, left: 10 }
+        }
+    };
+
+    try {
+        const chart = new ApexCharts(el, options);
+        chart.render();
+    } catch (e) {
+        console.warn('Driver scatter chart render failed:', e);
+    }
+}
+
+/**
  * Build a coefficient table with inline importance bars.
  */
 function _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc) {
@@ -3411,6 +3967,7 @@ function _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc) {
             <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Sig.</th>
             <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">VIF</th>
             <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">r</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Mean</th>
             <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Relative Importance</th>
         </tr></thead><tbody>`;
 
@@ -3433,6 +3990,7 @@ function _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc) {
             <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtP(r.p_value)}</td>
             <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; ${vifWarn}">${fmtD(vif, 2)}</td>
             <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.zero_order_r, 4)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.mean_score, 3)}</td>
             <td style="border:1px solid ${bc}; padding:4px 8px; min-width:160px;">
                 <div style="display:flex; align-items:center; gap:6px;">
                     <div style="flex:1; height:14px; background:var(--bg-tertiary, #1e293b); border-radius:3px; overflow:hidden;">
@@ -3699,6 +4257,15 @@ function renderFnResults(response, funcName, varName, varLabel) {
 
     // Scroll to the new result
     resultBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Auto-widen popup for driver regression charts
+    if (resultBlock.querySelector('.drv-regression-output')) {
+        const popup = document.getElementById('fnPopup');
+        if (popup && !_fnPopupState.lastWidth) {
+            popup.style.width = '960px';
+            popup.style.height = '680px';
+        }
+    }
 }
 
 /**

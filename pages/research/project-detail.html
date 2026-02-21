@@ -2001,15 +2001,19 @@
             border: 1px solid rgba(var(--brand-primary-rgb), 0.25) !important;
             border-radius: 8px !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+            color: #e2e8f0 !important;
         }
         .ai-chart-container .apexcharts-tooltip .apexcharts-tooltip-title {
             background: rgba(var(--brand-primary-rgb), 0.1) !important;
             border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.15) !important;
-            color: var(--text-primary) !important;
+            color: #e2e8f0 !important;
             font-size: 0.72rem !important;
         }
-        .ai-chart-container .apexcharts-tooltip-text {
-            color: var(--text-primary) !important;
+        .ai-chart-container .apexcharts-tooltip-text,
+        .ai-chart-container .apexcharts-tooltip-text-y-value,
+        .ai-chart-container .apexcharts-tooltip-text-y-label,
+        .ai-chart-container .apexcharts-tooltip-text-goals-value {
+            color: #e2e8f0 !important;
             font-size: 0.72rem !important;
         }
         .ai-chart-container .apexcharts-legend-text {
@@ -2608,6 +2612,109 @@
             padding: 0;
             overflow: auto;
             max-height: 400px;
+        }
+
+        /* ── Driver Regression Charts ── */
+        .drv-regression-output { padding: 14px; font-size: 0.8rem; }
+        .drv-regression-output .drv-title {
+            font-weight: 700; font-size: 0.92rem; margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+        .drv-regression-output .drv-title .drv-dep-label {
+            color: var(--text-secondary); font-weight: 400;
+        }
+        .drv-model-summary {
+            display: flex; gap: 6px; flex-wrap: wrap;
+            margin-bottom: 14px; align-items: center;
+        }
+        .drv-model-summary .drv-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 12px;
+            background: rgba(var(--brand-primary-rgb, 0, 212, 255), 0.08);
+            font-size: 0.73rem; white-space: nowrap;
+        }
+        .drv-model-summary .drv-pill .pill-label {
+            color: var(--text-secondary);
+        }
+        .drv-model-summary .drv-pill .pill-value {
+            color: var(--brand-primary); font-weight: 600;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+        }
+        .drv-chart-row {
+            display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap;
+        }
+        .drv-chart-panel {
+            flex: 1; min-width: 300px;
+            border: 1px solid var(--border-color, #334155);
+            border-radius: 8px; padding: 10px;
+            background: var(--bg-primary);
+        }
+        .drv-chart-panel .drv-chart-title {
+            font-size: 0.75rem; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .drv-collapse-toggle {
+            display: flex; align-items: center; gap: 6px;
+            cursor: pointer; padding: 8px 0; font-size: 0.78rem;
+            font-weight: 600; color: var(--text-secondary);
+            user-select: none; border: none; background: none;
+            width: 100%;
+        }
+        .drv-collapse-toggle:hover { color: var(--text-primary); }
+        .drv-collapse-toggle .drv-chevron {
+            transition: transform 0.2s; font-size: 0.65rem;
+        }
+        .drv-collapse-toggle.expanded .drv-chevron {
+            transform: rotate(90deg);
+        }
+        .drv-collapse-body {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .drv-collapse-body.expanded {
+            max-height: 2000px;
+        }
+        /* Override fn-result-body max-height when driver regression is shown */
+        .fn-popup-body:has(.drv-regression-output) {
+            max-height: none;
+        }
+        .fn-result-body:has(.drv-regression-output) {
+            max-height: none;
+        }
+        /* ApexCharts tooltip overrides — always dark for driver charts in both themes */
+        .drv-chart-panel .apexcharts-tooltip,
+        .drv-chart-panel .apexcharts-tooltip-custom {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+            border-radius: 6px !important;
+        }
+        .drv-chart-panel .apexcharts-tooltip .apexcharts-tooltip-title {
+            background: #0f172a !important;
+            border-bottom: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        .drv-chart-panel .apexcharts-tooltip-text,
+        .drv-chart-panel .apexcharts-tooltip-text-y-value,
+        .drv-chart-panel .apexcharts-tooltip-text-y-label {
+            color: #e2e8f0 !important;
+        }
+        .drv-chart-panel .apexcharts-xaxis-label,
+        .drv-chart-panel .apexcharts-yaxis-label {
+            fill: var(--text-secondary) !important;
+        }
+        .drv-chart-panel .apexcharts-gridline {
+            stroke: var(--border-color, #334155) !important;
+        }
+        .drv-chart-panel .apexcharts-legend-text {
+            color: var(--text-secondary) !important;
+        }
+        .drv-chart-panel .apexcharts-datalabels text {
+            fill: var(--text-secondary) !important;
+        }
+        .drv-chart-panel .apexcharts-annotation-line {
+            stroke-dasharray: 4 4;
         }
         .fn-stats-chips {
             display: flex;
