@@ -1993,7 +1993,7 @@ document.addEventListener('keydown', (e) => {
 async function checkAiAvailability() {
     if (aiAvailable !== null) return;
     try {
-        const response = await api.request('/research/ai/status');
+        const response = await api.request('/research/ai/status', { _skipSpinner: true });
         aiAvailable = response.available === true;
     } catch (error) {
         console.warn('AI availability check failed:', error);
@@ -2213,7 +2213,8 @@ async function sendAiMessage() {
                 file_id: fileId,
                 message: text,
                 session_id: aiSessionId
-            })
+            }),
+            _skipSpinner: true
         });
 
         // If SignalR already handled the response, skip REST rendering.
