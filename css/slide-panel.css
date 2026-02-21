@@ -126,13 +126,21 @@
    ============================================================= */
 .panel-body {
     flex: 1;
+    min-height: 0;               /* Allow flex child to shrink below content size */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     position: relative;
     z-index: 1;
+}
+
+/* Prevent panel body children from flex-shrinking — they must keep natural
+   height so the panel-body scrolls instead of clipping content. */
+.panel-body > * {
+    flex-shrink: 0;
 }
 
 /* =============================================================

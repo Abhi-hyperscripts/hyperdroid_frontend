@@ -33,6 +33,10 @@ let varCurrentPage = 1;
 let varPageSize = 50;
 let varFilteredVars = [];
 
+// Questions pagination state
+let qCurrentPage = 1;
+let qPageSize = 50;
+
 // AI Assistant state
 let aiAvailable = null;  // null = not checked, true/false = cached
 let aiChatVisible = false;
@@ -147,15 +151,6 @@ async function loadProject() {
 
 function renderProjectHeader() {
     document.getElementById('breadcrumbProjectName').textContent = project.name;
-    document.getElementById('projectName').textContent = project.name;
-
-    const descEl = document.getElementById('projectDescription');
-    if (project.description) {
-        descEl.textContent = project.description;
-        descEl.style.display = 'block';
-    } else {
-        descEl.style.display = 'none';
-    }
 
     // Status badge
     const statusEl = document.getElementById('projectStatus');
@@ -1036,6 +1031,7 @@ function renderVariables() {
         <div class="variables-table-container">
             <table class="variables-table">
                 <thead><tr>
+                    <th style="width:28px;"></th>
                     <th>#</th>
                     <th>Name</th>
                     <th>Label</th>
@@ -1052,7 +1048,29 @@ function renderVariables() {
                         const measure = v.measurementType || v.measurement_type || '-';
                         const vlCount = getValueLabelCount(v);
                         const rowIdx = startIdx + i;
+                        const isString = varType === 'string';
                         return `<tr>
+                            <td style="padding:4px;">
+                                <div class="var-ctx-wrapper">
+                                    <button class="var-ctx-btn" onclick="toggleVarCtxMenu(event, ${rowIdx})" title="Actions">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                                    </button>
+                                    <div class="var-ctx-menu" id="varCtx_${rowIdx}">
+                                        <button class="var-ctx-menu-item" onclick="copyVarName('${escapeHtml(varName)}')">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            Copy Name
+                                        </button>
+                                        <button class="var-ctx-menu-item" onclick="runVarFrequency(${rowIdx})">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="2" width="4" height="19"/></svg>
+                                            Frequency
+                                        </button>
+                                        ${!isString ? `<button class="var-ctx-menu-item" onclick="runVarDescriptive(${rowIdx})">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="10" y2="16"/></svg>
+                                            Descriptive Stats
+                                        </button>` : ''}
+                                    </div>
+                                </div>
+                            </td>
                             <td style="color:var(--text-muted);font-size:0.72rem;">${startIdx + i + 1}</td>
                             <td><span class="var-name-cell">${escapeHtml(varName)}</span></td>
                             <td><span class="var-label-cell" title="${escapeHtml(varLabel)}">${escapeHtml(truncate(varLabel, 60)) || '-'}</span></td>
@@ -1098,12 +1116,34 @@ function renderVariableCard(v, globalIdx) {
     const varType = v.variableType || v.variable_type || 'unknown';
     const measurementType = v.measurementType || v.measurement_type || '';
     const vlCount = getValueLabelCount(v);
+    const isString = varType === 'string';
 
     return `
         <div class="variable-card">
             <div class="variable-card-header">
                 <span class="variable-name">${escapeHtml(varName)}</span>
-                <span class="type-badge ${escapeHtml(varType)}">${escapeHtml(varType)}</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="type-badge ${escapeHtml(varType)}">${escapeHtml(varType)}</span>
+                    <div class="var-ctx-wrapper">
+                        <button class="var-ctx-btn" onclick="toggleVarCtxMenu(event, ${globalIdx})" title="Actions">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                        </button>
+                        <div class="var-ctx-menu" id="varCtxCard_${globalIdx}">
+                            <button class="var-ctx-menu-item" onclick="copyVarName('${escapeHtml(varName)}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                Copy Name
+                            </button>
+                            <button class="var-ctx-menu-item" onclick="runVarFrequency(${globalIdx})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="2" width="4" height="19"/></svg>
+                                Frequency
+                            </button>
+                            ${!isString ? `<button class="var-ctx-menu-item" onclick="runVarDescriptive(${globalIdx})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="10" y2="16"/></svg>
+                                Descriptive Stats
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
             </div>
             ${varLabel ? `<div class="variable-label">${escapeHtml(varLabel)}</div>` : ''}
             <div class="variable-meta">
@@ -1112,6 +1152,118 @@ function renderVariableCard(v, globalIdx) {
             ${vlCount > 0 ? `<button class="value-labels-link" onclick="openVarPanel(${globalIdx})" style="margin-top:8px;">Value labels (${vlCount})</button>` : ''}
         </div>
     `;
+}
+
+// ── Variable context menu handlers ──
+
+function toggleVarCtxMenu(event, rowIdx) {
+    event.stopPropagation();
+    // Close any open menu first
+    document.querySelectorAll('.var-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    const menu = document.getElementById(`varCtx_${rowIdx}`) || document.getElementById(`varCtxCard_${rowIdx}`);
+    if (!menu) return;
+    menu.classList.add('open');
+    // Close on outside click
+    setTimeout(() => {
+        const closer = (e) => {
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('open');
+                document.removeEventListener('click', closer);
+            }
+        };
+        document.addEventListener('click', closer);
+    }, 0);
+}
+
+function copyVarName(name) {
+    document.querySelectorAll('.var-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    navigator.clipboard.writeText(name).then(() => {
+        Toast.success(`Copied "${name}" to clipboard`);
+    }).catch(() => {
+        Toast.error('Failed to copy to clipboard');
+    });
+}
+
+async function runVarFrequency(rowIdx) {
+    document.querySelectorAll('.var-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    const v = varFilteredVars[rowIdx];
+    if (!v) return;
+    const varName = v.variableName || v.variable_name || '';
+    const varLabel = v.variableLabel || v.variable_label || '';
+    const fileId = v._fileId;
+    await _executeVarFunction('frequency', varName, fileId, varLabel);
+}
+
+async function runVarDescriptive(rowIdx) {
+    document.querySelectorAll('.var-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    const v = varFilteredVars[rowIdx];
+    if (!v) return;
+    const varName = v.variableName || v.variable_name || '';
+    const varLabel = v.variableLabel || v.variable_label || '';
+    const fileId = v._fileId;
+    await _executeVarFunction('descriptive_stats', varName, fileId, varLabel);
+}
+
+async function _executeVarFunction(funcName, varName, fileId, varLabel) {
+    const payload = {
+        file_id: fileId,
+        function_name: funcName,
+        input_params: { variable: varName }
+    };
+
+    // Show popup immediately with loading spinner (appended, not replacing)
+    const container = document.getElementById('fnResultsContent');
+    if (container) {
+        // Add separator if there's existing content
+        if (container.children.length > 0) {
+            const sep = document.createElement('div');
+            sep.className = 'fn-result-separator';
+            sep.style.cssText = 'height: 3px; background: var(--border-color, #334155); margin: 0;';
+            container.appendChild(sep);
+        }
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'fn-loading-spinner';
+        spinnerDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;';
+        spinnerDiv.innerHTML = `
+            <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);">Running ${escapeHtml(funcName.replace(/_/g, ' '))} for <strong>${escapeHtml(varName)}</strong>...</div>`;
+        container.appendChild(spinnerDiv);
+        spinnerDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const infoEl = document.getElementById('fnPopupInfo');
+    if (infoEl) infoEl.textContent = '';
+    showFnPopup(0, 0);
+
+    try {
+        const baseUrl = api._getBaseUrl('/research/');
+        const token = api.token || getAuthToken();
+        const fetchResponse = await fetch(`${baseUrl}/projects/${projectId}/functions/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const response = await fetchResponse.json();
+
+        if (!fetchResponse.ok || response.success === false) {
+            renderFnError(response.error || response.message || 'Function execution failed');
+            showFnPopup(0, 0);
+            return;
+        }
+
+        const execTime = response.execution_time_ms ?? 0;
+        const rowCount = response.rows ? response.rows.length : 0;
+
+        renderFnResults(response, funcName, varName, varLabel);
+        showFnPopup(execTime, rowCount);
+    } catch (error) {
+        renderFnError(`Request failed: ${error.message}`);
+        showFnPopup(0, 0);
+        console.error(`${funcName} execution failed:`, error);
+    }
 }
 
 function renderPagination(totalItems, currentPage, pageSize, totalPages) {
@@ -3101,7 +3253,122 @@ async function executeFn() {
     }
 }
 
-function renderFnResults(response) {
+/**
+ * Render SPSS-style output for frequency / descriptive stats.
+ */
+function _renderSpssStyle(funcName, varName, varLabel, rows, stats) {
+    const esc = s => escapeHtml(String(s ?? ''));
+    const fmtN = n => Number(n).toLocaleString();
+    const title = `${esc(varName)}${varLabel ? ' ' + esc(varLabel) : ''}`;
+    const totalCount = stats.total_count ?? rows.reduce((s, r) => s + (Number(r.count) || 0), 0);
+    const bc = 'var(--border-color, #334155)';
+
+    let h = `<div class="spss-output" style="padding: 14px; font-size: 0.8rem;">`;
+
+    // ── Title ──
+    h += `<div style="font-weight:600; margin-bottom:8px;">${title}</div>`;
+
+    if (funcName === 'frequency') {
+        // ── N statistics box ──
+        h += `<table class="spss-stats" style="border-collapse:collapse; margin-bottom:14px; font-size:0.78rem;">
+            <tr><td style="border:1px solid ${bc}; padding:3px 10px; font-weight:600;">N</td>
+                <td style="border:1px solid ${bc}; padding:3px 10px;">Valid</td>
+                <td style="border:1px solid ${bc}; padding:3px 10px; text-align:right;">${fmtN(totalCount)}</td></tr>
+            <tr><td style="border:1px solid ${bc}; padding:3px 10px;"></td>
+                <td style="border:1px solid ${bc}; padding:3px 10px;">Missing</td>
+                <td style="border:1px solid ${bc}; padding:3px 10px; text-align:right;">0</td></tr>
+        </table>`;
+
+        // ── Centered title above frequency table ──
+        h += `<div style="text-align:center; font-weight:700; margin-bottom:6px;">${title}</div>`;
+
+        // ── Frequency table ──
+        h += `<table class="spss-freq" style="border-collapse:collapse; width:100%; font-size:0.78rem;">`;
+        h += `<thead><tr>
+            <th style="border:1px solid ${bc}; padding:4px 8px;"></th>
+            <th style="border:1px solid ${bc}; padding:4px 8px;"></th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Frequency</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Percent</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Valid Percent</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Cumulative Percent</th>
+        </tr></thead><tbody>`;
+
+        let cumPercent = 0;
+        rows.forEach((r, i) => {
+            const count = Number(r.count) || 0;
+            const pct = Number(r.percent) || 0;
+            cumPercent += pct;
+            const valLabel = esc(r.value);
+            const firstCol = i === 0 ? `<td style="border:1px solid ${bc}; padding:4px 8px; font-weight:600; vertical-align:top;" rowspan="${rows.length + 1}">Valid</td>` : '';
+            h += `<tr>${firstCol}
+                <td style="border:1px solid ${bc}; padding:4px 8px;">${valLabel}</td>
+                <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtN(count)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${pct.toFixed(1)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${pct.toFixed(1)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${cumPercent.toFixed(1)}</td>
+            </tr>`;
+        });
+
+        // Total row
+        h += `<tr>
+            <td style="border:1px solid ${bc}; padding:4px 8px; font-weight:600;">Total</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; font-weight:600;">${fmtN(totalCount)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; font-weight:600;">100.0</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; font-weight:600;">100.0</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px;"></td>
+        </tr>`;
+        h += `</tbody></table>`;
+
+    } else if (funcName === 'descriptive_stats') {
+        // ── Descriptive Statistics table (SPSS style) ──
+        // Backend returns one row per group with stats as columns:
+        // { n, mean, median_val, std_dev, variance, min_val, max_val, sum_val, p25, p75, ... }
+        // We pivot these into Statistic / Value rows.
+        const statLabels = {
+            n: 'N', mean: 'Mean', median_val: 'Median', std_dev: 'Std. Deviation',
+            variance: 'Variance', min_val: 'Minimum', max_val: 'Maximum',
+            sum_val: 'Sum', p25: 'Percentile 25', p75: 'Percentile 75'
+        };
+        const fmtStat = v => {
+            if (v === null || v === undefined) return '-';
+            const n = Number(v);
+            return isNaN(n) ? esc(String(v)) : n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        };
+
+        for (let ri = 0; ri < rows.length; ri++) {
+            const r = rows[ri];
+            // If grouped, show group header
+            const groupKeys = Object.keys(r).filter(k => !statLabels[k] && !k.endsWith('_label'));
+            if (groupKeys.length > 0 && rows.length > 1) {
+                const groupVal = groupKeys.map(k => esc(String(r[k] ?? ''))).join(', ');
+                h += `<div style="font-weight:600; margin:10px 0 4px;">${groupVal}</div>`;
+            }
+
+            h += `<table class="spss-desc" style="border-collapse:collapse; width:100%; font-size:0.78rem; margin-bottom:10px;">`;
+            h += `<thead><tr>
+                <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Statistic</th>
+                <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Value</th>
+            </tr></thead><tbody>`;
+
+            for (const [key, label] of Object.entries(statLabels)) {
+                if (r[key] === undefined) continue;
+                const valStr = fmtStat(r[key]);
+                const lblKey = key + '_label';
+                const valLabel = r[lblKey] ? ` <span style="color:var(--text-secondary);font-size:0.75rem;">(${esc(String(r[lblKey]))})</span>` : '';
+                h += `<tr>
+                    <td style="border:1px solid ${bc}; padding:4px 8px;">${label}</td>
+                    <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${valStr}${valLabel}</td>
+                </tr>`;
+            }
+            h += `</tbody></table>`;
+        }
+    }
+
+    h += `</div>`;
+    return h;
+}
+
+function renderFnResults(response, funcName, varName, varLabel) {
     const container = document.getElementById('fnResultsContent');
     if (!container) return;
 
@@ -3111,118 +3378,129 @@ function renderFnResults(response) {
     const sigLetters = Array.isArray(stats.column_letters)
         ? stats.column_letters.map(c => c.letter) : [];
     const isTableFunc = (columns.length > 0 && columns[0] === 'row') || sigLetters.length > 0;
+    const isVarFunction = (funcName === 'frequency' || funcName === 'descriptive_stats');
 
-    // Build a single markdown document
-    let md = '';
-
-    // Summary
-    if (response.summary) {
-        md += `### Summary\n${response.summary}\n\n`;
-    }
-
-    // Statistics as markdown table
-    if (stats && Object.keys(stats).length > 0) {
-        md += `### Statistics\n| Metric | Value |\n|---|---|\n`;
-        for (const [key, val] of Object.entries(stats)) {
-            let displayVal;
-            if (typeof val === 'number') {
-                displayVal = val.toLocaleString(undefined, { maximumFractionDigits: 4 });
-            } else if (Array.isArray(val)) {
-                if (val.length > 0 && val[0] && val[0].letter !== undefined) {
-                    displayVal = val.map(v => `**${v.letter}**=${v.label || v.value || ''}`).join(', ');
-                } else {
-                    displayVal = val.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
-                }
-            } else if (typeof val === 'object' && val !== null) {
-                displayVal = Object.entries(val).map(([k, v]) => `${k}=${v}`).join(', ');
-            } else {
-                displayVal = String(val);
-            }
-            md += `| ${key} | ${displayVal} |\n`;
-        }
-        md += '\n';
-    }
-
-    // Data table as markdown table with stacked cells (stats computed on backend)
-    if (columns.length > 0 && rows.length > 0) {
-        md += `### Data (${formatNumber(rows.length)} rows)\n`;
-        // Header
-        md += '| ' + columns.map(c => `**${c}**`).join(' | ') + ' |\n';
-        md += '|' + columns.map(() => '---').join('|') + '|\n';
-        // Rows
-        const displayRows = rows.slice(0, 1000);
-        for (const row of displayRows) {
-            if (Array.isArray(row)) {
-                md += '| ' + row.map(cell => formatCellValue(cell)).join(' | ') + ' |\n';
-            } else if (typeof row === 'object' && row !== null) {
-                const cells = [];
-                let colIdx = 0;
-                for (const col of columns) {
-                    const val = row[col];
-                    const labelKey = col + '_label';
-                    const label = row[labelKey];
-                    let cellStr = formatCellValue(val);
-                    const isRowCol = colIdx === 0;
-
-                    if (isRowCol && isTableFunc) {
-                        const trimmed = cellStr.replace(/^ +/, '');
-                        if (!trimmed) { cells.push(''); colIdx++; continue; } // separator row
-                        const indent = cellStr.length - trimmed.length;
-                        const prefix = indent > 0 ? '&emsp;'.repeat(indent) : '';
-                        const statLabels = ['Mean', 'Median', 'Std Dev', 'Min', 'Max'];
-                        const isBold = trimmed === 'Base' || trimmed === 'Total' || indent === 0 || statLabels.includes(trimmed);
-                        cells.push(isBold ? `${prefix}**${trimmed}**` : `${prefix}${trimmed}`);
-                    } else if (label !== undefined && label !== null) {
-                        cells.push(`${cellStr} *${label}*`);
-                    } else if (isTableFunc) {
-                        cells.push(_formatCellStacked(cellStr, sigLetters));
-                    } else {
-                        cells.push(cellStr);
-                    }
-                    colIdx++;
-                }
-                md += '| ' + cells.join(' | ') + ' |\n';
-            }
-        }
-
-        md += '\n';
-    }
-
-    // SQL (collapsible)
-    if (response.sql_executed) {
-        const sqlId = 'fnSql_' + Date.now();
-        md += `### SQL Executed\n`;
-        // We'll add this as HTML since markdown code blocks inside the same render work fine
-    }
-
-    // Render markdown
     let html = '';
-    if (md) {
-        try {
-            html = `<div class="fn-summary fn-summary-md" style="padding: 14px;">${(typeof marked !== 'undefined' && marked.parse) ? marked.parse(md) : escapeHtml(md)}</div>`;
-        } catch(e) {
-            html = `<div class="fn-summary" style="padding: 14px;">${escapeHtml(md)}</div>`;
-        }
-    }
 
-    // SQL section as collapsible HTML block (outside markdown)
-    if (response.sql_executed) {
-        const sqlId = 'fnSql_' + Date.now();
-        html += `
-            <div class="fn-result-block">
-                <div class="fn-result-header">
-                    SQL Executed
-                    <span class="fn-sql-toggle" onclick="document.getElementById('${sqlId}').style.display = document.getElementById('${sqlId}').style.display === 'none' ? '' : 'none';">toggle</span>
-                </div>
-                <pre class="fn-sql-pre" id="${sqlId}" style="display:none;">${escapeHtml(response.sql_executed)}</pre>
-            </div>`;
+    // ── SPSS-style rendering for frequency/descriptive ──
+    if (isVarFunction && rows.length > 0) {
+        html = _renderSpssStyle(funcName, varName, varLabel, rows, stats);
+    } else {
+        // ── Generic markdown rendering for other functions ──
+        let md = '';
+
+        // Summary
+        if (response.summary) {
+            md += `### Summary\n${response.summary}\n\n`;
+        }
+
+        // Statistics as markdown table
+        if (stats && Object.keys(stats).length > 0) {
+            md += `### Statistics\n| Metric | Value |\n|---|---|\n`;
+            for (const [key, val] of Object.entries(stats)) {
+                let displayVal;
+                if (typeof val === 'number') {
+                    displayVal = val.toLocaleString(undefined, { maximumFractionDigits: 4 });
+                } else if (Array.isArray(val)) {
+                    if (val.length > 0 && val[0] && val[0].letter !== undefined) {
+                        displayVal = val.map(v => `**${v.letter}**=${v.label || v.value || ''}`).join(', ');
+                    } else {
+                        displayVal = val.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
+                    }
+                } else if (typeof val === 'object' && val !== null) {
+                    displayVal = Object.entries(val).map(([k, v]) => `${k}=${v}`).join(', ');
+                } else {
+                    displayVal = String(val);
+                }
+                md += `| ${key} | ${displayVal} |\n`;
+            }
+            md += '\n';
+        }
+
+        // Data table as markdown table with stacked cells
+        if (columns.length > 0 && rows.length > 0) {
+            md += `### Data (${formatNumber(rows.length)} rows)\n`;
+            md += '| ' + columns.map(c => `**${c}**`).join(' | ') + ' |\n';
+            md += '|' + columns.map(() => '---').join('|') + '|\n';
+            const displayRows = rows.slice(0, 1000);
+            for (const row of displayRows) {
+                if (Array.isArray(row)) {
+                    md += '| ' + row.map(cell => formatCellValue(cell)).join(' | ') + ' |\n';
+                } else if (typeof row === 'object' && row !== null) {
+                    const cells = [];
+                    let colIdx = 0;
+                    for (const col of columns) {
+                        const val = row[col];
+                        const labelKey = col + '_label';
+                        const label = row[labelKey];
+                        let cellStr = formatCellValue(val);
+                        const isRowCol = colIdx === 0;
+
+                        if (isRowCol && isTableFunc) {
+                            const trimmed = cellStr.replace(/^ +/, '');
+                            if (!trimmed) { cells.push(''); colIdx++; continue; }
+                            const indent = cellStr.length - trimmed.length;
+                            const prefix = indent > 0 ? '&emsp;'.repeat(indent) : '';
+                            const statLabels = ['Mean', 'Median', 'Std Dev', 'Min', 'Max'];
+                            const isBold = trimmed === 'Base' || trimmed === 'Total' || indent === 0 || statLabels.includes(trimmed);
+                            cells.push(isBold ? `${prefix}**${trimmed}**` : `${prefix}${trimmed}`);
+                        } else if (label !== undefined && label !== null) {
+                            cells.push(`${cellStr} *${label}*`);
+                        } else if (isTableFunc) {
+                            cells.push(_formatCellStacked(cellStr, sigLetters));
+                        } else {
+                            cells.push(cellStr);
+                        }
+                        colIdx++;
+                    }
+                    md += '| ' + cells.join(' | ') + ' |\n';
+                }
+            }
+            md += '\n';
+        }
+
+        // Render markdown
+        if (md) {
+            try {
+                html = `<div class="fn-summary fn-summary-md" style="padding: 14px;">${(typeof marked !== 'undefined' && marked.parse) ? marked.parse(md) : escapeHtml(md)}</div>`;
+            } catch(e) {
+                html = `<div class="fn-summary" style="padding: 14px;">${escapeHtml(md)}</div>`;
+            }
+        }
     }
 
     if (!html) {
         html = '<div class="fn-results-placeholder">Function returned no data</div>';
     }
 
-    container.innerHTML = html;
+    // Remove any loading spinner before appending
+    const spinner = container.querySelector('.fn-loading-spinner');
+    if (spinner) spinner.remove();
+
+    // Add separator if there's existing content and last child isn't already a separator
+    const lastChild = container.lastElementChild;
+    if (container.children.length > 0 && (!lastChild || !lastChild.classList.contains('fn-result-separator'))) {
+        const sep = document.createElement('div');
+        sep.className = 'fn-result-separator';
+        sep.style.cssText = 'height: 3px; background: var(--border-color, #334155); margin: 0;';
+        container.appendChild(sep);
+    }
+
+    // Append new result
+    const resultBlock = document.createElement('div');
+    resultBlock.innerHTML = html;
+    container.appendChild(resultBlock);
+
+    // Lock content width so nothing reflows when popup is resized.
+    // Block divs fill container, so temporarily switch to inline-block to measure natural content width.
+    resultBlock.style.display = 'inline-block';
+    resultBlock.style.minWidth = '100%';
+    const contentWidth = resultBlock.offsetWidth;
+    resultBlock.style.display = '';
+    resultBlock.style.minWidth = contentWidth + 'px';
+
+    // Scroll to the new result
+    resultBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
@@ -3313,7 +3591,12 @@ function formatCellWithSig(cellStr, sigLetters) {
 function renderFnError(message) {
     const container = document.getElementById('fnResultsContent');
     if (!container) return;
-    container.innerHTML = `<div class="query-error" style="margin: 12px;">${escapeHtml(message)}</div>`;
+    // Remove any loading spinner before appending error
+    const spinner = container.querySelector('.fn-loading-spinner');
+    if (spinner) spinner.remove();
+    const errDiv = document.createElement('div');
+    errDiv.innerHTML = `<div class="query-error" style="margin: 12px;">${escapeHtml(message)}</div>`;
+    container.appendChild(errDiv);
 }
 
 function clearFnResults() {
@@ -3365,6 +3648,11 @@ function closeFnPopup() {
     const pill = document.getElementById('fnPopupPill');
     if (popup) popup.classList.remove('visible');
     if (pill) pill.classList.remove('visible');
+    // Clear all results when window is closed
+    const container = document.getElementById('fnResultsContent');
+    if (container) container.innerHTML = '';
+    const info = document.getElementById('fnPopupInfo');
+    if (info) info.textContent = '';
 }
 
 function minimizeFnPopup() {
@@ -3584,8 +3872,12 @@ async function loadQuestions() {
             return;
         }
 
-        questionsData = resp.questions;
+        // Attach file name for panel display
+        const fileSelect = document.getElementById('questionFileFilter');
+        const selectedFileName = fileSelect?.options[fileSelect.selectedIndex]?.text || '-';
+        questionsData = resp.questions.map(q => ({ ...q, _fileName: selectedFileName }));
         filteredQuestions = [...questionsData];
+        qCurrentPage = 1;
         questionsLoaded = true;
         toolbarEl.style.display = 'flex';
         renderQuestions();
@@ -3596,6 +3888,7 @@ async function loadQuestions() {
 }
 
 function filterQuestions() {
+    qCurrentPage = 1;
     const search = (document.getElementById('questionSearch')?.value || '').toLowerCase();
     const typeFilter = document.getElementById('questionTypeFilter')?.value || '';
 
@@ -3628,63 +3921,275 @@ function renderQuestions() {
         countLabel.textContent = `${filteredQuestions.length} of ${questionsData.length} questions`;
     }
 
-    const html = filteredQuestions.map((q, idx) => {
-        const conf = q.confidence || 0;
-        const confClass = conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low';
-        const confPct = Math.round(conf * 100);
+    // Pagination
+    const totalPages = Math.ceil(filteredQuestions.length / qPageSize);
+    if (qCurrentPage > totalPages) qCurrentPage = totalPages;
+    if (qCurrentPage < 1) qCurrentPage = 1;
+    const startIdx = (qCurrentPage - 1) * qPageSize;
+    const pageQuestions = filteredQuestions.slice(startIdx, startIdx + qPageSize);
 
-        // Build variable-attribute pairs
-        let varAttrMap = {};
-        if (q.variable_attribute_map) {
-            // Parse "Q0341=Coca Cola, Q0342=Pepsi" format
-            q.variable_attribute_map.split(',').forEach(pair => {
-                const [varName, attr] = pair.split('=').map(s => s.trim());
-                if (varName && attr) varAttrMap[varName] = attr;
-            });
-        }
-
-        const varItems = (q.variable_names || []).map((v, vi) => {
-            const attr = varAttrMap[v] || (q.attribute_labels && q.attribute_labels[vi]) || '';
-            return `<div class="question-variable-item">
-                <span class="question-variable-name">${escapeHtml(v)}</span>
-                ${attr ? `<span class="question-variable-attr">→ ${escapeHtml(attr)}</span>` : ''}
-            </div>`;
-        }).join('');
-
-        const valueLabels = q.shared_value_labels
-            ? `<div class="question-value-labels"><strong>Value Labels:</strong> ${escapeHtml(q.shared_value_labels)}</div>`
-            : '';
-
-        return `<div class="question-card" id="qcard-${idx}">
-            <div class="question-card-header" onclick="toggleQuestionCard(${idx})">
-                <svg class="question-expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-                <span class="question-type-badge ${q.question_type || 'unknown'}">${(q.question_type || 'unknown').replace(/_/g, ' ')}</span>
-                <span class="question-card-label" title="${escapeHtml(q.question_label || q.question_id)}">${escapeHtml(q.question_label || q.question_id)}</span>
-                <div class="question-card-meta">
-                    <span>${q.variable_count || 0} vars</span>
-                    <span class="question-confidence">
-                        <span class="confidence-dot ${confClass}"></span>
-                        ${confPct}%
-                    </span>
-                </div>
-            </div>
-            <div class="question-card-body">
-                <div class="question-variables-list">
-                    ${varItems}
-                </div>
-                ${valueLabels}
-            </div>
+    // Desktop table
+    const tableHtml = `
+        <div class="questions-table-container">
+            <table class="questions-table">
+                <thead><tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Question ID</th>
+                    <th>Label</th>
+                    <th>Variables</th>
+                    <th>Confidence</th>
+                    <th>Details</th>
+                </tr></thead>
+                <tbody>
+                    ${pageQuestions.map((q, i) => {
+                        const conf = q.confidence || 0;
+                        const confClass = conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low';
+                        const confPct = Math.round(conf * 100);
+                        const rowIdx = startIdx + i;
+                        const qLabel = q.question_label || q.question_id || '';
+                        return `<tr>
+                            <td style="color:var(--text-muted);font-size:0.72rem;">${rowIdx + 1}</td>
+                            <td><span class="question-type-badge ${q.question_type || 'unknown'}">${(q.question_type || 'unknown').replace(/_/g, ' ')}</span></td>
+                            <td><span class="question-id-cell">${escapeHtml(q.question_id || '-')}</span></td>
+                            <td><span class="question-label-cell" title="${escapeHtml(qLabel)}">${escapeHtml(truncate(qLabel, 60)) || '-'}</span></td>
+                            <td style="text-align:center;">${q.variable_count || 0}</td>
+                            <td>
+                                <span class="question-confidence">
+                                    <span class="confidence-dot ${confClass}"></span>
+                                    ${confPct}%
+                                </span>
+                            </td>
+                            <td><button class="question-view-btn" onclick="openQuestionPanel(${rowIdx})">View</button></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
         </div>`;
-    }).join('');
 
-    contentEl.innerHTML = html;
+    // Mobile cards
+    const cardsHtml = `
+        <div class="questions-cards-mobile">
+            ${pageQuestions.map((q, i) => {
+                const conf = q.confidence || 0;
+                const confClass = conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low';
+                const confPct = Math.round(conf * 100);
+                const rowIdx = startIdx + i;
+                const qLabel = q.question_label || q.question_id || '';
+                return `<div class="question-card-mobile">
+                    <div class="question-card-mobile-header">
+                        <span class="question-type-badge ${q.question_type || 'unknown'}">${(q.question_type || 'unknown').replace(/_/g, ' ')}</span>
+                        <span class="question-card-mobile-label">${escapeHtml(qLabel)}</span>
+                    </div>
+                    <div class="question-card-mobile-meta">
+                        <div class="question-card-mobile-meta-left">
+                            <span>${q.variable_count || 0} vars</span>
+                            <span class="question-confidence">
+                                <span class="confidence-dot ${confClass}"></span>
+                                ${confPct}%
+                            </span>
+                        </div>
+                        <button class="question-view-btn" onclick="openQuestionPanel(${rowIdx})">View</button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+
+    // Pagination controls
+    const paginationHtml = renderQPagination(filteredQuestions.length, qCurrentPage, qPageSize, totalPages);
+
+    contentEl.innerHTML = tableHtml + cardsHtml + paginationHtml;
 }
 
-function toggleQuestionCard(idx) {
-    const card = document.getElementById(`qcard-${idx}`);
-    if (card) card.classList.toggle('expanded');
+function renderQPagination(totalItems, currentPage, pageSize, totalPages) {
+    if (totalItems <= pageSize) return '';
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalItems);
+
+    let pageButtons = '';
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+
+    if (startPage > 1) {
+        pageButtons += `<button class="pagination-btn" onclick="goToQPage(1)">1</button>`;
+        if (startPage > 2) pageButtons += `<span style="color:var(--text-muted);padding:0 4px;">...</span>`;
+    }
+    for (let p = startPage; p <= endPage; p++) {
+        pageButtons += `<button class="pagination-btn ${p === currentPage ? 'active' : ''}" onclick="goToQPage(${p})">${p}</button>`;
+    }
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) pageButtons += `<span style="color:var(--text-muted);padding:0 4px;">...</span>`;
+        pageButtons += `<button class="pagination-btn" onclick="goToQPage(${totalPages})">${totalPages}</button>`;
+    }
+
+    return `
+        <div class="pagination-container">
+            <div class="pagination-info">Showing ${startItem}-${endItem} of ${totalItems} questions</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" onclick="goToQPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                ${pageButtons}
+                <button class="pagination-btn" onclick="goToQPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+            <div class="pagination-per-page">
+                <span style="font-size:0.75rem;color:var(--text-muted);">Per page:</span>
+                <select onchange="changeQPageSize(this.value)">
+                    <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                    <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${pageSize === 100 ? 'selected' : ''}>100</option>
+                </select>
+            </div>
+        </div>`;
+}
+
+function goToQPage(page) {
+    qCurrentPage = page;
+    renderQuestions();
+    const el = document.getElementById('questionsContent');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeQPageSize(size) {
+    qPageSize = parseInt(size, 10);
+    qCurrentPage = 1;
+    renderQuestions();
+}
+
+function openQuestionPanel(idx) {
+    const q = filteredQuestions[idx];
+    if (!q) return;
+
+    const panel = document.getElementById('questionSlidePanel');
+    const overlay = document.getElementById('questionPanelOverlay');
+    const body = document.getElementById('questionPanelBody');
+
+    const qId = q.question_id || '-';
+    const qLabel = q.question_label || q.question_id || '';
+    const qType = q.question_type || 'unknown';
+    const conf = q.confidence || 0;
+    const confClass = conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low';
+    const confPct = Math.round(conf * 100);
+    const varCount = q.variable_count || 0;
+
+    // Build variable-attribute mapping table
+    let varAttrMap = {};
+    if (q.variable_attribute_map) {
+        q.variable_attribute_map.split(',').forEach(pair => {
+            const [varName, attr] = pair.split('=').map(s => s.trim());
+            if (varName && attr) varAttrMap[varName] = attr;
+        });
+    }
+
+    let varTableHtml = '';
+    const varNames = q.variable_names || [];
+    if (varNames.length > 0) {
+        const varRows = varNames.map((v, vi) => {
+            const attr = varAttrMap[v] || (q.attribute_labels && q.attribute_labels[vi]) || '-';
+            return `<tr><td class="qv-name">${escapeHtml(v)}</td><td>${escapeHtml(attr)}</td></tr>`;
+        }).join('');
+
+        varTableHtml = `
+            <div class="q-panel-section-header">
+                Variable Mapping
+                <span class="q-panel-section-count">${varNames.length}</span>
+            </div>
+            <div class="q-panel-info-card" style="padding:0; overflow:hidden;">
+                <table class="q-panel-var-table">
+                    <thead><tr><th>Variable Name</th><th>Attribute Label</th></tr></thead>
+                    <tbody>${varRows}</tbody>
+                </table>
+            </div>`;
+    }
+
+    // Value labels section — parse JSON into Code/Label table (mirrors var panel)
+    let valueLabelsHtml = '';
+    if (q.shared_value_labels) {
+        let parsedLabels = null;
+        try {
+            parsedLabels = typeof q.shared_value_labels === 'string'
+                ? JSON.parse(q.shared_value_labels)
+                : q.shared_value_labels;
+        } catch (e) {
+            parsedLabels = null;
+        }
+        if (parsedLabels && typeof parsedLabels === 'object' && Object.keys(parsedLabels).length > 0) {
+            const entries = Object.entries(parsedLabels);
+            valueLabelsHtml = `
+                <div class="q-panel-section-header">
+                    Value Labels
+                    <span class="q-panel-section-count">${entries.length}</span>
+                </div>
+                <div class="q-panel-info-card" style="padding:0; overflow:hidden;">
+                    <table class="q-panel-var-table">
+                        <thead><tr><th>Code</th><th>Label</th></tr></thead>
+                        <tbody>
+                            ${entries.map(([key, val]) => `
+                                <tr>
+                                    <td class="qv-name">${escapeHtml(key)}</td>
+                                    <td>${escapeHtml(String(val))}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        } else {
+            // Fallback: show raw string if not valid JSON
+            valueLabelsHtml = `
+                <div class="q-panel-section-header">Value Labels</div>
+                <div class="q-panel-info-card">
+                    <div class="q-panel-value-labels">${escapeHtml(q.shared_value_labels)}</div>
+                </div>`;
+        }
+    }
+
+    body.innerHTML = `
+        <div class="q-panel-info-card">
+            <div class="q-panel-question-label">${escapeHtml(qLabel)}</div>
+            <div class="q-panel-question-id">${escapeHtml(qId)}</div>
+            <div class="q-panel-meta-grid">
+                <div class="q-panel-meta-item">
+                    <span class="q-panel-meta-label">Type</span>
+                    <span class="q-panel-meta-value"><span class="question-type-badge ${qType}">${qType.replace(/_/g, ' ')}</span></span>
+                </div>
+                <div class="q-panel-meta-item">
+                    <span class="q-panel-meta-label">Confidence</span>
+                    <span class="q-panel-meta-value">
+                        <span class="question-confidence">
+                            <span class="confidence-dot ${confClass}"></span>
+                            ${confPct}%
+                        </span>
+                    </span>
+                </div>
+                <div class="q-panel-meta-item">
+                    <span class="q-panel-meta-label">Variables</span>
+                    <span class="q-panel-meta-value">${varCount}</span>
+                </div>
+                <div class="q-panel-meta-item">
+                    <span class="q-panel-meta-label">Source File</span>
+                    <span class="q-panel-meta-value" style="font-size:0.75rem;">${escapeHtml(q._fileName || '-')}</span>
+                </div>
+            </div>
+        </div>
+        ${varTableHtml}
+        ${valueLabelsHtml}
+    `;
+
+    panel.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeQuestionPanel() {
+    const panel = document.getElementById('questionSlidePanel');
+    const overlay = document.getElementById('questionPanelOverlay');
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 // ============================================
