@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed Widget Test Page</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        p { color: #666; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h1>External Dashboard</h1>
+    <p>This simulates an external website that embeds the Ragenaizer research chat widget.
+       The chat bubble should appear in the bottom-right corner.</p>
+    <p>Click the chat bubble to open the widget and ask questions about the research data.</p>
+
+    <script src="http://localhost:5501/embed/widget.js"
+            data-key="5ec68ba7da9df7663a12ba0fbf6e7228"
+            data-api="https://localhost:5114"
+            data-theme="dark"></script>
+</body>
+</html>

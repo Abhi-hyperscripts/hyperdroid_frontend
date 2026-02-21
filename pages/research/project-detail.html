@@ -21,6 +21,8 @@
     <script>
         document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');
         document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -33,12 +35,13 @@
 
         .research-container {
             width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
+            max-width: 100%;
             padding: 80px 24px 24px 24px;
             flex: 1;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+            transition: padding-left 0.3s ease;
         }
 
         /* Breadcrumb */
@@ -64,57 +67,145 @@
             font-weight: 500;
         }
 
-        /* Project Header */
-        .project-header {
+        /* Research Header Row — nav-control + title + actions in one line */
+        .research-header-row {
             display: flex;
-            justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 24px;
-            gap: 16px;
-            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 12px;
         }
-        .project-info {
+        /* Left column: hamburger stacked above tab indicator */
+        .research-nav-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .research-title-block {
             flex: 1;
             min-width: 0;
+            padding-top: 2px;
         }
-        .project-info h1 {
+        .research-title-block h1 {
             font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: -0.03em;
-            margin: 0 0 6px 0;
+            margin: 0 0 3px 0;
             color: var(--text-primary);
+            line-height: 1.2;
         }
-        .project-description {
+        .research-container .project-description {
             color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin: 0 0 8px 0;
-            line-height: 1.5;
+            font-size: 0.82rem;
+            margin: 0 0 4px 0;
+            line-height: 1.4;
         }
-        .project-meta {
+        .research-container .project-meta {
             display: flex;
             align-items: center;
-            gap: 16px;
-            font-size: 0.75rem;
+            gap: 12px;
+            font-size: 0.72rem;
             color: var(--text-muted);
             flex-wrap: wrap;
+            margin-top: 0;
         }
-        .project-meta .meta-item {
+        .research-container .project-meta .meta-item {
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        .project-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
+
+        /* Actions Dropdown */
+        .project-actions-dropdown {
+            position: relative;
             flex-shrink: 0;
         }
-        .project-actions .btn {
-            font-size: 0.8rem;
-            padding: 8px 14px;
+        .actions-trigger {
             display: flex;
             align-items: center;
             gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-card, var(--bg-secondary));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .actions-trigger:hover {
+            background: var(--bg-tertiary, var(--gray-100));
+            box-shadow: var(--shadow-sm);
+        }
+        .actions-trigger.open {
+            background: var(--bg-tertiary, var(--gray-100));
+            border-color: var(--brand-primary, #635bff);
+        }
+        .actions-chevron {
+            transition: transform 0.2s ease;
+        }
+        .actions-trigger.open .actions-chevron {
+            transform: rotate(180deg);
+        }
+        .actions-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 190px;
+            background: var(--bg-card, var(--bg-secondary));
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+            z-index: 1050;
+            padding: 6px;
+            animation: dropdownFadeIn 0.15s ease;
+        }
+        .actions-menu.open {
+            display: block;
+        }
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .actions-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            background: none;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-align: left;
+        }
+        .actions-item:hover {
+            background: var(--bg-tertiary, rgba(0,0,0,0.04));
+        }
+        .actions-item svg {
+            flex-shrink: 0;
+            color: var(--text-secondary);
+        }
+        .actions-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 8px;
+        }
+        .actions-item-danger {
+            color: var(--color-error, #ef4444);
+        }
+        .actions-item-danger svg {
+            color: var(--color-error, #ef4444);
+        }
+        .actions-item-danger:hover {
+            background: rgba(239, 68, 68, 0.08);
         }
 
         /* Status Badge */
@@ -153,55 +244,30 @@
             color: var(--color-danger, #ef4444);
         }
 
-        /* Tab Navigation */
-        .tab-nav {
-            display: inline-flex;
-            gap: 4px;
-            margin-bottom: 20px;
-            padding: 4px;
-            border-radius: 12px;
-            background: rgba(var(--brand-primary-rgb), 0.06);
-            border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
-        }
-        .tab-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 18px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 9px;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
+        /* Active tab title uses shared sidebar-nav.css — no page-specific overrides */
+
+        /* Layout wrapper */
+        .research-layout {
+            display: block;
+            min-height: calc(100vh - 200px);
             position: relative;
+            transition: all 0.3s ease;
         }
-        .tab-btn img {
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
+
+        /* Sidebar uses shared sidebar-nav.css — no page-specific overrides */
+
+        /* Content area */
+        .research-content {
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
         }
-        .tab-btn:hover {
-            color: var(--text-primary);
-            background: rgba(var(--brand-primary-rgb), 0.06);
+
+        /* When sidebar is open on desktop — push entire container right */
+        .research-container.sidebar-open {
+            padding-left: 296px; /* 280px sidebar + 16px gap */
         }
-        .tab-btn:hover img {
-            opacity: 0.8;
-        }
-        .tab-btn.active {
-            color: var(--text-primary);
-            background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
-                rgba(var(--brand-primary-rgb), 0.12);
-            border-color: rgba(var(--brand-primary-rgb), 0.25);
-            font-weight: 600;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-        .tab-btn.active img {
-            opacity: 1;
-        }
+
         .tab-content {
             display: none;
         }
@@ -253,6 +319,55 @@
         .file-name-cell svg {
             flex-shrink: 0;
             color: var(--text-muted);
+        }
+
+        /* File Cards — Mobile only (mirrors .variable-card pattern) */
+        .files-cards-mobile {
+            display: none;
+        }
+        .file-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%),
+                        rgba(255,255,255,0.55);
+            backdrop-filter: blur(16px) saturate(1.4);
+            -webkit-backdrop-filter: blur(16px) saturate(1.4);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        [data-theme="dark"] .file-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
+                        rgba(var(--bg-card-rgb, 30,41,59), 0.06);
+            border-color: var(--border-color-light);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .file-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .file-card-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            word-break: break-all;
+        }
+        .file-card-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .file-card-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
         }
 
         /* Variables Toolbar */
@@ -684,76 +799,7 @@
             font-size: 0.75rem;
         }
 
-        /* ── Variable Slide Panel ── */
-        .var-panel-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 9998;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.25s ease, visibility 0.25s ease;
-        }
-        .var-panel-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .var-slide-panel {
-            position: fixed;
-            top: 68px;
-            right: 8px;
-            bottom: 8px;
-            width: 440px;
-            max-width: calc(100vw - 16px);
-            background: var(--bg-body, #0f172a);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            transform: translateX(100%);
-            visibility: hidden;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s ease;
-            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
-        }
-        .var-slide-panel.active {
-            transform: translateX(0);
-            visibility: visible;
-        }
-        .var-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-        .var-panel-header h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-        .var-panel-close {
-            background: none;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            transition: all 0.15s ease;
-        }
-        .var-panel-close:hover {
-            color: var(--text-primary);
-            border-color: var(--text-secondary);
-        }
-        .var-panel-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 20px;
-        }
+        /* ── Variable Slide Panel (uses shared slide-panel.css for container) ── */
         .var-panel-info-card {
             background:
                 linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
@@ -1936,9 +1982,10 @@
         }
         @media (max-width: 640px) {
             .ai-hud-overlay {
-                width: 98vw;
+                width: calc(100vw - 32px);
                 min-width: 0;
-                height: 92vh;
+                height: calc(100vh - 140px);
+                top: calc(50% + 20px);
             }
             .ai-tv-screen { border-radius: 14px; }
             .ai-tv-stand { width: 90%; border-radius: 14px; }
@@ -2432,12 +2479,23 @@
             .research-container {
                 padding: 70px 12px 16px 12px;
             }
-            .project-header {
-                flex-direction: column;
+            .research-header-row {
+                gap: 10px;
             }
-            .project-actions {
-                width: 100%;
-                justify-content: flex-end;
+            .research-title-block h1 {
+                font-size: 1.15rem;
+            }
+            .research-container .project-meta {
+                gap: 8px;
+                font-size: 0.68rem;
+            }
+            .actions-menu {
+                right: 0;
+                min-width: 170px;
+            }
+            /* Don't shift content on mobile — sidebar overlays instead */
+            .research-container.sidebar-open {
+                padding-left: 12px;
             }
             .variables-table-container {
                 display: none;
@@ -2447,13 +2505,19 @@
                 flex-direction: column;
                 gap: 12px;
             }
-            .tab-btn {
-                padding: 10px 14px;
-                font-size: 0.8rem;
+            /* Files table → cards on mobile */
+            .files-table-wrapper {
+                display: none;
             }
-            .var-slide-panel {
-                top: 0;
-                width: 100vw;
+            .files-cards-mobile {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            /* Variable slide panel uses shared slide-panel.css bottom-sheet on mobile */
+            /* Value labels table — allow wrapping */
+            .var-panel-labels-table td {
+                word-break: break-word;
             }
             .pagination-container {
                 flex-direction: column;
@@ -2461,8 +2525,9 @@
                 text-align: center;
             }
             .ai-hud-overlay {
-                width: calc(100vw - 16px);
-                height: calc(100vh - 80px);
+                width: calc(100vw - 32px);
+                height: calc(100vh - 140px);
+                top: calc(50% + 20px);
             }
             .ai-tv-stand { width: 95%; }
             .ai-tv-neck { width: 60px; height: 8px; }
@@ -2938,6 +3003,7 @@
     </style>
 </head>
 <body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -2966,9 +3032,26 @@
                 <span class="current" id="breadcrumbProjectName">Project</span>
             </nav>
 
-            <!-- Project Header -->
-            <div class="project-header">
-                <div class="project-info">
+            <!-- Header Row: Navigation control (left) + Title + Actions -->
+            <div class="research-header-row">
+                <div class="research-nav-control">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="active-tab-title" id="activeTabTitle">
+                        <span class="tab-indicator"></span>
+                        <span id="activeTabName">Files</span>
+                    </div>
+                </div>
+                <div class="research-title-block">
                     <h1 id="projectName">Project Name</h1>
                     <p class="project-description" id="projectDescription"></p>
                     <div class="project-meta">
@@ -3004,85 +3087,116 @@
                         </span>
                     </div>
                 </div>
-                <div class="project-actions">
-                    <button class="btn btn-primary" onclick="openUploadModal()">
+                <!-- Actions Dropdown -->
+                <div class="project-actions-dropdown" id="projectActionsDropdown">
+                    <button class="actions-trigger" id="actionsTrigger" onclick="toggleActionsDropdown()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="17 8 12 3 7 8"/>
-                            <line x1="12" y1="3" x2="12" y2="15"/>
+                            <circle cx="12" cy="5" r="1.5"/>
+                            <circle cx="12" cy="12" r="1.5"/>
+                            <circle cx="12" cy="19" r="1.5"/>
                         </svg>
-                        Upload File
-                    </button>
-                    <button id="embedSettingsBtn" class="btn btn-secondary" onclick="openEmbedSettingsModal()" style="display:none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="16 18 22 12 16 6"/>
-                            <polyline points="8 6 2 12 8 18"/>
+                        Actions
+                        <svg class="actions-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
                         </svg>
-                        Embed
                     </button>
-                    <button class="btn btn-secondary" onclick="openEditProjectModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                        Edit
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteProject()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                        Delete
-                    </button>
+                    <div class="actions-menu" id="actionsMenu">
+                        <button class="actions-item" onclick="openUploadModal(); closeActionsDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Upload File
+                        </button>
+                        <button class="actions-item" id="embedSettingsBtn" onclick="openEmbedSettingsModal(); closeActionsDropdown();" style="display:none;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                            Embed
+                        </button>
+                        <button class="actions-item" onclick="openEditProjectModal(); closeActionsDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Edit Project
+                        </button>
+                        <div class="actions-divider"></div>
+                        <button class="actions-item actions-item-danger" onclick="deleteProject(); closeActionsDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Delete Project
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="tab-nav">
-                <button class="tab-btn active" data-tab="files" onclick="switchTab('files')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    Files
-                </button>
-                <button class="tab-btn" data-tab="variables" onclick="switchTab('variables')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <polyline points="4 7 4 4 20 4 20 7"/>
-                        <line x1="9" y1="20" x2="15" y2="20"/>
-                        <line x1="12" y1="4" x2="12" y2="20"/>
-                    </svg>
-                    Variables
-                </button>
-                <button class="tab-btn" data-tab="questions" onclick="switchTab('questions')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    Questions
-                </button>
-                <button class="tab-btn" data-tab="query" onclick="switchTab('query')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <polyline points="16 18 22 12 16 6"/>
-                        <polyline points="8 6 2 12 8 18"/>
-                    </svg>
-                    Query
-                </button>
-                <button class="tab-btn" data-tab="functions" onclick="switchTab('functions')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <rect x="4" y="4" width="16" height="16" rx="2"/>
-                        <path d="M9 9h6M9 13h4"/>
-                    </svg>
-                    Functions
-                </button>
-                <button class="tab-btn" data-tab="ailogs" onclick="switchTab('ailogs')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    AI Logs
-                </button>
-            </div>
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+            <!-- Layout: Sidebar + Content -->
+            <div class="research-layout">
+                <aside class="sidebar-nav-panel" id="researchSidebar">
+                    <div class="sidebar-header"><h3>Navigation</h3></div>
+                    <nav class="sidebar-nav">
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="files">
+                                <span class="nav-number">1</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                <span class="nav-label">Files</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="variables">
+                                <span class="nav-number">2</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="4 7 4 4 20 4 20 7"/>
+                                    <line x1="9" y1="20" x2="15" y2="20"/>
+                                    <line x1="12" y1="4" x2="12" y2="20"/>
+                                </svg>
+                                <span class="nav-label">Variables</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="questions">
+                                <span class="nav-number">3</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <span class="nav-label">Questions</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="query">
+                                <span class="nav-number">4</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
+                                </svg>
+                                <span class="nav-label">Query</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="functions">
+                                <span class="nav-number">5</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                    <path d="M9 9h6M9 13h4"/>
+                                </svg>
+                                <span class="nav-label">Functions</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="ailogs">
+                                <span class="nav-number">6</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <span class="nav-label">AI Logs</span>
+                            </button>
+                        </div>
+                    </nav>
+                </aside>
+                <main class="research-content">
 
             <!-- Tab Content: Files -->
             <div class="tab-content active" id="filesTab">
@@ -3305,22 +3419,25 @@
                 </div>
 
             </div>
+                </main>
+            </div><!-- /research-layout -->
         </div>
     </div>
 
     <!-- Variable Detail Slide Panel -->
-    <div class="var-panel-overlay" id="varPanelOverlay" onclick="closeVarPanel()"></div>
-    <div class="var-slide-panel" id="varSlidePanel">
-        <div class="var-panel-header">
-            <h3>Variable Details</h3>
-            <button class="var-panel-close" onclick="closeVarPanel()">
+    <div class="slide-panel-overlay" id="varPanelOverlay" onclick="closeVarPanel()"></div>
+    <div class="slide-panel" id="varSlidePanel">
+        <div class="panel-drag-handle"></div>
+        <div class="panel-header">
+            <h3 class="panel-title">Variable Details</h3>
+            <button class="panel-close-btn" onclick="closeVarPanel()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
             </button>
         </div>
-        <div class="var-panel-body" id="varPanelBody">
+        <div class="panel-body" id="varPanelBody">
             <div class="loading-state"><div class="spinner"></div></div>
         </div>
     </div>

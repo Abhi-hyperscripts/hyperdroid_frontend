@@ -614,13 +614,19 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
     const projectName = document.getElementById('projectName').value;
     const description = document.getElementById('projectDescription').value;
 
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
     try {
         await api.createProject(projectName, description);
         closeModal('createProjectModal');
         document.getElementById('createProjectForm').reset();
-        loadAllProjects();
+        Toast.success('Project created successfully');
+        await loadProjectFilterDropdown();
+        await loadAllProjects();
     } catch (error) {
         Toast.error('Failed to create project: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1303,6 +1309,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
         return;
     }
 
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
     try {
         // Create the meeting
         const response = await api.createMeeting(
@@ -1336,9 +1344,12 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
         closeModal('createMeetingModal');
         document.getElementById('createMeetingForm').reset();
         createMeetingSelectedParticipants = [];
-        loadAllProjects();
+        Toast.success('Meeting created successfully');
+        await loadAllProjects();
     } catch (error) {
         Toast.error('Failed to create meeting: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -3568,8 +3579,6 @@ async function saveMeetingSettings() {
     }
 
     const saveBtn = document.querySelector('#meetingSettingsModal .btn-primary');
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = 'Saving...';
     saveBtn.disabled = true;
 
     try {
@@ -3602,13 +3611,12 @@ async function saveMeetingSettings() {
         }
 
         closeModal('meetingSettingsModal');
-        loadAllProjects();
+        await loadAllProjects();
 
     } catch (error) {
         console.error('Error saving meeting settings:', error);
         Toast.error('Failed to save settings: ' + error.message);
     } finally {
-        saveBtn.textContent = originalText;
         saveBtn.disabled = false;
     }
 }

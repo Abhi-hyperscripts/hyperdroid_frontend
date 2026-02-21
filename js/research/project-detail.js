@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize
     loadProject();
+    setupSidebar();
 
     // Keyboard shortcut: Ctrl+Enter to run query or function
     document.addEventListener('keydown', (e) => {
@@ -213,7 +214,8 @@ async function loadFiles() {
 function renderFilesTable() {
     const contentEl = document.getElementById('filesContent');
 
-    let html = `
+    // Desktop table (hidden on mobile via CSS)
+    let tableHtml = `
         <div class="files-table-wrapper">
             <table class="files-table">
                 <thead>
@@ -231,16 +233,23 @@ function renderFilesTable() {
     `;
 
     for (const file of files) {
-        html += renderFileRow(file);
+        tableHtml += renderFileRow(file);
     }
 
-    html += `
+    tableHtml += `
                 </tbody>
             </table>
         </div>
     `;
 
-    contentEl.innerHTML = html;
+    // Mobile cards (hidden on desktop, shown on mobile via CSS)
+    const cardsHtml = `
+        <div class="files-cards-mobile">
+            ${files.map(f => renderFileCard(f)).join('')}
+        </div>
+    `;
+
+    contentEl.innerHTML = tableHtml + cardsHtml;
 }
 
 function renderFileRow(file) {
@@ -286,6 +295,55 @@ function renderFileRow(file) {
                 </button>
             </td>
         </tr>
+    `;
+}
+
+function renderFileCard(file) {
+    const fileId = file.id;
+    const fileName = file.fileName || file.file_name || 'Unknown';
+    const fileSize = formatFileSize(file.fileSizeBytes || file.file_size_bytes || 0);
+    const status = file.status || 'unknown';
+    const displayStatus = status === 'loading_data' ? 'loading data' : status;
+    const variableCount = file.variableCount ?? file.variable_count ?? 0;
+    const rowCount = file.rowCount ?? file.row_count ?? 0;
+    const uploadedAt = file.uploadedAt || file.uploaded_at;
+    const processingTimeMs = file.processingTimeMs ?? file.processing_time_ms ?? 0;
+    const timeInfo = (status === 'ready' && processingTimeMs > 0) ? ` (${(processingTimeMs / 1000).toFixed(1)}s)` : '';
+    const isProcessing = ['uploading', 'parsing', 'loading_data'].includes(status);
+
+    return `
+        <div class="file-card" id="file-card-${fileId}" data-file-id="${fileId}" data-status="${status}">
+            <div class="file-card-header">
+                <div class="file-card-name">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    ${escapeHtml(fileName)}
+                </div>
+                <span class="status-badge ${status}">${displayStatus}${timeInfo}</span>
+            </div>
+            <div class="file-card-meta">
+                <span>${fileSize}</span>
+                ${status === 'ready' ? `<span>${formatNumber(variableCount)} vars</span>` : ''}
+                ${status === 'ready' ? `<span>${formatNumber(rowCount)} rows</span>` : ''}
+                ${uploadedAt ? `<span>${formatDate(uploadedAt)}</span>` : ''}
+            </div>
+            <div class="file-card-actions">
+                ${status === 'ready' ? `<button class="btn-icon" onclick="openFileMetadataModal('${fileId}')" title="Edit file context & weights" style="color: var(--text-secondary);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>` : ''}
+                <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escapeHtml(fileName)}')" title="${isProcessing ? 'Cannot delete while processing' : 'Delete file'}"${isProcessing ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     `;
 }
 
@@ -664,10 +722,15 @@ async function refreshProjectHeader() {
 function switchTab(tabName) {
     activeTab = tabName;
 
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+    // Update sidebar buttons
+    document.querySelectorAll('#researchSidebar .sidebar-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
+
+    // Update active tab title
+    const nameEl = document.getElementById('activeTabName');
+    const tabDisplayNames = { files:'Files', variables:'Variables', questions:'Questions', query:'Query', functions:'Functions', ailogs:'AI Logs' };
+    if (nameEl && tabDisplayNames[tabName]) nameEl.textContent = tabDisplayNames[tabName];
 
     // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => {
@@ -695,6 +758,121 @@ function switchTab(tabName) {
     if (tabName === 'ailogs') {
         if (!document.getElementById('aiLogsContent').innerHTML) loadAiLogs();
     }
+}
+
+// ============================================
+// ACTIONS DROPDOWN
+// ============================================
+
+function toggleActionsDropdown() {
+    const trigger = document.getElementById('actionsTrigger');
+    const menu = document.getElementById('actionsMenu');
+    if (!trigger || !menu) return;
+    const isOpen = menu.classList.contains('open');
+    if (isOpen) {
+        closeActionsDropdown();
+    } else {
+        trigger.classList.add('open');
+        menu.classList.add('open');
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeActionsOnOutsideClick);
+        }, 0);
+    }
+}
+
+function closeActionsDropdown() {
+    const trigger = document.getElementById('actionsTrigger');
+    const menu = document.getElementById('actionsMenu');
+    trigger?.classList.remove('open');
+    menu?.classList.remove('open');
+    document.removeEventListener('click', closeActionsOnOutsideClick);
+}
+
+function closeActionsOnOutsideClick(e) {
+    const dropdown = document.getElementById('projectActionsDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        closeActionsDropdown();
+    }
+}
+
+// ============================================
+// COLLAPSIBLE SIDEBAR NAVIGATION
+// ============================================
+
+function setupSidebar() {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('researchSidebar');
+    const container = document.querySelector('.research-container');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (!toggle || !sidebar) return;
+
+    // Desktop: open by default; Mobile/Tablet: closed
+    if (window.innerWidth > 1024) {
+        toggle.classList.add('active');
+        sidebar.classList.add('open');
+        container?.classList.add('sidebar-open');
+    } else {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
+    }
+
+    // Toggle button click
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        sidebar.classList.toggle('open');
+        container?.classList.toggle('sidebar-open');
+        if (window.innerWidth <= 1024) {
+            overlay?.classList.toggle('active');
+        }
+    });
+
+    // Overlay click (mobile close)
+    overlay?.addEventListener('click', () => {
+        toggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        container?.classList.remove('sidebar-open');
+        overlay?.classList.remove('active');
+    });
+
+    // Sidebar button clicks → call switchTab + on mobile close sidebar
+    document.querySelectorAll('#researchSidebar .sidebar-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            switchTab(tab);
+            // On mobile, close sidebar after selection
+            if (window.innerWidth <= 1024) {
+                toggle.classList.remove('active');
+                sidebar.classList.remove('open');
+                container?.classList.remove('sidebar-open');
+                overlay?.classList.remove('active');
+            }
+        });
+    });
+
+    // Escape key closes sidebar
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            toggle.classList.remove('active');
+            sidebar.classList.remove('open');
+            container?.classList.remove('sidebar-open');
+            overlay?.classList.remove('active');
+        }
+    });
+
+    // Sync overlay state on resize (desktop↔mobile transitions)
+    window.addEventListener('resize', () => {
+        if (sidebar.classList.contains('open')) {
+            if (window.innerWidth <= 1024) {
+                overlay?.classList.add('active');
+            } else {
+                overlay?.classList.remove('active');
+            }
+        }
+    });
 }
 
 // ============================================

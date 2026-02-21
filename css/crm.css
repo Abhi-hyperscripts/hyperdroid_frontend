@@ -1939,98 +1939,8 @@ body.crm-dashboard .crm-container {
     justify-content: flex-start;
 }
 
-/* Active Tab Title */
-.crm-settings-header .active-tab-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
-.crm-settings-header .active-tab-title .tab-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: var(--brand-primary);
-    border-radius: 50%;
-}
-
-/* Sidebar Toggle */
-.crm-settings-container .sidebar-toggle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    width: 42px;
-    height: 42px;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.crm-settings-container .sidebar-toggle:hover {
-    background: var(--gray-100);
-    box-shadow: var(--shadow-md);
-}
-
-.crm-settings-container .hamburger-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.crm-settings-container .hamburger-line {
-    display: block;
-    width: 20px;
-    height: 2px;
-    background: var(--text-primary);
-    border-radius: 2px;
-    transition: all 0.3s ease;
-}
-
-.crm-settings-container .hamburger-line + .hamburger-line {
-    margin-top: 5px;
-}
-
-.crm-settings-container .arrow-icon {
-    display: none;
-    color: var(--text-primary);
-    stroke: currentColor;
-}
-
-.crm-settings-container .sidebar-toggle.active .hamburger-icon {
-    display: none;
-}
-
-.crm-settings-container .sidebar-toggle.active .arrow-icon {
-    display: block;
-}
-
-/* Sidebar Overlay */
-.crm-settings-container .sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.crm-settings-container .sidebar-overlay.active {
-    opacity: 1;
-}
+/* Sidebar toggle, hamburger, overlay — now in shared sidebar-nav.css */
 
 /* Alerts container */
 .crm-settings-alerts {
@@ -2046,105 +1956,7 @@ body.crm-dashboard .crm-container {
     transition: all 0.3s ease;
 }
 
-/* Sidebar */
-.crm-settings-sidebar {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    width: 280px;
-    height: calc(100vh - 60px);
-    background: var(--bg-card);
-    border-right: 1px solid var(--border-color);
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    overflow-y: auto;
-    padding: 16px 0;
-    box-shadow: var(--shadow-lg);
-}
-
-.crm-settings-sidebar.open {
-    transform: translateX(0);
-}
-
-/* Sidebar uses shared HRMS classes: .sidebar-header, .sidebar-nav, .sidebar-btn */
-.crm-settings-sidebar .sidebar-header {
-    padding: 12px 16px 16px;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 8px;
-}
-
-.crm-settings-sidebar .sidebar-header h3 {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.crm-settings-sidebar .sidebar-header p {
-    font-size: 11px;
-    color: var(--text-tertiary);
-    margin: 4px 0 0;
-}
-
-.crm-settings-sidebar .sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 0 8px;
-}
-
-.crm-settings-sidebar .sidebar-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
-    text-align: left;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.crm-settings-sidebar .sidebar-btn svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    opacity: 0.6;
-}
-
-.crm-settings-sidebar .sidebar-btn:hover {
-    background: var(--gray-100);
-    color: var(--text-primary);
-}
-
-.crm-settings-sidebar .sidebar-btn:hover svg {
-    opacity: 1;
-}
-
-.crm-settings-sidebar .sidebar-btn.active {
-    background: rgba(var(--brand-primary-rgb), 0.1);
-    color: var(--brand-primary);
-    font-weight: 600;
-}
-
-.crm-settings-sidebar .sidebar-btn.active svg {
-    opacity: 1;
-    color: var(--brand-primary);
-}
-
-.crm-settings-sidebar .nav-label {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+/* Sidebar panel, header, nav, buttons, labels — now in shared sidebar-nav.css */
 
 /* Settings Content */
 .crm-settings-content {
@@ -2181,25 +1993,10 @@ body.crm-dashboard .crm-container {
         padding: 12px 16px;
     }
 
-    .crm-settings-container .sidebar-toggle {
-        width: 38px;
-        height: 38px;
-    }
-
-    .crm-settings-container .hamburger-line {
-        width: 18px;
-    }
-
-    .crm-settings-sidebar {
-        width: 260px;
-    }
+    /* Sidebar toggle, hamburger, panel width — now in shared sidebar-nav.css */
 
     .crm-settings-content {
         padding: 12px 16px;
-    }
-
-    .crm-settings-header .active-tab-title {
-        font-size: 13px;
     }
 
     .crm-settings-alerts {
@@ -2231,15 +2028,7 @@ body.crm-dashboard .crm-container {
         white-space: nowrap;
     }
 
-    /* On mobile, sidebar overlays content instead of pushing */
-    .crm-settings-container .sidebar-overlay {
-        display: block;
-        pointer-events: none;
-    }
-
-    .crm-settings-container .sidebar-overlay.active {
-        pointer-events: auto;
-    }
+    /* Sidebar overlay — now in shared sidebar-nav.css */
 
     /* Don't shift content on mobile */
     .crm-settings-container.sidebar-open .crm-settings-header {
@@ -2327,28 +2116,7 @@ body.crm-dashboard .crm-container {
     }
 }
 
-/* Dark theme overrides for settings sidebar */
-[data-theme="dark"] .crm-settings-sidebar {
-    background: rgba(15, 23, 42, 0.95);
-    border-right-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .crm-settings-sidebar .sidebar-header {
-    border-bottom-color: rgba(255, 255, 255, 0.06);
-}
-
-[data-theme="dark"] .crm-settings-sidebar .sidebar-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-[data-theme="dark"] .crm-settings-container .sidebar-toggle {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .crm-settings-container .sidebar-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
+/* Dark theme sidebar overrides — now in shared sidebar-nav.css */
 
 /* =============================================================
    CRM - Dark Theme Overrides for Leads/Deals

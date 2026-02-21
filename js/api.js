@@ -137,6 +137,10 @@ class API {
             }
         }
 
+        // Auto-show spinner overlay (ref-counted — stays visible until all calls finish)
+        const _showSpinner = options._skipSpinner !== true && typeof ButtonSpinner !== 'undefined';
+        if (_showSpinner) ButtonSpinner.show();
+
         const baseUrl = this._getBaseUrl(endpoint);
         // For HRMS endpoints, strip /hrms prefix since baseUrl already has /api
         // e.g., /hrms/offices -> /offices (baseUrl has /api, so final is /api/offices)
@@ -166,6 +170,8 @@ class API {
                 ...options.headers
             }
         };
+        // Remove internal flags before fetch
+        delete config._skipSpinner;
 
         try {
             const response = await fetch(url, config);
@@ -210,6 +216,8 @@ class API {
         } catch (error) {
             console.error('API Error:', error);
             throw error;
+        } finally {
+            if (_showSpinner) ButtonSpinner.hide();
         }
     }
 

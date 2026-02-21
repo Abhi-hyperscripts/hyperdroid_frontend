@@ -189,7 +189,7 @@ function toggleSettingsSidebar() {
 
 function switchSettingsTab(tabName) {
     // Update sidebar buttons
-    document.querySelectorAll('.crm-settings-sidebar .sidebar-btn').forEach(btn => {
+    document.querySelectorAll('#settingsSidebar .sidebar-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
