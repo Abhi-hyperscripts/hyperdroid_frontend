@@ -3243,7 +3243,8 @@ async function executeFn() {
         const rowCount = response.rows ? response.rows.length : 0;
         if (execInfo) execInfo.textContent = `${formatNumber(rowCount)} rows in ${execTime}ms`;
 
-        renderFnResults(response);
+        const funcName = parsed.function_name || '';
+        renderFnResults(response, funcName);
         showFnPopup(execTime, rowCount);
     } catch (error) {
         renderFnError(`Request failed: ${error.message}`);
@@ -3252,6 +3253,199 @@ async function executeFn() {
         btn.disabled = false;
         btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Execute Function`;
     }
+}
+
+/**
+ * Render driver regression results in a polished SPSS-style format.
+ * Shows: model summary box, ANOVA table, coefficients table with
+ * importance bars, and comparison delta table when compare_by is used.
+ */
+function _renderDriverRegression(rows, stats) {
+    const esc = s => escapeHtml(String(s ?? ''));
+    const fmtN = n => Number(n).toLocaleString();
+    const fmtD = (n, d = 4) => {
+        if (n === null || n === undefined) return '-';
+        const v = Number(n);
+        return isNaN(v) ? String(n) : v.toFixed(d);
+    };
+    const fmtP = p => {
+        if (p === null || p === undefined) return '-';
+        const v = Number(p);
+        if (isNaN(v)) return String(p);
+        if (v < 0.001) return '<.001';
+        return v.toFixed(3);
+    };
+    const bc = 'var(--border-color, #334155)';
+    const depVar = stats.dependent_variable || '?';
+    const isComparison = !!stats.groups;
+
+    let h = `<div class="spss-output" style="padding: 14px; font-size: 0.8rem;">`;
+
+    // ── Title ──
+    h += `<div style="font-weight:700; font-size:0.92rem; margin-bottom:12px; color:var(--text-primary);">
+        Driver Regression — ${esc(depVar)}${stats.dependent_variable_label ? ' <span style="color:var(--text-secondary);font-weight:400;">(' + esc(stats.dependent_variable_label) + ')</span>' : ''}
+    </div>`;
+
+    if (!isComparison) {
+        // ── Single regression output ──
+        // Model Summary box
+        const r2 = Number(stats.r_squared || 0);
+        const adjR2 = Number(stats.adjusted_r_squared || 0);
+        const fStat = Number(stats.f_statistic || 0);
+        const fP = stats.f_p_value;
+        const n = Number(stats.n || 0);
+        const k = Number(stats.predictors_count || rows.length);
+
+        h += `<div style="font-weight:600; margin-bottom:4px;">Model Summary</div>`;
+        h += `<table style="border-collapse:collapse; margin-bottom:14px; font-size:0.78rem;">
+            <thead><tr>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">R\u00B2</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">Adj. R\u00B2</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">F</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">df1</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">df2</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">Sig.</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">N</th>
+            </tr></thead>
+            <tbody><tr>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right; font-weight:600;">${fmtD(r2, 4)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(adjR2, 4)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(fStat.toFixed(2))}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${k}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(Number(stats.f_df2 || 0))}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtP(fP)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(n)}</td>
+            </tr></tbody>
+        </table>`;
+
+        // Coefficients table
+        h += `<div style="font-weight:600; margin-bottom:4px;">Coefficients</div>`;
+        h += _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc);
+
+    } else {
+        // ── Comparison mode (compare_by) ──
+        const groups = stats.groups || [];
+        const deltas = stats.deltas || [];
+
+        // Per-group model summaries
+        h += `<div style="font-weight:600; margin-bottom:4px;">Model Summary by Group</div>`;
+        h += `<table style="border-collapse:collapse; margin-bottom:14px; font-size:0.78rem; width:100%;">
+            <thead><tr>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">Group</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">R\u00B2</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">Adj. R\u00B2</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">F</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">Sig.</th>
+                <th style="border:1px solid ${bc}; padding:4px 10px;">N</th>
+            </tr></thead><tbody>`;
+        for (const g of groups) {
+            h += `<tr>
+                <td style="border:1px solid ${bc}; padding:4px 10px; font-weight:600;">${esc(g.group_label || g.group_value)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(g.r_squared, 4)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtD(g.adjusted_r_squared, 4)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(Number(g.f_statistic || 0).toFixed(2))}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtP(g.f_p_value)}</td>
+                <td style="border:1px solid ${bc}; padding:4px 10px; text-align:right;">${fmtN(Number(g.n || 0))}</td>
+            </tr>`;
+        }
+        h += `</tbody></table>`;
+
+        // Per-group coefficient tables
+        const groupValues = [...new Set(rows.map(r => String(r.group ?? '')))];
+        for (const gv of groupValues) {
+            const groupRows = rows.filter(r => String(r.group ?? '') === gv);
+            const groupMeta = groups.find(g => String(g.group_value) === gv);
+            const label = groupMeta?.group_label || gv;
+            h += `<div style="font-weight:600; margin:12px 0 4px;">Coefficients — ${esc(label)}</div>`;
+            h += _buildCoefficientTable(groupRows, bc, fmtD, fmtP, fmtN, esc);
+        }
+
+        // Delta importance table
+        if (deltas.length > 0) {
+            h += `<div style="font-weight:600; margin:12px 0 4px;">Change in Drivers (First → Last Group)</div>`;
+            h += `<table style="border-collapse:collapse; width:100%; font-size:0.78rem; margin-bottom:10px;">
+                <thead><tr>
+                    <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Variable</th>
+                    <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">\u0394 Std. Beta</th>
+                    <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">\u0394 Importance</th>
+                    <th style="border:1px solid ${bc}; padding:4px 8px; text-align:center;">Direction</th>
+                </tr></thead><tbody>`;
+            const sortedDeltas = [...deltas].sort((a, b) => Math.abs(b.delta_importance || 0) - Math.abs(a.delta_importance || 0));
+            for (const d of sortedDeltas) {
+                const dImp = Number(d.delta_importance || 0);
+                const dBeta = Number(d.delta_std_beta || 0);
+                const dir = d.direction || '';
+                const dirColor = dir === 'strengthened' ? 'var(--color-success, #22c55e)' :
+                                 dir === 'weakened' ? 'var(--color-error, #ef4444)' :
+                                 'var(--text-secondary)';
+                const dirSymbol = dir === 'strengthened' ? '\u25B2' : dir === 'weakened' ? '\u25BC' : '\u25CF';
+                h += `<tr>
+                    <td style="border:1px solid ${bc}; padding:4px 8px;">${esc(d.variable_label || d.variable)}</td>
+                    <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${dBeta >= 0 ? '+' : ''}${fmtD(dBeta, 4)}</td>
+                    <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${dImp >= 0 ? '+' : ''}${fmtD(dImp, 1)}%</td>
+                    <td style="border:1px solid ${bc}; padding:4px 8px; text-align:center; color:${dirColor};">${dirSymbol} ${esc(dir)}</td>
+                </tr>`;
+            }
+            h += `</tbody></table>`;
+        }
+    }
+
+    h += `</div>`;
+    return h;
+}
+
+/**
+ * Build a coefficient table with inline importance bars.
+ */
+function _buildCoefficientTable(rows, bc, fmtD, fmtP, fmtN, esc) {
+    // Find max importance for bar scaling
+    const maxImp = Math.max(...rows.map(r => Math.abs(Number(r.relative_importance || 0))), 1);
+
+    let h = `<table style="border-collapse:collapse; width:100%; font-size:0.78rem; margin-bottom:10px;">
+        <thead><tr>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Variable</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Std. Beta</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Beta</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Std. Error</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">t</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">Sig.</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">VIF</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">r</th>
+            <th style="border:1px solid ${bc}; padding:4px 8px; text-align:left;">Relative Importance</th>
+        </tr></thead><tbody>`;
+
+    for (const r of rows) {
+        const varName = esc(r.variable_label || r.variable);
+        const imp = Number(r.relative_importance || 0);
+        const impPct = Math.max(0, (imp / maxImp) * 100);
+        const isSig = r.significant === true || r.significant === 'true';
+        const vif = Number(r.vif || 0);
+        const vifWarn = vif > 10 ? 'color:var(--color-error, #ef4444);font-weight:600;' :
+                        vif > 5 ? 'color:var(--color-warning, #f59e0b);font-weight:600;' : '';
+        const sigStyle = isSig ? '' : 'opacity:0.5;';
+
+        h += `<tr style="${sigStyle}">
+            <td style="border:1px solid ${bc}; padding:4px 8px; white-space:nowrap;">${varName}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; font-weight:600;">${fmtD(r.std_beta, 4)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.beta, 4)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.std_error, 4)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.t_value, 3)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtP(r.p_value)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right; ${vifWarn}">${fmtD(vif, 2)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; text-align:right;">${fmtD(r.zero_order_r, 4)}</td>
+            <td style="border:1px solid ${bc}; padding:4px 8px; min-width:160px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="flex:1; height:14px; background:var(--bg-tertiary, #1e293b); border-radius:3px; overflow:hidden;">
+                        <div style="height:100%; width:${impPct.toFixed(1)}%; background:var(--brand-primary, #00d4ff); border-radius:3px; transition:width 0.3s;"></div>
+                    </div>
+                    <span style="font-size:0.72rem; min-width:32px; text-align:right;">${fmtD(imp, 1)}%</span>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    h += `</tbody></table>`;
+    return h;
 }
 
 /**
@@ -3380,12 +3574,15 @@ function renderFnResults(response, funcName, varName, varLabel) {
         ? stats.column_letters.map(c => c.letter) : [];
     const isTableFunc = (columns.length > 0 && columns[0] === 'row') || sigLetters.length > 0;
     const isVarFunction = (funcName === 'frequency' || funcName === 'descriptive_stats');
+    const isRegressionFunc = (funcName === 'driver_regression');
 
     let html = '';
 
     // ── SPSS-style rendering for frequency/descriptive ──
     if (isVarFunction && rows.length > 0) {
         html = _renderSpssStyle(funcName, varName, varLabel, rows, stats);
+    } else if (isRegressionFunc && rows.length > 0) {
+        html = _renderDriverRegression(rows, stats);
     } else {
         // ── Generic markdown rendering for other functions ──
         let md = '';
