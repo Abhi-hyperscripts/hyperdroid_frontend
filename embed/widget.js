@@ -432,7 +432,7 @@
                                 </svg>
                             </div>
                             <div class="rz-welcome-title">Ask anything about this data</div>
-                            <div class="rz-welcome-sub">AI-powered research analysis. Ask questions about the dataset and get instant insights with charts.</div>
+                            <div class="rz-welcome-sub">Agentic AI-powered research assistant.</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
