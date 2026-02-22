@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demo — Ragenaizer Embed</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="/js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<link rel="stylesheet" href="/css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="/css/landing.css?v=' + CACHE_VERSION + '">');</script>
+
+    <style>
+        /* ── Demo-specific overrides ── */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #050810;
+        }
+
+        .demo-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Dashboard screenshot area — fills all space between nav and footer */
+        .demo-dashboard {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            margin-top: 72px; /* offset for fixed navbar height */
+            padding: 20px 24px 12px;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            background: #050810;
+        }
+
+        .demo-dashboard .bento-frame {
+            flex: 1;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .demo-dashboard .bento-frame img {
+            border-radius: 12px;
+        }
+
+        .demo-dashboard img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top left;
+            display: block;
+        }
+
+        /* ── Thin footer ── */
+        .demo-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 24px;
+            background: rgba(5, 8, 16, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: #64748b;
+            flex-shrink: 0;
+            gap: 10px;
+        }
+
+        .demo-footer img {
+            height: 18px;
+            opacity: 0.7;
+        }
+
+        /* ── Nav adjustments for demo ── */
+        .landing-nav {
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+        }
+    </style>
+
+    <!-- ═══ EMBED WIDGET — Replace data-key and data-api per client ═══ -->
+    <script src="/embed/widget.js"
+            data-key="d4622c9dc027ccd4845800fc401ce6a2"
+            data-api="https://localhost:5114"></script>
+</head>
+<body class="landing-page">
+    <div class="demo-layout">
+
+        <!-- Dynamic Navbar (loaded from navbar.js) -->
+        <div id="navbar" data-hide="resources,pricing,signin,getstarted"></div>
+
+        <!-- Client Dashboard Screenshot -->
+        <div class="demo-dashboard">
+            <!--
+                ╔═══════════════════════════════════════════════════════════╗
+                ║  HOW TO USE:                                              ║
+                ║  1. Take a screenshot of the client's dashboard           ║
+                ║  2. Save it in this folder (e.g., client-dashboard.png)   ║
+                ║  3. Update the <img> src below                            ║
+                ║  4. Update the data-key in the <script> tag above         ║
+                ╚═══════════════════════════════════════════════════════════╝
+            -->
+            <div class="bento-frame">
+                <img src="dashboard.png" alt="Dashboard">
+            </div>
+        </div>
+
+        <!-- Thin Footer -->
+        <div class="demo-footer">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer">
+            <span>&copy; 2026 Ragenaizer. All rights reserved.</span>
+        </div>
+
+    </div>
+
+    <script>document.write('<script src="/js/navbar.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
