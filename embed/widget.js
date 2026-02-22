@@ -614,7 +614,7 @@
                 case 'response':
                     removeEl(progressEl);
                     sMeta = { qt: data.query_time_ms || 0, it: data.input_tokens || 0, ot: data.output_tokens || 0 };
-                    if (data.visualizations_json) { try { sViz = JSON.parse(data.visualizations_json); if (!Array.isArray(sViz)) sViz = [sViz]; } catch { sViz = null; } }
+                    if (data.visualizations_json) { try { sViz = JSON.parse(data.visualizations_json); if (!Array.isArray(sViz)) sViz = [sViz]; console.log('[RZ-DEBUG] Parsed sViz:', sViz.length, 'charts'); } catch(e) { console.error('[RZ-DEBUG] Failed to parse viz:', e); sViz = null; } } else { console.log('[RZ-DEBUG] No visualizations_json in response'); }
                     if (data.session_id) sessionId = data.session_id;
                     if (sBubble) {
                         if (data.response && data.response !== sText) { sText = data.response; sBuf = data.response.substring(dText.length); }
@@ -658,8 +658,11 @@
             sDone = true;
             if (sBubble) {
                 dText = sText; sBuf = '';
+                console.log('[RZ-DEBUG] completeReveal: sText has CHART markers:', /\[CHART:\d+\]/.test(sText), 'sViz:', sViz?.length || 0);
                 sBubble.innerHTML = renderContent(sText, false);
+                console.log('[RZ-DEBUG] completeReveal: innerHTML has CHART markers:', /\[CHART:\d+\]/.test(sBubble.innerHTML));
                 if (sViz?.length) renderCharts(sBubble, sViz);
+                else console.log('[RZ-DEBUG] completeReveal: sViz is empty/null, skipping renderCharts');
                 scrollBottom();
             }
             if (sMeta) showMeta(sMeta);
@@ -740,10 +743,12 @@
         // INLINE CHART RENDERING (ApexCharts)
         // ========================================
         function renderCharts(el, charts) {
-            if (!charts?.length || typeof ApexCharts === 'undefined') return;
+            console.log('[RZ-DEBUG] renderCharts called, charts:', charts.length, 'ApexCharts:', typeof ApexCharts !== 'undefined');
+            if (!charts?.length || typeof ApexCharts === 'undefined') { console.log('[RZ-DEBUG] renderCharts: early return'); return; }
             const ts = Date.now();
             const html = el.innerHTML;
             const hasM = /\[CHART:\d+\]/.test(html);
+            console.log('[RZ-DEBUG] renderCharts: hasMarkers:', hasM, 'htmlLen:', html.length, 'sample:', html.substring(0, 200));
             if (hasM) {
                 let nh = html.replace(/<p>\s*\[CHART:(\d+)\]\s*<\/p>/g, (_, i) => {
                     const idx = parseInt(i); if (idx >= charts.length) return '';
@@ -771,10 +776,11 @@
         }
 
         function makeChart(el, cd) {
+            console.log('[RZ-DEBUG] makeChart called:', cd.chart_type, 'cats:', cd.categories?.length, 'series:', cd.series?.length);
             const { chart_type, categories, series, points } = cd;
             const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
-            if (!usesPoints && (!categories?.length || !series?.length)) return;
-            if (usesPoints && (!points?.length) && (!series?.length)) return;
+            if (!usesPoints && (!categories?.length || !series?.length)) { console.log('[RZ-DEBUG] makeChart: no data, returning'); return; }
+            if (usesPoints && (!points?.length) && (!series?.length)) { console.log('[RZ-DEBUG] makeChart: no points data, returning'); return; }
             const cc = CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
             const base = {
                 chart: {
