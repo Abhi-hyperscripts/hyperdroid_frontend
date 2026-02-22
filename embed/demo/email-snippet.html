@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Snippet Generator — Ragenaizer</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 40px 24px;
+        }
+        .container { max-width: 680px; margin: 0 auto; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+
+        /* Form */
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field input, .field textarea {
+            width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            color: #e2e8f0; font-family: inherit; font-size: 14px; outline: none;
+            transition: border-color 0.2s;
+        }
+        .field input:focus, .field textarea:focus { border-color: #3b82f6; }
+        .field textarea { resize: vertical; min-height: 60px; }
+
+        /* Preview */
+        .preview-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 28px 0 12px; }
+        .preview-frame {
+            background: #fff; border-radius: 12px; padding: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* Buttons */
+        .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-size: 14px; font-weight: 600; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #22c55e; color: #fff; padding: 10px 24px; border-radius: 8px;
+            font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Email Snippet Generator</h1>
+        <p class="subtitle">Generate a visual email card for sharing demo links. Copy and paste directly into Outlook or Gmail.</p>
+
+        <div class="field">
+            <label>Demo URL</label>
+            <input type="text" id="demoUrl" value="https://ragenaizer.com/embed/demo/aidashboard1.html">
+        </div>
+        <div class="field">
+            <label>OG Image URL</label>
+            <input type="text" id="ogImage" value="https://ragenaizer.com/embed/demo/og-preview.png">
+        </div>
+        <div class="field">
+            <label>Headline</label>
+            <input type="text" id="headline" value="Transform Your BI Into an AI Dashboard">
+        </div>
+        <div class="field">
+            <label>Description</label>
+            <textarea id="description">Agentic AI-powered research assistant. Plans, scans, analyzes, visualizes, and embeds — all from a single question. Click below to try the live demo.</textarea>
+        </div>
+        <div class="field">
+            <label>Button Text</label>
+            <input type="text" id="btnText" value="Try Live Demo →">
+        </div>
+
+        <div class="preview-label">Preview</div>
+        <div class="preview-frame" id="previewFrame"></div>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="copyRichHtml()">Copy for Email (Rich HTML)</button>
+            <button class="btn btn-secondary" onclick="copyRawHtml()">Copy Raw HTML</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        function buildSnippet() {
+            const url = document.getElementById('demoUrl').value;
+            const img = document.getElementById('ogImage').value;
+            const headline = document.getElementById('headline').value;
+            const desc = document.getElementById('description').value;
+            const btn = document.getElementById('btnText').value;
+
+            return `<div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;">
+    <a href="${url}" target="_blank" style="text-decoration:none;color:inherit;">
+        <img src="${img}" alt="${headline}" style="width:100%;border-radius:10px 10px 0 0;display:block;" />
+        <div style="background:#f8fafc;padding:20px 24px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;">
+            <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${headline}</h2>
+            <p style="margin:0 0 18px;font-size:14px;color:#475569;line-height:1.5;">${desc}</p>
+            <a href="${url}" target="_blank" style="display:inline-block;padding:12px 28px;background:#2563eb;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">${btn}</a>
+        </div>
+    </a>
+</div>`;
+        }
+
+        function renderPreview() {
+            document.getElementById('previewFrame').innerHTML = buildSnippet();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg || 'Copied to clipboard!';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function copyRichHtml() {
+            const html = buildSnippet();
+            const blob = new Blob([html], { type: 'text/html' });
+            const plainBlob = new Blob([html], { type: 'text/plain' });
+            navigator.clipboard.write([
+                new ClipboardItem({
+                    'text/html': blob,
+                    'text/plain': plainBlob
+                })
+            ]).then(() => showToast('Rich HTML copied — paste into email!'));
+        }
+
+        function copyRawHtml() {
+            navigator.clipboard.writeText(buildSnippet())
+                .then(() => showToast('Raw HTML copied!'));
+        }
+
+        // Live preview
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', renderPreview);
+        });
+        renderPreview();
+    </script>
+</body>
+</html>

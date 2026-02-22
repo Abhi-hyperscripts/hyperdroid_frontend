@@ -1,15 +1,14 @@
 // ══════════════════════════════════════════════════════════════
-// ShareWidget — Reusable share popover (Copy Link, WhatsApp, LinkedIn, Email Card)
+// ShareWidget — Simple share dropdown (Email Card, Copy Link, WhatsApp, LinkedIn)
 // Usage:
 //   ShareWidget.float({ url, title, description, ogImage })    → fixed floating button
-//   ShareWidget.inline({ url, title, description, ogImage })   → returns a DOM <button>
-//   ShareWidget.openAt(anchorEl, { url, title, description, ogImage }) → show popover at anchor
-//   ShareWidget.openAt(anchorEl, { items: [...] })              → custom popover items
+//   ShareWidget.openAt(anchorEl, { items: [...] })              → show dropdown
 // ══════════════════════════════════════════════════════════════
 
 const ShareWidget = (() => {
     let _cssInjected = false;
     let _activePopover = null;
+    let _activeTrigger = null;
 
     // ── Inject CSS once ──
     function _injectCSS() {
@@ -47,46 +46,44 @@ const ShareWidget = (() => {
     background: rgba(37, 99, 235, 0.85);
 }
 
-/* Inline share button (for meeting cards etc.) */
-.sw-inline-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary, #94a3b8);
-    transition: color 0.15s;
-}
-.sw-inline-btn:hover {
-    color: var(--brand-primary, #2563eb);
-}
-
-/* Popover */
-.sw-popover {
-    position: fixed;
+/* ── Dropdown — fixed, positioned via JS near anchor ── */
+.sw-dropdown {
+    position: fixed !important;
     z-index: 2147483647;
     background: #1e293b;
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 12px;
-    padding: 8px;
-    min-width: 200px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,0,0,0.2);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    padding: 6px;
+    min-width: 210px;
+    width: max-content;
+    max-width: 300px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.15s, transform 0.15s;
+    transition: opacity 0.15s;
     pointer-events: none;
 }
-.sw-popover.sw-open {
+.sw-dropdown.sw-open {
     opacity: 1;
-    transform: translateY(0);
     pointer-events: auto;
 }
 
-.sw-popover-item {
+/* Mobile: full-width action sheet at bottom */
+@media (max-width: 600px) {
+    .sw-dropdown {
+        left: 12px !important;
+        right: 12px !important;
+        top: auto !important;
+        bottom: 12px !important;
+        width: auto;
+        min-width: auto;
+        max-width: none;
+        border-radius: 16px;
+        padding: 8px;
+    }
+}
+
+/* Items */
+.sw-dropdown-item {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -104,20 +101,17 @@ const ShareWidget = (() => {
     transition: background 0.12s;
     white-space: nowrap;
 }
-.sw-popover-item:hover {
+.sw-dropdown-item:hover {
     background: rgba(255,255,255,0.08);
 }
-.sw-popover-item svg {
-    flex-shrink: 0;
-}
+.sw-dropdown-item svg { flex-shrink: 0; }
 
-.sw-popover-sep {
+.sw-dropdown-sep {
     height: 1px;
     background: rgba(255,255,255,0.08);
     margin: 4px 8px;
 }
-
-.sw-popover-label {
+.sw-dropdown-label {
     padding: 6px 14px 2px;
     font-size: 10px;
     font-weight: 600;
@@ -158,7 +152,6 @@ const ShareWidget = (() => {
     // ── SVG Icons ──
     const ICONS = {
         share: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
-        shareSmall: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
         link: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
         guest: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`,
         whatsapp: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`,
@@ -168,28 +161,19 @@ const ShareWidget = (() => {
 
     // ── Toast helper ──
     function _showToast(msg) {
-        // Reuse app Toast if available
-        if (typeof Toast !== 'undefined' && Toast.success) {
-            Toast.success(msg);
-            return;
-        }
-        // Fallback: own lightweight toast
+        if (typeof Toast !== 'undefined' && Toast.success) { Toast.success(msg); return; }
         const el = document.createElement('div');
         el.className = 'sw-toast';
         el.textContent = msg;
         document.body.appendChild(el);
         requestAnimationFrame(() => el.classList.add('sw-toast-show'));
-        setTimeout(() => {
-            el.classList.remove('sw-toast-show');
-            setTimeout(() => el.remove(), 250);
-        }, 2500);
+        setTimeout(() => { el.classList.remove('sw-toast-show'); setTimeout(() => el.remove(), 250); }, 2500);
     }
 
     // ── Build rich email card HTML ──
     function _buildEmailCard(opts) {
         const { url, title, description, ogImage, btnText } = opts;
         const btnLabel = btnText || (ogImage ? 'View Demo \u2192' : 'Join Meeting \u2192');
-
         return `<div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;">
     <a href="${url}" target="_blank" style="text-decoration:none;color:inherit;">
         ${ogImage ? `<img src="${ogImage}" alt="${_escHtml(title)}" style="width:100%;border-radius:10px 10px 0 0;display:block;" />` : ''}
@@ -208,63 +192,42 @@ const ShareWidget = (() => {
         return d.innerHTML;
     }
 
-    // ── Copy rich HTML to clipboard ──
-    async function _copyRichHtml(html, toastMsg) {
-        try {
-            const blob = new Blob([html], { type: 'text/html' });
-            const plainBlob = new Blob([html], { type: 'text/plain' });
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
-            ]);
-            _showToast(toastMsg);
-        } catch (e) {
-            // Fallback: plain text copy
-            try {
-                await navigator.clipboard.writeText(html);
-                _showToast(toastMsg);
-            } catch (e2) {
-                _showToast('Could not copy \u2014 please try again');
-            }
-        }
-    }
-
-    // ── Close any active popover ──
+    // ── Close any active dropdown ──
     function _closePopover() {
         if (_activePopover) {
             const old = _activePopover;
             _activePopover = null;
+            _activeTrigger = null;
             old.classList.remove('sw-open');
-            setTimeout(() => {
-                if (old.parentNode) old.parentNode.removeChild(old);
-            }, 180);
+            setTimeout(() => { if (old.parentNode) old.remove(); }, 180);
         }
     }
 
-    // Global click-outside listener (registered once)
+    // Click-outside listener (registered once)
     let _listenerAdded = false;
+    let _openedThisFrame = false;
     function _ensureClickOutside() {
         if (_listenerAdded) return;
         _listenerAdded = true;
         document.addEventListener('click', (e) => {
+            if (_openedThisFrame) return;
             if (_activePopover && !_activePopover.contains(e.target) &&
-                !e.target.closest('.sw-float-btn') && !e.target.closest('.sw-inline-btn') &&
-                !e.target.closest('[data-sw-trigger]')) {
+                !e.target.closest('.sw-float-btn') && !e.target.closest('[data-sw-trigger]')) {
                 _closePopover();
             }
         });
     }
 
-    // ── Build default popover items (for demo/generic pages) ──
+    // ── Build default items (for demo/generic pages) ──
     function _defaultItems(opts) {
         const { url, title, description, ogImage } = opts;
         return [
             { icon: ICONS.link, label: 'Copy Link', action: () => {
-                navigator.clipboard.writeText(url).then(() => _showToast('Link copied!')).catch(() => _showToast('Could not copy link'));
+                navigator.clipboard.writeText(url).then(() => _showToast('Link copied!')).catch(() => _showToast('Could not copy'));
                 _closePopover();
             }},
             { icon: ICONS.whatsapp, label: 'WhatsApp', action: () => {
-                const text = encodeURIComponent(title + '\n' + url);
-                window.open('https://wa.me/?text=' + text, '_blank');
+                window.open('https://wa.me/?text=' + encodeURIComponent(title + '\n' + url), '_blank');
                 _closePopover();
             }},
             { icon: ICONS.linkedin, label: 'LinkedIn', action: () => {
@@ -279,95 +242,17 @@ const ShareWidget = (() => {
         ];
     }
 
-    // ── Build popover DOM ──
-    function _createPopover(opts) {
-        const pop = document.createElement('div');
-        pop.className = 'sw-popover';
-
-        // Use custom items if provided, otherwise build defaults
-        const items = opts.items || _defaultItems(opts);
-
-        items.forEach(item => {
-            if (item.type === 'separator') {
-                const sep = document.createElement('div');
-                sep.className = 'sw-popover-sep';
-                pop.appendChild(sep);
-                return;
-            }
-            if (item.type === 'label') {
-                const lbl = document.createElement('div');
-                lbl.className = 'sw-popover-label';
-                lbl.textContent = item.text;
-                pop.appendChild(lbl);
-                return;
-            }
-            const btn = document.createElement('button');
-            btn.className = 'sw-popover-item';
-            btn.innerHTML = item.icon + '<span>' + item.label + '</span>';
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                item.action();
-            });
-            pop.appendChild(btn);
-        });
-
-        return pop;
-    }
-
-    // ── Position popover relative to anchor or click event ──
-    function _positionPopover(pop, anchor, clickEvent) {
-        document.body.appendChild(pop);
-        // Force layout
-        pop.offsetHeight;
-
-        const popWidth = pop.offsetWidth;
-        const popHeight = pop.offsetHeight;
-
-        let anchorX, anchorY, anchorW, anchorH;
-
-        // Try anchor element rect first
-        const anchorRect = anchor.getBoundingClientRect();
-        if (anchorRect.width > 0 && anchorRect.height > 0 && anchorRect.top > 0) {
-            anchorX = anchorRect.left;
-            anchorY = anchorRect.top;
-            anchorW = anchorRect.width;
-            anchorH = anchorRect.height;
-        } else if (clickEvent) {
-            // Fallback: use click coordinates
-            anchorX = clickEvent.clientX - 14;
-            anchorY = clickEvent.clientY - 14;
-            anchorW = 28;
-            anchorH = 28;
-        } else {
-            // Last resort: center of viewport
-            anchorX = window.innerWidth / 2 - 14;
-            anchorY = window.innerHeight / 2;
-            anchorW = 28;
-            anchorH = 28;
+    // ── Copy rich HTML to clipboard ──
+    async function _copyRichHtml(html, toastMsg) {
+        try {
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([html], { type: 'text/plain' }) })
+            ]);
+            _showToast(toastMsg);
+        } catch (e) {
+            try { await navigator.clipboard.writeText(html); _showToast(toastMsg); }
+            catch (e2) { _showToast('Could not copy'); }
         }
-
-        // Default: above the anchor, centered horizontally
-        let top = anchorY - popHeight - 8;
-        let left = anchorX + (anchorW / 2) - (popWidth / 2);
-
-        // Flip below if not enough space above
-        if (top < 8) {
-            top = anchorY + anchorH + 8;
-        }
-        // Clamp to viewport
-        if (left < 8) left = 8;
-        if (left + popWidth > window.innerWidth - 8) {
-            left = window.innerWidth - popWidth - 8;
-        }
-        if (top + popHeight > window.innerHeight - 8) {
-            top = window.innerHeight - popHeight - 8;
-        }
-
-        pop.style.top = top + 'px';
-        pop.style.left = left + 'px';
-
-        // Animate in
-        requestAnimationFrame(() => pop.classList.add('sw-open'));
     }
 
     // ═══════════════════════════
@@ -375,22 +260,48 @@ const ShareWidget = (() => {
     // ═══════════════════════════
 
     /**
-     * openAt(anchorEl, opts, clickEvent) — show share popover anchored to a DOM element
-     * opts.items — optional custom items array (overrides default Copy/WhatsApp/LinkedIn/Email)
+     * openAt(anchorEl, opts) — show dropdown (fixed bottom-right, no positioning math)
      */
-    function openAt(anchorEl, opts, clickEvent) {
+    function openAt(anchorEl, opts) {
         _injectCSS();
         _ensureClickOutside();
 
-        // Toggle: if popover is already open, just close it
-        if (_activePopover) {
-            _closePopover();
-            return;
-        }
+        // Toggle off if same trigger
+        if (_activePopover && _activeTrigger === anchorEl) { _closePopover(); return; }
+        _closePopover();
 
-        const pop = _createPopover(opts);
+        const items = opts.items || _defaultItems(opts);
+        const pop = document.createElement('div');
+        pop.className = 'sw-dropdown';
+
+        items.forEach(item => {
+            if (item.type === 'separator') { const s = document.createElement('div'); s.className = 'sw-dropdown-sep'; pop.appendChild(s); return; }
+            if (item.type === 'label') { const l = document.createElement('div'); l.className = 'sw-dropdown-label'; l.textContent = item.text; pop.appendChild(l); return; }
+            const btn = document.createElement('button');
+            btn.className = 'sw-dropdown-item';
+            btn.innerHTML = item.icon + '<span>' + item.label + '</span>';
+            btn.addEventListener('click', (e) => { e.stopPropagation(); item.action(); });
+            pop.appendChild(btn);
+        });
+
+        // Add to DOM to measure, then position near anchor
+        document.body.appendChild(pop);
         _activePopover = pop;
-        _positionPopover(pop, anchorEl, clickEvent);
+        _activeTrigger = anchorEl;
+
+        // Position: right-aligned below the button, flip above if no space
+        const r = anchorEl.getBoundingClientRect();
+        const pH = pop.offsetHeight;
+        const pW = pop.offsetWidth;
+        const spaceBelow = window.innerHeight - r.bottom - 8;
+        const top = spaceBelow >= pH ? r.bottom + 4 : r.top - pH - 4;
+        const left = Math.min(r.right - pW, window.innerWidth - pW - 8);
+
+        pop.style.top = Math.max(8, top) + 'px';
+        pop.style.left = Math.max(8, left) + 'px';
+
+        _openedThisFrame = true;
+        requestAnimationFrame(() => { _openedThisFrame = false; pop.classList.add('sw-open'); });
     }
 
     /**
@@ -406,10 +317,9 @@ const ShareWidget = (() => {
         btn.title = 'Share';
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            openAt(btn, opts, e);
+            openAt(btn, Object.assign({ _float: true }, opts));
         });
 
-        // Wait for DOM ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => document.body.appendChild(btn));
         } else {
@@ -417,24 +327,5 @@ const ShareWidget = (() => {
         }
     }
 
-    /**
-     * inline({ url, title, description, ogImage }) — returns a <button> element to insert anywhere
-     */
-    function inline(opts) {
-        _injectCSS();
-        _ensureClickOutside();
-
-        const btn = document.createElement('button');
-        btn.className = 'sw-inline-btn';
-        btn.innerHTML = ICONS.shareSmall;
-        btn.title = 'Share';
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openAt(btn, opts, e);
-        });
-        return btn;
-    }
-
-    // Expose helpers for custom items
-    return { float, inline, openAt, ICONS, buildEmailCard: _buildEmailCard, closePopover: _closePopover, showToast: _showToast };
+    return { float, openAt, ICONS, buildEmailCard: _buildEmailCard, closePopover: _closePopover, showToast: _showToast };
 })();

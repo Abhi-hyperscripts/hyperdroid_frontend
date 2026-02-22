@@ -8618,6 +8618,55 @@ label.toggle-switch,
     color: var(--color-danger);
 }
 
+/* ── Three-dot share dropdown ── */
+.share-dot-menu {
+    position: relative;
+    display: inline-flex;
+}
+.share-dot-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 100;
+    min-width: 200px;
+    background: var(--bg-card);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
+    margin-top: 4px;
+}
+.share-dot-dropdown.open {
+    display: block;
+}
+.share-dot-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    text-align: left;
+}
+.share-dot-dropdown button:hover {
+    background: var(--hover-overlay);
+}
+.share-dot-dropdown button svg {
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+[data-theme="dark"] .share-dot-dropdown {
+    background: #283548;
+    border-color: #475569;
+}
 /* Join button — always visible, compact pill */
 .btn-join-primary {
     display: inline-flex;

@@ -213,11 +213,21 @@ function createDashboardMeetingCard(meeting) {
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                             </svg>
                         </button>
-                        <button class="btn-icon-sm" data-sw-trigger onclick="openMeetingShare(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', ${!!showGuestLink})" title="Share">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                            </svg>
-                        </button>
+                        <div class="share-dot-menu">
+                            <button class="btn-icon-sm" onclick="toggleShareMenu(event)" title="More">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                            <div class="share-dot-dropdown">
+                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'participant')">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    Participant Email Card
+                                </button>
+                                ${showGuestLink ? `<button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'guest')">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                    Guest Email Card
+                                </button>` : ''}
+                            </div>
+                        </div>
                     </div>
                     <button class="btn-join-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
                         Join
@@ -1430,46 +1440,44 @@ function joinMeeting(meetingId) {
     window.open(`lobby.html?id=${meetingId}`, '_blank');
 }
 
-function openMeetingShare(event, meetingId, meetingName, allowGuests) {
+// ── Three-dot share menu (simple CSS dropdown) ──
+
+function toggleShareMenu(event) {
     event.stopPropagation();
-    const participantUrl = `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
-    const guestUrl = `${window.location.origin}/pages/vision/guest-join.html?id=${meetingId}`;
+    const menu = event.currentTarget.closest('.share-dot-menu');
+    const dropdown = menu.querySelector('.share-dot-dropdown');
+    const wasOpen = dropdown.classList.contains('open');
+
+    // Close all open menus first
+    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => d.classList.remove('open'));
+
+    if (!wasOpen) dropdown.classList.add('open');
+}
+
+// Close menus on any outside click
+document.addEventListener('click', () => {
+    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+function copyEmailCard(event, meetingId, meetingName, type) {
+    event.stopPropagation();
+    const url = type === 'guest'
+        ? `${window.location.origin}/pages/vision/guest-join.html?id=${meetingId}`
+        : `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
+    const btnText = type === 'guest' ? 'Join as Guest \u2192' : 'Join Meeting \u2192';
     const ogImage = `${window.location.origin}/assets/og-vision.png`;
+    const desc = 'Join this video meeting on Ragenaizer Vision.';
 
-    const items = [
-        { icon: ShareWidget.ICONS.link, label: 'Copy Participant Link', action: () => {
-            navigator.clipboard.writeText(participantUrl).then(() => ShareWidget.showToast('Participant link copied!')).catch(() => ShareWidget.showToast('Could not copy'));
-            ShareWidget.closePopover();
-        }}
-    ];
+    const html = ShareWidget.buildEmailCard({ url, title: meetingName, description: desc, ogImage, btnText });
+    const blob = new Blob([html], { type: 'text/html' });
+    const plainBlob = new Blob([html], { type: 'text/plain' });
+    navigator.clipboard.write([
+        new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
+    ]).then(() => showToast('Email card copied \u2014 paste into Outlook or Gmail!'))
+      .catch(() => showToast('Could not copy'));
 
-    if (allowGuests) {
-        items.push({ icon: ShareWidget.ICONS.guest, label: 'Copy Guest Link', action: () => {
-            navigator.clipboard.writeText(guestUrl).then(() => ShareWidget.showToast('Guest link copied!')).catch(() => ShareWidget.showToast('Could not copy'));
-            ShareWidget.closePopover();
-        }});
-    }
-
-    items.push({ type: 'separator' });
-    items.push({ icon: ShareWidget.ICONS.mail, label: 'Email Card', action: () => {
-        const html = ShareWidget.buildEmailCard({
-            url: participantUrl,
-            title: meetingName,
-            description: 'Join this video meeting on Ragenaizer Vision.',
-            ogImage: ogImage,
-            btnText: 'Join Meeting \u2192'
-        });
-        // Copy rich HTML
-        const blob = new Blob([html], { type: 'text/html' });
-        const plainBlob = new Blob([html], { type: 'text/plain' });
-        navigator.clipboard.write([
-            new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
-        ]).then(() => ShareWidget.showToast('Email card copied \u2014 paste into Outlook or Gmail!'))
-          .catch(() => ShareWidget.showToast('Could not copy'));
-        ShareWidget.closePopover();
-    }});
-
-    ShareWidget.openAt(event.currentTarget, { items }, event);
+    // Close the menu
+    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => d.classList.remove('open'));
 }
 
 function copyMeetingLink(meetingId) {
