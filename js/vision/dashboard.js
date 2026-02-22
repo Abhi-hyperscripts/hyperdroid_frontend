@@ -213,7 +213,7 @@ function createDashboardMeetingCard(meeting) {
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                             </svg>
                         </button>
-                        <button class="btn-icon-sm" onclick="openMeetingShare(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}')" title="Share">
+                        <button class="btn-icon-sm" data-sw-trigger onclick="openMeetingShare(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', ${!!showGuestLink})" title="Share">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                             </svg>
@@ -1430,16 +1430,46 @@ function joinMeeting(meetingId) {
     window.open(`lobby.html?id=${meetingId}`, '_blank');
 }
 
-function openMeetingShare(event, meetingId, meetingName) {
+function openMeetingShare(event, meetingId, meetingName, allowGuests) {
     event.stopPropagation();
-    const url = `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
-    ShareWidget.openAt(event.currentTarget, {
-        url,
-        title: meetingName,
-        description: 'Join this video meeting on Ragenaizer Vision.',
-        ogImage: `${window.location.origin}/assets/og-vision.png`,
-        btnText: 'Join Meeting \u2192'
-    });
+    const participantUrl = `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
+    const guestUrl = `${window.location.origin}/pages/vision/guest-join.html?id=${meetingId}`;
+    const ogImage = `${window.location.origin}/assets/og-vision.png`;
+
+    const items = [
+        { icon: ShareWidget.ICONS.link, label: 'Copy Participant Link', action: () => {
+            navigator.clipboard.writeText(participantUrl).then(() => ShareWidget.showToast('Participant link copied!')).catch(() => ShareWidget.showToast('Could not copy'));
+            ShareWidget.closePopover();
+        }}
+    ];
+
+    if (allowGuests) {
+        items.push({ icon: ShareWidget.ICONS.guest, label: 'Copy Guest Link', action: () => {
+            navigator.clipboard.writeText(guestUrl).then(() => ShareWidget.showToast('Guest link copied!')).catch(() => ShareWidget.showToast('Could not copy'));
+            ShareWidget.closePopover();
+        }});
+    }
+
+    items.push({ type: 'separator' });
+    items.push({ icon: ShareWidget.ICONS.mail, label: 'Email Card', action: () => {
+        const html = ShareWidget.buildEmailCard({
+            url: participantUrl,
+            title: meetingName,
+            description: 'Join this video meeting on Ragenaizer Vision.',
+            ogImage: ogImage,
+            btnText: 'Join Meeting \u2192'
+        });
+        // Copy rich HTML
+        const blob = new Blob([html], { type: 'text/html' });
+        const plainBlob = new Blob([html], { type: 'text/plain' });
+        navigator.clipboard.write([
+            new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
+        ]).then(() => ShareWidget.showToast('Email card copied \u2014 paste into Outlook or Gmail!'))
+          .catch(() => ShareWidget.showToast('Could not copy'));
+        ShareWidget.closePopover();
+    }});
+
+    ShareWidget.openAt(event.currentTarget, { items }, event);
 }
 
 function copyMeetingLink(meetingId) {
