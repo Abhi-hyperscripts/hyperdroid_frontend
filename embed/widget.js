@@ -431,8 +431,8 @@
                                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                                 </svg>
                             </div>
-                            <div class="rz-welcome-title">Ask anything about this data</div>
-                            <div class="rz-welcome-sub">Agentic AI-powered research assistant.</div>
+                            <div class="rz-welcome-title">Agentic AI-powered research assistant.</div>
+                            <div class="rz-welcome-sub">Plans. Scans. Analyzes. Visualizes. All from a single question.</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
