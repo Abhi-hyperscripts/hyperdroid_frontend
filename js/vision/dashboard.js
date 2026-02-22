@@ -213,6 +213,11 @@ function createDashboardMeetingCard(meeting) {
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                             </svg>
                         </button>
+                        <button class="btn-icon-sm" onclick="openMeetingShare(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}')" title="Share">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                        </button>
                     </div>
                     <button class="btn-join-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
                         Join
@@ -1423,6 +1428,18 @@ async function permanentDeleteMeeting(meetingId) {
 
 function joinMeeting(meetingId) {
     window.open(`lobby.html?id=${meetingId}`, '_blank');
+}
+
+function openMeetingShare(event, meetingId, meetingName) {
+    event.stopPropagation();
+    const url = `${window.location.origin}/pages/vision/lobby.html?id=${meetingId}`;
+    ShareWidget.openAt(event.currentTarget, {
+        url,
+        title: meetingName,
+        description: 'Join this video meeting on Ragenaizer Vision.',
+        ogImage: `${window.location.origin}/assets/og-vision.png`,
+        btnText: 'Join Meeting \u2192'
+    });
 }
 
 function copyMeetingLink(meetingId) {
