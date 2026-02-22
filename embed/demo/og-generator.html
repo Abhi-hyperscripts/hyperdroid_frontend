@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+        .og-card {
+            width: 1200px; height: 630px;
+            background: linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%);
+            position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .og-card::before {
+            content: ''; position: absolute; width: 800px; height: 800px; top: -200px; left: -200px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 60%);
+        }
+        .og-card::after {
+            content: ''; position: absolute; width: 600px; height: 600px; bottom: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 60%);
+        }
+        .grid-pattern {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px; opacity: 0.5;
+        }
+        .content { position: relative; z-index: 10; text-align: center; padding: 60px; width: 100%; }
+        .logo { margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+        .logo img { height: 50px; width: auto; filter: brightness(0) invert(1); }
+        .badge {
+            display: inline-block; padding: 10px 24px; background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 100px;
+            font-size: 14px; font-weight: 600; color: #60a5fa; text-transform: uppercase;
+            letter-spacing: 0.1em; margin-bottom: 28px;
+        }
+        .title { font-size: 60px; font-weight: 800; color: #ffffff; line-height: 1.15; margin-bottom: 20px; }
+        .title .highlight {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { font-size: 22px; color: rgba(255,255,255,0.6); font-weight: 400; letter-spacing: 1.5px; }
+        .features { display: flex; justify-content: center; gap: 32px; margin-top: 36px; }
+        .feature { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); font-size: 16px; font-weight: 500; }
+        .dot { width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="og-card">
+        <div class="grid-pattern"></div>
+        <div class="content">
+            <div class="logo"><img src="/assets/brand_logo.png" alt="Ragenaizer"></div>
+            <h1 class="title">Transform Your BI Into<br>an <span class="highlight">AI Dashboard</span></h1>
+            <p class="subtitle">AGENTIC AI-POWERED RESEARCH ASSISTANT</p>
+            <div class="features">
+                <div class="feature"><span class="dot"></span>Plan</div>
+                <div class="feature"><span class="dot"></span>Scan</div>
+                <div class="feature"><span class="dot"></span>Analyze</div>
+                <div class="feature"><span class="dot"></span>Visualize</div>
+                <div class="feature"><span class="dot"></span>Embed</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
