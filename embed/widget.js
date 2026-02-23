@@ -57,7 +57,7 @@
     let savedSize = null;
     try { savedSize = JSON.parse(localStorage.getItem(sizeKey)); } catch {}
     const defaultW = 420, defaultH = 600;
-    const minW = 340, minH = 400, maxW = 1600, maxH = 1200;
+    const minW = 340, minH = 400, maxW = 2400, maxH = 1600;
     let winW = savedSize?.w || defaultW;
     let winH = savedSize?.h || defaultH;
 
@@ -555,8 +555,10 @@
             function onMove(ev) {
                 const dx = startX - ev.clientX;
                 const dy = startY - ev.clientY;
-                const nw = Math.min(maxW, Math.max(minW, startW + dx));
-                const nh = Math.min(maxH, Math.max(minH, startH + dy));
+                const vpW = window.innerWidth - 32;
+                const vpH = window.innerHeight - 120;
+                const nw = Math.min(maxW, vpW, Math.max(minW, startW + dx));
+                const nh = Math.min(maxH, vpH, Math.max(minH, startH + dy));
                 windowWrap.style.width = nw + 'px';
                 windowWrap.style.height = nh + 'px';
             }
