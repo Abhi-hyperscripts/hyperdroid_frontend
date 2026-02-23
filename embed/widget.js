@@ -34,16 +34,23 @@
 
     const logoUrl = `${scriptOrigin}/assets/logo-icon-white.png`;
 
-    // Session ID
+    // Session ID — use sessionStorage so each tab/window gets a fresh session.
+    // localStorage was causing stale sessions that persisted forever, leaking
+    // old conversation context into new visits.
     const storageKey = `ragenaizer_session_${embedKey}`;
-    let sessionId = localStorage.getItem(storageKey);
-    if (!sessionId) {
-        sessionId = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    function generateSessionId() {
+        return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0;
             return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
-        localStorage.setItem(storageKey, sessionId);
     }
+    let sessionId = sessionStorage.getItem(storageKey);
+    if (!sessionId) {
+        sessionId = generateSessionId();
+        sessionStorage.setItem(storageKey, sessionId);
+    }
+    // Clean up stale localStorage key from previous versions
+    try { localStorage.removeItem(storageKey); } catch {}
 
     // Persisted window size
     const sizeKey = `ragenaizer_size_${embedKey}`;
@@ -217,13 +224,14 @@
                 font-size: 14px; font-weight: 600; color: #fff;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
             }
-            .rz-header-close {
+            .rz-header-actions { display: flex; gap: 4px; align-items: center; }
+            .rz-header-newchat, .rz-header-close {
                 background: rgba(255,255,255,0.15); border: none; cursor: pointer;
                 color: rgba(255,255,255,0.8); padding: 5px; display: flex;
                 border-radius: 6px; transition: background 0.15s, color 0.15s;
             }
-            .rz-header-close:hover { background: rgba(255,255,255,0.25); color: #fff; }
-            .rz-header-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+            .rz-header-newchat:hover, .rz-header-close:hover { background: rgba(255,255,255,0.25); color: #fff; }
+            .rz-header-newchat svg, .rz-header-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
 
             /* ---- MESSAGES ---- */
             .rz-messages {
@@ -429,11 +437,18 @@
                     <div class="rz-header">
                         <img class="rz-header-logo" src="${logoUrl}" alt="" onerror="this.style.display='none'">
                         <span class="rz-header-title" id="rzTitle">${esc(projectName)}</span>
-                        <button class="rz-header-close" id="rzClose" aria-label="Close">
-                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
+                        <div class="rz-header-actions">
+                            <button class="rz-header-newchat" id="rzNewChat" aria-label="New Chat" title="New Chat">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                </svg>
+                            </button>
+                            <button class="rz-header-close" id="rzClose" aria-label="Close">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="rz-messages" id="rzMessages">
                         <div class="rz-welcome">
@@ -470,6 +485,7 @@
         const windowWrap = $('#rzWrap');
         const chatWindow = $('#rzWindow');
         const closeBtn = $('#rzClose');
+        const newChatBtn = $('#rzNewChat');
         const messagesEl = $('#rzMessages');
         const inputEl = $('#rzInput');
         const sendBtn = $('#rzSend');
@@ -560,6 +576,31 @@
             windowWrap.classList.remove('open');
             if (isMobile()) toggleBtn.style.display = '';
             setTimeout(() => { if (!isOpen) windowWrap.style.display = 'none'; }, 350);
+        });
+        newChatBtn.addEventListener('click', () => {
+            if (isProcessing) return;
+            // Generate fresh session — discard all old context
+            sessionId = generateSessionId();
+            sessionStorage.setItem(storageKey, sessionId);
+            // Reset chat UI to welcome state
+            messagesEl.innerHTML = `
+                <div class="rz-welcome">
+                    <div class="rz-welcome-icon">
+                        <svg viewBox="0 0 24 24" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <div class="rz-welcome-title">Agentic AI-powered research assistant.</div>
+                    <div class="rz-welcome-sub">Plans. Scans. Analyzes. Visualizes. All from a single question.</div>
+                </div>`;
+            welcomeShown = true;
+            // Clear any streaming state
+            sBubble = null; sText = ''; dText = ''; sBuf = ''; sDone = false; sMeta = null; sViz = null;
+            if (sTimer) { clearInterval(sTimer); sTimer = null; }
+            inputEl.value = ''; inputEl.style.height = 'auto';
+            inputEl.focus();
         });
 
         // ========================================
