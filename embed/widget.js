@@ -224,22 +224,13 @@
                 font-size: 14px; font-weight: 600; color: #fff;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
             }
-            .rz-header-actions { display: flex; gap: 4px; align-items: center; }
-            .rz-header-newchat, .rz-header-close {
+            .rz-header-close {
                 background: rgba(255,255,255,0.15); border: none; cursor: pointer;
                 color: rgba(255,255,255,0.8); padding: 5px; display: flex;
                 border-radius: 6px; transition: background 0.15s, color 0.15s;
-                position: relative;
             }
-            .rz-header-newchat:hover, .rz-header-close:hover { background: rgba(255,255,255,0.25); color: #fff; }
-            .rz-header-newchat svg, .rz-header-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
-            .rz-header-newchat::after {
-                content: 'New Chat'; position: absolute; top: calc(100% + 6px); right: 0;
-                background: rgba(0,0,0,0.85); color: #fff; font-size: 11px; font-weight: 500;
-                padding: 4px 8px; border-radius: 4px; white-space: nowrap;
-                opacity: 0; pointer-events: none; transition: opacity 0.1s;
-            }
-            .rz-header-newchat:hover::after { opacity: 1; }
+            .rz-header-close:hover { background: rgba(255,255,255,0.25); color: #fff; }
+            .rz-header-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
 
             /* ---- MESSAGES ---- */
             .rz-messages {
@@ -360,6 +351,24 @@
                 padding: 12px 14px; border-top: 1px solid ${C.border};
                 background: ${C.bgCard}; flex-shrink: 0;
             }
+            .rz-newchat {
+                width: 40px; height: 40px; border-radius: 10px; border: 1px solid ${C.inputBorder};
+                background: ${C.inputBg}; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0; transition: border-color 0.15s, background 0.15s;
+                position: relative;
+            }
+            .rz-newchat:hover { border-color: ${C.accent}; background: ${C.accentDim}; }
+            .rz-newchat svg { width: 16px; height: 16px; stroke: ${C.textSecondary}; fill: none; }
+            .rz-newchat:hover svg { stroke: ${C.accent}; }
+            .rz-newchat::after {
+                content: 'New Chat'; position: absolute; bottom: calc(100% + 6px); left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.85); color: #fff; font-size: 11px; font-weight: 500;
+                padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+                opacity: 0; pointer-events: none; transition: opacity 0.1s;
+            }
+            .rz-newchat:hover::after { opacity: 1; }
             .rz-input {
                 flex: 1; border: 1px solid ${C.inputBorder}; background: ${C.inputBg};
                 color: ${C.text}; border-radius: 10px; padding: 10px 14px;
@@ -445,18 +454,11 @@
                     <div class="rz-header">
                         <img class="rz-header-logo" src="${logoUrl}" alt="" onerror="this.style.display='none'">
                         <span class="rz-header-title" id="rzTitle">${esc(projectName)}</span>
-                        <div class="rz-header-actions">
-                            <button class="rz-header-newchat" id="rzNewChat" aria-label="New Chat">
-                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                                </svg>
-                            </button>
-                            <button class="rz-header-close" id="rzClose" aria-label="Close">
-                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
+                        <button class="rz-header-close" id="rzClose" aria-label="Close">
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
                     </div>
                     <div class="rz-messages" id="rzMessages">
                         <div class="rz-welcome">
@@ -472,6 +474,11 @@
                         </div>
                     </div>
                     <div class="rz-input-area">
+                        <button class="rz-newchat" id="rzNewChat" aria-label="New Chat">
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                        </button>
                         <textarea class="rz-input" id="rzInput" placeholder="Ask a question..." rows="1"></textarea>
                         <button class="rz-send" id="rzSend" aria-label="Send">
                             <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
