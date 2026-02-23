@@ -391,10 +391,23 @@
 
             /* ---- MOBILE ---- */
             @media (max-width: 480px) {
-                .rz-window-wrap { bottom: 0; right: 0; width: 100vw !important; height: 100vh !important; max-height: 100vh; border-radius: 0; }
-                .rz-window { border-radius: 0; }
-                .rz-bubble { bottom: 16px; right: 16px; }
+                .rz-window-wrap {
+                    top: 0; bottom: 0; right: 0; left: 0;
+                    width: 100vw !important; height: 100% !important;
+                    max-width: 100vw; max-height: 100%;
+                    border-radius: 0;
+                }
+                .rz-window { border-radius: 0; height: 100%; }
+                .rz-header { padding-top: max(14px, env(safe-area-inset-top)); }
+                .rz-bubble { bottom: 16px; right: 16px; width: 48px; height: 48px; border-radius: 14px; }
+                .rz-bubble img { width: 22px; height: 22px; }
                 .rz-resize { display: none; }
+                .rz-input-area { padding: 10px 12px; gap: 8px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+                .rz-input { font-size: 16px; padding: 10px 12px; min-height: 42px; }
+                .rz-send { width: 42px; height: 42px; }
+                .rz-send img { width: 20px; height: 20px; }
+                .rz-footer { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+                .rz-messages { padding: 12px; }
             }
         `;
         shadow.appendChild(style);
@@ -479,11 +492,18 @@
         const bubbleLogo = shadow.querySelector('.rz-bubble img');
 
         if (info.header_color) { hdr.style.background = info.header_color; }
+        if (info.font_color) {
+            const title = shadow.querySelector('.rz-header-title');
+            if (title) title.style.color = info.font_color;
+        }
         if (info.accent_color) {
             bubble.style.background = info.accent_color;
             send.style.background = info.accent_color;
             const ts = document.createElement('style');
-            ts.textContent = `.rz-input:focus { border-color: ${info.accent_color}; box-shadow: 0 0 0 2px ${info.accent_color}22; }`;
+            ts.textContent = `
+                .rz-input:focus { border-color: ${info.accent_color}; box-shadow: 0 0 0 2px ${info.accent_color}22; }
+                .rz-msg.user .rz-msg-bubble { background: ${info.font_color || info.accent_color}; }
+            `;
             shadow.appendChild(ts);
         }
         if (info.logo_url) {
@@ -521,20 +541,25 @@
         // ========================================
         // TOGGLE / CLOSE
         // ========================================
+        const isMobile = () => window.innerWidth <= 480;
+
         toggleBtn.addEventListener('click', () => {
             isOpen = !isOpen;
             if (isOpen) {
                 windowWrap.style.display = 'block';
                 requestAnimationFrame(() => { windowWrap.classList.add('open'); });
+                if (isMobile()) toggleBtn.style.display = 'none';
                 inputEl.focus();
             } else {
                 windowWrap.classList.remove('open');
+                if (isMobile()) toggleBtn.style.display = '';
                 setTimeout(() => { if (!isOpen) windowWrap.style.display = 'none'; }, 350);
             }
         });
         closeBtn.addEventListener('click', () => {
             isOpen = false;
             windowWrap.classList.remove('open');
+            if (isMobile()) toggleBtn.style.display = '';
             setTimeout(() => { if (!isOpen) windowWrap.style.display = 'none'; }, 350);
         });
 

@@ -3989,6 +3989,17 @@
                                     </div>
                                 </div>
                                 <div class="embed-theme-field">
+                                    <div class="embed-color-label">Font Color</div>
+                                    <div class="embed-color-row">
+                                        <div class="embed-color-swatch" id="embedFontSwatch">
+                                            <input type="color" id="embedFontColorPicker" value="#ffffff"
+                                                oninput="document.getElementById('embedFontColor').value=this.value; this.parentElement.style.background=this.value;">
+                                        </div>
+                                        <input type="text" id="embedFontColor" class="embed-color-hex" placeholder="#ffffff" maxlength="7"
+                                            oninput="syncColorSwatch(this,'embedFontColorPicker','embedFontSwatch')">
+                                    </div>
+                                </div>
+                                <div class="embed-theme-field">
                                     <div class="embed-color-label">Logo URL</div>
                                     <input type="text" id="embedLogoUrl" class="embed-input" placeholder="https://yoursite.com/logo.png">
                                 </div>

@@ -5086,6 +5086,15 @@ function openEmbedDetail(configId) {
     const logoUrlInput = document.getElementById('embedLogoUrl');
     if (logoUrlInput) logoUrlInput.value = g('LogoUrl', 'logo_url') || '';
 
+    // Font color
+    const fc = g('FontColor', 'font_color') || '';
+    const fontColorInput = document.getElementById('embedFontColor');
+    if (fontColorInput) fontColorInput.value = fc;
+    const fPicker = document.getElementById('embedFontColorPicker');
+    const fSwatch = document.getElementById('embedFontSwatch');
+    if (fPicker && fc) { fPicker.value = fc; if (fSwatch) fSwatch.style.background = fc; }
+    else if (fSwatch) fSwatch.style.background = '';
+
     // Widget mode (dark/light)
     const theme = g('Theme', 'theme') || 'light';
     setEmbedTheme(theme, false);
@@ -5311,6 +5320,7 @@ async function saveEmbedConfig() {
 
     const headerColor = document.getElementById('embedHeaderColor')?.value?.trim() || null;
     const accentColor = document.getElementById('embedAccentColor')?.value?.trim() || null;
+    const fontColor = document.getElementById('embedFontColor')?.value?.trim() || null;
     const logoUrl = document.getElementById('embedLogoUrl')?.value?.trim() || null;
 
     const theme = getSelectedEmbedTheme();
@@ -5322,6 +5332,7 @@ async function saveEmbedConfig() {
         allowed_domains: allowedDomains.length > 0 ? allowedDomains : null,
         header_color: headerColor,
         accent_color: accentColor,
+        font_color: fontColor,
         logo_url: logoUrl,
         theme
     };
