@@ -352,15 +352,15 @@
                 background: ${C.bgCard}; flex-shrink: 0;
             }
             .rz-newchat {
-                width: 40px; height: 40px; border-radius: 10px; border: none;
-                background: ${C.accent}; cursor: pointer;
+                width: 40px; height: 40px; border-radius: 10px;
+                border: 1px solid ${C.accent}; background: transparent; cursor: pointer;
                 display: flex; align-items: center; justify-content: center;
-                flex-shrink: 0; transition: opacity 0.15s, transform 0.1s;
+                flex-shrink: 0; transition: background 0.15s, transform 0.1s;
                 position: relative;
             }
-            .rz-newchat:hover { opacity: 0.9; }
+            .rz-newchat:hover { background: ${C.accentDim}; }
             .rz-newchat:active { transform: scale(0.95); }
-            .rz-newchat svg { width: 16px; height: 16px; stroke: #fff; fill: none; }
+            .rz-newchat svg { width: 16px; height: 16px; stroke: ${C.accent}; fill: none; }
             .rz-newchat::after {
                 content: 'New Chat'; position: absolute; bottom: calc(100% + 6px); left: 50%;
                 transform: translateX(-50%);
@@ -534,6 +534,9 @@
             ts.textContent = `
                 .rz-input:focus { border-color: ${info.accent_color}; box-shadow: 0 0 0 2px ${info.accent_color}22; }
                 .rz-msg.user .rz-msg-bubble { background: ${info.font_color || info.accent_color}; }
+                .rz-newchat { border-color: ${info.accent_color}; }
+                .rz-newchat svg { stroke: ${info.accent_color}; }
+                .rz-newchat:hover { background: ${info.accent_color}22; }
             `;
             shadow.appendChild(ts);
         }
