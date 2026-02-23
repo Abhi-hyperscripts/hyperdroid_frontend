@@ -188,7 +188,7 @@ async function loadFiles() {
     emptyEl.style.display = 'none';
 
     try {
-        const response = await api.request(`/research/projects/${projectId}/files`);
+        const response = await api.request(`/research/projects/${projectId}/files`, { _skipSpinner: true });
         files = Array.isArray(response) ? response : [];
 
         loadingEl.style.display = 'none';
@@ -483,7 +483,7 @@ function handleFileProgressUpdate(data) {
 
 async function refreshFileRow(fileId) {
     try {
-        const file = await api.request(`/research/projects/${projectId}/files/${fileId}`);
+        const file = await api.request(`/research/projects/${projectId}/files/${fileId}`, { _skipSpinner: true });
         updateFileRowStatus(file);
     } catch (e) {
         console.warn('Failed to refresh file row:', e);
@@ -538,7 +538,7 @@ function startPollingFile(fileId) {
 
     fileStatusPollers[fileId] = setInterval(async () => {
         try {
-            const file = await api.request(`/research/projects/${projectId}/files/${fileId}`);
+            const file = await api.request(`/research/projects/${projectId}/files/${fileId}`, { _skipSpinner: true });
             updateFileRowStatus(file);
 
             // Stop polling if terminal state
@@ -705,7 +705,7 @@ function updateFileRowStatus(file) {
 
 async function refreshProjectHeader() {
     try {
-        const response = await api.request(`/research/projects/${projectId}`);
+        const response = await api.request(`/research/projects/${projectId}`, { _skipSpinner: true });
         project = response;
         renderProjectHeader();
     } catch (error) {
