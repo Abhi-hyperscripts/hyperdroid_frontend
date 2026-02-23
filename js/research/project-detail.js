@@ -3751,7 +3751,7 @@ function addFnBlock() {
         <div class="fn-block-body" id="fnBlockBody-${blockId}">
             <textarea class="fn-block-editor" id="fnBlockEditor-${blockId}"
                 placeholder='Select a function above to auto-fill template...'
-                rows="8"></textarea>
+                rows="4"></textarea>
         </div>
     `;
 
@@ -3767,7 +3767,7 @@ function addFnBlock() {
         if (blockDropdown) fnBlockDropdowns.set(blockId, blockDropdown);
     }
 
-    // Add Ctrl+Enter handler
+    // Add Ctrl+Enter handler + auto-resize on input
     const editor = blockEl.querySelector('.fn-block-editor');
     editor.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -3775,6 +3775,7 @@ function addFnBlock() {
             executeFnBlock(blockId);
         }
     });
+    editor.addEventListener('input', () => autoSizeFnEditor(editor));
 
     // Scroll into view
     blockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3807,13 +3808,13 @@ function onBlockFnChange(blockId) {
     const fn = fnFunctions.find(f => (f.name || f.function_name) === name);
     if (!fn || !editor) return;
 
-    let template;
+    let templateObj;
     const examples = fn.examples || [];
     if (examples.length > 0 && examples[0].input_params) {
-        template = JSON.stringify({
+        templateObj = {
             function_name: fn.name || fn.function_name,
             input_params: examples[0].input_params
-        }, null, 2);
+        };
     } else {
         const params = {};
         const schema = fn.input_schema;
@@ -3828,12 +3829,62 @@ function onBlockFnChange(blockId) {
                 }
             }
         }
-        template = JSON.stringify({
+        templateObj = {
             function_name: fn.name || fn.function_name,
             input_params: params
-        }, null, 2);
+        };
     }
-    editor.value = template;
+    editor.value = compactJsonStringify(templateObj);
+    autoSizeFnEditor(editor);
+}
+
+/**
+ * Compact JSON formatter: always expands top 2 levels (the wrapper object
+ * and input_params keys). At depth 2+ puts small objects/arrays on one
+ * line when they fit within lineWidth.
+ */
+function compactJsonStringify(obj, indent = 2, lineWidth = 100) {
+    function serialize(val, depth) {
+        const pad = ' '.repeat(depth * indent);
+        const childPad = ' '.repeat((depth + 1) * indent);
+
+        if (val === null || val === undefined) return 'null';
+        if (typeof val === 'boolean' || typeof val === 'number') return String(val);
+        if (typeof val === 'string') return JSON.stringify(val);
+
+        // At depth >= 2, try inline if it fits
+        if (depth >= 2) {
+            const inline = JSON.stringify(val);
+            if (inline.length <= lineWidth - depth * indent) return inline;
+        }
+
+        if (Array.isArray(val)) {
+            if (val.length === 0) return '[]';
+            const items = val.map(v => serialize(v, depth + 1));
+            const expanded = items.map(s => childPad + s).join(',\n');
+            return '[\n' + expanded + '\n' + pad + ']';
+        }
+
+        if (typeof val === 'object') {
+            const keys = Object.keys(val);
+            if (keys.length === 0) return '{}';
+            const entries = keys.map(k => {
+                const v = serialize(val[k], depth + 1);
+                return childPad + JSON.stringify(k) + ': ' + v;
+            });
+            return '{\n' + entries.join(',\n') + '\n' + pad + '}';
+        }
+
+        return String(val);
+    }
+    return serialize(obj, 0);
+}
+
+/** Auto-size a textarea to fit its content without scrollbar */
+function autoSizeFnEditor(editor) {
+    if (!editor) return;
+    editor.style.height = 'auto';
+    editor.style.height = editor.scrollHeight + 'px';
 }
 
 function deleteFnBlock(blockId) {
