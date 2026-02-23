@@ -752,6 +752,8 @@ function switchTab(tabName) {
     }
     if (tabName === 'ailogs') {
         if (!document.getElementById('aiLogsContent').innerHTML) loadAiLogs();
+        if (!eaLoaded) loadEmbedAnalytics('');
+        updateAiLogsBadges();
     }
 }
 
@@ -3137,6 +3139,7 @@ async function saveFileMetadata() {
 let aiLogsPage = 1;
 const aiLogsPageSize = 20;
 let _toolCallStore = [];
+let _aiLogMessages = [];
 
 async function loadAiLogs(page) {
     if (page) aiLogsPage = page;
@@ -3167,6 +3170,11 @@ async function loadAiLogs(page) {
         if (countEl) countEl.textContent = `${total} messages`;
 
         _toolCallStore = [];
+        _aiLogMessages = messages; // store for lazy response viewing
+
+        // Load stats from backend API
+        loadInternalAiStats();
+        loadToolUsageStats();
 
         // Build a map of response times: for each assistant message, find the preceding user message
         const responseTimeMap = new Map();
@@ -3190,7 +3198,7 @@ async function loadAiLogs(page) {
             const time = msg.created_at ? new Date(msg.created_at).toLocaleString() : '';
 
             html += `<div class="ai-log-entry" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 8px; background: var(--bg-secondary);">`;
-            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${isAssistant ? '8px' : '6px'};">`;
             html += `<span class="status-badge ${isUser ? 'active' : 'ready'}" style="font-size: 0.7rem;">${escapeHtml(msg.role)}</span>`;
             html += `<span style="color: var(--text-secondary); font-size: 0.75rem;">`;
             if (isAssistant && responseTimeMap.has(mi)) {
@@ -3201,17 +3209,37 @@ async function loadAiLogs(page) {
             html += `${time}</span>`;
             html += `</div>`;
 
-            // Content preview
-            const preview = msg.content ? msg.content.substring(0, 200) : '';
-            html += `<div style="color: var(--text-primary); font-size: 0.85rem; margin-bottom: 6px; white-space: pre-wrap; word-break: break-word;">${escapeHtml(preview)}${msg.content && msg.content.length > 200 ? '...' : ''}</div>`;
+            if (isUser) {
+                // User messages show full content inline (they're short)
+                html += `<div style="color: var(--text-primary); font-size: 0.85rem; white-space: pre-wrap; word-break: break-word;">${escapeHtml(msg.content || '')}</div>`;
+            }
 
-            // Metadata for assistant messages
             if (isAssistant) {
-                const parts = [];
-                if (msg.input_tokens || msg.output_tokens) parts.push(`Tokens: ${(msg.input_tokens || 0) + (msg.output_tokens || 0)}`);
-                if (msg.model_used) parts.push(`Model: ${msg.model_used}`);
-                if (parts.length > 0) {
-                    html += `<div style="color: var(--text-secondary); font-size: 0.75rem;">${parts.join(' · ')}</div>`;
+                // Extract first heading or first line as title preview
+                const titleMatch = (msg.content || '').match(/^#\s+(.+)/m);
+                const titlePreview = titleMatch ? titleMatch[1] : (msg.content || '').split('\n')[0].substring(0, 80);
+
+                // Compact: title preview + View Response button + metadata row
+                html += `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">`;
+                html += `<span class="ai-log-title-preview">${escapeHtml(titlePreview)}</span>`;
+                html += `<button class="ai-log-view-btn" onclick="showLlmResponse(${mi})" title="View full AI response">`;
+                html += `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+                html += `View Response</button>`;
+                html += `</div>`;
+
+                // Metadata row: tokens, model, tool calls — all inline
+                const metaParts = [];
+                if (msg.input_tokens || msg.output_tokens) metaParts.push(`Tokens: ${(msg.input_tokens || 0) + (msg.output_tokens || 0)}`);
+                if (msg.model_used) metaParts.push(`Model: ${msg.model_used}`);
+
+                let toolCallCount = 0;
+                if (msg.tool_calls_json) {
+                    try { toolCallCount = JSON.parse(msg.tool_calls_json).length; } catch (e) {}
+                }
+
+                html += `<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">`;
+                if (metaParts.length > 0) {
+                    html += `<span style="color: var(--text-secondary); font-size: 0.75rem;">${metaParts.join(' · ')}</span>`;
                 }
 
                 // Tool calls
@@ -3219,7 +3247,7 @@ async function loadAiLogs(page) {
                     try {
                         const toolCalls = JSON.parse(msg.tool_calls_json);
                         if (toolCalls.length > 0) {
-                            html += `<details style="margin-top: 6px;"><summary style="color: var(--brand-primary); cursor: pointer; font-size: 0.8rem;">Tool calls (${toolCalls.length})</summary>`;
+                            html += `<details style="display: inline;"><summary style="color: var(--brand-primary); cursor: pointer; font-size: 0.78rem; display: inline; list-style: none;">&#9654; Tool calls (${toolCalls.length})</summary>`;
                             html += `<div style="margin-top: 4px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; font-family: monospace; max-height: 300px; overflow: auto;">`;
                             for (let tci = 0; tci < toolCalls.length; tci++) {
                                 const tc = toolCalls[tci];
@@ -3248,6 +3276,7 @@ async function loadAiLogs(page) {
                         }
                     } catch (e) {}
                 }
+                html += `</div>`;
             }
 
             html += `</div>`;
@@ -3265,10 +3294,222 @@ async function loadAiLogs(page) {
             if (aiLogsPage < totalPages) pagHtml += `<button class="btn btn-secondary" onclick="loadAiLogs(${aiLogsPage + 1})" style="font-size:0.8rem;">Next</button>`;
             paginationEl.innerHTML = pagHtml;
         }
+
+        updateAiLogsBadges();
     } catch (error) {
         if (loadingEl) loadingEl.style.display = 'none';
         if (contentEl) contentEl.innerHTML = `<div class="query-error">Failed to load AI logs: ${escapeHtml(error.message)}</div>`;
         console.error('Failed to load AI logs:', error);
+    }
+}
+
+async function loadInternalAiStats() {
+    const cardsEl = document.getElementById('internalAiStatsCards');
+    if (!cardsEl) return;
+
+    try {
+        const stats = await api.request(`/research/ai/chat/stats/${projectId}`);
+        document.getElementById('iasSessions').textContent = stats.sessions || 0;
+        document.getElementById('iasMessages').textContent = stats.messages || 0;
+        document.getElementById('iasTokens').textContent = formatTokenCount((stats.input_tokens || 0) + (stats.output_tokens || 0));
+        document.getElementById('iasToolCalls').textContent = stats.tool_calls || 0;
+        cardsEl.style.display = 'grid';
+    } catch (e) {
+        console.error('Failed to load AI stats:', e);
+    }
+}
+
+async function loadToolUsageStats() {
+    const section = document.getElementById('toolUsageSection');
+    const body = document.getElementById('toolUsageBody');
+    if (!section || !body) return;
+
+    try {
+        const raw = await api.request(`/research/ai/chat/tool-usage/${projectId}`);
+        if (!raw || raw.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        // Group: aggregate execute_function sub-rows into a parent, keep others flat
+        const grouped = [];
+        const fnChildren = [];
+        let fnParent = { tool: 'execute_function', internal_count: 0, widget_count: 0, total: 0, success: 0, fail: 0 };
+
+        for (const s of raw) {
+            if (s.tool === 'execute_function' && s.function_name) {
+                fnParent.internal_count += s.internal_count;
+                fnParent.widget_count += s.widget_count;
+                fnParent.total += s.total;
+                fnParent.success += s.success;
+                fnParent.fail += s.fail;
+                fnChildren.push(s);
+            } else {
+                grouped.push(s);
+            }
+        }
+        // Sort: grouped by total DESC, then insert execute_function parent + children
+        grouped.sort((a, b) => b.total - a.total);
+        if (fnChildren.length > 0) {
+            // Insert parent at position based on its total
+            let insertIdx = grouped.findIndex(g => g.total < fnParent.total);
+            if (insertIdx === -1) insertIdx = grouped.length;
+            fnChildren.sort((a, b) => b.total - a.total);
+            grouped.splice(insertIdx, 0, { ...fnParent, _children: fnChildren });
+        }
+
+        const maxCount = Math.max(...grouped.map(g => g.total));
+        const INITIAL_SHOW = 5; // show top N functions initially
+
+        let html = `<table class="tool-usage-table">
+            <thead><tr>
+                <th>Tool</th>
+                <th class="tool-usage-bar-cell">Usage</th>
+                <th>Internal</th>
+                <th>Widget</th>
+                <th>Success</th>
+                <th>Fail</th>
+            </tr></thead><tbody>`;
+
+        for (const s of grouped) {
+            const pct = maxCount > 0 ? (s.total / maxCount * 100) : 0;
+            const failHtml = s.fail > 0 ? `<span class="tu-fail">${s.fail}</span>` : '<span style="color:var(--text-secondary)">0</span>';
+            const hasChildren = s._children && s._children.length > 0;
+            const expandAttr = hasChildren ? `onclick="toggleFnChildren(this)" style="cursor:pointer;"` : '';
+            const expandIcon = hasChildren ? `<span class="tu-expand-icon" style="font-size:0.65rem;margin-right:4px;display:inline-block;transition:transform 0.2s;">&#9654;</span>` : '';
+
+            html += `<tr ${expandAttr}>
+                <td>${expandIcon}<span class="tool-usage-name">${escapeHtml(s.tool)}</span>${hasChildren ? ` <span style="color:var(--text-secondary);font-size:0.68rem;">(${s._children.length} functions)</span>` : ''}</td>
+                <td class="tool-usage-bar-cell">
+                    <div class="tool-usage-bar-wrap">
+                        <div class="tool-usage-bar"><div class="tool-usage-bar-fill" style="width: ${pct}%"></div></div>
+                        <span class="tool-usage-bar-count">${s.total}</span>
+                    </div>
+                </td>
+                <td>${s.internal_count}</td>
+                <td>${s.widget_count}</td>
+                <td><span class="tu-success">${s.success}</span></td>
+                <td>${failHtml}</td>
+            </tr>`;
+
+            // Render children for execute_function — hidden by default
+            if (hasChildren) {
+                const children = s._children;
+                const hasMore = children.length > INITIAL_SHOW;
+
+                // Search bar row (hidden until expanded)
+                if (children.length > INITIAL_SHOW) {
+                    html += `<tr class="tu-fn-child tu-fn-search" style="display:none;background:var(--bg-secondary);">
+                        <td colspan="6" style="padding:6px 28px;">
+                            <input type="text" placeholder="Search ${children.length} functions..." oninput="filterFnChildren(this)" style="width:100%;padding:5px 10px;border:1px solid var(--border-color);border-radius:5px;background:var(--bg-tertiary);color:var(--text-primary);font-size:0.76rem;outline:none;">
+                        </td>
+                    </tr>`;
+                }
+
+                for (let ci = 0; ci < children.length; ci++) {
+                    const c = children[ci];
+                    const cpct = maxCount > 0 ? (c.total / maxCount * 100) : 0;
+                    const cfailHtml = c.fail > 0 ? `<span class="tu-fail">${c.fail}</span>` : '<span style="color:var(--text-secondary)">0</span>';
+                    const hiddenClass = (hasMore && ci >= INITIAL_SHOW) ? ' tu-fn-extra' : '';
+                    html += `<tr class="tu-fn-child${hiddenClass}" style="display:none;background:var(--bg-secondary);" data-fn="${escapeHtml(c.function_name).toLowerCase()}">
+                        <td style="padding-left: 28px;"><span class="tool-usage-name" style="color: var(--text-primary);">&#8627; ${escapeHtml(c.function_name)}</span></td>
+                        <td class="tool-usage-bar-cell">
+                            <div class="tool-usage-bar-wrap">
+                                <div class="tool-usage-bar"><div class="tool-usage-bar-fill" style="width: ${cpct}%; background: var(--color-success);"></div></div>
+                                <span class="tool-usage-bar-count">${c.total}</span>
+                            </div>
+                        </td>
+                        <td>${c.internal_count}</td>
+                        <td>${c.widget_count}</td>
+                        <td><span class="tu-success">${c.success}</span></td>
+                        <td>${cfailHtml}</td>
+                    </tr>`;
+                }
+
+                // "Show all" row
+                if (hasMore) {
+                    html += `<tr class="tu-fn-child tu-fn-show-all" style="display:none;background:var(--bg-secondary);">
+                        <td colspan="6" style="padding:4px 28px;">
+                            <button onclick="showAllFnChildren(this)" style="background:none;border:none;color:var(--brand-primary);cursor:pointer;font-size:0.76rem;padding:2px 0;">Show all ${children.length} functions</button>
+                        </td>
+                    </tr>`;
+                }
+            }
+        }
+
+        html += `</tbody></table>`;
+        body.innerHTML = html;
+        section.style.display = 'block';
+    } catch (e) {
+        console.error('Failed to load tool usage stats:', e);
+    }
+}
+
+function toggleToolUsage() {
+    const section = document.getElementById('toolUsageSection');
+    if (section) section.classList.toggle('open');
+}
+
+function toggleFnChildren(parentRow) {
+    const isExpanding = !parentRow.classList.contains('tu-expanded');
+    parentRow.classList.toggle('tu-expanded');
+
+    // Rotate expand icon
+    const icon = parentRow.querySelector('.tu-expand-icon');
+    if (icon) icon.style.transform = isExpanding ? 'rotate(90deg)' : '';
+
+    // Toggle child rows
+    let row = parentRow.nextElementSibling;
+    while (row && row.classList.contains('tu-fn-child')) {
+        if (isExpanding) {
+            // Show non-extra rows and search/show-all
+            if (!row.classList.contains('tu-fn-extra')) {
+                row.style.display = '';
+            }
+        } else {
+            row.style.display = 'none';
+        }
+        row = row.nextElementSibling;
+    }
+}
+
+function showAllFnChildren(btn) {
+    const showAllRow = btn.closest('tr');
+    let row = showAllRow.parentElement.firstElementChild;
+    // Find the parent group by walking from the show-all row backwards
+    let sibling = showAllRow.previousElementSibling;
+    while (sibling) {
+        if (sibling.classList.contains('tu-fn-extra')) {
+            sibling.style.display = '';
+            sibling.classList.remove('tu-fn-extra');
+        }
+        if (!sibling.classList.contains('tu-fn-child')) break;
+        sibling = sibling.previousElementSibling;
+    }
+    showAllRow.style.display = 'none';
+}
+
+function filterFnChildren(input) {
+    const query = input.value.toLowerCase().trim();
+    const searchRow = input.closest('tr');
+    let row = searchRow.nextElementSibling;
+    while (row && row.classList.contains('tu-fn-child')) {
+        if (row.classList.contains('tu-fn-search') || row.classList.contains('tu-fn-show-all')) {
+            row = row.nextElementSibling;
+            continue;
+        }
+        const fn = row.getAttribute('data-fn') || '';
+        row.style.display = (!query || fn.includes(query)) ? '' : 'none';
+        row.classList.remove('tu-fn-extra'); // remove extra class during search
+        row = row.nextElementSibling;
+    }
+    // Hide "show all" when searching
+    let next = searchRow.nextElementSibling;
+    while (next && next.classList.contains('tu-fn-child')) {
+        if (next.classList.contains('tu-fn-show-all')) {
+            next.style.display = query ? 'none' : '';
+        }
+        next = next.nextElementSibling;
     }
 }
 
@@ -3313,6 +3554,71 @@ function showToolCallDetail(storeIdx) {
         document.getElementById('toolCallModal').classList.add('active');
     } catch (e) {
         console.error('Failed to show tool call detail:', e);
+    }
+}
+
+function showLlmResponse(msgIndex, messageSource) {
+    const messages = messageSource || _aiLogMessages;
+    const msg = messages[msgIndex];
+    if (!msg) return;
+
+    const titleEl = document.getElementById('llmResponseModalTitle');
+    const bodyEl = document.getElementById('llmResponseModalBody');
+    if (!titleEl || !bodyEl) return;
+
+    // Title from first heading
+    const titleMatch = (msg.content || '').match(/^#\s+(.+)/m);
+    titleEl.textContent = titleMatch ? titleMatch[1] : 'AI Response';
+
+    // Metadata bar
+    const time = msg.created_at ? new Date(msg.created_at).toLocaleString() : '';
+    let metaHtml = `<div class="llm-response-meta">`;
+    metaHtml += `<span>${time}</span>`;
+    if (msg.input_tokens || msg.output_tokens) {
+        metaHtml += `<span>Input: ${(msg.input_tokens || 0).toLocaleString()} tokens</span>`;
+        metaHtml += `<span>Output: ${(msg.output_tokens || 0).toLocaleString()} tokens</span>`;
+    }
+    if (msg.model_used) metaHtml += `<span>Model: ${msg.model_used}</span>`;
+    metaHtml += `</div>`;
+
+    // Render markdown content
+    let rendered = '';
+    if (typeof marked !== 'undefined') {
+        try {
+            rendered = marked.parse(msg.content || '');
+        } catch (e) {
+            rendered = `<pre style="white-space:pre-wrap;">${escapeHtml(msg.content || '')}</pre>`;
+        }
+    } else {
+        rendered = `<pre style="white-space:pre-wrap;">${escapeHtml(msg.content || '')}</pre>`;
+    }
+
+    bodyEl.innerHTML = metaHtml + `<div class="llm-response-rendered">${rendered}</div>`;
+    document.getElementById('llmResponseModal').classList.add('active');
+
+    // Extract chart data from tool_calls_json and render charts
+    let charts = [];
+    if (msg.tool_calls_json) {
+        try {
+            const toolCalls = JSON.parse(msg.tool_calls_json);
+            for (const tc of toolCalls) {
+                if (tc.tool === 'create_visualization' && tc.success) {
+                    try {
+                        const input = JSON.parse(tc.input);
+                        if (input.charts && Array.isArray(input.charts)) {
+                            charts = charts.concat(input.charts);
+                        }
+                    } catch (e) {}
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (charts.length > 0) {
+        const renderedEl = bodyEl.querySelector('.llm-response-rendered');
+        if (renderedEl) {
+            renderInlineCharts(renderedEl, charts);
+        }
     }
 }
 
@@ -5318,10 +5624,11 @@ async function saveEmbedConfig() {
     const domainsRaw = document.getElementById('embedDomains')?.value || '';
     const allowedDomains = domainsRaw.split(',').map(d => d.trim()).filter(d => d.length > 0);
 
-    const headerColor = document.getElementById('embedHeaderColor')?.value?.trim() || null;
-    const accentColor = document.getElementById('embedAccentColor')?.value?.trim() || null;
-    const fontColor = document.getElementById('embedFontColor')?.value?.trim() || null;
-    const logoUrl = document.getElementById('embedLogoUrl')?.value?.trim() || null;
+    // Send empty string "" to explicitly clear a field; null would keep existing value
+    const headerColor = document.getElementById('embedHeaderColor')?.value?.trim() ?? '';
+    const accentColor = document.getElementById('embedAccentColor')?.value?.trim() ?? '';
+    const fontColor = document.getElementById('embedFontColor')?.value?.trim() ?? '';
+    const logoUrl = document.getElementById('embedLogoUrl')?.value?.trim() ?? '';
 
     const theme = getSelectedEmbedTheme();
 
@@ -5434,3 +5741,285 @@ document.addEventListener('click', (e) => {
         closeEmbedFilesDropdown();
     }
 });
+
+// ============================================
+// EMBED ANALYTICS (in AI Logs tab)
+// ============================================
+let eaSessionsPage = 1;
+const eaPageSize = 10;
+let eaExpandedSessionId = null;
+let eaAnalyticsData = null; // cached analytics summary per embed key
+let eaLoaded = false;
+
+async function loadEmbedAnalytics(selectedEmbedKey) {
+    try {
+        // Load overall analytics summary (all embed keys)
+        const analytics = await api.request(`/research/embed/analytics/${projectId}`);
+        eaAnalyticsData = analytics || [];
+
+        // Populate embed key filter dropdown
+        const filterEl = document.getElementById('eaEmbedKeyFilter');
+        if (filterEl && !eaLoaded) {
+            // Only populate once
+            filterEl.innerHTML = '<option value="">All embed keys</option>';
+            // Get embed config names for friendly display
+            let configNames = {};
+            try {
+                const configs = await api.request(`/research/embed/configs/${projectId}`);
+                (configs || []).forEach(c => {
+                    const key = c.EmbedKey || c.embed_key;
+                    const name = c.Name || c.name || key.substring(0, 10) + '...';
+                    configNames[key] = name;
+                });
+            } catch {}
+
+            eaAnalyticsData.forEach(a => {
+                const label = configNames[a.embed_key] || (a.embed_key.substring(0, 12) + '...');
+                filterEl.innerHTML += `<option value="${escapeHtml(a.embed_key)}">${escapeHtml(label)}</option>`;
+            });
+        }
+        eaLoaded = true;
+
+        // Compute totals for the selected key (or all keys)
+        const filtered = selectedEmbedKey
+            ? eaAnalyticsData.filter(a => a.embed_key === selectedEmbedKey)
+            : eaAnalyticsData;
+
+        const totals = filtered.reduce((acc, a) => ({
+            sessions: acc.sessions + (a.session_count || 0),
+            ips: acc.ips + (a.unique_ips || 0),
+            messages: acc.messages + (a.total_messages || 0),
+            tokens: acc.tokens + (a.total_input_tokens || 0) + (a.total_output_tokens || 0)
+        }), { sessions: 0, ips: 0, messages: 0, tokens: 0 });
+
+        setAnalyticsCards(totals.sessions, totals.ips, totals.messages, totals.tokens);
+
+        // Load sessions list
+        const keyParam = selectedEmbedKey ? `&embedKey=${encodeURIComponent(selectedEmbedKey)}` : '';
+        const data = await api.request(`/research/embed/analytics/${projectId}/sessions?page=${eaSessionsPage}&pageSize=${eaPageSize}${keyParam}`);
+        renderEmbedSessionsTable(data.sessions || [], data.total || 0);
+
+        updateAiLogsBadges();
+
+    } catch (err) {
+        console.error('Failed to load embed analytics:', err);
+    }
+}
+
+function onEaEmbedKeyFilterChange() {
+    const filterEl = document.getElementById('eaEmbedKeyFilter');
+    const key = filterEl ? filterEl.value : '';
+    eaSessionsPage = 1;
+    eaExpandedSessionId = null;
+    loadEmbedAnalytics(key);
+}
+
+function switchAiLogsSubtab(sub) {
+    const internalBtn = document.getElementById('ailogsSubtabInternal');
+    const widgetBtn = document.getElementById('ailogsSubtabWidget');
+    const internalPanel = document.getElementById('ailogsInternalPanel');
+    const widgetPanel = document.getElementById('ailogsWidgetPanel');
+
+    if (sub === 'internal') {
+        internalBtn.classList.add('active');
+        widgetBtn.classList.remove('active');
+        internalPanel.style.display = '';
+        widgetPanel.style.display = 'none';
+    } else {
+        internalBtn.classList.remove('active');
+        widgetBtn.classList.add('active');
+        internalPanel.style.display = 'none';
+        widgetPanel.style.display = '';
+        if (!eaLoaded) loadEmbedAnalytics('');
+    }
+}
+
+function updateAiLogsBadges() {
+    const internalBadge = document.getElementById('ailogsInternalBadge');
+    const widgetBadge = document.getElementById('ailogsWidgetBadge');
+    const countEl = document.getElementById('aiLogsCount');
+    if (internalBadge && countEl) {
+        const match = (countEl.textContent || '').match(/(\d+)/);
+        internalBadge.textContent = match ? match[1] : '';
+    }
+    if (widgetBadge && eaAnalyticsData) {
+        const total = eaAnalyticsData.reduce((sum, a) => sum + (a.session_count || 0), 0);
+        widgetBadge.textContent = total > 0 ? total : '';
+    }
+}
+
+function setAnalyticsCards(sessions, ips, messages, tokens) {
+    document.getElementById('eaSessions').textContent = sessions;
+    document.getElementById('eaUniqueIps').textContent = ips;
+    document.getElementById('eaMessages').textContent = messages;
+    document.getElementById('eaTokens').textContent = formatTokenCount(tokens);
+}
+
+function formatTokenCount(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+}
+
+function renderEmbedSessionsTable(sessions, total) {
+    const container = document.getElementById('embedSessionsList');
+    if (!container) return;
+
+    if (sessions.length === 0) {
+        container.innerHTML = '<div class="ea-empty">No embed sessions yet</div>';
+        return;
+    }
+
+    const totalPages = Math.ceil(total / eaPageSize);
+
+    let html = `<table class="ea-sessions-table">
+        <thead><tr>
+            <th>IP Address</th>
+            <th>Messages</th>
+            <th>Tokens</th>
+            <th>Last Active</th>
+        </tr></thead><tbody>`;
+
+    sessions.forEach(s => {
+        const tokens = (s.input_tokens || 0) + (s.output_tokens || 0);
+        const timeAgo = formatTimeAgo(s.updated_at);
+        const isExpanded = eaExpandedSessionId === s.id;
+
+        html += `<tr class="ea-session-row" onclick="toggleEmbedSessionExpand('${s.id}')">
+            <td><span class="ea-ip">${escapeHtml(s.ip_address || 'Unknown')}</span></td>
+            <td>${s.message_count || 0} <span style="color:var(--text-secondary);font-size:0.68rem">(${s.user_messages || 0} user)</span></td>
+            <td><span class="ea-token-badge">${formatTokenCount(tokens)}</span></td>
+            <td style="font-size:0.74rem;color:var(--text-secondary)">${timeAgo}</td>
+        </tr>`;
+
+        if (isExpanded) {
+            html += `<tr class="ea-expand-row"><td colspan="4"><div id="eaSessionMessages_${s.id}" class="ea-messages-wrap">
+                <div style="text-align:center;color:var(--text-secondary);font-size:0.78rem;padding:12px">Loading messages...</div>
+            </div></td></tr>`;
+        }
+    });
+
+    html += '</tbody></table>';
+
+    // Pagination
+    if (totalPages > 1) {
+        html += `<div class="ea-pagination">
+            <button ${eaSessionsPage <= 1 ? 'disabled' : ''} onclick="changeEaPage(${eaSessionsPage - 1})">Prev</button>
+            <span class="ea-page-info">Page ${eaSessionsPage} of ${totalPages}</span>
+            <button ${eaSessionsPage >= totalPages ? 'disabled' : ''} onclick="changeEaPage(${eaSessionsPage + 1})">Next</button>
+        </div>`;
+    }
+
+    container.innerHTML = html;
+
+    // If a session is expanded, load its messages
+    if (eaExpandedSessionId) {
+        loadEmbedSessionMessages(eaExpandedSessionId);
+    }
+}
+
+function changeEaPage(page) {
+    eaSessionsPage = page;
+    eaExpandedSessionId = null;
+    const filterEl = document.getElementById('eaEmbedKeyFilter');
+    loadEmbedAnalytics(filterEl ? filterEl.value : '');
+}
+
+async function toggleEmbedSessionExpand(sessionId) {
+    if (eaExpandedSessionId === sessionId) {
+        eaExpandedSessionId = null;
+    } else {
+        eaExpandedSessionId = sessionId;
+    }
+    const filterEl = document.getElementById('eaEmbedKeyFilter');
+    loadEmbedAnalytics(filterEl ? filterEl.value : '');
+}
+
+let _eaSessionMessages = {}; // { sessionId: messages[] } for lazy modal
+
+async function loadEmbedSessionMessages(sessionId) {
+    const container = document.getElementById(`eaSessionMessages_${sessionId}`);
+    if (!container) return;
+
+    try {
+        const messages = await api.request(`/research/embed/analytics/session/${sessionId}/messages`);
+        if (!messages || messages.length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:0.78rem;padding:12px">No messages found</div>';
+            return;
+        }
+
+        _eaSessionMessages[sessionId] = messages;
+
+        container.innerHTML = messages.map((m, mi) => {
+            const roleClass = m.role === 'user' ? 'user' : 'assistant';
+            const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let toolCallsHtml = '';
+            if (m.tool_calls_json) {
+                try {
+                    const toolCalls = JSON.parse(m.tool_calls_json);
+                    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+                        toolCallsHtml = '<div class="ea-tool-calls">' + toolCalls.map(tc => {
+                            const dotClass = tc.success !== false ? 'ok' : 'fail';
+                            const dur = tc.duration_ms != null ? ` ${tc.duration_ms}ms` : '';
+                            return `<span class="ea-tool-chip"><span class="ea-dot ${dotClass}"></span>${escapeHtml(tc.tool || 'unknown')}${dur}</span>`;
+                        }).join('') + '</div>';
+                    }
+                } catch {}
+            }
+
+            let tokenHtml = '';
+            if (m.role === 'assistant' && (m.input_tokens || m.output_tokens)) {
+                tokenHtml = `<span class="ea-token-badge" style="margin-left:auto">${m.input_tokens} IN / ${m.output_tokens} OUT</span>`;
+            }
+
+            // Content: user shows inline, assistant shows title + View Response button
+            let contentHtml = '';
+            if (m.role === 'user') {
+                contentHtml = `<div class="ea-msg-content">${escapeHtml(m.content || '')}</div>`;
+            } else {
+                const titleMatch = (m.content || '').match(/^#\s+(.+)/m);
+                const titlePreview = titleMatch ? titleMatch[1] : (m.content || '').split('\n')[0].substring(0, 80);
+                contentHtml = `<div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                    <span class="ai-log-title-preview" style="font-size:0.78rem;">${escapeHtml(titlePreview)}</span>
+                    <button class="ai-log-view-btn" onclick="showEaLlmResponse('${sessionId}',${mi})" style="font-size:0.7rem;padding:2px 8px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View</button>
+                </div>`;
+            }
+
+            return `<div class="ea-msg">
+                <div class="ea-msg-header">
+                    <span class="ea-msg-role ${roleClass}">${m.role}</span>
+                    <span class="ea-msg-time">${time}</span>
+                    ${tokenHtml}
+                </div>
+                ${contentHtml}
+                ${toolCallsHtml}
+            </div>`;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = `<div style="text-align:center;color:var(--color-error);font-size:0.78rem;padding:12px">Failed to load messages</div>`;
+    }
+}
+
+function showEaLlmResponse(sessionId, msgIndex) {
+    const messages = _eaSessionMessages[sessionId];
+    if (!messages) return;
+    showLlmResponse(msgIndex, messages);
+}
+
+function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 30) return `${diffDay}d ago`;
+    return date.toLocaleDateString();
+}

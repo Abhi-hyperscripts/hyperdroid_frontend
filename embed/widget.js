@@ -506,10 +506,9 @@
             `;
             shadow.appendChild(ts);
         }
-        if (info.logo_url) {
-            if (hdrLogo) { hdrLogo.src = info.logo_url; hdrLogo.style.display = ''; }
-            if (bubbleLogo) { bubbleLogo.src = info.logo_url; bubbleLogo.style.display = ''; }
-        }
+        const effectiveLogo = info.logo_url || logoUrl;
+        if (hdrLogo) { hdrLogo.src = effectiveLogo; hdrLogo.style.display = ''; }
+        if (bubbleLogo) { bubbleLogo.src = effectiveLogo; bubbleLogo.style.display = ''; }
 
         // ========================================
         // RESIZE HANDLING (drag from top-left corner)
