@@ -348,6 +348,52 @@
             min-height: 0;
             flex: 1;
         }
+        /* Variables tab: fill remaining viewport height, scroll table */
+        #variablesTab.active {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        #variablesGrid {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #variablesGrid::-webkit-scrollbar {
+            width: 6px;
+        }
+        #variablesGrid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #variablesGrid::-webkit-scrollbar-thumb {
+            background: var(--border-primary, #d1d5db);
+            border-radius: 3px;
+        }
+        /* Questions tab: fill remaining viewport height, scroll table */
+        #questionsTab.active {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        #questionsContent {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #questionsContent::-webkit-scrollbar {
+            width: 6px;
+        }
+        #questionsContent::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #questionsContent::-webkit-scrollbar-thumb {
+            background: var(--border-primary, #d1d5db);
+            border-radius: 3px;
+        }
         /* Functions tab: fill remaining viewport height, scroll blocks */
         #functionsTab.active {
             display: flex;
@@ -477,6 +523,7 @@
             margin-bottom: 16px;
             flex-wrap: wrap;
             align-items: center;
+            flex-shrink: 0;
         }
         .variables-toolbar input,
         .variables-toolbar select {
@@ -514,6 +561,7 @@
             margin-bottom: 16px;
             flex-wrap: nowrap;
             align-items: center;
+            flex-shrink: 0;
         }
         .questions-toolbar input,
         .questions-toolbar select {
@@ -3750,11 +3798,38 @@
         }
 
         /* ===== AI Logs Sub-tabs ===== */
+        /* AI Logs tab: fill remaining viewport height, scroll logs */
+        #ailogsTab.active {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        #ailogsInternalPanel, #ailogsWidgetPanel {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #ailogsInternalPanel::-webkit-scrollbar,
+        #ailogsWidgetPanel::-webkit-scrollbar {
+            width: 6px;
+        }
+        #ailogsInternalPanel::-webkit-scrollbar-track,
+        #ailogsWidgetPanel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #ailogsInternalPanel::-webkit-scrollbar-thumb,
+        #ailogsWidgetPanel::-webkit-scrollbar-thumb {
+            background: var(--border-primary, #d1d5db);
+            border-radius: 3px;
+        }
         .ailogs-subtabs {
             display: flex;
             gap: 0;
             margin-bottom: 16px;
             border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
         .ailogs-subtab {
             padding: 8px 18px;
