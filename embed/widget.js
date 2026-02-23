@@ -352,15 +352,15 @@
                 background: ${C.bgCard}; flex-shrink: 0;
             }
             .rz-newchat {
-                width: 40px; height: 40px; border-radius: 10px; border: 1px solid ${C.inputBorder};
-                background: ${C.inputBg}; cursor: pointer;
+                width: 40px; height: 40px; border-radius: 10px; border: none;
+                background: ${C.accent}; cursor: pointer;
                 display: flex; align-items: center; justify-content: center;
-                flex-shrink: 0; transition: border-color 0.15s, background 0.15s;
+                flex-shrink: 0; transition: opacity 0.15s, transform 0.1s;
                 position: relative;
             }
-            .rz-newchat:hover { border-color: ${C.accent}; background: ${C.accentDim}; }
-            .rz-newchat svg { width: 16px; height: 16px; stroke: ${C.textSecondary}; fill: none; }
-            .rz-newchat:hover svg { stroke: ${C.accent}; }
+            .rz-newchat:hover { opacity: 0.9; }
+            .rz-newchat:active { transform: scale(0.95); }
+            .rz-newchat svg { width: 16px; height: 16px; stroke: #fff; fill: none; }
             .rz-newchat::after {
                 content: 'New Chat'; position: absolute; bottom: calc(100% + 6px); left: 50%;
                 transform: translateX(-50%);
