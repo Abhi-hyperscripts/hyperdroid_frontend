@@ -22,6 +22,9 @@ let queryResultsData = null;
 // Functions tab state
 let fnFunctions = [];     // cached function metadata from backend
 let fnLoaded = false;
+let fnBlocks = [];         // { id, fnName }
+let fnBlockIdCounter = 0;
+const fnBlockDropdowns = new Map(); // blockId -> SearchableDropdown instance
 
 // Questions tab state
 let questionsData = [];    // raw question groups from API
@@ -128,7 +131,7 @@ async function loadProject() {
 
         // Hide loading, show content
         document.getElementById('pageLoading').style.display = 'none';
-        document.getElementById('projectContent').style.display = 'block';
+        document.getElementById('projectContent').style.display = 'flex';
 
         // Load files (default tab)
         loadFiles();
@@ -948,6 +951,10 @@ async function loadVariables() {
 }
 
 let fileFilterDropdown = null;
+let questionFileDropdown = null;
+let questionTypeDropdown = null;
+let eaEmbedKeyDropdown = null;
+let fnFileDropdown = null;
 
 function populateFileFilter() {
     const select = document.getElementById('variableFileFilter');
@@ -1576,7 +1583,7 @@ async function executeQuery() {
                 : `${formatNumber(rowCount)} row${rowCount !== 1 ? 's' : ''} returned`;
         }
 
-        resultsDiv.style.display = 'block';
+        resultsDiv.style.display = 'flex';
 
     } catch (error) {
         console.error('Query execution failed:', error);
@@ -1594,6 +1601,56 @@ async function executeQuery() {
             Run Query
         `;
     }
+}
+
+// ============================================
+// COPY QUERY RESULTS (Tab-separated for Excel)
+// ============================================
+
+function copyQueryResults() {
+    if (!queryResultsData || !queryResultsData.columns || !queryResultsData.rows.length) {
+        Toast.warning('No results to copy.');
+        return;
+    }
+
+    const { columns, rows } = queryResultsData;
+    const lines = [];
+
+    // Header row
+    lines.push(columns.join('\t'));
+
+    // Data rows
+    const displayRows = rows.slice(0, 1000);
+    for (const row of displayRows) {
+        if (Array.isArray(row)) {
+            lines.push(row.map(cell => formatCellValue(cell)).join('\t'));
+        } else if (typeof row === 'object' && row !== null) {
+            lines.push(columns.map(col => formatCellValue(row[col])).join('\t'));
+        }
+    }
+
+    const tsv = lines.join('\n');
+
+    navigator.clipboard.writeText(tsv).then(() => {
+        const btn = document.querySelector('.query-copy-btn');
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.classList.add('copied');
+            btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Copied!
+            `;
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        }
+        Toast.success(`Copied ${formatNumber(displayRows.length)} rows to clipboard`);
+    }).catch(() => {
+        Toast.error('Failed to copy to clipboard');
+    });
 }
 
 // ============================================
@@ -3627,10 +3684,10 @@ function showLlmResponse(msgIndex, messageSource) {
 // ============================================
 
 async function loadFunctions() {
-    const chipsEl = document.getElementById('fnLibraryChips');
-    if (!chipsEl) return;
+    const container = document.getElementById('fnBlocksContainer');
+    if (!container) return;
 
-    chipsEl.innerHTML = '<span style="color: var(--text-muted); font-size: 0.75rem;">Loading...</span>';
+    container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Loading functions...</div>';
 
     try {
         const baseUrl = api._getBaseUrl('/research/');
@@ -3640,146 +3697,200 @@ async function loadFunctions() {
         });
         const data = await resp.json();
         fnFunctions = Array.isArray(data) ? data : (data.functions || []);
+        fnFunctions.sort((a, b) => ((a.name || a.function_name) || '').localeCompare((b.name || b.function_name) || ''));
         fnLoaded = true;
-        renderFnChips();
+
+        // Clear and add one initial empty block
+        container.innerHTML = '';
+        fnBlocks = [];
+        fnBlockIdCounter = 0;
+        addFnBlock();
     } catch (error) {
-        chipsEl.innerHTML = `<span style="color: var(--color-danger, #ef4444); font-size: 0.75rem;">Failed to load functions</span>`;
+        container.innerHTML = `<div style="color: var(--color-danger, #ef4444); font-size: 0.8rem; text-align: center; padding: 20px;">Failed to load functions</div>`;
         console.error('Failed to load functions:', error);
     }
 }
 
-function renderFnChips() {
-    const chipsEl = document.getElementById('fnLibraryChips');
-    if (!chipsEl || fnFunctions.length === 0) {
-        if (chipsEl) chipsEl.innerHTML = '<span style="color: var(--text-muted); font-size: 0.75rem;">No functions available</span>';
+function addFnBlock() {
+    const container = document.getElementById('fnBlocksContainer');
+    if (!container) return;
+
+    const blockId = ++fnBlockIdCounter;
+    fnBlocks.push({ id: blockId, fnName: '' });
+
+    const blockEl = document.createElement('div');
+    blockEl.className = 'fn-block';
+    blockEl.id = `fnBlock-${blockId}`;
+    blockEl.dataset.blockId = blockId;
+
+    // Build dropdown options
+    const optionsHtml = fnFunctions.map(fn => {
+        const name = fn.name || fn.function_name || '';
+        return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+    }).join('');
+
+    blockEl.innerHTML = `
+        <div class="fn-block-header">
+            <div class="fn-block-num">${fnBlocks.length}</div>
+            <select class="fn-block-select" id="fnBlockSelect-${blockId}" data-block-id="${blockId}" onchange="onBlockFnChange(${blockId})">
+                <option value="">Select a function...</option>
+                ${optionsHtml}
+            </select>
+            <div class="fn-block-actions">
+                <button class="fn-block-btn fn-block-info-btn" title="Function info" data-block-id="${blockId}" onclick="openFnInfoPanel(${blockId})" style="display:none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+                <button class="fn-block-btn fn-block-run-btn" title="Run (Ctrl+Enter)" data-block-id="${blockId}" onclick="executeFnBlock(${blockId})" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <button class="fn-block-btn fn-block-delete-btn" title="Delete block" data-block-id="${blockId}" onclick="deleteFnBlock(${blockId})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="fn-block-body" id="fnBlockBody-${blockId}">
+            <textarea class="fn-block-editor" id="fnBlockEditor-${blockId}"
+                placeholder='Select a function above to auto-fill template...'
+                rows="8"></textarea>
+        </div>
+    `;
+
+    container.appendChild(blockEl);
+
+    // Convert select to searchable dropdown
+    if (typeof convertSelectToSearchable === 'function') {
+        const blockDropdown = convertSelectToSearchable(`fnBlockSelect-${blockId}`, {
+            placeholder: 'Select a function...',
+            searchPlaceholder: 'Search functions...',
+            onChange: (value) => onBlockFnChange(blockId)
+        });
+        if (blockDropdown) fnBlockDropdowns.set(blockId, blockDropdown);
+    }
+
+    // Add Ctrl+Enter handler
+    const editor = blockEl.querySelector('.fn-block-editor');
+    editor.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            executeFnBlock(blockId);
+        }
+    });
+
+    // Scroll into view
+    blockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function onBlockFnChange(blockId) {
+    const dropdown = fnBlockDropdowns.get(blockId);
+    const name = dropdown ? (dropdown.getValue() || '') : (document.querySelector(`select.fn-block-select[data-block-id="${blockId}"]`)?.value || '');
+    const block = fnBlocks.find(b => b.id === blockId);
+    if (block) block.fnName = name;
+
+    const body = document.getElementById(`fnBlockBody-${blockId}`);
+    const infoBtn = document.querySelector(`.fn-block-info-btn[data-block-id="${blockId}"]`);
+    const runBtn = document.querySelector(`.fn-block-run-btn[data-block-id="${blockId}"]`);
+    const editor = document.getElementById(`fnBlockEditor-${blockId}`);
+
+    if (!name) {
+        if (body) body.classList.remove('visible');
+        if (infoBtn) infoBtn.style.display = 'none';
+        if (runBtn) runBtn.disabled = true;
         return;
     }
 
-    chipsEl.innerHTML = fnFunctions.map(fn => {
-        const name = fn.name || fn.function_name || '';
-        return `<button class="fn-chip" data-fn="${escapeHtml(name)}" onclick="selectFnChip('${escapeHtml(name)}')">${escapeHtml(name)}</button>`;
-    }).join('');
-}
+    // Show body, info btn, enable run
+    if (body) body.classList.add('visible');
+    if (infoBtn) infoBtn.style.display = '';
+    if (runBtn) runBtn.disabled = false;
 
-function selectFnChip(name) {
-    // Highlight active chip
-    document.querySelectorAll('.fn-chip').forEach(c => c.classList.toggle('active', c.dataset.fn === name));
-
+    // Fill template
     const fn = fnFunctions.find(f => (f.name || f.function_name) === name);
-    if (!fn) return;
+    if (!fn || !editor) return;
 
-    // Show function info — uses input_schema (JSON Schema) from backend
-    const infoEl = document.getElementById('fnInfo');
-    if (infoEl) {
-        let infoHtml = `<strong>${escapeHtml(fn.name || fn.function_name)}</strong>`;
-        if (fn.category) infoHtml += ` <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;">${escapeHtml(fn.category)}</span>`;
-        if (fn.description) infoHtml += `<br>${escapeHtml(fn.description)}`;
-
-        // Parse parameters from input_schema.properties
+    let template;
+    const examples = fn.examples || [];
+    if (examples.length > 0 && examples[0].input_params) {
+        template = JSON.stringify({
+            function_name: fn.name || fn.function_name,
+            input_params: examples[0].input_params
+        }, null, 2);
+    } else {
+        const params = {};
         const schema = fn.input_schema;
         if (schema && schema.properties) {
-            const required = schema.required || [];
-            infoHtml += '<br><br><strong>Parameters:</strong><br>';
-            for (const [pName, pDef] of Object.entries(schema.properties)) {
-                const isReq = required.includes(pName);
-                const req = isReq ? ' <span style="color:var(--color-danger,#ef4444);">*</span>' : '';
-                infoHtml += `&bull; <code style="font-family:var(--font-mono,monospace);font-size:0.75rem;background:var(--bg-primary);padding:1px 4px;border-radius:3px;">${escapeHtml(pName)}</code>${req}`;
-                if (pDef.type) infoHtml += ` <span style="color:var(--text-muted);">(${escapeHtml(pDef.type)})</span>`;
-                if (pDef.description) infoHtml += ` — ${escapeHtml(pDef.description)}`;
-                infoHtml += '<br>';
-            }
-        }
-        infoEl.innerHTML = infoHtml;
-        infoEl.style.display = '';
-    }
-
-    // Pre-populate editor — use first example's input_params if available
-    const editor = document.getElementById('fnEditor');
-    if (editor) {
-        let template;
-        const examples = fn.examples || [];
-        if (examples.length > 0 && examples[0].input_params) {
-            template = JSON.stringify({
-                function_name: fn.name || fn.function_name,
-                input_params: examples[0].input_params
-            }, null, 2);
-        } else {
-            // Fallback: build skeleton from input_schema required fields
-            const params = {};
-            const schema = fn.input_schema;
-            if (schema && schema.properties) {
-                for (const pName of (schema.required || [])) {
-                    const pDef = schema.properties[pName];
-                    if (pDef) {
-                        params[pName] = pDef.type === 'number' || pDef.type === 'integer' ? 0
-                            : pDef.type === 'array' ? []
-                            : pDef.type === 'object' ? {}
-                            : '';
-                    }
+            for (const pName of (schema.required || [])) {
+                const pDef = schema.properties[pName];
+                if (pDef) {
+                    params[pName] = pDef.type === 'number' || pDef.type === 'integer' ? 0
+                        : pDef.type === 'array' ? []
+                        : pDef.type === 'object' ? {}
+                        : '';
                 }
             }
-            template = JSON.stringify({
-                function_name: fn.name || fn.function_name,
-                input_params: params
-            }, null, 2);
         }
-        editor.value = template;
+        template = JSON.stringify({
+            function_name: fn.name || fn.function_name,
+            input_params: params
+        }, null, 2);
     }
+    editor.value = template;
 }
 
-function updateFnFileSelector() {
-    const select = document.getElementById('fnFileSelect');
-    if (!select) return;
-
-    const currentValue = select.value;
-    select.innerHTML = '<option value="">Auto (first ready file)</option>';
-
-    const readyFiles = files.filter(f => f.status === 'ready');
-    for (const f of readyFiles) {
-        const fileName = f.fileName || f.file_name || 'Unknown';
-        const opt = document.createElement('option');
-        opt.value = f.id;
-        opt.textContent = fileName;
-        select.appendChild(opt);
+function deleteFnBlock(blockId) {
+    if (fnBlocks.length <= 1) {
+        Toast.warning('Cannot delete the last block.');
+        return;
     }
 
-    // Restore selection if still valid
-    if (currentValue && readyFiles.some(f => f.id === currentValue)) {
-        select.value = currentValue;
-    }
+    const blockEl = document.getElementById(`fnBlock-${blockId}`);
+    if (blockEl) blockEl.remove();
+
+    // Clean up searchable dropdown instance
+    const dd = fnBlockDropdowns.get(blockId);
+    if (dd) { dd.destroy(); fnBlockDropdowns.delete(blockId); }
+
+    fnBlocks = fnBlocks.filter(b => b.id !== blockId);
+
+    // Re-number remaining blocks
+    document.querySelectorAll('.fn-block').forEach((el, idx) => {
+        const numEl = el.querySelector('.fn-block-num');
+        if (numEl) numEl.textContent = idx + 1;
+    });
 }
 
-async function executeFn() {
-    const editor = document.getElementById('fnEditor');
+async function executeFnBlock(blockId) {
+    const editor = document.getElementById(`fnBlockEditor-${blockId}`);
     const editorValue = (editor ? editor.value : '').trim();
 
     if (!editorValue) {
-        Toast.warning('Please enter a function JSON spec in the editor.');
+        Toast.warning('Please select a function and fill in parameters.');
         return;
     }
 
-    // Validate JSON
     let parsed;
     try {
         parsed = JSON.parse(editorValue);
     } catch (e) {
         renderFnError(`Invalid JSON: ${e.message}`);
+        showFnPopup(0, 0);
         return;
     }
 
-    // Inject file_id from selector if not specified in JSON
-    const fileSelect = document.getElementById('fnFileSelect');
-    if (fileSelect && fileSelect.value && !parsed.file_id) {
-        parsed.file_id = fileSelect.value;
+    // Inject file_id from shared selector
+    const fnFileVal = getFnFileSelectValue();
+    if (fnFileVal && !parsed.file_id) {
+        parsed.file_id = fnFileVal;
     }
 
-    const btn = document.getElementById('fnRunBtn');
-    const execInfo = document.getElementById('fnExecInfo');
+    const blockEl = document.getElementById(`fnBlock-${blockId}`);
+    const runBtn = document.querySelector(`.fn-block-run-btn[data-block-id="${blockId}"]`);
 
     // Loading state
-    btn.disabled = true;
-    btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0;"></div> Running...`;
-    if (execInfo) execInfo.textContent = '';
+    if (blockEl) blockEl.classList.add('running');
+    if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin:0;"></div>';
+    }
 
     try {
         const baseUrl = api._getBaseUrl('/research/');
@@ -3798,25 +3909,232 @@ async function executeFn() {
         if (!fetchResponse.ok || response.success === false) {
             renderFnError(response.error || response.message || 'Function execution failed');
             showFnPopup(0, 0);
-            if (execInfo) execInfo.textContent = '';
             return;
         }
 
-        // Show execution info
         const execTime = response.execution_time_ms ?? 0;
         const rowCount = response.rows ? response.rows.length : 0;
-        if (execInfo) execInfo.textContent = `${formatNumber(rowCount)} rows in ${execTime}ms`;
 
         const funcName = parsed.function_name || '';
         renderFnResults(response, funcName);
         showFnPopup(execTime, rowCount);
     } catch (error) {
         renderFnError(`Request failed: ${error.message}`);
+        showFnPopup(0, 0);
         console.error('Function execution failed:', error);
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Execute Function`;
+        if (blockEl) blockEl.classList.remove('running');
+        if (runBtn) {
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+        }
     }
+}
+
+/**
+ * Formats a function description string into structured HTML.
+ * Recognizes: section headings (ALL CAPS with colon), bullet lists (- item),
+ * numbered lists (1. item), and paragraph breaks (double newline).
+ */
+function formatFnDescription(text) {
+    if (!text) return '<p>No description available.</p>';
+
+    const lines = text.split('\n');
+    let html = '';
+    let inList = false;   // currently inside a <ul>
+    let inOl = false;     // currently inside an <ol>
+    let paragraph = '';
+
+    function flushParagraph() {
+        const trimmed = paragraph.trim();
+        if (trimmed) {
+            html += `<p>${escapeHtml(trimmed)}</p>`;
+        }
+        paragraph = '';
+    }
+
+    function closeList() {
+        if (inList) { html += '</ul>'; inList = false; }
+        if (inOl) { html += '</ol>'; inOl = false; }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        // Empty line = paragraph break
+        if (trimmed === '') {
+            closeList();
+            flushParagraph();
+            continue;
+        }
+
+        // Section heading: ALL CAPS line ending with colon (e.g. "KEY CAPABILITIES:")
+        if (/^[A-Z][A-Z\s_\/&()-]+:$/.test(trimmed)) {
+            closeList();
+            flushParagraph();
+            const headingText = trimmed.replace(/:$/, '');
+            html += `<h4 class="fn-desc-heading">${escapeHtml(headingText)}</h4>`;
+            continue;
+        }
+
+        // Bullet list item: starts with "- " or "– "
+        if (/^[-–]\s+/.test(trimmed)) {
+            flushParagraph();
+            if (inOl) { html += '</ol>'; inOl = false; }
+            if (!inList) { html += '<ul>'; inList = true; }
+            const itemText = trimmed.replace(/^[-–]\s+/, '');
+            html += `<li>${escapeHtml(itemText)}</li>`;
+            continue;
+        }
+
+        // Numbered list item: starts with "1. ", "2. ", etc.
+        if (/^\d+\.\s+/.test(trimmed)) {
+            flushParagraph();
+            if (inList) { html += '</ul>'; inList = false; }
+            if (!inOl) { html += '<ol>'; inOl = true; }
+            const itemText = trimmed.replace(/^\d+\.\s+/, '');
+            html += `<li>${escapeHtml(itemText)}</li>`;
+            continue;
+        }
+
+        // Regular text — accumulate into paragraph
+        closeList();
+        if (paragraph) paragraph += ' ';
+        paragraph += trimmed;
+    }
+
+    closeList();
+    flushParagraph();
+
+    return html || '<p>No description available.</p>';
+}
+
+function openFnInfoPanel(blockId) {
+    const dropdown = fnBlockDropdowns.get(blockId);
+    const fnName = dropdown ? (dropdown.getValue() || '') : (document.querySelector(`select.fn-block-select[data-block-id="${blockId}"]`)?.value || '');
+    if (!fnName) return;
+
+    const fn = fnFunctions.find(f => (f.name || f.function_name) === fnName);
+    if (!fn) return;
+
+    const panel = document.getElementById('fnInfoSlidePanel');
+    const overlay = document.getElementById('fnInfoPanelOverlay');
+    const body = document.getElementById('fnInfoPanelBody');
+    if (!panel || !body) return;
+
+    const name = fn.name || fn.function_name || '';
+    const category = fn.category || '';
+    const description = fn.description || 'No description available.';
+    const schema = fn.input_schema;
+    const examples = fn.examples || [];
+
+    let html = '';
+
+    // Name + category
+    html += `<div class="fn-info-panel-name">${escapeHtml(name)}</div>`;
+    if (category) {
+        html += `<div class="fn-info-panel-category">${escapeHtml(category)}</div>`;
+    }
+
+    // Description — formatted with paragraphs, headings, and lists
+    html += `<div class="fn-info-panel-desc">${formatFnDescription(description)}</div>`;
+
+    // Parameters table
+    if (schema && schema.properties && Object.keys(schema.properties).length > 0) {
+        const required = schema.required || [];
+        html += `<div class="fn-info-panel-section-title">Parameters</div>`;
+        html += `<table class="fn-info-param-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>`;
+        for (const [pName, pDef] of Object.entries(schema.properties)) {
+            const isReq = required.includes(pName);
+            const reqMark = isReq ? ' <span class="fn-info-param-required">*</span>' : '';
+            const typeStr = pDef.type || 'any';
+            let descStr = pDef.description ? escapeHtml(pDef.description) : '';
+            // Enum values
+            if (pDef.enum && pDef.enum.length > 0) {
+                descStr += '<div class="fn-info-param-enum">';
+                for (const v of pDef.enum) {
+                    descStr += `<span class="fn-info-param-enum-val">${escapeHtml(String(v))}</span>`;
+                }
+                descStr += '</div>';
+            }
+            html += `<tr>
+                <td><code style="font-family:var(--font-mono,monospace);font-size:0.75rem;">${escapeHtml(pName)}</code>${reqMark}</td>
+                <td><span class="fn-info-param-type">${escapeHtml(typeStr)}</span></td>
+                <td>${descStr}</td>
+            </tr>`;
+        }
+        html += `</tbody></table>`;
+    }
+
+    // Examples
+    if (examples.length > 0) {
+        html += `<div class="fn-info-panel-section-title">Examples</div>`;
+        examples.forEach((ex, i) => {
+            const label = ex.label || ex.description || `Example ${i + 1}`;
+            const code = JSON.stringify({ function_name: name, input_params: ex.input_params || {} }, null, 2);
+            html += `<div class="fn-info-example-card">
+                <div class="fn-info-example-label">${escapeHtml(label)}</div>
+                <div class="fn-info-example-code">${escapeHtml(code)}</div>
+            </div>`;
+        });
+    }
+
+    body.innerHTML = html;
+
+    // Open panel
+    panel.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+}
+
+function closeFnInfoPanel() {
+    const panel = document.getElementById('fnInfoSlidePanel');
+    const overlay = document.getElementById('fnInfoPanelOverlay');
+    if (panel) panel.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function updateFnFileSelector() {
+    const select = document.getElementById('fnFileSelect');
+    if (!select) return;
+
+    const currentValue = fnFileDropdown ? fnFileDropdown.getValue() : select.value;
+    select.innerHTML = '';
+
+    const readyFiles = files.filter(f => f.status === 'ready');
+    for (const f of readyFiles) {
+        const fileName = f.fileName || f.file_name || 'Unknown';
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = fileName;
+        select.appendChild(opt);
+    }
+
+    // Restore selection if still valid, otherwise select first file
+    if (currentValue && readyFiles.some(f => f.id === currentValue)) {
+        select.value = currentValue;
+    } else if (readyFiles.length > 0) {
+        select.value = readyFiles[0].id;
+    }
+
+    // Convert to searchable dropdown
+    if (typeof convertSelectToSearchable === 'function') {
+        if (fnFileDropdown) fnFileDropdown.destroy();
+        fnFileDropdown = convertSelectToSearchable('fnFileSelect', {
+            placeholder: 'Select file...',
+            searchPlaceholder: 'Search files...',
+            compact: true
+        });
+        const selectedVal = select.value;
+        if (selectedVal) {
+            fnFileDropdown.setValue(selectedVal);
+        }
+    }
+}
+
+function getFnFileSelectValue() {
+    if (fnFileDropdown) return fnFileDropdown.getValue() || '';
+    return document.getElementById('fnFileSelect')?.value || '';
 }
 
 /**
@@ -4788,8 +5106,14 @@ function restoreFnPopup() {
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            popup.style.left = (e.clientX - offsetX) + 'px';
-            popup.style.top = (e.clientY - offsetY) + 'px';
+            const navbarH = 70; // navbar height — popup must stay below it
+            let newTop = e.clientY - offsetY;
+            let newLeft = e.clientX - offsetX;
+            // Clamp: never above navbar, never off-screen edges
+            newTop = Math.max(navbarH, Math.min(newTop, window.innerHeight - 40));
+            newLeft = Math.max(-popup.offsetWidth + 100, Math.min(newLeft, window.innerWidth - 100));
+            popup.style.left = newLeft + 'px';
+            popup.style.top = newTop + 'px';
         });
 
         document.addEventListener('mouseup', () => {
@@ -4903,7 +5227,7 @@ function showPageError(message) {
 function populateQuestionFileFilter() {
     const sel = document.getElementById('questionFileFilter');
     if (!sel) return;
-    sel.innerHTML = '<option value="">Select file...</option>';
+    sel.innerHTML = '';
     const readyFiles = files.filter(f => f.status === 'ready');
     readyFiles.forEach(f => {
         sel.innerHTML += `<option value="${f.id}">${escapeHtml(f.file_name || f.fileName)}</option>`;
@@ -4912,10 +5236,42 @@ function populateQuestionFileFilter() {
     if (readyFiles.length > 0) {
         sel.value = readyFiles[0].id;
     }
+
+    // Convert to searchable dropdown
+    if (typeof convertSelectToSearchable === 'function') {
+        if (questionFileDropdown) questionFileDropdown.destroy();
+        questionFileDropdown = convertSelectToSearchable('questionFileFilter', {
+            placeholder: 'Select file...',
+            searchPlaceholder: 'Search files...',
+            onChange: () => loadQuestions()
+        });
+        if (readyFiles.length > 0) {
+            questionFileDropdown.setValue(readyFiles[0].id);
+        }
+    }
+
+    // Convert question type filter once
+    if (!questionTypeDropdown && typeof convertSelectToSearchable === 'function') {
+        questionTypeDropdown = convertSelectToSearchable('questionTypeFilter', {
+            placeholder: 'All types',
+            searchPlaceholder: 'Search types...',
+            onChange: () => filterQuestions()
+        });
+    }
+}
+
+function getQuestionFileFilterValue() {
+    if (questionFileDropdown) return questionFileDropdown.getValue() || '';
+    return document.getElementById('questionFileFilter')?.value || '';
+}
+
+function getQuestionTypeFilterValue() {
+    if (questionTypeDropdown) return questionTypeDropdown.getValue() || '';
+    return document.getElementById('questionTypeFilter')?.value || '';
 }
 
 async function loadQuestions() {
-    const fileId = document.getElementById('questionFileFilter')?.value;
+    const fileId = getQuestionFileFilterValue();
     if (!fileId) {
         document.getElementById('questionsEmpty').style.display = 'flex';
         document.getElementById('questionsContent').innerHTML = '';
@@ -4944,8 +5300,14 @@ async function loadQuestions() {
         }
 
         // Attach file name for panel display
-        const fileSelect = document.getElementById('questionFileFilter');
-        const selectedFileName = fileSelect?.options[fileSelect.selectedIndex]?.text || '-';
+        let selectedFileName = '-';
+        if (questionFileDropdown) {
+            const opt = questionFileDropdown.options.find(o => String(o.value) === String(fileId));
+            selectedFileName = opt ? opt.label : '-';
+        } else {
+            const fileSelect = document.getElementById('questionFileFilter');
+            selectedFileName = fileSelect?.options[fileSelect.selectedIndex]?.text || '-';
+        }
         questionsData = resp.questions.map(q => ({ ...q, _fileName: selectedFileName }));
         filteredQuestions = [...questionsData];
         qCurrentPage = 1;
@@ -4961,7 +5323,7 @@ async function loadQuestions() {
 function filterQuestions() {
     qCurrentPage = 1;
     const search = (document.getElementById('questionSearch')?.value || '').toLowerCase();
-    const typeFilter = document.getElementById('questionTypeFilter')?.value || '';
+    const typeFilter = getQuestionTypeFilterValue();
 
     filteredQuestions = questionsData.filter(q => {
         if (typeFilter && q.question_type !== typeFilter) return false;
@@ -5777,6 +6139,17 @@ async function loadEmbedAnalytics(selectedEmbedKey) {
                 const label = configNames[a.embed_key] || (a.embed_key.substring(0, 12) + '...');
                 filterEl.innerHTML += `<option value="${escapeHtml(a.embed_key)}">${escapeHtml(label)}</option>`;
             });
+
+            // Convert to searchable dropdown
+            if (typeof convertSelectToSearchable === 'function') {
+                if (eaEmbedKeyDropdown) eaEmbedKeyDropdown.destroy();
+                eaEmbedKeyDropdown = convertSelectToSearchable('eaEmbedKeyFilter', {
+                    placeholder: 'All embed keys',
+                    searchPlaceholder: 'Search keys...',
+                    compact: true,
+                    onChange: (value) => onEaEmbedKeyFilterChange()
+                });
+            }
         }
         eaLoaded = true;
 
@@ -5807,8 +6180,7 @@ async function loadEmbedAnalytics(selectedEmbedKey) {
 }
 
 function onEaEmbedKeyFilterChange() {
-    const filterEl = document.getElementById('eaEmbedKeyFilter');
-    const key = filterEl ? filterEl.value : '';
+    const key = eaEmbedKeyDropdown ? (eaEmbedKeyDropdown.getValue() || '') : (document.getElementById('eaEmbedKeyFilter')?.value || '');
     eaSessionsPage = 1;
     eaExpandedSessionId = null;
     loadEmbedAnalytics(key);

@@ -41,6 +41,9 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            overflow-y: hidden;
+            height: 100vh;
+            box-sizing: border-box;
             transition: padding-left 0.3s ease;
         }
 
@@ -291,10 +294,24 @@
 
         /* Active tab title uses shared sidebar-nav.css — no page-specific overrides */
 
+        /* Project content wrapper — must participate in flex chain */
+        #projectContent {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #projectContent[style*="display: none"] {
+            display: none !important;
+        }
+
         /* Layout wrapper */
         .research-layout {
-            display: block;
-            min-height: calc(100vh - 200px);
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
             position: relative;
             transition: all 0.3s ease;
         }
@@ -306,6 +323,11 @@
             width: 100%;
             box-sizing: border-box;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
         }
 
         /* When sidebar is open on desktop — push entire container right */
@@ -318,6 +340,39 @@
         }
         .tab-content.active {
             display: block;
+        }
+        /* Query tab: fill remaining viewport height, no page scroll */
+        #queryTab.active {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        /* Functions tab: fill remaining viewport height, scroll blocks */
+        #functionsTab.active {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        .fn-scroll-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .fn-scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .fn-scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .fn-scroll-area::-webkit-scrollbar-thumb {
+            background: var(--border-color, #d1d5db);
+            border-radius: 3px;
+        }
+        .fn-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted, #64748b);
         }
 
         /* Files Table */
@@ -457,7 +512,7 @@
             display: flex;
             gap: 12px;
             margin-bottom: 16px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             align-items: center;
         }
         .questions-toolbar input,
@@ -477,7 +532,14 @@
         }
         .questions-toolbar input {
             flex: 1;
-            min-width: 200px;
+            min-width: 120px;
+        }
+        .questions-toolbar .searchable-dropdown-wrapper,
+        .questions-toolbar .searchable-dropdown {
+            width: auto;
+            min-width: 160px;
+            max-width: 240px;
+            flex-shrink: 0;
         }
 
         /* Question Type Badge */
@@ -1087,6 +1149,8 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            flex: 1;
+            min-height: 0;
         }
         .query-editor-wrapper {
             display: flex;
@@ -1175,11 +1239,24 @@
         }
 
         /* Query Results Table */
+        #queryResults {
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        #queryResultsContent {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
         .query-results-wrapper {
             overflow-x: auto;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            max-height: 500px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
         }
         .query-results-table {
@@ -1192,23 +1269,34 @@
             top: 0;
             text-align: left;
             padding: 8px 10px;
-            background: var(--bg-secondary);
+            background: var(--bg-card-hover, var(--bg-secondary, #e2e8f0));
             color: var(--text-secondary);
             font-weight: 600;
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
             white-space: nowrap;
             z-index: 1;
+        }
+        .query-results-table th:last-child {
+            border-right: none;
+        }
+        [data-theme="dark"] .query-results-table th {
+            background: var(--bg-card-hover, #1e293b);
         }
         .query-results-table td {
             padding: 6px 10px;
             border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
             color: var(--text-primary);
             white-space: nowrap;
             font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
             font-size: 0.75rem;
+        }
+        .query-results-table td:last-child {
+            border-right: none;
         }
         .query-results-table tr:last-child td {
             border-bottom: none;
@@ -1220,6 +1308,17 @@
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 8px;
+        }
+        .query-copy-btn {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            gap: 4px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .query-copy-btn.copied {
+            color: var(--color-success, #10b981);
+            border-color: var(--color-success, #10b981);
         }
         .query-error {
             background: var(--color-danger-light, rgba(239, 68, 68, 0.1));
@@ -2309,7 +2408,14 @@
             gap: 10px;
             align-items: center;
             margin-bottom: 16px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+        }
+        .fn-toolbar .searchable-dropdown-wrapper,
+        .fn-toolbar .searchable-dropdown {
+            width: auto;
+            min-width: 240px;
+            max-width: 320px;
+            flex-shrink: 0;
         }
         .fn-file-select {
             padding: 8px 12px;
@@ -2329,10 +2435,298 @@
             font-size: 0.75rem;
             color: var(--text-muted);
         }
-        .fn-editor-full {
+        /* ── Function Blocks (Colab-style) ── */
+        .fn-blocks-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+        }
+        .fn-block {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-primary);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            overflow: visible;
+        }
+        .fn-block:hover {
+            border-color: rgba(var(--brand-primary-rgb), 0.35);
+        }
+        .fn-block.running {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.15);
+        }
+        .fn-block-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 10px 10px 0 0;
+        }
+        .fn-block-num {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            border-radius: 6px;
+            background: rgba(var(--brand-primary-rgb), 0.12);
+            color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .fn-block-select {
+            flex: 1;
+            min-width: 160px;
+            max-width: 320px;
+            padding: 6px 28px 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            transition: border-color 0.15s;
+        }
+        .fn-block-select:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+        .fn-block-actions {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+        }
+        .fn-block-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .fn-block-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .fn-block-btn.fn-block-info-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+        }
+        .fn-block-btn.fn-block-run-btn {
+            color: var(--color-success, #10b981);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .fn-block-btn.fn-block-run-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--color-success, #10b981);
+        }
+        .fn-block-btn.fn-block-run-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .fn-block-btn.fn-block-delete-btn:hover {
+            border-color: var(--color-danger, #ef4444);
+            color: var(--color-danger, #ef4444);
+            background: rgba(239, 68, 68, 0.08);
+        }
+        .fn-block-body {
+            display: none;
+        }
+        .fn-block-body.visible {
+            display: block;
+        }
+        .fn-block-editor {
+            width: 100%;
+            min-height: 140px;
+            padding: 12px;
+            font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Code', monospace);
+            font-size: 0.82rem;
+            line-height: 1.5;
+            border: none;
+            border-top: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .fn-block-editor:focus {
+            outline: none;
+            background: var(--bg-primary);
+        }
+        .fn-block-editor::placeholder {
+            color: var(--text-muted);
+        }
+        .fn-add-block-row {
+            display: flex;
+            justify-content: center;
+            padding: 4px 0;
+        }
+        .fn-add-block-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 24px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .fn-add-block-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: rgba(var(--brand-primary-rgb), 0.04);
+        }
+
+        /* ── Function Info Panel content ── */
+        .fn-info-panel-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 6px 0;
+        }
+        .fn-info-panel-category {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(var(--brand-primary-rgb), 0.12);
+            color: var(--brand-primary);
+            margin-bottom: 12px;
+        }
+        .fn-info-panel-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .fn-info-panel-desc p {
+            margin: 0 0 10px 0;
+        }
+        .fn-info-panel-desc p:last-child {
+            margin-bottom: 0;
+        }
+        .fn-info-panel-desc h4.fn-desc-heading {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-primary);
+            margin: 16px 0 8px 0;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .fn-info-panel-desc h4.fn-desc-heading:first-child {
+            margin-top: 0;
+        }
+        .fn-info-panel-desc ul,
+        .fn-info-panel-desc ol {
+            margin: 6px 0 12px 0;
+            padding-left: 20px;
+        }
+        .fn-info-panel-desc li {
+            margin-bottom: 4px;
+        }
+        .fn-info-panel-section-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin: 16px 0 8px 0;
+        }
+        .fn-info-param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-bottom: 8px;
+        }
+        .fn-info-param-table th {
+            text-align: left;
+            padding: 6px 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .fn-info-param-table td {
+            padding: 6px 8px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+            line-height: 1.4;
+        }
+        .fn-info-param-table tr:last-child td {
+            border-bottom: none;
+        }
+        .fn-info-param-required {
+            color: var(--color-danger, #ef4444);
+            font-weight: 600;
+        }
+        .fn-info-param-type {
+            color: var(--text-muted);
+            font-family: var(--font-mono, monospace);
+            font-size: 0.72rem;
+        }
+        .fn-info-param-enum {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 3px;
+        }
+        .fn-info-param-enum-val {
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            font-size: 0.68rem;
+            font-family: var(--font-mono, monospace);
+            color: var(--text-secondary);
+        }
+        .fn-info-example-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .fn-info-example-label {
+            padding: 5px 10px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .fn-info-example-code {
+            padding: 10px;
+            font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+            font-size: 0.75rem;
+            line-height: 1.45;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         /* Floating results popup */
@@ -2345,7 +2739,7 @@
             height: 560px;
             min-width: 400px;
             min-height: 300px;
-            background: #ffffff;
+            background: var(--bg-card, var(--bg-body, #ffffff));
             border: 1px solid var(--border-color);
             border-radius: 12px;
             z-index: 9000;
@@ -2354,7 +2748,7 @@
             overflow: hidden;
         }
         [data-theme="dark"] .fn-popup {
-            background: #0f172a;
+            background: var(--bg-card, #0f172a);
         }
         .fn-popup.visible { display: flex; }
         .fn-popup-header {
@@ -2362,14 +2756,14 @@
             align-items: center;
             gap: 10px;
             padding: 10px 14px;
-            background: #f1f5f9;
+            background: var(--bg-card-hover, var(--bg-secondary, #f1f5f9));
             border-bottom: 1px solid var(--border-color);
             cursor: grab;
             user-select: none;
             flex-shrink: 0;
         }
         [data-theme="dark"] .fn-popup-header {
-            background: #1e293b;
+            background: var(--bg-card-hover, #1e293b);
         }
         .fn-popup-header:active { cursor: grabbing; }
         .fn-popup-title {
@@ -2429,24 +2823,29 @@
             bottom: 20px;
             right: 20px;
             padding: 8px 16px;
-            background: #f1f5f9;
+            background: var(--bg-card, var(--bg-body, #f1f5f9));
             border: 1px solid var(--brand-primary);
             border-radius: 20px;
             cursor: pointer;
             z-index: 9000;
             font-size: 0.8rem;
+            font-weight: 500;
             color: var(--text-primary);
             box-shadow: 0 4px 16px rgba(0,0,0,0.25);
             transition: transform 0.15s, box-shadow 0.15s;
         }
+        [data-theme="dark"] .fn-popup-pill {
+            background: var(--bg-card, #1e293b);
+        }
         .fn-popup-pill:hover {
             transform: translateY(-2px);
+            background: rgba(var(--brand-primary-rgb), 0.12);
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
         .fn-popup-pill.visible { display: flex; gap: 8px; align-items: center; }
         .fn-popup-pill-info {
             font-size: 0.7rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
         /* Tool call row hover in AI Logs */
@@ -2509,80 +2908,6 @@
             color: var(--text-primary);
             font-weight: 500;
             white-space: nowrap;
-        }
-        .fn-library {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .fn-library-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            padding-top: 4px;
-        }
-        .fn-library-chips {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .fn-chip {
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border: 1px solid var(--border-color);
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .fn-chip:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-        }
-        .fn-chip.active {
-            background: rgba(var(--brand-primary-rgb), 0.15);
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-            font-weight: 600;
-        }
-        .fn-editor {
-            width: 100%;
-            flex: 1;
-            min-height: 200px;
-            padding: 12px;
-            font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Code', monospace);
-            font-size: 0.82rem;
-            line-height: 1.5;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            resize: vertical;
-            transition: border-color 0.15s ease;
-        }
-        .fn-editor:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-        }
-        .fn-editor::placeholder {
-            color: var(--text-muted);
-        }
-        .fn-info {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .fn-info strong {
-            color: var(--text-primary);
         }
         .fn-results-placeholder {
             padding: 40px;
@@ -3994,7 +4319,6 @@
                         <option value="loop_group">Loop Group</option>
                     </select>
                     <select id="questionFileFilter" onchange="loadQuestions()">
-                        <option value="">Select file...</option>
                     </select>
                     <span class="variable-count-label" id="questionCountLabel"></span>
                 </div>
@@ -4090,9 +4414,18 @@
                     </div>
 
                     <!-- Query Results -->
-                    <div id="queryResults" style="display: none;">
+                    <div id="queryResults" style="display: none; flex-direction: column; flex: 1; min-height: 0;">
                         <div id="queryResultsContent"></div>
-                        <div class="query-row-count" id="queryRowCount"></div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                            <div class="query-row-count" id="queryRowCount" style="margin-top: 0;"></div>
+                            <button class="btn btn-secondary query-copy-btn" onclick="copyQueryResults()" title="Copy to clipboard (paste in Excel)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy for Excel
+                            </button>
+                        </div>
                     </div>
                     <div id="queryError" class="query-error" style="display: none;"></div>
                 </div>
@@ -4169,35 +4502,26 @@
                 <!-- Functions toolbar -->
                 <div class="fn-toolbar">
                     <select id="fnFileSelect" class="fn-file-select">
-                        <option value="">Auto (first ready file)</option>
                     </select>
-                    <button class="btn btn-primary" onclick="executeFn()" id="fnRunBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;">
-                            <polygon points="5 3 19 12 5 21 5 3"/>
-                        </svg>
-                        Execute Function
-                    </button>
-                    <span class="fn-exec-info" id="fnExecInfo"></span>
-                    <button class="btn btn-secondary" onclick="clearFnResults()" style="margin-left:auto;">Clear</button>
+                    <button class="btn btn-secondary" onclick="clearFnResults()" style="margin-left:auto;">Clear Results</button>
                 </div>
 
-                <!-- Full-width editor -->
-                <div class="fn-editor-full">
-                    <!-- Function library chips -->
-                    <div class="fn-library" id="fnLibrary">
-                        <div class="fn-library-label">Functions:</div>
-                        <div class="fn-library-chips" id="fnLibraryChips">
-                            <span style="color: var(--text-muted); font-size: 0.75rem;">Loading...</span>
-                        </div>
+                <!-- Scrollable blocks area -->
+                <div class="fn-scroll-area">
+                    <!-- Block-based editor -->
+                    <div class="fn-blocks-container" id="fnBlocksContainer">
+                        <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 20px;">Loading functions...</div>
                     </div>
-                    <!-- JSON editor -->
-                    <textarea class="fn-editor" id="fnEditor"
-                        placeholder='{ "function_name": "frequency", "input_params": { "variable": "Gender" } }'
-                        rows="14"></textarea>
-                    <!-- Selected function info -->
-                    <div class="fn-info" id="fnInfo" style="display:none;"></div>
-                </div>
 
+                    <div class="fn-add-block-row">
+                        <button class="fn-add-block-btn" onclick="addFnBlock()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Function Block
+                        </button>
+                    </div>
+                </div>
             </div>
                 </main>
             </div><!-- /research-layout -->
@@ -4236,6 +4560,24 @@
             </button>
         </div>
         <div class="panel-body" id="questionPanelBody">
+            <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <!-- Function Info Slide Panel -->
+    <div class="slide-panel-overlay" id="fnInfoPanelOverlay" onclick="closeFnInfoPanel()"></div>
+    <div class="slide-panel" id="fnInfoSlidePanel" style="--panel-width: 480px;">
+        <div class="panel-drag-handle"></div>
+        <div class="panel-header">
+            <h3 class="panel-title">Function Info</h3>
+            <button class="panel-close-btn" onclick="closeFnInfoPanel()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body" id="fnInfoPanelBody">
             <div class="loading-state"><div class="spinner"></div></div>
         </div>
     </div>
