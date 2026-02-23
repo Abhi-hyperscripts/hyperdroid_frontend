@@ -229,9 +229,17 @@
                 background: rgba(255,255,255,0.15); border: none; cursor: pointer;
                 color: rgba(255,255,255,0.8); padding: 5px; display: flex;
                 border-radius: 6px; transition: background 0.15s, color 0.15s;
+                position: relative;
             }
             .rz-header-newchat:hover, .rz-header-close:hover { background: rgba(255,255,255,0.25); color: #fff; }
             .rz-header-newchat svg, .rz-header-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+            .rz-header-newchat::after {
+                content: 'New Chat'; position: absolute; top: calc(100% + 6px); right: 0;
+                background: rgba(0,0,0,0.85); color: #fff; font-size: 11px; font-weight: 500;
+                padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+                opacity: 0; pointer-events: none; transition: opacity 0.1s;
+            }
+            .rz-header-newchat:hover::after { opacity: 1; }
 
             /* ---- MESSAGES ---- */
             .rz-messages {
@@ -438,7 +446,7 @@
                         <img class="rz-header-logo" src="${logoUrl}" alt="" onerror="this.style.display='none'">
                         <span class="rz-header-title" id="rzTitle">${esc(projectName)}</span>
                         <div class="rz-header-actions">
-                            <button class="rz-header-newchat" id="rzNewChat" aria-label="New Chat" title="New Chat">
+                            <button class="rz-header-newchat" id="rzNewChat" aria-label="New Chat">
                                 <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                                 </svg>
