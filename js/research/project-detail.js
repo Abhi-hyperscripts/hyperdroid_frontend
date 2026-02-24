@@ -373,6 +373,16 @@ async function connectFileProgressSignalR() {
         fileProgressConnection.onclose(() => {
             console.log('[FileProgress] SignalR connection closed');
             fileProgressConnected = false;
+            fileProgressConnection = null;
+
+            // Start fallback polling for any files still actively processing
+            const activeIds = Object.keys(activeProgressFiles);
+            if (activeIds.length > 0) {
+                console.log(`[FileProgress] Starting fallback polling for ${activeIds.length} active file(s)`);
+                for (const fileId of activeIds) {
+                    startPollingFile(fileId);
+                }
+            }
         });
 
         await fileProgressConnection.start();
@@ -540,6 +550,20 @@ function startPollingFile(fileId) {
         try {
             const file = await api.request(`/research/projects/${projectId}/files/${fileId}`, { _skipSpinner: true });
             updateFileRowStatus(file);
+
+            // Update progress panel for in-progress states
+            if (activeProgressFiles[fileId] && !['ready', 'failed'].includes(file.status)) {
+                const statusMsg = file.status === 'loading_data' ? `Loaded ${(file.row_count || 0).toLocaleString()} rows` :
+                                  file.status === 'parsing' ? 'Parsing file...' :
+                                  file.status === 'grouping' ? 'Grouping variables...' :
+                                  file.status === 'embedding' ? 'Generating embeddings...' : 'Processing...';
+                updateProgressPanelItem(fileId, {
+                    status: file.status,
+                    message: statusMsg,
+                    rows_loaded: file.row_count || 0,
+                    elapsed_ms: file.processing_time_ms || 0
+                });
+            }
 
             // Stop polling if terminal state
             if (file.status === 'ready' || file.status === 'failed') {
