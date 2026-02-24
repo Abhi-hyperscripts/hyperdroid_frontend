@@ -193,6 +193,29 @@
             background: rgba(239, 68, 68, 0.08);
         }
 
+        /* Question Actions Dropdown — reuses .actions-* base styles */
+        .question-actions-dropdown {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .question-actions-trigger {
+            padding: 6px;
+            font-size: 0;
+            min-width: 28px;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .question-actions-trigger svg {
+            flex-shrink: 0;
+        }
+        .question-actions-menu {
+            right: auto;
+            left: 0;
+        }
+
         /* Variable Context Menu */
         .var-ctx-wrapper {
             position: relative;
@@ -4387,6 +4410,32 @@
             <!-- Tab Content: Questions -->
             <div class="tab-content" id="questionsTab">
                 <div class="questions-toolbar" id="questionsToolbar" style="display: none;">
+                    <div class="question-actions-dropdown" id="questionActionsDropdown">
+                        <button class="actions-trigger question-actions-trigger" onclick="toggleQuestionActionsDropdown()" title="Actions">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="5" r="1.5"/>
+                                <circle cx="12" cy="12" r="1.5"/>
+                                <circle cx="12" cy="19" r="1.5"/>
+                            </svg>
+                        </button>
+                        <div class="actions-menu question-actions-menu" id="questionActionsMenu">
+                            <button class="actions-item" onclick="regenerateQuestions(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                                Regenerate Questions
+                            </button>
+                            <button class="actions-item" onclick="downloadQuestionsJson(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download JSON
+                            </button>
+                        </div>
+                    </div>
                     <input type="text" id="questionSearch" placeholder="Search questions..." oninput="filterQuestions()">
                     <select id="questionTypeFilter" onchange="filterQuestions()">
                         <option value="">All types</option>

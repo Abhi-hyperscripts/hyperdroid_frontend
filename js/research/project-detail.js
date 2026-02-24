@@ -821,6 +821,87 @@ function closeActionsOnOutsideClick(e) {
 }
 
 // ============================================
+// QUESTION ACTIONS DROPDOWN
+// ============================================
+
+function toggleQuestionActionsDropdown() {
+    const trigger = document.querySelector('.question-actions-trigger');
+    const menu = document.getElementById('questionActionsMenu');
+    if (!trigger || !menu) return;
+    const isOpen = menu.classList.contains('open');
+    if (isOpen) {
+        closeQuestionActionsDropdown();
+    } else {
+        trigger.classList.add('open');
+        menu.classList.add('open');
+        setTimeout(() => {
+            document.addEventListener('click', closeQuestionActionsOnOutsideClick);
+        }, 0);
+    }
+}
+
+function closeQuestionActionsDropdown() {
+    const trigger = document.querySelector('.question-actions-trigger');
+    const menu = document.getElementById('questionActionsMenu');
+    trigger?.classList.remove('open');
+    menu?.classList.remove('open');
+    document.removeEventListener('click', closeQuestionActionsOnOutsideClick);
+}
+
+function closeQuestionActionsOnOutsideClick(e) {
+    const dropdown = document.getElementById('questionActionsDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        closeQuestionActionsDropdown();
+    }
+}
+
+async function regenerateQuestions() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) { Toast.error('No file selected'); return; }
+
+    if (!confirm('This will regenerate all question groupings and embeddings for this file. Continue?')) return;
+
+    Toast.info('Regenerating question groupings...');
+    try {
+        const resp = await api.request(`/research/projects/${projectId}/files/${fileId}/regroup`, {
+            method: 'POST'
+        });
+        if (resp.success) {
+            Toast.success(resp.message || 'Questions regenerated successfully');
+            questionsLoaded = false;
+            await loadQuestions();
+        } else {
+            Toast.error(resp.message || 'Regrouping failed');
+        }
+    } catch (err) {
+        Toast.error('Failed to regenerate: ' + (err.message || err));
+    }
+}
+
+function downloadQuestionsJson() {
+    if (!questionsData || questionsData.length === 0) {
+        Toast.error('No questions to download');
+        return;
+    }
+    const blob = new Blob([JSON.stringify(questionsData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    let fileName = 'questions';
+    if (questionFileDropdown) {
+        const fileId = questionFileDropdown.getValue();
+        const opt = questionFileDropdown.options.find(o => String(o.value) === String(fileId));
+        if (opt) fileName = opt.label;
+    } else {
+        const fileSelect = document.getElementById('questionFileFilter');
+        fileName = fileSelect?.options[fileSelect.selectedIndex]?.text || 'questions';
+    }
+    a.href = url;
+    a.download = `${fileName.replace(/\.[^.]+$/, '')}_questions.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============================================
 // COLLAPSIBLE SIDEBAR NAVIGATION
 // ============================================
 
