@@ -859,7 +859,14 @@ async function regenerateQuestions() {
     const fileId = getQuestionFileFilterValue();
     if (!fileId) { Toast.error('No file selected'); return; }
 
-    if (!confirm('This will regenerate all question groupings and embeddings for this file. Continue?')) return;
+    const confirmed = await Confirm.show({
+        title: 'Regenerate Questions',
+        message: 'This will regenerate all question groupings and embeddings for this file. Any manual edits will be lost.',
+        type: 'warning',
+        confirmText: 'Regenerate',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
 
     Toast.info('Regenerating question groupings...');
     try {
@@ -899,6 +906,97 @@ function downloadQuestionsJson() {
     a.download = `${fileName.replace(/\.[^.]+$/, '')}_questions.json`;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+function uploadQuestionsJson() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) { Toast.error('No file selected'); return; }
+    document.getElementById('questionJsonUpload').click();
+}
+
+async function handleQuestionJsonUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input so same file can be re-uploaded
+    event.target.value = '';
+
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) { Toast.error('No file selected'); return; }
+
+    let parsed;
+    try {
+        const text = await file.text();
+        parsed = JSON.parse(text);
+    } catch (e) {
+        Toast.error('Invalid JSON file: ' + e.message);
+        return;
+    }
+
+    // Client-side pre-validation
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+        Toast.error('JSON must be a non-empty array of questions');
+        return;
+    }
+    const clientErrors = [];
+    for (let i = 0; i < parsed.length; i++) {
+        const q = parsed[i];
+        if (!q.question_id) clientErrors.push(`Question[${i}]: missing question_id`);
+        if (!q.variable_names || !Array.isArray(q.variable_names) || q.variable_names.length === 0)
+            clientErrors.push(`Question[${i}]: must have at least 1 variable_name`);
+    }
+    if (clientErrors.length > 0) {
+        Toast.error('Validation errors:\n' + clientErrors.join('\n'));
+        return;
+    }
+
+    const confirmed = await Confirm.show({
+        title: 'Upload Question Groupings',
+        message: 'This will replace all current question groupings with the uploaded JSON. This cannot be undone.',
+        type: 'warning',
+        confirmText: 'Upload & Replace',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    // Backend uses snake_case_lower JSON policy, so send as-is (download format is already snake_case)
+    // Just strip _fileName if present and ensure shared_value_labels is a string
+    const questions = parsed.map(q => {
+        const obj = {
+            question_id: q.question_id,
+            question_label: q.question_label || '',
+            question_type: q.question_type || 'single',
+            variable_names: q.variable_names || [],
+            attribute_labels: q.attribute_labels || [],
+        };
+        if (q.shared_value_labels) {
+            obj.shared_value_labels = typeof q.shared_value_labels === 'string' ? q.shared_value_labels : JSON.stringify(q.shared_value_labels);
+        }
+        if (q.variable_attribute_map) {
+            obj.variable_attribute_map = q.variable_attribute_map;
+        }
+        return obj;
+    });
+
+    Toast.info('Uploading question groupings...');
+    try {
+        const resp = await api.request(`/research/projects/${projectId}/files/${fileId}/upload-questions`, {
+            method: 'POST',
+            body: JSON.stringify({ questions: questions })
+        });
+        if (resp.success) {
+            Toast.success(resp.message || 'Questions uploaded successfully');
+            questionsLoaded = false;
+            await loadQuestions();
+        } else {
+            const errMsg = resp.errors ? resp.errors.join('\n') : (resp.message || 'Upload failed');
+            Toast.error(errMsg);
+        }
+    } catch (err) {
+        const errData = err.data || err;
+        const errMsg = errData.errors ? errData.errors.join('\n') : (err.message || 'Upload failed');
+        Toast.error('Failed to upload: ' + errMsg);
+    }
 }
 
 // ============================================
