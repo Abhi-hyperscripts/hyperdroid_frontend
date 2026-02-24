@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Embed Widget Test Page</title>
+    <title>Lead Capture Widget - Test Page</title>
     <style>
         body {
             font-family: system-ui, sans-serif;
@@ -12,18 +12,57 @@
             padding: 20px;
             background: #f5f5f5;
         }
-        h1 { color: #333; }
+        h1 { color: #333; margin-bottom: 8px; }
         p { color: #666; line-height: 1.6; }
+        .demo-section {
+            margin-top: 32px;
+            padding: 24px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .demo-section h3 { margin-bottom: 12px; color: #333; }
+        .demo-btn {
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.15s;
+        }
+        .demo-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .demo-btn:active { transform: scale(0.98); }
+        .btn-primary { background: #6366f1; color: #fff; }
+        .btn-secondary { background: #1e1e2e; color: #fff; margin-left: 12px; }
+        code { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-    <h1>External Dashboard</h1>
-    <p>This simulates an external website that embeds the Ragenaizer research chat widget.
-       The chat bubble should appear in the bottom-right corner.</p>
-    <p>Click the chat bubble to open the widget and ask questions about the research data.</p>
+    <h1>Lead Capture Widget Test</h1>
+    <p>This simulates an external landing page with the embedded lead capture widget.</p>
 
-    <script src="http://localhost:5501/embed/widget.js"
-            data-key="d4622c9dc027ccd4845800fc401ce6a2"
-            data-api="https://localhost:5114"></script>
+    <!-- Demo: Button-triggered widget (center, light theme) -->
+    <div class="demo-section">
+        <h3>1. Center Modal (Light Theme)</h3>
+        <p>Click the button below to open the lead form as a centered modal popup.</p>
+        <br>
+        <button id="contact-btn" class="demo-btn btn-primary">Get in Touch</button>
+    </div>
+
+    <!-- Demo: JS API trigger -->
+    <div class="demo-section">
+        <h3>2. Open via JavaScript API</h3>
+        <p>You can also open the form programmatically: <code>RagenazerLeadForm.open()</code></p>
+        <br>
+        <button class="demo-btn btn-secondary" onclick="window.RagenazerLeadForm && RagenazerLeadForm.open()">Open Form (JS API)</button>
+    </div>
+
+    <!-- The widget script — triggers on #contact-btn click -->
+    <script src="/embed/lead-form.js"
+            data-key="71l95vkj07heun49dp2je9u4bmvbdr5p"
+            data-api="https://localhost:5112"
+            data-trigger="#contact-btn"
+            data-position="center"></script>
 </body>
 </html>

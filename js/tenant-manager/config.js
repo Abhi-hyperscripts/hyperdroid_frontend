@@ -8,7 +8,7 @@
 // Environment configurations
 const TM_ENVIRONMENTS = {
     local: {
-        tenantManager: 'http://localhost:5108'
+        tenantManager: 'https://localhost:5108'
     },
     production: {
         tenantManager: 'https://tenant.ragenaizer.com'

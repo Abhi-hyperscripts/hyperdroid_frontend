@@ -15,7 +15,7 @@ const ENVIRONMENTS = {
         hrms: 'https://localhost:5104',
         crm: 'https://localhost:5112',
         research: 'https://localhost:5114',
-        notification: 'http://localhost:5110'
+        notification: 'https://localhost:5110'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',

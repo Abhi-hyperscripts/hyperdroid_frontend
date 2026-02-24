@@ -757,6 +757,14 @@ function renderLeadSources() {
                 </td>
                 <td>
                     <div class="crm-actions">
+                        <button class="crm-action-btn" onclick="openFormStylingModal('${source.id}')" title="Customize Form">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                                <path d="M2 2l7.586 7.586"/>
+                                <circle cx="11" cy="11" r="2"/>
+                            </svg>
+                        </button>
                         <button class="crm-action-btn" onclick="showEmbedCode('${source.id}')" title="Embed Code">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="16 18 22 12 16 6"/>
@@ -958,6 +966,21 @@ function clearFieldMappingsEditor() {
     document.getElementById('mapPhone').value = '';
     document.getElementById('mapCompany').value = '';
     document.getElementById('mapJobTitle').value = '';
+    document.getElementById('customFieldMappings').innerHTML = '';
+}
+
+function addCustomFieldRow(fieldName = '', aliases = '') {
+    const container = document.getElementById('customFieldMappings');
+    const row = document.createElement('div');
+    row.className = 'custom-field-mapping-row';
+    row.innerHTML = `
+        <input type="text" class="custom-field-name" placeholder="field_name" value="${fieldName}">
+        <input type="text" class="custom-field-aliases" placeholder="alias1, alias2, alias3" value="${aliases}">
+        <button type="button" class="btn-remove-custom-field" title="Remove field" onclick="this.parentElement.remove()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    container.appendChild(row);
 }
 
 function populateFieldMappingsEditor(fieldMappingsJson) {
@@ -979,6 +1002,8 @@ function populateFieldMappingsEditor(fieldMappingsJson) {
             'job_title': 'mapJobTitle'
         };
 
+        const coreKeys = new Set(Object.keys(fieldMap));
+
         for (const [key, inputId] of Object.entries(fieldMap)) {
             const val = mappings[key];
             if (val) {
@@ -986,6 +1011,14 @@ function populateFieldMappingsEditor(fieldMappingsJson) {
                 if (el) {
                     el.value = Array.isArray(val) ? val.join(', ') : val;
                 }
+            }
+        }
+
+        // Load custom fields (any key not in core set)
+        for (const [key, val] of Object.entries(mappings)) {
+            if (!coreKeys.has(key)) {
+                const aliases = Array.isArray(val) ? val.join(', ') : val;
+                addCustomFieldRow(key, aliases);
             }
         }
     } catch (e) {
@@ -1013,63 +1046,142 @@ function getFieldMappingsFromEditor() {
         }
     }
 
+    // Collect custom field mappings
+    const customRows = document.querySelectorAll('#customFieldMappings .custom-field-mapping-row');
+    customRows.forEach(row => {
+        const fieldName = row.querySelector('.custom-field-name')?.value?.trim();
+        const aliases = row.querySelector('.custom-field-aliases')?.value?.trim();
+        if (fieldName && aliases) {
+            const key = fieldName.toLowerCase().replace(/\s+/g, '_');
+            mappings[key] = aliases.split(',').map(s => s.trim()).filter(s => s);
+        }
+    });
+
     return mappings;
 }
 
 // ─── Embed Code ─────────────────────────────────────────────────────────────
 
+let activeEmbedTab = 'widget';
+
 function showEmbedCode(id) {
     const source = leadSources.find(s => s.id === id);
     if (!source || !source.webhook_key) return;
 
-    const webhookUrl = `${getCrmBaseUrl()}/leads/capture/${source.webhook_key}`;
+    const crmBase = getCrmBaseUrl();
+    const webhookUrl = `${crmBase}/leads/capture/${source.webhook_key}`;
 
-    const embedCode = `<form action="${webhookUrl}" method="POST" style="max-width: 480px; margin: 0 auto; font-family: system-ui, sans-serif;">
+    // ── Widget Script tab ──
+    // Derive the embed script URL from the frontend origin (where lead-form.js is served)
+    const frontendOrigin = window.location.origin;
+    // Widget data-api needs the bare origin (no /api suffix) since lead-form.js appends /api/leads/...
+    const crmOrigin = typeof CONFIG !== 'undefined' && CONFIG.endpoints?.crm
+        ? CONFIG.endpoints.crm
+        : crmBase.replace(/\/api\/?$/, '');
+    const widgetCode = `<!-- Ragenaizer Lead Capture Widget -->
+<button id="contact-btn">Get in Touch</button>
+<script src="${frontendOrigin}/embed/lead-form.js"
+        data-key="${source.webhook_key}"
+        data-api="${crmOrigin}"
+        data-trigger="#contact-btn"
+        data-position="center"><\/script>`;
+
+    // ── HTML Form tab ── (existing raw HTML logic)
+    const htmlCode = generateRawHtmlForm(source, webhookUrl);
+
+    document.getElementById('embedCodeSourceName').textContent = source.source_name;
+    document.getElementById('embedCodeWidget').textContent = widgetCode;
+    document.getElementById('embedCodeHtml').textContent = htmlCode;
+
+    // Reset to widget tab
+    switchEmbedTab('widget');
+    openModal('embedCodeModal');
+}
+
+function generateRawHtmlForm(source, webhookUrl) {
+    let mappings = {};
+    try {
+        mappings = typeof source.field_mappings === 'string'
+            ? JSON.parse(source.field_mappings || '{}')
+            : (source.field_mappings || {});
+    } catch (e) { /* use empty */ }
+
+    const inputStyle = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;';
+    const labelStyle = 'display: block; margin-bottom: 4px; font-weight: 500;';
+
+    const fieldMeta = {
+        'first_name': { label: 'First Name', type: 'text', placeholder: 'First name' },
+        'last_name': { label: 'Last Name', type: 'text', placeholder: 'Last name' },
+        'full_name': { label: 'Full Name', type: 'text', placeholder: 'Your full name' },
+        'email': { label: 'Email', type: 'email', placeholder: 'you@example.com', required: true },
+        'phone': { label: 'Phone', type: 'tel', placeholder: '+1 (555) 000-0000' },
+        'company_name': { label: 'Company', type: 'text', placeholder: 'Company name' },
+        'job_title': { label: 'Job Title', type: 'text', placeholder: 'Your role' },
+    };
+
+    let fieldsHtml = '';
+    const keys = Object.keys(mappings);
+    if (keys.length === 0) {
+        keys.push('full_name', 'email', 'phone', 'company_name');
+    }
+
+    keys.forEach((key, i) => {
+        const meta = fieldMeta[key] || {};
+        const label = meta.label || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const type = meta.type || 'text';
+        const placeholder = meta.placeholder || label;
+        const required = meta.required || key === 'email';
+        const isLast = i === keys.length - 1;
+        const marginBottom = isLast ? '16px' : '12px';
+        const aliases = Array.isArray(mappings[key]) ? mappings[key] : [];
+        const inputName = aliases[0] || key;
+
+        if (key === 'notes' || key === 'message' || key === 'description') {
+            fieldsHtml += `
+  <div style="margin-bottom: ${marginBottom};">
+    <label style="${labelStyle}">${label}${required ? ' *' : ''}</label>
+    <textarea name="${inputName}" rows="3"${required ? ' required' : ''} placeholder="${placeholder}"
+      style="${inputStyle} resize: vertical;"></textarea>
+  </div>`;
+        } else {
+            fieldsHtml += `
+  <div style="margin-bottom: ${marginBottom};">
+    <label style="${labelStyle}">${label}${required ? ' *' : ''}</label>
+    <input name="${inputName}" type="${type}"${required ? ' required' : ''} placeholder="${placeholder}"
+      style="${inputStyle}">
+  </div>`;
+        }
+    });
+
+    return `<form action="${webhookUrl}" method="POST" style="max-width: 480px; margin: 0 auto; font-family: system-ui, sans-serif;">
   <h3 style="margin-bottom: 16px;">Get in Touch</h3>
-
-  <div style="margin-bottom: 12px;">
-    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Name *</label>
-    <input name="name" required placeholder="Your full name"
-      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
-  </div>
-
-  <div style="margin-bottom: 12px;">
-    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Email *</label>
-    <input name="email" type="email" required placeholder="you@example.com"
-      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
-  </div>
-
-  <div style="margin-bottom: 12px;">
-    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Phone</label>
-    <input name="phone" type="tel" placeholder="+1 (555) 000-0000"
-      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
-  </div>
-
-  <div style="margin-bottom: 12px;">
-    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Company</label>
-    <input name="company" placeholder="Company name"
-      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
-  </div>
-
-  <div style="margin-bottom: 16px;">
-    <label style="display: block; margin-bottom: 4px; font-weight: 500;">Message</label>
-    <textarea name="message" rows="3" placeholder="How can we help?"
-      style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
-  </div>
+${fieldsHtml}
 
   <button type="submit"
     style="width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;">
     Submit
   </button>
 </form>`;
+}
 
-    document.getElementById('embedCodeSourceName').textContent = source.source_name;
-    document.getElementById('embedCodeContent').textContent = embedCode;
-    openModal('embedCodeModal');
+function switchEmbedTab(tab) {
+    activeEmbedTab = tab;
+    // Toggle tab content
+    document.getElementById('embedTab-widget').style.display = tab === 'widget' ? '' : 'none';
+    document.getElementById('embedTab-html').style.display = tab === 'html' ? '' : 'none';
+
+    // Toggle active tab button styles
+    document.querySelectorAll('.embed-tab-btn').forEach(btn => {
+        const isActive = btn.getAttribute('data-embed-tab') === tab;
+        btn.classList.toggle('active', isActive);
+        btn.style.color = isActive ? 'var(--brand-primary, #6366f1)' : 'var(--text-secondary)';
+        btn.style.borderBottomColor = isActive ? 'var(--brand-primary, #6366f1)' : 'transparent';
+    });
 }
 
 async function copyEmbedCode() {
-    const code = document.getElementById('embedCodeContent').textContent;
+    const contentId = activeEmbedTab === 'widget' ? 'embedCodeWidget' : 'embedCodeHtml';
+    const code = document.getElementById(contentId).textContent;
     try {
         await navigator.clipboard.writeText(code);
         Toast.success('Embed code copied to clipboard');
@@ -1086,4 +1198,707 @@ async function copyEmbedCode() {
 
 function closeEmbedCodeModal() {
     closeModal('embedCodeModal');
+}
+
+// ─── Form Styling Editor ─────────────────────────────────────────────────────
+
+let formStylingSourceId = null;
+let formStylingFields = null; // cached fields for preview
+
+const LIGHT_DEFAULTS = {
+    theme: 'light',
+    position: 'center',
+    form_title: '',
+    background_color: '#ffffff',
+    background_opacity: 1.0,
+    text_color: '#1e1e2e',
+    label_color: '#3f3f46',
+    input_bg_color: '#fafafa',
+    input_text_color: '#1e1e2e',
+    button_color: '#6366f1',
+    button_hover_color: '#4f46e5',
+    button_text_color: '#ffffff',
+    button_text: 'Submit',
+    border_color: '#e4e4e7',
+    border_radius: 10,
+    glassy_effect: false,
+    show_labels: true,
+    logo_url: '',
+    logo_position: 'top',
+    logo_height: 32,
+    input_height: 40,
+    button_height: 44,
+    form_width: 440
+};
+
+const DARK_DEFAULTS = {
+    theme: 'dark',
+    position: 'center',
+    form_title: '',
+    background_color: '#1e1e2e',
+    background_opacity: 0.95,
+    text_color: '#e4e4e7',
+    label_color: '#d4d4d8',
+    input_bg_color: '#27273a',
+    input_text_color: '#e4e4e7',
+    button_color: '#6366f1',
+    button_hover_color: '#4f46e5',
+    button_text_color: '#ffffff',
+    button_text: 'Submit',
+    border_color: '#3f3f46',
+    border_radius: 10,
+    glassy_effect: false,
+    show_labels: true,
+    logo_url: '',
+    logo_position: 'top',
+    logo_height: 32,
+    input_height: 40,
+    button_height: 44,
+    form_width: 440
+};
+
+// Color picker sync pairs: [colorInputId, hexInputId]
+const FS_COLOR_PAIRS = [
+    ['fsBgColor', 'fsBgColorHex'],
+    ['fsTextColor', 'fsTextColorHex'],
+    ['fsLabelColor', 'fsLabelColorHex'],
+    ['fsInputBgColor', 'fsInputBgColorHex'],
+    ['fsInputTextColor', 'fsInputTextColorHex'],
+    ['fsButtonColor', 'fsButtonColorHex'],
+    ['fsButtonTextColor', 'fsButtonTextColorHex'],
+    ['fsBorderColor', 'fsBorderColorHex'],
+];
+
+let _fsSyncBound = false;
+
+function initFormStylingSync() {
+    if (_fsSyncBound) return;
+    _fsSyncBound = true;
+
+    // Sync color pickers <-> hex inputs
+    FS_COLOR_PAIRS.forEach(([colorId, hexId]) => {
+        const colorEl = document.getElementById(colorId);
+        const hexEl = document.getElementById(hexId);
+        if (!colorEl || !hexEl) return;
+
+        colorEl.addEventListener('input', () => {
+            hexEl.value = colorEl.value;
+            renderStylingPreview();
+        });
+        hexEl.addEventListener('input', () => {
+            const v = hexEl.value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                colorEl.value = v;
+            }
+            renderStylingPreview();
+        });
+    });
+
+    // Opacity slider
+    const opacitySlider = document.getElementById('fsOpacity');
+    const opacityLabel = document.getElementById('fsOpacityValue');
+    if (opacitySlider) {
+        opacitySlider.addEventListener('input', () => {
+            opacityLabel.textContent = `${Math.round(opacitySlider.value * 100)}%`;
+            renderStylingPreview();
+        });
+    }
+
+    // Border radius slider
+    const radiusSlider = document.getElementById('fsBorderRadius');
+    const radiusLabel = document.getElementById('fsRadiusValue');
+    if (radiusSlider) {
+        radiusSlider.addEventListener('input', () => {
+            radiusLabel.textContent = `${radiusSlider.value}px`;
+            renderStylingPreview();
+        });
+    }
+
+    // Theme dropdown — reset only colors to new theme defaults, preserve everything else
+    const themeSelect = document.getElementById('fsTheme');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', () => {
+            const current = getFormStylingValues();
+            const defaults = themeSelect.value === 'dark' ? DARK_DEFAULTS : LIGHT_DEFAULTS;
+            // Merge: use new theme colors but preserve non-color settings
+            const merged = {
+                ...defaults,
+                position: current.position,
+                form_title: current.form_title,
+                button_text: current.button_text,
+                logo_url: current.logo_url,
+                logo_position: current.logo_position,
+                logo_height: current.logo_height,
+                input_height: current.input_height,
+                button_height: current.button_height,
+                border_radius: current.border_radius,
+                glassy_effect: current.glassy_effect,
+                show_labels: current.show_labels,
+                form_width: current.form_width,
+            };
+            populateFormStylingControls(merged);
+            renderStylingPreview();
+        });
+    }
+
+    // Position, form title, button text, logo URL, logo position — live preview
+    ['fsPosition', 'fsFormTitle', 'fsButtonText', 'fsLogoUrl', 'fsLogoPosition'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => renderStylingPreview());
+    });
+
+    // Logo height slider
+    const logoHeightSlider = document.getElementById('fsLogoHeight');
+    const logoHeightLabel = document.getElementById('fsLogoHeightValue');
+    if (logoHeightSlider) {
+        logoHeightSlider.addEventListener('input', () => {
+            if (logoHeightLabel) logoHeightLabel.textContent = `${logoHeightSlider.value}px`;
+            renderStylingPreview();
+        });
+    }
+
+    // Input height slider
+    const inputHeightSlider = document.getElementById('fsInputHeight');
+    const inputHeightLabel = document.getElementById('fsInputHeightValue');
+    if (inputHeightSlider) {
+        inputHeightSlider.addEventListener('input', () => {
+            if (inputHeightLabel) inputHeightLabel.textContent = `${inputHeightSlider.value}px`;
+            renderStylingPreview();
+        });
+    }
+
+    // Button height slider
+    const buttonHeightSlider = document.getElementById('fsButtonHeight');
+    const buttonHeightLabel = document.getElementById('fsButtonHeightValue');
+    if (buttonHeightSlider) {
+        buttonHeightSlider.addEventListener('input', () => {
+            if (buttonHeightLabel) buttonHeightLabel.textContent = `${buttonHeightSlider.value}px`;
+            renderStylingPreview();
+        });
+    }
+
+    // Form width slider
+    const formWidthSlider = document.getElementById('fsFormWidth');
+    const formWidthLabel = document.getElementById('fsFormWidthValue');
+    if (formWidthSlider) {
+        formWidthSlider.addEventListener('input', () => {
+            if (formWidthLabel) formWidthLabel.textContent = `${formWidthSlider.value}px`;
+            renderStylingPreview();
+        });
+    }
+
+    // Glassy toggle
+    const glassyCheckbox = document.getElementById('fsGlassyEffect');
+    if (glassyCheckbox) {
+        glassyCheckbox.addEventListener('change', () => {
+            updateGlassyToggleVisual();
+            renderStylingPreview();
+        });
+    }
+
+    // Show labels toggle
+    const showLabelsCb = document.getElementById('fsShowLabels');
+    if (showLabelsCb) {
+        showLabelsCb.addEventListener('change', () => {
+            updateShowLabelsToggleVisual();
+            renderStylingPreview();
+        });
+    }
+}
+
+function updateGlassyToggleVisual() {
+    const cb = document.getElementById('fsGlassyEffect');
+    const toggle = document.getElementById('fsGlassyToggle');
+    const knob = document.getElementById('fsGlassyKnob');
+    if (!cb || !toggle || !knob) return;
+
+    if (cb.checked) {
+        toggle.style.background = 'var(--brand-primary, #6366f1)';
+        knob.style.transform = 'translateX(18px)';
+    } else {
+        toggle.style.background = 'var(--border-primary, #d4d4d8)';
+        knob.style.transform = 'translateX(0)';
+    }
+}
+
+function updateShowLabelsToggleVisual() {
+    const cb = document.getElementById('fsShowLabels');
+    const toggle = document.getElementById('fsShowLabelsToggle');
+    const knob = document.getElementById('fsShowLabelsKnob');
+    if (!cb || !toggle || !knob) return;
+
+    if (cb.checked) {
+        toggle.style.background = 'var(--brand-primary, #6366f1)';
+        knob.style.transform = 'translateX(18px)';
+    } else {
+        toggle.style.background = 'var(--border-primary, #d4d4d8)';
+        knob.style.transform = 'translateX(0)';
+    }
+}
+
+function getFormStylingValues() {
+    return {
+        theme: document.getElementById('fsTheme')?.value || 'light',
+        position: document.getElementById('fsPosition')?.value || 'center',
+        form_title: document.getElementById('fsFormTitle')?.value?.trim() || '',
+        background_color: document.getElementById('fsBgColorHex')?.value || '#ffffff',
+        background_opacity: parseFloat(document.getElementById('fsOpacity')?.value || '1'),
+        text_color: document.getElementById('fsTextColorHex')?.value || '#1e1e2e',
+        label_color: document.getElementById('fsLabelColorHex')?.value || '#3f3f46',
+        input_bg_color: document.getElementById('fsInputBgColorHex')?.value || '#fafafa',
+        input_text_color: document.getElementById('fsInputTextColorHex')?.value || '#1e1e2e',
+        button_color: document.getElementById('fsButtonColorHex')?.value || '#6366f1',
+        button_hover_color: document.getElementById('fsButtonColorHex')?.value || '#4f46e5',
+        button_text_color: document.getElementById('fsButtonTextColorHex')?.value || '#ffffff',
+        button_text: document.getElementById('fsButtonText')?.value || 'Submit',
+        border_color: document.getElementById('fsBorderColorHex')?.value || '#e4e4e7',
+        border_radius: parseInt(document.getElementById('fsBorderRadius')?.value || '10'),
+        glassy_effect: document.getElementById('fsGlassyEffect')?.checked || false,
+        show_labels: document.getElementById('fsShowLabels')?.checked !== false,
+        logo_url: document.getElementById('fsLogoUrl')?.value?.trim() || '',
+        logo_position: document.getElementById('fsLogoPosition')?.value || 'top',
+        logo_height: parseInt(document.getElementById('fsLogoHeight')?.value || '32'),
+        input_height: parseInt(document.getElementById('fsInputHeight')?.value || '40'),
+        button_height: parseInt(document.getElementById('fsButtonHeight')?.value || '44'),
+        form_width: parseInt(document.getElementById('fsFormWidth')?.value || '440')
+    };
+}
+
+function populateFormStylingControls(s) {
+    // Theme, position, form title
+    const themeEl = document.getElementById('fsTheme');
+    if (themeEl) themeEl.value = s.theme || 'light';
+    const posEl = document.getElementById('fsPosition');
+    if (posEl) posEl.value = s.position || 'center';
+    const formTitleEl = document.getElementById('fsFormTitle');
+    if (formTitleEl) formTitleEl.value = s.form_title || '';
+
+    // Color pairs
+    const colorMap = {
+        'fsBgColor': s.background_color,
+        'fsTextColor': s.text_color,
+        'fsLabelColor': s.label_color,
+        'fsInputBgColor': s.input_bg_color,
+        'fsInputTextColor': s.input_text_color,
+        'fsButtonColor': s.button_color,
+        'fsButtonTextColor': s.button_text_color,
+        'fsBorderColor': s.border_color,
+    };
+
+    for (const [colorId, val] of Object.entries(colorMap)) {
+        const colorEl = document.getElementById(colorId);
+        const hexEl = document.getElementById(colorId + 'Hex');
+        if (colorEl && val) colorEl.value = val;
+        if (hexEl && val) hexEl.value = val;
+    }
+
+    // Opacity
+    const opacitySlider = document.getElementById('fsOpacity');
+    const opacityLabel = document.getElementById('fsOpacityValue');
+    if (opacitySlider) opacitySlider.value = s.background_opacity ?? 1;
+    if (opacityLabel) opacityLabel.textContent = `${Math.round((s.background_opacity ?? 1) * 100)}%`;
+
+    // Border radius
+    const radiusSlider = document.getElementById('fsBorderRadius');
+    const radiusLabel = document.getElementById('fsRadiusValue');
+    if (radiusSlider) radiusSlider.value = s.border_radius ?? 10;
+    if (radiusLabel) radiusLabel.textContent = `${s.border_radius ?? 10}px`;
+
+    // Button text
+    const btnTextEl = document.getElementById('fsButtonText');
+    if (btnTextEl) btnTextEl.value = s.button_text || 'Submit';
+
+    // Glassy
+    const glassyCb = document.getElementById('fsGlassyEffect');
+    if (glassyCb) glassyCb.checked = !!s.glassy_effect;
+    updateGlassyToggleVisual();
+
+    // Show labels
+    const showLabelsCb = document.getElementById('fsShowLabels');
+    if (showLabelsCb) showLabelsCb.checked = s.show_labels !== false;
+    updateShowLabelsToggleVisual();
+
+    // Logo
+    const logoUrlEl = document.getElementById('fsLogoUrl');
+    if (logoUrlEl) logoUrlEl.value = s.logo_url || '';
+    const logoPosEl = document.getElementById('fsLogoPosition');
+    if (logoPosEl) logoPosEl.value = s.logo_position || 'top';
+    const logoHeightSlider = document.getElementById('fsLogoHeight');
+    const logoHeightLabel = document.getElementById('fsLogoHeightValue');
+    if (logoHeightSlider) logoHeightSlider.value = s.logo_height || 32;
+    if (logoHeightLabel) logoHeightLabel.textContent = `${s.logo_height || 32}px`;
+
+    // Input & Button height
+    const inputHeightSlider = document.getElementById('fsInputHeight');
+    const inputHeightLabel = document.getElementById('fsInputHeightValue');
+    if (inputHeightSlider) inputHeightSlider.value = s.input_height || 40;
+    if (inputHeightLabel) inputHeightLabel.textContent = `${s.input_height || 40}px`;
+
+    const buttonHeightSlider = document.getElementById('fsButtonHeight');
+    const buttonHeightLabel = document.getElementById('fsButtonHeightValue');
+    if (buttonHeightSlider) buttonHeightSlider.value = s.button_height || 44;
+    if (buttonHeightLabel) buttonHeightLabel.textContent = `${s.button_height || 44}px`;
+
+    const formWidthSlider = document.getElementById('fsFormWidth');
+    const formWidthLabel = document.getElementById('fsFormWidthValue');
+    if (formWidthSlider) formWidthSlider.value = s.form_width || 440;
+    if (formWidthLabel) formWidthLabel.textContent = `${s.form_width || 440}px`;
+}
+
+function hexToRgba(hex, opacity) {
+    if (!hex || typeof hex !== 'string') return `rgba(0,0,0,${opacity})`;
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(0,0,0,${opacity})`;
+    return `rgba(${r},${g},${b},${opacity})`;
+}
+
+let _renderPreviewTimer = null;
+function renderStylingPreview() {
+    // Debounce to avoid rapid iframe reloads
+    clearTimeout(_renderPreviewTimer);
+    _renderPreviewTimer = setTimeout(_renderStylingPreviewNow, 60);
+}
+
+function _renderStylingPreviewNow() {
+    const container = document.getElementById('formStylingPreviewContainer');
+    if (!container) return;
+
+    const s = getFormStylingValues();
+    const isDark = s.theme === 'dark';
+    const radius = `${s.border_radius}px`;
+    const bgRgba = hexToRgba(s.background_color, s.background_opacity);
+    // Always use rgba so opacity slider works regardless of glassy toggle
+    const cardBg = bgRgba;
+    const cardBorder = s.glassy_effect ? `border: 1px solid ${hexToRgba(s.border_color, 0.3)};` : `border: 1px solid ${s.border_color};`;
+    const glassyFilter = s.glassy_effect ? 'backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);' : '';
+    const inputH = s.input_height || 40;
+    const buttonH = s.button_height || 44;
+
+    // Build preview fields from cached source fields
+    const fields = formStylingFields || [
+        { label: 'Email', type: 'email', placeholder: 'you@example.com', required: true },
+        { label: 'Phone', type: 'tel', placeholder: '+1 (555) 000-0000', required: false },
+    ];
+
+    const showLabels = s.show_labels !== false;
+
+    let fieldsHtml = '';
+    fields.forEach(f => {
+        const reqMark = f.required ? `<span style="color: #ef4444; margin-left: 2px;"> *</span>` : '';
+        const labelHtml = showLabels ? `<label class="pf-label">${_escHtml(f.label)}${reqMark}</label>` : '';
+        if (f.type === 'textarea') {
+            fieldsHtml += `
+                <div class="pf-field">
+                    ${labelHtml}
+                    <textarea rows="2" placeholder="${_escHtml(f.placeholder || '')}" disabled class="pf-textarea"></textarea>
+                </div>`;
+        } else {
+            fieldsHtml += `
+                <div class="pf-field">
+                    ${labelHtml}
+                    <input type="${f.type || 'text'}" placeholder="${_escHtml(f.placeholder || '')}" disabled class="pf-input">
+                </div>`;
+        }
+    });
+
+    const formTitle = s.form_title || '';
+
+    // Logo HTML (no onerror — iframe sandbox blocks inline scripts)
+    const logoUrl = s.logo_url || '';
+    const logoHeight = s.logo_height || 32;
+    const logoPos = s.logo_position || 'top';
+    const logoHtml = logoUrl
+        ? `<div class="pf-logo ${logoPos === 'bottom' ? 'pf-logo-bottom' : ''}"><img src="${_escHtml(logoUrl)}" alt="Logo"></div>`
+        : '';
+
+    // Extra top padding on body when there's nothing above it (no logo-top, no title)
+    const hasTopContent = (logoPos === 'top' && logoUrl) || formTitle;
+    const bodyPadTop = hasTopContent ? '20px' : '48px';
+
+    // Build a fully self-contained HTML document for the iframe
+    const iframeDoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+        margin: 0; padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100%;
+    }
+    body {
+        display: flex; align-items: flex-start; justify-content: center; padding: 16px;
+        /* Demo background for opacity/glassy preview */
+        background:
+            linear-gradient(135deg, #667eea 0%, #764ba2 100%),
+            linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+        background-size: cover;
+    }
+    .pf-card {
+        width: 100%;
+        max-width: ${s.form_width || 440}px;
+        position: relative;
+        background: ${cardBg};
+        border-radius: ${radius};
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.04);
+        color: ${s.text_color};
+        overflow: hidden;
+        ${cardBorder}
+        ${glassyFilter}
+    }
+    .pf-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        background: none;
+        border: none;
+        padding: 6px;
+        border-radius: 8px;
+        color: ${isDark ? '#a1a1aa' : '#71717a'};
+        cursor: default;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .pf-header {
+        padding: 20px 24px 0;
+        padding-right: 48px;
+    }
+    .pf-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: ${s.text_color};
+    }
+    .pf-body { padding: ${bodyPadTop} 24px 24px; }
+    .pf-field { margin-bottom: 16px; }
+    .pf-label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: ${s.label_color};
+    }
+    .pf-input {
+        width: 100%;
+        height: ${inputH}px;
+        padding: 0 14px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        border: 1.5px solid ${s.border_color};
+        border-radius: ${radius};
+        background: ${s.input_bg_color};
+        color: ${s.input_text_color};
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.15s;
+    }
+    .pf-textarea {
+        width: 100%;
+        min-height: ${Math.round(inputH * 1.8)}px;
+        padding: 8px 14px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        border: 1.5px solid ${s.border_color};
+        border-radius: ${radius};
+        background: ${s.input_bg_color};
+        color: ${s.input_text_color};
+        outline: none;
+        box-sizing: border-box;
+        resize: none;
+    }
+    .pf-submit {
+        width: 100%;
+        height: ${buttonH}px;
+        padding: 0 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        border-radius: ${radius};
+        cursor: default;
+        background: ${s.button_color};
+        color: ${s.button_text_color};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .pf-footer {
+        text-align: center;
+        padding: 0 24px 16px;
+        font-size: 0.72rem;
+        color: ${isDark ? '#52525b' : '#a1a1aa'};
+    }
+    .pf-footer span { font-weight: 500; }
+    .pf-logo {
+        text-align: center;
+        padding: 16px 24px 4px;
+    }
+    .pf-logo-bottom {
+        padding: 4px 24px 12px;
+    }
+    .pf-logo img {
+        max-height: ${logoHeight}px;
+        max-width: 80%;
+        object-fit: contain;
+    }
+</style>
+</head>
+<body>
+    <div class="pf-card">
+        <button class="pf-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        ${logoPos === 'top' ? logoHtml : ''}
+        ${formTitle ? `<div class="pf-header"><div class="pf-title">${_escHtml(formTitle)}</div></div>` : ''}
+        <div class="pf-body">
+            ${fieldsHtml}
+            <button disabled class="pf-submit">${_escHtml(s.button_text || 'Submit')}</button>
+        </div>
+        ${logoPos === 'bottom' ? logoHtml : ''}
+        <div class="pf-footer">Powered by <span>Ragenaizer</span></div>
+    </div>
+</body>
+</html>`;
+
+    // Render into an iframe for complete CSS isolation
+    let iframe = container.querySelector('iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.style.cssText = 'width: 100%; border: none; display: block; border-radius: 8px; overflow: hidden;';
+        iframe.setAttribute('sandbox', 'allow-same-origin');
+        container.innerHTML = '';
+        container.appendChild(iframe);
+    }
+    iframe.srcdoc = iframeDoc;
+
+    // Auto-resize iframe height to fit content
+    iframe.onload = () => {
+        try {
+            const body = iframe.contentDocument?.body;
+            if (body) {
+                iframe.style.height = body.scrollHeight + 'px';
+            }
+        } catch (e) { /* cross-origin guard */ }
+    };
+}
+
+// Lightweight HTML escape for preview (avoids dependency on global escapeHtml)
+function _escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function openFormStylingModal(id) {
+    formStylingSourceId = id;
+    const source = leadSources.find(s => s.id === id);
+    if (!source) return;
+
+    initFormStylingSync();
+
+    document.getElementById('formStylingSourceId').value = id;
+    document.getElementById('formStylingSourceName').textContent = source.source_name || '';
+
+    // Parse existing styling or use defaults
+    let styling = {};
+    if (source.form_styling && source.form_styling !== '{}') {
+        try {
+            styling = typeof source.form_styling === 'string'
+                ? JSON.parse(source.form_styling)
+                : source.form_styling;
+        } catch (e) { /* use empty */ }
+    }
+
+    const theme = styling.theme || 'light';
+    const defaults = theme === 'dark' ? DARK_DEFAULTS : LIGHT_DEFAULTS;
+    const merged = { ...defaults, ...styling };
+
+    populateFormStylingControls(merged);
+
+    // Cache field metadata for preview
+    try {
+        const crmBase = getCrmBaseUrl();
+        const crmOrigin = typeof CONFIG !== 'undefined' && CONFIG.endpoints?.crm
+            ? CONFIG.endpoints.crm
+            : crmBase.replace(/\/api\/?$/, '');
+        const res = await fetch(`${crmOrigin}/api/leads/capture/${source.webhook_key}/form-config?v=${Date.now()}`);
+        if (res.ok) {
+            const config = await res.json();
+            formStylingFields = config.fields || null;
+        }
+    } catch (e) {
+        formStylingFields = null;
+    }
+
+    renderStylingPreview();
+    openModal('formStylingModal');
+}
+
+function closeFormStylingModal() {
+    closeModal('formStylingModal');
+    formStylingSourceId = null;
+    formStylingFields = null;
+}
+
+function resetFormStylingDefaults() {
+    const theme = document.getElementById('fsTheme')?.value || 'light';
+    const defaults = theme === 'dark' ? DARK_DEFAULTS : LIGHT_DEFAULTS;
+    populateFormStylingControls(defaults);
+    renderStylingPreview();
+}
+
+async function saveFormStyling() {
+    if (!formStylingSourceId) return;
+
+    const saveBtn = document.getElementById('saveFormStylingBtn');
+    const originalText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="btn-spinner"></span>Saving...';
+
+    try {
+        const styling = getFormStylingValues();
+
+        // Derive button_hover_color as slightly darker version of button_color
+        const bc = styling.button_color;
+        styling.button_hover_color = darkenHex(bc, 15);
+
+        await api.request(`/crm/lead-sources/${formStylingSourceId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                form_styling: JSON.stringify(styling)
+            })
+        });
+
+        Toast.success('Form styling saved successfully');
+        closeFormStylingModal();
+        await loadLeadSources();
+    } catch (error) {
+        console.error('Error saving form styling:', error);
+        Toast.error(error.message || 'Failed to save styling');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+    }
+}
+
+function darkenHex(hex, percent) {
+    if (!hex) return '#4f46e5';
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+    r = Math.max(0, Math.round(r * (1 - percent / 100)));
+    g = Math.max(0, Math.round(g * (1 - percent / 100)));
+    b = Math.max(0, Math.round(b * (1 - percent / 100)));
+    return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
 }

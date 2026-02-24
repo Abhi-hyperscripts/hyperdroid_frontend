@@ -454,6 +454,11 @@
                                 <label>Job Title</label>
                                 <input type="text" id="mapJobTitle" placeholder="job_title, jobTitle, title, position">
                             </div>
+                            <div id="customFieldMappings"></div>
+                            <button type="button" class="btn-add-custom-field" onclick="addCustomFieldRow()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add Custom Field
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -522,10 +527,34 @@
                 </button>
             </div>
             <div class="gm-body">
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
-                    Copy this HTML and paste it into your landing page. The form submits leads directly to your CRM.
-                </p>
-                <pre class="crm-embed-code-block"><code id="embedCodeContent"></code></pre>
+                <!-- Tab bar -->
+                <div style="display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1.5px solid var(--border-primary, #e4e4e7);">
+                    <button type="button" class="embed-tab-btn active" data-embed-tab="widget" onclick="switchEmbedTab('widget')"
+                        style="flex: 1; padding: 10px 16px; font-size: 0.85rem; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s;">
+                        Widget Script
+                    </button>
+                    <button type="button" class="embed-tab-btn" data-embed-tab="html" onclick="switchEmbedTab('html')"
+                        style="flex: 1; padding: 10px 16px; font-size: 0.85rem; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s;">
+                        HTML Form
+                    </button>
+                </div>
+
+                <!-- Widget Script tab -->
+                <div id="embedTab-widget">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                        Paste this one-liner into your page. The widget auto-fetches fields and renders a styled popup form.
+                        Use <code style="font-size: 0.8rem; background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">data-trigger</code> to bind it to a button.
+                    </p>
+                    <pre class="crm-embed-code-block"><code id="embedCodeWidget"></code></pre>
+                </div>
+
+                <!-- HTML Form tab -->
+                <div id="embedTab-html" style="display: none;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                        Copy this raw HTML form and paste it into your landing page. Style it yourself.
+                    </p>
+                    <pre class="crm-embed-code-block"><code id="embedCodeHtml"></code></pre>
+                </div>
             </div>
             <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
                 <button type="button" class="btn btn-secondary" onclick="closeEmbedCodeModal()">Close</button>
@@ -569,6 +598,224 @@
             <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteStageModal()">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteStageBtn" onclick="confirmDeleteStage()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Styling Editor Modal -->
+    <div class="gm-overlay" id="formStylingModal">
+        <div class="gm-modal" style="max-width: 980px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark)); color: #fff;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                            <path d="M2 2l7.586 7.586"/>
+                            <circle cx="11" cy="11" r="2"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Form Styling</h3>
+                        <p class="gm-subtitle" id="formStylingSourceName"></p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeFormStylingModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="padding: 0;">
+                <div class="fs-split">
+                    <!-- Left Panel: Settings Controls (single column, no horizontal scroll) -->
+                    <div class="fs-controls">
+                        <input type="hidden" id="formStylingSourceId">
+
+                        <!-- Section: Layout -->
+                        <div class="fs-section-label">Layout</div>
+                        <div class="fs-row">
+                            <label for="fsFormTitle" class="fs-label">Form Title</label>
+                            <input type="text" id="fsFormTitle" value="" placeholder="Leave empty to hide" class="fs-text-input">
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsTheme" class="fs-label">Theme</label>
+                            <select id="fsTheme" class="fs-select">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsPosition" class="fs-label">Position</label>
+                            <select id="fsPosition" class="fs-select">
+                                <option value="center">Center</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="top-left">Top Left</option>
+                                <option value="bottom-right">Bottom Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                            </select>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsShowLabels" checked>
+                                <span id="fsShowLabelsToggle" class="fs-toggle-track"></span>
+                                <span id="fsShowLabelsKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Show Field Labels</span>
+                        </div>
+
+                        <!-- Section: Colors -->
+                        <div class="fs-section-label">Colors</div>
+                        <div class="fs-row">
+                            <label class="fs-label">Background</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsBgColor" value="#ffffff" class="fs-color-swatch">
+                                <input type="text" id="fsBgColorHex" value="#ffffff" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Opacity</span>
+                                <span id="fsOpacityValue" class="fs-label-value">100%</span>
+                            </label>
+                            <input type="range" id="fsOpacity" min="0" max="1" step="0.05" value="1" class="fs-range">
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Text Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsTextColor" value="#1e1e2e" class="fs-color-swatch">
+                                <input type="text" id="fsTextColorHex" value="#1e1e2e" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Label Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsLabelColor" value="#3f3f46" class="fs-color-swatch">
+                                <input type="text" id="fsLabelColorHex" value="#3f3f46" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Input Fill</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsInputBgColor" value="#fafafa" class="fs-color-swatch">
+                                <input type="text" id="fsInputBgColorHex" value="#fafafa" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Input Text Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsInputTextColor" value="#1e1e2e" class="fs-color-swatch">
+                                <input type="text" id="fsInputTextColorHex" value="#1e1e2e" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+
+                        <!-- Section: Sizing -->
+                        <div class="fs-section-label">Sizing</div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Form Width (Desktop)</span>
+                                <span id="fsFormWidthValue" class="fs-label-value">440px</span>
+                            </label>
+                            <input type="range" id="fsFormWidth" min="320" max="700" step="10" value="440" class="fs-range">
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Input Height</span>
+                                <span id="fsInputHeightValue" class="fs-label-value">40px</span>
+                            </label>
+                            <input type="range" id="fsInputHeight" min="28" max="56" step="2" value="40" class="fs-range">
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Button Height</span>
+                                <span id="fsButtonHeightValue" class="fs-label-value">44px</span>
+                            </label>
+                            <input type="range" id="fsButtonHeight" min="32" max="60" step="2" value="44" class="fs-range">
+                        </div>
+
+                        <!-- Section: Button -->
+                        <div class="fs-section-label">Button</div>
+                        <div class="fs-row">
+                            <label class="fs-label">Button Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsButtonColor" value="#6366f1" class="fs-color-swatch">
+                                <input type="text" id="fsButtonColorHex" value="#6366f1" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Button Text Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsButtonTextColor" value="#ffffff" class="fs-color-swatch">
+                                <input type="text" id="fsButtonTextColorHex" value="#ffffff" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsButtonText" class="fs-label">Button Label</label>
+                            <input type="text" id="fsButtonText" value="Submit" placeholder="Submit" class="fs-text-input">
+                        </div>
+
+                        <!-- Section: Branding -->
+                        <div class="fs-section-label">Branding</div>
+                        <div class="fs-row">
+                            <label for="fsLogoUrl" class="fs-label">Logo URL</label>
+                            <input type="text" id="fsLogoUrl" value="" placeholder="https://example.com/logo.png" class="fs-text-input">
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsLogoPosition" class="fs-label">Logo Position</label>
+                            <select id="fsLogoPosition" class="fs-select">
+                                <option value="top">Top (Header)</option>
+                                <option value="bottom">Bottom (Footer)</option>
+                            </select>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Logo Height</span>
+                                <span id="fsLogoHeightValue" class="fs-label-value">32px</span>
+                            </label>
+                            <input type="range" id="fsLogoHeight" min="16" max="80" step="2" value="32" class="fs-range">
+                        </div>
+
+                        <!-- Section: Shape -->
+                        <div class="fs-section-label">Shape</div>
+                        <div class="fs-row">
+                            <label class="fs-label">Border Color</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsBorderColor" value="#e4e4e7" class="fs-color-swatch">
+                                <input type="text" id="fsBorderColorHex" value="#e4e4e7" maxlength="7" class="fs-color-hex">
+                            </div>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label fs-label-flex">
+                                <span>Corner Radius</span>
+                                <span id="fsRadiusValue" class="fs-label-value">10px</span>
+                            </label>
+                            <input type="range" id="fsBorderRadius" min="0" max="24" step="1" value="10" class="fs-range">
+                        </div>
+
+                        <!-- Glassy Toggle -->
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsGlassyEffect">
+                                <span id="fsGlassyToggle" class="fs-toggle-track"></span>
+                                <span id="fsGlassyKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Frosted Glass Effect</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Live Preview -->
+                    <div class="fs-preview" id="fsPreviewPane">
+                        <div id="formStylingPreviewContainer" style="width: 100%; max-width: 380px;">
+                            <!-- Preview rendered here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="gm-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn" onclick="resetFormStylingDefaults()" style="margin-right: auto; background: transparent; border: none; color: var(--text-secondary); font-size: 0.82rem; opacity: 0.7; cursor: pointer;">Reset Defaults</button>
+                <button type="button" class="btn btn-secondary" onclick="closeFormStylingModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveFormStylingBtn" onclick="saveFormStyling()">Save Styling</button>
             </div>
         </div>
     </div>

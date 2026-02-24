@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Form Widget Test</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        p { font-size: 1.1rem; opacity: 0.85; margin-bottom: 2rem; }
+        #openForm {
+            padding: 14px 36px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: #e94560;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        #openForm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(233,69,96,0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1>Widget Test Page</h1>
+    <p>Click the button below to open the styled lead capture form</p>
+    <button id="openForm">Open Lead Form</button>
+
+    <script
+        src="/embed/lead-form.js"
+        data-key="71l95vkj07heun49dp2je9u4bmvbdr5p"
+        data-api="https://localhost:5112"
+        data-trigger="#openForm">
+    </script>
+</body>
+</html>

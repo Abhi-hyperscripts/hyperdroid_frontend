@@ -295,6 +295,7 @@ function openNewLeadModal() {
     if (leadStatusDropdown) leadStatusDropdown.setValue('');
     document.getElementById('leadId').value = '';
     clearCustomFieldRows();
+    clearCapturedData();
     openModal('leadModal');
 }
 
@@ -398,6 +399,9 @@ async function editLead(leadId) {
 
         // Populate custom fields
         populateCustomFieldRows(lead.custom_fields);
+
+        // Populate captured data from source_raw_data
+        populateCapturedData(lead.source_raw_data);
 
         openModal('leadModal');
     } catch (error) {
@@ -627,6 +631,68 @@ function getCustomFieldsFromForm() {
         }
     });
     return fields;
+}
+
+// ==================== Captured Data (Source Raw Data) ====================
+
+const CORE_LEAD_FIELDS = new Set([
+    'first_name', 'last_name', 'full_name', 'email', 'phone', 'company_name', 'company', 'job_title',
+    'lead_source', 'status', 'notes'
+]);
+
+function populateCapturedData(sourceRawData) {
+    const section = document.getElementById('capturedDataSection');
+    const list = document.getElementById('capturedDataList');
+    if (!section || !list) return;
+
+    list.innerHTML = '';
+
+    if (!sourceRawData || sourceRawData === '{}') {
+        section.style.display = 'none';
+        return;
+    }
+
+    try {
+        const data = typeof sourceRawData === 'string' ? JSON.parse(sourceRawData) : sourceRawData;
+        const entries = Object.entries(data).filter(([key]) => !CORE_LEAD_FIELDS.has(key));
+
+        if (entries.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        entries.forEach(([key, value]) => {
+            const item = document.createElement('div');
+            item.className = 'captured-data-item';
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            item.innerHTML = `
+                <span class="captured-data-label">${escapeHtml(label)}</span>
+                <span class="captured-data-value">${escapeHtml(String(value || '-'))}</span>
+            `;
+            list.appendChild(item);
+        });
+
+        section.style.display = 'block';
+    } catch (e) {
+        console.error('Error parsing source_raw_data:', e);
+        section.style.display = 'none';
+    }
+}
+
+function clearCapturedData() {
+    const section = document.getElementById('capturedDataSection');
+    const list = document.getElementById('capturedDataList');
+    if (section) section.style.display = 'none';
+    if (list) list.innerHTML = '';
+}
+
+function toggleCapturedData() {
+    const list = document.getElementById('capturedDataList');
+    const chevron = document.getElementById('capturedDataChevron');
+    if (!list) return;
+    const isHidden = list.style.display === 'none';
+    list.style.display = isHidden ? '' : 'none';
+    if (chevron) chevron.style.transform = isHidden ? '' : 'rotate(-90deg)';
 }
 
 // ==================== Utilities ====================
