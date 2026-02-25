@@ -896,6 +896,9 @@ function createUploadQueueItem(file) {
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks - matches backend
 const CHUNKED_UPLOAD_THRESHOLD = 50 * 1024 * 1024; // Use chunked upload for files > 50MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB max file size - matches backend
+const CHUNK_MAX_RETRIES = 5; // Retry each chunk up to 5 times
+const CHUNK_TIMEOUT_MS = 120000; // 2 minute timeout per chunk
+const CHUNK_PARALLEL = 3; // Upload 3 chunks concurrently
 
 async function uploadFile(file, queueItem) {
     const progressBar = queueItem.querySelector('.progress-bar');
@@ -978,7 +981,43 @@ async function uploadFileSimple(file, queueItem) {
     });
 }
 
-// Chunked upload for large files (> 50MB) - handles up to 5GB without timeout
+// Upload a single chunk with retry + exponential backoff
+async function uploadChunkWithRetry(sessionId, chunkNumber, chunk, fileName) {
+    for (let attempt = 1; attempt <= CHUNK_MAX_RETRIES; attempt++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CHUNK_TIMEOUT_MS);
+
+            const formData = new FormData();
+            formData.append('chunk', chunk, fileName);
+
+            const response = await fetch(
+                `${CONFIG.endpoints.drive}/api/drive/chunked/upload/${sessionId}/${chunkNumber}`,
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` },
+                    body: formData,
+                    signal: controller.signal
+                }
+            );
+            clearTimeout(timeoutId);
+
+            const result = await response.json();
+            if (result.success) return true;
+            console.warn(`Chunk ${chunkNumber} attempt ${attempt} server error:`, result.message);
+        } catch (err) {
+            console.warn(`Chunk ${chunkNumber} attempt ${attempt} ${err.name === 'AbortError' ? 'timed out' : 'failed'}:`, err.message);
+        }
+
+        if (attempt < CHUNK_MAX_RETRIES) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    return false;
+}
+
+// Chunked upload for large files (> 50MB) - parallel chunks with retry
 async function uploadFileChunked(file, queueItem) {
     const progressBar = queueItem.querySelector('.progress-bar');
     const status = queueItem.querySelector('.upload-item-status');
@@ -1009,44 +1048,47 @@ async function uploadFileChunked(file, queueItem) {
 
     const sessionId = initResult.upload_session_id;
 
-    // Step 2: Upload chunks one by one
-    for (let chunkNumber = 1; chunkNumber <= totalChunks; chunkNumber++) {
-        const start = (chunkNumber - 1) * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, end);
+    // Step 2: Upload chunks in parallel batches with retry
+    let completedChunks = 0;
+    let failed = false;
 
-        const overallProgress = Math.round(((chunkNumber - 1) / totalChunks) * 100);
-        status.textContent = `Uploading chunk ${chunkNumber}/${totalChunks}... ${overallProgress}%`;
-        progressBar.style.width = overallProgress + '%';
+    // Process chunks in batches of CHUNK_PARALLEL
+    for (let batchStart = 1; batchStart <= totalChunks && !failed; batchStart += CHUNK_PARALLEL) {
+        const batchEnd = Math.min(batchStart + CHUNK_PARALLEL - 1, totalChunks);
+        const batchPromises = [];
 
-        // Upload this chunk
-        const chunkFormData = new FormData();
-        chunkFormData.append('chunk', chunk, file.name);
+        for (let chunkNumber = batchStart; chunkNumber <= batchEnd; chunkNumber++) {
+            const start = (chunkNumber - 1) * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
 
-        const chunkResponse = await fetch(
-            `${CONFIG.endpoints.drive}/api/drive/chunked/upload/${sessionId}/${chunkNumber}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`
-                },
-                body: chunkFormData
-            }
-        );
-
-        const chunkResult = await chunkResponse.json();
-        if (!chunkResult.success) {
-            // Abort the upload session on failure
-            await fetch(`${CONFIG.endpoints.drive}/api/drive/chunked/abort/${sessionId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-            });
-            throw new Error(chunkResult.message || `Failed to upload chunk ${chunkNumber}`);
+            batchPromises.push(
+                uploadChunkWithRetry(sessionId, chunkNumber, chunk, file.name)
+                    .then(ok => ({ chunkNumber, ok }))
+            );
         }
 
-        // Update progress after successful chunk upload
-        const newProgress = Math.round((chunkNumber / totalChunks) * 95); // Leave 5% for completion
+        const overallProgress = Math.round(((batchStart - 1) / totalChunks) * 100);
+        status.textContent = `Uploading chunks ${batchStart}-${batchEnd}/${totalChunks}... ${overallProgress}%`;
+        progressBar.style.width = overallProgress + '%';
+
+        const results = await Promise.all(batchPromises);
+
+        for (const r of results) {
+            if (!r.ok) {
+                failed = true;
+                await fetch(`${CONFIG.endpoints.drive}/api/drive/chunked/abort/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                }).catch(() => {});
+                throw new Error(`Failed to upload chunk ${r.chunkNumber} after ${CHUNK_MAX_RETRIES} attempts`);
+            }
+            completedChunks++;
+        }
+
+        const newProgress = Math.round((completedChunks / totalChunks) * 95);
         progressBar.style.width = newProgress + '%';
+        status.textContent = `Uploaded ${completedChunks}/${totalChunks} chunks... ${newProgress}%`;
     }
 
     // Step 3: Complete the upload
