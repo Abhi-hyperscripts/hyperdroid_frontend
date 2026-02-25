@@ -297,6 +297,11 @@ function setSort(value) {
 
 function setProjectFilter(value) {
     dashboardState.project_id = value || null;
+    // Show/hide project action buttons
+    const actions = document.getElementById('projectActions');
+    if (actions) {
+        actions.style.display = value ? 'flex' : 'none';
+    }
     loadDashboard(true);
 }
 
@@ -380,6 +385,8 @@ let typeDropdownSD = null;
 let statusDropdownSD = null;
 let sortDropdownSD = null;
 let dashboardMonthPicker = null;
+let createMeetingProjectSD = null;
+let settingsProjectSD = null;
 
 function initDashboardDropdowns() {
     // Month picker for filtering by month/year
@@ -584,9 +591,9 @@ function showCreateMeetingQuickModal() {
     document.getElementById('autoTranscription').disabled = false;
 
     // Populate project selector
-    const projectSelect = document.getElementById('meetingProjectSelect');
     const projectGroup = document.getElementById('meetingProjectSelectGroup');
-    if (projectSelect && projectGroup) {
+    const projectContainer = document.getElementById('meetingProjectDropdownContainer');
+    if (projectContainer && projectGroup) {
         if (dashboardState.projects.length === 1) {
             // Auto-select the only project
             currentProjectId = dashboardState.projects[0].id;
@@ -596,12 +603,17 @@ function showCreateMeetingQuickModal() {
             currentProjectId = null;
             document.getElementById('currentProjectId').value = '';
             projectGroup.style.display = 'block';
-            projectSelect.innerHTML = '<option value="">Select a project...</option>';
-            dashboardState.projects.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.project_name;
-                projectSelect.appendChild(opt);
+            const opts = [{ value: '', label: 'Select a project...' }];
+            dashboardState.projects.forEach(p => opts.push({ value: p.id, label: p.project_name }));
+            if (createMeetingProjectSD) createMeetingProjectSD.destroy();
+            createMeetingProjectSD = new SearchableDropdown(projectContainer, {
+                id: 'createMeetingProjectSD',
+                options: opts,
+                value: '',
+                placeholder: 'Select a project...',
+                searchPlaceholder: 'Search projects...',
+                compact: true,
+                onChange: (value) => { onMeetingProjectSelected(value); }
             });
         }
     }
@@ -644,6 +656,92 @@ document.getElementById('createProjectForm').addEventListener('submit', async (e
         submitBtn.disabled = false;
     }
 });
+
+// ============================================
+// RENAME / DELETE PROJECT
+// ============================================
+
+function showRenameProjectModal() {
+    const projectId = dashboardState.project_id;
+    if (!projectId) return;
+    const project = dashboardState.projects.find(p => p.id === projectId);
+    if (!project) return;
+    document.getElementById('renameProjectInput').value = project.project_name || '';
+    openModal('renameProjectModal');
+    setTimeout(() => document.getElementById('renameProjectInput').focus(), 100);
+}
+
+async function confirmRenameProject() {
+    const projectId = dashboardState.project_id;
+    if (!projectId) return;
+    const newName = document.getElementById('renameProjectInput').value.trim();
+    if (!newName) {
+        Toast.warning('Project name is required');
+        return;
+    }
+    const project = dashboardState.projects.find(p => p.id === projectId);
+    if (!project) return;
+    closeModal('renameProjectModal');
+    ButtonSpinner.show();
+    try {
+        await api.updateProject(projectId, newName, project.description || '', true);
+        Toast.success('Project renamed');
+        await loadProjectFilterDropdown();
+        if (projectDropdownSD) projectDropdownSD.setValue(projectId);
+        await loadDashboard(true);
+    } catch (error) {
+        Toast.error('Failed to rename project: ' + error.message);
+    } finally {
+        ButtonSpinner.hide();
+    }
+}
+
+async function deleteSelectedProject() {
+    const projectId = dashboardState.project_id;
+    if (!projectId) return;
+    const project = dashboardState.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    try {
+        const result = await api.getProjectMeetingCount(projectId);
+        const count = result.count || 0;
+
+        let message;
+        if (count > 0) {
+            message = `This project contains ${count} meeting(s). Deleting it will permanently remove all meetings, recordings, and transcripts. Continue?`;
+        } else {
+            message = `Delete empty project "${project.project_name}"?`;
+        }
+
+        const confirmed = typeof Confirm !== 'undefined'
+            ? await Confirm.show(message)
+            : confirm(message);
+
+        if (confirmed) {
+            await performDeleteProject(projectId);
+        }
+    } catch (error) {
+        Toast.error('Failed to check project: ' + error.message);
+    }
+}
+
+async function performDeleteProject(projectId) {
+    ButtonSpinner.show();
+    try {
+        await api.deleteProject(projectId);
+        Toast.success('Project deleted');
+        dashboardState.project_id = null;
+        const actions = document.getElementById('projectActions');
+        if (actions) actions.style.display = 'none';
+        await loadProjectFilterDropdown();
+        if (projectDropdownSD) projectDropdownSD.setValue('');
+        await loadDashboard(true);
+    } catch (error) {
+        Toast.error('Failed to delete project: ' + error.message);
+    } finally {
+        ButtonSpinner.hide();
+    }
+}
 
 // ============================================
 // CREATE MEETING WITH TYPE SELECTION
@@ -3010,23 +3108,8 @@ async function showMeetingSettingsModal(meetingId, type) {
     if (saveBtn) saveBtn.disabled = true;
 
     try {
-        let meeting = null;
-
-        const projects = await api.getProjects();
-        for (const project of projects) {
-            const meetings = await api.getProjectMeetings(project.id);
-            meeting = meetings.find(m => m.id === meetingId);
-            if (meeting) break;
-        }
-
-        if (!meeting) {
-            try {
-                const hostedMeetings = await api.getHostedMeetings();
-                meeting = hostedMeetings.find(m => m.id === meetingId);
-            } catch (err) {
-                console.log('Error fetching hosted meetings:', err);
-            }
-        }
+        // Single API call instead of N+1 project loop
+        const meeting = await api.getMeeting(meetingId);
 
         if (!meeting) {
             Toast.error('Meeting not found');
@@ -3040,6 +3123,39 @@ async function showMeetingSettingsModal(meetingId, type) {
         typeDisplay.innerHTML = getTypeBadgeHTML(type);
 
         await populateSettingsHostDropdown(meeting.host_user_id, type);
+
+        // Populate project dropdown
+        const projectContainer = document.getElementById('settingsProjectDropdownContainer');
+        if (projectContainer) {
+            const opts = dashboardState.projects.map(p => ({ value: p.id, label: p.project_name }));
+            if (settingsProjectSD) settingsProjectSD.destroy();
+            settingsProjectSD = new SearchableDropdown(projectContainer, {
+                id: 'settingsProjectSD',
+                options: opts,
+                value: meeting.project_id,
+                placeholder: 'Select project...',
+                searchPlaceholder: 'Search projects...',
+                compact: true,
+                onChange: () => {}
+            });
+        }
+
+        // Populate meeting name
+        document.getElementById('settingsMeetingName').value = meeting.meeting_name || '';
+
+        // Populate schedule
+        const startInput = document.getElementById('settingsStartTime');
+        const endInput = document.getElementById('settingsEndTime');
+        if (meeting.start_time) {
+            startInput.value = new Date(meeting.start_time).toISOString().slice(0, 16);
+        } else {
+            startInput.value = '';
+        }
+        if (meeting.end_time) {
+            endInput.value = new Date(meeting.end_time).toISOString().slice(0, 16);
+        } else {
+            endInput.value = '';
+        }
 
         document.getElementById('settingsNotes').value = meeting.notes || '';
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
@@ -3092,6 +3208,10 @@ async function showMeetingSettingsModal(meetingId, type) {
 
         if (isStarted) {
             warningDiv.style.display = 'flex';
+            document.getElementById('settingsMeetingName').disabled = true;
+            document.getElementById('settingsStartTime').disabled = true;
+            document.getElementById('settingsEndTime').disabled = true;
+            if (settingsProjectSD) settingsProjectSD.setDisabled(true);
             document.getElementById('settingsNotes').disabled = true;
             document.getElementById('settingsAllowGuests').disabled = true;
             setHostDropdownDisabled(true);
@@ -3102,6 +3222,10 @@ async function showMeetingSettingsModal(meetingId, type) {
             if (saveBtn) saveBtn.disabled = true;
         } else {
             warningDiv.style.display = 'none';
+            document.getElementById('settingsMeetingName').disabled = false;
+            document.getElementById('settingsStartTime').disabled = false;
+            document.getElementById('settingsEndTime').disabled = false;
+            if (settingsProjectSD) settingsProjectSD.setDisabled(false);
             document.getElementById('settingsNotes').disabled = false;
             document.getElementById('settingsAllowGuests').disabled = false;
             setHostDropdownDisabled(false);
@@ -3620,6 +3744,7 @@ function selectCreateHostOption(userId) {
 async function saveMeetingSettings() {
     const meetingId = document.getElementById('settingsMeetingId').value;
     const type = document.getElementById('settingsMeetingType').value;
+    const meetingName = document.getElementById('settingsMeetingName').value.trim();
     const notes = document.getElementById('settingsNotes').value;
     const allowGuests = document.getElementById('settingsAllowGuests').checked;
     const hostUserId = document.getElementById('settingsHost').value || null;
@@ -3627,21 +3752,50 @@ async function saveMeetingSettings() {
     const autoTranscription = document.getElementById('settingsAutoTranscription').checked;
     const aiSupport = document.getElementById('settingsAiCopilot').checked;
     const meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
+    const newProjectId = settingsProjectSD ? settingsProjectSD.getValue() : null;
+    const startTimeVal = document.getElementById('settingsStartTime').value;
+    const endTimeVal = document.getElementById('settingsEndTime').value;
+
+    if (!meetingName) {
+        Toast.warning('Meeting name is required');
+        return;
+    }
 
     if (type === 'hosted' && !hostUserId) {
         Toast.warning('Host is required for hosted meetings');
         return;
     }
 
+    if (startTimeVal && endTimeVal && new Date(endTimeVal) <= new Date(startTimeVal)) {
+        Toast.warning('End time must be after start time');
+        return;
+    }
+
     const saveBtn = document.querySelector('#meetingSettingsModal .btn-primary');
     saveBtn.disabled = true;
+    closeModal('meetingSettingsModal');
+    ButtonSpinner.show();
 
     try {
-        // Save notes and meeting_mode if changed
+        // Move meeting to different project if changed
+        if (currentSettingsMeeting && newProjectId && currentSettingsMeeting.project_id !== newProjectId) {
+            await api.moveMeeting(meetingId, newProjectId);
+        }
+
+        // Determine what changed for the update call
+        const nameChanged = currentSettingsMeeting && (currentSettingsMeeting.meeting_name || '') !== meetingName;
         const notesChanged = currentSettingsMeeting && (currentSettingsMeeting.notes || '') !== notes;
         const modeChanged = currentSettingsMeeting && (currentSettingsMeeting.meeting_mode || null) !== meetingMode;
-        if (notesChanged || modeChanged) {
-            await api.updateMeetingNotes(meetingId, currentSettingsMeeting.meeting_name, notes, meetingMode);
+
+        const oldStart = currentSettingsMeeting?.start_time ? new Date(currentSettingsMeeting.start_time).toISOString().slice(0, 16) : '';
+        const oldEnd = currentSettingsMeeting?.end_time ? new Date(currentSettingsMeeting.end_time).toISOString().slice(0, 16) : '';
+        const startChanged = oldStart !== startTimeVal;
+        const endChanged = oldEnd !== endTimeVal;
+
+        if (nameChanged || notesChanged || modeChanged || startChanged || endChanged) {
+            const startTime = startTimeVal ? new Date(startTimeVal).toISOString() : null;
+            const endTime = endTimeVal ? new Date(endTimeVal).toISOString() : null;
+            await api.updateMeetingNotes(meetingId, meetingName, notes, meetingMode, startTime, endTime);
         }
 
         if (currentSettingsMeeting && currentSettingsMeeting.allow_guests !== allowGuests) {
@@ -3665,7 +3819,7 @@ async function saveMeetingSettings() {
             await api.updateMeetingHost(meetingId, hostUserId);
         }
 
-        closeModal('meetingSettingsModal');
+        await loadProjectFilterDropdown();
         await loadAllProjects();
 
     } catch (error) {
@@ -3673,6 +3827,7 @@ async function saveMeetingSettings() {
         Toast.error('Failed to save settings: ' + error.message);
     } finally {
         saveBtn.disabled = false;
+        ButtonSpinner.hide();
     }
 }
 

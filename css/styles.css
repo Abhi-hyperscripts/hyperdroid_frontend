@@ -7458,12 +7458,12 @@ label.toggle-switch,
         font-size: 1.1rem;
     }
 
-    .project-actions {
+    .project-card .project-actions {
         flex-direction: column;
         gap: 8px;
     }
 
-    .project-actions button {
+    .project-card .project-actions button {
         width: 100%;
     }
 }
@@ -7880,27 +7880,108 @@ label.toggle-switch,
     flex: 1;
 }
 
-.settings-row select {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    font-size: 0.9rem;
+.filter-bar-context .project-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+    margin-top: 0;
+}
+
+.filter-bar-context .btn-icon-xs {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--text-secondary);
     background: var(--bg-card);
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--text-primary);
+    transition: all 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.filter-bar-context .btn-icon-xs svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5;
+    display: block;
+}
+
+.filter-bar-context .btn-icon-xs:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.filter-bar-context .btn-icon-xs.btn-danger-icon {
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
+.filter-bar-context .btn-icon-xs.btn-danger-icon:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.settings-schedule-inputs {
+    display: flex;
+    gap: 12px;
     margin-top: 4px;
 }
 
-.settings-row select:disabled {
-    background: var(--gray-100);
+.settings-schedule-inputs .schedule-field {
+    flex: 1;
+}
+
+.settings-schedule-inputs .schedule-field small {
+    margin-bottom: 2px;
+}
+
+/* Override hrms.css !important bleed on ALL settings modal inputs (see CLAUDE.md CSS Specificity Gotcha) */
+#meetingSettingsModal .settings-row input[type="text"],
+#meetingSettingsModal .settings-row textarea {
+    padding: 8px 12px !important;
+    height: auto !important;
+    font-size: 0.85rem !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    background: var(--glass-bg-strong) !important;
+    color: var(--text-primary) !important;
+}
+
+#meetingSettingsModal .settings-schedule-inputs input[type="datetime-local"] {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    font-size: 0.85rem !important;
+    background: var(--glass-bg-strong) !important;
+    color: var(--text-primary) !important;
+    color-scheme: light dark;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] #meetingSettingsModal .settings-schedule-inputs input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+#meetingSettingsModal .settings-schedule-inputs input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: var(--brand-primary) !important;
+    box-shadow: var(--focus-ring);
+}
+
+#meetingSettingsModal .settings-schedule-inputs input[type="datetime-local"]:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* Dark mode option styling for settings-row select */
-[data-theme="dark"] .settings-row select option {
-    background-color: var(--bg-card) !important;
-    color: var(--text-primary) !important;
-}
 
 .settings-row .toggle-switch {
     margin-top: 0;

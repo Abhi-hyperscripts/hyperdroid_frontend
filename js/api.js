@@ -567,7 +567,22 @@ class API {
         });
     }
 
+    async getProjectMeetingCount(projectId) {
+        return this.request(`/projects/${projectId}/meeting-count`);
+    }
+
     // Meetings
+    async getMeeting(meetingId) {
+        return this.request(`/meetings/${meetingId}`);
+    }
+
+    async moveMeeting(meetingId, projectId) {
+        return this.request(`/meetings/${meetingId}/move`, {
+            method: 'PATCH',
+            body: JSON.stringify({ project_id: projectId })
+        });
+    }
+
     async getProjectMeetings(projectId) {
         return this.request(`/meetings/project/${projectId}`);
     }
@@ -749,7 +764,7 @@ class API {
         });
     }
 
-    async updateMeetingNotes(meetingId, meetingName, notes, meetingMode = undefined) {
+    async updateMeetingNotes(meetingId, meetingName, notes, meetingMode = undefined, startTime = undefined, endTime = undefined) {
         const body = {
             id: meetingId,
             meeting_name: meetingName,
@@ -757,6 +772,12 @@ class API {
         };
         if (meetingMode !== undefined) {
             body.meeting_mode = meetingMode;
+        }
+        if (startTime !== undefined) {
+            body.start_time = startTime;
+        }
+        if (endTime !== undefined) {
+            body.end_time = endTime;
         }
         return this.request('/meetings/update', {
             method: 'PUT',

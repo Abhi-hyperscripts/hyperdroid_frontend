@@ -64,6 +64,14 @@
             <div class="dashboard-filter-bar-inner">
             <div class="filter-bar-context">
                 <div id="projectDropdownContainer" class="filter-bar-dropdown filter-bar-project"></div>
+                <div id="projectActions" class="project-actions" style="display: none;">
+                    <button class="btn-icon-xs" id="projectRenameBtn" onclick="showRenameProjectModal()" title="Rename project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </button>
+                    <button class="btn-icon-xs btn-danger-icon" id="projectDeleteBtn" onclick="deleteSelectedProject()" title="Delete project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                </div>
                 <select id="dashboardProjectFilter" class="filter-select" style="display:none;" onchange="setProjectFilter(this.value)">
                     <option value="">All Projects</option>
                 </select>
@@ -174,10 +182,8 @@
 
                         <!-- Project Selector (shown when no project pre-selected) -->
                         <div class="form-group" id="meetingProjectSelectGroup">
-                            <label for="meetingProjectSelect">Project</label>
-                            <select id="meetingProjectSelect" class="form-select" onchange="onMeetingProjectSelected(this.value)">
-                                <option value="">Select a project...</option>
-                            </select>
+                            <label>Project</label>
+                            <div id="meetingProjectDropdownContainer"></div>
                         </div>
 
                         <!-- Meeting Type Toggle Buttons -->
@@ -473,6 +479,33 @@
                         <span>Settings locked while meeting is in progress</span>
                     </div>
 
+                    <!-- Project Selection -->
+                    <div id="settingsProjectGroup" class="form-group settings-row">
+                        <label>Project</label>
+                        <div id="settingsProjectDropdownContainer"></div>
+                    </div>
+
+                    <!-- Meeting Name -->
+                    <div class="form-group settings-row">
+                        <label for="settingsMeetingName">Meeting Name</label>
+                        <input type="text" id="settingsMeetingName" class="form-control" placeholder="Meeting name...">
+                    </div>
+
+                    <!-- Schedule -->
+                    <div class="form-group settings-row settings-schedule-row">
+                        <label>Schedule</label>
+                        <div class="settings-schedule-inputs">
+                            <div class="schedule-field">
+                                <small>Start</small>
+                                <input type="datetime-local" id="settingsStartTime" class="form-control">
+                            </div>
+                            <div class="schedule-field">
+                                <small>End</small>
+                                <input type="datetime-local" id="settingsEndTime" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Host Selection -->
                     <div id="hostSettingGroup" class="form-group settings-row">
                         <label>Meeting Host</label>
@@ -592,6 +625,27 @@
 
                     <div class="form-group" style="margin-top: 20px;">
                         <button type="button" class="btn btn-primary btn-full" onclick="saveMeetingSettings()">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Project Modal -->
+    <div id="renameProjectModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rename Project</h5>
+                    <button class="close-btn" onclick="closeModal('renameProjectModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="renameProjectInput">Project Name</label>
+                        <input type="text" id="renameProjectInput" class="form-control" placeholder="Enter project name...">
+                    </div>
+                    <div class="form-group" style="margin-top: 16px;">
+                        <button type="button" class="btn btn-primary btn-full" onclick="confirmRenameProject()">Rename</button>
                     </div>
                 </div>
             </div>
