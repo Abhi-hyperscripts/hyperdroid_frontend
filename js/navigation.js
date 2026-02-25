@@ -379,10 +379,23 @@ const Navigation = {
         let modal = document.getElementById('changePasswordModal');
         if (modal) modal.remove();
 
-        // Create modal
+        // Create modal - inline critical styles to prevent CSS caching/specificity issues
         modal = document.createElement('div');
         modal.id = 'changePasswordModal';
         modal.className = 'nav-modal-overlay';
+        Object.assign(modal.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '2147483647',
+            background: 'rgba(0, 0, 0, 0.5)',
+            padding: '16px'
+        });
         modal.innerHTML = `
             <div class="nav-modal-content">
                 <div class="nav-modal-header">
