@@ -4062,25 +4062,35 @@ function refreshAllComponentDropdowns() {
 
         const componentId = optionsContainer.dataset.componentId;
 
+        // Ensure original dropdown menu is visible (portal pattern hides it)
+        const menu = dropdown.querySelector('.dropdown-menu');
+        if (menu) menu.style.display = '';
+
         // Regenerate options HTML with country-filtered components from backend
-        optionsContainer.innerHTML = selectableComponents.map(c => `
+        optionsContainer.innerHTML = selectableComponents.map(c => {
+            const calcType = c.calculation_type || 'fixed';
+            const calcBase = c.calculation_base || 'basic';
+            const isBasic = c.is_basic_component || false;
+            let calcLabel = calcType === 'fixed' ? 'Fixed' : '% ' + (isBasic ? 'CTC' : (calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic'));
+            return `
             <div class="dropdown-option"
                  data-value="${c.id}"
                  data-type="${c.component_type || c.category}"
-                 data-calc-type="${c.calculation_type || 'fixed'}"
-                 data-calc-base="${c.calculation_base || 'basic'}"
-                 data-is-basic="${c.is_basic_component || false}"
+                 data-calc-type="${calcType}"
+                 data-calc-base="${calcBase}"
+                 data-is-basic="${isBasic}"
                  data-is-balance="${c.is_balance_component || false}"
                  data-percentage="${c.percentage || c.default_percentage || ''}"
                  data-fixed="${c.fixed_amount || ''}"
                  data-name="${escapeHtml(c.component_name || c.name)}"
                  data-code="${escapeHtml(c.component_code || c.code)}"
+                 data-calc-label="${calcLabel}"
                  onclick="selectDropdownOption('${dropdown.id}', this, '${componentId}')">
                 <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
                 <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
-                <span class="option-type badge badge-${(c.component_type || c.category) === 'earning' ? 'success' : 'warning'}">${c.component_type || c.category}</span>
+                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>
             </div>
-        `).join('');
+        `}).join('');
 
         // Clear any current selection if the selected component is no longer in the filtered list
         const selectedText = dropdown.querySelector('.dropdown-selected-text');
@@ -4265,20 +4275,13 @@ async function saveSalaryStructure() {
         return;
     }
 
-    // Check for multiple "is_basic" components
+    // Check for multiple "is_basic" components using in-memory array
+    // (DOM querySelector is unreliable due to portal menu pattern hiding original options)
     const basicComponentsInStructure = [];
-    const container = document.getElementById('structureComponents');
-    const rows = container.querySelectorAll('.structure-component-row');
-    rows.forEach(row => {
-        const hiddenInput = row.querySelector('.component-select-value');
-        if (hiddenInput && hiddenInput.value) {
-            // Get the selected option from the searchable dropdown
-            const dropdown = row.querySelector('.searchable-dropdown');
-            const selectedOption = dropdown?.querySelector(`.dropdown-option[data-value="${hiddenInput.value}"]`);
-            const isBasic = selectedOption?.getAttribute('data-is-basic') === 'true';
-            if (isBasic) {
-                basicComponentsInStructure.push(selectedOption?.getAttribute('data-name') || 'Unknown');
-            }
+    structureComponents.forEach(c => {
+        const comp = (selectableComponentsForCountry || []).find(sc => sc.id === c.component_id);
+        if (comp && comp.is_basic_component) {
+            basicComponentsInStructure.push(comp.component_name || comp.name || 'Unknown');
         }
     });
 
@@ -6653,6 +6656,11 @@ function closeSearchDropdown(dropdown) {
     const portalMenu = document.querySelector(`.dropdown-menu-portal[data-dropdown-id="${dropdown.id}"]`);
     if (portalMenu) {
         portalMenu.remove();
+    }
+    // Restore original menu visibility (portal pattern hides it via display:none)
+    const originalMenu = dropdown.querySelector('.dropdown-menu');
+    if (originalMenu) {
+        originalMenu.style.display = '';
     }
 }
 
