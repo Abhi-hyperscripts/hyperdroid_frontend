@@ -166,14 +166,17 @@
 }
 
 .drive-item-name {
-    display: block;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
     overflow: hidden;
-    text-overflow: ellipsis;
     margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 .drive-item-meta {
@@ -220,6 +223,37 @@
 .action-btn-danger:hover {
     background: var(--color-danger-light);
     color: var(--color-danger);
+}
+
+/* Custom fast tooltips for action buttons */
+.action-btn[data-tooltip] {
+    position: relative;
+}
+
+.action-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    transition-delay: 0s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.action-btn[data-tooltip]:hover::after {
+    opacity: 1;
+    transition-delay: 0.15s;
 }
 
 /* Mobile - slightly larger touch targets */

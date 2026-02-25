@@ -14,7 +14,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (typeof Navigation !== 'undefined') Navigation.init();
+    if (typeof loadNavigation === 'function') {
+        await loadNavigation();
+    } else if (typeof Navigation !== 'undefined') {
+        Navigation.init('hrms', '../');
+    }
 
     checkAdminAccess();
     await loadAnnouncements();
@@ -33,7 +37,7 @@ function checkAdminAccess() {
     if (user) {
         try {
             const roles = user.roles || [];
-            const adminRoles = ['SUPERADMIN', 'HRMS_ADMIN', 'HRMS_HR_ADMIN'];
+            const adminRoles = ['SUPERADMIN', 'HRMS_ADMIN', 'HRMS_HR_ADMIN', 'HRMS_MANAGER', 'HRMS_HR_MANAGER'];
             if (roles.some(r => adminRoles.includes(r))) {
                 isAdmin = true;
                 document.getElementById('adminActions').style.display = 'flex';

@@ -59,11 +59,17 @@ const HrmsOfficeSelection = (function() {
             return storedId;
         }
 
-        // Otherwise select first office
-        const firstOfficeId = activeOffices[0].id;
-        setSelectedOfficeId(firstOfficeId);
-        console.log('[HrmsOfficeSelection] Auto-selected first office:', firstOfficeId);
-        return firstOfficeId;
+        // If only one office, auto-select it
+        if (activeOffices.length === 1) {
+            const firstOfficeId = activeOffices[0].id;
+            setSelectedOfficeId(firstOfficeId);
+            console.log('[HrmsOfficeSelection] Auto-selected only office:', firstOfficeId);
+            return firstOfficeId;
+        }
+
+        // Multiple offices: default to "All Offices" (null = no filter)
+        console.log('[HrmsOfficeSelection] Multiple offices, defaulting to All Offices');
+        return null;
     }
 
     /**
@@ -100,7 +106,13 @@ const HrmsOfficeSelection = (function() {
             ];
         }
 
-        // Filter dropdowns - NO "All Offices", just office list
+        // Filter dropdowns - include "All Offices" when multiple offices exist
+        if (activeOffices.length > 1) {
+            return [
+                { value: '', label: 'All Offices' },
+                ...activeOffices.map(o => ({ value: o.id, label: formatOfficeLabel(o) }))
+            ];
+        }
         return activeOffices.map(o => ({ value: o.id, label: formatOfficeLabel(o) }));
     }
 
@@ -118,6 +130,9 @@ const HrmsOfficeSelection = (function() {
 
         if (isFormDropdown) {
             html = '<option value="">Select Office</option>';
+        } else if (activeOffices.length > 1) {
+            const allSelected = !selectedId ? ' selected' : '';
+            html = `<option value=""${allSelected}>All Offices</option>`;
         }
 
         html += activeOffices.map(o => {

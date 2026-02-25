@@ -147,17 +147,18 @@ async function loadOffices() {
         populateOfficeDropdown('calendarOffice', searchableOptions, selectedOfficeId);
 
         // Update SearchableDropdown instances if already initialized
+        const officeVal = selectedOfficeId || '';
         if (requestOfficeDropdown) {
             requestOfficeDropdown.setOptions(searchableOptions);
-            requestOfficeDropdown.setValue(selectedOfficeId);
+            requestOfficeDropdown.setValue(officeVal);
         }
         if (balanceOfficeDropdown) {
             balanceOfficeDropdown.setOptions(searchableOptions);
-            balanceOfficeDropdown.setValue(selectedOfficeId);
+            balanceOfficeDropdown.setValue(officeVal);
         }
         if (calendarOfficeDropdown) {
             calendarOfficeDropdown.setOptions(searchableOptions);
-            calendarOfficeDropdown.setValue(selectedOfficeId);
+            calendarOfficeDropdown.setValue(officeVal);
         }
 
     } catch (error) {
@@ -1380,6 +1381,15 @@ function selectEmployee(employeeId) {
 function showApplyLeaveModal() {
     document.getElementById('applyLeaveForm').reset();
     document.getElementById('leaveDays').value = '0';
+
+    // Wire up date/halfDay change handlers for auto-calculating leave days
+    const fromDateEl = document.getElementById('fromDate');
+    const toDateEl = document.getElementById('toDate');
+    const halfDayEl = document.getElementById('halfDay');
+    if (fromDateEl) fromDateEl.onchange = calculateLeaveDays;
+    if (toDateEl) toDateEl.onchange = calculateLeaveDays;
+    if (halfDayEl) halfDayEl.onchange = calculateLeaveDays;
+
     openModal('applyLeaveModal');
 }
 
@@ -1488,7 +1498,7 @@ function closeModal(modalId) {
     setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
-// Calculate leave days
+// Calculate leave days (excludes weekends)
 function calculateLeaveDays() {
     const fromDate = document.getElementById('fromDate').value;
     const toDate = document.getElementById('toDate').value;
@@ -1507,7 +1517,16 @@ function calculateLeaveDays() {
         return;
     }
 
-    let days = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+    // Count business days (exclude Sat/Sun)
+    let days = 0;
+    const current = new Date(from);
+    while (current <= to) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            days++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
 
     if (halfDay && from.getTime() === to.getTime()) {
         days = 0.5;
@@ -1705,6 +1724,8 @@ async function confirmLeaveAction() {
         closeModal('leaveActionModal');
         showToast(`Leave request ${action === 'approve' ? 'approved' : 'rejected'} successfully`, 'success');
         await loadPendingRequests();
+        // Refresh leave balances since approval/rejection affects them
+        await loadLeaveBalances();
         hideLoading();
     } catch (error) {
         console.error('Error processing leave action:', error);

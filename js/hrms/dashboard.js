@@ -53,6 +53,9 @@ function applyDashboardRBAC() {
     }
 
     // Quick action cards visibility based on role
+    // Statutory Compliance - only HR admins (not managers)
+    hrmsRoles.setElementVisibility('cardCompliance', hrmsRoles.isHRAdmin());
+
     // Organization - only HR users
     hrmsRoles.setElementVisibility('cardOrganization', hrmsRoles.canAccessOrganization());
 
@@ -339,58 +342,74 @@ async function loadDashboard() {
 }
 
 async function loadAdminStats() {
-    try {
-        // Load employees count
-        const employees = await api.request('/hrms/employees?includeInactive=false');
-        const employeeList = Array.isArray(employees) ? employees : (employees?.data || []);
-        document.getElementById('totalEmployees').textContent = employeeList.length || 0;
+    const isHR = hrmsRoles.isHRUser();
 
-        // Load departments
+    // Employees count — HR roles can see all, managers show "-"
+    try {
+        if (isHR) {
+            const employees = await api.request('/hrms/employees?includeInactive=false');
+            const employeeList = Array.isArray(employees) ? employees : (employees?.data || []);
+            document.getElementById('totalEmployees').textContent = employeeList.length || 0;
+        } else {
+            // Managers: try team endpoint for team size
+            try {
+                const team = await api.request('/hrms/employees/direct-reports');
+                const teamList = Array.isArray(team) ? team : (team?.data || []);
+                document.getElementById('totalEmployees').textContent = teamList.length || 0;
+            } catch (e) {
+                document.getElementById('totalEmployees').textContent = '-';
+            }
+        }
+    } catch (e) {
+        document.getElementById('totalEmployees').textContent = '-';
+    }
+
+    // Departments
+    try {
         const departments = await api.request('/hrms/departments');
         const deptList = Array.isArray(departments) ? departments : (departments?.data || []);
         document.getElementById('totalDepartments').textContent = deptList.length || 0;
+    } catch (e) {
+        document.getElementById('totalDepartments').textContent = '-';
+    }
 
-        // Load offices
+    // Offices
+    try {
         const offices = await api.request('/hrms/offices');
         const officeList = Array.isArray(offices) ? offices : (offices?.data || []);
         document.getElementById('totalOffices').textContent = officeList.length || 0;
+    } catch (e) {
+        document.getElementById('totalOffices').textContent = '-';
+    }
 
-        // Load pending leave approvals count
-        try {
-            const pendingLeave = await api.request('/hrms/leave/pending-approvals');
-            const pendingList = Array.isArray(pendingLeave) ? pendingLeave : (pendingLeave?.data || []);
-            document.getElementById('pendingApprovals').textContent = pendingList.length || 0;
-        } catch (e) {
-            document.getElementById('pendingApprovals').textContent = '-';
-        }
+    // Pending leave approvals
+    try {
+        const pendingLeave = await api.request('/hrms/leave/pending-approvals');
+        const pendingList = Array.isArray(pendingLeave) ? pendingLeave : (pendingLeave?.data || []);
+        document.getElementById('pendingApprovals').textContent = pendingList.length || 0;
+    } catch (e) {
+        document.getElementById('pendingApprovals').textContent = '-';
+    }
 
-        // Load today's attendance stats
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const teamAttendance = await api.request(`/hrms/attendance/team?date=${today}`);
-            const attendanceList = Array.isArray(teamAttendance) ? teamAttendance : (teamAttendance?.data || []);
+    // Today's attendance stats
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const teamAttendance = await api.request(`/hrms/attendance/team?date=${today}`);
+        const attendanceList = Array.isArray(teamAttendance) ? teamAttendance : (teamAttendance?.data || []);
+        const presentCount = attendanceList.filter(a => a.check_in_time).length;
+        document.getElementById('presentToday').textContent = presentCount;
+    } catch (e) {
+        document.getElementById('presentToday').textContent = '-';
+    }
 
-            // Count present employees (those with check_in_time)
-            const presentCount = attendanceList.filter(a => a.check_in_time).length;
-            document.getElementById('presentToday').textContent = presentCount;
-        } catch (e) {
-            console.log('Could not load attendance stats:', e);
-            document.getElementById('presentToday').textContent = '0';
-        }
-
-        // Load today's approved leave count
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
-            const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
-            document.getElementById('onLeave').textContent = leaveList.length || 0;
-        } catch (e) {
-            console.log('Could not load leave stats:', e);
-            document.getElementById('onLeave').textContent = '0';
-        }
-
-    } catch (error) {
-        console.error('Error loading admin stats:', error);
+    // Today's approved leave count
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
+        const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
+        document.getElementById('onLeave').textContent = leaveList.length || 0;
+    } catch (e) {
+        document.getElementById('onLeave').textContent = '-';
     }
 }
 

@@ -233,30 +233,37 @@ async function refreshDriveContents() {
     await loadDriveContents();
 }
 
-// Update upload button state based on current folder
+// Update upload button and new folder button state based on current folder
 function updateUploadButtonState() {
     const uploadBtn = document.querySelector('.drive-actions .btn-primary');
+    const newFolderBtn = document.querySelector('.drive-actions .btn-secondary');
     const noticeContainer = document.getElementById('uploadNotice');
 
     if (currentFolderId === null) {
-        // At root - disable upload, show notice
+        // At root - hide upload button, show notice, show new folder button
         if (uploadBtn) {
-            uploadBtn.classList.add('disabled');
-            uploadBtn.setAttribute('disabled', 'disabled');
-            uploadBtn.title = 'Create a folder first to upload files';
+            uploadBtn.style.display = 'none';
+        }
+        if (newFolderBtn) {
+            newFolderBtn.style.display = '';
         }
         if (noticeContainer) {
             noticeContainer.style.display = 'flex';
         }
     } else {
-        // In a folder - enable upload, hide notice
+        // In a folder - show upload button, hide notice
         if (uploadBtn) {
+            uploadBtn.style.display = '';
             uploadBtn.classList.remove('disabled');
             uploadBtn.removeAttribute('disabled');
-            uploadBtn.title = '';
         }
         if (noticeContainer) {
             noticeContainer.style.display = 'none';
+        }
+        // Hide "New Folder" at max depth (backend MAX_FOLDER_DEPTH = 1, meaning only 1 level of nesting)
+        // When currentFolderId is set, we're already at depth 1, so no sub-folders allowed
+        if (newFolderBtn) {
+            newFolderBtn.style.display = 'none';
         }
     }
 }
@@ -304,24 +311,24 @@ function createFolderCard(folder) {
             <span class="drive-item-meta">${folder.fileCount} files, ${formatBytes(folder.totalSize)}</span>
         </div>
         <div class="drive-item-actions">
-            <button class="action-btn" onclick="event.stopPropagation(); openFolder('${folder.folderId}', '${escapeHtml(folder.folderName)}')" title="Open">
+            <button class="action-btn" onclick="event.stopPropagation(); openFolder('${folder.folderId}', '${escapeHtml(folder.folderName)}')" data-tooltip="Open">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
             </button>
-            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Share">
+            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" data-tooltip="Share">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
             </button>
-            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Rename">
+            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" data-tooltip="Rename">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </button>
-            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" title="Delete">
+            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${folder.folderId}', 'folder', '${escapeHtml(folder.folderName)}')" data-tooltip="Delete">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -354,24 +361,24 @@ function createFileCard(file) {
             <span class="drive-item-meta">${formatBytes(file.fileSize)}</span>
         </div>
         <div class="drive-item-actions">
-            <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${file.fileId}')" title="Download">
+            <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${file.fileId}')" data-tooltip="Download">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
             </button>
-            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Share">
+            <button class="action-btn" onclick="event.stopPropagation(); shareItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Share">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
             </button>
-            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Rename">
+            <button class="action-btn" onclick="event.stopPropagation(); renameItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Rename">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </button>
-            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" title="Delete">
+            <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Delete">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>

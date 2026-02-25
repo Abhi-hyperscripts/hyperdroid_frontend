@@ -290,6 +290,13 @@ const Navigation = {
                         <span class="toggle-slider"></span>
                     </div>
                 </div>
+                <div class="user-dropdown-item" onclick="Navigation.showChangePasswordModal(event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Change Password
+                </div>
                 <div class="user-dropdown-divider"></div>
                 <button class="user-dropdown-item logout-btn" onclick="Navigation.logout()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -355,6 +362,158 @@ const Navigation = {
             // Fallback for pages that don't have api loaded
             clearAuthData();
             window.location.href = '/index.html';
+        }
+    },
+
+    /**
+     * Show change password modal
+     */
+    showChangePasswordModal(event) {
+        if (event) event.stopPropagation();
+
+        // Close dropdown
+        const portal = document.getElementById('navDropdownPortal');
+        if (portal) portal.remove();
+
+        // Remove existing modal if any
+        let modal = document.getElementById('changePasswordModal');
+        if (modal) modal.remove();
+
+        // Create modal
+        modal = document.createElement('div');
+        modal.id = 'changePasswordModal';
+        modal.className = 'nav-modal-overlay';
+        modal.innerHTML = `
+            <div class="nav-modal-content">
+                <div class="nav-modal-header">
+                    <h3>Change Password</h3>
+                    <button class="nav-modal-close" onclick="Navigation.closeChangePasswordModal()">&times;</button>
+                </div>
+                <div class="nav-modal-body">
+                    <form id="changePasswordForm" onsubmit="Navigation.submitChangePassword(event)">
+                        <div class="nav-form-group">
+                            <label for="navCurrentPassword">Current Password</label>
+                            <div class="nav-password-wrapper">
+                                <input type="password" id="navCurrentPassword" required autocomplete="current-password">
+                                <button type="button" class="nav-toggle-pw" onclick="Navigation.togglePasswordVisibility('navCurrentPassword', this)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="nav-form-group">
+                            <label for="navNewPassword">New Password</label>
+                            <div class="nav-password-wrapper">
+                                <input type="password" id="navNewPassword" required autocomplete="new-password" minlength="8">
+                                <button type="button" class="nav-toggle-pw" onclick="Navigation.togglePasswordVisibility('navNewPassword', this)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
+                            <small class="nav-pw-hint">Min 8 chars: upper, lower, digit, special</small>
+                        </div>
+                        <div class="nav-form-group">
+                            <label for="navConfirmPassword">Confirm Password</label>
+                            <div class="nav-password-wrapper">
+                                <input type="password" id="navConfirmPassword" required autocomplete="new-password">
+                                <button type="button" class="nav-toggle-pw" onclick="Navigation.togglePasswordVisibility('navConfirmPassword', this)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="navPwError" class="nav-pw-error" style="display:none;"></div>
+                        <button type="submit" class="nav-pw-submit" id="navPwSubmitBtn">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) Navigation.closeChangePasswordModal();
+        });
+
+        // Focus first input
+        setTimeout(() => document.getElementById('navCurrentPassword')?.focus(), 100);
+    },
+
+    closeChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) modal.remove();
+    },
+
+    togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.innerHTML = isPassword
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    },
+
+    async submitChangePassword(event) {
+        event.preventDefault();
+        const errorEl = document.getElementById('navPwError');
+        const submitBtn = document.getElementById('navPwSubmitBtn');
+        const currentPassword = document.getElementById('navCurrentPassword').value;
+        const newPassword = document.getElementById('navNewPassword').value;
+        const confirmPassword = document.getElementById('navConfirmPassword').value;
+
+        errorEl.style.display = 'none';
+
+        if (newPassword !== confirmPassword) {
+            errorEl.textContent = 'New password and confirmation do not match.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            errorEl.textContent = 'Password must be at least 8 characters.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Validate password strength
+        const hasUpper = /[A-Z]/.test(newPassword);
+        const hasLower = /[a-z]/.test(newPassword);
+        const hasDigit = /[0-9]/.test(newPassword);
+        const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
+        if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+            errorEl.textContent = 'Password needs uppercase, lowercase, digit, and special character.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Changing...';
+
+        try {
+            await api.request('/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({
+                    currentPassword,
+                    newPassword
+                })
+            });
+
+            Navigation.closeChangePasswordModal();
+
+            // Show success via Toast if available, else alert
+            if (typeof Toast !== 'undefined' && Toast.success) {
+                Toast.success('Password changed successfully. Please log in again.');
+            } else if (typeof showToast === 'function') {
+                showToast('Password changed successfully. Please log in again.', 'success');
+            } else {
+                alert('Password changed successfully. Please log in again.');
+            }
+
+            // Log out after password change since JWT is invalidated
+            setTimeout(() => Navigation.logout(), 2000);
+        } catch (error) {
+            errorEl.textContent = error.message || 'Failed to change password. Check your current password.';
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Change Password';
         }
     },
 

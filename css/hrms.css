@@ -582,6 +582,8 @@ td.text-right strong,
     border-radius: 16px;
     border: 1px solid var(--hover-overlay-strong);
     overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
@@ -1449,6 +1451,15 @@ input.readonly-field,
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .tab-btn {
+        padding: 10px 14px;
+        font-size: 0.8rem;
+    }
+
+    .data-table {
+        min-width: 600px;
     }
 }
 

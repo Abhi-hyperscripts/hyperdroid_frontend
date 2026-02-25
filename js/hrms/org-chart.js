@@ -28,7 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (typeof Navigation !== 'undefined') Navigation.init();
+    if (typeof loadNavigation === 'function') {
+        await loadNavigation();
+    } else if (typeof Navigation !== 'undefined') {
+        Navigation.init('hrms', '../');
+    }
 
     // Load filter options
     await loadFilterOptions();

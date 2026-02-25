@@ -1848,59 +1848,110 @@ async function loadMeetings() {
     container.innerHTML = `<div class="ess-loading"><div class="ess-spinner"></div><p>Loading meetings...</p></div>`;
 
     try {
-        const response = await api.getMyMeetings();
-        const meetings = response?.meetings || [];
+        // Fetch HRMS meetings and Vision meetings in parallel
+        const [hrmsResponse, visionMeetings] = await Promise.all([
+            api.getMyMeetings().catch(() => null),
+            api.getUserMeetings().catch(() => [])
+        ]);
+
+        const hrmsMeetings = hrmsResponse?.meetings || [];
+
+        // Normalize HRMS meetings
+        const normalizedHrms = hrmsMeetings.map(m => ({
+            id: m.id,
+            meeting_name: m.meeting_name,
+            source: 'hrms',
+            status: m.status || 'scheduled',
+            scheduled_at: m.scheduled_at,
+            created_at: m.created_at,
+            created_by_name: m.created_by_name || 'HR',
+            notes: m.notes,
+            join_id: m.vision_meeting_id,
+            is_active: m.status === 'scheduled'
+        }));
+
+        // Collect HRMS vision_meeting_ids to avoid duplicates
+        const hrmsVisionIds = new Set(hrmsMeetings.map(m => m.vision_meeting_id).filter(Boolean));
+
+        // Normalize Vision meetings (exclude ones already shown via HRMS)
+        const normalizedVision = (Array.isArray(visionMeetings) ? visionMeetings : [])
+            .filter(m => !hrmsVisionIds.has(m.id))
+            .map(m => ({
+                id: m.id,
+                meeting_name: m.meeting_name,
+                source: m.source_service || 'vision',
+                status: m.is_active ? 'active' : (m.is_started ? 'completed' : 'scheduled'),
+                scheduled_at: m.start_time,
+                created_at: m.created_at,
+                created_by_name: m.source_service === 'Chat' ? 'Chat Call' : 'Vision',
+                notes: m.notes,
+                join_id: m.id,
+                is_active: m.is_active
+            }));
+
+        const allMeetings = [...normalizedHrms, ...normalizedVision];
+
+        // Sort: active first, then by date descending
+        allMeetings.sort((a, b) => {
+            if (a.is_active && !b.is_active) return -1;
+            if (!a.is_active && b.is_active) return 1;
+            const dateA = new Date(a.scheduled_at || a.created_at);
+            const dateB = new Date(b.scheduled_at || b.created_at);
+            return dateB - dateA;
+        });
 
         // Update badge
         const badge = document.getElementById('meetingsBadge');
         if (badge) {
-            const scheduled = meetings.filter(m => m.status === 'scheduled').length;
-            if (scheduled > 0) {
-                badge.textContent = scheduled;
+            const active = allMeetings.filter(m => m.status === 'scheduled' || m.status === 'active').length;
+            if (active > 0) {
+                badge.textContent = active;
                 badge.style.display = '';
             } else {
                 badge.style.display = 'none';
             }
         }
 
-        if (meetings.length === 0) {
+        if (allMeetings.length === 0) {
             container.innerHTML = `
                 <div class="ess-empty-state">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
                         <polygon points="23 7 16 12 23 17 23 7"/>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
-                    <h3>No meetings scheduled</h3>
-                    <p>When HR schedules a meeting with you, it will appear here.</p>
+                    <h3>No meetings found</h3>
+                    <p>Your scheduled and recent meetings will appear here.</p>
                 </div>
             `;
             return;
         }
 
         let html = '<div class="ess-meetings-list">';
-        for (const meeting of meetings) {
+        for (const meeting of allMeetings) {
             const scheduledDate = meeting.scheduled_at
                 ? new Date(meeting.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : null;
             const createdDate = new Date(meeting.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-            const statusClass = meeting.status === 'scheduled' ? 'status-active' : 'status-inactive';
+            const statusClass = (meeting.status === 'scheduled' || meeting.status === 'active') ? 'status-active' : 'status-inactive';
             const statusLabel = meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1);
+            const sourceLabel = meeting.source === 'hrms' ? 'HR Meeting' : (meeting.source === 'Chat' ? 'Chat Call' : 'Meeting');
 
             html += `
                 <div class="ess-meeting-card">
                     <div class="ess-meeting-info">
                         <div class="ess-meeting-name">${escapeHtml(meeting.meeting_name)}</div>
                         <div class="ess-meeting-meta">
-                            <span>Scheduled by: <strong>${escapeHtml(meeting.created_by_name || 'HR')}</strong></span>
+                            <span>${escapeHtml(sourceLabel)}</span>
+                            <span>By: <strong>${escapeHtml(meeting.created_by_name)}</strong></span>
                             ${scheduledDate ? `<span>Date: <strong>${scheduledDate}</strong></span>` : `<span>Created: ${createdDate}</span>`}
                         </div>
                         ${meeting.notes ? `<div class="ess-meeting-notes">${escapeHtml(meeting.notes)}</div>` : ''}
                     </div>
                     <div class="ess-meeting-actions">
                         <span class="ess-status-badge ${statusClass}">${statusLabel}</span>
-                        ${meeting.status === 'scheduled' ? `
-                            <a href="/pages/vision/lobby.html?meetingId=${meeting.vision_meeting_id}" target="_blank" class="btn btn-primary btn-sm">
+                        ${meeting.status === 'scheduled' || meeting.status === 'active' ? `
+                            <a href="/pages/vision/lobby.html?meetingId=${meeting.join_id}" target="_blank" class="btn btn-primary btn-sm">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polygon points="23 7 16 12 23 17 23 7"/>
                                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
@@ -2888,7 +2939,60 @@ async function showApplyLeaveModal() {
         halfDayDropdown.setValue('');
     }
 
+    // Wire up date change handlers for auto-calculating leave days
+    const fromDateEl = document.getElementById('fromDate');
+    const toDateEl = document.getElementById('toDate');
+    const halfDayEl = document.getElementById('halfDay');
+    if (fromDateEl) fromDateEl.onchange = calculateLeaveDays;
+    if (toDateEl) toDateEl.onchange = calculateLeaveDays;
+    if (halfDayEl) halfDayEl.onchange = calculateLeaveDays;
+
+    // Reset total days
+    const leaveDaysEl = document.getElementById('leaveDays');
+    if (leaveDaysEl) leaveDaysEl.value = '0';
+
     openModal('applyLeaveModal');
+}
+
+/**
+ * Calculate leave days excluding weekends
+ */
+function calculateLeaveDays() {
+    const fromDate = document.getElementById('fromDate')?.value;
+    const toDate = document.getElementById('toDate')?.value;
+    const halfDay = (halfDayDropdown ? halfDayDropdown.getValue() : document.getElementById('halfDay')?.value) || '';
+    const leaveDaysEl = document.getElementById('leaveDays');
+
+    if (!fromDate || !toDate || !leaveDaysEl) {
+        if (leaveDaysEl) leaveDaysEl.value = '0';
+        return;
+    }
+
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+
+    if (to < from) {
+        leaveDaysEl.value = '0';
+        return;
+    }
+
+    // Count business days (exclude Sat/Sun)
+    let days = 0;
+    const current = new Date(from);
+    while (current <= to) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            days++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+
+    // Half day: if same date, count as 0.5
+    if (halfDay && from.getTime() === to.getTime()) {
+        days = 0.5;
+    }
+
+    leaveDaysEl.value = days;
 }
 
 /**
@@ -2931,7 +3035,7 @@ async function submitLeaveApplication() {
             : document.getElementById('halfDay').value;
         const emergencyContact = document.getElementById('emergencyContact').value;
 
-        if (!leaveType || !fromDate || !toDate || !reason) {
+        if (!leaveType || !fromDate || !toDate) {
             showToast('Please fill all required fields', 'error');
             return;
         }
@@ -2979,7 +3083,13 @@ async function showEncashLeaveModal() {
     // Load leave types with encashment enabled
     try {
         const response = await api.request('/hrms/leave/types');
-        const types = (response?.types || response || []).filter(t => t.encashment_enabled || t.allow_encashment);
+        const allTypes = response?.types || response || [];
+        const types = allTypes.filter(t => t.encashment_enabled || t.allow_encashment);
+
+        if (types.length === 0) {
+            showToast('No leave types are currently configured for encashment. Please contact HR.', 'warning');
+            return;
+        }
 
         const options = [
             { value: '', label: 'Select Leave Type' },
@@ -3001,6 +3111,8 @@ async function showEncashLeaveModal() {
         }
     } catch (e) {
         console.error('Error loading leave types:', e);
+        showToast('Failed to load leave types', 'error');
+        return;
     }
 
     openModal('encashLeaveModal');

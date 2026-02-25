@@ -591,6 +591,10 @@ class API {
         return this.request('/meetings/hosted');
     }
 
+    async getUserMeetings() {
+        return this.request('/meetings/my');
+    }
+
     async getDashboardMeetings(params = {}) {
         const query = new URLSearchParams();
         if (params.page) query.set('page', params.page);

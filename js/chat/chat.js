@@ -110,6 +110,7 @@ async function connectSignalR() {
         signalRConnection.on('UserTyping', handleUserTyping);
         signalRConnection.on('UserStatusChanged', handleUserStatusChanged);
         signalRConnection.on('ConversationUpdated', handleConversationUpdated);
+        signalRConnection.on('ConversationCreated', handleConversationCreated);
         signalRConnection.on('ParticipantAdded', handleParticipantAdded);
         signalRConnection.on('ParticipantRemoved', handleParticipantRemoved);
         signalRConnection.on('ReadReceipt', handleReadReceipt);
@@ -244,6 +245,17 @@ function handleUserStatusChanged(event) {
 
 function handleConversationUpdated(event) {
     loadConversations();
+}
+
+function handleConversationCreated(conversation) {
+    // Reload conversations to show the new one
+    loadConversations();
+    // Join the new conversation's SignalR group so messages arrive in real-time
+    if (conversation && conversation.id && signalRConnection && signalRConnection.state === signalR.HubConnectionState.Connected) {
+        signalRConnection.invoke('JoinConversation', conversation.id).catch(err => {
+            console.error('Error joining new conversation group:', err);
+        });
+    }
 }
 
 function handleParticipantAdded(event) {
