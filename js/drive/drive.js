@@ -898,7 +898,7 @@ const CHUNKED_UPLOAD_THRESHOLD = 50 * 1024 * 1024; // Use chunked upload for fil
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB max file size - matches backend
 const CHUNK_MAX_RETRIES = 5; // Retry each chunk up to 5 times
 const CHUNK_TIMEOUT_MS = 120000; // 2 minute timeout per chunk
-const CHUNK_PARALLEL = 3; // Upload 3 chunks concurrently
+const CHUNK_PARALLEL = 6; // Upload 6 chunks concurrently (Chrome max per origin)
 
 async function uploadFile(file, queueItem) {
     const progressBar = queueItem.querySelector('.progress-bar');
