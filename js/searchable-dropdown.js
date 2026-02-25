@@ -26,6 +26,13 @@ const SearchableDropdown = (function() {
     // Store for all dropdown instances
     const instances = new Map();
 
+    // Close all open SearchableDropdowns when flatpickr custom dropdowns open
+    document.addEventListener('fpDropdownOpened', () => {
+        instances.forEach(instance => {
+            if (instance.isOpen) instance.close();
+        });
+    });
+
     // HTML escape function to prevent XSS
     function escapeHtml(text) {
         if (!text) return '';
@@ -327,6 +334,9 @@ const SearchableDropdown = (function() {
             document.querySelectorAll('.month-picker.open').forEach(picker => {
                 picker.classList.remove('open');
             });
+
+            // Close any open flatpickr custom month/year dropdowns
+            document.dispatchEvent(new CustomEvent('dropdownOpened'));
 
             this.isOpen = true;
             this.dropdownEl.classList.add('open');

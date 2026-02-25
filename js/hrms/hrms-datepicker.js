@@ -14,12 +14,15 @@
 
     // Store active dropdown closers per flatpickr instance
     const activeDropdowns = new WeakMap();
+    // Global list of all close functions for cross-component closing
+    const allCloseFns = [];
 
     function registerDropdown(fp, type, closeFn) {
         if (!activeDropdowns.has(fp)) {
             activeDropdowns.set(fp, {});
         }
         activeDropdowns.get(fp)[type] = closeFn;
+        allCloseFns.push(closeFn);
     }
 
     function closeOtherDropdowns(fp, exceptType) {
@@ -32,6 +35,17 @@
             });
         }
     }
+
+    /**
+     * Close ALL open flatpickr custom dropdowns (month + year across all instances).
+     * Called externally when other dropdowns (e.g. SearchableDropdown) open.
+     */
+    function closeAllFpDropdowns() {
+        allCloseFns.forEach(fn => fn());
+    }
+
+    // Listen for custom event dispatched by SearchableDropdown and other components
+    document.addEventListener('dropdownOpened', closeAllFpDropdowns);
 
     /**
      * Creates custom month selector to replace native dropdown
@@ -105,11 +119,14 @@
             dropdown.style.position = 'fixed';
             dropdown.style.top = (triggerRect.bottom + 4) + 'px';
             dropdown.style.left = triggerRect.left + 'px';
+            dropdown.style.zIndex = '999999';
         }
 
         function openDropdown() {
-            // Close other dropdowns first
+            // Close other flatpickr dropdowns first
             closeOtherDropdowns(fp, 'month');
+            // Notify other components (SearchableDropdown, etc.) to close
+            document.dispatchEvent(new CustomEvent('fpDropdownOpened'));
             isOpen = true;
             positionDropdown();
             dropdown.classList.add('open');
@@ -138,7 +155,8 @@
         }
 
         function selectMonth(monthIndex) {
-            fp.changeMonth(monthIndex - fp.currentMonth, false);
+            // Use jumpToDate for reliable absolute month navigation
+            fp.jumpToDate(new Date(fp.currentYear, monthIndex, 1));
             trigger.querySelector('.fp-custom-month-text').textContent = MONTHS[monthIndex];
 
             // Update selected state
@@ -305,11 +323,14 @@
             dropdown.style.position = 'fixed';
             dropdown.style.top = (triggerRect.bottom + 4) + 'px';
             dropdown.style.left = triggerRect.left + 'px';
+            dropdown.style.zIndex = '999999';
         }
 
         function openDropdown() {
-            // Close other dropdowns first
+            // Close other flatpickr dropdowns first
             closeOtherDropdowns(fp, 'year');
+            // Notify other components (SearchableDropdown, etc.) to close
+            document.dispatchEvent(new CustomEvent('fpDropdownOpened'));
             isOpen = true;
             positionDropdown();
             dropdown.classList.add('open');
@@ -595,6 +616,7 @@
     window.HRMSDatePicker = {
         init: initDatePicker,
         initAll: initAllDatePickers,
+        closeAll: closeAllFpDropdowns,
         config: defaultConfig
     };
 

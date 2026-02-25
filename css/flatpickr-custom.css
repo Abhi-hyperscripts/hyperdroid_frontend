@@ -23,7 +23,7 @@ input.flatpickr-input::placeholder,
 }
 
 .flatpickr-calendar.open {
-    z-index: 100000;
+    z-index: 999998;
 }
 
 /* Month/Year header */
@@ -496,7 +496,7 @@ input.flatpickr-input[readonly] {
     opacity: 0;
     visibility: hidden;
     transition: max-height 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
-    z-index: 100001;
+    z-index: 999999;
 }
 
 .fp-custom-month-dropdown.open {
@@ -617,7 +617,7 @@ input.flatpickr-input[readonly] {
     opacity: 0;
     visibility: hidden;
     transition: max-height 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
-    z-index: 100001;
+    z-index: 999999;
 }
 
 .fp-custom-year-dropdown.open {
