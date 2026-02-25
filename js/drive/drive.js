@@ -1066,12 +1066,15 @@ async function uploadFileChunked(file, queueItem) {
 }
 
 // Sharing
+let currentShareItemName = '';
+
 function showShareModal(itemId, itemType, itemName) {
     document.getElementById('shareItemId').value = itemId;
     document.getElementById('shareItemType').value = itemType;
     document.getElementById('shareForm').style.display = 'block';
     document.getElementById('shareExistingLink').style.display = 'none';
     currentShareId = null;
+    currentShareItemName = itemName || 'Shared File';
 
     // Reset form
     document.getElementById('shareAccessType').value = 'download';
@@ -1119,6 +1122,42 @@ function copyShareLink() {
         Toast.success('Link copied to clipboard');
     }).catch(() => {
         Toast.error('Failed to copy link');
+    });
+}
+
+function copyEmailCard() {
+    const url = document.getElementById('existingShareUrl').value;
+    const fileName = currentShareItemName || 'Shared File';
+    const ogImage = `${window.location.origin}/assets/og-drive.png`;
+
+    const html = `<div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;">
+    <a href="${url}" target="_blank" style="text-decoration:none;color:inherit;">
+        <img src="https://ragenaizer.com/assets/og-drive.png" alt="${fileName} — Ragenaizer Drive" style="width:100%;border-radius:10px 10px 0 0;display:block;" />
+        <div style="background:#f8fafc;padding:20px 24px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;">
+            <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${fileName}</h2>
+            <p style="margin:0 0 18px;font-size:14px;color:#475569;line-height:1.5;">A file has been shared with you via Ragenaizer Drive. Click below to view or download.</p>
+            <a href="${url}" target="_blank" style="display:inline-block;padding:12px 28px;background:#2563eb;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">View File →</a>
+        </div>
+    </a>
+</div>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const plainText = `${fileName} — Shared via Ragenaizer Drive\n${url}`;
+
+    navigator.clipboard.write([
+        new ClipboardItem({
+            'text/html': blob,
+            'text/plain': new Blob([plainText], { type: 'text/plain' })
+        })
+    ]).then(() => {
+        Toast.success('Email card copied — paste into your email');
+    }).catch(() => {
+        // Fallback: copy plain HTML
+        navigator.clipboard.writeText(html).then(() => {
+            Toast.success('Email card HTML copied to clipboard');
+        }).catch(() => {
+            Toast.error('Failed to copy email card');
+        });
     });
 }
 

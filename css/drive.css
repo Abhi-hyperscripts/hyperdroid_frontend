@@ -484,18 +484,20 @@
 }
 
 .share-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-.btn-copy-link {
+.btn-copy-link,
+.btn-copy-email {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     width: 100%;
     padding: 14px 24px;
-    background: var(--brand-primary);
-    color: var(--text-inverse);
     border: none;
     border-radius: 10px;
     font-size: 15px;
@@ -504,13 +506,32 @@
     transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.btn-copy-link {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
 .btn-copy-link:hover {
     background: var(--brand-primary-dark);
     transform: translateY(-1px);
     box-shadow: var(--shadow-lg);
 }
 
-.btn-copy-link svg {
+.btn-copy-email {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color-light);
+}
+
+.btn-copy-email:hover {
+    background: var(--bg-elevated);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    transform: translateY(-1px);
+}
+
+.btn-copy-link svg,
+.btn-copy-email svg {
     flex-shrink: 0;
 }
 
