@@ -334,6 +334,20 @@ function initializeFilterDropdowns() {
 }
 
 // Initialize SearchableDropdowns for Leave Type Modal
+// Toggle Max Carry Forward Days field based on carry forward setting
+function toggleCarryForwardField(enabled) {
+    const maxCarryForwardInput = document.getElementById('maxCarryForward');
+    if (!maxCarryForwardInput) return;
+    if (enabled) {
+        maxCarryForwardInput.disabled = false;
+        maxCarryForwardInput.closest('.form-group')?.classList.remove('disabled-field');
+    } else {
+        maxCarryForwardInput.value = '0';
+        maxCarryForwardInput.disabled = true;
+        maxCarryForwardInput.closest('.form-group')?.classList.add('disabled-field');
+    }
+}
+
 function initializeLeaveTypeModalDropdowns() {
     if (typeof convertSelectToSearchable !== 'function') {
         console.warn('SearchableDropdown not available for Leave Type modal');
@@ -348,7 +362,8 @@ function initializeLeaveTypeModalDropdowns() {
         leaveTypeCarryForwardDropdown = convertSelectToSearchable('carryForward', {
             compact: false,
             placeholder: 'Select',
-            searchPlaceholder: 'Search...'
+            searchPlaceholder: 'Search...',
+            onChange: (value) => toggleCarryForwardField(value === 'true')
         });
     }
 
@@ -1379,6 +1394,9 @@ function showCreateLeaveTypeModal() {
     // Reset dropdown values to defaults
     resetLeaveTypeModalDropdowns();
 
+    // Carry forward defaults to No on create — disable the field
+    toggleCarryForwardField(false);
+
     // Set country dropdown to first country (country is now required)
     if (leaveTypeModalCountryDropdown && countries.length > 0) {
         leaveTypeModalCountryDropdown.setValue(countries[0].id);
@@ -1420,6 +1438,9 @@ function editLeaveType(id) {
         prorateOnJoining: type.prorate_on_joining ? 'true' : 'false',
         isActive: type.is_active ? 'true' : 'false'
     });
+
+    // Sync carry forward field state with dropdown value
+    toggleCarryForwardField(type.carry_forward_enabled);
 
     document.getElementById('leaveTypeModalTitle').textContent = 'Edit Leave Type';
     openModal('leaveTypeModal');
@@ -1571,6 +1592,22 @@ async function saveLeaveType() {
             prorate_on_joining: getDropdownValue(leaveTypeProrateOnJoiningDropdown, 'prorateOnJoining') === 'true',
             is_active: getDropdownValue(leaveTypeIsActiveDropdown, 'typeIsActive') === 'true'
         };
+
+        // Cross-field validation
+        if (data.carry_forward_enabled && data.max_carry_forward_days > data.default_days_per_year) {
+            showToast(`Max Carry Forward Days (${data.max_carry_forward_days}) cannot exceed Default Days Per Year (${data.default_days_per_year})`, 'error');
+            hideLoading();
+            return;
+        }
+
+        if (data.max_consecutive_days) {
+            const maxAllowed = data.default_days_per_year + (data.carry_forward_enabled ? data.max_carry_forward_days : 0);
+            if (data.max_consecutive_days > maxAllowed) {
+                showToast(`Max Days Per Request (${data.max_consecutive_days}) cannot exceed ${maxAllowed} (Default Days${data.carry_forward_enabled ? ' + Carry Forward Days' : ''})`, 'error');
+                hideLoading();
+                return;
+            }
+        }
 
         if (id) {
             data.id = id;
