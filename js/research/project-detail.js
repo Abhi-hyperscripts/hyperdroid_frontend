@@ -1370,16 +1370,42 @@ function renderVariableCard(v, globalIdx) {
 
 function toggleVarCtxMenu(event, rowIdx) {
     event.stopPropagation();
-    // Close any open menu first
-    document.querySelectorAll('.var-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    // Close any open menu first and restore portaled menus
+    document.querySelectorAll('.var-ctx-menu.open').forEach(m => {
+        m.classList.remove('open');
+        if (m._origParent) {
+            m._origParent.appendChild(m);
+            m.style.cssText = '';
+            delete m._origParent;
+        }
+    });
     const menu = document.getElementById(`varCtx_${rowIdx}`) || document.getElementById(`varCtxCard_${rowIdx}`);
     if (!menu) return;
+
+    // On mobile, portal menu to body to escape overflow clip + backdrop-filter containing block
+    if (window.innerWidth <= 768) {
+        const btn = event.currentTarget;
+        const rect = btn.getBoundingClientRect();
+        menu._origParent = menu.parentElement;
+        document.body.appendChild(menu);
+        menu.style.position = 'fixed';
+        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
+        menu.style.left = 'auto';
+        menu.style.zIndex = '10000';
+    }
+
     menu.classList.add('open');
     // Close on outside click
     setTimeout(() => {
         const closer = (e) => {
             if (!menu.contains(e.target)) {
                 menu.classList.remove('open');
+                if (menu._origParent) {
+                    menu._origParent.appendChild(menu);
+                    menu.style.cssText = '';
+                    delete menu._origParent;
+                }
                 document.removeEventListener('click', closer);
             }
         };
