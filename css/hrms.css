@@ -972,6 +972,15 @@ td.text-right strong,
     height: auto;
 }
 
+/* Single-row textareas in multi-column layouts should match input height */
+.form-row.three-col .form-group textarea[rows="1"],
+.form-row.four-col .form-group textarea[rows="1"] {
+    min-height: 32px;
+    height: 32px;
+    resize: none;
+    overflow: hidden;
+}
+
 .form-group input::placeholder,
 .form-group textarea::placeholder {
     font-size: 0.75rem;
@@ -1020,6 +1029,27 @@ td.text-right strong,
 [data-theme="dark"] .modal-body input::placeholder,
 [data-theme="dark"] .modal-body textarea::placeholder {
     color: var(--text-muted) !important;
+}
+
+/* Browser autofill override — prevent white/yellow box on autocomplete */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.modal-body input:-webkit-autofill,
+.modal-body input:-webkit-autofill:hover,
+.modal-body input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="dark"] .form-group input:-webkit-autofill,
+[data-theme="dark"] .form-group input:-webkit-autofill:hover,
+[data-theme="dark"] .form-group input:-webkit-autofill:focus,
+[data-theme="dark"] .modal-body input:-webkit-autofill,
+[data-theme="dark"] .modal-body input:-webkit-autofill:hover,
+[data-theme="dark"] .modal-body input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 30px var(--bg-input) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
 }
 
 /* Date inputs color scheme for dark mode */
@@ -6262,6 +6292,19 @@ input:checked + .slider:before {
     margin: 16px 0;
 }
 
+/* Responsive for tablets */
+@media (max-width: 768px) {
+    .leave-detail-row {
+        grid-template-columns: 1fr;
+    }
+
+    .leave-detail-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
+
 /* Responsive for smaller screens */
 @media (max-width: 480px) {
     .leave-detail-row {
@@ -7792,6 +7835,43 @@ input:checked + .slider:before {
         width: 20px;
         height: 20px;
         font-size: 8px;
+    }
+
+    .calendar-legend {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .legend-item {
+        font-size: 11px;
+    }
+
+    /* Leave filter buttons should stay inline on tablets */
+    .filters-bar .btn-group {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .filters-bar .btn-group .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-legend {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .legend-item {
+        font-size: 10px;
+        gap: 4px;
+    }
+
+    .legend-color {
+        width: 12px;
+        height: 12px;
     }
 }
 

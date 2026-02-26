@@ -819,7 +819,19 @@ async function executeUnifiedImport(validRows) {
                 });
             }
 
-            showToast('Validation failed. No changes made. Fix errors and retry.', 'error');
+            // Show specific validation errors in the toast
+            const errorDetails = response.validationErrors || [];
+            if (errorDetails.length > 0 && errorDetails.length <= 5) {
+                showToast('Validation failed:\n' + errorDetails.join('\n'), 'error', 8000);
+            } else if (errorDetails.length > 5) {
+                showToast(`Validation failed with ${errorDetails.length} errors. Check rows marked in red for details.`, 'error', 8000);
+            } else {
+                showToast('Validation failed. No changes made. Fix errors and retry.', 'error');
+            }
+
+            // Show results step so user can see per-row errors
+            showStep(3);
+            displayImportResults();
             return;
         }
 

@@ -24,7 +24,7 @@ let dashboardState = {
     search: '',
     source_filter: 'all',
     type_filter: 'all',
-    status_filter: 'all',
+    status_filter: 'active',
     sort_by: 'recent',
     project_id: null,
     month_filter: null,  // null = all months
@@ -152,6 +152,7 @@ function createDashboardMeetingCard(meeting) {
 
     const dateStr = meeting.start_time
         ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            + ', ' + new Date(meeting.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
         : '';
 
     const typeBadge = getTypeBadgeHTML(type);
@@ -1415,6 +1416,21 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
         ? (document.getElementById('meetingHost').value || null)
         : null;
+
+    // Validate start time is not in the past
+    if (startTime) {
+        const startDate = new Date(startTime);
+        if (startDate < new Date()) {
+            Toast.warning('Meeting start time cannot be in the past');
+            return;
+        }
+    }
+
+    // Validate end time is after start time
+    if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
+        Toast.warning('End time must be after start time');
+        return;
+    }
 
     // Validate host for hosted meetings
     if (selectedMeetingType === 'hosted' && !hostUserId) {
@@ -3763,6 +3779,12 @@ async function saveMeetingSettings() {
 
     if (type === 'hosted' && !hostUserId) {
         Toast.warning('Host is required for hosted meetings');
+        return;
+    }
+
+    // Validate start time is not in the past (only for future-scheduled meetings)
+    if (startTimeVal && new Date(startTimeVal) < new Date()) {
+        Toast.warning('Meeting start time cannot be in the past');
         return;
     }
 

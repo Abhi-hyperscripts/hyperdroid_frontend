@@ -106,14 +106,11 @@ const HrmsOfficeSelection = (function() {
             ];
         }
 
-        // Filter dropdowns - include "All Offices" when multiple offices exist
-        if (activeOffices.length > 1) {
-            return [
-                { value: '', label: 'All Offices' },
-                ...activeOffices.map(o => ({ value: o.id, label: formatOfficeLabel(o) }))
-            ];
-        }
-        return activeOffices.map(o => ({ value: o.id, label: formatOfficeLabel(o) }));
+        // Filter dropdowns - always include "All Offices" option
+        return [
+            { value: '', label: 'All Offices' },
+            ...activeOffices.map(o => ({ value: o.id, label: formatOfficeLabel(o) }))
+        ];
     }
 
     /**
@@ -130,7 +127,7 @@ const HrmsOfficeSelection = (function() {
 
         if (isFormDropdown) {
             html = '<option value="">Select Office</option>';
-        } else if (activeOffices.length > 1) {
+        } else {
             const allSelected = !selectedId ? ' selected' : '';
             html = `<option value=""${allSelected}>All Offices</option>`;
         }

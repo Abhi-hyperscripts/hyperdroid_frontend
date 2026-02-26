@@ -194,11 +194,51 @@ function buildVisibleData() {
         });
     }
 
+    // When filters are active, find matching nodes and auto-expand their ancestors
+    const hasFilters = deptFilter || officeFilter || searchQuery;
+
+    // Pre-compute which nodes match filters
+    let matchingNodeIds = new Set();
+    if (hasFilters) {
+        flatOrgData.forEach(node => {
+            let matchesDept = !deptFilter || node.department_id === deptFilter;
+            let matchesOffice = !officeFilter || node.office_id === officeFilter;
+            let matchesSearch = true;
+
+            if (searchQuery) {
+                const name = getDisplayName(node).toLowerCase();
+                const code = (node.employee_code || '').toLowerCase();
+                const dept = (node.department || node.department_name || '').toLowerCase();
+                const designation = (node.designation || node.designation_name || '').toLowerCase();
+                matchesSearch = name.includes(searchQuery) ||
+                                code.includes(searchQuery) ||
+                                dept.includes(searchQuery) ||
+                                designation.includes(searchQuery);
+            }
+
+            if (matchesDept && matchesOffice && matchesSearch) {
+                matchingNodeIds.add(node.id);
+                // Auto-expand ancestors so matching nodes are visible
+                node.path.forEach(id => expandedNodes.add(id));
+            }
+        });
+
+        // Also mark ancestors of matching nodes as "should show"
+        const ancestorIds = new Set();
+        matchingNodeIds.forEach(nodeId => {
+            const node = flatOrgData.find(n => n.id === nodeId);
+            if (node) {
+                node.path.forEach(id => ancestorIds.add(id));
+            }
+        });
+        // Merge ancestor IDs into matching set (ancestors shown as tree structure)
+        ancestorIds.forEach(id => matchingNodeIds.add(id));
+    }
+
     // Build visible list based on expansion state and filters
     flatOrgData.forEach(node => {
         // Check if this node should be visible
         const isRoot = node.level === 0;
-        const parentExpanded = node.parent_id ? expandedNodes.has(node.parent_id) : true;
 
         // Check all ancestors are expanded
         let allAncestorsExpanded = true;
@@ -215,29 +255,8 @@ function buildVisibleData() {
 
         if (!isRoot && !allAncestorsExpanded) return;
 
-        // Apply filters
-        if (deptFilter && node.department_id !== deptFilter) return;
-        if (officeFilter && node.office_id !== officeFilter) return;
-
-        // Check if matches search (if searching)
-        if (searchQuery) {
-            const name = getDisplayName(node).toLowerCase();
-            const code = (node.employee_code || '').toLowerCase();
-            const dept = (node.department || node.department_name || '').toLowerCase();
-            const designation = (node.designation || node.designation_name || '').toLowerCase();
-            const matchesSearch = name.includes(searchQuery) ||
-                                  code.includes(searchQuery) ||
-                                  dept.includes(searchQuery) ||
-                                  designation.includes(searchQuery);
-            // Show if matches or is in path to a match
-            const inPathToMatch = flatOrgData.some(n =>
-                n.path.includes(node.id) && (
-                    getDisplayName(n).toLowerCase().includes(searchQuery) ||
-                    (n.employee_code || '').toLowerCase().includes(searchQuery)
-                )
-            );
-            if (!matchesSearch && !inPathToMatch) return;
-        }
+        // When filters are active, only show matching nodes + their ancestors
+        if (hasFilters && !matchingNodeIds.has(node.id)) return;
 
         visibleData.push(node);
     });
@@ -407,8 +426,19 @@ function resetChart() {
     selectedId = null;
     expandedNodes.clear();
     document.getElementById('searchInput').value = '';
-    document.getElementById('departmentFilter').value = '';
-    document.getElementById('officeFilter').value = '';
+
+    // Reset SearchableDropdown instances (not just native selects)
+    if (departmentDropdown) {
+        departmentDropdown.setValue('');
+    } else {
+        document.getElementById('departmentFilter').value = '';
+    }
+    if (officeDropdown) {
+        officeDropdown.setValue('');
+    } else {
+        document.getElementById('officeFilter').value = '';
+    }
+
     hideDetailsPanel();
     loadOrgChart();
 }

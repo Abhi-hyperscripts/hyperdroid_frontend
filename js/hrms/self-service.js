@@ -180,6 +180,15 @@ function setupSidebar() {
             closeSidebar();
         }
     });
+
+    // Bell icon — navigate to announcements panel
+    const notifBtn = document.getElementById('notificationBtn');
+    if (notifBtn) {
+        notifBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchToPanel('panel-announcements');
+        });
+    }
 }
 
 /**
@@ -2475,6 +2484,12 @@ function getReimbursementStatusBadge(status) {
 /**
  * Load team directory
  */
+// Directory pagination state
+let directoryAllEmployees = [];
+let directoryFilteredEmployees = [];
+let directoryCurrentPage = 1;
+const DIRECTORY_PAGE_SIZE = 24;
+
 async function loadDirectory() {
     const container = document.getElementById('directoryGrid');
     if (!container) return;
@@ -2487,37 +2502,27 @@ async function loadDirectory() {
 
         if (!employees.length) {
             container.innerHTML = `<div class="ess-empty-state"><p>No employees found</p></div>`;
+            const pagination = document.getElementById('directoryPagination');
+            if (pagination) pagination.style.display = 'none';
             return;
         }
 
-        container.innerHTML = employees.map(e => {
-            // Extract first and last name from full_name for initials
-            const nameParts = (e.full_name || '').split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
-
-            return `
-            <div class="ess-directory-card">
-                <div class="ess-directory-avatar">
-                    ${e.profile_photo_url
-                        ? `<img src="${e.profile_photo_url}" alt="${e.full_name}">`
-                        : `<span>${getInitials(firstName, lastName)}</span>`
-                    }
-                </div>
-                <div class="ess-directory-info">
-                    <h4 class="ess-directory-name">${escapeHtml(e.full_name || e.employee_code || 'Unknown')}</h4>
-                    <p class="ess-directory-role">${escapeHtml(e.designation || 'Employee')}</p>
-                    <p class="ess-directory-dept">${escapeHtml(e.department || '')}</p>
-                    ${e.work_email ? `<a href="mailto:${e.work_email}" class="ess-directory-email">${escapeHtml(e.work_email)}</a>` : ''}
-                </div>
-            </div>
-        `}).join('');
+        directoryAllEmployees = employees;
+        directoryFilteredEmployees = employees;
+        directoryCurrentPage = 1;
+        renderDirectoryPage();
 
         // Setup search
         const searchInput = document.getElementById('directorySearch');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => filterDirectory(e.target.value, employees));
+            searchInput.addEventListener('input', (e) => filterDirectory(e.target.value));
         }
+
+        // Setup pagination buttons
+        const prevBtn = document.getElementById('dirPrevBtn');
+        const nextBtn = document.getElementById('dirNextBtn');
+        if (prevBtn) prevBtn.addEventListener('click', () => { directoryCurrentPage--; renderDirectoryPage(); });
+        if (nextBtn) nextBtn.addEventListener('click', () => { directoryCurrentPage++; renderDirectoryPage(); });
 
     } catch (error) {
         console.error('Error loading directory:', error);
@@ -2525,42 +2530,78 @@ async function loadDirectory() {
     }
 }
 
+function renderDirectoryPage() {
+    const container = document.getElementById('directoryGrid');
+    if (!container) return;
+
+    const totalPages = Math.max(1, Math.ceil(directoryFilteredEmployees.length / DIRECTORY_PAGE_SIZE));
+    if (directoryCurrentPage > totalPages) directoryCurrentPage = totalPages;
+    if (directoryCurrentPage < 1) directoryCurrentPage = 1;
+
+    const start = (directoryCurrentPage - 1) * DIRECTORY_PAGE_SIZE;
+    const pageEmployees = directoryFilteredEmployees.slice(start, start + DIRECTORY_PAGE_SIZE);
+
+    if (!pageEmployees.length) {
+        container.innerHTML = `<div class="ess-empty-state"><p>No employees found</p></div>`;
+    } else {
+        container.innerHTML = pageEmployees.map(e => {
+            const nameParts = (e.full_name || '').split(' ');
+            const firstName = nameParts[0] || e.first_name || '';
+            const lastName = nameParts.slice(1).join(' ') || e.last_name || '';
+            const displayName = e.full_name || `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.employee_code || 'Unknown';
+
+            return `
+            <div class="ess-directory-card">
+                <div class="ess-directory-avatar">
+                    ${e.profile_photo_url
+                        ? `<img src="${e.profile_photo_url}" alt="${displayName}">`
+                        : `<span>${getInitials(firstName, lastName)}</span>`
+                    }
+                </div>
+                <div class="ess-directory-info">
+                    <h4 class="ess-directory-name">${escapeHtml(displayName)}</h4>
+                    <p class="ess-directory-role">${escapeHtml(e.designation || e.designation_name || 'Employee')}</p>
+                    <p class="ess-directory-dept">${escapeHtml(e.department || e.department_name || '')}</p>
+                    ${e.work_email ? `<a href="mailto:${e.work_email}" class="ess-directory-email">${escapeHtml(e.work_email)}</a>` : ''}
+                </div>
+            </div>
+        `}).join('');
+    }
+
+    // Update pagination controls
+    const pagination = document.getElementById('directoryPagination');
+    const prevBtn = document.getElementById('dirPrevBtn');
+    const nextBtn = document.getElementById('dirNextBtn');
+    const pageInfo = document.getElementById('dirPageInfo');
+
+    if (pagination) {
+        pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+    if (prevBtn) prevBtn.disabled = directoryCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = directoryCurrentPage >= totalPages;
+    if (pageInfo) pageInfo.textContent = `Page ${directoryCurrentPage} of ${totalPages}`;
+}
+
 /**
  * Filter directory
  */
-function filterDirectory(query, employees) {
-    const container = document.getElementById('directoryGrid');
-    if (!container || !employees) return;
+function filterDirectory(query) {
+    if (!directoryAllEmployees.length) return;
 
-    const filtered = employees.filter(e => {
-        const fullName = `${e.first_name} ${e.last_name || ''}`.toLowerCase();
-        const dept = (e.department_name || '').toLowerCase();
-        const title = (e.designation_name || '').toLowerCase();
+    if (!query || !query.trim()) {
+        directoryFilteredEmployees = directoryAllEmployees;
+    } else {
         const q = query.toLowerCase();
-
-        return fullName.includes(q) || dept.includes(q) || title.includes(q);
-    });
-
-    if (!filtered.length) {
-        container.innerHTML = `<div class="ess-empty-state"><p>No matches found for "${escapeHtml(query)}"</p></div>`;
-        return;
+        directoryFilteredEmployees = directoryAllEmployees.filter(e => {
+            const fullName = (e.full_name || `${e.first_name || ''} ${e.last_name || ''}`).toLowerCase();
+            const dept = (e.department || e.department_name || '').toLowerCase();
+            const title = (e.designation || e.designation_name || '').toLowerCase();
+            return fullName.includes(q) || dept.includes(q) || title.includes(q);
+        });
     }
 
-    container.innerHTML = filtered.map(e => `
-        <div class="ess-directory-card">
-            <div class="ess-directory-avatar">
-                ${e.profile_photo_url
-                    ? `<img src="${e.profile_photo_url}" alt="${e.first_name}">`
-                    : `<span>${getInitials(e.first_name, e.last_name)}</span>`
-                }
-            </div>
-            <div class="ess-directory-info">
-                <h4>${escapeHtml(e.first_name)} ${escapeHtml(e.last_name || '')}</h4>
-                <p class="ess-directory-role">${escapeHtml(e.designation_name || 'Employee')}</p>
-                <p class="ess-directory-dept">${escapeHtml(e.department_name || '')}</p>
-            </div>
-        </div>
-    `).join('');
+    directoryCurrentPage = 1;
+    renderDirectoryPage();
 }
 
 /**
@@ -2878,11 +2919,15 @@ async function submitOvertime() {
             return;
         }
 
-        // v3.0.52: Fixed API call format
+        // Combine date + time into proper DateTime for backend
         await api.request('/hrms/attendance/overtime', {
             method: 'POST',
             body: JSON.stringify({
-                date, planned_start: startTime, planned_end: endTime, reason, task
+                request_date: date,
+                planned_start_time: `${date}T${startTime}:00`,
+                planned_end_time: `${date}T${endTime}:00`,
+                reason: reason,
+                project_task: task || null
             })
         });
 
@@ -3237,21 +3282,30 @@ async function submitLoanApplication() {
             ? loanTypeDropdown.getValue()
             : document.getElementById('loanType')?.value;
         const amount = document.getElementById('loanAmount')?.value;
-        const emi = document.getElementById('loanEmi')?.value;
+        const emiRaw = document.getElementById('loanEmi')?.value;
         const reason = document.getElementById('loanReason')?.value;
 
-        if (!loanType || !amount || !emi || !reason) {
+        if (!loanType || !amount || !reason) {
             showToast('Please fill all required fields', 'error');
             return;
         }
 
-        // v3.0.52: Fixed API call format and field names
+        // For salary advance, EMI months defaults to 1 (deducted next month)
+        // For other loans, EMI months is required
+        let emi = parseInt(emiRaw) || 0;
+        if (loanType === 'salary_advance') {
+            emi = emi || 1; // Default to 1 month for salary advance
+        } else if (!emi || emi < 1) {
+            showToast('Please enter repayment months for this loan type', 'error');
+            return;
+        }
+
         await api.request('/hrms/payroll-processing/loans', {
             method: 'POST',
             body: JSON.stringify({
                 loan_type: loanType,
                 principal_amount: parseFloat(amount),
-                tenure_months: parseInt(emi),
+                tenure_months: emi,
                 interest_rate: 0, // Interest-free by default, HR can update if needed
                 purpose: reason
             })
@@ -3342,7 +3396,13 @@ async function submitReimbursement() {
             return;
         }
 
-        // v3.0.53: Validate receipt file if provided (optional, max 5MB, image/pdf only)
+        // Receipt is mandatory for reimbursement claims
+        if (!receiptFile) {
+            showToast('Please attach a receipt or bill for the expense', 'error');
+            return;
+        }
+
+        // Validate receipt file (max 5MB, image/pdf only)
         if (receiptFile) {
             const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
             if (!allowedTypes.includes(receiptFile.type)) {

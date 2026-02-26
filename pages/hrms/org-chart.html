@@ -128,15 +128,28 @@
             </div>
         </div>
 
-        <div class="ess-back-link">
-            <a href="self-service.html" class="back-btn">
+        <div class="ess-back-link" id="backLink">
+            <a href="self-service.html" class="back-btn" id="backLinkAnchor">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="19" y1="12" x2="5" y2="12"/>
                     <polyline points="12 19 5 12 12 5"/>
                 </svg>
-                Back to Self-Service
+                <span id="backLinkText">Back to Self-Service</span>
             </a>
         </div>
+        <script>
+        // Show "Back to HRMS" for admin users, "Back to Self-Service" for employees
+        document.addEventListener('DOMContentLoaded', () => {
+            const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+            const isAdmin = roles.some(r => ['SUPERADMIN','HRMS_ADMIN','HRMS_HR_ADMIN'].includes(r));
+            if (isAdmin) {
+                const a = document.getElementById('backLinkAnchor');
+                const t = document.getElementById('backLinkText');
+                if (a) a.href = 'dashboard.html';
+                if (t) t.textContent = 'Back to HRMS';
+            }
+        });
+        </script>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>

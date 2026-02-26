@@ -1876,6 +1876,48 @@ body:has(.ess-layout) .navbar {
     text-decoration: underline;
 }
 
+/* Directory Pagination */
+.ess-directory-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 0 8px;
+    margin-top: 8px;
+}
+
+.ess-page-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ess-page-btn:hover:not(:disabled) {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--bg-secondary);
+}
+
+.ess-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ess-page-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 /* =============================================================
    DIRECTORY PAGE (Standalone) - directory.html
    ============================================================= */

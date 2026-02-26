@@ -245,11 +245,15 @@ function initOrganizationSearchableDropdowns() {
     // Department Modal
     convertAndStore('deptOffice', {
         placeholder: 'Select Office',
-        searchPlaceholder: 'Search offices...'
+        searchPlaceholder: 'Search offices...',
+        onChange: (value) => {
+            // When office changes, filter dept head dropdown to that office's employees
+            updateDeptHeadDropdown(value);
+        }
     });
 
     convertAndStore('deptHead', {
-        placeholder: 'Select Employee',
+        placeholder: 'Select Department Head',
         searchPlaceholder: 'Search employees...',
         virtualScroll: true
     });
@@ -2348,34 +2352,68 @@ async function loadEmployees() {
         const response = await api.request('/hrms/employees');
         employees = Array.isArray(response) ? response : (response?.data || []);
 
-        // Build employee options
-        const employeeOptions = [
-            { value: '', label: 'Select Employee' },
-            ...employees.map(emp => {
-                const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
-                return { value: emp.id, label: empName };
-            })
-        ];
-
-        // Update searchable dropdown if exists, otherwise fallback to select
-        const dropdown = searchableDropdownInstances.get('deptHead');
-        if (dropdown) {
-            dropdown.setOptions(employeeOptions);
-        } else {
-            const select = document.getElementById('deptHead');
-            if (select && select.tagName === 'SELECT') {
-                select.innerHTML = '<option value="">Select Employee</option>';
-                employees.forEach(emp => {
-                    const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
-                    select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(empName)}</option>`;
-                });
-            }
-        }
+        // Build employee options (all employees for roster etc.)
+        updateDeptHeadDropdown();
 
         // Also update rosterEmployee dropdown
         populateRosterEmployeeSelect();
     } catch (error) {
         console.error('Error loading employees:', error);
+    }
+}
+
+/**
+ * Update dept head dropdown filtered by the selected office in department modal
+ * @param {string} officeId - Optional office ID to filter by
+ */
+function updateDeptHeadDropdown(officeId) {
+    // If no officeId provided, try to get from the department form
+    if (!officeId) {
+        const deptOfficeDropdown = searchableDropdownInstances.get('deptOffice');
+        officeId = deptOfficeDropdown ? deptOfficeDropdown.getValue() : document.getElementById('deptOffice')?.value;
+    }
+
+    // Filter employees by office if an office is selected
+    let filtered = officeId
+        ? employees.filter(emp => emp.office_id === officeId)
+        : employees;
+
+    // Filter to only show employees whose designation has is_manager = true
+    // This prevents non-managers from being selected as department heads
+    if (allDesignations.length > 0) {
+        const managerDesignationIds = new Set(
+            allDesignations.filter(d => d.is_manager === true).map(d => d.id)
+        );
+        // Only apply manager filter if there are manager designations defined
+        if (managerDesignationIds.size > 0) {
+            const managers = filtered.filter(emp => emp.designation_id && managerDesignationIds.has(emp.designation_id));
+            // Use filtered managers if any exist, otherwise fall back to all employees
+            if (managers.length > 0) {
+                filtered = managers;
+            }
+        }
+    }
+
+    const employeeOptions = [
+        { value: '', label: 'Select Department Head' },
+        ...filtered.map(emp => {
+            const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+            return { value: emp.id, label: empName };
+        })
+    ];
+
+    const dropdown = searchableDropdownInstances.get('deptHead');
+    if (dropdown) {
+        dropdown.setOptions(employeeOptions);
+    } else {
+        const select = document.getElementById('deptHead');
+        if (select && select.tagName === 'SELECT') {
+            select.innerHTML = '<option value="">Select Department Head</option>';
+            filtered.forEach(emp => {
+                const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.employee_code;
+                select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(empName)}</option>`;
+            });
+        }
     }
 }
 
@@ -3430,13 +3468,16 @@ async function saveHoliday() {
         showLoading();
         const id = document.getElementById('holidayId').value;
 
-        const officeSelect = document.getElementById('holidayOffices');
-        const selectedOffice = officeSelect.value;
+        const officeDropdown = searchableDropdownInstances.get('holidayOffices');
+        const selectedOffice = officeDropdown ? officeDropdown.getValue() : document.getElementById('holidayOffices')?.value;
+
+        const holidayTypeDropdown = searchableDropdownInstances.get('holidayTypeSelect');
+        const holidayType = holidayTypeDropdown ? holidayTypeDropdown.getValue() : document.getElementById('holidayTypeSelect')?.value;
 
         const data = {
             holiday_name: document.getElementById('holidayName').value,
             holiday_date: document.getElementById('holidayDate').value,
-            holiday_type: document.getElementById('holidayTypeSelect').value,
+            holiday_type: holidayType || 'public',
             description: document.getElementById('holidayDescription').value,
             office_id: selectedOffice ? selectedOffice : null
         };
@@ -3499,15 +3540,41 @@ async function saveRoster() {
     try {
         showLoading();
         const id = document.getElementById('rosterId').value;
+
+        // Read from SearchableDropdown instances if available, otherwise native selects
+        const empDropdown = searchableDropdownInstances.get('rosterEmployee');
+        const shiftDropdown = searchableDropdownInstances.get('rosterShiftId');
+        const typeDropdown = searchableDropdownInstances.get('rosterType');
+
+        const endDateVal = document.getElementById('rosterEndDate').value;
         const data = {
-            employee_id: document.getElementById('rosterEmployee').value,
-            shift_id: document.getElementById('rosterShiftId').value,
+            employee_id: empDropdown ? empDropdown.getValue() : document.getElementById('rosterEmployee')?.value,
+            shift_id: shiftDropdown ? shiftDropdown.getValue() : document.getElementById('rosterShiftId')?.value,
             start_date: document.getElementById('rosterStartDate').value,
-            end_date: document.getElementById('rosterEndDate').value || null,
-            roster_type: document.getElementById('rosterType').value,
+            roster_type: typeDropdown ? typeDropdown.getValue() : document.getElementById('rosterType')?.value,
             notes: document.getElementById('rosterNotes').value,
             is_active: document.getElementById('rosterIsActive').checked
         };
+        if (endDateVal) {
+            data.end_date = endDateVal;
+        }
+
+        // Validate required fields
+        if (!data.employee_id) {
+            showToast('Please select an employee', 'error');
+            hideLoading();
+            return;
+        }
+        if (!data.shift_id) {
+            showToast('Please select a shift', 'error');
+            hideLoading();
+            return;
+        }
+        if (!data.start_date) {
+            showToast('Please select a start date', 'error');
+            hideLoading();
+            return;
+        }
 
         if (id) {
             data.id = id;
@@ -3673,8 +3740,10 @@ function updateBulkHolidayCount() {
 }
 
 async function saveBulkHolidays() {
-    const year = document.getElementById('bulkHolidayYear').value;
-    const selectedOfficeId = document.getElementById('bulkHolidayOffice').value;
+    const yearDropdown = searchableDropdownInstances.get('bulkHolidayYear');
+    const year = yearDropdown ? yearDropdown.getValue() : document.getElementById('bulkHolidayYear')?.value;
+    const officeDropdown = searchableDropdownInstances.get('bulkHolidayOffice');
+    const selectedOfficeId = officeDropdown ? officeDropdown.getValue() : document.getElementById('bulkHolidayOffice')?.value;
     const rows = document.querySelectorAll('#bulkHolidayEntries .bulk-entry-row');
 
     // Collect holiday data from rows

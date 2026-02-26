@@ -862,7 +862,16 @@ async function saveEmployee() {
         }
     } catch (error) {
         console.error('Error saving employee:', error);
-        showToast(error.message || 'Error saving employee', 'error');
+        // Parse backend errors to show user-friendly messages
+        let errorMsg = error.message || 'Error saving employee';
+        if (errorMsg.includes('identifier') || errorMsg.includes('unique constraint') || errorMsg.includes('duplicate key')) {
+            errorMsg = 'This user already has an employee profile, or the employee code is already in use. Please check and try again.';
+        } else if (errorMsg.includes('user_id')) {
+            errorMsg = 'The selected user account is invalid or already linked to an employee. Please select a different user.';
+        } else if (errorMsg.includes('salary structure')) {
+            errorMsg = 'The selected office does not have a salary structure configured. Please set up a salary structure first.';
+        }
+        showToast(errorMsg, 'error');
     } finally {
         // Re-enable save button
         saveBtn.disabled = false;
@@ -3592,6 +3601,18 @@ function validateDocumentsStep() {
         return false;
     }
 
+    // Validate document numbers are filled
+    const panNumber = document.getElementById('pan-number')?.value?.trim();
+    if (!panNumber) {
+        showToast('PAN number is required', 'error');
+        return false;
+    }
+    const aadharNumber = document.getElementById('aadhar-number')?.value?.trim();
+    if (!aadharNumber) {
+        showToast('Aadhar number is required', 'error');
+        return false;
+    }
+
     return true;
 }
 
@@ -3622,10 +3643,28 @@ function validatePersonalStep() {
         return false;
     }
 
-    // Date of birth is mandatory
+    // Date of birth is mandatory and must be reasonable
     const dateOfBirth = document.getElementById('dateOfBirth').value;
     if (!dateOfBirth) {
         showToast('Date of birth is required', 'error');
+        return false;
+    }
+    const dobDate = new Date(dateOfBirth);
+    const today = new Date();
+    if (dobDate >= today) {
+        showToast('Date of birth cannot be in the future', 'error');
+        return false;
+    }
+    // Must be at least 16 years old
+    const minAge = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+    if (dobDate > minAge) {
+        showToast('Employee must be at least 16 years old', 'error');
+        return false;
+    }
+    // Must be under 100 years old
+    const maxAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+    if (dobDate < maxAge) {
+        showToast('Please enter a valid date of birth', 'error');
         return false;
     }
 

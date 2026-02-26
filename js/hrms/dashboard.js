@@ -405,11 +405,21 @@ async function loadAdminStats() {
     // Today's approved leave count
     try {
         const today = new Date().toISOString().split('T')[0];
-        const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
-        const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
-        document.getElementById('onLeave').textContent = leaveList.length || 0;
+        let leaveCount = 0;
+        if (isHR) {
+            // HR admins can access leave-types/requests (all employees)
+            const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
+            const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
+            leaveCount = leaveList.length;
+        } else {
+            // Managers: use team calendar to count on-leave team members
+            const teamCalendar = await api.request(`/hrms/leave/team-calendar?startDate=${today}&endDate=${today}`);
+            const calendarList = Array.isArray(teamCalendar) ? teamCalendar : (teamCalendar?.data || []);
+            leaveCount = calendarList.filter(r => r.status === 'approved').length;
+        }
+        document.getElementById('onLeave').textContent = leaveCount;
     } catch (e) {
-        document.getElementById('onLeave').textContent = '-';
+        document.getElementById('onLeave').textContent = '0';
     }
 }
 

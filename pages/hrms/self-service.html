@@ -1155,6 +1155,17 @@
                         <span>Loading directory...</span>
                     </div>
                 </div>
+                <div class="ess-directory-pagination" id="directoryPagination" style="display:none;">
+                    <button class="ess-page-btn" id="dirPrevBtn" disabled>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        Prev
+                    </button>
+                    <span class="ess-page-info" id="dirPageInfo">Page 1 of 1</span>
+                    <button class="ess-page-btn" id="dirNextBtn" disabled>
+                        Next
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
             </div>
 
             <!-- ======================= -->
@@ -1454,8 +1465,8 @@
                             <input type="number" id="loanAmount" class="form-control" required min="1000">
                         </div>
                         <div class="form-group">
-                            <label>EMI Months <span class="required">*</span></label>
-                            <input type="number" id="loanEmi" class="form-control" required min="1" max="24">
+                            <label>Repayment Months <span class="required" id="emiRequiredStar">*</span></label>
+                            <input type="number" id="loanEmi" class="form-control" min="1" max="24" placeholder="Default: 1 for salary advance">
                         </div>
                     </div>
                     <div class="form-group">
@@ -1505,8 +1516,8 @@
                         <textarea id="expenseDescription" class="form-control" required placeholder="Describe the expense..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Receipt/Bill</label>
-                        <input type="file" id="expenseReceipt" class="form-control" accept="image/*,.pdf">
+                        <label>Receipt/Bill <span class="required">*</span></label>
+                        <input type="file" id="expenseReceipt" class="form-control" accept="image/*,.pdf" required>
                     </div>
                 </form>
             </div>

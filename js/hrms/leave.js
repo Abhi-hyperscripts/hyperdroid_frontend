@@ -716,6 +716,7 @@ async function loadPendingRequests() {
     try {
         const status = document.getElementById('requestStatus').value;
         const department = document.getElementById('requestDepartment').value;
+        const office = requestOfficeDropdown ? requestOfficeDropdown.getValue() : document.getElementById('requestOffice')?.value;
 
         let url = `/hrms/leave/pending-approvals`;
         const params = [];
@@ -727,6 +728,7 @@ async function loadPendingRequests() {
 
         if (status) params.push(`status=${status}`);
         if (department) params.push(`departmentId=${department}`);
+        if (office) params.push(`officeId=${office}`);
         if (params.length) url += '?' + params.join('&');
 
         const response = await api.request(url);
@@ -863,10 +865,12 @@ async function loadLeaveBalances() {
         showLoading();
         const year = document.getElementById('balanceYear').value;
         const department = document.getElementById('balanceDepartment').value;
+        const office = balanceOfficeDropdown ? balanceOfficeDropdown.getValue() : document.getElementById('balanceOffice')?.value;
 
         // Use the admin endpoint for getting all employee balances
         let url = `/hrms/leave-types/balances?year=${year}`;
         if (department) url += `&departmentId=${department}`;
+        if (office) url += `&officeId=${office}`;
 
         const response = await api.request(url);
         const rawBalances = Array.isArray(response) ? response : (response?.data || []);
@@ -1498,11 +1502,11 @@ function closeModal(modalId) {
     setTimeout(() => el.classList.remove('gm-animating'), 200);
 }
 
-// Calculate leave days (excludes weekends)
+// Calculate leave days (excludes weekends — approximate, final count from backend)
 function calculateLeaveDays() {
     const fromDate = document.getElementById('fromDate').value;
     const toDate = document.getElementById('toDate').value;
-    const halfDay = document.getElementById('halfDay').value;
+    const halfDay = document.getElementById('halfDay')?.value;
 
     if (!fromDate || !toDate) {
         document.getElementById('leaveDays').value = '0';
@@ -1514,25 +1518,28 @@ function calculateLeaveDays() {
 
     if (to < from) {
         document.getElementById('leaveDays').value = '0';
+        showToast('End date must be after start date', 'error');
         return;
     }
 
-    // Count business days (exclude Sat/Sun)
-    let days = 0;
+    // Count calendar days between from and to (inclusive)
+    let totalDays = 0;
     const current = new Date(from);
     while (current <= to) {
         const dayOfWeek = current.getDay();
+        // Exclude Saturday(6) and Sunday(0) as default weekends
         if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-            days++;
+            totalDays++;
         }
         current.setDate(current.getDate() + 1);
     }
 
-    if (halfDay && from.getTime() === to.getTime()) {
-        days = 0.5;
+    // Half-day only applies for single-day leaves
+    if (halfDay && halfDay !== '' && from.getTime() === to.getTime()) {
+        totalDays = 0.5;
     }
 
-    document.getElementById('leaveDays').value = days;
+    document.getElementById('leaveDays').value = totalDays;
 }
 
 // Submit functions
