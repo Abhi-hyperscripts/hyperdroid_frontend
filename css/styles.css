@@ -8921,6 +8921,11 @@ label.toggle-switch,
 }
 
 /* ── Three-dot share dropdown ── */
+/* Elevate meeting card when its share dropdown is open so it sits above sibling cards */
+.meeting-card-v2:has(.share-dot-dropdown.open) {
+    z-index: 10;
+}
+
 .share-dot-menu {
     position: relative;
     display: inline-flex;
