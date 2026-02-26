@@ -10060,3 +10060,11 @@ label.toggle-switch,
     width: 100% !important;
     align-self: stretch !important;
 }
+
+/* Send Email Invite modal — meeting info card */
+.invite-meeting-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}

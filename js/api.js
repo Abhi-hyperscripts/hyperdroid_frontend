@@ -758,6 +758,13 @@ class API {
         });
     }
 
+    async sendMeetingInvites(meetingId, emails) {
+        return this.request(`/meetings/${meetingId}/send-invites`, {
+            method: 'POST',
+            body: JSON.stringify({ meeting_id: meetingId, emails })
+        });
+    }
+
     async toggleAiSupport(meetingId, value) {
         return this.request(`/meetings/${meetingId}/toggle-ai-support`, {
             method: 'POST',

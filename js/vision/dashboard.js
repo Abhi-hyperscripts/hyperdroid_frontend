@@ -223,10 +223,14 @@ function createDashboardMeetingCard(meeting) {
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                     Participant Email Card
                                 </button>
-                                ${showGuestLink ? `<button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'guest')">
+                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'guest')">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                                     Guest Email Card
-                                </button>` : ''}
+                                </button>
+                                <button onclick="openSendInviteModal(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', '${meeting.start_time || ''}', '${meeting.end_time || ''}')">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                    Send Email Invite
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -439,7 +443,7 @@ function initDashboardDropdowns() {
         onChange: (value) => { setFilter('type', value); }
     });
 
-    // Status dropdown
+    // Status dropdown — default matches dashboardState.status_filter ('active')
     statusDropdownSD = new SearchableDropdown('statusDropdownContainer', {
         id: 'statusDropdownSD',
         options: [
@@ -449,8 +453,8 @@ function initDashboardDropdowns() {
             { value: 'scheduled', label: 'Scheduled' },
             { value: 'ended', label: 'Ended' }
         ],
-        value: 'all',
-        placeholder: 'All Status',
+        value: 'active',
+        placeholder: 'Active',
         compact: true,
         onChange: (value) => { setFilter('status', value); }
     });
@@ -4549,4 +4553,90 @@ if (document.querySelector('.dashboard')) {
             await dashboardConnection.stop();
         }
     });
+}
+
+// ============================================
+// SEND EMAIL INVITE MODAL
+// ============================================
+
+function openSendInviteModal(event, meetingId, meetingName, startTime, endTime) {
+    event.stopPropagation();
+    // Close the dropdown menu
+    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => d.classList.remove('open'));
+
+    // Populate modal fields
+    document.getElementById('inviteMeetingId').value = meetingId;
+    document.getElementById('inviteMeetingName').textContent = meetingName;
+
+    let dateInfo = 'No date set';
+    if (startTime) {
+        const start = new Date(startTime);
+        dateInfo = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+            + ', ' + start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        if (endTime) {
+            const end = new Date(endTime);
+            dateInfo += ' - ' + end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+    }
+    document.getElementById('inviteMeetingDate').textContent = dateInfo;
+
+    // Reset textarea and count
+    const textarea = document.getElementById('inviteEmailsTextarea');
+    textarea.value = '';
+    document.getElementById('inviteEmailCount').textContent = '0 emails';
+    document.getElementById('sendInvitesBtn').disabled = true;
+
+    openModal('sendInviteModal');
+    textarea.focus();
+}
+
+function parseEmailList(text) {
+    return text
+        .split(/[,;\n]+/)
+        .map(e => e.trim().toLowerCase())
+        .filter(e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+}
+
+// Live email count updater
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('inviteEmailsTextarea');
+    if (textarea) {
+        textarea.addEventListener('input', () => {
+            const emails = parseEmailList(textarea.value);
+            const count = emails.length;
+            document.getElementById('inviteEmailCount').textContent = count === 1 ? '1 email' : `${count} emails`;
+            document.getElementById('sendInvitesBtn').disabled = count === 0;
+        });
+    }
+});
+
+async function sendEmailInvites() {
+    const meetingId = document.getElementById('inviteMeetingId').value;
+    const textarea = document.getElementById('inviteEmailsTextarea');
+    const emails = parseEmailList(textarea.value);
+
+    if (emails.length === 0) {
+        Toast.warning('Please enter at least one valid email address');
+        return;
+    }
+
+    const btn = document.getElementById('sendInvitesBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner-sm"></span> Sending...';
+
+    try {
+        const result = await api.sendMeetingInvites(meetingId, emails);
+        if (result.success) {
+            Toast.success(result.message);
+            closeModal('sendInviteModal');
+        } else {
+            Toast.error(result.message || 'Failed to send invites');
+        }
+    } catch (error) {
+        Toast.error('Failed to send invites: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
 }

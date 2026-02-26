@@ -652,6 +652,39 @@
         </div>
     </div>
 
+    <!-- Send Email Invite Modal -->
+    <div id="sendInviteModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Email Invite</h5>
+                    <button class="close-btn" onclick="closeModal('sendInviteModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="inviteMeetingId">
+                    <div class="invite-meeting-info">
+                        <h4 id="inviteMeetingName" style="margin:0 0 4px; font-size:0.95rem;"></h4>
+                        <span id="inviteMeetingDate" style="font-size:0.8rem; color:var(--text-secondary);"></span>
+                    </div>
+                    <div class="form-group" style="margin-top:16px;">
+                        <label for="inviteEmailsTextarea">Email Addresses</label>
+                        <textarea id="inviteEmailsTextarea" rows="4" placeholder="Enter emails separated by commas, semicolons, or new lines&#10;e.g. alice@example.com, bob@example.com" style="resize:vertical;"></textarea>
+                        <small style="display:flex; justify-content:space-between; margin-top:4px;">
+                            <span style="color:var(--text-tertiary);">Separate with commas, semicolons, or new lines</span>
+                            <span id="inviteEmailCount" style="color:var(--text-secondary); font-weight:500;">0 emails</span>
+                        </small>
+                    </div>
+                    <div class="form-group" style="margin-top:16px;">
+                        <button type="button" id="sendInvitesBtn" class="btn btn-primary btn-full" onclick="sendEmailInvites()" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            Send Invites
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script src="../../js/config.js"></script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
