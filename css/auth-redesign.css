@@ -600,6 +600,85 @@ bodybody.auth-page .auth-link:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   SUBMIT BUTTON - Shared by forgot-password and reset-password pages
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.auth-page .login-submit-btn {
+    width: 100%;
+    height: 54px;
+    margin-top: 6px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition-all);
+    box-shadow: var(--shadow-primary-sm);
+}
+
+body.auth-page .login-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-md);
+}
+
+body.auth-page .login-submit-btn:active {
+    transform: translateY(0);
+}
+
+body.auth-page .login-submit-btn .btn-text {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-inverse);
+}
+
+body.auth-page .login-submit-btn .btn-arrow {
+    color: var(--text-inverse);
+    transition: transform 0.2s ease;
+}
+
+body.auth-page .login-submit-btn:hover .btn-arrow {
+    transform: translateX(4px);
+}
+
+body.auth-page .login-submit-btn .btn-spinner {
+    display: none;
+    color: var(--text-inverse);
+}
+
+body.auth-page .login-submit-btn.loading {
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+body.auth-page .login-submit-btn.loading .btn-text {
+    opacity: 0.7;
+}
+
+body.auth-page .login-submit-btn.loading .btn-arrow {
+    display: none;
+}
+
+body.auth-page .login-submit-btn.loading .btn-spinner {
+    display: block;
+}
+
+body.auth-page .login-submit-btn.success {
+    background: var(--gradient-success);
+    box-shadow: var(--shadow-success-md);
+}
+
+body.auth-page .login-submit-btn.success .btn-arrow {
+    display: none;
+}
+
+body.auth-page .login-submit-btn:disabled {
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ACTIVATE PAGE SPECIFIC - Wider container for success card
    ═══════════════════════════════════════════════════════════════════════════ */
 

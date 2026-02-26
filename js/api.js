@@ -190,7 +190,7 @@ class API {
 
             if (!response.ok) {
                 // If we get 401 and it's not a refresh request, try to refresh token
-                if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
+                if (response.status === 401 && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
                     console.log('[API] Got 401, attempting token refresh...');
                     const refreshed = await this._refreshTokenIfNeeded();
                     if (refreshed) {

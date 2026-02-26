@@ -597,6 +597,19 @@
     align-items: center;
 }
 
+.forgot-password-link {
+    font-size: 0.8125rem;
+    color: var(--brand-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-colors);
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+    color: var(--brand-primary-dark);
+}
+
 /* Input styling */
 .login-form .input-wrapper {
     position: relative;

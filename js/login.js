@@ -77,6 +77,12 @@ togglePasswordBtn?.addEventListener('click', () => {
     }
 });
 
+function showLoginError(msg) {
+    if (!errorMessage) return;
+    errorMessage.textContent = msg;
+    errorMessage.style.display = 'block';
+}
+
 // Form submission
 async function handleFormSubmit() {
     const email = emailInput.value.trim();
@@ -88,7 +94,7 @@ async function handleFormSubmit() {
 
     // Basic validation
     if (!email || !password) {
-        Toast.error('Please enter both email and password');
+        showLoginError('Please enter both email and password');
         return;
     }
 
@@ -123,11 +129,11 @@ async function handleFormSubmit() {
             // Redirect immediately — full FCM registration happens on home.html / navigation.js
             window.location.href = 'home.html';
         } else {
-            Toast.error(response.message || 'Login failed');
+            showLoginError(response.message || 'Login failed');
             setButtonLoading(false);
         }
     } catch (error) {
-        Toast.error(error.message || 'An error occurred');
+        showLoginError(error.message || 'An error occurred');
         setButtonLoading(false);
     }
 }
