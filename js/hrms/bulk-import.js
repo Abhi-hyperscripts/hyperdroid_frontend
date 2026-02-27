@@ -155,6 +155,7 @@ function downloadTemplate() {
         '1200000',
         'full-time',
         'Male',
+        'O+',
         '+91-9876543210'
     ];
 

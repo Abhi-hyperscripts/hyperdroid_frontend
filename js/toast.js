@@ -104,6 +104,13 @@ const Toast = (function() {
     function show(message, type = 'info', options = {}) {
         init();
 
+        // Prevent duplicate toasts — if the same message+type is already showing, skip
+        for (const existing of container.children) {
+            if (existing.dataset.toastMessage === message && existing.dataset.toastType === type) {
+                return;
+            }
+        }
+
         const duration = options.duration || CONFIG.duration;
         const themeColors = getColors();
         const colors = themeColors[type] || themeColors.info;
@@ -117,6 +124,8 @@ const Toast = (function() {
 
         // Create toast element
         const toast = document.createElement('div');
+        toast.dataset.toastMessage = message;
+        toast.dataset.toastType = type;
         toast.style.cssText = `
             display: flex;
             align-items: flex-start;
