@@ -3786,8 +3786,10 @@ async function saveMeetingSettings() {
         return;
     }
 
-    // Validate start time is not in the past (only for future-scheduled meetings)
-    if (startTimeVal && new Date(startTimeVal) < new Date()) {
+    // Validate start time is not in the past — but only if the user actually changed it
+    // (allow moving an already-past meeting to a different project without touching dates)
+    const originalStart = currentSettingsMeeting?.start_time ? new Date(currentSettingsMeeting.start_time).toISOString().slice(0, 16) : '';
+    if (startTimeVal && startTimeVal !== originalStart && new Date(startTimeVal) < new Date()) {
         Toast.warning('Meeting start time cannot be in the past');
         return;
     }
