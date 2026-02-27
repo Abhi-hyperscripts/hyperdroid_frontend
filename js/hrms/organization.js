@@ -3701,8 +3701,8 @@ function addBulkHolidayRow() {
     const row = document.createElement('div');
     row.className = 'bulk-entry-row';
     row.innerHTML = `
-        <input type="text" class="form-control holiday-name" placeholder="Holiday name *" required>
-        <input type="date" class="form-control holiday-date" required>
+        <input type="text" class="form-control holiday-name" placeholder="Holiday name *" required oninput="updateBulkHolidayCount()">
+        <input type="date" class="form-control holiday-date" required onchange="updateBulkHolidayCount()">
         <select class="form-control holiday-type">
             <option value="public">Public</option>
             <option value="regional">Regional</option>
