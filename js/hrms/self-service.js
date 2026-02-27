@@ -1065,7 +1065,11 @@ async function loadUpcomingHolidays() {
     if (!container) return;
 
     try {
-        const holidays = await api.getUpcomingHolidays(5);
+        let upcomingUrl = `/hrms/holidays/upcoming?count=5`;
+        if (currentEmployee?.office_id) {
+            upcomingUrl += `&officeId=${currentEmployee.office_id}`;
+        }
+        const holidays = await api.request(upcomingUrl);
 
         if (!holidays || holidays.length === 0) {
             container.innerHTML = '<p class="ess-no-data">No upcoming holidays</p>';
@@ -1810,7 +1814,11 @@ async function loadHolidays() {
     try {
         container.innerHTML = `<div class="ess-loading"><div class="spinner"></div><span>Loading holidays...</span></div>`;
 
-        const response = await api.request(`/hrms/holidays?year=${year}`);
+        let holidayUrl = `/hrms/holidays?year=${year}`;
+        if (currentEmployee?.office_id) {
+            holidayUrl += `&officeId=${currentEmployee.office_id}`;
+        }
+        const response = await api.request(holidayUrl);
         const holidays = response?.holidays || response || [];
 
         if (!holidays.length) {

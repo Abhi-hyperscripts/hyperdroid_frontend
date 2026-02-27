@@ -580,7 +580,11 @@ async function loadUpcomingEvents() {
     if (holidaysContainer) {
         try {
             // Load upcoming holidays for current year
-            const holidays = await api.request(`/hrms/holidays?year=${new Date().getFullYear()}`);
+            let holidayUrl = `/hrms/holidays?year=${new Date().getFullYear()}`;
+            if (currentEmployee?.office_id) {
+                holidayUrl += `&officeId=${currentEmployee.office_id}`;
+            }
+            const holidays = await api.request(holidayUrl);
             const holidayList = Array.isArray(holidays) ? holidays : (holidays?.data || []);
 
             // Filter for upcoming holidays only

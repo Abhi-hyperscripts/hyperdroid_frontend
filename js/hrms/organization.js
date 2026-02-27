@@ -2282,6 +2282,10 @@ function updateHolidaysTable() {
         filtered = filtered.filter(h => h.holiday_type === typeFilter);
     }
 
+    if (officeFilter) {
+        filtered = filtered.filter(h => h.office_id === officeFilter);
+    }
+
     // Use pagination if available
     if (typeof createTablePagination !== 'undefined') {
         holidaysPagination = createTablePagination('holidaysPagination', {
