@@ -719,6 +719,13 @@ const Theme = {
     }
 };
 
+// Immediately set data-theme to prevent FOUC (flash of light mode before DOMContentLoaded)
+(function() {
+    var saved = null;
+    try { saved = localStorage.getItem('theme-mode'); } catch(e) {}
+    document.documentElement.setAttribute('data-theme', saved || 'dark');
+})();
+
 // Auto-apply theme on DOM ready with saved mode preference
 function initTheme() {
     const savedMode = Theme.loadSavedMode();

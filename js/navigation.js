@@ -377,9 +377,9 @@ const Navigation = {
     showChangePasswordModal(event) {
         if (event) event.stopPropagation();
 
-        // Close dropdown
-        const portal = document.getElementById('navDropdownPortal');
-        if (portal) portal.remove();
+        // Close dropdown (hide, don't remove — removing destroys the portal permanently)
+        const dropdown = document.getElementById('userDropdownMenu');
+        if (dropdown) dropdown.classList.remove('show');
 
         // Remove existing modal if any
         let modal = document.getElementById('changePasswordModal');
@@ -753,11 +753,16 @@ const Navigation = {
      * Check if dark mode is currently enabled
      */
     isDarkMode() {
+        // Use Theme system as source of truth if available
+        if (typeof Theme !== 'undefined' && Theme.isDarkMode) {
+            return Theme.isDarkMode();
+        }
         const savedMode = localStorage.getItem('theme-mode');
         if (savedMode) {
             return savedMode === 'dark';
         }
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Default to dark (matches Theme.getSystemPreference())
+        return true;
     },
 
     /**
@@ -768,19 +773,21 @@ const Navigation = {
             event.stopPropagation();
         }
 
-        const isDark = this.isDarkMode();
-        const newMode = isDark ? 'light' : 'dark';
+        const newMode = this.isDarkMode() ? 'light' : 'dark';
 
-        // Save preference
-        localStorage.setItem('theme-mode', newMode);
-
-        // Apply theme
-        document.documentElement.setAttribute('data-theme', newMode);
+        // Use Theme system if available (handles CSS variables, localStorage, data-theme)
+        if (typeof Theme !== 'undefined' && Theme.setMode) {
+            Theme.setMode(newMode);
+        } else {
+            // Fallback
+            localStorage.setItem('theme-mode', newMode);
+            document.documentElement.setAttribute('data-theme', newMode);
+        }
 
         // Update checkbox state
         const checkbox = document.getElementById('darkModeToggle');
         if (checkbox) {
-            checkbox.checked = !isDark;
+            checkbox.checked = newMode === 'dark';
         }
     }
 };
