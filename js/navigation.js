@@ -128,6 +128,11 @@ const Navigation = {
 
         // Bootstrap FCM on all authenticated pages
         this._ensureFcmInitialized(basePath);
+
+        // Fetch chat unread count (skip if already on the chat page)
+        if (currentPageId !== 'chat') {
+            this._fetchChatUnreadCount();
+        }
     },
 
     /**
@@ -276,6 +281,7 @@ const Navigation = {
                            data-nav-id="${item.id}">
                             <span class="nav-link-icon">${item.icon}</span>
                             <span class="nav-link-label">${item.label}</span>
+                            ${item.id === 'chat' ? '<span class="nav-unread-badge" id="chatUnreadBadge" style="display:none;"></span>' : ''}
                         </a>
                     `).join('')}
                 </div>
@@ -534,6 +540,36 @@ const Navigation = {
      * Display SW_VERSION in the nav dropdown.
      * Reads from /js/sw-version.js (single source of truth).
      */
+    /**
+     * Fetch total unread chat message count and display badge on Chat nav link.
+     */
+    async _fetchChatUnreadCount() {
+        try {
+            if (typeof api === 'undefined') return;
+            const conversations = await api.getConversations(100, 0);
+            const list = conversations.conversations || conversations || [];
+            const total = list.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+            this._updateChatBadge(total);
+        } catch (e) {
+            // Silently ignore — chat service may be unavailable
+        }
+    },
+
+    /**
+     * Update the chat unread badge in the nav dropdown.
+     * Also adds a dot indicator on the user avatar trigger.
+     */
+    _updateChatBadge(count) {
+        const badge = document.getElementById('chatUnreadBadge');
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    },
+
     _showSwVersion() {
         const el = document.getElementById('navSwVersion');
         if (!el) return;

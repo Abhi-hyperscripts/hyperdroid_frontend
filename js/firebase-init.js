@@ -436,6 +436,17 @@ async function setupForegroundMessageHandler(callback) {
                 Toast.info(`${title}: ${body}`);
             }
 
+            // Increment chat unread badge if this is a chat notification
+            if (payload.data?.notification_type === 'chat_message') {
+                const badge = document.getElementById('chatUnreadBadge');
+                if (badge) {
+                    const current = parseInt(badge.textContent) || 0;
+                    const next = current + 1;
+                    badge.textContent = next > 99 ? '99+' : next;
+                    badge.style.display = '';
+                }
+            }
+
             if (callback) {
                 callback(payload);
             }
