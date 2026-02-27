@@ -209,7 +209,15 @@ class API {
                     this.logout();
                     throw new Error('Session expired. Please log in again.');
                 }
-                throw new Error(data.message || data.error || data.title || data.errors?.join(', ') || 'Request failed');
+                let errorMessage = data.message || data.error || data.title;
+                if (!errorMessage && data.errors) {
+                    if (Array.isArray(data.errors)) {
+                        errorMessage = data.errors.join(', ');
+                    } else if (typeof data.errors === 'object') {
+                        errorMessage = Object.values(data.errors).flat().join('. ');
+                    }
+                }
+                throw new Error(errorMessage || 'Request failed');
             }
 
             return data;

@@ -6124,6 +6124,18 @@ body:has(.ess-layout) .navbar {
     padding-top: 20px;
 }
 
+/* ESS form modals — constrain width (these use .modal > .modal-content without .modal-dialog) */
+#loanModal > .modal-content,
+#applyLeaveModal > .modal-content,
+#encashLeaveModal > .modal-content,
+#viewLeaveModal > .modal-content,
+#reimbursementModal > .modal-content,
+#regularizationModal > .modal-content,
+#overtimeModal > .modal-content,
+#completeOvertimeModal > .modal-content {
+    max-width: 520px;
+}
+
 #declarationsModal .modal-content {
     background: var(--bg-card);
     display: flex;

@@ -1463,8 +1463,9 @@
                         <div class="form-group">
                             <label>Amount <span class="required">*</span></label>
                             <input type="number" id="loanAmount" class="form-control" required min="1000">
+                            <div id="salaryAdvanceHint" style="display:none; margin-top:4px; font-size:0.82rem; color:var(--text-secondary);"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="loanEmiGroup">
                             <label>Repayment Months <span class="required" id="emiRequiredStar">*</span></label>
                             <input type="number" id="loanEmi" class="form-control" min="1" max="24" placeholder="Default: 1 for salary advance">
                         </div>

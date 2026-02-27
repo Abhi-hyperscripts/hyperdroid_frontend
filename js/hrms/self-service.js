@@ -2109,6 +2109,11 @@ async function loadSalaryDetails() {
         const breakdown = breakdownResponse;
         const history = Array.isArray(historyResponse) ? historyResponse : [];
 
+        // Cache salary data for loan advance cap
+        if (salary) {
+            window._cachedMySalary = salary;
+        }
+
         // Build the tabs UI
         const historyCount = history.length > 0 ? ` (${history.length})` : '';
 
@@ -3225,7 +3230,49 @@ function openLoanModal() {
         loanTypeDropdown.setValue('');
     }
 
+    // Listen for loan type changes to toggle salary advance UI
+    const loanTypeSelect = document.getElementById('loanType');
+    if (loanTypeSelect && !loanTypeSelect._loanTypeListenerAdded) {
+        loanTypeSelect.addEventListener('change', (e) => {
+            updateLoanFormForType(e.target.value);
+        });
+        loanTypeSelect._loanTypeListenerAdded = true;
+    }
+
+    // Reset to default state
+    updateLoanFormForType('');
+
     openModal('loanModal');
+}
+
+function updateLoanFormForType(type) {
+    const emiGroup = document.getElementById('loanEmiGroup');
+    const hintDiv = document.getElementById('salaryAdvanceHint');
+    const amountInput = document.getElementById('loanAmount');
+
+    if (type === 'salary_advance') {
+        // Hide EMI months field
+        if (emiGroup) emiGroup.style.display = 'none';
+
+        // Show max amount hint from cached salary data
+        if (hintDiv) {
+            const salaryData = window._cachedMySalary;
+            if (salaryData && salaryData.monthly_gross > 0) {
+                const maxAmt = salaryData.monthly_gross;
+                hintDiv.textContent = `Max advance: ${maxAmt.toLocaleString()} (monthly gross)`;
+                hintDiv.style.display = 'block';
+                if (amountInput) amountInput.max = maxAmt;
+            } else {
+                hintDiv.textContent = 'Max: your monthly gross salary';
+                hintDiv.style.display = 'block';
+            }
+        }
+    } else {
+        // Show EMI months field for regular loans
+        if (emiGroup) emiGroup.style.display = '';
+        if (hintDiv) hintDiv.style.display = 'none';
+        if (amountInput) amountInput.removeAttribute('max');
+    }
 }
 
 /**
@@ -3331,23 +3378,38 @@ async function submitLoanApplication() {
             return;
         }
 
-        // For salary advance, EMI months defaults to 1 (deducted next month)
-        // For other loans, EMI months is required
-        let emi = parseInt(emiRaw) || 0;
+        const parsedAmount = parseFloat(amount);
+        let emi;
+        let interestRate = 0;
+
         if (loanType === 'salary_advance') {
-            emi = emi || 1; // Default to 1 month for salary advance
-        } else if (!emi || emi < 1) {
-            showToast('Please enter repayment months for this loan type', 'error');
-            return;
+            // Salary advance: force 1 month, 0 interest, cap at monthly gross
+            emi = 1;
+            interestRate = 0;
+
+            const salaryData = window._cachedMySalary;
+            if (salaryData && salaryData.monthly_gross > 0) {
+                if (parsedAmount > salaryData.monthly_gross) {
+                    showToast(`Salary advance cannot exceed monthly gross (${salaryData.monthly_gross.toLocaleString()})`, 'error');
+                    return;
+                }
+            }
+        } else {
+            // Regular loan: EMI months required
+            emi = parseInt(emiRaw) || 0;
+            if (!emi || emi < 1) {
+                showToast('Please enter repayment months for this loan type', 'error');
+                return;
+            }
         }
 
         await api.request('/hrms/payroll-processing/loans', {
             method: 'POST',
             body: JSON.stringify({
                 loan_type: loanType,
-                principal_amount: parseFloat(amount),
+                principal_amount: parsedAmount,
                 tenure_months: emi,
-                interest_rate: 0, // Interest-free by default, HR can update if needed
+                interest_rate: interestRate,
                 purpose: reason
             })
         });
