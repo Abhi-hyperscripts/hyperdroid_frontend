@@ -74,7 +74,8 @@
         </div>
         <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const roles = JSON.parse(localStorage.getItem('userRoles') || '[]');
+            const user = JSON.parse(localStorage.getItem('ragenaizer_user') || '{}');
+            const roles = user.roles || [];
             const isAdmin = roles.some(r => ['SUPERADMIN','HRMS_ADMIN','HRMS_HR_ADMIN'].includes(r));
             if (isAdmin) {
                 const a = document.getElementById('backLinkAnchor');
