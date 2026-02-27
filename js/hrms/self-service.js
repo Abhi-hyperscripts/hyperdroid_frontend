@@ -1069,7 +1069,17 @@ async function loadUpcomingHolidays() {
         if (currentEmployee?.office_id) {
             upcomingUrl += `&officeId=${currentEmployee.office_id}`;
         }
-        const holidays = await api.request(upcomingUrl);
+        let holidays = await api.request(upcomingUrl);
+        // Deduplicate if no office filter
+        if (!currentEmployee?.office_id && holidays?.length) {
+            const seen = new Set();
+            holidays = holidays.filter(h => {
+                const key = `${h.holiday_name}_${h.holiday_date}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
 
         if (!holidays || holidays.length === 0) {
             container.innerHTML = '<p class="ess-no-data">No upcoming holidays</p>';
@@ -1819,7 +1829,17 @@ async function loadHolidays() {
             holidayUrl += `&officeId=${currentEmployee.office_id}`;
         }
         const response = await api.request(holidayUrl);
-        const holidays = response?.holidays || response || [];
+        let holidays = response?.holidays || response || [];
+        // Deduplicate if no office filter (admin/unlinked users see one entry per office)
+        if (!currentEmployee?.office_id && holidays.length) {
+            const seen = new Set();
+            holidays = holidays.filter(h => {
+                const key = `${h.holiday_name || h.name}_${h.holiday_date || h.date}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
 
         if (!holidays.length) {
             container.innerHTML = `<div class="ess-empty-state"><p>No holidays for ${year}</p></div>`;

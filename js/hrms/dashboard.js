@@ -585,7 +585,17 @@ async function loadUpcomingEvents() {
                 holidayUrl += `&officeId=${currentEmployee.office_id}`;
             }
             const holidays = await api.request(holidayUrl);
-            const holidayList = Array.isArray(holidays) ? holidays : (holidays?.data || []);
+            let holidayList = Array.isArray(holidays) ? holidays : (holidays?.data || []);
+            // Deduplicate if no office filter
+            if (!currentEmployee?.office_id && holidayList.length) {
+                const seen = new Set();
+                holidayList = holidayList.filter(h => {
+                    const key = `${h.holiday_name}_${h.holiday_date}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            }
 
             // Filter for upcoming holidays only
             const today = new Date();
