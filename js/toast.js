@@ -24,6 +24,9 @@ const Toast = (function() {
     // Container element
     let container = null;
 
+    // Track active toast keys to prevent duplicates (immune to DOM timing)
+    const activeToastKeys = new Set();
+
     // Icons for each toast type
     const ICONS = {
         success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,11 +108,9 @@ const Toast = (function() {
         init();
 
         // Prevent duplicate toasts — if the same message+type is already showing, skip
-        for (const existing of container.children) {
-            if (existing.dataset.toastMessage === message && existing.dataset.toastType === type) {
-                return;
-            }
-        }
+        const toastKey = `${type}::${message}`;
+        if (activeToastKeys.has(toastKey)) return;
+        activeToastKeys.add(toastKey);
 
         const duration = options.duration || CONFIG.duration;
         const themeColors = getColors();
@@ -124,8 +125,7 @@ const Toast = (function() {
 
         // Create toast element
         const toast = document.createElement('div');
-        toast.dataset.toastMessage = message;
-        toast.dataset.toastType = type;
+        toast.dataset.toastKey = toastKey;
         toast.style.cssText = `
             display: flex;
             align-items: flex-start;
@@ -214,6 +214,11 @@ const Toast = (function() {
     function removeToast(toast) {
         if (!toast || !toast.parentNode) return;
 
+        // Remove from active tracking so the same message can appear again later
+        if (toast.dataset.toastKey) {
+            activeToastKeys.delete(toast.dataset.toastKey);
+        }
+
         // Clear any pending timeout
         if (toast.dataset.timeoutId) {
             clearTimeout(parseInt(toast.dataset.timeoutId));
@@ -247,6 +252,7 @@ const Toast = (function() {
      */
     function clearAll() {
         if (!container) return;
+        activeToastKeys.clear();
         Array.from(container.children).forEach(toast => removeToast(toast));
     }
 
