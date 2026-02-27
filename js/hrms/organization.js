@@ -3478,29 +3478,50 @@ async function saveHoliday() {
         const holidayTypeDropdown = searchableDropdownInstances.get('holidayTypeSelect');
         const holidayType = holidayTypeDropdown ? holidayTypeDropdown.getValue() : document.getElementById('holidayTypeSelect')?.value;
 
-        const data = {
+        const baseData = {
             holiday_name: document.getElementById('holidayName').value,
             holiday_date: document.getElementById('holidayDate').value,
             holiday_type: holidayType || 'public',
-            description: document.getElementById('holidayDescription').value,
-            office_id: selectedOffice ? selectedOffice : null
+            description: document.getElementById('holidayDescription').value
         };
 
         if (id) {
-            data.id = id;
+            // Editing existing holiday — send with its office_id
+            baseData.id = id;
+            baseData.office_id = selectedOffice || null;
             await api.request('/hrms/holidays', {
                 method: 'PUT',
-                body: JSON.stringify(data)
+                body: JSON.stringify(baseData)
             });
-        } else {
+        } else if (selectedOffice) {
+            // Specific office selected
+            baseData.office_id = selectedOffice;
             await api.request('/hrms/holidays', {
                 method: 'POST',
-                body: JSON.stringify(data)
+                body: JSON.stringify(baseData)
             });
+        } else {
+            // "All Offices" selected — create one holiday per active office
+            const activeOffices = offices.filter(o => o.is_active !== false);
+            if (activeOffices.length === 0) {
+                showToast('No offices available. Please create an office first.', 'error');
+                hideLoading();
+                return;
+            }
+            for (const office of activeOffices) {
+                await api.request('/hrms/holidays', {
+                    method: 'POST',
+                    body: JSON.stringify({ ...baseData, office_id: office.id })
+                });
+            }
         }
 
         closeModal('holidayModal');
-        showToast(`Holiday ${id ? 'updated' : 'created'} successfully`, 'success');
+        const activeOfficeCount = !selectedOffice && !id ? offices.filter(o => o.is_active !== false).length : 1;
+        const msg = activeOfficeCount > 1
+            ? `Holiday created for ${activeOfficeCount} offices`
+            : `Holiday ${id ? 'updated' : 'created'} successfully`;
+        showToast(msg, 'success');
         await loadHolidays();
         hideLoading();
     } catch (error) {
