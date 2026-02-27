@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize navigation
         if (typeof Navigation !== 'undefined') {
-            Navigation.init();
+            Navigation.init('hrms', '../');
         }
 
         // Load profile data

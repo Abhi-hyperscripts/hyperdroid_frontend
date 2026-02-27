@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (typeof Navigation !== 'undefined') Navigation.init();
+    if (typeof Navigation !== 'undefined') Navigation.init('hrms', '../');
     await loadNotifications();
 });
 

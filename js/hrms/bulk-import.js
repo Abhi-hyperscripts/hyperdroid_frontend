@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize navigation
     if (typeof Navigation !== 'undefined') {
-        Navigation.init();
+        Navigation.init('hrms', '../');
     }
 
     // Setup drag and drop
