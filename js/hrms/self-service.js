@@ -1490,19 +1490,19 @@ async function loadOvertimeRequests() {
         }
 
         tbody.innerHTML = requests.map(r => {
-            const date = formatDate(r.date || r.overtime_date);
+            const date = formatDate(r.request_date);
             const status = r.status || 'pending';
 
             return `
                 <tr>
                     <td>${date}</td>
-                    <td>${r.planned_start || '--'}</td>
-                    <td>${r.planned_end || '--'}</td>
-                    <td>${r.actual_start || '--'}</td>
-                    <td>${r.actual_end || '--'}</td>
+                    <td>${formatTime(r.planned_start_time)}</td>
+                    <td>${formatTime(r.planned_end_time)}</td>
+                    <td>${formatTime(r.actual_start_time)}</td>
+                    <td>${formatTime(r.actual_end_time)}</td>
                     <td><span class="status-badge status-${status}">${capitalizeFirst(status)}</span></td>
                     <td>
-                        ${status === 'approved' && !r.actual_start ? `<button class="action-btn" onclick="openCompleteOvertimeModal('${r.id}')" title="Complete">Complete</button>` : '--'}
+                        ${status === 'approved' && !r.actual_start_time ? `<button class="action-btn" onclick="openCompleteOvertimeModal('${r.id}')" title="Complete">Complete</button>` : '--'}
                     </td>
                 </tr>
             `;

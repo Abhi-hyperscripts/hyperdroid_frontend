@@ -4615,12 +4615,27 @@ function renderDropdownItems(field, append = false) {
         `;
     }).join('');
 
+    // For optional fields (manager), prepend a "None" option to allow clearing the selection
+    let noneOptionHTML = '';
+    if (!append && field === 'manager') {
+        const isNoneSelected = !data.selectedId;
+        noneOptionHTML = `
+            <div class="searchable-dropdown-item searchable-dropdown-none-option ${isNoneSelected ? 'selected' : ''}"
+                 data-id=""
+                 onclick="selectSearchableDropdownItem('manager', '', '', '')">
+                <div class="dropdown-item-main">
+                    <span class="dropdown-item-name" style="opacity: 0.6;">None (No manager)</span>
+                </div>
+            </div>
+        `;
+    }
+
     if (append) {
         const loadingIndicator = list.querySelector('.dropdown-loading-indicator');
         if (loadingIndicator) loadingIndicator.remove();
         list.insertAdjacentHTML('beforeend', batchHTML);
     } else {
-        list.innerHTML = batchHTML;
+        list.innerHTML = noneOptionHTML + batchHTML;
     }
 
     data.displayedCount = endIndex;
