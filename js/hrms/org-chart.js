@@ -91,14 +91,16 @@ function populateFilters() {
     if (deptSelect) {
         deptSelect.innerHTML = '<option value="">All Departments</option>';
         departments.forEach(dept => {
-            deptSelect.innerHTML += `<option value="${dept.id}">${escapeHtml(dept.department_name || dept.name)}</option>`;
+            const name = dept.department_name || dept.name;
+            deptSelect.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
         });
     }
 
     if (officeSelect) {
         officeSelect.innerHTML = '<option value="">All Offices</option>';
         offices.forEach(office => {
-            officeSelect.innerHTML += `<option value="${office.id}">${escapeHtml(office.office_name || office.name)}</option>`;
+            const name = office.office_name || office.name;
+            officeSelect.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
         });
     }
 }
@@ -132,7 +134,7 @@ function updateStats() {
     if (totalCount) totalCount.textContent = flatOrgData.length;
 
     // Count unique departments
-    const uniqueDepts = new Set(flatOrgData.map(e => e.department_id).filter(Boolean));
+    const uniqueDepts = new Set(flatOrgData.map(e => e.department || e.department_name).filter(Boolean));
     if (deptCount) deptCount.textContent = uniqueDepts.size;
 
     // Count managers (employees with direct reports)
@@ -201,8 +203,8 @@ function buildVisibleData() {
     let matchingNodeIds = new Set();
     if (hasFilters) {
         flatOrgData.forEach(node => {
-            let matchesDept = !deptFilter || node.department_id === deptFilter;
-            let matchesOffice = !officeFilter || node.office_id === officeFilter;
+            let matchesDept = !deptFilter || (node.department || node.department_name) === deptFilter;
+            let matchesOffice = !officeFilter || (node.office || node.office_name) === officeFilter;
             let matchesSearch = true;
 
             if (searchQuery) {
