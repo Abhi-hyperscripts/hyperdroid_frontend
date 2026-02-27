@@ -1036,8 +1036,8 @@ async function loadAnnouncements() {
     } catch (error) {
         console.error('Error loading announcements:', error);
         container.innerHTML = `
-            <div class="ess-error-state">
-                <p>Failed to load announcements</p>
+            <div class="ess-empty-state">
+                <p>Not Available</p>
             </div>
         `;
     }
@@ -1101,7 +1101,7 @@ async function loadUpcomingHolidays() {
 
     } catch (error) {
         console.error('Error loading holidays:', error);
-        container.innerHTML = '<p class="ess-error">Failed to load</p>';
+        container.innerHTML = '<p class="ess-no-data">Not Available</p>';
     }
 }
 
@@ -1138,7 +1138,7 @@ async function loadUpcomingBirthdays() {
 
     } catch (error) {
         console.error('Error loading birthdays:', error);
-        container.innerHTML = '<p class="ess-error">Failed to load</p>';
+        container.innerHTML = '<p class="ess-no-data">Not Available</p>';
     }
 }
 
@@ -1168,14 +1168,14 @@ async function loadUpcomingAnniversaries() {
                 </div>
                 <div class="ess-upcoming-info">
                     <span class="ess-upcoming-name">${escapeHtml(a.first_name)} ${escapeHtml(a.last_name || '')}</span>
-                    <span class="ess-upcoming-detail">${a.years || 1} year${a.years !== 1 ? 's' : ''}</span>
+                    <span class="ess-upcoming-detail">${a.years_of_service || 1} year${a.years_of_service !== 1 ? 's' : ''}</span>
                 </div>
             </div>
         `).join('');
 
     } catch (error) {
         console.error('Error loading anniversaries:', error);
-        container.innerHTML = '<p class="ess-error">Failed to load</p>';
+        container.innerHTML = '<p class="ess-no-data">Not Available</p>';
     }
 }
 
@@ -3028,9 +3028,9 @@ async function showApplyLeaveModal() {
 }
 
 /**
- * Calculate leave days excluding weekends
+ * Calculate leave days using backend API (considers weekends, holidays, shift rosters)
  */
-function calculateLeaveDays() {
+async function calculateLeaveDays() {
     const fromDate = document.getElementById('fromDate')?.value;
     const toDate = document.getElementById('toDate')?.value;
     const halfDay = (halfDayDropdown ? halfDayDropdown.getValue() : document.getElementById('halfDay')?.value) || '';
@@ -3049,23 +3049,36 @@ function calculateLeaveDays() {
         return;
     }
 
-    // Count business days (exclude Sat/Sun)
-    let days = 0;
-    const current = new Date(from);
-    while (current <= to) {
-        const dayOfWeek = current.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-            days++;
+    // Call backend for accurate calculation (includes holidays, shift rosters, office config)
+    try {
+        leaveDaysEl.value = 'Calculating...';
+        const result = await api.request('/hrms/leave/calculate-days', {
+            method: 'POST',
+            body: JSON.stringify({
+                start_date: fromDate,
+                end_date: toDate,
+                is_half_day: !!halfDay && from.getTime() === to.getTime(),
+                half_day_type: halfDay || null
+            })
+        });
+        leaveDaysEl.value = result.total_days;
+    } catch (error) {
+        console.warn('Leave day calculation API failed, using client-side estimate:', error);
+        // Fallback: count business days (exclude Sat/Sun) — less accurate
+        let days = 0;
+        const current = new Date(from);
+        while (current <= to) {
+            const dayOfWeek = current.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                days++;
+            }
+            current.setDate(current.getDate() + 1);
         }
-        current.setDate(current.getDate() + 1);
+        if (halfDay && from.getTime() === to.getTime()) {
+            days = 0.5;
+        }
+        leaveDaysEl.value = days;
     }
-
-    // Half day: if same date, count as 0.5
-    if (halfDay && from.getTime() === to.getTime()) {
-        days = 0.5;
-    }
-
-    leaveDaysEl.value = days;
 }
 
 /**

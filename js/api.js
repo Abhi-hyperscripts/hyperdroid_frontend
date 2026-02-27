@@ -1428,11 +1428,11 @@ class API {
     }
 
     async getDashboardBirthdays(days = 30) {
-        return this.request(`/hrms/reports/dashboard/birthdays?days=${days}`);
+        return this.request(`/hrms/self-service/birthdays?days=${days}`);
     }
 
     async getDashboardAnniversaries(days = 30) {
-        return this.request(`/hrms/reports/dashboard/anniversaries?days=${days}`);
+        return this.request(`/hrms/self-service/anniversaries?days=${days}`);
     }
 
     async getDashboardQuickStats() {
