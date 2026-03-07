@@ -64,6 +64,10 @@ let fileProgressConnection = null;
 let fileProgressConnected = false;
 let activeProgressFiles = {}; // fileId -> { fileName, status, message, ... }
 
+// Questionnaire progress tracking
+let activeQuestionnaireProgress = {}; // questionnaireId -> { fileName, status, message, progressPercent }
+let questionnairePollers = {}; // questionnaireId -> intervalId
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -109,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Cleanup pollers and SignalR on page unload
 window.addEventListener('beforeunload', () => {
     Object.values(fileStatusPollers).forEach(id => clearInterval(id));
+    Object.values(questionnairePollers).forEach(id => clearInterval(id));
     if (fileProgressConnection) {
         fileProgressConnection.stop().catch(() => {});
     }
@@ -195,13 +200,16 @@ async function loadFiles() {
 
         if (files.length === 0) {
             emptyEl.style.display = 'block';
+            checkAiAvailability();
             return;
         }
 
         renderFilesTable();
         startFilePolling();
-        // Check AI availability once files are loaded (enables AI button + SignalR)
-        if (files.some(f => f.status === 'ready')) checkAiAvailability();
+        // Check AI availability once files are loaded (enables AI button, questionnaire buttons + SignalR)
+        checkAiAvailability();
+        // Reconnect progress tracking for any in-progress questionnaires
+        checkInProgressQuestionnaires();
     } catch (error) {
         loadingEl.style.display = 'none';
         contentEl.innerHTML = `<div class="query-error">Failed to load files: ${escapeHtml(error.message)}</div>`;
@@ -364,10 +372,15 @@ async function connectFileProgressSignalR() {
             handleFileProgressUpdate(data);
         });
 
+        fileProgressConnection.on('QuestionnaireProgress', (data) => {
+            handleQuestionnaireProgressUpdate(data);
+        });
+
         fileProgressConnection.onreconnected(async () => {
             console.log('[FileProgress] SignalR reconnected, rejoining groups');
             fileProgressConnected = true;
             await joinFileProgressGroups();
+            await rejoinQuestionnaireProgressGroups();
         });
 
         fileProgressConnection.onclose(() => {
@@ -2298,6 +2311,13 @@ async function checkAiAvailability() {
     if (embedBtn) {
         embedBtn.style.display = aiAvailable ? 'inline-flex' : 'none';
     }
+
+    // Show/hide Questionnaire section based on AI availability
+    const qDisplay = aiAvailable ? '' : 'none';
+    ['uploadQuestionnaireBtn', 'manageQuestionnairesBtn', 'questionnaireSectionDivider', 'questionnaireSectionLabel'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = qDisplay;
+    });
 
     // Connect SignalR if AI is available
     if (aiAvailable) connectAiSignalR();
@@ -6674,4 +6694,922 @@ function formatTimeAgo(dateStr) {
     const diffDay = Math.floor(diffHr / 24);
     if (diffDay < 30) return `${diffDay}d ago`;
     return date.toLocaleDateString();
+}
+
+// ============================================
+// QUESTIONNAIRE UPLOAD & MANAGEMENT
+// ============================================
+
+function openQuestionnaireUploadModal() {
+    const modal = document.getElementById('questionnaireUploadModal');
+    if (!modal) return;
+    modal.classList.add('active');
+
+    // Reset state
+    const dropzone = document.getElementById('questionnaireDropzone');
+    const progress = document.getElementById('questionnaireUploadProgress');
+    const fileInput = document.getElementById('questionnaireFileInput');
+    if (dropzone) dropzone.style.display = '';
+    if (progress) progress.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+
+    // Setup dropzone events (idempotent — removes old listeners via clone)
+    if (dropzone && !dropzone._qSetup) {
+        dropzone.addEventListener('click', () => fileInput?.click());
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-over');
+            const file = e.dataTransfer?.files?.[0];
+            if (file) handleQuestionnaireUpload(file);
+        });
+        fileInput?.addEventListener('change', () => {
+            const file = fileInput.files?.[0];
+            if (file) handleQuestionnaireUpload(file);
+        });
+        dropzone._qSetup = true;
+    }
+}
+
+async function handleQuestionnaireUpload(file) {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'docx') {
+        Toast.error('Only .docx files are accepted');
+        return;
+    }
+
+    const dropzone = document.getElementById('questionnaireDropzone');
+    const progress = document.getElementById('questionnaireUploadProgress');
+    const progressBar = document.getElementById('questionnaireUploadProgressBar');
+    const progressText = document.getElementById('questionnaireUploadProgressText');
+
+    if (dropzone) dropzone.style.display = 'none';
+    if (progress) progress.style.display = '';
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressText) progressText.textContent = 'Uploading...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = api.token;
+
+    try {
+        const result = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    if (progressBar) progressBar.style.width = percent + '%';
+                    if (progressText) progressText.textContent = `Uploading ${file.name}... ${percent}%`;
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(response);
+                    } else {
+                        reject(new Error(response.error || `Upload failed with status ${xhr.status}`));
+                    }
+                } catch (e) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve({ message: 'Upload accepted' });
+                    } else {
+                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                    }
+                }
+            });
+
+            xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+            xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+
+            xhr.open('POST', `${CONFIG.researchApiBaseUrl}/projects/${projectId}/questionnaires/upload`);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.send(formData);
+        });
+
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressText) progressText.textContent = 'Upload complete. Parsing in progress...';
+
+        Toast.success('Questionnaire uploaded. Parsing in progress...');
+
+        setTimeout(() => {
+            const m = document.getElementById('questionnaireUploadModal');
+            if (m) m.classList.remove('active');
+        }, 1000);
+
+        const qId = result.questionnaire_id;
+        if (qId) {
+            // Track in progress panel
+            activeQuestionnaireProgress[qId] = {
+                fileName: file.name,
+                questionnaireId: qId,
+                status: 'queued',
+                message: result.queue_position > 0 ? `In queue (position ${result.queue_position})` : 'Queued for parsing...',
+                progressPercent: 0
+            };
+            updateQuestionnaireProgressPanelItem(qId, activeQuestionnaireProgress[qId]);
+            showProgressPanel();
+
+            // Connect SignalR and join questionnaire progress group
+            if (!fileProgressConnected) {
+                await connectFileProgressSignalR();
+            }
+            if (fileProgressConnected) {
+                try {
+                    await fileProgressConnection.invoke('JoinQuestionnaireProgress', qId);
+                } catch (e) {
+                    console.warn('Failed to join questionnaire progress group:', e);
+                }
+            }
+
+            // Fallback polling
+            if (!fileProgressConnected) {
+                startPollingQuestionnaire(qId);
+            }
+        }
+    } catch (error) {
+        console.error('Questionnaire upload failed:', error);
+        if (progressText) progressText.textContent = `Upload failed: ${error.message}`;
+        if (progressBar) progressBar.style.width = '0%';
+        Toast.error(error.message || 'Questionnaire upload failed');
+    }
+}
+
+const QUESTIONNAIRE_STAGE_LABELS = {
+    queued: 'Queued for processing',
+    extracting: 'Extracting document text',
+    detecting: 'Detecting question boundaries',
+    chunking: 'Building chunks',
+    parsing: 'Parsing questions (LLM)',
+    merging: 'Merging parsed results',
+    canonicalizing: 'Canonicalizing questions',
+    reconciling: 'Reconciling coverage',
+    auditing: 'Auditing quality',
+    validating: 'Validating extraction',
+    retrying: 'Retrying failed chunks',
+    mapping: 'Mapping ontology concepts',
+    ready: 'Parsing complete',
+    failed: 'Parsing failed'
+};
+
+function handleQuestionnaireProgressUpdate(data) {
+    const qId = data.questionnaire_id;
+    const status = data.status;
+    const rawMessage = data.message || '';
+    const progressPercent = data.progress_percent || 0;
+    const tokensUsed = data.tokens_used || 0;
+    const llmCalls = data.llm_calls || 0;
+    const totalQuestions = data.total_questions || 0;
+    // Use chunk-specific message for parsing (e.g., "Parsing chunk 3/5"), otherwise friendly label
+    const message = (status === 'parsing' && rawMessage.includes('chunk'))
+        ? rawMessage
+        : (QUESTIONNAIRE_STAGE_LABELS[status] || rawMessage);
+
+    if (status === 'ready' || status === 'failed') {
+        // Terminal state
+        if (activeQuestionnaireProgress[qId]) {
+            activeQuestionnaireProgress[qId] = { ...activeQuestionnaireProgress[qId], status, message, progressPercent, tokensUsed, llmCalls, totalQuestions };
+            updateQuestionnaireProgressPanelItem(qId, activeQuestionnaireProgress[qId]);
+        }
+
+        if (status === 'ready') {
+            const fileName = activeQuestionnaireProgress[qId]?.fileName || 'Questionnaire';
+            const tokenStr = tokensUsed > 0 ? `, ${tokensUsed.toLocaleString()} tokens` : '';
+            Toast.success(`"${fileName}" parsed successfully (${totalQuestions || '?'} questions${tokenStr})`);
+        } else {
+            Toast.error(`Questionnaire parsing failed: ${message}`);
+        }
+
+        // Clean up after a moment
+        setTimeout(() => {
+            delete activeQuestionnaireProgress[qId];
+            removeProgressPanelItem(`q-${qId}`);
+            if (fileProgressConnected && fileProgressConnection) {
+                fileProgressConnection.invoke('LeaveQuestionnaireProgress', qId).catch(() => {});
+            }
+            if (questionnairePollers[qId]) {
+                clearInterval(questionnairePollers[qId]);
+                delete questionnairePollers[qId];
+            }
+        }, 2000);
+    } else {
+        // In-progress update
+        if (!activeQuestionnaireProgress[qId]) {
+            activeQuestionnaireProgress[qId] = { fileName: 'Questionnaire', questionnaireId: qId };
+        }
+        activeQuestionnaireProgress[qId] = { ...activeQuestionnaireProgress[qId], status, message, progressPercent, tokensUsed, llmCalls };
+        updateQuestionnaireProgressPanelItem(qId, activeQuestionnaireProgress[qId]);
+        showProgressPanel();
+    }
+}
+
+function updateQuestionnaireProgressPanelItem(qId, data) {
+    const panelItemId = `q-${qId}`;
+    let item = document.getElementById(`progress-item-${panelItemId}`);
+    const list = document.getElementById('fileProgressList');
+    if (!list) return;
+
+    if (!item) {
+        item = document.createElement('div');
+        item.id = `progress-item-${panelItemId}`;
+        item.className = 'file-progress-item';
+        list.appendChild(item);
+    }
+
+    const pct = data.progressPercent || 0;
+    const tokens = data.tokensUsed || 0;
+    const calls = data.llmCalls || 0;
+    const tokenInfo = tokens > 0 ? `<span class="file-progress-tokens">${tokens.toLocaleString()} tokens &middot; ${calls} LLM calls</span>` : '';
+
+    item.innerHTML = `
+        <div class="file-progress-name" title="${escapeHtml(data.fileName || '')}">${escapeHtml(data.fileName || 'Questionnaire')}</div>
+        <div class="file-progress-status">${escapeHtml(data.message || data.status || '')}</div>
+        <div class="file-progress-bar">
+            <div class="file-progress-fill ${pct < 100 && pct > 0 ? 'indeterminate' : ''}" style="width: ${pct}%;${data.status === 'failed' ? ' background: var(--color-danger, #ef4444);' : ''}"></div>
+        </div>
+        ${tokenInfo}
+    `;
+}
+
+function startPollingQuestionnaire(qId) {
+    if (questionnairePollers[qId]) return;
+    questionnairePollers[qId] = setInterval(async () => {
+        try {
+            const data = await api.request(`/research/projects/${projectId}/questionnaires/${qId}`, { _skipSpinner: true });
+            handleQuestionnaireProgressUpdate({
+                questionnaire_id: qId,
+                status: data.Status || data.status,
+                progress_percent: data.ProgressPercent || data.progressPercent || data.progress_percent || 0,
+                message: data.Status || data.status,
+                total_questions: data.TotalQuestions || data.totalQuestions || data.total_questions || 0,
+                tokens_used: data.TokensUsed || data.tokensUsed || data.tokens_used || 0,
+                llm_calls: data.LlmCalls || data.llmCalls || data.llm_calls || 0
+            });
+
+            const st = data.Status || data.status;
+            if (st === 'ready' || st === 'failed') {
+                clearInterval(questionnairePollers[qId]);
+                delete questionnairePollers[qId];
+            }
+        } catch (e) {
+            console.warn('Questionnaire poll failed:', e);
+        }
+    }, 5000);
+}
+
+async function rejoinQuestionnaireProgressGroups() {
+    if (!fileProgressConnection || !fileProgressConnected) return;
+    for (const qId of Object.keys(activeQuestionnaireProgress)) {
+        try {
+            await fileProgressConnection.invoke('JoinQuestionnaireProgress', qId);
+        } catch (e) {
+            console.warn(`Failed to rejoin questionnaire progress group ${qId}:`, e);
+        }
+    }
+}
+
+async function checkInProgressQuestionnaires() {
+    try {
+        const questionnaires = await api.request(`/research/projects/${projectId}/questionnaires`, { _skipSpinner: true });
+        if (!Array.isArray(questionnaires)) return;
+
+        const processingStatuses = ['queued', 'extracting', 'detecting', 'chunking', 'parsing', 'merging', 'canonicalizing', 'reconciling', 'auditing', 'validating', 'retrying', 'mapping'];
+        const inProgress = questionnaires.filter(q => {
+            const st = q.Status || q.status;
+            return processingStatuses.includes(st);
+        });
+
+        if (inProgress.length === 0) return;
+
+        for (const q of inProgress) {
+            const qId = q.Id || q.id;
+            const fileName = q.FileName || q.fileName || q.file_name || 'Questionnaire';
+            const status = q.Status || q.status;
+            const pct = q.ProgressPercent || q.progressPercent || q.progress_percent || 0;
+            const tokensUsed = q.TokensUsed || q.tokensUsed || q.tokens_used || 0;
+            const llmCalls = q.LlmCalls || q.llmCalls || q.llm_calls || 0;
+
+            activeQuestionnaireProgress[qId] = {
+                fileName,
+                questionnaireId: qId,
+                status,
+                message: QUESTIONNAIRE_STAGE_LABELS[status] || `Resuming: ${status}`,
+                progressPercent: pct,
+                tokensUsed,
+                llmCalls
+            };
+            updateQuestionnaireProgressPanelItem(qId, activeQuestionnaireProgress[qId]);
+        }
+        showProgressPanel();
+
+        // Connect SignalR and join groups
+        if (!fileProgressConnected) {
+            await connectFileProgressSignalR();
+        }
+        if (fileProgressConnected) {
+            for (const q of inProgress) {
+                const qId = q.Id || q.id;
+                try {
+                    await fileProgressConnection.invoke('JoinQuestionnaireProgress', qId);
+                } catch (e) {
+                    console.warn(`Failed to join questionnaire progress group ${qId}:`, e);
+                    startPollingQuestionnaire(qId);
+                }
+            }
+        } else {
+            for (const q of inProgress) {
+                startPollingQuestionnaire(q.Id || q.id);
+            }
+        }
+    } catch (e) {
+        // Non-critical — silently fail
+        console.warn('Failed to check in-progress questionnaires:', e);
+    }
+}
+
+// ============================================
+// QUESTIONNAIRE MANAGER
+// ============================================
+
+async function openQuestionnaireManager() {
+    const modal = document.getElementById('questionnaireManagerModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    await loadQuestionnaireList();
+}
+
+async function loadQuestionnaireList() {
+    const container = document.getElementById('questionnaireListContainer');
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted);">Loading...</div>';
+
+    try {
+        const questionnaires = await api.request(`/research/projects/${projectId}/questionnaires`);
+
+        if (!questionnaires || questionnaires.length === 0) {
+            container.innerHTML = '<div class="questionnaire-empty">No questionnaires uploaded yet.</div>';
+            return;
+        }
+
+        container.innerHTML = `<div class="questionnaire-list">${questionnaires.map(q => {
+            const isActive = q.IsActive || q.isActive || q.is_active;
+            const status = q.Status || q.status;
+            const quality = q.QualityLevel || q.qualityLevel || q.quality_level || '';
+            const totalQ = q.TotalQuestions || q.totalQuestions || q.total_questions || 0;
+            const totalSections = q.TotalSections || q.totalSections || q.total_sections || 0;
+            const totalChunks = q.TotalChunks || q.totalChunks || q.total_chunks || 0;
+            const fileName = q.FileName || q.fileName || q.file_name || '';
+            const uploadedAt = q.UploadedAt || q.uploadedAt || q.uploaded_at || '';
+            const parsedAt = q.ParsedAt || q.parsedAt || q.parsed_at || '';
+            const id = q.Id || q.id;
+            const tokensUsed = q.TokensUsed || q.tokensUsed || q.tokens_used || 0;
+            const llmCalls = q.LlmCalls || q.llmCalls || q.llm_calls || 0;
+            const recall = q.QuestionRecall || q.questionRecall || q.question_recall || 0;
+            const structural = q.StructuralCoverage || q.structuralCoverage || q.structural_coverage || 0;
+            const semantic = q.SemanticCoverageMetric || q.semanticCoverageMetric || q.semantic_coverage_metric || q.semantic_coverage || 0;
+            const progRatio = q.ProgrammingRatio || q.programmingRatio || q.programming_ratio || 0;
+            const structConf = q.StructureConfidence || q.structureConfidence || q.structure_confidence || 0;
+            const semConf = q.SemanticConfidence || q.semanticConfidence || q.semantic_confidence || 0;
+            const detectedFormat = q.DetectedFormat || q.detectedFormat || q.detected_format || '';
+            const labelPattern = q.LabelPattern || q.labelPattern || q.label_pattern || '';
+            const processingMs = q.ProcessingTimeMs || q.processingTimeMs || q.processing_time_ms || 0;
+            const parserVersion = q.ParserVersion || q.parserVersion || q.parser_version || '';
+            const fileSizeBytes = q.FileSizeBytes || q.fileSizeBytes || q.file_size_bytes || 0;
+            const processingTime = processingMs > 0 ? (processingMs / 1000).toFixed(1) + 's' : '-';
+            const fileSize = fileSizeBytes > 0 ? (fileSizeBytes < 1048576 ? (fileSizeBytes / 1024).toFixed(1) + ' KB' : (fileSizeBytes / 1048576).toFixed(1) + ' MB') : '-';
+
+            const hasDetails = status === 'ready' && tokensUsed > 0;
+
+            return `<div class="questionnaire-item ${isActive ? 'active-item' : ''}">
+                <div class="questionnaire-item-row">
+                    <div class="questionnaire-item-info">
+                        <div class="questionnaire-item-name" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</div>
+                        <div class="questionnaire-item-meta">
+                            ${isActive ? '<span class="questionnaire-active-badge">Active</span>' : ''}
+                            <span class="questionnaire-status-badge ${status}">${status}</span>
+                            ${quality ? `<span class="questionnaire-quality-badge ${quality}">${quality}</span>` : ''}
+                            ${status === 'ready' ? `<span>${totalQ} questions</span>` : ''}
+                            ${hasDetails ? `<span class="questionnaire-token-info">${tokensUsed.toLocaleString()} tokens &middot; ${llmCalls} calls</span>` : ''}
+                            <span>${formatRelativeTime(uploadedAt)}</span>
+                        </div>
+                    </div>
+                    <div class="questionnaire-item-actions">
+                        ${hasDetails ? `<button class="btn-expand-details" onclick="toggleQuestionnaireDetails(this)" title="Show details"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>` : ''}
+                        ${status === 'ready' ? `<button class="btn-view-questionnaire" onclick="openQuestionnaireViewer('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')">View</button>` : ''}
+                        ${status === 'ready' && !isActive ? `<button class="btn-activate" onclick="activateQuestionnaire('${id}')">Set Active</button>` : ''}
+                        <button class="btn-icon-danger" onclick="deleteQuestionnaire('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')" title="Delete">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                ${hasDetails ? `<div class="questionnaire-details" style="display:none;">
+                    <div class="qd-grid">
+                        <div class="qd-section">
+                            <div class="qd-section-title">Quality Metrics</div>
+                            <div class="qd-row"><span class="qd-label">Question Recall</span><span class="qd-value">${(recall * 100).toFixed(1)}%</span></div>
+                            <div class="qd-row"><span class="qd-label">Structural Coverage</span><span class="qd-value">${(structural * 100).toFixed(1)}%</span></div>
+                            <div class="qd-row"><span class="qd-label">Semantic Coverage</span><span class="qd-value">${(semantic * 100).toFixed(1)}%</span></div>
+                            <div class="qd-row"><span class="qd-label">Quality Level</span><span class="qd-value qd-quality-${quality}">${quality || '-'}</span></div>
+                        </div>
+                        <div class="qd-section">
+                            <div class="qd-section-title">Extraction</div>
+                            <div class="qd-row"><span class="qd-label">Questions</span><span class="qd-value">${totalQ}</span></div>
+                            <div class="qd-row"><span class="qd-label">Sections</span><span class="qd-value">${totalSections}</span></div>
+                            <div class="qd-row"><span class="qd-label">Chunks</span><span class="qd-value">${totalChunks}</span></div>
+                            <div class="qd-row"><span class="qd-label">Programming Ratio</span><span class="qd-value">${(progRatio * 100).toFixed(1)}%</span></div>
+                        </div>
+                        <div class="qd-section">
+                            <div class="qd-section-title">Confidence</div>
+                            <div class="qd-row"><span class="qd-label">Structure</span><span class="qd-value">${(structConf * 100).toFixed(1)}%</span></div>
+                            <div class="qd-row"><span class="qd-label">Semantic</span><span class="qd-value">${(semConf * 100).toFixed(1)}%</span></div>
+                            <div class="qd-row"><span class="qd-label">Detected Format</span><span class="qd-value">${detectedFormat || '-'}</span></div>
+                            <div class="qd-row"><span class="qd-label">Label Pattern</span><span class="qd-value">${labelPattern || '-'}</span></div>
+                        </div>
+                        <div class="qd-section">
+                            <div class="qd-section-title">Processing</div>
+                            <div class="qd-row"><span class="qd-label">Tokens Used</span><span class="qd-value">${tokensUsed.toLocaleString()}</span></div>
+                            <div class="qd-row"><span class="qd-label">LLM Calls</span><span class="qd-value">${llmCalls}</span></div>
+                            <div class="qd-row"><span class="qd-label">Processing Time</span><span class="qd-value">${processingTime}</span></div>
+                            <div class="qd-row"><span class="qd-label">File Size</span><span class="qd-value">${fileSize}</span></div>
+                            <div class="qd-row"><span class="qd-label">Parser Version</span><span class="qd-value">${parserVersion || '-'}</span></div>
+                            ${parsedAt ? `<div class="qd-row"><span class="qd-label">Parsed</span><span class="qd-value">${new Date(parsedAt).toLocaleString()}</span></div>` : ''}
+                        </div>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        }).join('')}</div>`;
+    } catch (error) {
+        console.error('Failed to load questionnaires:', error);
+        container.innerHTML = `<div class="questionnaire-empty" style="color:var(--color-error);">Failed to load questionnaires: ${escapeHtml(error.message)}</div>`;
+    }
+}
+
+function toggleQuestionnaireDetails(btn) {
+    const item = btn.closest('.questionnaire-item');
+    const details = item?.querySelector('.questionnaire-details');
+    if (!details) return;
+    const isOpen = details.style.display !== 'none';
+    details.style.display = isOpen ? 'none' : 'block';
+    btn.classList.toggle('expanded', !isOpen);
+}
+
+async function activateQuestionnaire(id) {
+    try {
+        await api.request(`/research/projects/${projectId}/questionnaires/${id}/activate`, { method: 'POST' });
+        Toast.success('Questionnaire activated');
+        await loadQuestionnaireList();
+    } catch (error) {
+        Toast.error(error.message || 'Failed to activate questionnaire');
+    }
+}
+
+async function deleteQuestionnaire(id, name) {
+    const confirmed = await Confirm.danger(
+        `This will permanently delete "${name}" and all its parsed data. This action cannot be undone.`,
+        'Delete Questionnaire'
+    );
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/research/projects/${projectId}/questionnaires/${id}`, { method: 'DELETE' });
+        Toast.success(`"${name}" deleted`);
+        await loadQuestionnaireList();
+    } catch (error) {
+        Toast.error(error.message || 'Failed to delete questionnaire');
+    }
+}
+
+function formatRelativeTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 30) return `${diffDay}d ago`;
+    return date.toLocaleDateString();
+}
+
+// ============================================
+// QUESTIONNAIRE VIEWER
+// ============================================
+let qvData = null; // cached parsed JSON
+let qvFileName = '';
+let qvCurrentTab = 'normal';
+
+async function openQuestionnaireViewer(questionnaireId, fileName) {
+    // Close manager modal if open
+    const mgr = document.getElementById('questionnaireManagerModal');
+    if (mgr) mgr.classList.remove('active');
+
+    const modal = document.getElementById('questionnaireViewerModal');
+    if (!modal) return;
+    qvFileName = fileName;
+    qvCurrentTab = 'normal';
+    document.getElementById('qvTitle').textContent = fileName || 'Questionnaire';
+    document.getElementById('qvBody').innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">Loading...</div>';
+    modal.classList.add('active');
+
+    // Reset search
+    const si = document.getElementById('qvSearchInput');
+    if (si) si.value = '';
+    qvSearchClear();
+
+    // Reset tab UI
+    modal.querySelectorAll('.qv-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+    document.getElementById('qvPrintBtn').style.display = '';
+    document.getElementById('qvDownloadBtn').style.display = 'none';
+
+    try {
+        qvData = await api.request(`/research/projects/${projectId}/questionnaires/${questionnaireId}/parsed`);
+        renderQvNormalView();
+    } catch (error) {
+        console.error('Failed to load parsed questionnaire:', error);
+        document.getElementById('qvBody').innerHTML = `<div style="text-align:center; padding:40px; color:var(--color-error);">Failed to load: ${escapeHtml(error.message)}</div>`;
+    }
+}
+
+function closeQuestionnaireViewer() {
+    const modal = document.getElementById('questionnaireViewerModal');
+    if (modal) modal.classList.remove('active');
+    qvData = null;
+}
+
+function switchQvTab(tab) {
+    qvCurrentTab = tab;
+    const si = document.getElementById('qvSearchInput');
+    if (si) si.value = '';
+    qvSearchClear();
+    const modal = document.getElementById('questionnaireViewerModal');
+    modal.querySelectorAll('.qv-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.toLowerCase().includes(tab === 'normal' ? 'normal' : 'json'));
+    });
+    document.getElementById('qvPrintBtn').style.display = tab === 'normal' ? '' : 'none';
+    document.getElementById('qvDownloadBtn').style.display = tab === 'json' ? '' : 'none';
+    if (tab === 'normal') renderQvNormalView();
+    else renderQvJsonView();
+}
+
+function renderQvNormalView() {
+    const body = document.getElementById('qvBody');
+    if (!qvData) return;
+    _qvQidCounter = 0;
+
+    const meta = qvData.metadata || qvData.Metadata || {};
+    const sections = qvData.sections || qvData.Sections || [];
+    const fileName = qvData.file_name || qvData.fileName || qvData.FileName || qvFileName;
+    const totalQ = meta.total_questions || meta.totalQuestions || meta.TotalQuestions || 0;
+    const totalS = meta.total_sections || meta.totalSections || meta.TotalSections || 0;
+    const format = meta.detected_format || meta.detectedFormat || meta.DetectedFormat || '';
+    const quality = meta.audit_quality || meta.auditQuality || meta.AuditQuality || '';
+
+    let html = `<div class="qv-doc">
+        <div class="qv-doc-title">${escapeHtml(fileName)}</div>
+        <div class="qv-doc-meta">
+            <span>${totalQ} questions</span>
+            <span>${totalS} sections</span>
+            ${format ? `<span>Format: ${escapeHtml(format)}</span>` : ''}
+            ${quality ? `<span>Quality: ${escapeHtml(quality)}</span>` : ''}
+        </div>`;
+
+    sections.forEach(sec => {
+        const sLabel = sec.sectionLabel || sec.SectionLabel || sec.section_label;
+        const sId = sec.sectionId || sec.SectionId || sec.section_id || '';
+        const questions = sec.questions || sec.Questions || [];
+
+        html += `<div class="qv-section">`;
+        if (sLabel) {
+            html += `<div class="qv-section-label">${escapeHtml(sLabel)}</div>`;
+        } else if (sId) {
+            html += `<div class="qv-section-label">${escapeHtml(sId)}</div>`;
+        }
+
+        questions.forEach(q => {
+            html += renderQvQuestion(q);
+        });
+        html += `</div>`;
+    });
+
+    html += `</div>`;
+    body.innerHTML = html;
+    body.scrollTop = 0;
+}
+
+let _qvQidCounter = 0;
+
+function renderQvQuestion(q) {
+    const qNum = q.questionNumber || q.QuestionNumber || q.question_number || '';
+    const label = q.originalLabel || q.OriginalLabel || q.original_label || '';
+    const text = q.questionText || q.QuestionText || q.question_text || '';
+    const type = q.questionType || q.QuestionType || q.question_type || '';
+    const instruction = q.instructionText || q.InstructionText || q.instruction_text || '';
+    const options = q.options || q.Options || [];
+    const rows = q.rows || q.Rows || [];
+    const columns = q.columns || q.Columns || [];
+    const scale = q.scale || q.Scale || null;
+    const skipLogic = q.skipLogic || q.SkipLogic || q.skip_logic || null;
+    const ontology = q.ontology || q.Ontology || null;
+
+    const displayNum = label || `Q${qNum}`;
+    const typeLabels = {
+        'single_select': 'Single Select',
+        'multi_select': 'Multi Select',
+        'open_text': 'Open Text',
+        'numeric': 'Numeric',
+        'matrix_single': 'Matrix (Single)',
+        'matrix_multi': 'Matrix (Multi)',
+        'ranking': 'Ranking',
+        'scale': 'Scale'
+    };
+
+    const qid = `qvq_${_qvQidCounter++}`;
+    const jsonStr = JSON.stringify(q, null, 2);
+
+    let questionContent = '';
+
+    // Header
+    questionContent += `<div class="qv-q-header">
+            <span class="qv-q-number">${escapeHtml(displayNum)}</span>
+            <span class="qv-q-text">${escapeHtml(text)}</span>
+        </div>`;
+
+    if (instruction) {
+        questionContent += `<div class="qv-q-instruction">${escapeHtml(instruction)}</div>`;
+    }
+
+    questionContent += `<span class="qv-q-type">${typeLabels[type] || type}</span>`;
+    if (ontology) {
+        const cLabel = ontology.conceptLabel || ontology.ConceptLabel || ontology.concept_label || '';
+        if (cLabel) questionContent += `<span class="qv-ontology-tag">${escapeHtml(cLabel)}</span>`;
+    }
+
+    // Render by type
+    if (type === 'single_select' && options.length) {
+        questionContent += renderQvOptions(options, 'single');
+    } else if (type === 'multi_select' && options.length) {
+        questionContent += renderQvOptions(options, 'multi');
+    } else if (type === 'ranking' && options.length) {
+        questionContent += renderQvOptions(options, 'rank');
+    } else if ((type === 'matrix_single' || type === 'matrix_multi') && rows.length && columns.length) {
+        questionContent += renderQvMatrix(rows, columns, type);
+    } else if (type === 'scale' && scale) {
+        questionContent += renderQvScale(scale);
+    } else if (type === 'open_text') {
+        questionContent += `<div class="qv-open-text-box">Write-in response</div>`;
+    } else if (type === 'numeric') {
+        questionContent += `<div class="qv-open-text-box">Numeric response</div>`;
+    }
+
+    // Skip logic
+    if (skipLogic) {
+        const cond = skipLogic.condition || skipLogic.Condition || '';
+        const showIf = skipLogic.showIf || skipLogic.ShowIf || skipLogic.show_if || '';
+        const skipTo = skipLogic.skipTo || skipLogic.SkipTo || skipLogic.skip_to || '';
+        const parts = [cond, showIf ? `Show if: ${showIf}` : '', skipTo ? `Skip to: ${skipTo}` : ''].filter(Boolean);
+        if (parts.length) {
+            questionContent += `<div class="qv-skip-logic">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                ${escapeHtml(parts.join(' | '))}
+            </div>`;
+        }
+    }
+
+    let html = `<div class="qv-question">
+        <div class="qv-q-tabs">
+            <button class="qv-q-tab active" onclick="switchQvQTab('${qid}','question',this)">Question</button>
+            <button class="qv-q-tab" onclick="switchQvQTab('${qid}','json',this)">JSON</button>
+        </div>
+        <div class="qv-q-panel" id="${qid}_question">${questionContent}</div>
+        <div class="qv-q-panel" id="${qid}_json" hidden><pre class="qv-q-json-pre">${escapeHtml(jsonStr)}</pre></div>
+    </div>`;
+    return html;
+}
+
+function switchQvQTab(qid, tab, btn) {
+    const qPanel = document.getElementById(`${qid}_question`);
+    const jPanel = document.getElementById(`${qid}_json`);
+    if (!qPanel || !jPanel) return;
+
+    // Toggle panels
+    if (tab === 'question') {
+        qPanel.hidden = false;
+        jPanel.hidden = true;
+    } else {
+        qPanel.hidden = true;
+        jPanel.hidden = false;
+    }
+
+    // Toggle active tab
+    const tabs = btn.parentElement.querySelectorAll('.qv-q-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+/* ====== Questionnaire Viewer Search ====== */
+let _qvSearchTimer = null;
+let _qvSearchMatches = [];
+let _qvSearchIdx = -1;
+
+function qvSearchDebounced() {
+    clearTimeout(_qvSearchTimer);
+    _qvSearchTimer = setTimeout(qvSearchExec, 250);
+}
+
+function qvSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(_qvSearchTimer);
+        if (_qvSearchMatches.length === 0) {
+            qvSearchExec();
+        } else {
+            qvSearchNav(e.shiftKey ? -1 : 1);
+        }
+    } else if (e.key === 'Escape') {
+        document.getElementById('qvSearchInput').value = '';
+        qvSearchClear();
+    }
+}
+
+function qvSearchExec() {
+    qvSearchClear(true);
+    const term = (document.getElementById('qvSearchInput').value || '').trim();
+    const info = document.getElementById('qvSearchInfo');
+    const prevBtn = document.getElementById('qvSearchPrev');
+    const nextBtn = document.getElementById('qvSearchNext');
+
+    if (!term || term.length < 2) {
+        info.textContent = '';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+    }
+
+    const body = document.getElementById('qvBody');
+    if (!body) return;
+
+    // Walk text nodes and wrap matches
+    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
+    const textNodes = [];
+    while (walker.nextNode()) {
+        const n = walker.currentNode;
+        if (n.parentElement && n.parentElement.closest('.qv-q-json-pre')) continue;
+        if (n.nodeValue && regex.test(n.nodeValue)) {
+            textNodes.push(n);
+        }
+        regex.lastIndex = 0;
+    }
+
+    textNodes.forEach(node => {
+        const frag = document.createDocumentFragment();
+        let text = node.nodeValue;
+        let lastIdx = 0;
+        regex.lastIndex = 0;
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+            if (m.index > lastIdx) {
+                frag.appendChild(document.createTextNode(text.slice(lastIdx, m.index)));
+            }
+            const mark = document.createElement('mark');
+            mark.className = 'qv-search-highlight';
+            mark.textContent = m[0];
+            frag.appendChild(mark);
+            lastIdx = regex.lastIndex;
+        }
+        if (lastIdx < text.length) {
+            frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+        }
+        node.parentNode.replaceChild(frag, node);
+    });
+
+    _qvSearchMatches = Array.from(body.querySelectorAll('.qv-search-highlight'));
+    const count = _qvSearchMatches.length;
+
+    if (count > 0) {
+        _qvSearchIdx = 0;
+        _qvSearchMatches[0].classList.add('active');
+        _qvSearchMatches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        info.textContent = `1 / ${count}`;
+        prevBtn.disabled = false;
+        nextBtn.disabled = false;
+    } else {
+        info.textContent = 'No results';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+    }
+}
+
+function qvSearchNav(dir) {
+    if (_qvSearchMatches.length === 0) return;
+    _qvSearchMatches[_qvSearchIdx].classList.remove('active');
+    _qvSearchIdx = (_qvSearchIdx + dir + _qvSearchMatches.length) % _qvSearchMatches.length;
+    _qvSearchMatches[_qvSearchIdx].classList.add('active');
+    _qvSearchMatches[_qvSearchIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('qvSearchInfo').textContent = `${_qvSearchIdx + 1} / ${_qvSearchMatches.length}`;
+}
+
+function qvSearchClear(keepInput) {
+    _qvSearchMatches = [];
+    _qvSearchIdx = -1;
+    const body = document.getElementById('qvBody');
+    if (!body) return;
+    body.querySelectorAll('.qv-search-highlight').forEach(mark => {
+        const parent = mark.parentNode;
+        parent.replaceChild(document.createTextNode(mark.textContent), mark);
+        parent.normalize();
+    });
+    if (!keepInput) {
+        document.getElementById('qvSearchInfo').textContent = '';
+        document.getElementById('qvSearchPrev').disabled = true;
+        document.getElementById('qvSearchNext').disabled = true;
+    }
+}
+
+function renderQvOptions(options, mode) {
+    let html = `<ul class="qv-options">`;
+    options.forEach((opt, i) => {
+        const code = opt.code || opt.Code || '';
+        const label = opt.label || opt.Label || '';
+        let marker;
+        if (mode === 'rank') {
+            marker = `<span class="qv-opt-marker rank">${i + 1}.</span>`;
+        } else if (mode === 'multi') {
+            marker = `<span class="qv-opt-marker multi"></span>`;
+        } else {
+            marker = `<span class="qv-opt-marker"></span>`;
+        }
+        html += `<li>${marker} ${code ? `<span class="qv-opt-code">${escapeHtml(code)}</span>` : ''} ${escapeHtml(label)}</li>`;
+    });
+    html += `</ul>`;
+    return html;
+}
+
+function renderQvMatrix(rows, columns, type) {
+    let html = `<table class="qv-matrix"><thead><tr><th></th>`;
+    columns.forEach(c => { html += `<th>${escapeHtml(c)}</th>`; });
+    html += `</tr></thead><tbody>`;
+    rows.forEach(r => {
+        html += `<tr><td>${escapeHtml(r)}</td>`;
+        columns.forEach(() => {
+            const marker = type === 'matrix_multi' ? '&#9634;' : '&#9675;';
+            html += `<td>${marker}</td>`;
+        });
+        html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
+
+function renderQvScale(scale) {
+    const min = scale.min ?? scale.Min ?? 0;
+    const max = scale.max ?? scale.Max ?? 10;
+    const minLabel = scale.minLabel || scale.MinLabel || scale.min_label || '';
+    const maxLabel = scale.maxLabel || scale.MaxLabel || scale.max_label || '';
+
+    let html = `<div class="qv-scale-bar">`;
+    for (let i = min; i <= max; i++) {
+        html += `<div class="qv-scale-point">${i}</div>`;
+    }
+    html += `</div>`;
+    if (minLabel || maxLabel) {
+        html += `<div class="qv-scale-labels"><span>${escapeHtml(minLabel)}</span><span>${escapeHtml(maxLabel)}</span></div>`;
+    }
+    return html;
+}
+
+function renderQvJsonView() {
+    const body = document.getElementById('qvBody');
+    if (!qvData) return;
+    const json = JSON.stringify(qvData, null, 2);
+    body.innerHTML = `<div class="qv-json-wrap"><pre class="qv-json-pre">${escapeHtml(json)}</pre></div>`;
+    body.scrollTop = 0;
+}
+
+function downloadQuestionnaireJson() {
+    if (!qvData) return;
+    const json = JSON.stringify(qvData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (qvFileName || 'questionnaire').replace(/\.\w+$/, '') + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function printQuestionnaire() {
+    if (qvCurrentTab !== 'normal') switchQvTab('normal');
+    setTimeout(() => window.print(), 200);
 }
