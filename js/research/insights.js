@@ -317,8 +317,8 @@
                 html += '<div class="ins-chart-grid">';
                 // Pre-compute which charts are full-width to detect lone half-width at end
                 const widths = charts.map(c => {
-                    // All charts render full-width for clean, readable layout
-                    return true;
+                    const isWide = ['stacked_bar', 'line', 'area', 'heatmap', 'scatter', 'bubble', 'boxPlot'].includes(c.chart_type);
+                    return charts.length === 1 || isWide || c.chart_size === 'full';
                 });
                 // Count half-width charts; if odd, the last half-width should become full
                 const halfCount = widths.filter(w => !w).length;
