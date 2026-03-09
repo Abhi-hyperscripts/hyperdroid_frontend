@@ -320,6 +320,17 @@
                     const isWide = ['stacked_bar', 'line', 'area', 'heatmap', 'scatter', 'bubble', 'boxPlot'].includes(c.chart_type);
                     return charts.length === 1 || isWide || c.chart_size === 'full';
                 });
+                // Promote unpaired half-width charts to full-width
+                // Walk through and pair consecutive halves; any lone half becomes full
+                for (let k = 0; k < widths.length; k++) {
+                    if (!widths[k]) {
+                        if (k + 1 < widths.length && !widths[k + 1]) {
+                            k++; // paired — skip both
+                        } else {
+                            widths[k] = true; // lone half → promote to full
+                        }
+                    }
+                }
                 charts.forEach((chart, ci) => {
                     const fullWidth = widths[ci];
                     html += `
