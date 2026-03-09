@@ -1280,7 +1280,16 @@
     window.insToggleMethodology = function (e) {
         e.stopPropagation();
         const popover = document.getElementById('insMethodologyPopover');
-        if (popover) popover.classList.toggle('visible');
+        if (!popover) return;
+        const isVisible = popover.classList.toggle('visible');
+        // On mobile, position fixed below the trigger icon
+        if (isVisible && window.innerWidth <= 600) {
+            const trigger = e.currentTarget || e.target.closest('.ins-info-trigger');
+            if (trigger) {
+                const r = trigger.getBoundingClientRect();
+                popover.style.top = Math.min(r.bottom + 8, window.innerHeight - popover.offsetHeight - 16) + 'px';
+            }
+        }
     };
 
     // Close methodology popover when clicking outside
