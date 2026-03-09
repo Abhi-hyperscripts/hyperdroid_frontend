@@ -52,6 +52,8 @@ const NO_CACHE_PATTERNS = [
     /gstatic\.com/,      // Firebase SDK (let browser handle)
     /cdn\.jsdelivr/,     // CDN resources (let browser handle)
     /chrome-extension/,  // Browser extensions
+    /\/js\/research\/insights\.js/,  // Public insights page — always fresh
+    /\/pages\/research\/insights\.html/,  // Public insights page — always fresh
 ];
 
 // ── Version check timer ──
