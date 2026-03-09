@@ -1476,7 +1476,23 @@
     });
 
     window.insPrintDashboard = function () {
-        window.print();
+        // Show all tab panels so ApexCharts can render into visible containers
+        const panels = document.querySelectorAll('.ins-tab-panel');
+        panels.forEach(p => p.style.display = 'block');
+
+        // Re-render all charts now that all containers are visible
+        if (dashboardData) {
+            const tabs = dashboardData.tabs || dashboardData.sections || [];
+            renderAllCharts(tabs);
+            renderKpiGauges(dashboardData.kpi_cards || []);
+        }
+
+        // Wait for ApexCharts to finish rendering, then print
+        setTimeout(() => {
+            window.print();
+            // Restore tab visibility after print
+            panels.forEach(p => p.style.display = '');
+        }, 600);
     };
 
     window.insToggleTheme = function () {
