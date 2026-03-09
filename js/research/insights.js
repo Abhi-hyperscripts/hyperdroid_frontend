@@ -11,7 +11,12 @@
     'use strict';
 
     // ═══ CONFIG ═══
-    const API_BASE = window.location.origin.replace(':5501', ':5114').replace('http://', 'https://');
+    const API_BASE = (function () {
+        const h = window.location.hostname;
+        if (h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.'))
+            return window.location.origin.replace(':5501', ':5114').replace('http://', 'https://');
+        return 'https://research.ragenaizer.com';
+    })();
 
     const CHART_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444', '#ec4899', '#14b8a6'];
     const CHART_FONT = "'DM Sans', -apple-system, sans-serif";
