@@ -508,6 +508,40 @@
         }
 
         /* ═══ EXECUTIVE SUMMARY ═══ */
+        /* ═══ OVERVIEW SECTION (KPI + Summary collapsible) ═══ */
+        .ins-overview-section {
+            margin-bottom: 24px;
+        }
+        .ins-overview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 4px;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 12px;
+        }
+        .ins-overview-header .ins-summary-label {
+            font-size: 11px;
+        }
+        .ins-overview-header .ins-summary-chevron {
+            width: 18px;
+            height: 18px;
+        }
+        .ins-overview-body {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+        .ins-overview-section.collapsed .ins-summary-chevron {
+            transform: rotate(180deg);
+        }
+        .ins-overview-section.collapsed .ins-overview-body {
+            max-height: 0;
+            opacity: 0;
+        }
+
         .ins-summary-card {
             background: var(--ins-card-bg);
             backdrop-filter: blur(20px) saturate(1.3);

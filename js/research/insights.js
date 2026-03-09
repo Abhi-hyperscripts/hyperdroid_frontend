@@ -241,57 +241,67 @@
 
         // Methodology Note — now shown via info icon popover in header meta
 
-        // KPI Cards with gauge meters
-        if (d.kpi_cards && d.kpi_cards.length > 0) {
-            html += '<div class="ins-kpi-row">';
-            d.kpi_cards.forEach((kpi, i) => {
-                const accent = i % 4;
-                html += `
-                <div class="ins-kpi-card ins-kpi-accent-${accent}">
-                    <div class="ins-kpi-label">${esc(kpi.kpi_label || '')}</div>
-                    <div class="ins-kpi-gauge" id="insKpiGauge-${i}"></div>
-                    ${kpi.benchmark ? `<div class="ins-kpi-insight" style="font-style:normal;opacity:0.7;">${esc(kpi.benchmark)}</div>` : ''}
-                    ${kpi.insight ? `<div class="ins-kpi-insight">${esc(kpi.insight)}</div>` : ''}
-                </div>`;
-            });
-            html += '</div>';
-        }
-
-        // Executive Summary & Key Takeaways — collapsible card
-        if (d.executive_summary || d.overall_insights) {
-            const hasExec = !!d.executive_summary;
-            const hasKey = !!d.overall_insights;
-            const headerLabel = hasExec && hasKey ? 'Executive Summary' : (hasExec ? 'Executive Summary' : 'Key Takeaways');
-
-            html += `<div class="ins-summary-card" id="insSummaryCard">`;
-            // Clickable header with chevron
-            html += `<div class="ins-summary-header" onclick="insToggleSummary()">
-                <span class="ins-summary-label">${headerLabel}</span>
+        // Overview section — KPI cards + Executive Summary, collapsible
+        const hasKpis = d.kpi_cards && d.kpi_cards.length > 0;
+        const hasExec = !!d.executive_summary;
+        const hasKey = !!d.overall_insights;
+        if (hasKpis || hasExec || hasKey) {
+            html += `<div class="ins-overview-section" id="insOverviewSection">`;
+            html += `<div class="ins-overview-header" onclick="insToggleOverview()">
+                <span class="ins-summary-label">Overview</span>
                 <svg class="ins-summary-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </div>`;
-            // Collapsible body
-            html += `<div class="ins-summary-body">`;
-            // Mini-tabs (only if both sections exist)
-            if (hasExec && hasKey) {
-                html += `<div class="ins-mini-tabs">
-                    <button class="ins-mini-tab active" onclick="event.stopPropagation(); insSwitchMiniTab(this, 'exec')">Executive Summary</button>
-                    <button class="ins-mini-tab" onclick="event.stopPropagation(); insSwitchMiniTab(this, 'key')">Key Takeaways</button>
-                </div>`;
+            html += `<div class="ins-overview-body">`;
+
+            // KPI Cards
+            if (hasKpis) {
+                html += '<div class="ins-kpi-row">';
+                d.kpi_cards.forEach((kpi, i) => {
+                    const accent = i % 4;
+                    html += `
+                    <div class="ins-kpi-card ins-kpi-accent-${accent}">
+                        <div class="ins-kpi-label">${esc(kpi.kpi_label || '')}</div>
+                        <div class="ins-kpi-gauge" id="insKpiGauge-${i}"></div>
+                        ${kpi.benchmark ? `<div class="ins-kpi-insight" style="font-style:normal;opacity:0.7;">${esc(kpi.benchmark)}</div>` : ''}
+                        ${kpi.insight ? `<div class="ins-kpi-insight">${esc(kpi.insight)}</div>` : ''}
+                    </div>`;
+                });
+                html += '</div>';
             }
-            // Content panels
-            if (hasExec) {
-                html += `<div class="ins-mini-panel active" id="insMiniExec">
-                    <div class="ins-summary-text">${formatBullets(d.executive_summary)}</div>
+
+            // Executive Summary & Key Takeaways
+            if (hasExec || hasKey) {
+                const headerLabel = hasExec ? 'Executive Summary' : 'Key Takeaways';
+                html += `<div class="ins-summary-card" id="insSummaryCard">`;
+                html += `<div class="ins-summary-header" onclick="insToggleSummary()">
+                    <span class="ins-summary-label">${headerLabel}</span>
+                    <svg class="ins-summary-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </div>`;
+                html += `<div class="ins-summary-body">`;
+                if (hasExec && hasKey) {
+                    html += `<div class="ins-mini-tabs">
+                        <button class="ins-mini-tab active" onclick="event.stopPropagation(); insSwitchMiniTab(this, 'exec')">Executive Summary</button>
+                        <button class="ins-mini-tab" onclick="event.stopPropagation(); insSwitchMiniTab(this, 'key')">Key Takeaways</button>
+                    </div>`;
+                }
+                if (hasExec) {
+                    html += `<div class="ins-mini-panel active" id="insMiniExec">
+                        <div class="ins-summary-text">${formatBullets(d.executive_summary)}</div>
+                    </div>`;
+                }
+                if (hasKey) {
+                    html += `<div class="ins-mini-panel${!hasExec ? ' active' : ''}" id="insMiniKey">
+                        <div class="ins-summary-text">${formatBullets(d.overall_insights)}</div>
+                    </div>`;
+                }
+                html += `</div></div>`; // close ins-summary-body + ins-summary-card
             }
-            if (hasKey) {
-                html += `<div class="ins-mini-panel${!hasExec ? ' active' : ''}" id="insMiniKey">
-                    <div class="ins-summary-text">${formatBullets(d.overall_insights)}</div>
-                </div>`;
-            }
-            html += `</div></div>`; // close ins-summary-body + ins-summary-card
+
+            html += `</div></div>`; // close ins-overview-body + ins-overview-section
         }
 
         // Tabs — sidebar handles navigation for >3 tabs, horizontal tabs for <=3
@@ -1267,6 +1277,11 @@
     }
 
     // ═══ GLOBAL FUNCTIONS ═══
+    window.insToggleOverview = function () {
+        const section = document.getElementById('insOverviewSection');
+        if (section) section.classList.toggle('collapsed');
+    };
+
     window.insToggleSummary = function () {
         const card = document.getElementById('insSummaryCard');
         if (card) card.classList.toggle('collapsed');
