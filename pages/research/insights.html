@@ -264,12 +264,16 @@
         }
         @media (max-width: 600px) {
             .ins-info-popover {
-                left: 0;
+                position: fixed;
+                left: 16px;
+                right: 16px;
+                top: auto;
+                width: auto;
+                max-width: none;
                 transform: none;
             }
             .ins-info-popover::before {
-                left: 12px;
-                transform: rotate(45deg);
+                display: none;
             }
         }
         .ins-info-popover.visible {
