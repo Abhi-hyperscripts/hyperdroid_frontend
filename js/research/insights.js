@@ -248,10 +248,10 @@
         if (hasKpis || hasExec || hasKey) {
             html += `<div class="ins-overview-section" id="insOverviewSection">`;
             html += `<div class="ins-overview-header" onclick="insToggleOverview()">
-                <span class="ins-summary-label">Overview</span>
                 <svg class="ins-summary-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
+                <span class="ins-summary-label">Overview</span>
             </div>`;
             html += `<div class="ins-overview-body">`;
 
