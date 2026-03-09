@@ -208,11 +208,25 @@
         const actionsEl = document.getElementById('insHeaderActions');
         if (actionsEl) {
             actionsEl.innerHTML = `
-                <button class="ins-theme-btn" onclick="insToggleTheme()" title="Toggle theme">${themeIcon}</button>
-                <button class="ins-share-btn" onclick="insShareLink()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                    Share
-                </button>`;
+                <div class="ins-menu-wrap">
+                    <button class="ins-menu-btn" onclick="insToggleMenu()" title="Options">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </button>
+                    <div class="ins-menu-dropdown" id="insMenuDropdown">
+                        <button onclick="insToggleTheme(); insCloseMenu()">
+                            ${themeIcon}
+                            <span>${isDark() ? 'Light Mode' : 'Dark Mode'}</span>
+                        </button>
+                        <button onclick="insShareLink(); insCloseMenu()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            <span>Share</span>
+                        </button>
+                        <button onclick="insPrintDashboard(); insCloseMenu()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            <span>Print</span>
+                        </button>
+                    </div>
+                </div>`;
         }
 
         // Show header area
@@ -1318,7 +1332,7 @@
         sidebar.id = 'insSidebar';
 
         let sidebarHtml = `
-            <div class="sidebar-header"><h3>Navigation</h3></div>
+            <div class="sidebar-header"><h3>Sections</h3></div>
             <nav class="sidebar-nav">
                 <div class="nav-group-items">`;
 
@@ -1405,7 +1419,7 @@
     }
 
     window.insShareLink = function () {
-        const btn = document.querySelector('.ins-share-btn');
+        const btn = document.querySelector('.ins-menu-btn');
         if (!btn) return;
 
         const projectName = dashboardData?.project_name || 'Insights Dashboard';
@@ -1413,23 +1427,56 @@
         const description = dashboardData?.executive_summary
             ? dashboardData.executive_summary.substring(0, 160) + '...'
             : `Interactive insights dashboard${sampleSize ? ' (' + sampleSize + ')' : ''} powered by Ragenaizer Research.`;
+        const url = window.location.href;
 
         if (typeof ShareWidget !== 'undefined') {
+            const title = projectName + ' — Insights';
+            const ogImage = window.location.origin + '/assets/og-insights.png';
             ShareWidget.openAt(btn, {
-                url: window.location.href,
-                title: projectName + ' — Insights',
-                description: description,
-                ogImage: window.location.origin + '/assets/og-insights.png',
-                btnText: 'View Insights →'
+                url, title, description, ogImage,
+                btnText: 'View Insights →',
+                items: [
+                    { icon: ShareWidget.ICONS.link, label: 'Copy Link', action: () => {
+                        navigator.clipboard.writeText(url).then(() => ShareWidget.showToast('Link copied!')).catch(() => ShareWidget.showToast('Could not copy'));
+                        ShareWidget.closePopover();
+                    }},
+                    { icon: ShareWidget.ICONS.mail, label: 'Email Card', action: () => {
+                        const html = ShareWidget.buildEmailCard({ url, title, description, ogImage, btnText: 'View Insights →' });
+                        navigator.clipboard.write([
+                            new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([html], { type: 'text/plain' }) })
+                        ]).then(() => ShareWidget.showToast('Email card copied — paste into Outlook or Gmail!'));
+                        ShareWidget.closePopover();
+                    }}
+                ]
             });
         } else {
-            // Fallback: simple copy
-            navigator.clipboard.writeText(window.location.href).then(() => {
+            navigator.clipboard.writeText(url).then(() => {
                 showToast('Share link copied to clipboard');
             }).catch(() => {
                 showToast('Copy this URL to share the dashboard');
             });
         }
+    };
+
+    window.insToggleMenu = function () {
+        const dd = document.getElementById('insMenuDropdown');
+        if (dd) dd.classList.toggle('open');
+    };
+
+    window.insCloseMenu = function () {
+        const dd = document.getElementById('insMenuDropdown');
+        if (dd) dd.classList.remove('open');
+    };
+
+    // Close menu on outside click
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.ins-menu-wrap')) {
+            insCloseMenu();
+        }
+    });
+
+    window.insPrintDashboard = function () {
+        window.print();
     };
 
     window.insToggleTheme = function () {
@@ -1438,12 +1485,13 @@
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('ins-theme', next);
 
-        // Update theme toggle button icon
-        const themeBtn = document.querySelector('.ins-theme-btn');
-        if (themeBtn) {
-            themeBtn.innerHTML = next === 'dark'
-                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
-                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+        // Update theme label in dropdown menu
+        const themeItem = document.querySelector('.ins-menu-dropdown button:first-child');
+        if (themeItem) {
+            const icon = next === 'dark'
+                ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+                : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+            themeItem.innerHTML = `${icon}<span>${next === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>`;
         }
 
         // Re-render all charts with new theme colors
